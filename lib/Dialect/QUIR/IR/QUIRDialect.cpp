@@ -1,0 +1,145 @@
+//===- QUIRDialect.cpp - QUIR dialect ---------------------------*- C++ -*-===//
+//
+// (C) Copyright IBM 2022.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+//
+//===----------------------------------------------------------------------===//
+
+#include "Dialect/QUIR/IR/QUIRDialect.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
+#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
+
+#include "llvm/ADT/TypeSwitch.h"
+
+/// Tablegen Definitions
+#include "Dialect/QUIR/IR/QUIRDialect.cpp.inc"
+
+#define GET_TYPEDEF_CLASSES
+#include "Dialect/QUIR/IR/QUIRTypes.cpp.inc"
+
+namespace mlir {
+// TODO: This is a parser template for APFloat, not defined in LLVM 14,
+// perhaps in future versions? Only able to make this work with `double`
+// so anything that requires more precision will need an update or definition
+// for parseFloat() that takes APFloat or gnu mpfr.
+template <class FloatT>
+struct FieldParser<
+    FloatT, std::enable_if_t<std::is_same<FloatT, APFloat>::value, FloatT>> {
+  static FailureOr<FloatT> parse(AsmParser &parser) {
+    double value;
+    if (parser.parseFloat(value))
+      return failure();
+    return APFloat(value);
+  }
+};
+} // namespace mlir
+
+//===----------------------------------------------------------------------===//
+// Table generated attribute method definitions
+//===----------------------------------------------------------------------===//
+
+#define GET_ATTRDEF_CLASSES
+#include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
+
+namespace mlir::quir {
+
+//===----------------------------------------------------------------------===//
+// Quir dialect.
+//===----------------------------------------------------------------------===//
+
+struct QuirInlinerInterface : public DialectInlinerInterface {
+  using DialectInlinerInterface::DialectInlinerInterface;
+
+  //===--------------------------------------------------------------------===//
+  // Analysis Hooks
+  //===--------------------------------------------------------------------===//
+
+  // inlining for call operations
+  auto isLegalToInline(Operation *call, Operation *callable,
+                       bool wouldBeCloned) const -> bool final {
+    return true;
+  }
+
+  /// For now all operations within quir can be inlined.
+  auto isLegalToInline(Operation *, Region *, bool,
+                       BlockAndValueMapping &) const -> bool final {
+    return true;
+  }
+};
+
+void quir::QUIRDialect::initialize() {
+
+  addTypes<
+#define GET_TYPEDEF_LIST
+#include "Dialect/QUIR/IR/QUIRTypes.cpp.inc"
+      >();
+
+  addOperations<
+#define GET_OP_LIST
+#include "Dialect/QUIR/IR/QUIR.cpp.inc"
+      >();
+
+  addAttributes<
+#define GET_ATTRDEF_LIST
+#include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
+      >();
+
+  addInterfaces<QuirInlinerInterface>();
+}
+
+template <typename QUIRType>
+mlir::Type parseOptionalWidth(mlir::AsmParser &parser) {
+  unsigned width = -1;
+
+  // non-parameterized Qubit type?
+  if (parser.parseOptionalLess())
+    return QUIRType::get(parser.getContext(), llvm::None);
+
+  // incorrect syntax
+  if (parser.parseInteger(width) || parser.parseGreater())
+    return {};
+
+  if (width < 1) {
+    parser.emitError(parser.getNameLoc(), "width must be > 0");
+    return {};
+  }
+
+  return QUIRType::get(parser.getContext(), width);
+}
+
+mlir::Type AngleType::parse(mlir::AsmParser &parser) {
+  return parseOptionalWidth<AngleType>(parser);
+}
+
+static void printOptionalWidth(llvm::Optional<int> width,
+                               mlir::AsmPrinter &printer) {
+  if (width.hasValue()) {
+    printer << "<";
+    printer.printStrippedAttrOrType(width);
+    printer << ">";
+  }
+}
+
+void AngleType::print(mlir::AsmPrinter &printer) const {
+  printOptionalWidth(getImpl()->width, printer);
+}
+
+LogicalResult QubitType::verify(function_ref<InFlightDiagnostic()> emitError,
+                                int width) {
+  if (width <= 0)
+    return emitError() << "width must be > 0";
+  return success();
+}
+
+LogicalResult AngleType::verify(function_ref<InFlightDiagnostic()> emitError,
+                                llvm::Optional<int> width) {
+  if (width.hasValue() && width.getValue() <= 0)
+    return emitError() << "width must be > 0";
+  return success();
+}
+
+} // namespace mlir::quir

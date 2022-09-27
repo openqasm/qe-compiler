@@ -1,0 +1,18 @@
+# (C) Copyright IBM 2022.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+from ._version import version as __version__  # noqa: F401
+from .py_qssc import __doc__  # noqa: F401
+
+from .compile import (  # noqa: F401
+    compile_file,
+    compile_file_async,
+    compile_str,
+    compile_str_async,
+    InputType,
+    OutputType,
+    CompileOptions,
+    QSSCompilationFailure,
+)

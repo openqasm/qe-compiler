@@ -1,0 +1,15 @@
+breathe
+cmake>=3.15
+conan>=1.43
+Jinja2==3.0.3 # https://github.com/sphinx-doc/sphinx/issues/10291
+lit>=12.0.0
+markupsafe==2.0.1
+myst-parser
+ninja>=1.10
+pytest
+pytest-asyncio
+setuptools_scm
+reno
+Sphinx>=4.0
+sphinx-rtd-theme
+sphinx-sitemap

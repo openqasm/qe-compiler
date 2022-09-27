@@ -1,0 +1,13 @@
+# Use with "source qssc-activate" to prepare variables for build envronment.
+# Do not run it directly.
+
+qssc-deactivate() {
+    # unset environment variables
+    if [ -n "${QSSC_RESOURCES:-}" ]; then
+        unset QSSC_RESOURCES
+    fi
+    unset -f qssc-deactivate
+}
+
+QSSC_RESOURCES="@QSSC_RESOURCES_OUTPUT_INTDIR@"
+export QSSC_RESOURCES

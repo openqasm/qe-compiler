@@ -1,0 +1,25 @@
+//===- config.h ------------------------------------------------*- C++ -*-===//
+//
+// (C) Copyright IBM 2022.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+//
+//===----------------------------------------------------------------------===//
+//
+// configuration variables passed by build system
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef QSSC_CONFIG_H
+#define QSSC_CONFIG_H
+
+#define QSSC_VERSION_MAJOR "${QSSC_VERSION_MAJOR}"
+#define QSSC_VERSION_MINOR "${QSSC_VERSION_MINOR}"
+#define QSSC_VERSION_PATCH "${QSSC_VERSION_PATCH}"
+#define QSSC_VERSION "${QSSC_VERSION}"
+
+#define QSSC_RESOURCES_INSTALL_PREFIX "${QSSC_RESOURCES_INSTALL_PREFIX}"
+
+#endif // QSSC_CONFIG_H

@@ -1,0 +1,48 @@
+# (C) Copyright IBM 2021, 2022.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+add_subdirectory(API)
+add_subdirectory(Conversion)
+add_subdirectory(Dialect)
+add_subdirectory(Frontend)
+add_subdirectory(HAL)
+add_subdirectory(Payload)
+add_subdirectory(Utils)
+
+set(SOURCES
+        QSSC.cpp
+)
+add_library(QSSCCore ${SOURCES})
+
+get_property(qssc_targets GLOBAL PROPERTY QSSC_TARGETS)
+get_property(mlir_dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
+get_property(mlir_conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
+
+set(LIBS
+        ${qssc_targets}
+        QSSCAPI
+        QSSCHAL
+        QSSCVisitor
+        QSSCPayload
+        QSSCCore
+        ${mlir_dialect_libs}
+        ${mlir_conversion_libs}
+        MLIRCallInterfaces
+        MLIRExecutionEngine
+        MLIROptLib
+        MLIRQUIRDialect
+        MLIRPulseDialect
+        qasm::qasm
+        mpc::mpc
+        mpfr::mpfr
+        gmp::gmp
+        )
+
+# collect all required components in an "interface library", which exports its
+# INTERFACE and dependencies to all targets that refer to the library yet does
+# not materialize as an artifact by itself
+add_library(QSSCLib INTERFACE)
+target_link_libraries(QSSCLib INTERFACE ${LIBS})
