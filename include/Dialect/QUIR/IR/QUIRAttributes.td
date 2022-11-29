@@ -37,4 +37,31 @@ def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle"> {
   let skipDefaultBuilders = 1;
 }
 
+def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
+  let summary = "A duration of time";
+  let description = [{
+    Duration attributes represent OpenQASM 3.0 durations, which are lengths of
+    time. They are represented by a string containing a float literal and unit
+    specifiers. Valid units are s, ms, ns, us, and dt.
+  }];
+
+  let parameters = (ins AttributeSelfTypeParameter<"">:$type,
+                        StringRefParameter<"the duration">:$value);
+
+  let assemblyFormat = "`<` $value `:` $type `>`";
+}
+
+def QUIR_InputParameterAttr : QUIR_Attr<"InputParameter", "inputParameter"> {
+  let summary = "A marker for an operation that represents an input parameter";
+  let description = [{
+    InputParameter attributes mark operations that represent input parameters
+    to a circuit.
+  }];
+
+  let parameters = (ins StringRefParameter<"the parameter's name">:$name);
+
+  let assemblyFormat = "`<` $name `>`";
+  let genAccessors = 1;
+}
+
 #endif // QUIR_ATTRIBUTES

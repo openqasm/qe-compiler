@@ -80,6 +80,10 @@ public:
 
   virtual void visit(const QASM::ASTSwitchStatementNode *) = 0;
 
+  virtual void visit(const QASM::ASTWhileStatementNode *) = 0;
+
+  virtual void visit(const QASM::ASTWhileLoopNode *) = 0;
+
   virtual void visit(const QASM::ASTReturnStatementNode *) = 0;
 
   virtual void visit(const QASM::ASTResultNode *);
@@ -111,6 +115,8 @@ public:
   virtual void visit(const QASM::ASTBarrierNode *) = 0;
 
   virtual void visit(const QASM::ASTDeclarationNode *) = 0;
+
+  virtual void visit(const QASM::ASTKernelDeclarationNode *) = 0;
 
   virtual void visit(const QASM::ASTQubitContainerNode *) = 0;
 

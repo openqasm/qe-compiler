@@ -26,6 +26,7 @@ Optional<Type> convertCbitType(quir::CBitType t) {
   return llvm::None;
 }
 
+Optional<Type> legalizeIndexType(mlir::IndexType t) { return t; }
 } // anonymous namespace
 
 QuirTypeConverter::QuirTypeConverter() {
@@ -33,6 +34,7 @@ QuirTypeConverter::QuirTypeConverter() {
   addSourceMaterialization(angleSourceMaterialization);
 
   addConversion(convertCbitType);
+  addConversion(legalizeIndexType);
 }
 
 Optional<Type> QuirTypeConverter::convertAngleType(Type t) {

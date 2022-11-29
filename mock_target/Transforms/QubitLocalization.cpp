@@ -197,7 +197,7 @@ void mock::MockQubitLocalizationPass::processOp(FuncOp &funcOp) {
 void mock::MockQubitLocalizationPass::processOp(Builtin_UOp &uOp) {
   Operation *op = uOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
-  int qubitId = lookupQubitId(uOp.qa1());
+  int qubitId = lookupQubitId(uOp.target());
 
   // broadcast all classical values from Controller to all Mockss
   // recv all classical values on all Mockss
@@ -217,8 +217,8 @@ void mock::MockQubitLocalizationPass::processOp(Builtin_UOp &uOp) {
 void mock::MockQubitLocalizationPass::processOp(BuiltinCXOp &cxOp) {
   Operation *op = cxOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
-  int qubitId1 = lookupQubitId(cxOp.qa1());
-  int qubitId2 = lookupQubitId(cxOp.qb1());
+  int qubitId1 = lookupQubitId(cxOp.control());
+  int qubitId2 = lookupQubitId(cxOp.target());
 
   if (qubitId1 < 0 || qubitId2 < 0) {
     cxOp->emitOpError() << "Can't resolve qubit ID for cxOp\n";
@@ -395,19 +395,22 @@ void mock::MockQubitLocalizationPass::processOp(BarrierOp &barrierOp) {
   Operation *op = barrierOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
 
-  std::vector<Value> qubitArgs;
-  qubitCallArgs(barrierOp, qubitArgs);
+  std::vector<Value> qubitOperands;
+  qubitCallOperands(barrierOp, qubitOperands);
 
+  bool qubitIdsResolved = true;
   std::vector<unsigned int> qubits;
-  qubits.reserve(qubitArgs.size());
-  for (auto &qubit : qubitArgs) {
-    int qubitId = lookupQubitId(qubit);
-    if (qubitId < 0) {
-      barrierOp->emitOpError()
-          << "Unable to resolve all qubit IDs for barrier\n";
-      return signalPassFailure();
-    }
-    qubits.emplace_back(qubitId);
+  qubits.reserve(qubitOperands.size());
+  for (auto &qubit : qubitOperands) {
+    auto qubitIdx = lookupQubitId(qubit);
+    qubits.emplace_back(qubitIdx);
+    if (qubitIdx < 0)
+      qubitIdsResolved = false;
+  }
+
+  if (!qubitIdsResolved) {
+    barrierOp->emitOpError() << "Unable to resolve all qubit IDs for barrier\n";
+    return signalPassFailure();
   }
 
   // Clone the gate call to all relevant drive
@@ -507,7 +510,7 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
   Operation *op = delayOp.getOperation();
   std::vector<int> qInd;
   bool qubitIdsResolved = true;
-  for (auto operand : delayOp.targets()) {
+  for (auto operand : delayOp.qubits()) {
     qInd.emplace_back(lookupQubitId(operand));
     if (qInd.back() < 0)
       qubitIdsResolved = false;
@@ -516,7 +519,7 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
     delayOp->emitOpError() << "Unable to resolve all qubit IDs for delay\n";
     return signalPassFailure();
   }
-  if (delayOp.targets().empty()) // no qubit args means all qubits
+  if (delayOp.qubits().empty()) // no qubit args means all qubits
     for (uint qId : seenQubitIds)
       qInd.emplace_back((int)qId);
 
@@ -533,7 +536,7 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
       (*mockBuilders)[id]->clone(*durationDeclare, mockMapping[id]);
   }
 
-  if (delayOp.targets().empty())
+  if (delayOp.qubits().empty())
     controllerBuilder->clone(*op, controllerMapping);
   // clone the delay op to the involved nodes
   for (uint nodeId : involvedNodes)

@@ -5,15 +5,23 @@
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
-//
+//===----------------------------------------------------------------------===//
+///
+///  This file declares defines functions for registering the core Pulse IR
+///  passes.
+///
 //===----------------------------------------------------------------------===//
 
 #ifndef PULSE_PULSEPASSES_H
 #define PULSE_PULSEPASSES_H
 
 #include "Conversion/QUIRToPulse/QUIRToPulse.h"
+#include "Dialect/Pulse/Transforms/ClassicalOnlyDetection.h"
 #include "Dialect/Pulse/Transforms/InlineRegion.h"
+#include "Dialect/Pulse/Transforms/MergeDelays.h"
 #include "Dialect/Pulse/Transforms/PortGroupPrune.h"
+#include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
+#include "Dialect/Pulse/Transforms/SchedulePort.h"
 #include "Dialect/Pulse/Transforms/SlicePorts.h"
 #include "Dialect/Pulse/Transforms/SystemCreation.h"
 #include "mlir/Pass/Pass.h"
@@ -23,6 +31,7 @@
 namespace mlir::pulse {
 void registerPulsePasses();       // individual command line passes
 void registerPulsePassPipeline(); // pass pipeline (ordered list of passes)
+void pulsePassPipelineBuilder(OpPassManager &pm);
 } // namespace mlir::pulse
 
 #endif // PULSE_PULSEPASSES_H

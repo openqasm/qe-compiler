@@ -1,4 +1,5 @@
-//===- RemoveQubitArgs.cpp - Remove qubit args ------------------*- C++ -*-===//
+//===- RemoveQubitOperands.cpp - Remove qubit args ------------------*- C++
+//-*-===//
 //
 // (C) Copyright IBM 2021, 2022.
 //
@@ -14,7 +15,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/QUIR/Transforms/RemoveQubitArgs.h"
+#include "Dialect/QUIR/Transforms/RemoveQubitOperands.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "llvm/ADT/BitVector.h"
@@ -22,7 +23,7 @@
 using namespace mlir;
 using namespace mlir::quir;
 
-auto RemoveQubitArgsPass::lookupQubitId(const Value val) -> int {
+auto RemoveQubitOperandsPass::lookupQubitId(const Value val) -> int {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
   if (declOp)
     return declOp.id().getValue();
@@ -33,8 +34,8 @@ auto RemoveQubitArgsPass::lookupQubitId(const Value val) -> int {
     unsigned argIdx = blockArg.getArgNumber();
     auto funcOp = dyn_cast<FuncOp>(blockArg.getOwner()->getParentOp());
     if (funcOp) {
-      auto argAttr =
-          funcOp.getArgAttrOfType<IntegerAttr>(argIdx, "quir.physicalId");
+      auto argAttr = funcOp.getArgAttrOfType<IntegerAttr>(
+          argIdx, quir::getPhysicalIdAttrName());
       if (argAttr)
         return argAttr.getInt();
       funcOp->emitOpError()
@@ -53,7 +54,7 @@ auto RemoveQubitArgsPass::lookupQubitId(const Value val) -> int {
   return -1;
 } // lookupQubitId
 
-void RemoveQubitArgsPass::addQubitDeclarations(FuncOp funcOp) {
+void RemoveQubitOperandsPass::addQubitDeclarations(FuncOp funcOp) {
   // build inside the func def body
   OpBuilder build(funcOp.getBody());
 
@@ -74,7 +75,7 @@ void RemoveQubitArgsPass::addQubitDeclarations(FuncOp funcOp) {
   }
 } // addQubitDeclarations
 
-void RemoveQubitArgsPass::processCallOp(Operation *op) {
+void RemoveQubitOperandsPass::processCallOp(Operation *op) {
   auto callOp = dyn_cast<CallSubroutineOp>(op);
   llvm::BitVector qIndicesBV(callOp->getNumOperands());
 
@@ -106,7 +107,7 @@ void RemoveQubitArgsPass::processCallOp(Operation *op) {
 } // processCallOp
 
 // Entry point for the pass.
-void RemoveQubitArgsPass::runOnOperation() {
+void RemoveQubitOperandsPass::runOnOperation() {
   moduleOperation = getOperation();
   Operation *mainFunc = getMainFunction(moduleOperation);
   callWorkList.clear();
@@ -130,10 +131,10 @@ void RemoveQubitArgsPass::runOnOperation() {
 
 } // runOnOperation
 
-llvm::StringRef RemoveQubitArgsPass::getArgument() const {
+llvm::StringRef RemoveQubitOperandsPass::getArgument() const {
   return "remove-qubit-args";
 }
-llvm::StringRef RemoveQubitArgsPass::getDescription() const {
+llvm::StringRef RemoveQubitOperandsPass::getDescription() const {
   return "Remove qubit arguments from subroutine defs and calls, replacing "
          "them with qubit declarations inside the subroutine body";
 }

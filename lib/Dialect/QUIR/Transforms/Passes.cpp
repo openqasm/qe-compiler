@@ -16,6 +16,7 @@
 
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTestInterfaces.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
@@ -149,10 +150,10 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
       // just check the arguments for qubitType values
       FunctionType fType = funcOp.getType();
       bool isMain = SymbolRefAttr::get(funcOp).getLeafReference() == "main";
-      bool quantumArgs = false;
+      bool quantumOperands = false;
       for (auto argType : fType.getInputs()) {
         if (argType.isa<QubitType>()) {
-          quantumArgs = true;
+          quantumOperands = true;
           break;
         }
       }
@@ -160,7 +161,7 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
       funcOp->walk([&](DeclareQubitOp op) { quantumDeclarations = true; });
       op->setAttr(
           llvm::StringRef("quir.classicalOnly"),
-          b.getBoolAttr(!quantumArgs && !quantumDeclarations && !isMain));
+          b.getBoolAttr(!quantumOperands && !quantumDeclarations && !isMain));
     } // if funcOp
   });
 } // ClassicalOnlyDetectionPass::runOnOperation
@@ -233,20 +234,32 @@ void quirPassPipelineBuilder(OpPassManager &pm) {
 }
 
 void registerQuirPasses() {
+  //===----------------------------------------------------------------------===//
+  // Transform Passes
+  //===----------------------------------------------------------------------===//
   PassRegistration<quir::TestPrintNestingPass>();
   PassRegistration<quir::FunctionArgumentSpecializationPass>();
   PassRegistration<quir::ClassicalOnlyDetectionPass>();
   PassRegistration<quir::BreakResetPass>();
-  PassRegistration<quir::MergeParallelResetsPass>();
+  PassRegistration<quir::MergeResetsLexicographicPass>();
+  PassRegistration<quir::MergeResetsTopologicalPass>();
   PassRegistration<quir::SubroutineCloningPass>();
-  PassRegistration<quir::RemoveQubitArgsPass>();
+  PassRegistration<quir::RemoveQubitOperandsPass>();
   PassRegistration<quir::UnusedVariablePass>();
   PassRegistration<quir::AddShotLoopPass>();
   PassRegistration<quir::QuantumDecorationPass>();
-  PassRegistration<quir::MergeMeasuresPass>();
+  PassRegistration<quir::ReorderMeasurementsPass>();
+  PassRegistration<quir::MergeMeasuresLexographicalPass>();
+  PassRegistration<quir::MergeMeasuresTopologicalPass>();
   PassRegistration<quir::QUIRAngleConversionPass>();
   PassRegistration<quir::LoadEliminationPass>();
   PassRegistration<quir::DumpVariableDominanceInfoPass>();
+  PassRegistration<quir::VariableEliminationPass>();
+
+  //===----------------------------------------------------------------------===//
+  // Test Passes
+  //===----------------------------------------------------------------------===//
+  PassRegistration<quir::TestQubitOpInterfacePass>();
 }
 
 void registerQuirPassPipeline() {

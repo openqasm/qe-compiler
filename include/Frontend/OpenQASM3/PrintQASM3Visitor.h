@@ -33,6 +33,10 @@ public:
 
   void visit(const QASM::ASTSwitchStatementNode *) override;
 
+  void visit(const QASM::ASTWhileStatementNode *) override;
+
+  void visit(const QASM::ASTWhileLoopNode *) override;
+
   void visit(const QASM::ASTReturnStatementNode *) override;
 
   void visit(const QASM::ASTResultNode *) override;
@@ -64,6 +68,8 @@ public:
   void visit(const QASM::ASTBarrierNode *) override;
 
   void visit(const QASM::ASTDeclarationNode *) override;
+
+  void visit(const QASM::ASTKernelDeclarationNode *) override;
 
   void visit(const QASM::ASTQubitContainerNode *) override;
 

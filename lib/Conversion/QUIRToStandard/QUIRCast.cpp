@@ -133,7 +133,27 @@ struct CastIntToCBitConversionPat : public OpConversionPattern<CastOp> {
 
     return failure();
   } // matchAndRewrite
-};  // struct CastCBitToIntConversionPat
+};  // struct CastIntToCBitConversionPat
+
+/// @brief Conversion pattern for cast ops that produce integers from index
+/// values
+struct CastIndexToIntegerPat : public OpConversionPattern<CastOp> {
+  explicit CastIndexToIntegerPat(MLIRContext *ctx,
+                                 mlir::TypeConverter &typeConverter)
+      : OpConversionPattern(typeConverter, ctx, /*benefit=*/1) {}
+
+  LogicalResult
+  matchAndRewrite(CastOp castOp, CastOp::Adaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    // check if the input is index type
+    if (!castOp.arg().getType().isIndex())
+      return failure();
+
+    rewriter.replaceOpWithNewOp<mlir::arith::IndexCastOp>(
+        castOp, castOp.out().getType(), adaptor.arg());
+    return success();
+  } // matchAndRewrite
+};  // struct CastIndexToIntegerPat
 
 /// @brief Conversion pattern that drops CastOps that have been made redundant
 /// by type conversion (e.g., cbit<1> -> i1)
@@ -182,9 +202,9 @@ struct WideningIntegerCastsPattern : public OpConversionPattern<quir::CastOp> {
   LogicalResult
   matchAndRewrite(quir::CastOp castOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    if (!castOp.getOperand().getType().isSignlessIntOrIndex())
+    if (!castOp.getOperand().getType().isSignlessInteger())
       return failure();
-    if (!castOp.getType().isSignlessIntOrIndex())
+    if (!castOp.getType().isSignlessInteger())
       return failure();
 
     assert(castOp.getOperand().getType() == adaptor.arg().getType() &&
@@ -210,6 +230,7 @@ void mlir::quir::populateQUIRCastPatterns(RewritePatternSet &patterns,
   patterns.insert<CastCBitToIntConversionPat>(ctx, typeConverter);
   patterns.insert<CastIntToCBitConversionPat>(ctx, typeConverter);
   patterns.insert<CastIntegerToBoolConversionPattern>(ctx, typeConverter);
+  patterns.insert<CastIndexToIntegerPat>(ctx, typeConverter);
   patterns.insert<RemoveConvertedNilCastsPat>(ctx, typeConverter);
   patterns.insert<RemoveI1ToCbitCastsPattern>(ctx, typeConverter);
   patterns.insert<WideningIntegerCastsPattern>(ctx, typeConverter);

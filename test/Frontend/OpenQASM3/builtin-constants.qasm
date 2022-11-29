@@ -9,9 +9,9 @@ U(pi, pi / 2, euler) $0;
 
 angle[3] a = euler;
 
-U(π, τ, ℇ) $0;
+U(π, τ, ε) $0;
 
-U(1.5 * π, τ / 2, 1.5 * ℇ) $0;
+U(1.5 * π, τ / 2, 1.5 * ε) $0;
 
 
 // gate declarations
@@ -26,6 +26,6 @@ phase(0.4 * tau) $0;
 phase(0.4 * τ) $0;
 
 phase(1.5 * euler) $0;
-phase(1.5 * ℇ) $0;
+phase(1.5 * ε) $0;
 
-angle phi = 1.5 * π + τ / 2 - 1.5 * ℇ;
+angle phi = 1.5 * π + τ / 2 - 1.5 * ε;

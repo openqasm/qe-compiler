@@ -100,10 +100,10 @@ auto getNodeId(Operation *moduleOperation) -> int {
 // adds the qubit Ids on the physicalId or physicalIds attributes to theseIds
 void addModuleQubitIds(Operation *moduleOperation,
                        std::vector<uint> &theseIds) {
-  auto thisIdAttr =
-      moduleOperation->getAttrOfType<IntegerAttr>("quir.physicalId");
-  auto theseIdsAttr =
-      moduleOperation->getAttrOfType<ArrayAttr>("quir.physicalIds");
+  auto thisIdAttr = moduleOperation->getAttrOfType<IntegerAttr>(
+      mlir::quir::getPhysicalIdAttrName());
+  auto theseIdsAttr = moduleOperation->getAttrOfType<ArrayAttr>(
+      mlir::quir::getPhysicalIdsAttrName());
   if (thisIdAttr)
     theseIds.push_back(thisIdAttr.getInt());
   if (theseIdsAttr) {
@@ -114,75 +114,59 @@ void addModuleQubitIds(Operation *moduleOperation,
   }
 } // addModuleQubitIds
 
-// appends all of the qubit arguments for a callOp to vec
-template <class CallOpTy>
-void qubitCallArgs(CallOpTy &callOp, std::vector<Value> &vec) {
-  for (auto arg : callOp.args())
-    if (arg.getType().template isa<QubitType>())
-      vec.emplace_back(arg);
-} // qubitCallArgs
-
-// explicit template instantiation
-template void qubitCallArgs<CallGateOp>(CallGateOp &, std::vector<Value> &);
-template void qubitCallArgs<BarrierOp>(BarrierOp &, std::vector<Value> &);
-template void qubitCallArgs<CallDefCalGateOp>(CallDefCalGateOp &,
-                                              std::vector<Value> &);
-template void qubitCallArgs<CallDefcalMeasureOp>(CallDefcalMeasureOp &,
-                                                 std::vector<Value> &);
-template void qubitCallArgs<CallSubroutineOp>(CallSubroutineOp &,
-                                              std::vector<Value> &);
-
 // returns a vector of all of the classical arguments for a callOp
 template <class CallOpTy>
-void classicalCallArgs(CallOpTy &callOp, std::vector<Value> &vec) {
-  for (auto arg : callOp.args())
+void classicalCallOperands(CallOpTy &callOp, std::vector<Value> &vec) {
+  for (auto arg : callOp.operands())
     if (!arg.getType().template isa<QubitType>())
       vec.emplace_back(arg);
-} // classicalCallArgs
+} // classicalCallOperands
 
 // explicit template instantiation
-template void classicalCallArgs<CallGateOp>(CallGateOp &, std::vector<Value> &);
-template void classicalCallArgs<CallDefCalGateOp>(CallDefCalGateOp &,
-                                                  std::vector<Value> &);
-template void classicalCallArgs<CallDefcalMeasureOp>(CallDefcalMeasureOp &,
-                                                     std::vector<Value> &);
-template void classicalCallArgs<CallSubroutineOp>(CallSubroutineOp &,
-                                                  std::vector<Value> &);
+template void classicalCallOperands<CallGateOp>(CallGateOp &,
+                                                std::vector<Value> &);
+template void classicalCallOperands<CallDefCalGateOp>(CallDefCalGateOp &,
+                                                      std::vector<Value> &);
+template void classicalCallOperands<CallDefcalMeasureOp>(CallDefcalMeasureOp &,
+                                                         std::vector<Value> &);
+template void classicalCallOperands<CallSubroutineOp>(CallSubroutineOp &,
+                                                      std::vector<Value> &);
 
 // returns the number of qubit arguments for a callOp
 template <class CallOpTy>
-uint numQubitCallArgs(CallOpTy &callOp) {
+uint numQubitCallOperands(CallOpTy &callOp) {
   std::vector<Value> tmpVec;
-  qubitCallArgs(callOp, tmpVec);
+  qubitCallOperands(callOp, tmpVec);
   return tmpVec.size();
-} // numQubitCallArgs
+} // numQubitCallOperands
 
 // explicit template instantiation
-template uint numQubitCallArgs<CallGateOp>(CallGateOp &);
-template uint numQubitCallArgs<CallDefCalGateOp>(CallDefCalGateOp &);
-template uint numQubitCallArgs<CallDefcalMeasureOp>(CallDefcalMeasureOp &);
-template uint numQubitCallArgs<CallSubroutineOp>(CallSubroutineOp &);
+template uint numQubitCallOperands<CallGateOp>(CallGateOp &);
+template uint numQubitCallOperands<CallDefCalGateOp>(CallDefCalGateOp &);
+template uint numQubitCallOperands<CallDefcalMeasureOp>(CallDefcalMeasureOp &);
+template uint numQubitCallOperands<CallSubroutineOp>(CallSubroutineOp &);
 
 // returns the number of classical arguments for a callOp
 template <class CallOpTy>
-uint numClassicalCallArgs(CallOpTy &callOp) {
+uint numClassicalCallOperands(CallOpTy &callOp) {
   std::vector<Value> tmpVec;
-  classicalCallArgs(callOp, tmpVec);
+  classicalCallOperands(callOp, tmpVec);
   return tmpVec.size();
-} // numQubitCallArgs
+} // numQubitCallOperands
 
 // explicit template instantiation
-template uint numClassicalCallArgs<CallGateOp>(CallGateOp &);
-template uint numClassicalCallArgs<CallDefCalGateOp>(CallDefCalGateOp &);
-template uint numClassicalCallArgs<CallDefcalMeasureOp>(CallDefcalMeasureOp &);
-template uint numClassicalCallArgs<CallSubroutineOp>(CallSubroutineOp &);
+template uint numClassicalCallOperands<CallGateOp>(CallGateOp &);
+template uint numClassicalCallOperands<CallDefCalGateOp>(CallDefCalGateOp &);
+template uint
+numClassicalCallOperands<CallDefcalMeasureOp>(CallDefcalMeasureOp &);
+template uint numClassicalCallOperands<CallSubroutineOp>(CallSubroutineOp &);
 
 // appends the indices of the qubit arguments for a callOp to a bit vector
 template <class CallOpTy>
 void qubitArgIndices(CallOpTy &callOp, llvm::BitVector &bv) {
   uint ii = 0;
 
-  for (auto arg : callOp.args()) {
+  for (auto arg : callOp.operands()) {
     if (arg.getType().template isa<QubitType>()) {
       if (bv.size() <= ii)
         bv.resize(ii + 1);
@@ -201,16 +185,19 @@ template void qubitArgIndices<CallDefcalMeasureOp>(CallDefcalMeasureOp &,
 template void qubitArgIndices<CallSubroutineOp>(CallSubroutineOp &,
                                                 llvm::BitVector &);
 
+// TODO: Determine a better way of tracing qubit identities
+// other than decorating blocks and functions.
 llvm::Optional<uint> lookupQubitId(const Value &val) {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
   if (!declOp) { // Must be an argument to a function
     // see if we can find an attribute with the info
     if (auto blockArg = val.dyn_cast<BlockArgument>()) {
       unsigned argIdx = blockArg.getArgNumber();
-      auto funcOp = dyn_cast<FuncOp>(blockArg.getOwner()->getParentOp());
-      if (funcOp) {
-        auto argAttr =
-            funcOp.getArgAttrOfType<IntegerAttr>(argIdx, "quir.physicalId");
+      auto *parentOp = blockArg.getOwner()->getParentOp();
+      if (FunctionOpInterface functionOpInterface =
+              dyn_cast<FunctionOpInterface>(parentOp)) {
+        auto argAttr = functionOpInterface.getArgAttrOfType<IntegerAttr>(
+            argIdx, quir::getPhysicalIdAttrName());
         if (argAttr) {
           int id = argAttr.getInt();
           assert(id >= 0 && "physicalId of qubit argument is < 0");
@@ -311,8 +298,12 @@ bool isQuantumOp(Operation *op) {
 }
 
 llvm::Expected<Duration>
-Duration::parseDuration(mlir::quir::DeclareDurationOp &duration) {
-  return Duration::parseDuration(duration.value().str());
+Duration::parseDuration(mlir::quir::ConstantOp &duration) {
+  auto durAttr = duration.value().dyn_cast<DurationAttr>();
+  if (!durAttr)
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Expected a ConstantOp with a DurationAttr");
+  return Duration::parseDuration(durAttr.getValue().str());
 }
 
 llvm::Expected<Duration>

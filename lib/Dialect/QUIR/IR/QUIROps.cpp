@@ -12,10 +12,12 @@
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
+#include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/BlockAndValueMapping.h"
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/FunctionImplementation.h"
 #include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/Operation.h"
@@ -25,6 +27,106 @@
 
 using namespace mlir;
 using namespace mlir::quir;
+
+static uint lookupQubitIdHandleError_(const Value &val) {
+  auto id = lookupQubitId(val);
+  if (!id.hasValue()) {
+    auto &diagEngine = val.getContext()->getDiagEngine();
+    diagEngine.emit(val.getLoc(), mlir::DiagnosticSeverity::Error)
+        << "Qubit does not have a valid ID.";
+    val.getDefiningOp()->emitError() << "Qubit does not have a valid ID.";
+  }
+  return id.getValue();
+} // lookupQubitIdHandleError_
+
+template <class Op>
+std::set<uint32_t> getQubitIds(Op &op) {
+  std::set<uint32_t> opQubits;
+  std::vector<Value> vals;
+  qubitCallOperands<Op>(op, vals);
+  for (auto qubit : vals) {
+    auto id = lookupQubitIdHandleError_(qubit);
+    opQubits.insert(id);
+  }
+  return opQubits;
+} // getQubitIds
+
+//===----------------------------------------------------------------------===//
+// BuiltinCXOp
+//===----------------------------------------------------------------------===//
+
+std::set<uint32_t> BuiltinCXOp::getOperatedQubits() {
+  std::set<uint32_t> opQubits;
+  opQubits.insert(lookupQubitIdHandleError_(control()));
+  opQubits.insert(lookupQubitIdHandleError_(target()));
+  return opQubits;
+}
+
+//===----------------------------------------------------------------------===//
+// Builtin_UOp
+//===----------------------------------------------------------------------===//
+
+std::set<uint32_t> Builtin_UOp::getOperatedQubits() {
+  std::set<uint32_t> opQubits;
+  opQubits.insert(lookupQubitIdHandleError_(target()));
+  return opQubits;
+}
+
+//===----------------------------------------------------------------------===//
+// CallGateOp
+//===----------------------------------------------------------------------===//
+
+std::set<uint32_t> CallGateOp::getOperatedQubits() {
+  return getQubitIds<CallGateOp>(*this);
+}
+
+//===----------------------------------------------------------------------===//
+// MeasureOp
+//===----------------------------------------------------------------------===//
+
+std::set<uint32_t> MeasureOp::getOperatedQubits() {
+  return getQubitIds<MeasureOp>(*this);
+}
+
+//===----------------------------------------------------------------------===//
+// ResetOp
+//===----------------------------------------------------------------------===//
+
+std::set<uint32_t> ResetQubitOp::getOperatedQubits() {
+  return getQubitIds<ResetQubitOp>(*this);
+}
+
+//===----------------------------------------------------------------------===//
+// SynchronizeOp
+//===----------------------------------------------------------------------===//
+
+std::set<uint32_t> SynchronizeOp::getOperatedQubits() {
+  return getQubitIds<SynchronizeOp>(*this);
+}
+
+//===----------------------------------------------------------------------===//
+// DelayOp
+//===----------------------------------------------------------------------===//
+
+std::set<uint32_t> DelayOp::getOperatedQubits() {
+  return getQubitIds<DelayOp>(*this);
+}
+
+//===----------------------------------------------------------------------===//
+// DelayCyclesOp
+//===----------------------------------------------------------------------===//
+
+std::set<uint32_t> DelayCyclesOp::getOperatedQubits() {
+  return getQubitIds<DelayCyclesOp>(*this);
+}
+
+//===----------------------------------------------------------------------===//
+// BarrierOp
+//===----------------------------------------------------------------------===//
+
+std::set<uint32_t> BarrierOp::getOperatedQubits() {
+  return getQubitIds<BarrierOp>(*this);
+}
 
 //===----------------------------------------------------------------------===//
 // ConstantOp
@@ -40,6 +142,8 @@ void quir::ConstantOp::getAsmResultNames(
   auto type = getType();
   if (type.isa<AngleType>())
     setNameFn(getResult(), "angle");
+  else if (type.isa<DurationType>())
+    setNameFn(getResult(), "dur");
   else
     setNameFn(getResult(), "qcst");
 }
@@ -69,7 +173,9 @@ auto CallGateOp::getCallableForCallee() -> CallInterfaceCallable {
 
 /// Get the argument operands to the called function, this is required by the
 /// call interface.
-auto CallGateOp::getArgOperands() -> Operation::operand_range { return args(); }
+auto CallGateOp::getArgOperands() -> Operation::operand_range {
+  return operands();
+}
 
 auto CallGateOp::getCalleeType() -> FunctionType {
   return FunctionType::get(getContext(), getOperandTypes(), TypeRange{});
@@ -87,13 +193,13 @@ auto CallKernelOp::getCallableForCallee() -> CallInterfaceCallable {
 }
 
 auto CallDefCalGateOp::getArgOperands() -> Operation::operand_range {
-  return args();
+  return operands();
 }
 auto CallDefcalMeasureOp::getArgOperands() -> Operation::operand_range {
-  return args();
+  return operands();
 }
 auto CallKernelOp::getArgOperands() -> Operation::operand_range {
-  return args();
+  return operands();
 }
 
 auto CallDefCalGateOp::getCalleeType() -> FunctionType {
@@ -114,7 +220,7 @@ auto CallSubroutineOp::getCallableForCallee() -> CallInterfaceCallable {
 /// Get the argument operands to the called function, this is required by the
 /// call interface.
 auto CallSubroutineOp::getArgOperands() -> Operation::operand_range {
-  return args();
+  return operands();
 }
 
 auto CallSubroutineOp::getCalleeType() -> FunctionType {
@@ -171,6 +277,10 @@ CallCircuitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   }
 
   return success();
+}
+
+std::set<uint32_t> CallCircuitOp::getOperatedQubits() {
+  return getQubitIds<CallCircuitOp>(*this);
 }
 
 //===----------------------------------------------------------------------===//
@@ -571,7 +681,7 @@ static void print(OpAsmPrinter &p, quir::SwitchOp op) {
     printBlockTerminators = true;
   }
   p.printRegion(op.defaultRegion(),
-                /*printEntryBlockArgs=*/false,
+                /*printEntryBlockOperands=*/false,
                 /*printBlockTerminators=*/printBlockTerminators);
 
   p << "[";
@@ -586,7 +696,7 @@ static void print(OpAsmPrinter &p, quir::SwitchOp op) {
       id += 1;
       p << " : ";
       p.printRegion(*region,
-                    /*printEntryBlockArgs=*/false,
+                    /*printEntryBlockOperands=*/false,
                     /*printBlockTerminators=*/printBlockTerminators);
     }
   p << "]";
@@ -632,6 +742,49 @@ static LogicalResult verify(quir::YieldOp op) {
 
 //===----------------------------------------------------------------------===//
 // end YieldOp
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// Cbit_ExtractBitOp
+//===----------------------------------------------------------------------===//
+
+static llvm::Optional<mlir::Value>
+findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
+
+  mlir::Operation *op = val.getDefiningOp();
+
+  // follow chains of Cbit_InsertBit operations and try to find one matching the
+  // requested bit
+  while (auto insertBitOp =
+             mlir::dyn_cast_or_null<mlir::quir::Cbit_InsertBitOp>(op)) {
+    if (insertBitOp.indexAttr() == bitIndex)
+      return insertBitOp.assigned_bit();
+
+    op = insertBitOp.operand().getDefiningOp();
+  }
+
+  // is the value defined by an i1 constant? then that would be the bit
+  if (auto constantOp =
+          mlir::dyn_cast_or_null<mlir::arith::ConstantIntOp>(op)) {
+    if (constantOp.getType().isInteger(1))
+      return constantOp.getResult();
+  }
+
+  return llvm::None;
+}
+
+::mlir::OpFoldResult
+quir::Cbit_ExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
+
+  auto foundDefiningBitOrNone = findDefiningBitInBitmap(operand(), indexAttr());
+
+  if (foundDefiningBitOrNone)
+    return foundDefiningBitOrNone.getValue();
+  return nullptr;
+}
+
+//===----------------------------------------------------------------------===//
+// end Cbit_ExtractBitOp
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//

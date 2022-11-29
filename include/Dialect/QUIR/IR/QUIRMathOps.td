@@ -36,7 +36,7 @@ class QUIR_Unary_CbitOp<string mnemonic, list<Trait> traits = []> :
 }
 
 class QUIR_BinaryOp<string mnemonic, list<Trait> traits = []> :
-  QUIR_Op<mnemonic, traits>, Arguments<(ins AnyClassical:$lhs, AnyClassical:$rhs)> {
+  QUIR_Op<mnemonic, !listconcat(traits, [NoSideEffect])>, Arguments<(ins AnyClassical:$lhs, AnyClassical:$rhs)> {
     let results = (outs AnyClassical:$result);
     let assemblyFormat = [{
         attr-dict $lhs `,` $rhs `:` `(` type($lhs) `,` type($rhs) `)` `->` type($result)
@@ -180,10 +180,11 @@ def QUIR_Cbit_LshiftOp : QUIR_BinaryOp<"cbit_lshift"> {
 }
 
 def QUIR_Cbit_ExtractBitOp : QUIR_Op<"cbit_extractbit", [NoSideEffect]> {
-    let summary = "extract single bit from a cbit register";
+    let summary = "extract single bit from a bitmap";
     let description = [{
-        The `quir.cbit_extractbit` operations takes one cbit operand and one index attribute
-        and returns one i1 result, which is the bit at the position with the given index.
+        The `quir.cbit_extractbit` operations takes a bitmap operand (cbit or
+        integer) and one index attribute and returns one i1 result, which is
+        the bit at the position with the given index.
 
         Example:
 
@@ -193,14 +194,47 @@ def QUIR_Cbit_ExtractBitOp : QUIR_Op<"cbit_extractbit", [NoSideEffect]> {
         ```
     }];
 
-    let arguments = (ins AnyCbit:$operand, IndexAttr:$index);
+    let arguments = (ins AnyCbitOrSignlessInteger:$operand, IndexAttr:$index);
 
     let results = (outs I1:$result);
 
     let assemblyFormat = [{
         attr-dict `(` $operand `:` type($operand) `)` `[` $index `]` `:` type($result)
     }];
+
+    let hasFolder = 1;
 }
+
+def QUIR_Cbit_InsertBitOp : QUIR_Op<"cbit_insertbit", [
+            NoSideEffect,
+            TypesMatchWith<
+                "first operand and result have the same type",
+                "operand", "result", "$_self">]> {
+    let summary = "insert single bit into a bitmap";
+    let description = [{
+        The `quir.cbit_insertbit` operations takes a bitmap operand (cbit or
+        integer), a i1 operand, and one index attribute and returns the bitmap
+        with the bit at the position with the given index replaced by the
+        provided bit operand.
+
+        Example:
+
+        ```mlir
+        %6 = quir.cbit_insertbit(%5 : !quir.cbit<2>) [1] = %4 : !quir.cbit<2>
+
+        ```
+    }];
+
+    let arguments = (ins AnyCbitOrSignlessInteger:$operand, I1:$assigned_bit, IndexAttr:$index);
+
+    let results = (outs AnyCbitOrSignlessInteger:$result);
+
+    let assemblyFormat = [{
+        attr-dict `(` $operand `:` type($operand) `)` `[` $index `]` `=` $assigned_bit `:` type($result)
+    }];
+}
+
+
 
 def QUIR_Angle_AddOp : QUIR_Binary_AngleOp<"angle_add"> {
     let summary = "Add two angles";

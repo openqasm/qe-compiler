@@ -12,6 +12,8 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
+#include "mlir/Interfaces/SideEffectInterfaces.h"
+
 #include "gtest/gtest.h"
 
 namespace {
@@ -66,6 +68,26 @@ TEST_F(QUIRDialect, UnitaryOpTrait) {
 
   EXPECT_FALSE(mlir::quir::isQuantumOp(declareQubitOp));
   EXPECT_TRUE(mlir::quir::isQuantumOp(barrier));
+}
+
+TEST_F(QUIRDialect, MeasureSideEffects) {
+
+  auto qubitDecl = builder.create<mlir::quir::DeclareQubitOp>(
+      unkownLoc, builder.getType<mlir::quir::QubitType>(1),
+      builder.getIntegerAttr(builder.getI32Type(), 0));
+
+  auto measureOp = builder.create<mlir::quir::MeasureOp>(
+      unkownLoc, builder.getI1Type(), qubitDecl.res());
+
+  EXPECT_TRUE(measureOp);
+
+  auto effectInterface =
+      mlir::dyn_cast<mlir::MemoryEffectOpInterface>(measureOp.getOperation());
+
+  ASSERT_TRUE(effectInterface);
+
+  EXPECT_FALSE(mlir::isOpTriviallyDead(qubitDecl.getOperation()));
+  EXPECT_FALSE(mlir::isOpTriviallyDead(measureOp.getOperation()));
 }
 
 } // namespace

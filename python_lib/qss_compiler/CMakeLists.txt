@@ -19,6 +19,7 @@ endmacro()
 # Note that when adding new source files, you need to add them here.
 python_pkg_add_files(
                 compile.py
+                link.py
                 __init__.py
 )
 

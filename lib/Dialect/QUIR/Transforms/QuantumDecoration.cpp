@@ -58,13 +58,13 @@ void QuantumDecorationPass::processOp(Operation *op,
 
 void QuantumDecorationPass::processOp(Builtin_UOp builtinUOp,
                                       std::unordered_set<int> &retSet) {
-  retSet.emplace(lookupOrMinus1(builtinUOp.qa1()));
+  retSet.emplace(lookupOrMinus1(builtinUOp.target()));
 } // processOp Builtin_UOp
 
 void QuantumDecorationPass::processOp(BuiltinCXOp builtinCXOp,
                                       std::unordered_set<int> &retSet) {
-  retSet.emplace(lookupOrMinus1(builtinCXOp.qa1()));
-  retSet.emplace(lookupOrMinus1(builtinCXOp.qb1()));
+  retSet.emplace(lookupOrMinus1(builtinCXOp.control()));
+  retSet.emplace(lookupOrMinus1(builtinCXOp.target()));
 } // processOp BuiltinCXOp
 
 void QuantumDecorationPass::processOp(MeasureOp measureOp,
@@ -75,16 +75,16 @@ void QuantumDecorationPass::processOp(MeasureOp measureOp,
 
 void QuantumDecorationPass::processOp(CallDefcalMeasureOp measureOp,
                                       std::unordered_set<int> &retSet) {
-  std::vector<Value> qubitArgs;
-  qubitCallArgs(measureOp, qubitArgs);
+  std::vector<Value> qubitOperands;
+  qubitCallOperands(measureOp, qubitOperands);
 
-  for (Value &val : qubitArgs)
+  for (Value &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp MeasureOp
 
 void QuantumDecorationPass::processOp(DelayOp delayOp,
                                       std::unordered_set<int> &retSet) {
-  for (auto qubit_operand : delayOp.targets())
+  for (auto qubit_operand : delayOp.qubits())
     retSet.emplace(lookupOrMinus1(qubit_operand));
 } // processOp MeasureOp
 
@@ -96,28 +96,28 @@ void QuantumDecorationPass::processOp(ResetQubitOp resetOp,
 
 void QuantumDecorationPass::processOp(CallDefCalGateOp callOp,
                                       std::unordered_set<int> &retSet) {
-  std::vector<Value> qubitArgs;
-  qubitCallArgs(callOp, qubitArgs);
+  std::vector<Value> qubitOperands;
+  qubitCallOperands(callOp, qubitOperands);
 
-  for (Value &val : qubitArgs)
+  for (Value &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp CallGateOp
 
 void QuantumDecorationPass::processOp(CallGateOp callOp,
                                       std::unordered_set<int> &retSet) {
-  std::vector<Value> qubitArgs;
-  qubitCallArgs(callOp, qubitArgs);
+  std::vector<Value> qubitOperands;
+  qubitCallOperands(callOp, qubitOperands);
 
-  for (Value &val : qubitArgs)
+  for (Value &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp CallGateOp
 
 void QuantumDecorationPass::processOp(BarrierOp barrierOp,
                                       std::unordered_set<int> &retSet) {
-  std::vector<Value> qubitArgs;
-  qubitCallArgs(barrierOp, qubitArgs);
+  std::vector<Value> qubitOperands;
+  qubitCallOperands(barrierOp, qubitOperands);
 
-  for (Value &val : qubitArgs)
+  for (Value &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp BarrierOp
 
@@ -135,7 +135,7 @@ void QuantumDecorationPass::runOnOperation() {
       qubitVec.insert(qubitVec.begin(), involvedQubits.begin(),
                       involvedQubits.end());
       std::sort(qubitVec.begin(), qubitVec.end());
-      op->setAttr(llvm::StringRef("quir.physicalIds"),
+      op->setAttr(mlir::quir::getPhysicalIdsAttrName(),
                   build.getI32ArrayAttr(ArrayRef<int>(qubitVec)));
     }
   });

@@ -103,6 +103,10 @@ protected:
 
   void visit(const QASM::ASTSwitchStatementNode *) override;
 
+  void visit(const QASM::ASTWhileStatementNode *) override;
+
+  void visit(const QASM::ASTWhileLoopNode *) override;
+
   void visit(const QASM::ASTReturnStatementNode *) override;
 
   template <typename NodeType>
@@ -118,6 +122,8 @@ protected:
   void visit(const QASM::ASTFunctionDeclarationNode *) override;
 
   void visit(const QASM::ASTFunctionDefinitionNode *) override;
+
+  void visit(const QASM::ASTFunctionCallNode *) override;
 
   void visit(const QASM::ASTGateDeclarationNode *) override;
 
@@ -145,6 +151,10 @@ protected:
   void visit(const QASM::ASTBarrierNode *) override;
 
   void visit(const QASM::ASTDeclarationNode *) override;
+
+  void visit(const QASM::ASTKernelDeclarationNode *) override;
+
+  void visit(const QASM::ASTKernelNode *) override;
 
   void visit(const QASM::ASTQubitContainerNode *node) override {
     visitWithReturn(node);
@@ -241,6 +251,8 @@ private:
   ExpressionValueType handleAssign(const QASM::ASTBinaryOpNode *);
 
   ExpressionValueType getValueFromLiteral(const QASM::ASTMPDecimalNode *);
+
+  mlir::Type getQUIRTypeFromDeclaration(const QASM::ASTDeclarationNode *);
 };
 
 #endif // VISITOR_QUIR_GEN_VISITOR_H

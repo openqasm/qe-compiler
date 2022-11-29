@@ -162,6 +162,14 @@ void BaseQASM3Visitor::visit(const ASTStatementNode *node) {
     dispatchVisit<ASTSwitchStatementNode>(node);
     break;
 
+  case ASTTypeWhileStatement:
+    dispatchVisit<ASTWhileStatementNode>(node);
+    break;
+
+  case ASTTypeWhileLoop:
+    dispatchVisit<ASTWhileLoopNode>(node);
+    break;
+
   case ASTTypeReturn:
     dispatchVisit<ASTReturnStatementNode>(node);
     break;

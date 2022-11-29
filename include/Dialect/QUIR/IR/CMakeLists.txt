@@ -14,3 +14,5 @@ mlir_tablegen(QUIRAttributes.cpp.inc -gen-attrdef-defs -attrdefs-dialect=quir)
 set(LLVM_TARGET_DEFINITIONS QUIRPatterns.td)
 mlir_tablegen(QUIRPatterns.inc -gen-rewriters)
 add_public_tablegen_target(MLIRQUIRPatternsIncGen)
+
+add_mlir_interface(QUIRInterfaces)

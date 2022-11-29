@@ -274,7 +274,7 @@ def Pulse_Port_SelectOp : Pulse_Op<"select_port", [SequenceAllowed]> {
 }
 
 
-def Pulse_FrameMixOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed]> {
+def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed]> {
     let summary = "Mixes a frame with a port.";
     let description = [{
         The `pulse.mix_frame` operation mixes a frame with a port.
@@ -282,15 +282,13 @@ def Pulse_FrameMixOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed]> {
         Example:
 
         ```mlir
-        pulse.mix_frame(%port, %frame) : (!pulse.port, !pulse.frame)
+        pulse.mix_frame(%port, %frame) {signal_type = "type of the channel"} : (!pulse.port, !pulse.frame) -> (!port.mixed_frame)
 
         ```
     }];
-    let arguments = (ins Pulse_PortType:$port, Pulse_FrameType:$frame);
 
-    let assemblyFormat = [{
-      attr-dict `(` $port  `,` $frame `)` `:` `(` type($port) `,` type($frame) `)`
-    }];
+    let arguments = (ins StrAttr:$signal_type, Pulse_PortType:$port, Pulse_FrameType:$frame);
+    let results = (outs Pulse_MixedFrameType:$out);
 }
 
 def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAllowed]> {
@@ -316,20 +314,38 @@ def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAll
 def Pulse_PlayOp : Pulse_Op<"play", [SequenceAllowed]> {
     let summary = "Play a waveform on a given frame.";
     let description = [{
-        The `pulse.play` operation plays a waveform on a frame or a port, optionally with a phase shift and a change in frequency.
+        The `pulse.play` operation plays a waveform on a mixed frame,
+        optional attributes include:angle (in radians), ssb (frequency in Hz),
+        amp (float 64).
 
-        Example:
+        Examples:
 
         ```mlir
-        pulse.play(%frame, %wfr) : (!pulse.frame, !pulse.waveform, !quir.angle, !f64)
-        pulse.play(%port, %wfr) : (!pulse.port, !pulse.waveform, !quir.angle, !f64)
+        pulse.play(%mixed_frame, %wfr) : (!pulse.mixed_frame, !pulse.waveform)
+        pulse.play {amplitude = 1.000000e+00 : f64, angle = -0.37850401795412569 : f64, ssb = 181339679.17541504 : f64}(%mixed_frame, %wfr) : (!pulse.mixed_frame, !pulse.waveform)
         ```
     }];
 
-    let arguments = (ins AnyPortOrFrame:$target, Pulse_WaveformType:$wfr);
+    let arguments = (ins Pulse_MixedFrameType:$target, Pulse_WaveformType:$wfr,
+                     OptionalAttr<F64Attr>:$angle,
+                     OptionalAttr<F64Attr>:$ssb,
+                     OptionalAttr<F64Attr>:$amplitude);
+
+    let builders = [
+        OpBuilder<(ins "Value":$target, "Value":$wfr), [{
+            // dummy builder for QUIRToPulsePass
+            // this allows existing QUIRToPulsePass to compile
+            // TODO: Implement as part of QUIRToPulse re-implementation
+            //       with new Pulse updates
+        }]>
+        ];
 
     let assemblyFormat = [{
         attr-dict `(` $target  `,` $wfr `)` `:` `(` type($target) `,` type($wfr) `)`
+    }];
+
+    let extraClassDeclaration = [{
+        llvm::Expected<int> getDuration (CallSequenceOp callOp);
     }];
 }
 
@@ -345,11 +361,11 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceAllowed]> {
 
         ```mlir
         pulse.set_frequency(%frame, %frequency) : (!pulse.frame, !f64)
-        pulse.set_frequency(%port, %frequency) : (!pulse.port, !f64)
+        pulse.set_frequency(%mixed, %frequency) : (!pulse.mixed_frame, !f64)
         ```
     }];
 
-    let arguments = (ins AnyPortOrFrame:$target, F64:$frequency);
+    let arguments = (ins AnyFrame:$target, F64:$frequency);
 
     let assemblyFormat = [{
         attr-dict `(` $target  `,` $frequency `)` `:` `(` type($target) `,` type($frequency) `)`
@@ -368,11 +384,11 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceAllowed]> {
 
         ```mlir
         pulse.shift_frequency(%frame, %frequency) : (!pulse.frame, !f64)
-        pulse.shift_frequency(%port, %frequency) : (!pulse.port, !f64)
+        pulse.shift_frequency(%mixed, %frequency) : (!pulse.mixed_frame, !f64)
         ```
     }];
 
-    let arguments = (ins AnyPortOrFrame:$target, F64:$frequency);
+    let arguments = (ins AnyFrame:$target, F64:$frequency);
 
     let assemblyFormat = [{
         attr-dict `(` $target  `,` $frequency `)` `:` `(` type($target) `,` type($frequency) `)`
@@ -391,11 +407,11 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceAllowed]> {
 
         ```mlir
         pulse.set_phase(%frame, %phase) : (!pulse.frame, f64)
-        pulse.set_phase(%port, %phase) : (!pulse.port, f64)
+        pulse.set_phase(%mixed, %phase) : (!pulse.mixed_frame, f64)
         ```
     }];
 
-    let arguments = (ins AnyPortOrFrame:$target, F64:$phase);
+    let arguments = (ins AnyFrame:$target, F64:$phase);
 
     let assemblyFormat = [{
         attr-dict `(` $target  `,` $phase `)` `:` `(` type($target) `,` type($phase) `)`
@@ -414,11 +430,11 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceAllowed]> {
 
         ```mlir
         pulse.shift_phase(%frame, %phase) : (!pulse.frame, f64)
-        pulse.shift_phase(%port, %phase) : (!pulse.port, f64)
+        pulse.shift_phase(%mixed, %phase) : (!pulse.mixed_frame, f64)
         ```
     }];
 
-    let arguments = (ins AnyPortOrFrame:$target, F64:$phase);
+    let arguments = (ins AnyFrame:$target, F64:$phase);
 
     let assemblyFormat = [{
         attr-dict `(` $target  `,` $phase `)` `:` `(` type($target) `,` type($phase) `)`
@@ -437,18 +453,16 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceAllowed]> {
         Example:
 
         ```mlir
-        pulse.capture(%frame, %kernel) : (!pulse.frame, !pulse.kernel) -> i1
-        pulse.capture(%port, %kernel) : (!pulse.port, !pulse.kernel) -> i1
+        pulse.capture(%mixed_frame) : (!pulse.mixed_frame) -> i1
         ```
     }];
 
-    let arguments = (ins AnyPortOrFrame:$target, Pulse_KernelType:$kernel);
+    let arguments = (ins Pulse_MixedFrameType:$target);
     let results = (outs I1:$out);
 
     let assemblyFormat = [{
-        attr-dict `(` $target `,` $kernel `)` `:` `(` type($target) `,` type($kernel) `)` `->` type($out)
+        attr-dict `(` $target `)` `:` `(` type($target) `)` `->` type($out)
     }];
-
 }
 
 def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed]> {
@@ -464,29 +478,25 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed]> {
         Example:
         ```mlir
         %dur = constant 10 : i32
-        pulse.delay(%d_frame, %dur) : (!pulse.frame, i32) // delay on single frame
+        pulse.delay(%mixed, %dur) : (!pulse.mixed_frame, i32) // delay on single frame
         ```
     }];
 
-    let arguments = (ins AnyInteger:$dur, AnyPortOrFrame:$target);
+    let arguments = (ins Pulse_MixedFrameType:$target,  AnyInteger:$dur);
 
     let assemblyFormat = [{
-        attr-dict `(` $dur `,` $target `)` `:` `(` type($dur) `,` type($target) `)`
-    }];
-
-    let extraClassDeclaration = [{
-        int getDuration() {
-            // get op that defines duration and return its value
-            auto durDeclOp = dyn_cast<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-            return durDeclOp.value();
-        }
+        attr-dict `(` $target `,` $dur `)` `:` `(` type($target) `,` type($dur) `)`
     }];
 
     let verifier = [{
-        auto dur = (*this).getDuration();
-        if (dur < 0)
-            return emitOpError("duration must be >= 0.");
+        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+        if (durDeclOp && durDeclOp.value() < 0)
+           return emitOpError("duration must be >= 0.");
         return success();
+    }];
+
+    let extraClassDeclaration = [{
+        int getDuration() {return dyn_cast<mlir::arith::ConstantIntOp>(dur().getDefiningOp()).value();}
     }];
 }
 

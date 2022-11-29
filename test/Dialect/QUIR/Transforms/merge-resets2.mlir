@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --merge-resets -emit=mlir %s | FileCheck %s
+// RUN: qss-compiler -X=mlir --merge-resets-lexicographic -emit=mlir %s | FileCheck %s
 //
 // This test case checks that the MergeResetPass merges all parallelizable
 // resets (and no more than that) and removes the resets that have been merged

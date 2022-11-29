@@ -1,4 +1,5 @@
 // RUN: qss-compiler -X=mlir --pulse-inline %s | FileCheck %s
+// XFAIL: *
 
 // CHECK-NOT:   func @x0(%arg0: !pulse.port_group)
 // CHECK-NOT:   func @x0(%arg0: !pulse.port_group)

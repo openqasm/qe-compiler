@@ -6,8 +6,10 @@
 
 add_mlir_dialect_library(MLIRQUIRDialect
         QUIRDialect.cpp
+        QUIRInterfaces.cpp
         QUIROps.cpp
         QUIRPatterns.cpp
+        QUIRTestInterfaces.cpp
 
         ADDITIONAL_HEADER_DIRS
         ${PROJECT_SOURCE_DIR}/include/QUIR

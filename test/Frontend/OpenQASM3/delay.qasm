@@ -10,31 +10,31 @@ qubit $0;
 qubit $1;
 
 
-// MLIR: {{.*}} = quir.declare_duration {value = "5ns"} : !quir.duration
+// MLIR: {{.*}} = quir.constant #quir.duration<"5ns" : !quir.duration>
 // MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=5, unit=Nanoseconds, name=t))
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=t, qubit=IdentifierNode(name=$0, bits=1)))
 duration t = 5ns;
 delay[t] $0;
 
-// MLIR: {{.*}} = quir.declare_duration {value = "10ns"} : !quir.duration
+// MLIR: {{.*}} = quir.constant #quir.duration<"10ns" : !quir.duration>
 // MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=10Nanoseconds, qubit=IdentifierNode(name=$1, bits=1), ))
 delay[10ns] $1;
-// MLIR: {{.*}} = quir.declare_duration {value = "20us"} : !quir.duration
+// MLIR: {{.*}} = quir.constant #quir.duration<"20us" : !quir.duration>
 // MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=20Microseconds, qubit=IdentifierNode(name=$1, bits=1), ))
 delay[20us] $1;
-// MLIR: {{.*}} = quir.declare_duration {value = "30ms"} : !quir.duration
+// MLIR: {{.*}} = quir.constant #quir.duration<"30ms" : !quir.duration>
 // MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=30Milliseconds, qubit=IdentifierNode(name=$1, bits=1), ))
 delay[30ms] $1;
-// MLIR: {{.*}} = quir.declare_duration {value = "40dt"} : !quir.duration
+// MLIR: {{.*}} = quir.constant #quir.duration<"40dt" : !quir.duration>
 // MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=40DT, qubit=IdentifierNode(name=$1, bits=1), ))
 delay[40dt] $1;
 
-// MLIR: {{.*}} = quir.declare_duration {value = "10ns"} : !quir.duration
+// MLIR: {{.*}} = quir.constant #quir.duration<"10ns" : !quir.duration>
 // MLIR: quir.delay {{.*}}, ({{.*}}, {{.*}}) : !quir.duration, (!quir.qubit<1>, !quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=10Nanoseconds, qubit=IdentifierNode(name=$0, bits=1), IdentifierNode(name=$1, bits=1), ))
 delay [10ns] $0, $1;

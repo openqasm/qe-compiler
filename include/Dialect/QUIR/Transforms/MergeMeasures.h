@@ -19,13 +19,27 @@
 #include "mlir/Pass/Pass.h"
 
 namespace mlir::quir {
-struct MergeMeasuresPass
-    : public PassWrapper<MergeMeasuresPass, OperationPass<>> {
+
+/// @brief Merge together measures in a circuit that are lexicographically
+/// adjacent into a single variadic measurement.
+struct MergeMeasuresLexographicalPass
+    : public PassWrapper<MergeMeasuresLexographicalPass, OperationPass<>> {
   void runOnOperation() override;
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
-}; // struct MergeMeasuresPass
+}; // struct MergeMeasuresLexographicalPass
+
+/// @brief Merge together measures in a circuit that are topologically
+/// adjacent into a single variadic measurement.
+struct MergeMeasuresTopologicalPass
+    : public PassWrapper<MergeMeasuresTopologicalPass, OperationPass<>> {
+  void runOnOperation() override;
+
+  llvm::StringRef getArgument() const override;
+  llvm::StringRef getDescription() const override;
+}; // struct MergeMeasuresTopologicalPass
+
 } // namespace mlir::quir
 
 #endif // QUIR_MERGE_MEASURES_H

@@ -54,21 +54,24 @@ void addModuleQubitIds(Operation *moduleOperation, std::vector<uint> &theseIds);
 
 // appends all of the qubit arguments for a callOp to vec
 template <class CallOpTy>
-void qubitCallArgs(CallOpTy &callOp, std::vector<Value> &vec);
+void qubitCallOperands(CallOpTy &callOp, std::vector<Value> &vec);
 
 // appends all of the classical arguments for a callOp to vec
 template <class CallOpTy>
-void classicalCallArgs(CallOpTy &callOp, std::vector<Value> &vec);
+void classicalCallOperands(CallOpTy &callOp, std::vector<Value> &vec);
 
 // returns the number of qubit arguments for a callOp
-// TODO: Should be replaced by an analysis compatable struct.
 template <class CallOpTy>
-uint numQubitCallArgs(CallOpTy &callOp);
+void qubitCallOperands(CallOpTy &callOp, std::vector<Value> &vec) {
+  for (auto arg : callOp.getOperands())
+    if (arg.getType().template isa<QubitType>())
+      vec.emplace_back(arg);
+} // qubitCallOperands
 
 // returns the number of classical arguments for a callOp
 // TODO: Should be replaced by an analysis compatable struct.
 template <class CallOpTy>
-uint numClassicalCallArgs(CallOpTy &callOp);
+uint numClassicalCallOperands(CallOpTy &callOp);
 
 /// appends the indices of the qubit arguments for a callOp to a bit vector
 template <class CallOpTy>
@@ -114,7 +117,7 @@ bool isQuantumOp(Operation *op);
 
 /// Duration representation
 // Question: Can this be represented with MLIR more naturally?
-// Eg., can this logic be added to the DeclareDurationOp?
+// TODO: This should be added to the DurationAttr
 struct Duration {
   enum DurationUnit { dt, ns, us, ms, s };
   double duration;
@@ -122,12 +125,12 @@ struct Duration {
 
   /// Construct a Duration from a string
   static llvm::Expected<Duration> parseDuration(const std::string &durationStr);
-  /// Construct a Duration from a DeclareDurationOp
+  /// Construct a Duration from a ConstantOp
   static llvm::Expected<Duration>
-  parseDuration(mlir::quir::DeclareDurationOp &duration);
+  parseDuration(mlir::quir::ConstantOp &duration);
   /// Convert duration to cycles. dt is in SI (seconds).
   Duration convertToCycles(double dt) const;
 };
-/// Extract the Duration from a DeclareDurationOp
+/// Extract the Duration from a ConstantOp
 
 } // end namespace mlir::quir

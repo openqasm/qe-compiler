@@ -63,9 +63,16 @@ def Pulse_WaveformType : Pulse_Type<"Waveform", "waveform"> {
     }];
 }
 
-// TODO: Ports and Frames should not be used interchangeably.
-def AnyPortOrFrame : AnyTypeOf<[Pulse_FrameType, Pulse_PortType]>;
+def Pulse_MixedFrameType : Pulse_Type<"MixedFrame", "mixed_frame"> {
+    let summary = "A frame associated with a port for interacting with qubits.";
+    let description = [{
+        The mixed frame type represents a frame associated with a port used for interacting with qubits.
+    }];
+}
 
-def AnyPulse : AnyTypeOf<[Pulse_CaptureType, Pulse_FrameType, Pulse_KernelType, Pulse_PortType, Pulse_PortGroupType, Pulse_WaveformType]>;
+def AnyFrame : AnyTypeOf<[Pulse_FrameType, Pulse_MixedFrameType]>;
+
+def AnyPulse : AnyTypeOf<[Pulse_CaptureType, Pulse_FrameType, Pulse_KernelType, Pulse_PortType,
+                          Pulse_PortGroupType, Pulse_WaveformType, Pulse_MixedFrameType]>;
 
 #endif // PULSE_TYPES

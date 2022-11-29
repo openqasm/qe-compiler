@@ -21,6 +21,7 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 
+#include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
@@ -32,27 +33,22 @@ using namespace mlir;
 using namespace mlir::quir;
 
 namespace {
-mlir::ModuleOp findContainingModule(mlir::Operation *op) {
-  while (!llvm::isa<mlir::ModuleOp>(op)) {
-    op = op->getParentOp();
-    assert(op->getParentOp() &&
-           "reached top-level without encountering a ModuleOp container, which "
-           "is expected by conversion.");
-  }
-
-  return llvm::cast<mlir::ModuleOp>(op);
-}
-
-mlir::memref::GlobalOp createGlobalMemrefOp(mlir::OpBuilder &builder,
-                                            mlir::Location loc,
-                                            mlir::Operation *insertionAnchor,
-                                            mlir::MemRefType type,
-                                            llvm::StringRef name) {
+llvm::Optional<mlir::memref::GlobalOp>
+createGlobalMemrefOp(mlir::OpBuilder &builder, mlir::Location loc,
+                     mlir::Operation *insertionAnchor, mlir::MemRefType type,
+                     llvm::StringRef name) {
 
   // place memref::GlobalOps at the top of the surrounding module.
   // (note: required by llvm.mlir.global, which this is lowered to)
   mlir::OpBuilder::InsertionGuard g(builder);
-  builder.setInsertionPoint(&findContainingModule(insertionAnchor).front());
+  auto containingModule = insertionAnchor->getParentOfType<mlir::ModuleOp>();
+
+  if (!containingModule) {
+    insertionAnchor->emitOpError("Missing a global ModuleOp container.");
+    return llvm::None;
+  }
+
+  builder.setInsertionPoint(&containingModule.front());
 
   // "private" symbols are visible only to the closest symbol table.
   // thus, any references to the symbol can be observed in this module, and
@@ -92,8 +88,14 @@ struct VariableDeclarationConversionPattern
     assert(memRefType && "failed to instantiate a MemRefType, likely trying "
                          "with invalid element type");
 
-    auto gmo = createGlobalMemrefOp(rewriter, declareOp.getLoc(), declareOp,
-                                    memRefType, declareOp.getName());
+    auto gmoOrNone =
+        createGlobalMemrefOp(rewriter, declareOp.getLoc(), declareOp,
+                             memRefType, declareOp.getName());
+    if (!gmoOrNone)
+      return failure();
+
+    auto gmo = gmoOrNone.getValue();
+
     if (externalizeOutputVariables && declareOp.isOutputVariable()) {
       // for generating defined symbols, global memrefs need an initializer
       auto rankedTensorType =
@@ -134,17 +136,29 @@ struct ArrayDeclarationConversionPattern
     assert(memRefType && "failed to instantiate a MemRefType, likely trying "
                          "with invalid element type");
 
-    createGlobalMemrefOp(rewriter, declareOp.getLoc(), declareOp, memRefType,
-                         declareOp.getName());
-    rewriter.replaceOp(declareOp, mlir::ValueRange{});
+    if (!createGlobalMemrefOp(rewriter, declareOp.getLoc(), declareOp,
+                              memRefType, declareOp.getName()))
+      return failure();
+    rewriter.eraseOp(declareOp);
 
     return success();
   }
 };
 
+/// @brief Find an existing GetGlobalMemrefOp for a QUIR variable in the
+/// surrounding function or create a new one at the head of the surrounding
+/// function. The QUIR variable's declaration must already have been converted
+/// into a GlobalMemrefOp.
+/// @tparam QUIRVariableOp template parameter for the type of QUIRVariableOp
+/// @param variableOp the variable operation to find or create a
+/// GetGlobalMemrefOp for
+/// @return a GetGlobalMemrefOp for the given variable op
 template <class QUIRVariableOp>
 llvm::Optional<mlir::memref::GetGlobalOp>
-lookupAndGetGlobalMemref(QUIRVariableOp variableOp, mlir::OpBuilder &builder) {
+findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
+                            ConversionPatternRewriter &builder) {
+  mlir::OpBuilder::InsertionGuard g(builder);
+
   auto globalMemrefOp =
       SymbolTable::lookupNearestSymbolFrom<mlir::memref::GlobalOp>(
           variableOp, variableOp.variable_nameAttr());
@@ -154,6 +168,25 @@ lookupAndGetGlobalMemref(QUIRVariableOp variableOp, mlir::OpBuilder &builder) {
                            variableOp.variable_name());
     return llvm::None;
   }
+
+  auto surroundingFunction =
+      variableOp->template getParentOfType<mlir::FuncOp>();
+  if (!surroundingFunction) {
+    variableOp.emitOpError("Variable use of " + variableOp.variable_name() +
+                           " outside functions not supported");
+    return llvm::None;
+  }
+
+  // Search for an existing memref::GetGlobalOp in the surrounding function by
+  // walking all the GlobalMemref's symbol uses.
+  if (auto rangeOrNone = mlir::SymbolTable::getSymbolUses(
+          /* symbol */ globalMemrefOp, /* inside */ surroundingFunction))
+    for (auto &use : rangeOrNone.getValue())
+      if (llvm::isa<mlir::memref::GetGlobalOp>(use.getUser()))
+        return llvm::cast<mlir::memref::GetGlobalOp>(use.getUser());
+
+  // Create new one at the top of the start of the function
+  builder.setInsertionPointToStart(&surroundingFunction.getBody().front());
 
   return builder.create<mlir::memref::GetGlobalOp>(
       variableOp.getLoc(), globalMemrefOp.type(), globalMemrefOp.sym_name());
@@ -168,12 +201,12 @@ struct VariableUseConversionPattern
   LogicalResult
   matchAndRewrite(UseVariableOp useOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    auto varRefOrNone = lookupAndGetGlobalMemref(useOp, rewriter);
+    auto varRefOrNone = findOrCreateGetGlobalMemref(useOp, rewriter);
     if (!varRefOrNone)
       return failure();
     auto varRef = varRefOrNone.getValue();
-    auto loadOp = rewriter.create<mlir::memref::LoadOp>(
-        useOp.getLoc(), varRef.getResult(), mlir::ValueRange{});
+    auto loadOp =
+        rewriter.create<mlir::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
 
     rewriter.replaceOp(useOp, {loadOp});
     return success();
@@ -191,7 +224,7 @@ struct ArrayElementUseConversionPattern
   matchAndRewrite(UseArrayElementOp useOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto varRefOrNone = lookupAndGetGlobalMemref(useOp, rewriter);
+    auto varRefOrNone = findOrCreateGetGlobalMemref(useOp, rewriter);
     if (!varRefOrNone)
       return failure();
     auto varRef = varRefOrNone.getValue();
@@ -216,17 +249,16 @@ struct VariableAssignConversionPattern
   LogicalResult
   matchAndRewrite(VariableAssignOp assignOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    auto varRefOrNone = lookupAndGetGlobalMemref(assignOp, rewriter);
+    auto varRefOrNone = findOrCreateGetGlobalMemref(assignOp, rewriter);
     if (!varRefOrNone)
       return failure();
     auto varRef = varRefOrNone.getValue();
 
-    rewriter.create<mlir::memref::StoreOp>(
+    rewriter.create<mlir::AffineStoreOp>(
         assignOp.getLoc(), adaptor.assigned_value(), varRef.getResult(),
         mlir::ValueRange{});
 
     rewriter.eraseOp(assignOp);
-
     return success();
   }
 };
@@ -241,7 +273,7 @@ struct ArrayElementAssignConversionPattern
   LogicalResult
   matchAndRewrite(AssignArrayElementOp assignOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    auto varRefOrNone = lookupAndGetGlobalMemref(assignOp, rewriter);
+    auto varRefOrNone = findOrCreateGetGlobalMemref(assignOp, rewriter);
 
     if (!varRefOrNone)
       return failure();

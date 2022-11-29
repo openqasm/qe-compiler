@@ -30,6 +30,7 @@ def QUIRDialect : Dialect {
         "mlir::scf::SCFDialect",
         "mlir::LLVM::LLVMDialect"
     ];
+    let hasConstantMaterializer = 1;
 }
 
 //===----------------------------------------------------------------------===//

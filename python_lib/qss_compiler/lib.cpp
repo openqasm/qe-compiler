@@ -48,10 +48,14 @@
 #include "API/api.h"
 
 #include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
+
+#include <llvm/Support/Error.h>
 
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 /// Call into the qss-compiler via an interface to qss-compile's command line
@@ -78,7 +82,39 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
       compile(args.size(), argv.data(), outputAsStr ? &outputStr : nullptr);
   bool success = status == 0;
 
+#ifndef NDEBUG
+  std::cerr << "Compile " << (success ? "successful" : "failed") << std::endl;
+#endif
+
   return pybind11::make_tuple(success, pybind11::bytes(outputStr));
+}
+
+pybind11::tuple
+py_link_file(const std::string &inputPath, const std::string &outputPath,
+             const std::string &target,
+             const std::unordered_map<std::string, double> &parameters) {
+
+#ifndef NDEBUG
+  std::cout << "input " << inputPath << "\n";
+  std::cout << "output " << outputPath << "\n";
+
+  std::cout << "parameters (as seen from C++): \n";
+
+  for (auto &item : parameters)
+    std::cout << item.first << " = " << item.second << "\n";
+#endif
+
+  auto successOrErr = bindParameters(target, inputPath, outputPath, parameters);
+
+  if (successOrErr) {
+    std::string errorMsg;
+    llvm::raw_string_ostream errorMsgStream(errorMsg);
+    llvm::logAllUnhandledErrors(std::move(successOrErr), errorMsgStream,
+                                "Error: ");
+
+    return pybind11::make_tuple(false, errorMsg);
+  }
+  return pybind11::make_tuple(true, pybind11::none());
 }
 
 PYBIND11_MODULE(py_qssc, m) {
@@ -86,4 +122,5 @@ PYBIND11_MODULE(py_qssc, m) {
 
   m.def("_compile_with_args", &py_compile_by_args,
         "Call compiler via cli qss-compile");
+  m.def("_link_file", &py_link_file, "Call the linker tool");
 }

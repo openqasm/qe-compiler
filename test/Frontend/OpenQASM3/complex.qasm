@@ -1,6 +1,6 @@
 OPENQASM 3.0;
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
+// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
 // MLIR: quir.declare_variable @a : complex<f32>
 // MLIR: quir.declare_variable @my_complex : complex<f80>
@@ -21,8 +21,8 @@ complex[32] a = 3 + 7.35 im;
 complex[65] my_complex = 3000 + 7.352322 im;
 
 // MLIR: %{{.*}} = quir.use_variable @a : complex<f32>
-// MLIR: %4 = "quir.cast"(%{{.*}}) : (complex<f32>) -> complex<f80>
-// MLIR: quir.assign_variable @my_complex : complex<f80> = %4
+// MLIR: [[CAST_1:%.*]] = "quir.cast"(%{{.*}}) : (complex<f32>) -> complex<f80>
+// MLIR: quir.assign_variable @my_complex : complex<f80> = [[CAST_1]]
 my_complex = a;
 
 // MLIR: %cst_3 = arith.constant 0.000000e+00 : f64

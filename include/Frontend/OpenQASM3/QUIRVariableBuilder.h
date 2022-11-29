@@ -191,6 +191,8 @@ public:
 
   mlir::Type resolveQUIRVariableType(const QASM::ASTDeclarationNode *node);
 
+  mlir::Type resolveQUIRVariableType(const QASM::ASTResultNode *node);
+
 private:
   mlir::OpBuilder &builder;
 
@@ -199,7 +201,7 @@ private:
   std::unordered_map<mlir::Operation *, mlir::Operation *> lastDeclaration;
 
   mlir::Type resolveQUIRVariableType(QASM::ASTType astType,
-                                     QASM::ASTIdentifierNode const *id) const;
+                                     const unsigned bits) const;
 };
 
 #endif // VISITOR_QUIR_VARIABLE_BUILDER_H

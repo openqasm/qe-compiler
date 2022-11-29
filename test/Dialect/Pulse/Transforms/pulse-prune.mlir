@@ -1,4 +1,5 @@
 // RUN: qss-compiler -X=mlir --pulse-prune %s | FileCheck %s
+// XFAIL: *
 
 // CHECK-NOT:  "pulse.create_port_group"
 // CHECK-NOT:  "pulse.select_port"

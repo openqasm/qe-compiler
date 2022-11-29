@@ -135,11 +135,11 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
   std::string durationString = std::to_string(durationValue);
   llvm::SmallString<32> buf;
 
-  return builder.create<DeclareDurationOp>(
-      location, builder.getType<DurationType>(),
-      builder.getStringAttr(
-          durationString +
-          llvm::Twine(getDurationUnitShortName(durationUnit))));
+  return builder.create<quir::ConstantOp>(
+      location,
+      DurationAttr::get(builder.getContext(), builder.getType<DurationType>(),
+                        durationString +
+                            getDurationUnitShortName(durationUnit).str()));
 }
 
 void QUIRGenQASM3Visitor::initialize(uint numShots,
@@ -178,9 +178,10 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
 
     builder.setInsertionPointToStart(&forOp.getRegion().front());
     // Add the shot delay to all qubits
-    auto duration = builder.create<DeclareDurationOp>(
-        initialLocation, builder.getType<DurationType>(),
-        builder.getStringAttr(shotDelay));
+    auto duration = builder.create<quir::ConstantOp>(
+        initialLocation,
+        DurationAttr::get(builder.getContext(), builder.getType<DurationType>(),
+                          shotDelay));
     builder.create<DelayOp>(initialLocation, duration, ValueRange({}));
   }
   // init shots even when there's no loop, so we always get a sync_trigger
@@ -245,13 +246,32 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
   const ASTIntegerList &intList = loop->GetIntegerList();
   Location loc = getLocation(node);
 
+  // Lower bound
   auto startOp = builder.create<mlir::arith::ConstantOp>(
       loc, builder.getIndexType(), builder.getIndexAttr(intList.front()));
+
+  // Upper bound
+  // +1 because the SCF dialect has a half-open range, so it does not include
+  // the upper bound, whereas OpenQASM3 has an inclusive range, so it includes
+  // both the lower bound and the upper bound.
   auto endOp = builder.create<mlir::arith::ConstantOp>(
-      loc, builder.getIndexType(), builder.getIndexAttr(intList.back()));
+      loc, builder.getIndexType(), builder.getIndexAttr(intList.back() + 1));
+
+  // Stepping
   auto stepOp = builder.create<mlir::arith::ConstantOp>(
       loc, builder.getIndexType(), builder.getIndexAttr(loop->GetStepping()));
+
   auto forOp = builder.create<scf::ForOp>(loc, startOp, endOp, stepOp);
+
+  // Adding induction variable to SSA values map
+  const ASTIntNode *indVar = loop->GetIndVar();
+  Value forOpIndVar = forOp.getInductionVar();
+  ssaValues[indVar->GetName()] = forOpIndVar;
+
+  // Dictionary of SSA values used inside "for"
+  std::unordered_map<std::string, mlir::Value> forSsaValues = ssaValues;
+  // Save previous SSA values so we can restore them outside the for scope
+  std::swap(ssaValues, forSsaValues);
 
   // set up the builders to point to the proper places
   OpBuilder b(&forOp.getRegion());
@@ -263,6 +283,7 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
 
   // Set the builder to add the next operations after the for loop.
   builder.setInsertionPointAfter(forOp);
+  std::swap(ssaValues, forSsaValues);
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTForLoopNode *node) {
@@ -344,9 +365,91 @@ void QUIRGenQASM3Visitor::visit(const ASTElseStatementNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
+  // Getting the number of cases we have
+  unsigned caseSize = node->GetNumCaseStatements();
+  Location loc = getLocation(node);
+
+  // Getting all the case values
+  DenseIntElementsAttr caseValuesAttr;
+  SmallVector<uint32_t> caseValues;
+  for (auto const &[key, caseStatement] : node->GetCaseStatementsMap())
+    caseValues.push_back(caseStatement->GetCaseIndex());
+  if (!caseValues.empty())
+    caseValuesAttr = DenseIntElementsAttr::get(
+        VectorType::get(static_cast<int64_t>(caseValues.size()),
+                        builder.getIntegerType(32)),
+        caseValues);
+
+  auto caseOperands = node->GetCaseStatementsMap();
+
+  ASTType quantityType = node->GetQuantityType();
+
+  mlir::Value flag;
+  switch (quantityType) {
+  case ASTTypeInt:
+  case ASTTypeUInt:
+    flag = visit_(node->GetIntQuantity());
+    break;
+  case ASTTypeMPInteger:
+    flag = visit_(node->GetMPIntegerQuantity());
+    break;
+  case ASTTypeBinaryOp:
+    flag = visit_(node->GetBinaryOpQuantity());
+    break;
+  case ASTTypeUnaryOp:
+    flag = visit_(node->GetUnaryOpQuantity());
+    break;
+  case ASTTypeIdentifier:
+    flag = visit_(node->GetIdentifierQuantity());
+    break;
+  // TODO: ASTFunctionCallNode is not supported in QUIRGen
+  case ASTTypeFunctionCall:
+    visit(node->GetFunctionCallQuantity());
+    break;
+  default:
+    break;
+  }
+
+  auto switchOp = builder.create<quir::SwitchOp>(
+      loc, /*resultTypes=*/mlir::TypeRange{}, flag, caseValuesAttr,
+      /*caseRegionsCount=*/caseSize);
+
+  // Save current level OpBuilder
+  OpBuilder prevBuilder = builder;
+
+  // Parse the default region.
+  Region &defaultRegion = switchOp.defaultRegion();
+  defaultRegion.emplaceBlock();
+  OpBuilder defaultRegionBuilder(defaultRegion);
+  builder = defaultRegionBuilder;
+  BaseQASM3Visitor::visit(node->GetDefaultStatement()->GetStatementList());
+  // add YieldOp to terminate default regions
+  builder.create<quir::YieldOp>(loc);
+
+  // New OpBuilder for the case statement Region
+  // adding case regions
+  int i = 0;
+  for (auto const &[key, caseValue] : node->GetCaseStatementsMap()) {
+    Region &caseRegion = switchOp.caseRegions()[i];
+    caseRegion.emplaceBlock();
+    OpBuilder caseRegionBuilder(caseRegion);
+    i++;
+    builder = caseRegionBuilder;
+    BaseQASM3Visitor::visit(caseValue->GetStatementList());
+    // add YieldOp to terminate all case regions
+    builder.create<quir::YieldOp>(loc);
+  }
+  builder = prevBuilder;
+}
+
+void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
   reportError(node, mlir::DiagnosticSeverity::Error)
-      << "Switch statements are not yet supported in QUIRGen.";
-  return;
+      << "While loops are not yet supported.";
+}
+
+void QUIRGenQASM3Visitor::visit(const ASTWhileLoopNode *node) {
+  reportError(node, mlir::DiagnosticSeverity::Error)
+      << "While loops are not yet supported.";
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTReturnStatementNode *node) {
@@ -368,6 +471,28 @@ void QUIRGenQASM3Visitor::visit(const ASTFunctionDeclarationNode *node) {
 void QUIRGenQASM3Visitor::visit(const ASTFunctionDefinitionNode *node) {
   reportError(node, mlir::DiagnosticSeverity::Error)
       << "Subroutine processing is not yet supported in QUIRGen.";
+}
+
+void QUIRGenQASM3Visitor::visit(const ASTFunctionCallNode *node) {
+  std::vector<Value> operands;
+  for (const auto *expr : *node)
+    operands.push_back(visitAndGetExpressionValue(
+        dynamic_cast<const ASTExpressionNode *>(expr)));
+  ValueRange operandRange(operands.data(), operands.size());
+
+  llvm::SmallVector<Type, 1> resultTypes;
+  if (node->ReturnsResult())
+    resultTypes.emplace_back(
+        varHandler.resolveQUIRVariableType(node->GetResult()));
+  TypeRange resultRange(resultTypes.data(), resultTypes.size());
+
+  auto callOp = builder.create<CallOp>(getLocation(node), node->GetCallName(),
+                                       resultRange, operandRange);
+
+  // fill the expression in case the call result is assigned to something
+  expression.reset(); // should be reset, operand visiting above sets expression
+  if (node->ReturnsResult())
+    expression = callOp->getResult(0); // QASM3 can only return 1 result
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
@@ -703,12 +828,70 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
     return;
   }
 
+  case ASTTypeKernelDeclaration:
+    visit(dynamic_cast<const ASTKernelDeclarationNode *>(node));
+    return;
+
   default:
     break;
   }
 
   // otherwise, look up node in sym table (old path, to be removed)
   BaseQASM3Visitor::visit(idNode->GetSymbolTableEntry());
+}
+
+void QUIRGenQASM3Visitor::visit(const ASTKernelDeclarationNode *node) {
+  visit(node->GetKernel());
+  return;
+}
+
+void QUIRGenQASM3Visitor::visit(const ASTKernelNode *node) {
+  const auto &params = node->GetParameters();
+  const size_t numParams = params.size();
+  llvm::SmallVector<Type> inputs(numParams);
+  for (const auto &[index, declNode] : params)
+    inputs[index] = getQUIRTypeFromDeclaration(declNode);
+  auto inputsRef = ArrayRef<Type>(inputs.data(), inputs.size());
+
+  assert(node->HasResult() && "Every kernel node must have a return node");
+  llvm::SmallVector<Type> outputs;
+  if (!node->GetResult()->IsVoid())
+    outputs.emplace_back(varHandler.resolveQUIRVariableType(node->GetResult()));
+  auto outputsRef = ArrayRef<Type>(outputs.data(), outputs.size());
+
+  llvm::SmallVector<NamedAttribute, 1> attrs;
+  attrs.emplace_back(
+      builder.getStringAttr(SymbolTable::getVisibilityAttrName()),
+      builder.getStringAttr("private"));
+  ArrayRef<NamedAttribute> funcAttrs(attrs.data(), attrs.size());
+
+  topLevelBuilder.create<FuncOp>(
+      getLocation(node), node->GetName(),
+      builder.getFunctionType(/*inputs=*/inputsRef, /*results=*/outputsRef),
+      /*attrs=*/funcAttrs);
+  return;
+}
+
+Type QUIRGenQASM3Visitor::getQUIRTypeFromDeclaration(
+    const ASTDeclarationNode *node) {
+  switch (node->GetASTType()) {
+  case ASTTypeMPInteger:
+  case ASTTypeInt:
+  case ASTTypeBool:
+  case ASTTypeBitset:
+  case ASTTypeAngle:
+  case ASTTypeFloat:
+  case ASTTypeMPDecimal:
+  case ASTTypeMPComplex: {
+    return varHandler.resolveQUIRVariableType(node);
+  }
+  default:
+    break;
+  }
+
+  reportError(node, mlir::DiagnosticSeverity::Error)
+      << "Unknown Declaration Type, cannot convert to QUIR Type.";
+  return builder.getNoneType();
 }
 
 ExpressionValueType
@@ -1007,11 +1190,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
 
   if (leftType.isa<quir::CBitType>())
     bits = std::max(bits, (size_t)leftType.cast<quir::CBitType>().getWidth());
-  if (leftType.isIntOrIndex())
+  if (leftType.isIntOrFloat())
     bits = std::max(bits, (size_t)leftType.getIntOrFloatBitWidth());
   if (rightType.isa<quir::CBitType>())
     bits = std::max(bits, (size_t)rightType.cast<quir::CBitType>().getWidth());
-  if (rightType.isIntOrIndex())
+  if (rightType.isIntOrFloat())
     bits = std::max(bits, (size_t)rightType.getIntOrFloatBitWidth());
 
   LLVM_DEBUG(llvm::dbgs() << "binary op "
@@ -1067,6 +1250,18 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
     break;
   }
 
+  // lambda function for checking type mismatch
+  auto createCastIfTypeMismatch = [&]() {
+    // cast in case of IndexType
+    if (leftType != rightType && (leftType.isIndex() || rightType.isIndex())) {
+      if (leftType.isIndex())
+        leftRef = builder.create<CastOp>(getLocation(left), rightType, leftRef);
+      else
+        rightRef =
+            builder.create<CastOp>(getLocation(right), leftType, rightRef);
+    }
+  };
+
   Value opRef;
 
   switch (node->GetOpType()) {
@@ -1079,14 +1274,17 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
     break;
 
   case ASTOpTypeBitAnd:
+    createCastIfTypeMismatch();
     opRef = builder.create<mlir::quir::Cbit_AndOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeBitOr:
+    createCastIfTypeMismatch();
     opRef = builder.create<mlir::quir::Cbit_OrOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeXor:
+    createCastIfTypeMismatch();
     opRef = builder.create<mlir::quir::Cbit_XorOp>(loc, leftRef, rightRef);
     break;
 

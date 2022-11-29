@@ -11,6 +11,7 @@
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/Pulse/IR/PulseDialect.h"
 
+#include "mlir/Dialect/Complex/IR/Complex.h"
 #include "mlir/IR/BlockAndValueMapping.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/FunctionImplementation.h"
@@ -161,6 +162,7 @@ static LogicalResult verifyClassical_(SequenceOp op) {
     if (isa<mlir::ConstantOp>(subOp) || isa<mlir::arith::ConstantOp>(subOp) ||
         isa<quir::ConstantOp>(subOp) || isa<CallSequenceOp>(subOp) ||
         isa<pulse::ReturnOp>(subOp) || isa<SequenceOp>(subOp) ||
+        isa<mlir::complex::CreateOp>(subOp) ||
         subOp->hasTrait<mlir::pulse::SequenceAllowed>())
       return WalkResult::advance();
     classicalOp = subOp;
@@ -283,6 +285,32 @@ static LogicalResult verify(ReturnOp op) {
 //===----------------------------------------------------------------------===//
 //
 // end ReturnOp
+//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// PlayOp
+//===----------------------------------------------------------------------===//
+
+llvm::Expected<int> PlayOp::getDuration(CallSequenceOp callOp) {
+  // check if wfr is of type Waveform_CreateOp; this is the case if wfrOp is
+  // defined in the same block as playOp e.g., if both are defined inside a
+  // sequenceOp
+  if (auto castOp = dyn_cast_or_null<Waveform_CreateOp>(wfr().getDefiningOp()))
+    return castOp.getDuration();
+
+  auto argIndex = wfr().cast<BlockArgument>().getArgNumber();
+  auto *argOp = callOp.getOperand(argIndex).getDefiningOp();
+  auto wfrOp = dyn_cast_or_null<Waveform_CreateOp>(argOp);
+  if (wfrOp)
+    return wfrOp.getDuration();
+  return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                 "Could not get the wfrOp!");
+}
+
+//===----------------------------------------------------------------------===//
+//
+// end PlayOp
 //
 //===----------------------------------------------------------------------===//
 

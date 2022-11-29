@@ -19,19 +19,34 @@
 
 namespace mlir::quir {
 /// This pass merges qubit reset operations that can be parallelized into a
-/// single reset op.
-struct MergeParallelResetsPass
-    : public mlir::PassWrapper<MergeParallelResetsPass,
+/// single reset op lexicographically.
+struct MergeResetsLexicographicPass
+    : public mlir::PassWrapper<MergeResetsLexicographicPass,
                                mlir::OperationPass<mlir::ModuleOp>> {
-  MergeParallelResetsPass() = default;
-  MergeParallelResetsPass(const MergeParallelResetsPass &pass) = default;
+  MergeResetsLexicographicPass() = default;
+  MergeResetsLexicographicPass(const MergeResetsLexicographicPass &pass) =
+      default;
 
   void runOnOperation() override;
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+}; // struct MergeResetsLexicographicPass
 
-}; // struct MergeParallelResetsPass
+/// This pass merges qubit reset operations that can be parallelized into a
+/// single reset op topologically.
+struct MergeResetsTopologicalPass
+    : public mlir::PassWrapper<MergeResetsTopologicalPass,
+                               mlir::OperationPass<mlir::ModuleOp>> {
+  MergeResetsTopologicalPass() = default;
+  MergeResetsTopologicalPass(const MergeResetsTopologicalPass &pass) = default;
+
+  void runOnOperation() override;
+
+  llvm::StringRef getArgument() const override;
+  llvm::StringRef getDescription() const override;
+}; // struct MergeResetsTopologicalPass
+
 } // namespace mlir::quir
 
 #endif // QUIR_MERGE_PARALLEL_RESETS_H

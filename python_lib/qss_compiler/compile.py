@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2022.
+# (C) Copyright IBM 2021, 2022.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -253,7 +253,11 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         childproc.join()
         if childproc.exitcode != 0:
             raise QSSCompilerError(
-                "compile process exited with non-zero status " + str(childproc.exitcode)
+                (
+                    "compile process exited with non-zero status "
+                    + str(childproc.exitcode)
+                    + (" yet appears  still alive" if childproc.is_alive() else "")
+                )
             )
 
         if not status.success:

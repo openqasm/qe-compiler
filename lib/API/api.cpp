@@ -1,6 +1,6 @@
 //===- api.cpp --------------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021.
+// (C) Copyright IBM 2021, 2022.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -631,4 +631,24 @@ int compile(int argc, char const **argv, std::string *outputString) {
   }
 
   return 0;
+}
+
+llvm::Error
+bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
+               llvm::StringRef payloadOutputPath,
+               std::unordered_map<std::string, double> const &parameters) {
+
+  // ZipPayloads are implemented with libzip, which only supports updating a zip
+  // archive in-place. Thus, copy module to payload first, then update payload
+  // (instead of read module, update, write payload)
+  std::error_code copyError =
+      llvm::sys::fs::copy_file(moduleInputPath, payloadOutputPath);
+
+  if (copyError)
+    return llvm::make_error<llvm::StringError>(
+        "Failed to copy circuit module to payload", copyError);
+
+  // TODO actually update parameters, tbd in later commits.
+
+  return llvm::Error::success();
 }

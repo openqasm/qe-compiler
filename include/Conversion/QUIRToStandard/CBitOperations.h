@@ -24,7 +24,8 @@
 namespace mlir::quir {
 
 void populateCBitOperationsPatterns(RewritePatternSet &patterns,
-                                    mlir::TypeConverter &typeConverter);
+                                    mlir::TypeConverter &typeConverter,
+                                    bool includeBitmapOperationPatterns = true);
 
 }; // namespace mlir::quir
 

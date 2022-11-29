@@ -12,6 +12,7 @@
 #define QUIR_QUIROPS_H
 
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
@@ -24,6 +25,9 @@
 #include "mlir/Interfaces/ControlFlowInterfaces.h"
 #include "mlir/Interfaces/SideEffectInterfaces.h"
 #include "mlir/Transforms/InliningUtils.h"
+
+#include <set>
+#include <vector>
 
 #define GET_OP_CLASSES
 #include "Dialect/QUIR/IR/QUIR.h.inc"

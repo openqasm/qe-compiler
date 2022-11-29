@@ -95,10 +95,23 @@ void QUIRVariableBuilder::generateCBitSingleBitAssignment(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Value assignedValue, size_t bitPosition, size_t registerWidth) {
 
+  // TODO at some point, implement any follow-up changes required and move away
+  // from AssignCbitBitOp.
+#if 0
+  auto oldCbitValue = generateVariableUse(location, variableName, builder.getType<mlir::quir::CBitType>(registerWidth));
+  auto cbitWithInsertedBit = builder.create<mlir::quir::CBit_InsertBitOp>(
+            location, oldCbitValue.getType(), oldCbitValue,
+            assignedValue, builder.getIndexAttr(bitPosition));
+
+  builder.create<mlir::quir::VariableAssignOp>(
+        location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)), cbitWithInsertedBit);
+
+#else
   builder.create<mlir::quir::AssignCbitBitOp>(
       location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)),
       builder.getIndexAttr(bitPosition), builder.getIndexAttr(registerWidth),
       assignedValue);
+#endif
 }
 
 mlir::Value
@@ -119,25 +132,25 @@ mlir::Value QUIRVariableBuilder::generateArrayVariableElementUse(
       builder.getIndexAttr(elementIndex));
 }
 
-mlir::Type QUIRVariableBuilder::resolveQUIRVariableType(
-    QASM::ASTType astType, QASM::ASTIdentifierNode const *id) const {
+mlir::Type
+QUIRVariableBuilder::resolveQUIRVariableType(QASM::ASTType astType,
+                                             const unsigned bits) const {
   switch (astType) {
   case QASM::ASTTypeBool:
     return builder.getI1Type();
 
   case QASM::ASTTypeBitset: {
-    return builder.getType<mlir::quir::CBitType>(id->GetBits());
+    return builder.getType<mlir::quir::CBitType>(bits);
   }
 
   case QASM::ASTTypeMPInteger:
   case QASM::ASTTypeInt: {
-    return builder.getIntegerType(id->GetBits());
+    return builder.getIntegerType(bits);
   }
 
   case QASM::ASTTypeFloat:
   case QASM::ASTTypeMPDecimal:
   case QASM::ASTTypeMPComplex: {
-    const unsigned bits = id->GetBits();
     mlir::FloatType floatType;
     if (bits <= 16)
       floatType = builder.getF16Type();
@@ -157,7 +170,7 @@ mlir::Type QUIRVariableBuilder::resolveQUIRVariableType(
   }
 
   case QASM::ASTTypeAngle: {
-    return builder.getType<mlir::quir::AngleType>(id->GetBits());
+    return builder.getType<mlir::quir::AngleType>(bits);
   }
 
   default:
@@ -168,7 +181,10 @@ mlir::Type QUIRVariableBuilder::resolveQUIRVariableType(
 mlir::Type QUIRVariableBuilder::resolveQUIRVariableType(
     QASM::ASTSymbolTableEntry const *entry) const {
   assert(entry && "symbol table entry must not be null.");
-  return resolveQUIRVariableType(entry->GetValueType(), entry->GetIdentifier());
+  assert(entry->GetIdentifier() &&
+         "Symbol table entry must have an assigned identifier");
+  return resolveQUIRVariableType(entry->GetValueType(),
+                                 entry->GetIdentifier()->GetBits());
 }
 
 mlir::Type QUIRVariableBuilder::resolveQUIRVariableType(
@@ -176,5 +192,12 @@ mlir::Type QUIRVariableBuilder::resolveQUIRVariableType(
   assert(node && "node argument must be non-null");
   assert(node->GetIdentifier() &&
          "node argument must have an assigned identifier");
-  return resolveQUIRVariableType(node->GetASTType(), node->GetIdentifier());
+  return resolveQUIRVariableType(node->GetASTType(),
+                                 node->GetIdentifier()->GetBits());
+}
+
+mlir::Type
+QUIRVariableBuilder::resolveQUIRVariableType(const QASM::ASTResultNode *node) {
+  assert(node && "node argument must be non-null");
+  return resolveQUIRVariableType(node->GetResultType(), node->GetResultBits());
 }

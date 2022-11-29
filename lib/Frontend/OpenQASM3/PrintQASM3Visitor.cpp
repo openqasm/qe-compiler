@@ -131,6 +131,22 @@ void PrintQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   vStream << "])\n";
 }
 
+void PrintQASM3Visitor::visit(const ASTWhileStatementNode *node) {
+  const ASTWhileLoopNode *loop = node->GetLoop();
+  vStream << "WhileStatement(";
+  visit(loop);
+  vStream << ")\n";
+}
+
+void PrintQASM3Visitor::visit(const ASTWhileLoopNode *node) {
+  const ASTExpressionNode *condition = node->GetExpression();
+  vStream << "condition=";
+  BaseQASM3Visitor::visit(condition);
+  vStream << ",\nstatements=\n";
+  const ASTStatementList &loopNode = node->GetStatementList();
+  BaseQASM3Visitor::visit(&loopNode);
+}
+
 void PrintQASM3Visitor::visit(const ASTReturnStatementNode *node) {
   vStream << "ReturnNode(";
   if (node->IsVoid()) {
@@ -391,6 +407,11 @@ void PrintQASM3Visitor::visit(const ASTDeclarationNode *node) {
   else if (node->GetModifierType() == QASM::ASTTypeOutputModifier)
     vStream << ", outputVariable";
   vStream << ")\n";
+}
+
+void PrintQASM3Visitor::visit(const ASTKernelDeclarationNode *node) {
+  visit(node->GetKernel());
+  return;
 }
 
 void PrintQASM3Visitor::visit(const ASTQubitContainerNode *node) {

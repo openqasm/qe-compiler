@@ -11,6 +11,7 @@
 #ifndef QUIR_OPS
 #define QUIR_OPS
 
+include "Dialect/QUIR/IR/QUIRInterfaces.td"
 include "Dialect/QUIR/IR/QUIRTraits.td"
 include "Dialect/QUIR/IR/QUIRAttributes.td"
 
@@ -23,9 +24,16 @@ include "mlir/IR/FunctionInterfaces.td"
 include "mlir/IR/OpAsmInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
 
-
 include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 
+// Define a side effect that identifies an operation as not dead while not
+// interfering with memory operations (e.g., allows store-forwarding across
+// this operation).
+// Note that operations without memory effects defined will be treated
+// conservatively (i.e., not making any assumptions).
+// see lib/Interfaces/SideEffectInterfaces.cpp:isTriviallyDeadImpl()
+// see lib/Dialect/Affine/Utils/Utils.cpp:hasNoInterveningEffect()
+def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
 
 // TODO: This op should be extracted to a system-level dialect
 def QUIR_SystemInitOp : QUIR_Op<"system_init", [IsolatedFromAbove]> {
@@ -64,7 +72,9 @@ def QUIR_ShotInitOp : QUIR_Op<"shot_init", [IsolatedFromAbove]> {
 }
 
 // TODO: This op should be extracted to a system-level dialect
-def QUIR_SynchronizeOp : QUIR_Op<"synchronize"> {
+def QUIR_SynchronizeOp : QUIR_Op<"synchronize", [
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "Synchronize the system";
     let description = [{
         The `quir.synchronize` operation causes the system to perform a
@@ -73,11 +83,11 @@ def QUIR_SynchronizeOp : QUIR_Op<"synchronize"> {
         arguments, this is to simplify the tracking of synchronization timing
         relative to other qubit-based operations, like measurement and reset.
     }];
-    let arguments = (ins Variadic<AnyQubit>:$args);
+    let arguments = (ins Variadic<AnyQubit>:$qubits);
     let results = (outs);
 
     let assemblyFormat = [{
-        $args attr-dict `:` functional-type($args, results)
+        $qubits attr-dict `:` functional-type($qubits, results)
     }];
 }
 
@@ -345,7 +355,7 @@ def QUIR_AssignCbitBitOp : QUIR_Op<"assign_cbit_bit",
     let verifier = ?;
 }
 
-def QUIR_DeclareQubitOp : QUIR_Op<"declare_qubit"> {
+def QUIR_DeclareQubitOp : QUIR_Op<"declare_qubit", [NonInterferingNonDeadSideEffect]> {
     let summary = "Declare a new physical qubit.";
     let description = [{
         The `quir.declare_qubit` operation creates a new physical qubit.
@@ -401,7 +411,10 @@ def QUIR_DeclareStretchOp : QUIR_Op<"declare_stretch", [NoSideEffect]> {
     }];
 }
 
-def QUIR_ResetQubitOp : QUIR_Op<"reset", [IsolatedFromAbove, CPTPOp]> {
+def QUIR_ResetQubitOp : QUIR_Op<"reset", [
+            IsolatedFromAbove, CPTPOp,
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "Perform a reset operation on the given qubits";
     let description = [{
         The `quir.reset` operation performs a reset operation on all the qubits
@@ -422,41 +435,50 @@ def QUIR_ResetQubitOp : QUIR_Op<"reset", [IsolatedFromAbove, CPTPOp]> {
     }];
 }
 
-def QUIR_BuiltinCXOp : QUIR_Op<"builtin_CX", [UnitaryOp]> {
+def QUIR_BuiltinCXOp : QUIR_Op<"builtin_CX", [
+            UnitaryOp,
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "Controlled NOT gate";
     let description = [{
-        The `quir.builtin_CX` operation performs a controlled not i.e. flips %qb iff %qa is a 1.
+        The `quir.builtin_CX` operation performs a controlled not i.e. flips %target iff %control is a 1.
         Example:
         ```mlir
-        quir.builtin_CX %qa_0, %qb_0 : !quir.qubit<1>, !quir.qubit<1>
+        quir.builtin_CX %control, %target : !quir.qubit<1>, !quir.qubit<1>
         ```
     }];
 
-    let arguments = (ins AnyQubit:$qa1, AnyQubit:$qb1);
+    let arguments = (ins AnyQubit:$control, AnyQubit:$target);
 
     let assemblyFormat = [{
-        attr-dict $qa1 `,` $qb1 `:` type($qa1) `,` type($qb1)
+        attr-dict $control `,` $target `:` type($control) `,` type($target)
     }];
 }
 
-def QUIR_Builtin_UOp : QUIR_Op<"builtin_U", [UnitaryOp]> {
+def QUIR_Builtin_UOp : QUIR_Op<"builtin_U", [
+            UnitaryOp,
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "Generic unitary gate";
     let description = [{
         The `quir.builtin_U` operation performs a single qubit unitary rotation.
         Example:
         ```mlir
-        quir.builtin_U %qa_0, %theta_0, %phi_0, %lambda_0 : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
+        quir.builtin_U %target, %theta_0, %phi_0, %lambda_0 : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         ```
     }];
 
-    let arguments = (ins AnyQubit:$qa1, AnyAngle:$theta, AnyAngle:$phi, AnyAngle:$lambda);
+    let arguments = (ins AnyQubit:$target, AnyAngle:$theta, AnyAngle:$phi, AnyAngle:$lambda);
 
     let assemblyFormat = [{
-        attr-dict $qa1 `,` $theta `,` $phi `,` $lambda `:` type($qa1) `,` type($theta) `,` type($phi) `,` type($lambda)
+        attr-dict $target `,` $theta `,` $phi `,` $lambda `:` type($target) `,` type($theta) `,` type($phi) `,` type($lambda)
     }];
 }
 
-def QUIR_CallGateOp : QUIR_Op<"call_gate", [DeclareOpInterfaceMethods<CallOpInterface>, UnitaryOp]> {
+def QUIR_CallGateOp : QUIR_Op<"call_gate", [DeclareOpInterfaceMethods<CallOpInterface>,
+        UnitaryOp,
+        DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+        NonInterferingNonDeadSideEffect]> {
     let summary = "A call to a user-defined quantum gate that needs to be specialized for input operands";
     let description = [{
         The `quir.call_gate` operation represents calls to user-defined quantum gates
@@ -464,31 +486,31 @@ def QUIR_CallGateOp : QUIR_Op<"call_gate", [DeclareOpInterfaceMethods<CallOpInte
         an attribute. The arguments list must match the arguments provided by the callee. For example:
 
         ```mlir
-        quir.call_gate @userGateZX(%qa_0, %theta, %phi) : (!quir.qubit<1>, !quir.angle<1>, !quir.angle<1>) -> ()
+        quir.call_gate @userGateZX(%target, %theta, %phi) : (!quir.qubit<1>, !quir.angle<1>, !quir.angle<1>) -> ()
         ```
         This is valid only if the named user gate `userGateZX` exists and takes a qubit and 2 angles as arguments.
     }];
 
-    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyAngleOrQubit>:$args);
+    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyAngleOrQubit>:$operands);
     let results = (outs );
 
     let assemblyFormat = [{
-        $callee `(` $args `)` attr-dict `:` functional-type($args, results)
+        $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
     }];
 
     let builders = [
-        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", callee);
         }]>,
         OpBuilder<(ins "StringRef":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
-            build($_builder, $_state, SymbolRefAttr::get($_builder.getContext(), callee), args);
+        CArg<"ValueRange", "{}">:$operands), [{
+            build($_builder, $_state, SymbolRefAttr::get($_builder.getContext(), callee), operands);
         }]>];
 
     let extraClassDeclaration = [{
@@ -501,7 +523,10 @@ def QUIR_CallGateOp : QUIR_Op<"call_gate", [DeclareOpInterfaceMethods<CallOpInte
     }];
 }
 
-def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [DeclareOpInterfaceMethods<CallOpInterface>, UnitaryOp]> {
+def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [
+            DeclareOpInterfaceMethods<CallOpInterface>,
+            UnitaryOp,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "A call to a user-defined defcal quantum gate that needs to be specialized for input operands";
     let description = [{
         The `quir.call_defcal_gate` operation represents calls to user-defined quantum gates controlled with pulse-level descriptions
@@ -509,31 +534,31 @@ def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [DeclareOpInterfaceMetho
         an attribute. The arguments list must match the arguments provided by the callee. For example:
 
         ```mlir
-        quir.call_defcal_gate @defcalGateZX(%qa_0, %theta, %phi) : (!quir.qubit<1>, !quir.angle<1>, !quir.angle<1>) ->
+        quir.call_defcal_gate @defcalGateZX(%target, %theta, %phi) : (!quir.qubit<1>, !quir.angle<1>, !quir.angle<1>) ->
         ```
         This is valid only if the named user gate `defcalGateZX` exists and takes a qubit and 2 angles as arguments.
     }];
 
-    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyAngleOrQubit>:$args);
+    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyAngleOrQubit>:$operands);
     let results = (outs );
 
     let assemblyFormat = [{
-        $callee `(` $args `)` attr-dict `:` functional-type($args, results)
+        $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
     }];
 
     let builders = [
-        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", callee);
         }]>,
         OpBuilder<(ins "StringRef":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
-            build($_builder, $_state, SymbolRefAttr::get($_builder.getContext(), callee), args);
+        CArg<"ValueRange", "{}">:$operands), [{
+            build($_builder, $_state, SymbolRefAttr::get($_builder.getContext(), callee), operands);
         }]>];
 
     let extraClassDeclaration = [{
@@ -546,7 +571,10 @@ def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [DeclareOpInterfaceMetho
     }];
 }
 
-def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [DeclareOpInterfaceMethods<CallOpInterface>, CPTPOp]> {
+def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
+            DeclareOpInterfaceMethods<CallOpInterface>,
+            CPTPOp,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "A call to a user-defined defcal qubit measurement that needs to be specialized for input operands";
     let description = [{
         The `quir.call_defcal_measure` operation represents calls to user-defined qubit measurements controlled with pulse-level descriptions
@@ -554,33 +582,33 @@ def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [DeclareOpInterfac
         an attribute. The arguments list must match the arguments provided by the callee. For example:
 
         ```mlir
-        %c1 = quir.call_defcal_measure @defcalMeasure(%qa_0) : (!quir.qubit<1>) -> i1
+        %c1 = quir.call_defcal_measure @defcalMeasure(%target) : (!quir.qubit<1>) -> i1
         ```
     }];
 
-    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyAngleOrQubit>:$args);
+    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyAngleOrQubit>:$operands);
     let results = (outs I1:$res);
 
     let assemblyFormat = [{
-        $callee `(` $args `)` attr-dict `:` functional-type(operands, results)
+        $callee `(` $operands `)` attr-dict `:` functional-type(operands, results)
     }];
 
     let builders = [
-        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
             $_state.addTypes(callee.getType().getResults());
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", callee);
             $_state.addTypes(res);
         }]>,
         OpBuilder<(ins "StringRef":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
+        CArg<"ValueRange", "{}">:$operands), [{
             build($_builder, $_state, SymbolRefAttr::get($_builder.getContext(), callee), res,
-                    args);
+                    operands);
         }]>];
 
     let extraClassDeclaration = [{
@@ -630,29 +658,29 @@ def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [DeclareOpInterfaceMethod
         a std.call op.
     }];
 
-    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyTypeOf<[AnyClassical, AnyQubit]>>:$args);
+    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyTypeOf<[AnyClassical, AnyQubit]>>:$operands);
     let results = (outs Optional<AnyClassical>:$res);
 
     let assemblyFormat = [{
-        $callee `(` $args `)` attr-dict `:` functional-type($args, results)
+        $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
     }];
 
     let builders = [
-        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
             $_state.addTypes(callee.getType().getResults());
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", callee);
             $_state.addTypes(res);
         }]>,
         OpBuilder<(ins "StringRef":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
+        CArg<"ValueRange", "{}">:$operands), [{
             build($_builder, $_state, SymbolRefAttr::get($_builder.getContext(), callee), res,
-                    args);
+                    operands);
         }]>];
 
     let extraClassDeclaration = [{
@@ -681,33 +709,33 @@ def QUIR_CallKernelOp : QUIR_Op<"call_kernel", [DeclareOpInterfaceMethods<CallOp
         returns an i1 as a result.
     }];
 
-    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyClassical>:$args);
+    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyClassical>:$operands);
     let results = (outs Optional<AnyClassical>:$res);
 
     let assemblyFormat = [{
-        $callee `(` $args `)` attr-dict `:` functional-type($args, results)
+        $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
     }];
 
     let builders = [
-        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
             $_state.addTypes(callee.getType().getResults());
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
-            $_state.addOperands(args);
+        CArg<"ValueRange", "{}">:$operands), [{
+            $_state.addOperands(operands);
             $_state.addAttribute("callee", callee);
             $_state.addTypes(res);
         }]>,
         OpBuilder<(ins "StringRef":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$args), [{
+        CArg<"ValueRange", "{}">:$operands), [{
             build($_builder, $_state, SymbolRefAttr::get($_builder.getContext(), callee), res,
-                    args);
+                    operands);
         }]>];
 }
 
-def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormalizable, DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormalizable, DeclareOpInterfaceMethods<SymbolUserOpInterface>, DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>]> {
     let summary = "Call a circuit operation";
     let description = [{
         The `quir.call_circuit` operation represents calls to launch a quantum circuit in the target system.
@@ -771,7 +799,10 @@ def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormal
 
 
 
-def QUIR_MeasureOp : QUIR_Op<"measure", [CPTPOp]> {
+def QUIR_MeasureOp : QUIR_Op<"measure", [
+            CPTPOp,
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "Measure qubits";
     let description = [{
         The `quir.measure` operation represents a quantum measurement
@@ -809,7 +840,10 @@ def QUIR_CastOp : QUIR_Op<"cast", [NoSideEffect]> {
     let hasCanonicalizer = 1;
 }
 
-def QUIR_DelayOp : QUIR_Op<"delay", [UnitaryOp]> {
+def QUIR_DelayOp : QUIR_Op<"delay", [
+            UnitaryOp,
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "Add a delay operation of a given duration or stretch to a qubit";
     let description = [{
         The `quir.delay` operation represents a delay operation of the given
@@ -823,15 +857,18 @@ def QUIR_DelayOp : QUIR_Op<"delay", [UnitaryOp]> {
         ```
     }];
 
-    let arguments = (ins DurationOrStretch:$time, Variadic<AnyQubit>:$targets);
+    let arguments = (ins DurationOrStretch:$time, Variadic<AnyQubit>:$qubits);
     let results = (outs );
 
     let assemblyFormat = [{
-        attr-dict $time `,` `(` $targets `)` `:` type($time) `,` functional-type($targets, results)
+        attr-dict $time `,` `(` $qubits `)` `:` type($time) `,` functional-type($qubits, results)
     }];
 }
 
-def QUIR_DelayCyclesOp : QUIR_Op<"delay_cycles", [UnitaryOp]> {
+def QUIR_DelayCyclesOp : QUIR_Op<"delay_cycles", [
+            UnitaryOp,
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "Add a delay operation of a given number of cycles to a qubit";
     let description = [{
         The `quir.delay_cycles` operation represents a delay operation of the given
@@ -844,15 +881,18 @@ def QUIR_DelayCyclesOp : QUIR_Op<"delay_cycles", [UnitaryOp]> {
         ```
     }];
 
-    let arguments = (ins I64Attr:$time, Variadic<AnyQubit>:$targets);
+    let arguments = (ins I64Attr:$time, Variadic<AnyQubit>:$qubits);
     let results = (outs );
 
     let assemblyFormat = [{
-        `(` $targets `)` attr-dict `:` functional-type($targets, results)
+        `(` $qubits `)` attr-dict `:` functional-type($qubits, results)
     }];
 }
 
-def QUIR_BarrierOp : QUIR_Op<"barrier", [UnitaryOp]> {
+def QUIR_BarrierOp : QUIR_Op<"barrier", [
+            UnitaryOp,
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
     let summary = "Add a barrier operation";
     let description =   [{
         The `quir.barrier` operation represents a barrier operation that synchronizes subsequent
@@ -866,16 +906,16 @@ def QUIR_BarrierOp : QUIR_Op<"barrier", [UnitaryOp]> {
         ```
     }];
 
-    let arguments = (ins Variadic<AnyQubit>:$args);
+    let arguments = (ins Variadic<AnyQubit>:$qubits);
     let results = (outs);
 
     let assemblyFormat = [{
-        $args attr-dict `:` functional-type($args, results)
+        $qubits attr-dict `:` functional-type($qubits, results)
     }];
 }
 
 // TODO: This op should be extracted to a system-level dialect
-def QUIR_BroadcastOp : QUIR_Op<"broadcast"> {
+def QUIR_BroadcastOp : QUIR_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
     let summary = "Broadcast a value from this controller to all others";
     let description = [{
         The `quir.broadcast` operation represents a broadcast command that sends a value
@@ -898,7 +938,7 @@ def QUIR_BroadcastOp : QUIR_Op<"broadcast"> {
 }
 
 // TODO: This op should be extracted to a system-level dialect
-def QUIR_SendOp : QUIR_Op<"send"> {
+def QUIR_SendOp : QUIR_Op<"send", [NonInterferingNonDeadSideEffect]> {
     let summary = "Send a classical value from this controller to another";
     let description = [{
         The `quir.send` operation represents a send command from one controller to another.
@@ -906,7 +946,7 @@ def QUIR_SendOp : QUIR_Op<"send"> {
 
         Example:
         ```mlir
-        %cbit = "quir.measure"(%qa_0) : (!quir.qubit<1>) -> i1
+        %cbit = "quir.measure"(%target) : (!quir.qubit<1>) -> i1
         quir.send %cbit : i1
         ```
     }];
@@ -925,7 +965,7 @@ def IndexArrayAttr : TypedArrayAttrBase<IndexAttr,
 }
 
 // TODO: This op should be extracted to a system-level dialect
-def QUIR_RecvOp : QUIR_Op<"recv"> {
+def QUIR_RecvOp : QUIR_Op<"recv", [NonInterferingNonDeadSideEffect]> {
     let summary = "Receive classical values from other controllers";
     let description = [{
         The `quir.recv` operation represents a receive command for potentially
@@ -948,7 +988,8 @@ def QUIR_RecvOp : QUIR_Op<"recv"> {
 
 // TODO: This op should be extracted to a system-level dialect
 def QUIR_ParallelControlFlowOp : QUIR_Op<"parallel_control_flow", [
-                        SingleBlockImplicitTerminator<"ParallelEndOp">]> {
+                        SingleBlockImplicitTerminator<"ParallelEndOp">,
+                        RecursiveSideEffects]> {
     let summary = "Contain a group of control flow ops that can run in parallel";
     let description = [{
         The `quir.parallel_control_flow` operation has a single region and block
@@ -975,7 +1016,7 @@ def QUIR_ParallelControlFlowOp : QUIR_Op<"parallel_control_flow", [
 
 // TODO: This op should be extracted to a system-level dialect
 def QUIR_ParallelEndOp : QUIR_Op<"parallel_end", [
-    Terminator, HasParent<"ParallelControlFlowOp">]> {
+    Terminator, HasParent<"ParallelControlFlowOp">, NoSideEffect]> {
   let summary = "A pseudo op that marks the end of a `quir.parallel_control_flow` op.";
   let description = [{
     This op terminates the only block inside the only region of a
@@ -997,7 +1038,9 @@ def QUIR_ParallelEndOp : QUIR_Op<"parallel_end", [
 //===----------------------------------------------------------------------===//
 def QUIR_CircuitOp : QUIR_Op<"circuit", [
   AutomaticAllocationScope, CallableOpInterface,
-  FunctionOpInterface, IsolatedFromAbove, Symbol
+  FunctionOpInterface, IsolatedFromAbove, Symbol,
+  DeclareOpInterfaceMethods<QubitOpInterface>,
+  RecursiveSideEffects
 ]> {
   let summary = "An operation with a name containing a single `SSACFG` region corresponding to a quantum circuit(block) execution";
   let description = [{
@@ -1159,8 +1202,11 @@ def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, NoSideEffect, Ter
 }
 
 def QUIR_SwitchOp : QUIR_Op<"switch",
-    [DeclareOpInterfaceMethods<RegionBranchOpInterface>, RecursiveSideEffects,
-     SingleBlockImplicitTerminator<"quir::YieldOp">, NoRegionArguments]> {
+    [DeclareOpInterfaceMethods<RegionBranchOpInterface>,
+     RecursiveSideEffects,
+     SingleBlockImplicitTerminator<"quir::YieldOp">,
+     NoRegionArguments
+     ]> {
     let summary = "switch to case regions based on the operand value";
     let description = [{
         The "quir.switch" operation conditionally switch to a region of code

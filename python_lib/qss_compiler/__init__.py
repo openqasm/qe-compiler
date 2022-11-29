@@ -16,3 +16,9 @@ from .compile import (  # noqa: F401
     CompileOptions,
     QSSCompilationFailure,
 )
+
+from .link import (  # noqa: F401
+    link_file,
+    LinkOptions,
+    QSSLinkingFailure,
+)

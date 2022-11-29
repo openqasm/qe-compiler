@@ -56,12 +56,11 @@ void AddShotLoopPass::runOnOperation() {
   auto stepOp = build.create<mlir::arith::ConstantOp>(
       opLoc, build.getIndexType(), build.getIndexAttr(1));
   auto forOp = build.create<scf::ForOp>(opLoc, startOp, endOp, stepOp);
-  forOp->setAttr("quir.shotLoop", build.getUnitAttr());
+  forOp->setAttr(getShotLoopAttrName(), build.getUnitAttr());
 
   build.setInsertionPointToStart(&forOp.getRegion().front());
   auto shotInit = build.create<ShotInitOp>(opLoc);
-  shotInit->setAttr(StringRef("quir.numShots"),
-                    build.getI32IntegerAttr(numShots));
+  shotInit->setAttr(getNumShotsAttrName(), build.getI32IntegerAttr(numShots));
 
   std::list<Operation *> toErase;
   BlockAndValueMapping mapper;

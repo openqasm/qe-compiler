@@ -19,9 +19,11 @@
 #include "MergeMeasures.h"
 #include "MergeParallelResets.h"
 #include "QuantumDecoration.h"
-#include "RemoveQubitArgs.h"
+#include "RemoveQubitOperands.h"
+#include "ReorderMeasurements.h"
 #include "SubroutineCloning.h"
 #include "UnusedVariable.h"
+#include "VariableElimination.h"
 
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"

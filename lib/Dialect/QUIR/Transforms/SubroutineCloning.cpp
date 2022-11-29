@@ -34,8 +34,8 @@ auto SubroutineCloningPass::lookupQubitId(const Value val) -> int {
     unsigned argIdx = blockArg.getArgNumber();
     auto funcOp = dyn_cast<FuncOp>(blockArg.getOwner()->getParentOp());
     if (funcOp) {
-      auto argAttr =
-          funcOp.getArgAttrOfType<IntegerAttr>(argIdx, "quir.physicalId");
+      auto argAttr = funcOp.getArgAttrOfType<IntegerAttr>(
+          argIdx, mlir::quir::getPhysicalIdAttrName());
       if (argAttr)
         return argAttr.getInt();
       funcOp->emitOpError()
@@ -58,10 +58,10 @@ auto SubroutineCloningPass::getMangledName(Operation *op) -> std::string {
   auto callOp = dyn_cast<CallSubroutineOp>(op);
   std::string mangledName = callOp.callee().str();
 
-  std::vector<Value> qArgs;
-  qubitCallArgs(callOp, qArgs);
+  std::vector<Value> qOperands;
+  qubitCallOperands(callOp, qOperands);
 
-  for (Value qArg : qArgs) {
+  for (Value qArg : qOperands) {
     int qId = SubroutineCloningPass::lookupQubitId(qArg);
     if (qId < 0) {
       callOp->emitOpError() << "Unable to resolve qubit ID for call\n";
@@ -82,8 +82,8 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
   Operation *findOp =
       SymbolTable::lookupSymbolIn(moduleOperation, callOp.callee());
   if (findOp) {
-    std::vector<Value> qArgs;
-    qubitCallArgs(callOp, qArgs);
+    std::vector<Value> qOperands;
+    qubitCallOperands(callOp, qOperands);
 
     // first get the mangled name
     std::string mangledName = getMangledName(callOp);
@@ -104,12 +104,14 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
                      StringAttr::get(&getContext(), mangledName));
 
     // add qubit ID attributes to all the arguments
-    for (uint ii = 0; ii < callOp.args().size(); ++ii) {
-      if (callOp.args()[ii].getType().isa<QubitType>()) {
-        int qId = lookupQubitId(callOp.args()[ii]); // copy qubitId from call
+    for (uint ii = 0; ii < callOp.operands().size(); ++ii) {
+      if (callOp.operands()[ii].getType().isa<QubitType>()) {
+        int qId =
+            lookupQubitId(callOp.operands()[ii]); // copy qubitId from call
         newFunc.setArgAttrs(
             ii, ArrayRef({NamedAttribute(
-                    StringAttr::get(&getContext(), "quir.physicalId"),
+                    StringAttr::get(&getContext(),
+                                    mlir::quir::getPhysicalIdAttrName()),
                     build.getI32IntegerAttr(qId))}));
       }
     }

@@ -21,7 +21,15 @@ class Qubit<int width> : Type<CPred<[{$_self.isa<::mlir::quir::QubitType>() &&
                     int bitwidth = width;
                 }
 
-def AnyCbit : Type<CPred<"$_self.isa<::mlir::quir::CBitType>()">, "CBit">;
+def AnyCbit : Type<Or<[
+                        CPred<"$_self.isa<::mlir::quir::CBitType>()">,
+                        CPred<"$_self.isInteger(1)">
+                      ]>, "CBit">;
+
+def AnyCbitOrSignlessInteger : Type<Or<[
+                        CPred<"$_self.isa<::mlir::quir::CBitType>()">,
+                        CPred<"$_self.isSignlessInteger()">
+                      ]>, "CBitOrInteger">;
 
 // Angle type - an unsigned fixed point number with variable precision, f64 representation
 def AnyAngle : Type<CPred<"$_self.isa<::mlir::quir::AngleType>()">, "Angle">;

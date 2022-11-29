@@ -72,9 +72,9 @@ cx $1, $2;
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=30, unit=Nanoseconds, name=for_0))
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=40, unit=Nanoseconds, name=for_1))
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=50, unit=Nanoseconds, name=for_2))
-// MLIR: [[DURATION0:%.*]] = quir.declare_duration {value = "30ns"} : !quir.duration
-// MLIR: [[DURATION1:%.*]] = quir.declare_duration {value = "40ns"} : !quir.duration
-// MLIR: [[DURATION2:%.*]] = quir.declare_duration {value = "50ns"} : !quir.duration
+// MLIR: [[DURATION0:%.*]] = quir.constant #quir.duration<"30ns" : !quir.duration>
+// MLIR: [[DURATION1:%.*]] = quir.constant #quir.duration<"40ns" : !quir.duration>
+// MLIR: [[DURATION2:%.*]] = quir.constant #quir.duration<"50ns" : !quir.duration>
 duration for_0 = 30ns;
 duration for_1 = 40ns;
 duration for_2 = 50ns;

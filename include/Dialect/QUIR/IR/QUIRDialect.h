@@ -17,6 +17,8 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dialect.h"
 
+#include <set>
+
 #include "Dialect/QUIR/IR/QUIRDialect.h.inc"
 
 #endif // QUIR_QUIRDIALECT_H

@@ -162,7 +162,7 @@ llvm::Error MockSystem::registerTargetPasses() {
 namespace {
 void mockPipelineBuilder(mlir::OpPassManager &pm) {
   pm.addPass(std::make_unique<mlir::quir::SubroutineCloningPass>());
-  pm.addPass(std::make_unique<mlir::quir::RemoveQubitArgsPass>());
+  pm.addPass(std::make_unique<mlir::quir::RemoveQubitOperandsPass>());
   pm.addPass(std::make_unique<mlir::quir::ClassicalOnlyDetectionPass>());
   pm.addPass(std::make_unique<MockQubitLocalizationPass>());
   pm.addPass(std::make_unique<SymbolTableBuildPass>());

@@ -1,6 +1,6 @@
 OPENQASM 3.0;
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
+// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
 // MLIR: quir.declare_variable @x : f32
 // MLIR: quir.declare_variable @y : f32
@@ -21,8 +21,8 @@ OPENQASM 3.0;
 float[32] x = 5.5;
 float[32] y = 5.5;
 
-// MLIR: %1 = quir.use_variable @x : f32
-// MLIR: quir.assign_variable @y : f32 = %1
+// MLIR: [[VAR_X_0:%.*]] = quir.use_variable @x : f32
+// MLIR: quir.assign_variable @y : f32 = [[VAR_X_0]]
 y = x;
 
 // MLIR: %cst_1 = arith.constant 2020.2021 : f64

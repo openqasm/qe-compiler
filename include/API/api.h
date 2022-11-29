@@ -1,6 +1,6 @@
 //===- api.h ----------------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021.
+// (C) Copyright IBM 2021, 2022.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -11,8 +11,17 @@
 #ifndef QSS_COMPILER_LIB_H
 #define QSS_COMPILER_LIB_H
 
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+
 #include <string>
+#include <unordered_map>
 
 int compile(int argc, char const **argv, std::string *outputString);
+
+llvm::Error
+bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
+               llvm::StringRef payloadOutputPath,
+               std::unordered_map<std::string, double> const &parameters);
 
 #endif // QSS_COMPILER_LIB_H

@@ -109,7 +109,7 @@ class DefCalConversionPat : public OpConversionPattern<quir::CallDefCalGateOp> {
       llvm::errs() << "Failed to get any references to system graph qubits";
 
     for (size_t i = 0; i < operands.size(); ++i) {
-      const auto arg = originalOp.args()[i];
+      const auto arg = originalOp.operands()[i];
       if (auto qubitOp = dyn_cast<quir::DeclareQubitOp>(arg.getDefiningOp())) {
         std::shared_ptr<qu::Qubit> qubit;
         for (const auto &q : qubits) {
@@ -200,7 +200,7 @@ public:
     if (!existingOp) {
 
       std::string namingHelpers;
-      for (auto i : originalOp.args())
+      for (auto i : originalOp.operands())
         if (auto j = dyn_cast<quir::DeclareQubitOp>(i.getDefiningOp()))
           namingHelpers += std::to_string(j.id().getValue());
 

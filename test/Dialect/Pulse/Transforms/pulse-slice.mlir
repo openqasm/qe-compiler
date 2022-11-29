@@ -1,5 +1,5 @@
 // RUN: qss-compiler -X=mlir --pulse-slice %s | FileCheck %s
-
+// XFAIL: *
 
 // CHECK:  func @d0
 // CHECK:  func @d1

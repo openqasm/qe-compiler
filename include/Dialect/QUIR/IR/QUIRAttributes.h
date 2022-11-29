@@ -20,9 +20,24 @@
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/DialectImplementation.h"
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/TypeSwitch.h"
 
 #define GET_ATTRDEF_CLASSES
 #include "Dialect/QUIR/IR/QUIRAttributes.h.inc"
+
+namespace mlir::quir {
+static inline llvm::StringRef getInputParameterAttrName() {
+  return "quir.inputParameter";
+}
+static inline llvm::StringRef getPhysicalIdAttrName() {
+  return "quir.physicalId";
+}
+static inline llvm::StringRef getPhysicalIdsAttrName() {
+  return "quir.physicalIds";
+}
+static inline llvm::StringRef getShotLoopAttrName() { return "quir.shotLoop"; }
+static inline llvm::StringRef getNumShotsAttrName() { return "quir.numShots"; }
+} // namespace mlir::quir
 
 #endif // QUIR_QUIRATTRIBUTES_H

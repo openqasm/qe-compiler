@@ -25,6 +25,8 @@
 #include "mlir/Interfaces/InferTypeOpInterface.h"
 #include "mlir/Interfaces/SideEffectInterfaces.h"
 
+#include "llvm/Support/Error.h"
+
 #define GET_OP_CLASSES
 #include "Dialect/Pulse/IR/Pulse.h.inc"
 

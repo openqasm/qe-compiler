@@ -7,9 +7,9 @@ qubit $0;
 
 // For loop.
 // MLIR: %c0_0 = arith.constant 0 : index
-// MLIR: %c4 = arith.constant 4 : index
+// MLIR: %c5 = arith.constant 5 : index
 // MLIR: %c1_1 = arith.constant 1 : index
-// MLIR: scf.for %arg1 = %c0_0 to %c4 step %c1_1 {
+// MLIR: scf.for %arg1 = %c0_0 to %c5 step %c1_1 {
 // AST-PRETTY: ForStatementNode(start=0, end=4,
 for i in [0 : 4] {
     // MLIR: {{.*}} = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
@@ -23,9 +23,9 @@ for i in [0 : 4] {
 }
 
 // MLIR: %c0_2 = arith.constant 0 : index
-// MLIR: %c4_3 = arith.constant 4 : index
+// MLIR: %c5_3 = arith.constant 5 : index
 // MLIR: %c1_4 = arith.constant 1 : index
-// MLIR: scf.for %arg1 = %c0_2 to %c4_3 step %c1_4 {
+// MLIR: scf.for %arg1 = %c0_2 to %c5_3 step %c1_4 {
 // AST-PRETTY: ForStatementNode(start=0, stepping=1, end=4,
 for i in [0 : 1 : 4] {
     // MLIR: {{.*}} = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
@@ -36,9 +36,9 @@ for i in [0 : 1 : 4] {
 }
 
 // MLIR: %c-1 = arith.constant -1 : index
-// MLIR: %c1000_5 = arith.constant 1000 : index
+// MLIR: %c1001 = arith.constant 1001 : index
 // MLIR: %c10 = arith.constant 10 : index
-// MLIR: scf.for %arg1 = %c-1 to %c1000_5 step %c10 {
+// MLIR: scf.for %arg1 = %c-1 to %c1001 step %c10 {
 // AST-PRETTY: ForStatementNode(start=-1, stepping=10, end=1000,
 for i in [-1 : 10 : 1000] {
     // MLIR: {{.*}} = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>

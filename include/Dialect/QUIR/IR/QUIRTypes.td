@@ -11,6 +11,7 @@
 #ifndef QUIR_TYPES
 #define QUIR_TYPES
 
+include "mlir/IR/BuiltinTypeInterfaces.td"
 include "mlir/IR/OpBase.td"
 
 class QUIR_Type<string name, string typeMnemonic, list<Trait> traits = []>
@@ -30,7 +31,7 @@ def QUIR_QubitType : QUIR_Type<"Qubit", "qubit"> {
     let genVerifyDecl = 1;
 }
 
-def QUIR_CBitType : QUIR_Type<"CBit", "cbit"> {
+def QUIR_CBitType : QUIR_Type<"CBit", "cbit", [MemRefElementTypeInterface]> {
     let summary = "Classical bit register with arbitrary width.";
     let description = [{
         CBit types define a single classical bit or a classical bit register

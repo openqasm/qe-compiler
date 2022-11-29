@@ -1,4 +1,5 @@
-//===- RemoveQubitArgs.h - Remove qubit args --------------------*- C++ -*-===//
+//===- RemoveQubitOperands.h - Remove qubit args --------------------*- C++
+//-*-===//
 //
 // (C) Copyright IBM 2021, 2022.
 //
@@ -29,8 +30,8 @@ class Operation;
 } // namespace mlir
 
 namespace mlir::quir {
-struct RemoveQubitArgsPass
-    : public PassWrapper<RemoveQubitArgsPass, OperationPass<>> {
+struct RemoveQubitOperandsPass
+    : public PassWrapper<RemoveQubitOperandsPass, OperationPass<>> {
   auto lookupQubitId(const Value val) -> int;
   void addQubitDeclarations(FuncOp funcOp);
   void processCallOp(Operation *op);

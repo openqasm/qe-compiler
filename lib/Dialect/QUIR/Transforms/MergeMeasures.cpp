@@ -22,6 +22,7 @@
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include <algorithm>
 #include <unordered_set>
 
 using namespace mlir;
@@ -30,8 +31,37 @@ using namespace mlir::quir;
 namespace {
 // This pattern matches on two MeasureOps that are only interspersed by
 // classical non-control flow ops and merges them into one measure op
-struct MeasureAndMeasurePattern : public OpRewritePattern<MeasureOp> {
-  explicit MeasureAndMeasurePattern(MLIRContext *ctx)
+
+static void mergeMeasurements(PatternRewriter &rewriter, MeasureOp measureOp,
+                              MeasureOp nextMeasureOp) {
+  // good to merge
+  std::vector<Type> typeVec;
+  std::vector<Value> valVec;
+  typeVec.reserve(measureOp.getNumResults() + nextMeasureOp.getNumResults());
+  valVec.reserve(measureOp.getNumResults() + nextMeasureOp.getNumResults());
+
+  typeVec.insert(typeVec.end(), measureOp.result_type_begin(),
+                 measureOp.result_type_end());
+  typeVec.insert(typeVec.end(), nextMeasureOp.result_type_begin(),
+                 nextMeasureOp.result_type_end());
+  valVec.insert(valVec.end(), measureOp.qubits().begin(),
+                measureOp.qubits().end());
+  valVec.insert(valVec.end(), nextMeasureOp.qubits().begin(),
+                nextMeasureOp.qubits().end());
+
+  auto mergedOp = rewriter.create<MeasureOp>(
+      measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
+
+  // dice the output so we can specify which results to replace
+  auto iterSep = mergedOp.outs().begin() + measureOp.getNumResults();
+  rewriter.replaceOp(measureOp, ResultRange(mergedOp.outs().begin(), iterSep));
+  rewriter.replaceOp(nextMeasureOp,
+                     ResultRange(iterSep, mergedOp.outs().end()));
+}
+
+struct MeasureAndMeasureLexographicalPattern
+    : public OpRewritePattern<MeasureOp> {
+  explicit MeasureAndMeasureLexographicalPattern(MLIRContext *ctx)
       : OpRewritePattern<MeasureOp>(ctx) {}
 
   LogicalResult matchAndRewrite(MeasureOp measureOp,
@@ -60,49 +90,94 @@ struct MeasureAndMeasurePattern : public OpRewritePattern<MeasureOp> {
     }
 
     // good to merge
-    std::vector<Type> typeVec;
-    std::vector<Value> valVec;
-    typeVec.reserve(measureOp.getNumResults() + nextMeasureOp.getNumResults());
-    valVec.reserve(measureOp.getNumResults() + nextMeasureOp.getNumResults());
+    mergeMeasurements(rewriter, measureOp, nextMeasureOp);
 
-    typeVec.insert(typeVec.end(), measureOp.result_type_begin(),
-                   measureOp.result_type_end());
-    typeVec.insert(typeVec.end(), nextMeasureOp.result_type_begin(),
-                   nextMeasureOp.result_type_end());
-    valVec.insert(valVec.end(), measureOp.qubits().begin(),
-                  measureOp.qubits().end());
-    valVec.insert(valVec.end(), nextMeasureOp.qubits().begin(),
-                  nextMeasureOp.qubits().end());
-
-    auto mergedOp = rewriter.create<MeasureOp>(
-        measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
-
-    // dice the output so we can specify which results to replace
-    auto iterSep = mergedOp.outs().begin() + measureOp.getNumResults();
-    rewriter.replaceOp(measureOp,
-                       ResultRange(mergedOp.outs().begin(), iterSep));
-    rewriter.replaceOp(nextMeasureOp,
-                       ResultRange(iterSep, mergedOp.outs().end()));
     return success();
   } // matchAndRewrite
-};  // struct MeasureAndMeasurePattern
+};  // struct MeasureAndMeasureLexographicalPattern
 } // end anonymous namespace
 
-void MergeMeasuresPass::runOnOperation() {
+void MergeMeasuresLexographicalPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<MeasureAndMeasurePattern>(&getContext());
+  patterns.insert<MeasureAndMeasureLexographicalPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
     signalPassFailure();
 } // runOnOperation
 
-llvm::StringRef MergeMeasuresPass::getArgument() const {
-  return "merge-measures";
+llvm::StringRef MergeMeasuresLexographicalPass::getArgument() const {
+  return "merge-measures-lexographical";
 }
-llvm::StringRef MergeMeasuresPass::getDescription() const {
+llvm::StringRef MergeMeasuresLexographicalPass::getDescription() const {
   return "Merge qubit-parallel measurement operations into a "
-         "single measurement operation";
+         "single measurement operation with lexographicalal ordering";
+}
+
+namespace {
+// This pattern matches on two MeasureOps that are only interspersed by
+// classical non-control flow ops and merges them into one measure op
+struct MeasureAndMeasureTopologicalPattern
+    : public OpRewritePattern<MeasureOp> {
+  explicit MeasureAndMeasureTopologicalPattern(MLIRContext *ctx)
+      : OpRewritePattern<MeasureOp>(ctx) {}
+
+  LogicalResult matchAndRewrite(MeasureOp measureOp,
+                                PatternRewriter &rewriter) const override {
+    // Accumulate qubits in measurement set
+    std::set<uint> currMeasureQubits = measureOp.getOperatedQubits();
+
+    // Find the next measurement operation accumulating qubits along the
+    // topological path if it exists
+    auto [nextMeasureOpt, observedQubits] =
+        QubitOpInterface::getNextQubitOpOfTypeWithQubits<MeasureOp>(measureOp);
+    if (!nextMeasureOpt.hasValue())
+      return failure();
+
+    // If any qubit along path touches the same qubits we cannot merge the next
+    // measurement.
+    currMeasureQubits.insert(observedQubits.begin(), observedQubits.end());
+
+    // found a measure and a measure, now make sure they aren't working on the
+    // same qubit and that we can resolve them both
+    MeasureOp nextMeasureOp = nextMeasureOpt.getValue();
+    auto nextMeasureQubits = nextMeasureOp.getOperatedQubits();
+
+    // If there is an intersection we cannot merge
+    std::set<int> mergeMeasureIntersection;
+    std::set_intersection(currMeasureQubits.begin(), currMeasureQubits.end(),
+                          nextMeasureQubits.begin(), nextMeasureQubits.end(),
+                          std::inserter(mergeMeasureIntersection,
+                                        mergeMeasureIntersection.begin()));
+
+    if (!mergeMeasureIntersection.empty())
+      return failure();
+
+    // good to merge
+    mergeMeasurements(rewriter, measureOp, nextMeasureOp);
+
+    return success();
+  } // matchAndRewrite
+};  // struct MeasureAndMeasureTopologicalPattern
+} // end anonymous namespace
+
+void MergeMeasuresTopologicalPass::runOnOperation() {
+  Operation *moduleOperation = getOperation();
+
+  RewritePatternSet patterns(&getContext());
+  patterns.insert<MeasureAndMeasureTopologicalPattern>(&getContext());
+
+  if (failed(
+          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
+    signalPassFailure();
+} // runOnOperation
+
+llvm::StringRef MergeMeasuresTopologicalPass::getArgument() const {
+  return "merge-measures-topological";
+}
+llvm::StringRef MergeMeasuresTopologicalPass::getDescription() const {
+  return "Merge qubit-parallel measurement operations into a "
+         "single measurement operation with topological ordering";
 }
