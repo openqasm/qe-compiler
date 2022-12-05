@@ -38,7 +38,7 @@ struct VariableEliminationPass
     registry.insert<mlir::memref::MemRefDialect>();
     registry.insert<mlir::AffineDialect>();
   }
-}; // struct LoadEliminationPass
+}; // struct VariableEliminationPass
 
 } // namespace mlir::quir
 
