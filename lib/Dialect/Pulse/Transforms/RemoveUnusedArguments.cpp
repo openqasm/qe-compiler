@@ -16,6 +16,7 @@
 #include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
 
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+
 #include "llvm/Support/Debug.h"
 
 #include <vector>
