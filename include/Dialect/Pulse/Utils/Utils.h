@@ -7,16 +7,17 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file declares some utility functions for Pulse passes
-//
+///
+///  This file declares some utility functions for Pulse passes
+///
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Types.h"
 #include "mlir/IR/Value.h"
-#include <llvm/ADT/StringRef.h>
+
+#include "llvm/ADT/StringRef.h"
 
 #include <vector>
 

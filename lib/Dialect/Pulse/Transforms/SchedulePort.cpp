@@ -352,8 +352,5 @@ llvm::StringRef SchedulePortPass::getDescription() const {
 }
 
 std::string SchedulePortPass::indent() {
-  std::string str = "";
-  for (int cnt = 0; cnt < debugIndentCount; cnt++)
-    str += " ";
-  return str;
+  return {std::string(debugIndentCount, ' ')};
 }
