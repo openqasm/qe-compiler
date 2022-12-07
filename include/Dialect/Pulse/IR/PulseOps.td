@@ -282,12 +282,12 @@ def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed]> {
         Example:
 
         ```mlir
-        pulse.mix_frame(%port, %frame) {signal_type = "type of the channel"} : (!pulse.port, !pulse.frame) -> (!port.mixed_frame)
+        pulse.mix_frame(%port, %frame) {signalType = "type of the channel"} : (!pulse.port, !pulse.frame) -> (!port.mixed_frame)
 
         ```
     }];
 
-    let arguments = (ins StrAttr:$signal_type, Pulse_PortType:$port, Pulse_FrameType:$frame);
+    let arguments = (ins StrAttr:$signalType, Pulse_PortType:$port, Pulse_FrameType:$frame);
     let results = (outs Pulse_MixedFrameType:$out);
 }
 

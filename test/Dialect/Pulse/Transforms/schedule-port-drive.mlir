@@ -22,11 +22,11 @@ module @drive_0 attributes {quir.nodeId = 0 : i32, quir.nodeType = "drive", quir
     pulse.delay(%arg3, %c7_i32) : (!pulse.mixed_frame, i32)
     pulse.play(%arg3, %arg1) : (!pulse.mixed_frame, !pulse.waveform)
     pulse.delay(%arg3, %c3_i32) : (!pulse.mixed_frame, i32)
-    // CHECK-NOT: pulse.delay {timepoint = 0 : i64}(%[[ARG2]], %{{.*}}) : (!pulse.mixed_frame, i32)
-    // CHECK: pulse.play {timepoint = 2 : i64}(%[[ARG2]], %[[ARG0]]) : (!pulse.mixed_frame, !pulse.waveform)
-    // CHECK-NOT: pulse.delay {timepoint = 5 : i64}(%[[ARG3]], %{{.*}}) : (!pulse.mixed_frame, i32)
-    // CHECK: pulse.play {timepoint = 7 : i64}(%[[ARG3]], %[[ARG1]]) : (!pulse.mixed_frame, !pulse.waveform)
-    // CHECK: pulse.return {timepoint = 12 : i64} %false : i1
+    // CHECK-NOT: pulse.delay {pulse.timepoint = 0 : i64}(%[[ARG2]], %{{.*}}) : (!pulse.mixed_frame, i32)
+    // CHECK: pulse.play {pulse.timepoint = 2 : i64}(%[[ARG2]], %[[ARG0]]) : (!pulse.mixed_frame, !pulse.waveform)
+    // CHECK-NOT: pulse.delay {pulse.timepoint = 5 : i64}(%[[ARG3]], %{{.*}}) : (!pulse.mixed_frame, i32)
+    // CHECK: pulse.play {pulse.timepoint = 7 : i64}(%[[ARG3]], %[[ARG1]]) : (!pulse.mixed_frame, !pulse.waveform)
+    // CHECK: pulse.return {pulse.timepoint = 12 : i64} %false : i1
     pulse.return %false : i1
   }
   func @main() -> i32 attributes {quir.classicalOnly = false} {
@@ -36,9 +36,9 @@ module @drive_0 attributes {quir.nodeId = 0 : i32, quir.nodeType = "drive", quir
     %1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
     %2 = "pulse.create_port"() {uid = "Q0"} : () -> !pulse.port
     %3 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %4 = "pulse.mix_frame"(%2, %3) {signal_type = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %4 = "pulse.mix_frame"(%2, %3) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
     %5 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %6 = "pulse.mix_frame"(%2, %5) {signal_type = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %6 = "pulse.mix_frame"(%2, %5) {signalType = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
     %7 = pulse.create_waveform dense<[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0] ]> : tensor<3x2xf64> -> !pulse.waveform
     %8 = pulse.create_waveform dense<[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0] ]> : tensor<5x2xf64> -> !pulse.waveform
     %9 = pulse.call_sequence @seq_0(%7, %8, %4, %6) : (!pulse.waveform, !pulse.waveform, !pulse.mixed_frame, !pulse.mixed_frame) -> i1

@@ -34,8 +34,6 @@ bool isPlayOpForDrive(Operation *op,
 
 int getTimepoint(Operation *op);
 
-static llvm::StringRef timepointAttrName = "timepoint";
-
 template <typename Func>
 void iterateByTimepoint(std::vector<Operation *> &ops, Func func) {
   // template function for iterating over a list of operations by timepoint
