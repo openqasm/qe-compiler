@@ -283,11 +283,17 @@ auto parseQasmFile(QASM::ASTParser &parser, QASM::ASTRoot *&root)
   for (const auto &dirStr : includeDirs)
     QASM::QasmPreprocessor::Instance().AddIncludePath(dirStr);
 
-  if (directInput) {
-    root = parser.ParseAST(inputSource);
-  } else {
-    QASM::QasmPreprocessor::Instance().SetTranslationUnit(inputSource);
-    root = parser.ParseAST();
+  try {
+    if (directInput) {
+      root = parser.ParseAST(inputSource);
+    } else {
+      QASM::QasmPreprocessor::Instance().SetTranslationUnit(inputSource);
+      root = parser.ParseAST();
+    }
+  } catch (std::exception &e) {
+    llvm::errs() << "Exception while parsing OpenQASM 3 input: " << e.what()
+                 << "\n";
+    return mlir::failure();
   }
 
   if (root)
@@ -481,6 +487,43 @@ static llvm::Error compile_(int argc, char const **argv,
   if (inputType == InputType::QASM) {
     QASM::ASTRoot *root = nullptr;
     QASM::ASTParser parser;
+    QASM::QasmDiagnosticEmitter::SetHandler(
+        [](const std::string &Exp, const std::string &Msg,
+           QASM::QasmDiagnosticEmitter::DiagLevel DL) {
+          std::string level = "unknown";
+
+          switch (DL) {
+          case QASM::QasmDiagnosticEmitter::DiagLevel::Error:
+            level = "Error";
+            break;
+
+          case QASM::QasmDiagnosticEmitter::DiagLevel::ICE:
+            level = "ICE";
+            break;
+
+          case QASM::QasmDiagnosticEmitter::DiagLevel::Warning:
+            level = "Warning";
+            break;
+
+          case QASM::QasmDiagnosticEmitter::DiagLevel::Info:
+            level = "Info";
+            break;
+
+          case QASM::QasmDiagnosticEmitter::DiagLevel::Status:
+            level = "Status";
+            break;
+          }
+
+          llvm::errs() << level << " while parsing OpenQASM 3 input\n"
+                       << Exp << " " << Msg << "\n";
+
+          if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
+              DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
+            // give up parsing after errors right away (TODO update to recent
+            // qss-qasm to support continuing)
+            throw std::runtime_error("Failure parsing");
+          }
+        });
 
     if (failed(parseQasmFile(parser, root)))
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
