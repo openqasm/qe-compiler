@@ -361,7 +361,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTElseStatementNode *node) {
-  // This is processed with the IfStatementNode.
+  // This is processed with the ASTIfStatementNode.
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
@@ -443,13 +443,28 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
-  reportError(node, mlir::DiagnosticSeverity::Error)
-      << "While loops are not yet supported.";
+  const ASTWhileLoopNode *loop = node->GetLoop();
+  Location loc = getLocation(node);
+
+  auto whileOp =
+      builder.create<scf::WhileOp>(loc, TypeRange({}), ValueRange({}));
+  builder.createBlock(&whileOp.getBefore());
+
+  const ASTExpressionNode *exprNode = loop->GetExpression();
+  Value condition = visitAndGetExpressionValue(exprNode);
+
+  builder.create<scf::ConditionOp>(loc, condition, ValueRange({}));
+
+  builder.createBlock(&whileOp.getAfter());
+
+  const ASTStatementList &statementList = loop->GetStatementList();
+  BaseQASM3Visitor::visit(&statementList);
+
+  builder.create<scf::YieldOp>(loc);
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTWhileLoopNode *node) {
-  reportError(node, mlir::DiagnosticSeverity::Error)
-      << "While loops are not yet supported.";
+  // This is processed with the ASTWhileStatementNode.
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTReturnStatementNode *node) {
