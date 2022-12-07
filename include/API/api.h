@@ -11,8 +11,6 @@
 #ifndef QSS_COMPILER_LIB_H
 #define QSS_COMPILER_LIB_H
 
-#include "Diagnostic.h"
-
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
@@ -20,9 +18,7 @@
 #include <string>
 #include <unordered_map>
 
-using DiagnosticCallback = std::function<void(const Diagnostic&)>;
-
-int compile(int argc, char const **argv, std::string *outputString, DiagnosticCallback onDiagnostic);
+int compile(int argc, char const **argv, std::string *outputString);
 
 llvm::Error
 bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,

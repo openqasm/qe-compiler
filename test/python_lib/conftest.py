@@ -41,10 +41,15 @@ def example_qasm3_tmpfile(tmp_path, example_qasm3_str):
 
 @pytest.fixture
 def example_invalid_qasm3_str():
-    return """FOOBAR 3.0;
+    return """OPENQASM 4.0;
     crambit $0;
     fit c0 = ~0;
     """
+
+
+@pytest.fixture
+def example_qasm3_invalid_tmpfile(tmp_path, example_invalid_qasm3_str):
+    return __create_tmpfile(tmp_path, example_invalid_qasm3_str)
 
 
 @pytest.fixture

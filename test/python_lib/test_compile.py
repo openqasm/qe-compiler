@@ -7,12 +7,14 @@
 """
 Unit tests for the compiler API.
 """
+import pytest
 import qss_compiler
 from qss_compiler import (
     compile_file,
     compile_str,
     InputType,
     OutputType,
+    QSSCompilationFailure,
 )
 
 
@@ -73,3 +75,25 @@ def test_compile_str_to_mlir(example_qasm3_str):
         output_file=None,
     )
     check_mlir_string(mlir)
+
+def test_compile_invalid_file(example_invalid_qasm3_tmpfile):
+    """Test that we can attempt to compile invalid OpenQASM 3 and receive an
+    error"""
+
+    with pytest.raises(QSSCompilationFailure):
+        compile_file(example_invalid_qasm3_tmpfile,
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+        )
+
+def test_compile_invalid_str(example_invalid_qasm3_str):
+    """Test that we can attempt to compile invalid OpenQASM 3 and receive an
+    error"""
+
+    with pytest.raises(QSSCompilationFailure):
+        compile_str(example_invalid_qasm3_str,
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+        )
