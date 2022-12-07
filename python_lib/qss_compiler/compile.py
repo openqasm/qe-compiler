@@ -248,6 +248,9 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             else:
                 output = None
         except EOFError:
+            # make sure that child process terminates
+            childproc.kill()
+            childproc.join()
             raise QSSCompilerError("compile process exited before delivering output.")
 
         childproc.join()
