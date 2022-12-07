@@ -514,19 +514,15 @@ static llvm::Error compile_(int argc, char const **argv,
             break;
           }
 
+          llvm::errs() << level << " while parsing OpenQASM 3 input\n"
+                       << Exp << " " << Msg << "\n";
+
           if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
               DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
-
-            llvm::errs() << level << " while parsing OpenQASM 3 input\n"
-                         << Exp << " " << Msg << "\n";
-            // give up parsing right away (TODO update to recent qss-qasm to
-            // support continuing)
+            // give up parsing after errors right away (TODO update to recent
+            // qss-qasm to support continuing)
             throw std::runtime_error("Failure parsing");
           }
-
-          // Warning or below:
-          llvm::outs() << level << " while parsing OpenQASM 3 input\n"
-                       << Exp << " " << Msg << "\n";
         });
 
     if (failed(parseQasmFile(parser, root)))
