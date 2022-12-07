@@ -147,6 +147,9 @@ static llvm::cl::opt<bool>
                      llvm::cl::desc("Write the payload in plaintext"),
                      llvm::cl::init(false), llvm::cl::cat(qsscCat));
 
+// For user-provided diagnostic callback function.
+static DiagnosticCallback onDiagnosticCallback = [](const ::Diagnostic&) {};
+
 namespace {
 enum InputType { NONE, QASM, MLIR, QOBJ };
 } // anonymous namespace
@@ -294,6 +297,19 @@ auto parseQasmFile(QASM::ASTParser &parser, QASM::ASTRoot *&root)
     return mlir::success();
   return mlir::failure();
 } // parseQasmFile()
+
+void onQasmDiagnostc(const std::string& Exp,
+                     const std::string& Msg,
+                     QASM::QasmDiagnosticEmitter::DiagLevel DL) {
+    ::Diagnostic::Kind kind = ::Diagnostic::Error;
+
+    onDiagnosticCallback(
+            ::Diagnostic {
+                kind,
+                SourceLocation {"", 0, 0},
+                Msg
+            });
+}
 
 llvm::Error registerPasses() {
   // TODO: Register standalone passes here.
@@ -481,6 +497,7 @@ static llvm::Error compile_(int argc, char const **argv,
   if (inputType == InputType::QASM) {
     QASM::ASTRoot *root = nullptr;
     QASM::ASTParser parser;
+    QASM::QasmDiagnosticEmitter::SetHandler(onQasmDiagnostc);
 
     if (failed(parseQasmFile(parser, root)))
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
@@ -624,7 +641,9 @@ static llvm::Error compile_(int argc, char const **argv,
   return llvm::Error::success();
 }
 
-int compile(int argc, char const **argv, std::string *outputString) {
+int compile(int argc, char const **argv, std::string *outputString, DiagnosticCallback onDiagnostic) {
+  onDiagnosticCallback = std::move(onDiagnostic);
+
   if (auto err = compile_(argc, argv, outputString)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;

@@ -10,6 +10,10 @@
 
 #include "API/api.h"
 
+void on_diagnostic(const Diagnostic& diag) {
+
+}
+
 auto main(int argc, const char **argv) -> int {
-  return compile(argc, argv, nullptr);
+  return compile(argc, argv, nullptr, on_diagnostic);
 }
