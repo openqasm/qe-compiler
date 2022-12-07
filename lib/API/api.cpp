@@ -490,11 +490,43 @@ static llvm::Error compile_(int argc, char const **argv,
     QASM::QasmDiagnosticEmitter::SetHandler(
         [](const std::string &Exp, const std::string &Msg,
            QASM::QasmDiagnosticEmitter::DiagLevel DL) {
-          llvm::errs() << "Failure parsing OpenQASM 3 input\n"
+          std::string level = "unknown";
+
+          switch (DL) {
+          case QASM::QasmDiagnosticEmitter::DiagLevel::Error:
+            level = "Error";
+            break;
+
+          case QASM::QasmDiagnosticEmitter::DiagLevel::ICE:
+            level = "ICE";
+            break;
+
+          case QASM::QasmDiagnosticEmitter::DiagLevel::Warning:
+            level = "Warning";
+            break;
+
+          case QASM::QasmDiagnosticEmitter::DiagLevel::Info:
+            level = "Info";
+            break;
+
+          case QASM::QasmDiagnosticEmitter::DiagLevel::Status:
+            level = "Status";
+            break;
+          }
+
+          if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
+              DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
+
+            llvm::errs() << level << " while parsing OpenQASM 3 input\n"
+                         << Exp << " " << Msg << "\n";
+            // give up parsing right away (TODO update to recent qss-qasm to
+            // support continuing)
+            throw std::runtime_error("Failure parsing");
+          }
+
+          // Warning or below:
+          llvm::outs() << level << " while parsing OpenQASM 3 input\n"
                        << Exp << " " << Msg << "\n";
-          // give up parsing right away (TODO update to recent qss-qasm to
-          // support continuing)
-          throw std::runtime_error("Failure parsing");
         });
 
     if (failed(parseQasmFile(parser, root)))
