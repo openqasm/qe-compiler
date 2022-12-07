@@ -136,7 +136,7 @@ uint SchedulePortPass::processCallee(Operation *module,
   // TODO: check for a better way to do this with getTerminator or back()
   sequenceOp->walk([&](ReturnOp op) {
     IntegerAttr timepointAttr = builder.getI64IntegerAttr(maxTime);
-    op->setAttr(timepointAttrName, timepointAttr);
+    op->setAttr("pulse.timepoint", timepointAttr);
   });
 
   INDENT_DEBUG("==== processCallee - end ===============\n");
@@ -229,7 +229,7 @@ SchedulePortPass::opVec_t SchedulePortPass::buildOpsList(
 
       // set attribute on op with current timepoint
       IntegerAttr timepointAttr = builder.getI64IntegerAttr(currentTimepoint);
-      op->setAttr(timepointAttrName, timepointAttr);
+      op->setAttr("pulse.timepoint", timepointAttr);
 
       // push op on vector to be sorted
       ops.push_back(op);
@@ -254,7 +254,7 @@ SchedulePortPass::opVec_t SchedulePortPass::buildOpsList(
         auto newDelay =
             builder.create<DelayOp>(op->getLoc(), target, mergeConstant);
         IntegerAttr timepointAttr = builder.getI64IntegerAttr(currentTimepoint);
-        newDelay->setAttr(timepointAttrName, timepointAttr);
+        newDelay->setAttr("pulse.timepoint", timepointAttr);
         ops.push_back(newDelay);
       }
     }

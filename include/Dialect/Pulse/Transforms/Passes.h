@@ -7,8 +7,7 @@
 // that they have been altered from the originals.
 //===----------------------------------------------------------------------===//
 ///
-///  This file declares defines functions for registering the core Pulse IR
-///  passes.
+///  This file declares functions for registering the core Pulse IR passes.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -17,13 +16,9 @@
 
 #include "Conversion/QUIRToPulse/QUIRToPulse.h"
 #include "Dialect/Pulse/Transforms/ClassicalOnlyDetection.h"
-#include "Dialect/Pulse/Transforms/InlineRegion.h"
 #include "Dialect/Pulse/Transforms/MergeDelays.h"
-#include "Dialect/Pulse/Transforms/PortGroupPrune.h"
 #include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
 #include "Dialect/Pulse/Transforms/SchedulePort.h"
-#include "Dialect/Pulse/Transforms/SlicePorts.h"
-#include "Dialect/Pulse/Transforms/SystemCreation.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Transforms/Passes.h"

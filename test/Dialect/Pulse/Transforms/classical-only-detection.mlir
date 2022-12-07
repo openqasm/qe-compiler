@@ -54,7 +54,7 @@ func @subroutine2 () {
     %1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
     %2 = "pulse.create_port"() {uid = "Q0"} : () -> !pulse.port
     %3 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %4 = "pulse.mix_frame"(%2, %3) {signal_type = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %4 = "pulse.mix_frame"(%2, %3) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
     %5 = pulse.create_waveform dense<[[0.0, 1.0]]> : tensor<1x2xf64> -> !pulse.waveform
     %zero = arith.constant 0.0 : f64
     %one = arith.constant 1.0 : f64

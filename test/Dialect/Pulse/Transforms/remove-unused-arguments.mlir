@@ -5,9 +5,9 @@ func @main() -> i32 {
     %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<20>>
     %1 = "pulse.create_port"() {uid = "Q0"} : () -> !pulse.port
     %2 = pulse.create_frame(%0, %cst, %angle) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %3 = "pulse.mix_frame"(%1, %2) {signal_type = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %3 = "pulse.mix_frame"(%1, %2) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
     %4 = pulse.create_frame(%0, %cst, %angle) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %5 = "pulse.mix_frame"(%1, %4) {signal_type = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %5 = "pulse.mix_frame"(%1, %4) {signalType = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
 
 
     // CHECK-NOT: %{{.}}= "pulse.create_port"() {uid = "Q1"} : () -> !pulse.port

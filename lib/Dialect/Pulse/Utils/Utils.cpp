@@ -33,14 +33,14 @@ bool isPlayOpForDrive(Operation *op,
   auto mixFrameOp = callSequenceOp.getOperand(mixFrameArgIndex)
                         .getDefiningOp<mlir::pulse::MixFrameOp>();
 
-  if (mixFrameOp.signal_type().str() == "drive")
+  if (mixFrameOp.signalType().str() == "drive")
     return true;
 
   return false;
 }
 
 int getTimepoint(Operation *op) {
-  return op->getAttrOfType<IntegerAttr>(timepointAttrName).getInt();
+  return op->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
 }
 
 } // end namespace mlir::pulse

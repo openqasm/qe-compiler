@@ -7,10 +7,10 @@ func @main() -> i32 {
     // CHECK : %c0_i32 = arith.constant 0 : i32
     %1 = "pulse.create_port"() {uid = "Q0"} : () -> !pulse.port
     %2 = pulse.create_frame(%0, %cst, %angle) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %3 = "pulse.mix_frame"(%1, %2) {signal_type = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %3 = "pulse.mix_frame"(%1, %2) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
     %4 = pulse.create_frame(%0, %cst, %angle) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %5 = "pulse.mix_frame"(%1, %4) {signal_type = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    // CHECK: %{{.}} = "pulse.mix_frame"(%{{.}}, %{{.}}) {signal_type = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %5 = "pulse.mix_frame"(%1, %4) {signalType = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    // CHECK: %{{.}} = "pulse.mix_frame"(%{{.}}, %{{.}}) {signalType = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
     // CHECK-NOT: %c5_i32 = arith.constant 5 : i32
     // CHECK-NOT: %c10_i32 = arith.constant 10 : i32
     // CHECK-NOT: %c15_i32 = arith.constant 10 : i32

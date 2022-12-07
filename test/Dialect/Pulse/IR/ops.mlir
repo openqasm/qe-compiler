@@ -16,8 +16,8 @@ func @main () {
     %f0 = "pulse.create_frame"(%amp, %freq, %phase) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
     // CHECK: %[[F0:.*]] = pulse.create_frame(%{{.*}}, %{{.*}}, %{{.*}}) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
 
-    %mf0 = "pulse.mix_frame"(%d0, %f0) {signal_type = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    // CHECK: %[[MF0:.*]] = "pulse.mix_frame"(%[[D0]], %[[F0]]) {signal_type = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %mf0 = "pulse.mix_frame"(%d0, %f0) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    // CHECK: %[[MF0:.*]] = "pulse.mix_frame"(%[[D0]], %[[F0]]) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
 
     %param_amp_i = arith.constant 0.10086211860780928 : f64
     %param_amp_j = arith.constant 0.0012978777572167797 : f64
@@ -53,8 +53,8 @@ pulse.sequence @test_pulse_ops (%d0: !pulse.port, %m0: !pulse.port, %f0: !pulse.
     %kernel_waveform = pulse.create_waveform dense<[[0.0, 0.5], [0.5, 0.5], [0.5, 0.0]]> : tensor<3x2xf64> -> !pulse.waveform
     // CHECK %[[KERNELWAVEFORM:.*]] = pulse.create_waveform dense<[[0.000000e+00, 5.000000e-01], [5.000000e-01, 5.000000e-01], [5.000000e-01, 0.000000e+00]]> : tensor<3x2xf64> -> !pulse.waveform
 
-    %mf1 = "pulse.mix_frame"(%d0, %f0) {signal_type = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    // CHECK: %{{.*}}   = "pulse.mix_frame"(%[[ARG0]], %[[ARG2]]) {signal_type = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %mf1 = "pulse.mix_frame"(%d0, %f0) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    // CHECK: %{{.*}}   = "pulse.mix_frame"(%[[ARG0]], %[[ARG2]]) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
 
     %param_amp_i = arith.constant 0.10086211860780928 : f64
     %param_amp_j = arith.constant 0.0012978777572167797 : f64
