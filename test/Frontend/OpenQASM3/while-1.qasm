@@ -7,18 +7,18 @@ gate h q {
 }
 
 qubit $0;
-int n = 5;
+int n = 1;
 
 bit is_excited;
 
-// AST-PRETTY: WhileStatement(condition=BinaryOpNode(type=ASTOpTypeGT, left=IdentifierNode(name=n, bits=32), right=IntNode(signed=true, value=0, bits=32))
+// AST-PRETTY: WhileStatement(condition=BinaryOpNode(type=ASTOpTypeCompNeq, left=IdentifierNode(name=n, bits=32), right=IntNode(signed=true, value=0, bits=32))
 // MLIR: scf.while : () -> () {
 // MLIR:     %2 = quir.use_variable @n : i32
 // MLIR:     %c0_i32_0 = arith.constant 0 : i32
-// MLIR:     %3 = arith.cmpi sgt, %2, %c0_i32_0 : i32
+// MLIR:     %3 = arith.cmpi ne, %2, %c0_i32_0 : i32
 // MLIR:     scf.condition(%3)
 // MLIR: } do {
-while (n > 0) {
+while (n != 0) {
     // AST-PRETTY: statements=
     // AST-PRETTY: HGateOpNode(params=[], qubits=[], qcparams=[$0])
     // MLIR: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
@@ -39,5 +39,9 @@ while (n > 0) {
     }
     // error: Binary operation ASTOpTypeSub not supported yet.
     // n = n - 1;
+    // MLIR: %c0_i32_0 = arith.constant 0 : i32
+    // MLIR: quir.assign_variable @n : i32 = %c0_i32_0
+    n = 0;
+    // MLIR: scf.yield
 }
 // AST-PRETTY: )
