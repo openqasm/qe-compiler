@@ -32,10 +32,10 @@ while (n != 0) {
     // MLIR: scf.if %4 {
     if (is_excited) {
         // MLIR:     quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-        // MLIR:     %cst_0 = constant unit
+        // MLIR:     %cst_1 = constant unit
         // MLIR: }
-        // MLIR: scf.yield
         h $0;
+        // MLIR: scf.yield
     }
     // error: Binary operation ASTOpTypeSub not supported yet.
     // n = n - 1;
