@@ -35,13 +35,12 @@ while (n != 0) {
         // MLIR:     %cst_1 = constant unit
         // MLIR: }
         h $0;
-        // MLIR: scf.yield
     }
     // error: Binary operation ASTOpTypeSub not supported yet.
     // n = n - 1;
     // MLIR: %c0_i32_0 = arith.constant 0 : i32
     // MLIR: quir.assign_variable @n : i32 = %c0_i32_0
-    n = 0;
+    n = 0;  // workaround for n = n - 1
     // MLIR: scf.yield
 }
 // AST-PRETTY: )
