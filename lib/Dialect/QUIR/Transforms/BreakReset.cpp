@@ -60,7 +60,7 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
 
       auto measureOp = rewriter.create<MeasureOp>(
           resetOp.getLoc(), TypeRange(typeVec), resetOp.qubits());
-      measureOp->setAttr(llvm::StringRef("quir.noReport"),
+      measureOp->setAttr(llvm::StringRef("quir.noReportOuroboros"),
                          rewriter.getUnitAttr());
 
       size_t i = 0;

@@ -17,7 +17,7 @@ func @main() {
 // DELAYITER-NOT: quir.reset
   quir.reset %1, %2, %3 : !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>
 
-// CHECK: [[MEASUREMENT:%.*]]:3 = quir.measure(%0, %1, %2) {quir.noReport} : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1)
+// CHECK: [[MEASUREMENT:%.*]]:3 = quir.measure(%0, %1, %2) {quir.noReportOuroboros} : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1)
 // CHECK: scf.if [[MEASUREMENT]]#0 {
 // CHECK:   quir.call_gate @x([[QUBIT0]]) : (!quir.qubit<1>) -> ()
 // CHECK: }
