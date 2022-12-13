@@ -24,10 +24,4 @@ def SequenceAllowed : NativeOpTrait<"SequenceAllowed">{
     let cppNamespace= "::mlir::pulse";
 }
 
-/// Operation is a required to be within a real-time scheduled pulse.sequence
-/// SequenceRequired ops MUST be located within a sequence
-def SequenceRequired : NativeOpTrait<"SequenceRequired">{
-    let cppNamespace= "::mlir::pulse";
-}
-
 #endif // PULSE_TRAITS

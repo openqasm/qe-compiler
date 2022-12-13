@@ -34,7 +34,6 @@ def PulseDialect : Dialect {
 
 class Pulse_Op<string mnemonic, list<Trait> traits = []> :
         Op<PulseDialect, mnemonic, traits> {
-  let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
 include "PulseTypes.td"
