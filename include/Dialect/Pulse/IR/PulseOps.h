@@ -33,13 +33,13 @@
 namespace mlir::pulse {
 
 // define SequenceRequired::verifyTrait here rather than in PulseTraits.h
-// in order to prevent circular header dependencies 
+// in order to prevent circular header dependencies
 template <typename ConcreteType>
 LogicalResult SequenceRequired<ConcreteType>::verifyTrait(Operation *op) {
-    if (isa<SequenceOp>(op->getParentOp()))
-        return success();
-    return op->emitOpError() << "expects parent op '"
-                             << SequenceOp::getOperationName() << "'";
+  if (isa<SequenceOp>(op->getParentOp()))
+    return success();
+  return op->emitOpError() << "expects parent op '"
+                           << SequenceOp::getOperationName() << "'";
 }
 
 } // namespace mlir::pulse

@@ -15,7 +15,6 @@
 #ifndef PULSE_PULSETRAITS_H
 #define PULSE_PULSETRAITS_H
 
-
 #include "mlir/IR/OpDefinition.h"
 
 //===----------------------------------------------------------------------===//
@@ -29,10 +28,10 @@ class SequenceAllowed
     : public mlir::OpTrait::TraitBase<ConcreteType, SequenceAllowed> {};
 
 template <typename ConcreteType>
-class SequenceRequired 
+class SequenceRequired
     : public mlir::OpTrait::TraitBase<ConcreteType, SequenceRequired> {
 public:
-   static LogicalResult verifyTrait(Operation *op); 
+  static LogicalResult verifyTrait(Operation *op);
 };
 
 } // namespace mlir::pulse
