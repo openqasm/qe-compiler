@@ -461,6 +461,7 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
   BaseQASM3Visitor::visit(&statementList);
 
   builder.create<scf::YieldOp>(loc);
+  builder.setInsertionPointAfter(whileOp);
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTWhileLoopNode *node) {
