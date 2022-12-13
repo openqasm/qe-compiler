@@ -332,7 +332,8 @@ static void printVersion(llvm::raw_ostream &out) {
 }
 
 static llvm::Error compile_(int argc, char const **argv,
-                            std::string *outputString) {
+                            std::string *outputString,
+                            qssc::DiagnosticCallback *diagnosticCb) {
   llvm::InitLLVM y(argc, argv);
 
   if (auto err = registerPasses())
@@ -447,7 +448,7 @@ static llvm::Error compile_(int argc, char const **argv,
     if (auto frontendError = qssc::frontend::openqasm3::parse(
             inputSource, !directInput, emitAction == Action::DumpAST,
             emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
-            moduleOp))
+            moduleOp, diagnosticCb))
       return frontendError;
 
     if (emitAction < Action::DumpMLIR)
@@ -546,8 +547,9 @@ static llvm::Error compile_(int argc, char const **argv,
   return llvm::Error::success();
 }
 
-int compile(int argc, char const **argv, std::string *outputString) {
-  if (auto err = compile_(argc, argv, outputString)) {
+int qssc::compile(int argc, char const **argv, std::string *outputString,
+                  DiagnosticCallback *diagnosticCb) {
+  if (auto err = compile_(argc, argv, outputString, diagnosticCb)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;
   }
@@ -555,10 +557,10 @@ int compile(int argc, char const **argv, std::string *outputString) {
   return 0;
 }
 
-llvm::Error
-bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
-               llvm::StringRef payloadOutputPath,
-               std::unordered_map<std::string, double> const &parameters) {
+llvm::Error qssc::bindParameters(
+    llvm::StringRef target, llvm::StringRef moduleInputPath,
+    llvm::StringRef payloadOutputPath,
+    std::unordered_map<std::string, double> const &parameters) {
 
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload
@@ -573,4 +575,18 @@ bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
   // TODO actually update parameters, tbd in later commits.
 
   return llvm::Error::success();
+}
+
+std::string
+qssc::Diagnostic::getErrorForCategory(qssc::ErrorCategory category) {
+  using namespace qssc;
+  switch (category) {
+  case ErrorCategory::OpenQASM3ParseFailure:
+    return "OpenQASM 3 parse error";
+
+  case ErrorCategory::UncategorizedError:
+    return "Compilation failure";
+  }
+
+  llvm_unreachable("unhandled category");
 }

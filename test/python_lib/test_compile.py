@@ -12,6 +12,7 @@ import qss_compiler
 from qss_compiler import (
     compile_file,
     compile_str,
+    ErrorCategory,
     InputType,
     OutputType,
     QSSCompilationFailure,
@@ -94,10 +95,13 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     """Test that we can attempt to compile invalid OpenQASM 3 and receive an
     error"""
 
-    with pytest.raises(QSSCompilationFailure):
+    with pytest.raises(QSSCompilationFailure) as compfail:
         compile_str(
             example_invalid_qasm3_str,
             input_type=InputType.QASM3,
             output_type=OutputType.MLIR,
             output_file=None,
         )
+    assert compfail.value.severity == "Error"
+    assert compfail.value.error_category == ErrorCategory.OpenQASM3ParseFailure.name
+    assert compfail.value.error_label == "OpenQASM 3 parse error"

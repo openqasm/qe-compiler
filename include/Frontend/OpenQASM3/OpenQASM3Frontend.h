@@ -16,6 +16,8 @@
 #ifndef OPENQASM3_FRONTEND_H
 #define OPENQASM3_FRONTEND_H
 
+#include "API/error.h"
+
 #include "mlir/IR/BuiltinOps.h"
 
 #include "llvm/Support/Error.h"
@@ -35,7 +37,7 @@ namespace qssc::frontend::openqasm3 {
 /// otherwise
 llvm::Error parse(std::string const &source, bool sourceIsFilename,
                   bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
-                  mlir::ModuleOp &newModule);
+                  mlir::ModuleOp &newModule, DiagnosticCallback *diagnosticCb);
 
 }; // namespace qssc::frontend::openqasm3
 

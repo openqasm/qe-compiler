@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2021, 2022.
+# (C) Copyright IBM 2021, 2023.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -67,6 +67,30 @@ class QSSCompilerError(Exception):
 
 class QSSCompilationFailure(Exception):
     """Raised on compilation failure."""
+
+    def __init__(
+        self,
+        severity="Error",
+        error_category="UncategorizedError",
+        error_label="Compilation failure",
+        message="Internal compilation failure.",
+    ):
+        self.severity = severity
+        self.error_category = error_category
+        self.error_label = error_label
+        self.message = message
+
+    def get_severity(self):
+        return self.severity
+
+    def get_error_category(self):
+        return self.error_category
+
+    def get_error_label(self):
+        return self.error_label
+
+    def get_message(self):
+        return self.message
 
 
 class InputType(Enum):
@@ -179,6 +203,7 @@ class _CompilerStatus:
     """Internal compiler result status dataclass."""
 
     success: bool
+    diagnostics: List
 
 
 def _compile_child_backend(
@@ -200,9 +225,9 @@ def _compile_child_backend(
     with importlib_resources.path("qss_compiler", "_version.py") as version_py_path:
         resources_path = version_py_path.parent / "resources"
         os_environ["QSSC_RESOURCES"] = str(resources_path)
-        success, output = _compile_with_args(args, output_as_return)
+        success, output, diagnostics = _compile_with_args(args, output_as_return)
 
-    status = _CompilerStatus(success)
+    status = _CompilerStatus(success, diagnostics)
     if output_as_return:
         return status, output
     else:
@@ -264,7 +289,19 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             )
 
         if not status.success:
-            raise QSSCompilationFailure("Failure during compilation.")
+            if not hasattr(status, "diagnostics"):
+                raise QSSCompilerError(
+                    "compile process indicated failure but failed to return diagnostics information"
+                )
+
+            if len(status.diagnostics) == 0:
+                raise QSSCompilationFailure()
+
+            # For now, report the first diagnostic as an exception
+            diag = status.diagnostics[0]
+            raise QSSCompilationFailure(
+                diag.severity.name, diag.category.name, diag.error, diag.message
+            )
 
     except mp.ProcessError as e:
         raise QSSCompilerError(
