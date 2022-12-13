@@ -70,8 +70,6 @@ func @subroutine2 () {
             %cond2 = arith.cmpf "oeq", %zero, %one : f64
             // CHECK: {quir.classicalOnly = false}
             scf.if %cond2 {
-                pulse.set_frequency(%3, %cst) : (!pulse.frame, f64)
-            } else {
                 %6 = pulse.call_sequence @seq_0(%5, %4) : (!pulse.waveform, !pulse.mixed_frame) -> i1
             }
         }
