@@ -311,7 +311,7 @@ def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAll
     }];
 }
 
-def Pulse_PlayOp : Pulse_Op<"play", [SequenceAllowed]> {
+def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired]> {
     let summary = "Play a waveform on a given frame.";
     let description = [{
         The `pulse.play` operation plays a waveform on a mixed frame,
@@ -441,7 +441,7 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceAllowed]> {
     }];
 }
 
-def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceAllowed]> {
+def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired]> {
     let summary = "Capture the incoming port and use a kernel for integration.";
     let description = [{
         The `pulse.capture` operation captures the incoming data on a frame using a kernel.
@@ -768,7 +768,7 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
   let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
-def Pulse_ReturnOp : Pulse_Op<"return", [HasParent<"SequenceOp">, NoSideEffect, Terminator, ReturnLike, SequenceAllowed]>,
+def Pulse_ReturnOp : Pulse_Op<"return", [HasParent<"SequenceOp">, NoSideEffect, Terminator, ReturnLike, SequenceRequired]>,
     Arguments<(ins Variadic<AnyClassical>:$operands)>, Results<(outs)> {
         let summary = "Terminator for pulse.sequence.";
         let description = [{

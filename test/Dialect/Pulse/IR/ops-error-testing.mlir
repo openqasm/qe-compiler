@@ -74,3 +74,30 @@ pulse.sequence @sequence7 (%port : !pulse.port, %waveform: !pulse.waveform) {
     pulse.play(%port, %waveform) : (!pulse.port, !pulse.waveform)
 	pulse.return
 }
+
+// -----
+
+// verify MLIR sequence required error is reported when a pulse.play is not contained in a sequence 
+func @invalid_sequence_required1(%mf0: !pulse.mixed_frame,%waveform: !pulse.waveform) {
+	// expected-error@+1 {{'pulse.play' op expects parent op 'pulse.sequence'}}
+    pulse.play(%mf0, %waveform) : (!pulse.mixed_frame, !pulse.waveform)
+}
+
+// -----
+
+// verify MLIR sequence required error is reported when a pulse.capture is not contained in a 
+// sequence 
+func @invalid_sequence_required2(%mf0: !pulse.mixed_frame) {
+	// expected-error@+1 {{'pulse.capture' op expects parent op 'pulse.sequence'}}
+     %res0 = pulse.capture(%mf0) : (!pulse.mixed_frame) -> i1
+}
+
+// -----
+
+// verify MLIR sequence required error is reported when a pulse.capture is not contained in a 
+// sequence 
+func @invalid_sequence_required3() {
+	%false = arith.constant 0 : i1
+	// expected-error@+1 {{'pulse.return' op expects parent op 'pulse.sequence'}}
+     pulse.return %false : i1
+}

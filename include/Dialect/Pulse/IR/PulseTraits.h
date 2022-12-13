@@ -27,6 +27,10 @@ template <typename ConcreteType>
 class SequenceAllowed
     : public mlir::OpTrait::TraitBase<ConcreteType, SequenceAllowed> {};
 
+template <typename ConcreteType>
+class SequenceRequired
+    : public mlir::OpTrait::TraitBase<ConcreteType, SequenceRequired> {};
+
 } // namespace mlir::pulse
 
 #endif // PULSE_PULSETRAITS_H
