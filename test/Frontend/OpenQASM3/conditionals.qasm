@@ -10,7 +10,7 @@ qubit $0;
 bool b = false;
 
 // AST-PRETTY: IfStatementNode(
-// AST-PRETTY: condition=UnaryOpNode(type=ASTOpTypeLogicalNot, operand=OperatorNode(op=!, target-expression=BoolNode(name=b, false))
+// AST-PRETTY: condition=UnaryOpNode(type=ASTOpTypeLogicalNot, operand=OperatorNode(op=!, target-identifier=IdentifierNode(name=b, bits=8))
 // AST-PRETTY: statements=
 // AST-PRETTY: UGateOpNode(params=[AngleNode(value=0.0, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=0.0, bits=64)], qubits=[], qcparams=[$0])
 // AST-PRETTY: )
