@@ -345,7 +345,14 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceAllowed]> {
     }];
 
     let extraClassDeclaration = [{
+        // get the duration of the waveform being played
         llvm::Expected<int> getDuration (CallSequenceOp callOp);
+
+        // get a string hash of the waveform and target being played
+        llvm::Expected<std::string> getWaveformHash(CallSequenceOp callOp);
+
+        // get channel name
+        llvm::Expected<std::string> getChannelName(CallSequenceOp callOp, uint qubitId);
     }];
 }
 
