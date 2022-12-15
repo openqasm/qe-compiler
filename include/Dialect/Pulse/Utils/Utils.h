@@ -27,7 +27,13 @@ class Operation;
 
 namespace mlir::pulse {
 
-uint getQubitId(Port_CreateOp *pulsePortOp);
+Waveform_CreateOp getWaveformOp(PlayOp &pulsePlayOp,
+                                CallSequenceOp &callSequenceOp);
+MixFrameOp getMixFrameOp(PlayOp &pulsePlayOp, CallSequenceOp &callSequenceOp);
+uint getQubitId(PlayOp &pulsePlayOp, CallSequenceOp &callSequenceOp);
+uint getQubitId(CaptureOp &captureOp, CallSequenceOp &callSequenceOp);
+
+uint getQubitId(Port_CreateOp &pulsePortOp);
 
 bool isPlayOpForDrive(Operation *op,
                       mlir::pulse::CallSequenceOp &callSequenceOp);
