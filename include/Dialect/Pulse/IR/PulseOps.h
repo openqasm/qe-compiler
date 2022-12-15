@@ -30,4 +30,18 @@
 #define GET_OP_CLASSES
 #include "Dialect/Pulse/IR/Pulse.h.inc"
 
+namespace mlir::pulse {
+
+// define SequenceRequired::verifyTrait here rather than in PulseTraits.h
+// in order to prevent circular header dependencies
+template <typename ConcreteType>
+LogicalResult SequenceRequired<ConcreteType>::verifyTrait(Operation *op) {
+  if (isa<SequenceOp>(op->getParentOp()))
+    return success();
+  return op->emitOpError() << "expects parent op '"
+                           << SequenceOp::getOperationName() << "'";
+}
+
+} // namespace mlir::pulse
+
 #endif // PULSE_PULSEOPS_H
