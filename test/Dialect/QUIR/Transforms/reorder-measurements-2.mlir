@@ -36,7 +36,7 @@ module {
       quir.call_gate @x(%0) : (!quir.qubit<1>) -> ()
       // CHECK: quir.call_gate @rz([[QUBIT1]], {{.*}})
       quir.call_gate @rz(%1, %angle) : (!quir.qubit<1>, !quir.angle<64>) -> ()
-    }
+    } {quir.classicalOnly = false, quir.physicalIds = [0 : i32, 1 : i32]}
 
     // CHECK: quir.call_gate @sx([[QUBIT1]])
     quir.call_gate @sx(%1) : (!quir.qubit<1>) -> ()
