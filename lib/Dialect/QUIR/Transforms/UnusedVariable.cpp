@@ -45,7 +45,7 @@ struct UnusedVariablePat : public OpRewritePattern<DeclareVariableOp> {
     // iterate through uses
     for (auto *useOp : symbolUses.getUsers(declOp)) {
       if (auto useVariable = dyn_cast<UseVariableOp>(useOp)) {
-        if (!useVariable.use_empty())
+        if (!useVariable || !useVariable.use_empty())
           return failure();
       }
     }

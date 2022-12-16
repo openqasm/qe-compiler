@@ -19,8 +19,6 @@
 #include "mlir/IR/Dominance.h"
 #include "mlir/IR/SymbolTable.h"
 
-#include <iostream>
-
 namespace mlir::quir {
 
 void LoadEliminationPass::runOnOperation() {
