@@ -19,6 +19,8 @@
 #include "mlir/IR/Dominance.h"
 #include "mlir/IR/SymbolTable.h"
 
+#include <iostream>
+
 namespace mlir::quir {
 
 void LoadEliminationPass::runOnOperation() {
@@ -35,30 +37,29 @@ void LoadEliminationPass::runOnOperation() {
   // This code is strongly inspired by the concepts behind
   // mlir::affineScalarReplace().
   Operation *op = getOperation();
+  SymbolTableCollection symbolTable_;
+  SymbolUserMap symbolUsers(symbolTable_, op);
   auto &domInfo = getAnalysis<mlir::DominanceInfo>();
   SmallVector<Operation *, 4> varUsesToErase;
 
   op->walk([&](mlir::quir::DeclareVariableOp decl) {
     // Each variable must only have a single assigment statement
 
-    auto *symbolTable = mlir::SymbolTable::getNearestSymbolTable(decl);
-    auto symbolUses = mlir::SymbolTable::getSymbolUses(decl, symbolTable);
+    auto symbolUses = symbolUsers.getUsers(decl);
 
     Operation *assignment = nullptr;
 
-    auto numAssignments =
-        std::count_if(symbolUses->begin(), symbolUses->end(),
-                      [&](mlir::SymbolTable::SymbolUse u) {
-                        Operation *userOp = u.getUser();
-                        if (mlir::isa<mlir::quir::VariableAssignOp>(userOp) ||
-                            mlir::isa<mlir::quir::AssignCbitBitOp>(userOp)) {
-                          // TODO have a common interface that identifies any
-                          // assignment to a variable
-                          assignment = userOp;
-                          return true;
-                        }
-                        return false;
-                      });
+    auto numAssignments = std::count_if(
+        symbolUses.begin(), symbolUses.end(), [&](Operation *userOp) {
+          if (mlir::isa<mlir::quir::VariableAssignOp>(userOp) ||
+              mlir::isa<mlir::quir::AssignCbitBitOp>(userOp)) {
+            // TODO have a common interface that identifies any
+            // assignment to a variable
+            assignment = userOp;
+            return true;
+          }
+          return false;
+        });
 
     if (numAssignments > 1)
       return WalkResult::advance();
@@ -80,8 +81,7 @@ void LoadEliminationPass::runOnOperation() {
       varAssignmentOp.assigned_value().getDefiningOp()->setAttr(
           mlir::quir::getInputParameterAttrName(), decl.getNameAttr());
 
-    for (auto use : *symbolUses) {
-      Operation *userOp = use.getUser();
+    for (auto *userOp : symbolUses) {
 
       if (!mlir::isa<mlir::quir::UseVariableOp>(userOp))
         continue;

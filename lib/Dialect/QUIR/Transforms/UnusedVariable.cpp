@@ -32,8 +32,10 @@ namespace {
 /// This pattern matches on variable declarations that are not marked 'output'
 /// and are not followed by a use of the same variable, and removes them
 struct UnusedVariablePat : public OpRewritePattern<DeclareVariableOp> {
-  UnusedVariablePat(MLIRContext *context)
-      : OpRewritePattern<DeclareVariableOp>(context, /*benefit=*/1) {}
+  UnusedVariablePat(MLIRContext *context, mlir::SymbolUserMap &symbolUses)
+      : OpRewritePattern<DeclareVariableOp>(context, /*benefit=*/1),
+        symbolUses(symbolUses) {}
+  mlir::SymbolUserMap &symbolUses;
   LogicalResult
   matchAndRewrite(DeclareVariableOp declOp,
                   mlir::PatternRewriter &rewriter) const override {
@@ -41,27 +43,23 @@ struct UnusedVariablePat : public OpRewritePattern<DeclareVariableOp> {
       return failure();
 
     // iterate through uses
-    llvm::Optional<SymbolTable::UseRange> variableSymbolUses =
-        SymbolTable::getSymbolUses(declOp.sym_nameAttr(),
-                                   declOp->getParentRegion());
-    if (variableSymbolUses.hasValue()) { // some variable references exist
-      for (auto use : variableSymbolUses.getValue()) {
-        if (auto useVariable = dyn_cast<UseVariableOp>(use.getUser())) {
-          if (!useVariable.use_empty())
-            return failure();
-        }
+    for (auto *useOp : symbolUses.getUsers(declOp)) {
+      if (auto useVariable = dyn_cast<UseVariableOp>(useOp)) {
+        if (!useVariable.use_empty())
+          return failure();
       }
-
-      // No uses found, so now we can erase all references (just stores) and the
-      // declaration
-      for (auto use : variableSymbolUses.getValue())
-        rewriter.eraseOp(use.getUser());
     }
+
+    // No uses found, so now we can erase all references (just stores) and the
+    // declaration
+    for (auto *useOp : symbolUses.getUsers(declOp))
+      rewriter.eraseOp(useOp);
 
     rewriter.eraseOp(declOp);
     return success();
   } // matchAndRewrite
-};  // struct UnusedVariablePat
+
+}; // struct UnusedVariablePat
 } // anonymous namespace
 
 ///
@@ -69,11 +67,13 @@ struct UnusedVariablePat : public OpRewritePattern<DeclareVariableOp> {
 void UnusedVariablePass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   mlir::GreedyRewriteConfig config;
+  mlir::SymbolTableCollection symbolTable;
+  mlir::SymbolUserMap symbolUsers(symbolTable, getOperation());
 
   // use cheaper top-down traversal (in this case, bottom-up would not behave
   // any differently)
   config.useTopDownTraversal = true;
-  patterns.insert<UnusedVariablePat>(&getContext());
+  patterns.insert<UnusedVariablePat>(&getContext(), symbolUsers);
 
   if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
                                           config)))
