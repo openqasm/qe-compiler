@@ -41,6 +41,9 @@ module {
     scf.for %arg0 = %c0 to %c1000 step %c1 {
       quir.delay %dur, () : !quir.duration, () -> ()
       quir.shot_init {quir.numShots = 1000 : i32}
+// CHECK:  [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
+// CHECK:  [[QUBIT2:%.*]] = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
+// CHECK:  [[QUBIT3:%.*]] = quir.declare_qubit {id = 3 : i32} : !quir.qubit<1>
       %0 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
       %1 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
       %2 = quir.declare_qubit {id = 3 : i32} : !quir.qubit<1>
@@ -48,6 +51,9 @@ module {
       quir.assign_variable @a : !quir.cbit<1> = %3
       %4 = "quir.cast"(%false) : (i1) -> !quir.cbit<1>
       quir.assign_variable @b : !quir.cbit<1> = %4
+// CHECK: quir.builtin_CX [[QUBIT1]], [[QUBIT3]] : !quir.qubit<1>, !quir.qubit<1>
+// CHECK: %{{.*}} = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
+// CHECK: %{{.*}} = quir.measure([[QUBIT1]]) : (!quir.qubit<1>) -> i1
       %5 = quir.measure(%1) : (!quir.qubit<1>) -> i1
       %6 = "quir.cast"(%5) : (i1) -> !quir.cbit<1>
       quir.assign_variable @a : !quir.cbit<1> = %6
