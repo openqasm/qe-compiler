@@ -36,7 +36,7 @@ where `<your_username>` is your w3id (eg., `first.last@ibm.com`), and `<your_art
 
 Follow the instructions [here](https://github.ibm.com/IBM-Q-Software/qss-compiler#building) to download and build `qss-compiler` locally. The build step also prepares a directory `python_lib` inside your build directory that can be used to build the python package.
 
-To install the package in the current virtual environment, from `<build dir>/python_lib`, run:
+To install the package in the current virtual environment, from `<build dir>/qss-compiler/python_lib`, run:
 
     pip install .
 
