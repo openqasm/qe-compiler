@@ -34,3 +34,5 @@ endif()
 
 set (CMAKE_CXX_FLAGS_DEBUG "-g3 -O0")
 set (CMAKE_CXX_FLAGS_RELEASE "-g -O2")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${qasm_LIB_DIRS}")
