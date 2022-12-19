@@ -39,7 +39,9 @@ qubit $1;
 
 bit[2] c;
 
-// AST-PRETTY: HGateOpNode(params=[], qubits=[], qcparams=[$0])
+// AST-PRETTY: HGateOpNode(params=[], qubits=[], qcparams=[$0],
+// AST-PRETTY: ops=[
+// AST-PRETTY: UGateOpNode(params=[AngleNode(value=1.57079632679000003037, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=3.14159265359000006157, bits=64)], qubits=[], qcparams=[q])
 // MLIR: quir.call_gate @h([[QUBIT0]]) : (!quir.qubit<1>) -> ()
 // MLIR: quir.builtin_CX [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>
 h $0;
