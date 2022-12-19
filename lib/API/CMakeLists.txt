@@ -11,5 +11,6 @@ set(LIBS
         qasm::qasm
         )
 target_link_libraries(QSSCAPI ${LIBS})
+target_include_directories(QSSCAPI PUBLIC ${gmp_INCLUDES})
 
 add_dependencies(QSSCAPI MLIRQUIRDialect)

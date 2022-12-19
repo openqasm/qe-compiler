@@ -7,6 +7,7 @@
 ADD_LIBRARY(QSSCVisitor BaseQASM3Visitor.cpp PrintQASM3Visitor.cpp QUIRGenQASM3Visitor.cpp QUIRVariableBuilder.cpp)
 include_directories(${OPENQASM_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${gmp_INCLUDES})
 
 target_link_libraries(QSSCVisitor
         qasm::qasm
