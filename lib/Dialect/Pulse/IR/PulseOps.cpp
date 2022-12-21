@@ -20,6 +20,7 @@
 #include "mlir/IR/OperationSupport.h"
 #include "mlir/Interfaces/CallInterfaces.h"
 #include "llvm/ADT/MapVector.h"
+#include "llvm/ADT/Twine.h"
 
 namespace mlir::pulse {
 
@@ -356,7 +357,7 @@ llvm::Expected<std::string> PlayOp::getChannelName(CallSequenceOp callOp,
 
   if (targetOp) {
     assert(dyn_cast<MixFrameOp>(targetOp));
-    auto signalType = dyn_cast<MixFrameOp>(targetOp).signalType().str();
+    auto signalType = dyn_cast<MixFrameOp>(targetOp).signalType();
     std::string channelName;
     if (signalType == "measure")
       channelName = std::string("m") + std::to_string(qubitId);
@@ -365,7 +366,7 @@ llvm::Expected<std::string> PlayOp::getChannelName(CallSequenceOp callOp,
     else
       return llvm::createStringError(
           llvm::inconvertibleErrorCode(),
-          "signal type " + signalType +
+          llvm::Twine("signal type ") + signalType +
               " is not supported. Must be 'measure' or 'drive'.");
     return channelName;
   }
