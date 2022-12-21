@@ -311,7 +311,7 @@ def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAll
     }];
 }
 
-def Pulse_PlayOp : Pulse_Op<"play", [SequenceAllowed]> {
+def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired]> {
     let summary = "Play a waveform on a given frame.";
     let description = [{
         The `pulse.play` operation plays a waveform on a mixed frame,
@@ -356,7 +356,7 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceAllowed]> {
     }];
 }
 
-def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceAllowed]> {
+def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired]> {
     let summary = "Set a frequency of a frame.";
     let description = [{
         The `pulse.set_frequency` operation sets a new frequency on a frame that comes to effect with the next relevant operation such as play or capture.
@@ -379,7 +379,7 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceAllowed]> {
     }];
 }
 
-def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceAllowed]> {
+def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired]> {
     let summary = "Shift the frequency of a frame.";
     let description = [{
         The `pulse.shift_frequency` operation shifts the frequency of a frame that comes to effect with the next relevant operation such as play or capture.
@@ -402,7 +402,7 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceAllowed]> {
     }];
 }
 
-def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceAllowed]> {
+def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired]> {
     let summary = "Set the phase of a frame.";
     let description = [{
         The `pulse.set_phase` operation sets the phase of a frame. this operation comes to effect with the next relevant operation such as play or capture.
@@ -425,7 +425,7 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceAllowed]> {
     }];
 }
 
-def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceAllowed]> {
+def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired]> {
     let summary = "Shift a phase of a frame.";
     let description = [{
         The `pulse.shift_phase` operation shifts the phase of a frame. this operation comes to effect with the next relevant operation such as play or capture.
@@ -448,7 +448,7 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceAllowed]> {
     }];
 }
 
-def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceAllowed]> {
+def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired]> {
     let summary = "Capture the incoming port and use a kernel for integration.";
     let description = [{
         The `pulse.capture` operation captures the incoming data on a frame using a kernel.
@@ -775,7 +775,7 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
   let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
-def Pulse_ReturnOp : Pulse_Op<"return", [HasParent<"SequenceOp">, NoSideEffect, Terminator, ReturnLike, SequenceAllowed]>,
+def Pulse_ReturnOp : Pulse_Op<"return", [NoSideEffect, Terminator, ReturnLike, SequenceRequired]>,
     Arguments<(ins Variadic<AnyClassical>:$operands)>, Results<(outs)> {
         let summary = "Terminator for pulse.sequence.";
         let description = [{

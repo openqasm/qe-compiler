@@ -19,6 +19,7 @@
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
 #include "mlir/Interfaces/CallInterfaces.h"
+#include <mlir/Support/LogicalResult.h>
 #include "llvm/ADT/MapVector.h"
 #include "llvm/ADT/Twine.h"
 
@@ -164,7 +165,8 @@ static LogicalResult verifyClassical_(SequenceOp op) {
         isa<quir::ConstantOp>(subOp) || isa<CallSequenceOp>(subOp) ||
         isa<pulse::ReturnOp>(subOp) || isa<SequenceOp>(subOp) ||
         isa<mlir::complex::CreateOp>(subOp) ||
-        subOp->hasTrait<mlir::pulse::SequenceAllowed>())
+        subOp->hasTrait<mlir::pulse::SequenceAllowed>() ||
+        subOp->hasTrait<mlir::pulse::SequenceRequired>())
       return WalkResult::advance();
     classicalOp = subOp;
     return WalkResult::interrupt();
