@@ -18,14 +18,14 @@
 namespace mlir::pulse {
 
 // TODO: update this function based on the config files
-uint getQubitId(Port_CreateOp &pulsePortOp) {
+uint getQubitId(Port_CreateOp pulsePortOp) {
   auto portNumId = pulsePortOp.uid().drop_front();
   uint idNum = 0;
   portNumId.getAsInteger(0, idNum);
   return idNum;
 }
 
-uint getQubitId(PlayOp &pulsePlayOp, CallSequenceOp &callSequenceOp) {
+uint getQubitId(PlayOp pulsePlayOp, CallSequenceOp callSequenceOp) {
   // get qubit id from a PlayOp under the assumption that the play op
   // is part of a sequence
   auto mixFrameOp = getMixFrameOp(pulsePlayOp, callSequenceOp);
@@ -33,7 +33,7 @@ uint getQubitId(PlayOp &pulsePlayOp, CallSequenceOp &callSequenceOp) {
   return getQubitId(portOp);
 }
 
-uint getQubitId(CaptureOp &captureOp, CallSequenceOp &callSequenceOp) {
+uint getQubitId(CaptureOp captureOp, CallSequenceOp callSequenceOp) {
   // get qubit id from a CaptureOp under the assumption that the capture op
   // is part of a sequence
   auto portOpArgIndex =
@@ -45,15 +45,15 @@ uint getQubitId(CaptureOp &captureOp, CallSequenceOp &callSequenceOp) {
   return getQubitId(portOp);
 }
 
-Waveform_CreateOp getWaveformOp(PlayOp &pulsePlayOp,
-                                CallSequenceOp &callSequenceOp) {
+Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
+                                CallSequenceOp callSequenceOp) {
   auto wfrArgIndex = pulsePlayOp.wfr().dyn_cast<BlockArgument>().getArgNumber();
   auto wfrOp = callSequenceOp.getOperand(wfrArgIndex)
                    .getDefiningOp<mlir::pulse::Waveform_CreateOp>();
   return wfrOp;
 }
 
-MixFrameOp getMixFrameOp(PlayOp &pulsePlayOp, CallSequenceOp &callSequenceOp) {
+MixFrameOp getMixFrameOp(PlayOp pulsePlayOp, CallSequenceOp callSequenceOp) {
   auto mixFrameArgIndex =
       pulsePlayOp.target().dyn_cast<BlockArgument>().getArgNumber();
   auto mixFrameOp = callSequenceOp.getOperand(mixFrameArgIndex)
@@ -62,7 +62,7 @@ MixFrameOp getMixFrameOp(PlayOp &pulsePlayOp, CallSequenceOp &callSequenceOp) {
 }
 
 bool isPlayOpForDrive(Operation *op,
-                      mlir::pulse::CallSequenceOp &callSequenceOp) {
+                      mlir::pulse::CallSequenceOp callSequenceOp) {
 
   auto pulsePlayOp = dyn_cast<mlir::pulse::PlayOp>(op);
   auto mixFrameArgIndex =
