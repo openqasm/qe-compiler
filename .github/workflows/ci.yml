@@ -19,6 +19,10 @@ jobs:
         run: |
           conan profile new default --detect
           conan profile update settings.compiler.libcxx=libstdc++11 default
+      - name: Export QSSC_VERSION from Git version tag
+        run: |
+          version=`python -c "from setuptools_scm import get_version; print(get_version())"`
+          echo "QSSC_VERSION=$version" >> $GITHUB_ENV
       - name: Build QSS compiler Conan package
         run: |
           conan create . qss/stable --build=missing

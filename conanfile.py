@@ -3,10 +3,18 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+import os
 
 from conans import ConanFile, CMake, tools
 from conans.tools import load
-from setuptools_scm import get_version
+
+
+# Get version from environment variable.
+# Note: QSSC_VERSION must be set in the environment when exporting
+# to the Conan cache (i.e. via conan export or conan create).
+# https://docs.conan.io/en/1.53/reference/conanfile/attributes.html#version
+def get_version():
+    return os.environ.get("QSSC_VERSION", None)
 
 
 class QSSCompilerConan(ConanFile):
