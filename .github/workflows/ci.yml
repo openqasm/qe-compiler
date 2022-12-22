@@ -1,0 +1,23 @@
+name: Continuous Integration
+on: [push]
+
+env:
+  HOST_PYTHON_VERSION: 3.10.1
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ HOST_PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ HOST_PYTHON_VERSION }}
+      - name: Install pip packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Build QSS compiler Conan package
+        run: |
+          conan create . qss/stable --build=missing
+      - run: echo "🍏 This job's status is ${{ job.status }}."

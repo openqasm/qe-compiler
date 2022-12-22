@@ -1,0 +1,9 @@
+requirements:
+  - boost/1.80.0
+  - gtest/1.11.0
+  - libzip/1.8.0
+  - nlohmann_json/3.9.1
+  - pybind11/2.10.1
+  - qasm/0.2.8@qss/stable
+  - llvm/14.0.6-1@qss/stable
+  - clang-tools-extra/14.0.6@qss/stable
