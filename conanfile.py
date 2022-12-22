@@ -6,13 +6,7 @@
 
 from conans import ConanFile, CMake, tools
 from conans.tools import load
-
-
-def get_version():
-    try:
-        return load("VERSION.txt")
-    except Exception:
-        return None
+from setuptools_scm import get_version
 
 
 class QSSCompilerConan(ConanFile):
