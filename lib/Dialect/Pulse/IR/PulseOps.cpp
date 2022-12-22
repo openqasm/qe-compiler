@@ -19,8 +19,9 @@
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
 #include "mlir/Interfaces/CallInterfaces.h"
+#include "mlir/Support/LogicalResult.h"
 #include "llvm/ADT/MapVector.h"
-#include <mlir/Support/LogicalResult.h>
+#include "llvm/ADT/Twine.h"
 
 namespace mlir::pulse {
 
@@ -308,6 +309,73 @@ llvm::Expected<int> PlayOp::getDuration(CallSequenceOp callOp) {
     return wfrOp.getDuration();
   return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                  "Could not get the wfrOp!");
+}
+
+llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
+  // attempt to get waveform and target directly from PlayOp if that
+  // fails get to the defining op via the call sequence
+
+  Operation *wfrOp;
+  Operation *targetOp;
+  wfrOp = dyn_cast_or_null<Waveform_CreateOp>(wfr().getDefiningOp());
+  targetOp = dyn_cast_or_null<MixFrameOp>(target().getDefiningOp());
+
+  if (!wfrOp && !targetOp) {
+    auto wfrArgIndex = wfr().dyn_cast<BlockArgument>().getArgNumber();
+    wfrOp = callOp.getOperand(wfrArgIndex)
+                .getDefiningOp<mlir::pulse::Waveform_CreateOp>();
+    auto mixFrameArgIndex = target().dyn_cast<BlockArgument>().getArgNumber();
+    targetOp = callOp.getOperand(mixFrameArgIndex)
+                   .getDefiningOp<mlir::pulse::MixFrameOp>();
+  }
+
+  if (wfrOp && targetOp) {
+    auto targetHash = mlir::hash_value(targetOp->getLoc());
+    auto wfrHash = mlir::hash_value(wfrOp->getLoc());
+    return std::to_string(targetHash) + "_" + std::to_string(wfrHash);
+  }
+
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Failed to hash waveform name from play operation");
+}
+
+llvm::Expected<std::string> PlayOp::getChannelName(CallSequenceOp callOp,
+                                                   uint qubitId) {
+  // TODO: This is a temporary method that will be removed when
+  // the the Pulse Layer adds UIDs to the mixed_frames:
+  // see issue 971
+
+  // attempt to get target directly from PlayOp if that
+  // fails get to the defining op via the call sequence
+  Operation *targetOp;
+  targetOp = dyn_cast_or_null<MixFrameOp>(target().getDefiningOp());
+
+  if (!targetOp) {
+    auto mixFrameArgIndex = target().dyn_cast<BlockArgument>().getArgNumber();
+    targetOp = callOp.getOperand(mixFrameArgIndex)
+                   .getDefiningOp<mlir::pulse::MixFrameOp>();
+  }
+
+  if (targetOp) {
+    assert(dyn_cast<MixFrameOp>(targetOp));
+    auto signalType = dyn_cast<MixFrameOp>(targetOp).signalType();
+    std::string channelName;
+    if (signalType == "measure")
+      channelName = std::string("m") + std::to_string(qubitId);
+    else if (signalType == "drive")
+      channelName = std::string("d") + std::to_string(qubitId);
+    else
+      return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          llvm::Twine("signal type ") + signalType +
+              " is not supported. Must be 'measure' or 'drive'.");
+    return channelName;
+  }
+
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Failed to get channel name for play operation");
 }
 
 //===----------------------------------------------------------------------===//
