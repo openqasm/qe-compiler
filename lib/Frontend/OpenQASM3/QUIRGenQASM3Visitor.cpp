@@ -913,14 +913,27 @@ Type QUIRGenQASM3Visitor::getQUIRTypeFromDeclaration(
 ExpressionValueType
 QUIRGenQASM3Visitor::visit_(const ASTQubitContainerNode *node) {
   const std::string &qId = node->GetName();
-  int id = stoi(node->GetIdentifier()->GetQubitMnemonic());
-
   const unsigned size = node->Size();
-  Value qubitRef = builder
-                       .create<DeclareQubitOp>(
-                           getLocation(node), builder.getType<QubitType>(size),
-                           builder.getIntegerAttr(builder.getI32Type(), id))
-                       .res();
+
+  const ASTIdentifierNode *idnode = node->GetIdentifier();
+  Value qubitRef;
+
+  if (idnode->IsBoundQubit()) {
+    int id = stoi(idnode->GetQubitMnemonic());
+
+    qubitRef = builder
+                   .create<DeclareQubitOp>(
+                       getLocation(node), builder.getType<QubitType>(size),
+                       builder.getIntegerAttr(builder.getI32Type(), id))
+                   .res();
+  } else {
+    auto id_name = idnode->GetName();
+    qubitRef = builder
+                   .create<DeclareVirtualQubitOp>(
+                       getLocation(node), builder.getType<QubitType>(size),
+                       builder.getStringAttr(id_name))
+                   .res();
+  }
   ssaValues[qId] = qubitRef;
   return qubitRef;
 }

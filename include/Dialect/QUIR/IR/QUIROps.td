@@ -374,6 +374,25 @@ def QUIR_DeclareQubitOp : QUIR_Op<"declare_qubit", [NonInterferingNonDeadSideEff
     }];
 }
 
+def QUIR_DeclareVirtualQubitOp : QUIR_Op<"declare_virtual_qubit", [NonInterferingNonDeadSideEffect]> {
+    let summary = "Declare a new virtual qubit.";
+    let description = [{
+        The `quir.declare_virtual_qubit` operation creates a new virtual qubit.
+        Example:
+
+        ```mlir
+        %1 = quir.declare_virtual_qubit "qVar"
+        ```
+    }];
+
+    let arguments = (ins SymbolNameAttr:$sym_name);
+    let results = (outs AnyType:$res);
+
+    let assemblyFormat = [{
+        attr-dict $sym_name `:` type($res)
+    }];
+}
+
 def QUIR_DeclareDurationOp : QUIR_Op<"declare_duration", [NoSideEffect]> {
     let summary = "Declare a new duration.";
     let description = [{
