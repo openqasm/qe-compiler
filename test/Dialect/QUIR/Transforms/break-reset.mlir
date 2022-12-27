@@ -4,7 +4,7 @@
 // RUN: qss-compiler -X=mlir --break-reset='numIterations=2 delayCycles=500' %s | FileCheck %s --check-prefix DELAYITER
 
 func @t1 (%inq : !quir.qubit<1>) {
-// CHECK:     %0 = quir.measure(%arg0) {quir.noReportOuroboros} : (!quir.qubit<1>) -> i1
+// CHECK:     %0 = quir.measure(%arg0) {quir.noReportRuntime} : (!quir.qubit<1>) -> i1
 // CHECK:     scf.if %0 {
 // CHECK:       quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // CHECK:     }
