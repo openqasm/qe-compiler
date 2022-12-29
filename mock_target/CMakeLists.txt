@@ -19,6 +19,7 @@ ${QSSC_INCLUDE_DIR}/HAL
 
 LINK_LIBS
 ${qssc_api_libs}
+QSSCHAL
 MLIRExecutionEngine
 MLIROptLib
 MLIRLLVMIR
