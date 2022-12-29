@@ -11,6 +11,8 @@
 #ifndef QSS_COMPILER_LIB_H
 #define QSS_COMPILER_LIB_H
 
+#include "mlir/IR/Dialect.h"
+
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
@@ -24,5 +26,8 @@ llvm::Error
 bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
                llvm::StringRef payloadOutputPath,
                std::unordered_map<std::string, double> const &parameters);
+
+/// Register all qss-compiler dialects returning a dialect registry
+mlir::DialectRegistry registerDialects();
 
 #endif // QSS_COMPILER_LIB_H

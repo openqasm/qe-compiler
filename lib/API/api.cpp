@@ -317,7 +317,7 @@ llvm::Error registerPasses() {
   return err;
 }
 
-auto registerDialects() -> DialectRegistry {
+DialectRegistry registerDialects() {
   DialectRegistry registry;
   mlir::registerAllDialects(registry);
   registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect>();
