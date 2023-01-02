@@ -31,6 +31,8 @@
 #include <string>
 #include <utility>
 
+namespace qssc::frontend::openqasm3 {
+
 void QUIRVariableBuilder::generateVariableDeclaration(
     mlir::Location location, llvm::StringRef variableName, mlir::Type type,
     bool isInputVariable, bool isOutputVariable) {
@@ -201,3 +203,5 @@ QUIRVariableBuilder::resolveQUIRVariableType(const QASM::ASTResultNode *node) {
   assert(node && "node argument must be non-null");
   return resolveQUIRVariableType(node->GetResultType(), node->GetResultBits());
 }
+
+} // namespace qssc::frontend::openqasm3

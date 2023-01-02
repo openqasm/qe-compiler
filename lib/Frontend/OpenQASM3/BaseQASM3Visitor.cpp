@@ -54,6 +54,8 @@
 
 using namespace QASM;
 
+namespace qssc::frontend::openqasm3 {
+
 BaseQASM3Visitor::~BaseQASM3Visitor() = default;
 
 void BaseQASM3Visitor::setStatementList(ASTStatementList *list) {
@@ -459,3 +461,5 @@ void BaseQASM3Visitor::visit(const ASTFunctionCallNode *node) {
     llvm_unreachable("unhandled call type in ASTFunctionCallNode");
   }
 }
+
+} // namespace qssc::frontend::openqasm3

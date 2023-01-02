@@ -25,7 +25,7 @@ set(LIBS
         ${qssc_targets}
         QSSCAPI
         QSSCHAL
-        QSSCVisitor
+        QSSCOpenQASM3Frontend
         QSSCPayload
         QSSCCore
         ${mlir_dialect_libs}

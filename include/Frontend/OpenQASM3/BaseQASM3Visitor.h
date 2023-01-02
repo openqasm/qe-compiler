@@ -28,6 +28,8 @@
 
 #include <string>
 
+namespace qssc::frontend::openqasm3 {
+
 class BaseQASM3Visitor {
 
 protected:
@@ -172,5 +174,7 @@ public:
 
   virtual void visit(const QASM::ASTUnaryOpNode *) = 0;
 };
+
+} // namespace qssc::frontend::openqasm3
 
 #endif // VISITOR_BASE_VISITOR_H

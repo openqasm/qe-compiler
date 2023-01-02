@@ -538,7 +538,7 @@ static llvm::Error compile_(int argc, char const **argv,
     if (emitAction == Action::DumpASTPretty) {
       QASM::ASTStatementList *statementList =
           QASM::ASTStatementBuilder::Instance().List();
-      PrintQASM3Visitor visitor(std::cout);
+      qssc::frontend::openqasm3::PrintQASM3Visitor visitor(std::cout);
       visitor.setStatementList(statementList);
       visitor.walkAST();
       return llvm::Error::success();
@@ -559,7 +559,8 @@ static llvm::Error compile_(int argc, char const **argv,
       QASM::ASTStatementList *statementList =
           QASM::ASTStatementBuilder::Instance().List();
 
-      QUIRGenQASM3Visitor visitor(builder, newModule, /*filename=*/"");
+      qssc::frontend::openqasm3::QUIRGenQASM3Visitor visitor(builder, newModule,
+                                                             /*filename=*/"");
       visitor.initialize(numShots, shotDelay);
       visitor.setStatementList(statementList);
       visitor.setInputFile(inputSource);

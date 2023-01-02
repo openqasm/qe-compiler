@@ -22,6 +22,8 @@
 
 #include <unordered_map>
 
+namespace qssc::frontend::openqasm3 {
+
 class QUIRGenQASM3Visitor : public BaseQASM3Visitor {
 private:
   // References to MLIR single static assignment Values
@@ -254,5 +256,7 @@ private:
 
   mlir::Type getQUIRTypeFromDeclaration(const QASM::ASTDeclarationNode *);
 };
+
+} // namespace qssc::frontend::openqasm3
 
 #endif // VISITOR_QUIR_GEN_VISITOR_H

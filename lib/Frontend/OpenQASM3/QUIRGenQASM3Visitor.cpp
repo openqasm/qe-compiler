@@ -60,6 +60,8 @@ using namespace mlir;
 using namespace mlir::quir;
 using namespace QASM;
 
+namespace qssc::frontend::openqasm3 {
+
 using ExpressionValueType = mlir::Value;
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
@@ -1613,3 +1615,5 @@ mlir::Value QUIRGenQASM3Visitor::createVoidValue(mlir::Location location) {
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
   return createVoidValue(getLocation(node));
 }
+
+} // namespace qssc::frontend::openqasm3
