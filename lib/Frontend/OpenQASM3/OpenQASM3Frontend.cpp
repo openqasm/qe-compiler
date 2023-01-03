@@ -92,8 +92,8 @@ llvm::Error qssc::frontend::openqasm3::parse(std::string const &source,
 
         if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
             DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
-          // give up parsing after errors right away (TODO update to recent
-          // qss-qasm to support continuing)
+          // give up parsing after errors right away 
+          // TODO: update to recent qss-qasm to support continuing
           throw std::runtime_error("Failure parsing");
         }
       });
