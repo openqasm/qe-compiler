@@ -33,9 +33,9 @@ namespace qssc::frontend::openqasm3 {
 /// @param newModule ModuleOp container for emitting MLIR into
 /// @return an llvm::Error in case of failure, or llvm::Error::success()
 /// otherwise
-llvm::Error parseOpenQASM3(std::string const &source, bool sourceIsFilename,
-                           bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
-                           mlir::ModuleOp &newModule);
+llvm::Error parse(std::string const &source, bool sourceIsFilename,
+                  bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
+                  mlir::ModuleOp &newModule);
 
 }; // namespace qssc::frontend::openqasm3
 

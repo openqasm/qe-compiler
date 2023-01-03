@@ -49,9 +49,11 @@ static llvm::cl::list<std::string>
     includeDirs("I", llvm::cl::desc("Add <dir> to the include path"),
                 llvm::cl::value_desc("dir"), llvm::cl::cat(openqasm3Cat));
 
-llvm::Error qssc::frontend::openqasm3::parseOpenQASM3(
-    std::string const &source, bool sourceIsFilename, bool emitRawAST,
-    bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp &newModule) {
+llvm::Error qssc::frontend::openqasm3::parse(std::string const &source,
+                                             bool sourceIsFilename,
+                                             bool emitRawAST,
+                                             bool emitPrettyAST, bool emitMLIR,
+                                             mlir::ModuleOp &newModule) {
   for (const auto &dirStr : includeDirs)
     QASM::QasmPreprocessor::Instance().AddIncludePath(dirStr);
 

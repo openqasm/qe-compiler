@@ -445,7 +445,7 @@ static llvm::Error compile_(int argc, char const **argv,
           &context, directInput ? std::string{"-"} : inputSource, 0, 0));
     }
 
-    if (auto frontendError = qssc::frontend::openqasm3::parseOpenQASM3(
+    if (auto frontendError = qssc::frontend::openqasm3::parse(
             inputSource, !directInput, emitAction == Action::DumpAST,
             emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
             moduleOp))
