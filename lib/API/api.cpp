@@ -10,23 +10,20 @@
 
 #include "API/api.h"
 
-#include "mlir/Dialect/Complex/IR/Complex.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/ExecutionEngine/ExecutionEngine.h"
 #include "mlir/IR/AsmState.h"
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/MLIRContext.h"
-#include "mlir/IR/Verifier.h"
 #include "mlir/InitAllDialects.h"
 #include "mlir/InitAllPasses.h"
 #include "mlir/Parser.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/FileUtilities.h"
-#include "mlir/Support/MlirOptMain.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
@@ -44,10 +41,7 @@
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 
-#include "Frontend/OpenQASM3/PrintQASM3Visitor.h"
-#include "Frontend/OpenQASM3/QUIRGenQASM3Visitor.h"
-
-#include <qasm/Frontend/QasmParser.h>
+#include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
 
@@ -68,10 +62,6 @@ static llvm::cl::opt<std::string>
     outputFilename("o", llvm::cl::desc("Output filename"),
                    llvm::cl::value_desc("filename"), llvm::cl::init("-"),
                    llvm::cl::cat(qsscCat));
-
-static llvm::cl::list<std::string>
-    includeDirs("I", llvm::cl::desc("Add <dir> to the include path"),
-                llvm::cl::value_desc("dir"), llvm::cl::cat(qsscCat));
 
 static llvm::cl::opt<std::string> configurationPath(
     "config",
@@ -130,17 +120,6 @@ static llvm::cl::opt<bool>
     showTargets("show-targets",
                 llvm::cl::desc("Print the list of registered targets"),
                 llvm::cl::init(false), llvm::cl::cat(qsscCat));
-
-static llvm::cl::opt<uint>
-    numShots("num-shots",
-             llvm::cl::desc("The number of shots to execute on the quantum "
-                            "circuit, default is 1000"),
-             llvm::cl::init(1000), llvm::cl::cat(qsscCat));
-
-static llvm::cl::opt<std::string> shotDelay(
-    "shot-delay",
-    llvm::cl::desc("Repetition delay between shots. Defaults to 1ms."),
-    llvm::cl::init("1ms"), llvm::cl::cat(qsscCat));
 
 static llvm::cl::opt<bool>
     plaintextPayload("plaintext-payload",
@@ -276,30 +255,6 @@ auto getExtension(const std::string &inStr) -> qss::FileExtension {
     return strToFileExtension(inStr.substr(pos + 1));
   return qss::FileExtension::None;
 }
-
-auto parseQasmFile(QASM::ASTParser &parser, QASM::ASTRoot *&root)
-    -> mlir::LogicalResult {
-  // first build a command line for the parser
-  for (const auto &dirStr : includeDirs)
-    QASM::QasmPreprocessor::Instance().AddIncludePath(dirStr);
-
-  try {
-    if (directInput) {
-      root = parser.ParseAST(inputSource);
-    } else {
-      QASM::QasmPreprocessor::Instance().SetTranslationUnit(inputSource);
-      root = parser.ParseAST();
-    }
-  } catch (std::exception &e) {
-    llvm::errs() << "Exception while parsing OpenQASM 3 input: " << e.what()
-                 << "\n";
-    return mlir::failure();
-  }
-
-  if (root)
-    return mlir::success();
-  return mlir::failure();
-} // parseQasmFile()
 
 llvm::Error registerPasses() {
   // TODO: Register standalone passes here.
@@ -485,95 +440,19 @@ static llvm::Error compile_(int argc, char const **argv,
   context.printOpOnDiagnostic(!verifyDiagnostics);
 
   if (inputType == InputType::QASM) {
-    QASM::ASTRoot *root = nullptr;
-    QASM::ASTParser parser;
-    QASM::QasmDiagnosticEmitter::SetHandler(
-        [](const std::string &Exp, const std::string &Msg,
-           QASM::QasmDiagnosticEmitter::DiagLevel DL) {
-          std::string level = "unknown";
-
-          switch (DL) {
-          case QASM::QasmDiagnosticEmitter::DiagLevel::Error:
-            level = "Error";
-            break;
-
-          case QASM::QasmDiagnosticEmitter::DiagLevel::ICE:
-            level = "ICE";
-            break;
-
-          case QASM::QasmDiagnosticEmitter::DiagLevel::Warning:
-            level = "Warning";
-            break;
-
-          case QASM::QasmDiagnosticEmitter::DiagLevel::Info:
-            level = "Info";
-            break;
-
-          case QASM::QasmDiagnosticEmitter::DiagLevel::Status:
-            level = "Status";
-            break;
-          }
-
-          llvm::errs() << level << " while parsing OpenQASM 3 input\n"
-                       << Exp << " " << Msg << "\n";
-
-          if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
-              DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
-            // give up parsing after errors right away (TODO update to recent
-            // qss-qasm to support continuing)
-            throw std::runtime_error("Failure parsing");
-          }
-        });
-
-    if (failed(parseQasmFile(parser, root)))
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Problem parsing QASM file!");
-
-    if (emitAction == Action::DumpAST) {
-      root->print();
-      // when we output to file instead of cout we need to remember to do
-      // output->keep();
-      return llvm::Error::success();
-    }
-    if (emitAction == Action::DumpASTPretty) {
-      QASM::ASTStatementList *statementList =
-          QASM::ASTStatementBuilder::Instance().List();
-      PrintQASM3Visitor visitor(std::cout);
-      visitor.setStatementList(statementList);
-      visitor.walkAST();
-      return llvm::Error::success();
-    }
-
-    // generate QUIR from AST here using moduleOp
     if (emitAction >= Action::DumpMLIR) {
-      // the openqasm 3 frontend is not a pass (yet), so manually load the QUIR
-      // dialect instead of using MLIR's dependency tracking.
-      context.loadDialect<mlir::quir::QUIRDialect>();
-      context.loadDialect<mlir::complex::ComplexDialect>();
-      context.loadDialect<mlir::StandardOpsDialect>();
-
-      ModuleOp newModule = mlir::ModuleOp::create(
-          FileLineColLoc::get(&context, inputSource, 0, 0));
-      OpBuilder builder(newModule.getBodyRegion());
-
-      QASM::ASTStatementList *statementList =
-          QASM::ASTStatementBuilder::Instance().List();
-
-      QUIRGenQASM3Visitor visitor(builder, newModule, /*filename=*/"");
-      visitor.initialize(numShots, shotDelay);
-      visitor.setStatementList(statementList);
-      visitor.setInputFile(inputSource);
-      if (failed(visitor.walkAST()))
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                       "Failed to emit QUIR");
-      if (mlir::failed(mlir::verify(newModule))) {
-        newModule.dump();
-
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                       "Failed to verify generated QUIR");
-      }
-      moduleOp = newModule;
+      moduleOp = mlir::ModuleOp::create(FileLineColLoc::get(
+          &context, directInput ? std::string{"-"} : inputSource, 0, 0));
     }
+
+    if (auto frontendError = qssc::frontend::openqasm3::parse(
+            inputSource, !directInput, emitAction == Action::DumpAST,
+            emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
+            moduleOp))
+      return frontendError;
+
+    if (emitAction < Action::DumpMLIR)
+      return llvm::Error::success();
   } // if input == QASM
 
   if (inputType == InputType::MLIR) {

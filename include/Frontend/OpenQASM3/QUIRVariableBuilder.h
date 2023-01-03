@@ -13,8 +13,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef VISITOR_QUIR_VARIABLE_BUILDER_H
-#define VISITOR_QUIR_VARIABLE_BUILDER_H
+#ifndef OPENQASM3_QUIR_VARIABLE_BUILDER_H
+#define OPENQASM3_QUIR_VARIABLE_BUILDER_H
 
 #include <mlir/Dialect/StandardOps/IR/Ops.h>
 #include <mlir/IR/Builders.h>
@@ -28,6 +28,8 @@
 #include <llvm/ADT/StringRef.h>
 
 #include <unordered_map>
+
+namespace qssc::frontend::openqasm3 {
 
 class QUIRVariableBuilder {
 public:
@@ -204,4 +206,6 @@ private:
                                      const unsigned bits) const;
 };
 
-#endif // VISITOR_QUIR_VARIABLE_BUILDER_H
+} // namespace qssc::frontend::openqasm3
+
+#endif // OPENQASM3_QUIR_VARIABLE_BUILDER_H

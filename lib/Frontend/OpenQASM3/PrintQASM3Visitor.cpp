@@ -28,6 +28,8 @@
 
 using namespace QASM;
 
+namespace qssc::frontend::openqasm3 {
+
 void PrintQASM3Visitor::visit(const ASTForStatementNode *node) {
   const ASTForLoopNode *loop = node->GetLoop();
   vStream << "ForStatementNode(";
@@ -656,3 +658,5 @@ void PrintQASM3Visitor::visit(const QASM::ASTOperatorNode *node) {
   }
   vStream << ")\n";
 }
+
+} // namespace qssc::frontend::openqasm3
