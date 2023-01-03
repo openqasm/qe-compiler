@@ -1,7 +1,8 @@
 // RUN: qss-compiler --canonicalize --quantum-decorate --reorder-measures %s | FileCheck %s
 
 // This regression test case validates that reorder-measures can move
-// operations across control flow when there are no conflicts
+// operations across control flow when there are no conflicts, and also that
+// conflicts prevent movement
 
 // Related to https://github.ibm.com/IBM-Q-Software/ibm-qss-compiler/issues/921
 //
@@ -30,6 +31,7 @@ module {
     %2 = quir.declare_qubit {id = 3 : i32} : !quir.qubit<1>
 // CHECK: quir.builtin_CX [[QUBIT1]], [[QUBIT3]] : !quir.qubit<1>, !quir.qubit<1>
 // CHECK: %{{.*}} = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
+// CHECK: quir.call_gate @rz([[QUBIT1]], {{.*}})
 // CHECK: %{{.*}} = quir.measure([[QUBIT1]]) : (!quir.qubit<1>) -> i1
     %5 = quir.measure(%1) : (!quir.qubit<1>) -> i1
     %6 = "quir.cast"(%5) : (i1) -> !quir.cbit<1>
@@ -41,6 +43,9 @@ module {
       quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
     } {quir.classicalOnly = false, quir.physicalIds = [2 : i32]}
     quir.builtin_CX %0, %2 : !quir.qubit<1>, !quir.qubit<1>
+    %angle = "quir.cast"(%5) : (i1) -> !quir.angle<64>
+    // The following gate call uses a value generated from the measurement
+    quir.call_gate @rz(%0, %angle) : (!quir.qubit<1>, !quir.angle<64>) -> ()
     %10 = quir.measure(%0) : (!quir.qubit<1>) -> i1
     %11 = "quir.cast"(%10) : (i1) -> !quir.cbit<1>
     quir.assign_variable @b : !quir.cbit<1> = %11

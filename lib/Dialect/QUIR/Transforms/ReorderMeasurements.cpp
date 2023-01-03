@@ -76,6 +76,21 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
       if (QubitOpInterface::qubitSetsOverlap(currQubits, nextQubits))
         break;
 
+      // Make sure that the nextOp doesn't use an SSA value defined between
+      // the measureOp and nextOp
+      Block *measBlock = measureOp->getBlock();
+      bool interveningValue = false;
+      for (auto operand : nextOp->getOperands())
+        if (Operation *defOp = operand.getDefiningOp())
+          if (defOp->getBlock() == measBlock &&
+              measureOp->isBeforeInBlock(defOp)) {
+            interveningValue = true;
+            break;
+          }
+
+      if (interveningValue)
+        break;
+
       LLVM_DEBUG(llvm::dbgs() << "Succeeded match with operation:\n");
       LLVM_DEBUG(nextOp->dump());
       LLVM_DEBUG(llvm::dbgs() << "on qubits:\t");
