@@ -125,17 +125,6 @@ static llvm::cl::opt<bool>
                 llvm::cl::desc("Print the list of registered targets"),
                 llvm::cl::init(false), llvm::cl::cat(qsscCat));
 
-static llvm::cl::opt<uint>
-    numShots("num-shots",
-             llvm::cl::desc("The number of shots to execute on the quantum "
-                            "circuit, default is 1000"),
-             llvm::cl::init(1000), llvm::cl::cat(qsscCat));
-
-static llvm::cl::opt<std::string> shotDelay(
-    "shot-delay",
-    llvm::cl::desc("Repetition delay between shots. Defaults to 1ms."),
-    llvm::cl::init("1ms"), llvm::cl::cat(qsscCat));
-
 static llvm::cl::opt<bool>
     plaintextPayload("plaintext-payload",
                      llvm::cl::desc("Write the payload in plaintext"),
@@ -468,7 +457,7 @@ static llvm::Error compile_(int argc, char const **argv,
     if (auto frontendError = qssc::frontend::openqasm3::parseOpenQASM3(
             inputSource, !directInput, includeDirs,
             emitAction == Action::DumpAST, emitAction == Action::DumpASTPretty,
-            emitAction >= Action::DumpMLIR, moduleOp, numShots, shotDelay))
+            emitAction >= Action::DumpMLIR, moduleOp))
       return frontendError;
 
     if (emitAction < Action::DumpMLIR)

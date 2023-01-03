@@ -30,11 +30,25 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
 
+static llvm::cl::OptionCategory openqasm3Cat(
+    " OpenQASM 3 Frontend Options",
+    "Options that control the OpenQASM 3 frontend of QSS Compiler");
+
+static llvm::cl::opt<uint>
+    numShots("num-shots",
+             llvm::cl::desc("The number of shots to execute on the quantum "
+                            "circuit, default is 1000"),
+             llvm::cl::init(1000), llvm::cl::cat(openqasm3Cat));
+
+static llvm::cl::opt<std::string> shotDelay(
+    "shot-delay",
+    llvm::cl::desc("Repetition delay between shots. Defaults to 1ms."),
+    llvm::cl::init("1ms"), llvm::cl::cat(openqasm3Cat));
+
 llvm::Error qssc::frontend::openqasm3::parseOpenQASM3(
     std::string const &source, bool sourceIsFilename,
     llvm::ArrayRef<std::string> includeDirs, bool emitRawAST,
-    bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp &newModule,
-    unsigned int numShots, std::string const &shotDelay) {
+    bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp &newModule) {
   for (const auto &dirStr : includeDirs)
     QASM::QasmPreprocessor::Instance().AddIncludePath(dirStr);
 
