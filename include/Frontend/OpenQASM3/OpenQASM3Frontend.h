@@ -20,7 +20,6 @@
 
 #include "llvm/Support/Error.h"
 
-// TODO number of shots
 namespace qssc::frontend::openqasm3 {
 
 llvm::Error parseOpenQASM3(std::string const &source, bool sourceIsFilename,
