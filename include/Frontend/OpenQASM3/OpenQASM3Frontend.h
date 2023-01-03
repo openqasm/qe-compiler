@@ -27,7 +27,6 @@ namespace qssc::frontend::openqasm3 {
 /// @param source input source as string or filename of the source
 /// @param sourceIsFilename true when the parameter source is the name of a
 /// source file, false when the parameter is the source input
-/// @param includeDirs list of include directories
 /// @param emitRawAST whether the raw AST should be dumped
 /// @param emitPrettyAST whether a pretty-printed AST should be dumped
 /// @param emitMLIR whether high-level IR should be emitted
@@ -35,7 +34,6 @@ namespace qssc::frontend::openqasm3 {
 /// @return an llvm::Error in case of failure, or llvm::Error::success()
 /// otherwise
 llvm::Error parseOpenQASM3(std::string const &source, bool sourceIsFilename,
-                           llvm::ArrayRef<std::string> includeDirs,
                            bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
                            mlir::ModuleOp &newModule);
 

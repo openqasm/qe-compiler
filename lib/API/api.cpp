@@ -63,10 +63,6 @@ static llvm::cl::opt<std::string>
                    llvm::cl::value_desc("filename"), llvm::cl::init("-"),
                    llvm::cl::cat(qsscCat));
 
-static llvm::cl::list<std::string>
-    includeDirs("I", llvm::cl::desc("Add <dir> to the include path"),
-                llvm::cl::value_desc("dir"), llvm::cl::cat(qsscCat));
-
 static llvm::cl::opt<std::string> configurationPath(
     "config",
     llvm::cl::desc("Path to configuration file or directory (depends on the "
@@ -444,20 +440,15 @@ static llvm::Error compile_(int argc, char const **argv,
   context.printOpOnDiagnostic(!verifyDiagnostics);
 
   if (inputType == InputType::QASM) {
-    llvm::SmallVector<std::string, 1> includeDirsVec;
-
-    std::copy(includeDirs.begin(), includeDirs.end(),
-              std::back_inserter(includeDirsVec));
-
     if (emitAction >= Action::DumpMLIR) {
       moduleOp = mlir::ModuleOp::create(FileLineColLoc::get(
           &context, directInput ? std::string{"-"} : inputSource, 0, 0));
     }
 
     if (auto frontendError = qssc::frontend::openqasm3::parseOpenQASM3(
-            inputSource, !directInput, includeDirs,
-            emitAction == Action::DumpAST, emitAction == Action::DumpASTPretty,
-            emitAction >= Action::DumpMLIR, moduleOp))
+            inputSource, !directInput, emitAction == Action::DumpAST,
+            emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
+            moduleOp))
       return frontendError;
 
     if (emitAction < Action::DumpMLIR)
