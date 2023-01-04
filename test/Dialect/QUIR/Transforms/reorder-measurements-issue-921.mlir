@@ -4,8 +4,6 @@
 // operations across control flow when there are no conflicts, and also that
 // conflicts prevent movement
 
-// Related to https://github.ibm.com/IBM-Q-Software/ibm-qss-compiler/issues/921
-//
 // based on failures for 
 // reset $2;
 // cx $1, $4;
