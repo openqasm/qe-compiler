@@ -50,7 +50,8 @@ auto getNodeType(Operation *moduleOperation) -> std::string;
 auto getNodeId(Operation *moduleOperation) -> int;
 
 // adds the qubit Ids on the physicalId or physicalIds attributes to theseIds
-void addModuleQubitIds(Operation *moduleOperation, std::vector<uint> &theseIds);
+void addQubitIdsFromAttr(Operation *operation, std::vector<uint> &theseIds);
+void addQubitIdsFromAttr(Operation *operation, std::set<uint> &theseIds);
 
 // appends all of the qubit arguments for a callOp to vec
 template <class CallOpTy>

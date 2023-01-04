@@ -53,13 +53,42 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
         break;
 
       Operation *nextOp = nextOpt.getValue();
+      // for control flow ops, continue, but add the operated qubits of the
+      // control flow block to the currQubits set
+      while (nextOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
+        addQubitIdsFromAttr(nextOp, currQubits);
+
+        // now find the next next op
+        auto nextNextOpt = nextQuantumOrControlFlowOrNull(nextOp);
+        if (!nextNextOpt.hasValue()) // only move non-control-flow ops
+          break;
+
+        nextOp = nextNextOpt.getValue();
+      }
+
       // don't reorder past the next measurement or reset or control flow
       if (nextOp->hasTrait<mlir::quir::CPTPOp>() ||
           nextOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>())
         break;
 
-      // The measure operates on something that is operated on by nextOp
-      if (QubitOpInterface::opsShareQubits(measureOp, nextOp))
+      // Check for overlap between currQubits and what's operated on by nextOp
+      std::set<uint> nextQubits = QubitOpInterface::getOperatedQubits(nextOp);
+      if (QubitOpInterface::qubitSetsOverlap(currQubits, nextQubits))
+        break;
+
+      // Make sure that the nextOp doesn't use an SSA value defined between
+      // the measureOp and nextOp
+      Block *measBlock = measureOp->getBlock();
+      bool interveningValue = false;
+      for (auto operand : nextOp->getOperands())
+        if (Operation *defOp = operand.getDefiningOp())
+          if (defOp->getBlock() == measBlock &&
+              measureOp->isBeforeInBlock(defOp)) {
+            interveningValue = true;
+            break;
+          }
+
+      if (interveningValue)
         break;
 
       LLVM_DEBUG(llvm::dbgs() << "Succeeded match with operation:\n");

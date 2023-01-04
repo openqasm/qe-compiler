@@ -98,12 +98,11 @@ auto getNodeId(Operation *moduleOperation) -> int {
 } // getNodeType
 
 // adds the qubit Ids on the physicalId or physicalIds attributes to theseIds
-void addModuleQubitIds(Operation *moduleOperation,
-                       std::vector<uint> &theseIds) {
-  auto thisIdAttr = moduleOperation->getAttrOfType<IntegerAttr>(
+void addQubitIdsFromAttr(Operation *operation, std::vector<uint> &theseIds) {
+  auto thisIdAttr = operation->getAttrOfType<IntegerAttr>(
       mlir::quir::getPhysicalIdAttrName());
-  auto theseIdsAttr = moduleOperation->getAttrOfType<ArrayAttr>(
-      mlir::quir::getPhysicalIdsAttrName());
+  auto theseIdsAttr =
+      operation->getAttrOfType<ArrayAttr>(mlir::quir::getPhysicalIdsAttrName());
   if (thisIdAttr)
     theseIds.push_back(thisIdAttr.getInt());
   if (theseIdsAttr) {
@@ -112,7 +111,23 @@ void addModuleQubitIds(Operation *moduleOperation,
       theseIds.push_back(intAttr.getInt());
     }
   }
-} // addModuleQubitIds
+} // addQubitIdsFromAttr
+
+// adds the qubit Ids on the physicalId or physicalIds attributes to theseIds
+void addQubitIdsFromAttr(Operation *operation, std::set<uint> &theseIds) {
+  auto thisIdAttr = operation->getAttrOfType<IntegerAttr>(
+      mlir::quir::getPhysicalIdAttrName());
+  auto theseIdsAttr =
+      operation->getAttrOfType<ArrayAttr>(mlir::quir::getPhysicalIdsAttrName());
+  if (thisIdAttr)
+    theseIds.emplace(thisIdAttr.getInt());
+  if (theseIdsAttr) {
+    for (Attribute valAttr : theseIdsAttr) {
+      auto intAttr = valAttr.dyn_cast<IntegerAttr>();
+      theseIds.emplace(intAttr.getInt());
+    }
+  }
+} // addQubitIdsFromAttr
 
 // returns a vector of all of the classical arguments for a callOp
 template <class CallOpTy>
