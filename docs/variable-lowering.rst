@@ -43,7 +43,7 @@ QUIRGenQASM3Visitor
 -------------------
 
 The OpenQASM 3 frontend’s first step that generates MLIR, the
-```QUIRGenQASM3Visitor`` <../lib/Frontend/OpenQASM3/QUIRGenQASM3Visitor.cpp>`__,
+`QUIRGenQASM3Visitor <https://github.com/Qiskit/qss-compiler/blob/main/lib/Frontend/OpenQASM3/QUIRGenQASM3Visitor.cpp>`__ ,
 follows the memory semantics of OpenQASM 3 variables: each variable
 identifies a location in memory and each reference or assignment to that
 variables reads or writes that location.
@@ -81,18 +81,18 @@ Coarse Initial Optimizations
 Two initial optimization steps can remove (or simplify) variables
 altogether (saving memory and potentially enabling further optimizations
 of values assigned to them). The
-```LoadEliminationPass`` <../lib/Dialect/QUIR/Transforms/LoadElimination.cpp>`__
+`LoadEliminationPass <https://github.com/Qiskit/qss-compiler/blob/main/lib/Dialect/QUIR/Transforms/LoadElimination.cpp>`__
 can remove variables that are only assigned once and, thus, effectively
 act as constants (replacing every use with the single assigned value).
 The
-```UnusedVariablePass`` <../lib/Dialect/QUIR/Transforms/UnusedVariable.cpp>`__
+`UnusedVariablePass <https://github.com/Qiskit/qss-compiler/blob/main/lib/Dialect/QUIR/Transforms/UnusedVariable.cpp>`__
 removes variables that are never referenced.
 
 Best-Effort SSA Transformation
 ------------------------------
 
 The
-```VariableEliminationPass`` <../lib/Dialect/QUIR/Transforms/VariableElimination.cpp>`__
+`VariableEliminationPass <https://github.com/Qiskit/qss-compiler/blob/main/lib/Dialect/QUIR/Transforms/VariableElimination.cpp>`__
 reuses the scalar-replacement pass from MLIR’s affine dialect to
 transform many cases of variable uses into SSA form. Noteably, that code
 does not perform a complete SSA transformation and variable assignment
