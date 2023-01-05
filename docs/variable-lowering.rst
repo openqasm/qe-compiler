@@ -2,9 +2,9 @@ OpenQASM 3 Variable Lowering
 ============================
 
 The current lowering pipeline for variables is driven by the goals of
-enabling efficient optimizations based on SSA form while at the same
-keeping the difference of abstraction bridged in each transformation
-step low.
+enabling efficient optimizations based on the static single assignment
+(SSA) form's convenient use-def chains while at the same time keeping
+the difference of abstraction bridged in each transformation step low.
 
 As an example, consider the OpenQASM 3 code
 
@@ -15,8 +15,8 @@ As an example, consider the OpenQASM 3 code
      x $0;
 
 To enable optimizations to have a clear “view” of data flow between
-classical and quantum operations, we aim to get MLIR in clean SSA form
-such as
+classical and quantum operations, we aim to promote all variable
+operations into SSA form such as
 
 ::
 
@@ -37,7 +37,7 @@ steps. The initial MLIR follows the memory semantics of OpenQASM 3. Two
 initial optimizations can remove some variables. Finally, variable
 declarations, assignments, and references are converted to memory
 operations from MLIR’s builtin dialects and replaced with SSA values in
-many cases (not a full SSA transformation).
+many cases (not a full SSA transformation, though).
 
 QUIRGenQASM3Visitor
 -------------------
@@ -74,6 +74,11 @@ for clarity):
 Variable scoping is not supported yet (there is only the global scope). Adding
 support is future work.
 
+Note that MLIR is always in SSA form (by construction). Yet, the SSA
+use-def chains between the operations that actually define and use
+variable values are broken by `assign_variable` and `use_variable`
+operations.
+
 
 Coarse Initial Optimizations
 ----------------------------
@@ -94,10 +99,11 @@ Best-Effort SSA Transformation
 The
 `VariableEliminationPass <https://github.com/Qiskit/qss-compiler/blob/main/lib/Dialect/QUIR/Transforms/VariableElimination.cpp>`__
 reuses the scalar-replacement pass from MLIR’s affine dialect to
-transform many cases of variable uses into SSA form. Noteably, that code
+replace instances of `quir.use_variable` with the MLIR Value previously
+assigned to the respective variable, in many cases. Noteably, that code
 does not perform a complete SSA transformation and variable assignment
 and use around control flow will be left as memory operations. The
-(partial) transformation has four steps
+(partial) transformation has four steps:
 
 Lowering to Memory Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
