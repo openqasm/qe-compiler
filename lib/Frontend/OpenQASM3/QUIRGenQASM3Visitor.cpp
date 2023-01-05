@@ -174,7 +174,7 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
         initialLocation, builder.getIndexType(), builder.getIndexAttr(1));
     auto forOp =
         builder.create<scf::ForOp>(initialLocation, startOp, endOp, stepOp);
-    forOp->setAttr("quir.shotLoop", builder.getUnitAttr());
+    forOp->setAttr(getShotLoopAttrName(), builder.getUnitAttr());
 
     builder.setInsertionPointToStart(&forOp.getRegion().front());
     // Add the shot delay to all qubits
@@ -186,8 +186,7 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
   }
   // init shots even when there's no loop, so we always get a sync_trigger
   auto shotInit = builder.create<ShotInitOp>(initialLocation);
-  shotInit->setAttr(StringRef("quir.numShots"),
-                    builder.getI32IntegerAttr(numShots));
+  shotInit->setAttr(getNumShotsAttrName(), builder.getI32IntegerAttr(numShots));
 
   // reset the insertion pointer to outside the shot loop
   builder.setInsertionPointToEnd(&func.getBody().front());
