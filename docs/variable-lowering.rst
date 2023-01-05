@@ -71,6 +71,10 @@ for clarity):
       %2 = quir.cbit_xor %s02, %s13
       quir.assign_variable @a = %2
 
+Variable scoping is not supported yet (there is only the global scope). Adding
+support is future work.
+
+
 Coarse Initial Optimizations
 ----------------------------
 
@@ -93,7 +97,7 @@ reuses the scalar-replacement pass from MLIR’s affine dialect to
 transform many cases of variable uses into SSA form. Noteably, that code
 does not perform a complete SSA transformation and variable assignment
 and use around control flow will be left as memory operations. The
-(partial) transformation has three steps
+(partial) transformation has four steps
 
 Lowering to Memory Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
