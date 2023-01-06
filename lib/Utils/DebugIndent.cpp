@@ -22,8 +22,8 @@
 
 using namespace qssc::utils;
 
-DebugIndent::DebugIndent(int indentStep)
-    : debugIndentCount(0), debugIndentStep(indentStep) {}
+DebugIndent::DebugIndent(unsigned int indentStep)
+    : debugIndentStep(indentStep) {}
 
 void DebugIndent::increaseDebugIndent() {
 #ifndef NDEBUG

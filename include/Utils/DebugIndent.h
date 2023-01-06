@@ -32,7 +32,8 @@ namespace qssc::utils {
 
 class DebugIndent {
 public:
-  DebugIndent(int indentStep = 2);
+  DebugIndent() = default;
+  DebugIndent(unsigned int indentStep);
 
 protected:
   std::string indent();
@@ -40,8 +41,8 @@ protected:
   void decreaseDebugIndent();
 
 private:
-  unsigned int debugIndentCount;
-  unsigned int debugIndentStep;
+  unsigned int debugIndentCount {0};
+  unsigned int debugIndentStep {2};
 };
 
 } // namespace qssc::utils
