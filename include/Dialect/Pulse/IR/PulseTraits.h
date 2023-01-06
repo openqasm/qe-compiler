@@ -34,6 +34,10 @@ public:
   static LogicalResult verifyTrait(Operation *op);
 };
 
+template <typename ConcreteType>
+class HasFrameArg
+    : public mlir::OpTrait::TraitBase<ConcreteType, HasFrameArg> {};
+
 } // namespace mlir::pulse
 
 #endif // PULSE_PULSETRAITS_H
