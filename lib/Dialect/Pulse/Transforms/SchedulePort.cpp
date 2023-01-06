@@ -65,12 +65,6 @@
 using namespace mlir;
 using namespace mlir::pulse;
 
-// silence lint error for msg not in () - adding () will break macro
-// NOLINTNEXTLINE(bugprone-macro-parentheses)
-#define INDENT_DEBUG(msg) LLVM_DEBUG(llvm::errs() << indent() << msg)
-#define INDENT_DUMP(msg) LLVM_DEBUG(llvm::errs() << indent(); (msg))
-#define INDENT_STEP (2)
-
 uint SchedulePortPass::processCall(Operation *module,
                                    CallSequenceOp &callSequenceOp) {
 
@@ -218,7 +212,7 @@ SchedulePortPass::opVec_t SchedulePortPass::buildOpsList(
 
   for (const auto &index : mixedFrameSequences) {
     INDENT_DEBUG("processing fixed frame: " << index.first << "\n");
-    debugIndentCount += 2;
+    increaseDebugIndent();
 
     uint currentTimepoint = 0;
     for (auto *op : index.second) {
@@ -260,7 +254,7 @@ SchedulePortPass::opVec_t SchedulePortPass::buildOpsList(
     }
     if (currentTimepoint > maxTime)
       maxTime = currentTimepoint;
-    debugIndentCount -= 2;
+    decreaseDebugIndent();
   }
 
   return ops;
@@ -349,8 +343,4 @@ llvm::StringRef SchedulePortPass::getArgument() const {
 
 llvm::StringRef SchedulePortPass::getDescription() const {
   return "Schedule operations on the same port in a sequence";
-}
-
-std::string SchedulePortPass::indent() {
-  return {std::string(debugIndentCount, ' ')};
 }
