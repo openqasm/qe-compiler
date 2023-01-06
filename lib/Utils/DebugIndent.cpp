@@ -1,6 +1,6 @@
 //===- DebugIndent.cpp - Mixin class for debug indentation ------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -16,9 +16,9 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include <string>
-
 #include "Utils/DebugIndent.h"
+
+#include <string>
 
 using namespace qssc::utils;
 
