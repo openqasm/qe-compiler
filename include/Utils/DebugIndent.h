@@ -23,6 +23,8 @@
 #ifndef UTILS_DEBUG_INDENT_H
 #define UTILS_DEBUG_INDENT_H
 
+#include <string>
+
 // silence lint error for msg not in () - adding () will break macro
 // NOLINTNEXTLINE(bugprone-macro-parentheses)
 #define INDENT_DEBUG(msg) LLVM_DEBUG(llvm::errs() << indent() << msg)
