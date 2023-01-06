@@ -41,8 +41,8 @@ protected:
   void decreaseDebugIndent();
 
 private:
-  unsigned int debugIndentCount {0};
-  unsigned int debugIndentStep {2};
+  unsigned int debugIndentCount{0};
+  unsigned int debugIndentStep{2};
 };
 
 } // namespace qssc::utils
