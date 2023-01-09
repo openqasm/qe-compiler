@@ -33,7 +33,7 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
 template <typename PulseOpTy>
 MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
 
-  if (!pulseOp.template hasTrait<mlir::pulse::HasFrameArg>())
+  if (!pulseOp.template hasTrait<mlir::pulse::HasTarget>())
     pulseOp->emitError() << "The pulseOp does not have a frame argument.";
 
   auto frameArgIndex =

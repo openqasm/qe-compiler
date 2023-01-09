@@ -29,8 +29,8 @@ def SequenceRequired : NativeOpTrait<"SequenceRequired">{
     let cppNamespace= "::mlir::pulse";
 }
 
-/// Operation receives a frame as an argument
-def HasFrameArg : NativeOpTrait<"HasFrameArg">{
+/// Operation receives a target argument
+def HasTarget : NativeOpTrait<"HasTarget">{
     let cppNamespace= "::mlir::pulse";
 }
 

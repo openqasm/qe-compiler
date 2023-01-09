@@ -308,10 +308,12 @@ def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAll
     }];
 }
 
-def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasFrameArg]> {
+def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTarget]> {
     let summary = "Play a waveform on a given frame.";
     let description = [{
-        The `pulse.play` operation plays a waveform on a frame.
+        The `pulse.play` operation plays a waveform on a frame,
+        optional attributes include: angle (in radians), ssb (frequency in Hz),
+        amplitude (float 64).
 
         Examples:
 
@@ -321,7 +323,19 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasFrameArg]> {
         ```
     }];
 
-    let arguments = (ins AnyFrame:$target, Pulse_WaveformType:$wfr);
+    let arguments = (ins AnyFrame:$target, Pulse_WaveformType:$wfr,
+                     OptionalAttr<F64Attr>:$angle,
+                     OptionalAttr<F64Attr>:$ssb,
+                     OptionalAttr<F64Attr>:$amplitude);
+
+    let builders = [
+        OpBuilder<(ins "Value":$target, "Value":$wfr), [{
+            // dummy builder for QUIRToPulsePass
+            // this allows existing QUIRToPulsePass to compile
+            // TODO: Implement as part of QUIRToPulse re-implementation
+            //       with new Pulse updates
+        }]>
+        ];
 
     let assemblyFormat = [{
         attr-dict `(` $target  `,` $wfr `)` `:` `(` type($target) `,` type($wfr) `)`
@@ -339,7 +353,7 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasFrameArg]> {
     }];
 }
 
-def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasFrameArg]> {
+def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTarget]> {
     let summary = "Set a frequency of a frame.";
     let description = [{
         The `pulse.set_frequency` operation sets the frequency of a frame.
@@ -370,7 +384,7 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasFrame
     }];
 }
 
-def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasFrameArg]> {
+def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasTarget]> {
     let summary = "Shift the frequency of a frame.";
     let description = [{
         The `pulse.shift_frequency` operation shifts the frequency of a frame.
@@ -401,7 +415,7 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasF
     }];
 }
 
-def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasFrameArg]> {
+def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTarget]> {
     let summary = "Set the phase of a frame.";
     let description = [{
         The `pulse.set_phase` operation sets the phase of a frame.
@@ -432,7 +446,7 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasFrameArg]> {
     }];
 }
 
-def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasFrameArg]> {
+def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTarget]> {
     let summary = "Shift a phase of a frame.";
     let description = [{
         The `pulse.shift_phase` operation shifts the phase of a frame.
@@ -463,16 +477,16 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasFrameArg]
     }];
 }
 
-def Pulse_SetAmpOp : Pulse_Op<"set_amp", [SequenceRequired, HasFrameArg]> {
+def Pulse_SetAmplitudeOp : Pulse_Op<"set_amplitude", [SequenceRequired, HasTarget]> {
 let summary = "Set a scaling factor for pulses of a frame.";
     let description = [{
-        The `pulse.set_amp` operation sets a scaling factor for pulses of a frame.
+        The `pulse.set_amplitude` operation sets a scaling factor for pulses of a frame.
 
         Example:
 
         ```mlir
-        pulse.set_amp(%frame, %amp) : (!pulse.frame, f64)
-        pulse.set_amp(%mixed_frame, %amp) : (!pulse.mixed_frame, f64)
+        pulse.set_amplitude(%frame, %amp) : (!pulse.frame, f64)
+        pulse.set_amplitude(%mixed_frame, %amp) : (!pulse.mixed_frame, f64)
         ```
     }];
 
@@ -491,7 +505,7 @@ let summary = "Set a scaling factor for pulses of a frame.";
     }];
 }
 
-def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasFrameArg]> {
+def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTarget]> {
     let summary = "Capture the incoming port and use a kernel for integration.";
     let description = [{
         The `pulse.capture` operation captures the incoming data on a frame using a kernel.
@@ -516,7 +530,7 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasFrameArg]> {
     }];
 }
 
-def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasFrameArg]> {
+def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTarget]> {
     let summary = "Delay by an integer duration of samples on a set of pulse frames.";
     let description = [{
         The `pulse.delay` operation represents a delay operation of integer length on a set of pulse
@@ -551,7 +565,7 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasFrameArg]> {
     }];
 }
 
-def Pulse_BarrierOp : Pulse_Op<"barrier", [NoSideEffect, SequenceAllowed, HasFrameArg]> {
+def Pulse_BarrierOp : Pulse_Op<"barrier", [NoSideEffect, SequenceAllowed, HasTarget]> {
     let summary = "Add a barrier operation on a set of pulse frames.";
     let description =   [{
         The `pulse.barrier` operation synchronizes the timing of all frames. It does this by inserting
