@@ -1,6 +1,6 @@
 //===- SchedulePort.h  - Schedule Pulse on single port ----------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -22,6 +22,7 @@
 #define PULSE_SCHEDULE_PORT_H
 
 #include "Dialect/Pulse/IR/PulseOps.h"
+#include "Utils/DebugIndent.h"
 #include "mlir/Pass/Pass.h"
 
 #include <deque>
@@ -30,7 +31,8 @@
 namespace mlir::pulse {
 
 class SchedulePortPass
-    : public PassWrapper<SchedulePortPass, OperationPass<ModuleOp>> {
+    : public PassWrapper<SchedulePortPass, OperationPass<ModuleOp>>,
+      protected qssc::utils::DebugIndent {
 public:
   void runOnOperation() override;
 
@@ -55,9 +57,7 @@ private:
                        mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
 
   void sortOpsByType(SequenceOp &sequenceOp);
-  std::string indent();
   void removePendingOps();
-  int debugIndentCount;
 };
 } // namespace mlir::pulse
 

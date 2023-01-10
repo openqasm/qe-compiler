@@ -4,7 +4,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-set(SOURCES LegacyInputConversion.cpp SystemDefinition.cpp)
+set(SOURCES LegacyInputConversion.cpp SystemDefinition.cpp DebugIndent.cpp)
 
 find_package(Boost 1.77.0 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
