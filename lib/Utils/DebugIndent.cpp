@@ -25,20 +25,21 @@ using namespace qssc::utils;
 DebugIndent::DebugIndent(unsigned int indentStep)
     : debugIndentStep(indentStep) {}
 
-void DebugIndent::increaseDebugIndent() {
-#ifndef NDEBUG
-  debugIndentCount += debugIndentStep;
-#endif
-}
+// DEBUG versions of the {in,de}creaseDebugIndent methods are defined here
+// NDEBUG versions are defined in the header file as empty methods
 
-void DebugIndent::decreaseDebugIndent() {
 #ifndef NDEBUG
+void DebugIndent::increaseDebugIndent() { debugIndentCount += debugIndentStep; }
+#endif
+
+#ifndef NDEBUG
+void DebugIndent::decreaseDebugIndent() {
   if (debugIndentCount >= debugIndentStep)
     debugIndentCount -= debugIndentStep;
   else
     debugIndentCount = 0;
-#endif
 }
+#endif
 
 std::string DebugIndent::indent() {
   // this method is intended to be called inside LLVM_DEBUG

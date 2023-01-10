@@ -39,8 +39,14 @@ public:
 
 protected:
   std::string indent();
+
+#ifdef NDEBUG
+  void increaseDebugIndent() {}
+  void decreaseDebugIndent() {}
+#else
   void increaseDebugIndent();
   void decreaseDebugIndent();
+#endif
 
 private:
   unsigned int debugIndentCount{0};
