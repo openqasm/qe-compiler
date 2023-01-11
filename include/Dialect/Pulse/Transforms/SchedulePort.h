@@ -54,7 +54,7 @@ private:
                                      uint &numMixedFrames);
 
   void addTimepoints(CallSequenceOp &callSequenceOp, mlir::OpBuilder &builder,
-                       mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
+                     mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
 
   void sortOpsByTimepoint(SequenceOp &sequenceOp);
   void removePendingOps();

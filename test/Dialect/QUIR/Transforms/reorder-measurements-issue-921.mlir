@@ -4,7 +4,7 @@
 // operations across control flow when there are no conflicts, and also that
 // conflicts prevent movement
 
-// based on failures for 
+// based on failures for
 // reset $2;
 // cx $1, $4;
 // reset $1;

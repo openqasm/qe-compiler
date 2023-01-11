@@ -203,9 +203,10 @@ SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
   return mixedFrameSequences;
 } // buildMixedFrameMap
 
-void SchedulePortPass::addTimepoints(
-    CallSequenceOp &callSequenceOp, mlir::OpBuilder &builder,
-    mixedFrameMap_t &mixedFrameSequences, uint &maxTime) {
+void SchedulePortPass::addTimepoints(CallSequenceOp &callSequenceOp,
+                                     mlir::OpBuilder &builder,
+                                     mixedFrameMap_t &mixedFrameSequences,
+                                     uint &maxTime) {
 
   // add timepoint to operations in mixedFrameSequences where timepoints
   // are calculated based on the duration of delayOps
@@ -247,22 +248,23 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
   for (Region &region : sequenceOp->getRegions()) {
     for (Block &block : region.getBlocks()) {
       auto &blockOps = block.getOperations();
-       blockOps.sort([](Operation &op1, Operation &op2) {
-         // put constants ahead of everything else
-         if (isa<arith::ConstantIntOp>(op1) && !isa<arith::ConstantIntOp>(op2))
-           return true;
+      blockOps.sort([](Operation &op1, Operation &op2) {
+        // put constants ahead of everything else
+        if (isa<arith::ConstantIntOp>(op1) && !isa<arith::ConstantIntOp>(op2))
+          return true;
 
-         if (!op1.hasTrait<mlir::pulse::HasTarget>() || !op2.hasTrait<mlir::pulse::HasTarget>())
+        if (!op1.hasTrait<mlir::pulse::HasTarget>() ||
+            !op2.hasTrait<mlir::pulse::HasTarget>())
           return false;
 
-         auto currentTime = getTimepoint(&op1);
-         auto nextTime = getTimepoint(&op2);
+        auto currentTime = getTimepoint(&op1);
+        auto nextTime = getTimepoint(&op2);
 
-         // order by timepoint
-         if (currentTime < nextTime)
-           return true;
-         return false;
-       }); // blockOps.sort
+        // order by timepoint
+        if (currentTime < nextTime)
+          return true;
+        return false;
+      }); // blockOps.sort
     }
   }
 } // sortOpsByType

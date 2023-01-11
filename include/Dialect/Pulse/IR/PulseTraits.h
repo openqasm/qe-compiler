@@ -35,8 +35,7 @@ public:
 };
 
 template <typename ConcreteType>
-class HasTarget
-    : public mlir::OpTrait::TraitBase<ConcreteType, HasTarget> {};
+class HasTarget : public mlir::OpTrait::TraitBase<ConcreteType, HasTarget> {};
 
 } // namespace mlir::pulse
 
