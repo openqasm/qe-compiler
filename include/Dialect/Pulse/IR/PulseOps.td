@@ -565,7 +565,7 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTarget]> {
     }];
 }
 
-def Pulse_BarrierOp : Pulse_Op<"barrier", [NoSideEffect, SequenceAllowed, HasTarget]> {
+def Pulse_BarrierOp : Pulse_Op<"barrier", [NoSideEffect, SequenceAllowed]> {
     let summary = "Add a barrier operation on a set of pulse frames.";
     let description =   [{
         The `pulse.barrier` operation synchronizes the timing of all frames. It does this by inserting

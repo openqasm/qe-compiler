@@ -115,14 +115,13 @@ uint SchedulePortPass::processCallee(Operation *module,
 
   uint maxTime = 0;
 
-  opVec_t ops =
-      buildOpsList(callSequenceOp, builder, mixedFrameSequences, maxTime);
+  addTimepoints(callSequenceOp, builder, mixedFrameSequences, maxTime);
 
   // remove all DelayOps - they are no longer required now that we have
   // timepoints
   sequenceOp->walk([&](DelayOp op) { op->erase(); });
 
-  sortOpsByType(sequenceOp);
+  sortOpsByTimepoint(sequenceOp);
 
   // clean up
   sequenceOp->walk([&](arith::ConstantOp op) {
@@ -179,8 +178,7 @@ SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
   for (Region &region : sequenceOp->getRegions()) {
     for (Block &block : region.getBlocks()) {
       for (Operation &op : block.getOperations()) {
-        if (isa<DelayOp>(op) || isa<PlayOp>(op) || isa<CaptureOp>(op)) {
-
+        if (op.hasTrait<mlir::pulse::HasTarget>()) {
           Value target;
           // get mixed_frames
           if (isa<DelayOp>(op))
@@ -189,6 +187,16 @@ SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
             target = dyn_cast<PlayOp>(op).target();
           else if (isa<CaptureOp>(op))
             target = dyn_cast<CaptureOp>(op).target();
+          else if (isa<SetFrequencyOp>(op))
+            target = dyn_cast<SetFrequencyOp>(op).target();
+          else if (isa<SetPhaseOp>(op))
+            target = dyn_cast<SetPhaseOp>(op).target();
+          else if (isa<ShiftFrequencyOp>(op))
+            target = dyn_cast<ShiftFrequencyOp>(op).target();
+          else if (isa<ShiftPhaseOp>(op))
+            target = dyn_cast<ShiftPhaseOp>(op).target();
+          else if (isa<SetAmplitudeOp>(op))
+            target = dyn_cast<SetAmplitudeOp>(op).target();
 
           auto blockArg = target.cast<BlockArgument>();
           auto index = blockArg.getArgNumber();
@@ -201,20 +209,15 @@ SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
   return mixedFrameSequences;
 } // buildMixedFrameMap
 
-SchedulePortPass::opVec_t SchedulePortPass::buildOpsList(
+void SchedulePortPass::addTimepoints(
     CallSequenceOp &callSequenceOp, mlir::OpBuilder &builder,
     mixedFrameMap_t &mixedFrameSequences, uint &maxTime) {
 
-  // build a vector of ops in the sequence sorted by timepoint
-  // where the timepoint is calculated from the duration of each
-  // op on mixed frame.
+  // add timepoint to operations in mixedFrameSequences where timepoints
+  // are calculated based on the duration of delayOps
   //
   // Timepoints start at 0 for each mixed frame vector and are calculated
   // independently for each mixed frame.
-
-  // vector of ops to be sorted by timepoint this vector will include ops
-  // operating on multiple mixed frames
-  opVec_t ops;
 
   for (const auto &index : mixedFrameSequences) {
     INDENT_DEBUG("processing fixed frame: " << index.first << "\n");
@@ -231,89 +234,41 @@ SchedulePortPass::opVec_t SchedulePortPass::buildOpsList(
       IntegerAttr timepointAttr = builder.getI64IntegerAttr(currentTimepoint);
       op->setAttr("pulse.timepoint", timepointAttr);
 
-      // push op on vector to be sorted
-      ops.push_back(op);
-
       // get duration of current op and add to current timepoint
       auto delayOp = dyn_cast<DelayOp>(op);
       if (delayOp)
         currentTimepoint += delayOp.getDuration();
-
-      auto playOp = dyn_cast<PlayOp>(op);
-      if (playOp) {
-        auto duration = playOp.getDuration(callSequenceOp);
-        if (auto err = duration.takeError()) {
-          playOp.emitOpError() << toString(std::move(err));
-          signalPassFailure();
-        }
-        auto target = playOp.target();
-
-        builder.setInsertionPointAfter(op);
-        auto mergeConstant = builder.create<mlir::arith::ConstantIntOp>(
-            op->getLoc(), duration.get(), 32);
-        auto newDelay =
-            builder.create<DelayOp>(op->getLoc(), target, mergeConstant);
-        IntegerAttr timepointAttr = builder.getI64IntegerAttr(currentTimepoint);
-        newDelay->setAttr("pulse.timepoint", timepointAttr);
-        ops.push_back(newDelay);
-      }
     }
     if (currentTimepoint > maxTime)
       maxTime = currentTimepoint;
     debugIndentCount -= 2;
   }
-
-  return ops;
 } // buildOpsList
 
-void SchedulePortPass::sortOpsByType(SequenceOp &sequenceOp) {
+void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
   // sort updated ops so that ops across mixed frame are in the correct
   // sequence with respect to timepoint on a single port.
 
-  // sort ops by time point
-  // put plays before delays at same timepoint
-  //
-  // (find a better way to do this, its basically a bubblesort)
-
+  // sort ops by timepoint
   for (Region &region : sequenceOp->getRegions()) {
     for (Block &block : region.getBlocks()) {
-      bool movedOp;
-      do {
-        movedOp = false;
+      auto &blockOps = block.getOperations();
+       blockOps.sort([](Operation &op1, Operation &op2) {
+         // put constants ahead of everything else
+         if (isa<arith::ConstantIntOp>(op1) && !isa<arith::ConstantIntOp>(op2))
+           return true;
 
-        for (Operation &op : block.getOperations()) {
-          Operation *nextOp = op.getNextNode();
-          if (!nextOp)
-            continue;
+         if (!op1.hasTrait<mlir::pulse::HasTarget>() || !op2.hasTrait<mlir::pulse::HasTarget>())
+          return false;
 
-          // put constants ahead of everything else
-          if (!isa<arith::ConstantIntOp>(op) &&
-              isa<arith::ConstantIntOp>(nextOp)) {
-            nextOp->moveBefore(&op);
-            movedOp = true;
-            break;
-          }
+         auto currentTime = getTimepoint(&op1);
+         auto nextTime = getTimepoint(&op2);
 
-          // only attempt to sort
-          // PlayOp, CaptureOp
-
-          if (!isa<PlayOp>(op) && !isa<CaptureOp>(op))
-            continue;
-
-          if (!isa<PlayOp>(nextOp) && !isa<CaptureOp>(nextOp))
-            continue;
-
-          auto currentTime = getTimepoint(&op);
-          auto nextTime = getTimepoint(nextOp);
-
-          // order by timepoint
-          if (nextTime < currentTime) {
-            nextOp->moveBefore(&op);
-            movedOp = true;
-            break;
-          }
-        }
-      } while (movedOp);
+         // order by timepoint
+         if (currentTime < nextTime)
+           return true;
+         return false;
+       }); // blockOps.sort
     }
   }
 } // sortOpsByType
