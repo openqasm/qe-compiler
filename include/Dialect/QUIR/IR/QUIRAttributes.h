@@ -38,6 +38,12 @@ static inline llvm::StringRef getPhysicalIdsAttrName() {
 }
 static inline llvm::StringRef getShotLoopAttrName() { return "quir.shotLoop"; }
 static inline llvm::StringRef getNumShotsAttrName() { return "quir.numShots"; }
+static inline llvm::StringRef getNoReportRuntimeAttrName() {
+  return "quir.noReportRuntime";
+}
+static inline llvm::StringRef getNoReportUserResultAttrName() {
+  return "quir.noReportUserResult";
+}
 } // namespace mlir::quir
 
 #endif // QUIR_QUIRATTRIBUTES_H
