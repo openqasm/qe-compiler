@@ -21,7 +21,8 @@ get_property(qssc_targets GLOBAL PROPERTY QSSC_TARGETS)
 get_property(mlir_dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(mlir_conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 
-set(LIBS
+# All liibraries for the QSS-Compiler
+set(qssc_api_libs
         ${qssc_targets}
         QSSCAPI
         QSSCHAL
@@ -40,9 +41,10 @@ set(LIBS
         mpfr::mpfr
         gmp::gmp
         )
+set_property(GLOBAL PROPERTY QSSC_API_LIBS ${qssc_api_libs})
 
 # collect all required components in an "interface library", which exports its
 # INTERFACE and dependencies to all targets that refer to the library yet does
 # not materialize as an artifact by itself
 add_library(QSSCLib INTERFACE)
-target_link_libraries(QSSCLib INTERFACE ${LIBS})
+target_link_libraries(QSSCLib INTERFACE ${qssc_api_libs})

@@ -35,6 +35,8 @@
 #include "HAL/TargetRegistry.h"
 #include "HAL/TargetSystem.h"
 
+#include "Dialect/RegisterDialects.h"
+
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
 
@@ -272,13 +274,6 @@ llvm::Error registerPasses() {
   return err;
 }
 
-auto registerDialects() -> DialectRegistry {
-  DialectRegistry registry;
-  mlir::registerAllDialects(registry);
-  registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect>();
-  return registry;
-}
-
 auto registerPassManagerCLOpts() {
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
@@ -339,7 +334,7 @@ static llvm::Error compile_(int argc, char const **argv,
   if (auto err = registerPasses())
     return err;
 
-  DialectRegistry registry = registerDialects();
+  DialectRegistry registry = qssc::dialect::registerDialects();
   mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
   registerPassManagerCLOpts();
 
