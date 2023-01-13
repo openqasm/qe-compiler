@@ -56,13 +56,13 @@ else()
         COMMAND git rev-parse --show-toplevel
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_VARIABLE QSS_ROOT_GIT_DIR
-            OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     message(STATUS "Root CMake project Git directory (used for version): ${QSS_ROOT_GIT_DIR}")
     execute_process(
-            COMMAND ${Python_EXECUTABLE} -c "from setuptools_scm import get_version; print(get_version(root='${QSS_ROOT_GIT_DIR}'))"
-            OUTPUT_VARIABLE VERSION_STRING
-            OUTPUT_STRIP_TRAILING_WHITESPACE
+        COMMAND ${Python_EXECUTABLE} -c "from setuptools_scm import get_version; print(get_version(root='${QSS_ROOT_GIT_DIR}'))"
+        OUTPUT_VARIABLE VERSION_STRING
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     unset(QSS_ROOT_GIT_DIR)
 endif()
