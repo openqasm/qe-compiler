@@ -229,10 +229,17 @@ void SchedulePortPass::addTimepoints(CallSequenceOp &callSequenceOp,
       IntegerAttr timepointAttr = builder.getI64IntegerAttr(currentTimepoint);
       op->setAttr("pulse.timepoint", timepointAttr);
 
-      // get duration of current op and add to current timepoint
-      auto delayOp = dyn_cast<DelayOp>(op);
-      if (delayOp)
-        currentTimepoint += delayOp.getDuration();
+      // update currentTimepoint if DelayOp or playOp
+      if (auto castOp = dyn_cast<DelayOp>(op)) {
+        currentTimepoint += castOp.getDuration();
+      } else if (auto castOp = dyn_cast<PlayOp>(op)) {
+        auto duration = castOp.getDuration(callSequenceOp);
+        if (auto err = duration.takeError()) {
+          op->emitOpError() << toString(std::move(err));
+          signalPassFailure();
+        }
+        currentTimepoint += duration.get();
+      }
     }
     if (currentTimepoint > maxTime)
       maxTime = currentTimepoint;
