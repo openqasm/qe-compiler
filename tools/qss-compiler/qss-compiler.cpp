@@ -11,5 +11,10 @@
 #include "API/api.h"
 
 int main(int argc, const char **argv) {
-  return qssc::compile(argc, argv, nullptr, nullptr);
+  qssc::DiagnosticCallback diagnosticDiscardingCallback{
+      [](qssc::Diagnostic const &) {
+        /* diagnostics not handled separately */
+      }};
+
+  return qssc::compile(argc, argv, nullptr, diagnosticDiscardingCallback);
 }

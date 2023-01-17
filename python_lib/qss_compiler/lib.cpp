@@ -86,7 +86,7 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
 
   int status =
       qssc::compile(args.size(), argv.data(),
-                    outputAsStr ? &outputStr : nullptr, &diagnosticCallback);
+                    outputAsStr ? &outputStr : nullptr, diagnosticCallback);
   bool success = status == 0;
 
 #ifndef NDEBUG
