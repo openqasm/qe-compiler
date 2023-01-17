@@ -49,6 +49,7 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <utility>
 
 using namespace mlir;
 
@@ -448,7 +449,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     if (auto frontendError = qssc::frontend::openqasm3::parse(
             inputSource, !directInput, emitAction == Action::DumpAST,
             emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
-            moduleOp, diagnosticCb))
+            moduleOp, std::move(diagnosticCb)))
       return frontendError;
 
     if (emitAction < Action::DumpMLIR)
@@ -549,7 +550,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
 int qssc::compile(int argc, char const **argv, std::string *outputString,
                   llvm::Optional<DiagnosticCallback> diagnosticCb) {
-  if (auto err = compile_(argc, argv, outputString, diagnosticCb)) {
+  if (auto err = compile_(argc, argv, outputString, std::move(diagnosticCb))) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;
   }
