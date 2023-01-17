@@ -36,18 +36,6 @@ include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
 
 // TODO: This op should be extracted to a system-level dialect
-def QUIR_ShotInitOp : QUIR_Op<"shot_init", [IsolatedFromAbove]> {
-    let summary = "Initialization for shot loops";
-    let description = [{
-        The `quir.shot_init` operation causes the system to initialize the shot
-        loop to maintain consistent initial conditions for each shot
-    }];
-    let assemblyFormat = [{
-        attr-dict
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
 def QUIR_SynchronizeOp : QUIR_Op<"synchronize", [
             DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
             NonInterferingNonDeadSideEffect]> {

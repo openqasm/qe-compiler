@@ -36,8 +36,6 @@ static inline llvm::StringRef getPhysicalIdAttrName() {
 static inline llvm::StringRef getPhysicalIdsAttrName() {
   return "quir.physicalIds";
 }
-static inline llvm::StringRef getShotLoopAttrName() { return "quir.shotLoop"; }
-static inline llvm::StringRef getNumShotsAttrName() { return "quir.numShots"; }
 static inline llvm::StringRef getNoReportRuntimeAttrName() {
   return "quir.noReportRuntime";
 }

@@ -32,8 +32,8 @@ module {
         sys.init
         // CHECK: sys.finalize
         sys.finalize
-        // CHECK: quir.shot_init
-        quir.shot_init
+        // CHECK: sys.shot_loop_init
+        sys.shot_loop_init
         %0 = arith.constant 1 : i32
         %val = arith.constant 1 : i1
         // quir.constant canonical form example with angle attribute

@@ -14,7 +14,7 @@ module {
     %c0_i2 = arith.constant 0 : i2
     %true = arith.constant true
     sys.init
-    quir.shot_init {quir.numShots = 1 : i32}
+    sys.shot_loop_init {sys.num_shots = 1 : i32}
 
     // CHECK: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0
     // CHECK: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1

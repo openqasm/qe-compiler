@@ -58,6 +58,17 @@ def SYS_SystemFinalizeOp : SYS_Op<"finalize", [IsolatedFromAbove]> {
     }];
 }
 
+def SYS_ShotInitOp : SYS_Op<"shot_loop_init", [IsolatedFromAbove]> {
+    let summary = "Initialization for shot loops";
+    let description = [{
+        The `sys.shot_loop_init` operation causes the system to initialize the shot
+        loop to maintain consistent initial conditions for each shot
+    }];
+    let assemblyFormat = [{
+        attr-dict
+    }];
+}
+
 // def SYS_BroadcastOp : SYS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
 //     let summary = "Broadcast a value from this controller to all others";
 //     let description = [{

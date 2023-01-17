@@ -26,6 +26,12 @@
 #define GET_ATTRDEF_CLASSES
 #include "Dialect/System/IR/SystemAttributes.h.inc"
 
-namespace mlir::sys {} // namespace mlir::sys
+namespace mlir::sys {
+static inline llvm::StringRef getShotLoopInitAttrName() {
+  return "sys.shot_loop_init";
+}
+static inline llvm::StringRef getShotLoopAttrName() { return "sys.shot_loop"; }
+static inline llvm::StringRef getNumShotsAttrName() { return "sys.num_shots"; }
+} // namespace mlir::sys
 
 #endif // SYSTEM_SYSTEMATTRIBUTES_H
