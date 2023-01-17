@@ -31,6 +31,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "Dialect/System/IR/SystemOps.h"
+
 #include <Frontend/OpenQASM3/QUIRGenQASM3Visitor.h>
 
 #include <Frontend/OpenQASM3/BaseQASM3Visitor.h>
@@ -58,6 +60,7 @@
 
 using namespace mlir;
 using namespace mlir::quir;
+using namespace mlir::sys;
 using namespace QASM;
 
 namespace qssc::frontend::openqasm3 {

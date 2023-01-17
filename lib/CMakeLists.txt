@@ -34,6 +34,7 @@ set(qssc_api_libs
         MLIRCallInterfaces
         MLIRExecutionEngine
         MLIROptLib
+        MLIRSystemDialect
         MLIRQUIRDialect
         MLIRPulseDialect
         qasm::qasm

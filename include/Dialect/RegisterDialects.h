@@ -1,6 +1,6 @@
 //===- OperationUtils.h -----------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -19,6 +19,7 @@
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
+#include "Dialect/System/IR/SystemDialect.h"
 
 namespace qssc::dialect {
 
@@ -26,7 +27,8 @@ namespace qssc::dialect {
 inline mlir::DialectRegistry registerDialects() {
   mlir::DialectRegistry registry;
   mlir::registerAllDialects(registry);
-  registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect>();
+  registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect,
+                  mlir::sys::SystemDialect>();
   return registry;
 }
 } // namespace qssc::dialect

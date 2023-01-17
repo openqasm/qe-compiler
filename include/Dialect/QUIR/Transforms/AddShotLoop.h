@@ -16,6 +16,8 @@
 #ifndef QUIR_ADD_SHOT_LOOP_H
 #define QUIR_ADD_SHOT_LOOP_H
 
+#include "Dialect/QUIR/IR/QUIRDialect.h"
+
 #include "mlir/Pass/Pass.h"
 
 namespace mlir {
@@ -45,6 +47,10 @@ struct AddShotLoopPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+
+  void getDependentDialects(DialectRegistry &registry) const override {
+    registry.insert<mlir::quir::QUIRDialect>();
+  }
 }; // struct AddShotLoopPass
 } // namespace mlir::quir
 

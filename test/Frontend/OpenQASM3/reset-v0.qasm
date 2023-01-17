@@ -3,7 +3,7 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-// MLIR: quir.system_init
+// MLIR: sys.init
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 qubit $0;
 
@@ -20,4 +20,4 @@ qubit $0;
 // MLIR: quir.reset [[QUBIT0]] : !quir.qubit<1>
 reset $0;
 
-// MLIR: quir.system_finalize
+// MLIR: sys.finalize

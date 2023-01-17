@@ -26,6 +26,7 @@ def QUIRDialect : Dialect {
     }];
     let cppNamespace = "::mlir::quir";
     let dependentDialects = [
+        "mlir::sys::SystemDialect",
         "mlir::arith::ArithmeticDialect",
         "mlir::scf::SCFDialect",
         "mlir::LLVM::LLVMDialect"

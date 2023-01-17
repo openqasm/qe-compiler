@@ -1,15 +1,7 @@
-# (C) Copyright IBM 2021.
+# (C) Copyright IBM 2023.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
-add_library(QSSCAPI api.cpp)
-
-set(LIBS
-        qasm::qasm
-        )
-target_link_libraries(QSSCAPI ${LIBS})
-
-add_dependencies(QSSCAPI MLIRSystemDialect MLIRQUIRDialect)
+add_subdirectory(IR)

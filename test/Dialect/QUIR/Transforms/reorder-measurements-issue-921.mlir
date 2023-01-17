@@ -4,7 +4,7 @@
 // operations across control flow when there are no conflicts, and also that
 // conflicts prevent movement
 
-// based on failures for 
+// based on failures for
 // reset $2;
 // cx $1, $4;
 // reset $1;
@@ -53,7 +53,7 @@ module {
     scf.if %14 {
       quir.call_gate @x(%0) : (!quir.qubit<1>) -> ()
     } {quir.classicalOnly = false, quir.physicalIds = [1 : i32]}
-    quir.system_finalize
+    sys.finalize
     return %c0_i32 : i32
   }
 }

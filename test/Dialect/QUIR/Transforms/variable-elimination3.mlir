@@ -13,7 +13,7 @@ module {
     %c0_i32 = arith.constant 0 : i32
     %c0_i2 = arith.constant 0 : i2
     %true = arith.constant true
-    quir.system_init
+    sys.init
     quir.shot_init {quir.numShots = 1 : i32}
 
     // CHECK: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0
@@ -64,7 +64,7 @@ module {
     scf.if %14 {
       quir.call_gate @x(%2) : (!quir.qubit<1>) -> ()
     }
-    quir.system_finalize
+    sys.finalize
     return %c0_i32 : i32
   }
 }

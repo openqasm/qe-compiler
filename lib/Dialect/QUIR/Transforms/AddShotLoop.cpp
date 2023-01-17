@@ -21,6 +21,7 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Dialect/System/IR/SystemOps.h"
 
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/SCF/SCF.h"
@@ -31,6 +32,7 @@
 
 using namespace mlir;
 using namespace mlir::quir;
+using namespace mlir::sys;
 
 // Entry point for the pass.
 void AddShotLoopPass::runOnOperation() {

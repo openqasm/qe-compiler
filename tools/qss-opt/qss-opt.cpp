@@ -39,6 +39,7 @@
 #include "Dialect/Pulse/Transforms/Passes.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
+#include "Dialect/System/IR/SystemDialect.h"
 
 using namespace qssc::hal;
 
@@ -112,7 +113,8 @@ auto main(int argc, char **argv) -> int {
   // include what you need like above. You only need to register dialects that
   // will be *parsed* by the tool, not the one generated
   registerAllDialects(registry);
-  registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect>();
+  registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect,
+                  mlir::sys::SystemDialect>();
 
   llvm::InitLLVM y(argc, argv);
 

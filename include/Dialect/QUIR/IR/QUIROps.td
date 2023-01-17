@@ -36,30 +36,6 @@ include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
 
 // TODO: This op should be extracted to a system-level dialect
-def QUIR_SystemInitOp : QUIR_Op<"system_init", [IsolatedFromAbove]> {
-    let summary = "Initializes the system";
-    let description = [{
-        The `quir.system_init` operation causes the system to be initialized,
-        preparing for execution and synchronizing the system.
-    }];
-    let assemblyFormat = [{
-        attr-dict
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SystemFinalizeOp : QUIR_Op<"system_finalize", [IsolatedFromAbove]> {
-    let summary = "Finalizes the system";
-    let description = [{
-        The `quir.system_finalize` operation causes the system to be finalized,
-        cleaning up results and shutting down execution.
-    }];
-    let assemblyFormat = [{
-        attr-dict
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
 def QUIR_ShotInitOp : QUIR_Op<"shot_init", [IsolatedFromAbove]> {
     let summary = "Initialization for shot loops";
     let description = [{

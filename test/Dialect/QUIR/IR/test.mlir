@@ -28,10 +28,10 @@ module {
     }
     // CHECK-LABEL: func @bar()
     func @bar() {
-        // CHECK: quir.system_init
-        quir.system_init
-        // CHECK: quir.system_finalize
-        quir.system_finalize
+        // CHECK: sys.init
+        sys.init
+        // CHECK: sys.finalize
+        sys.finalize
         // CHECK: quir.shot_init
         quir.shot_init
         %0 = arith.constant 1 : i32
