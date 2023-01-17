@@ -74,13 +74,11 @@ class QSSCompilationFailure(Exception):
         error_category="UncategorizedError",
         error_label="Compilation failure",
         message="Internal compilation failure.",
-        diagnostics: List[Diagnostic] | None = None,
     ):
         self.severity = severity
         self.error_category = error_category
         self.error_label = error_label
         self.message = message
-        self.diagnostics = [] if diagnostics is None else diagnostics
 
     def get_severity(self):
         return self.severity
@@ -299,13 +297,15 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                     " backend/compile process."
                 )
 
+            # TODO move default message here
             if len(status.diagnostics) == 0:
                 raise QSSCompilationFailure()
 
-            # For now, report the first diagnostic as an exception (pass along all diagnostics)
+            # For now, report the first diagnostic as an exception
+            # (tbd in followup PRs, pass along all diagnostics and enable proper formatting)
             diag = status.diagnostics[0]
             raise QSSCompilationFailure(
-                diag.severity.name, diag.category.name, diag.error, diag.message, status.diagnostics
+                diag.severity.name, diag.category.name, diag.error, diag.message
             )
 
     except mp.ProcessError as e:

@@ -25,17 +25,17 @@ enum class ErrorCategory {
   UncategorizedError,
 };
 
+enum class Severity {
+  Info,
+  Warning,
+  Error,
+  Fatal,
+};
+
 struct Diagnostic {
   static std::string getErrorForCategory(qssc::ErrorCategory category);
 
 public:
-  enum class Severity {
-    Info,
-    Warning,
-    Error,
-    Fatal,
-  };
-
   Severity severity;
   ErrorCategory category;
   std::string error;   /// a brief description of the error

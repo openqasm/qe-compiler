@@ -72,33 +72,32 @@ llvm::Error qssc::frontend::openqasm3::parse(
       [](const std::string &Exp, const std::string &Msg,
          QASM::QasmDiagnosticEmitter::DiagLevel DL) {
         std::string level = "unknown";
-        qssc::Diagnostic::Severity diagLevel =
-            qssc::Diagnostic::Severity::Error;
+        qssc::Severity diagLevel = qssc::Severity::Error;
 
         switch (DL) {
         case QASM::QasmDiagnosticEmitter::DiagLevel::Error:
           level = "Error";
-          diagLevel = qssc::Diagnostic::Severity::Error;
+          diagLevel = qssc::Severity::Error;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::ICE:
           level = "ICE";
-          diagLevel = qssc::Diagnostic::Severity::Fatal;
+          diagLevel = qssc::Severity::Fatal;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Warning:
           level = "Warning";
-          diagLevel = qssc::Diagnostic::Severity::Warning;
+          diagLevel = qssc::Severity::Warning;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Info:
           level = "Info";
-          diagLevel = qssc::Diagnostic::Severity::Info;
+          diagLevel = qssc::Severity::Info;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Status:
           level = "Status";
-          diagLevel = qssc::Diagnostic::Severity::Info;
+          diagLevel = qssc::Severity::Info;
           break;
         }
 

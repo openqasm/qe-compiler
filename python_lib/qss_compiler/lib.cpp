@@ -143,8 +143,15 @@ PYBIND11_MODULE(py_qssc, m) {
       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
       .export_values();
 
-  pybind11::class_<qssc::Diagnostic> diagnostic(m, "Diagnostic");
-  diagnostic.def_readonly("severity", &qssc::Diagnostic::severity)
+  pybind11::enum_<qssc::Severity>(m, "Severity")
+      .value("Info", qssc::Severity::Info)
+      .value("Warning", qssc::Severity::Warning)
+      .value("Error", qssc::Severity::Error)
+      .value("Fatal", qssc::Severity::Fatal)
+      .export_values();
+
+  pybind11::class_<qssc::Diagnostic>(m, "Diagnostic")
+      .def_readonly("severity", &qssc::Diagnostic::severity)
       .def_readonly("category", &qssc::Diagnostic::category)
       .def_readonly("error", &qssc::Diagnostic::error)
       .def_readonly("message", &qssc::Diagnostic::message)
@@ -158,16 +165,10 @@ PYBIND11_MODULE(py_qssc, m) {
             if (t.size() != 3)
               throw std::runtime_error("invalid state for unpickling");
 
-            auto severity = t[0].cast<qssc::Diagnostic::Severity>();
+            auto severity = t[0].cast<qssc::Severity>();
             auto category = t[1].cast<qssc::ErrorCategory>();
             auto message = t[2].cast<std::string>();
 
             return qssc::Diagnostic(severity, category, std::move(message));
           }));
-
-  pybind11::enum_<qssc::Diagnostic::Severity>(diagnostic, "Severity")
-      .value("Info", qssc::Diagnostic::Severity::Info)
-      .value("Warning", qssc::Diagnostic::Severity::Warning)
-      .value("Error", qssc::Diagnostic::Severity::Error)
-      .value("Fatal", qssc::Diagnostic::Severity::Fatal);
 }

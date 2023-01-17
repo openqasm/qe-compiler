@@ -20,6 +20,7 @@ from .compile import (  # noqa: F401
 from .py_qssc import (  # noqa: F401
     ErrorCategory,
     Diagnostic,
+    Severity,
 )
 
 from .link import (  # noqa: F401
