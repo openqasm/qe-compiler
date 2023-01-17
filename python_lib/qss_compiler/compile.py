@@ -50,7 +50,7 @@ from os import environ as os_environ
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
-from .py_qssc import _compile_with_args, Diagnostic
+from .py_qssc import _compile_with_args, Diagnostic, ErrorCategory, Severity
 
 
 # Note that we require a complete process spawn for the compiler to avoid
@@ -70,10 +70,10 @@ class QSSCompilationFailure(Exception):
 
     def __init__(
         self,
-        severity="Error",
-        error_category="UncategorizedError",
-        error_label="Compilation failure",
-        message="Internal compilation failure.",
+        severity,
+        error_category,
+        error_label,
+        message,
     ):
         self.severity = severity
         self.error_category = error_category
@@ -297,9 +297,13 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                     " backend/compile process."
                 )
 
-            # TODO move default message here
             if len(status.diagnostics) == 0:
-                raise QSSCompilationFailure()
+                raise QSSCompilationFailure(
+                    Severity.Error.name,
+                    ErrorCategory.UncategorizedError.name,
+                    "Compilation failure",
+                    "Compilation failure. No detailed messages available.",
+                )
 
             # For now, report the first diagnostic as an exception
             # (tbd in followup PRs, pass along all diagnostics and enable proper formatting)

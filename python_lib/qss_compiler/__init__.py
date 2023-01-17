@@ -18,8 +18,8 @@ from .compile import (  # noqa: F401
 )
 
 from .py_qssc import (  # noqa: F401
-    ErrorCategory,
     Diagnostic,
+    ErrorCategory,
     Severity,
 )
 
