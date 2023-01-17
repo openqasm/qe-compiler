@@ -114,9 +114,9 @@ module {
         %ub = arith.constant 10 : index
         // CHECK: quir.call_subroutine @subroutine1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()
         quir.call_subroutine @subroutine1(%qa1, %ang, %ub) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()
-        // CHECK: quir.parallel_control_flow
-        quir.parallel_control_flow {
-            quir.parallel_end // including just for parsing and verification
+        // CHECK: sys.parallel_control_flow
+        sys.parallel_control_flow {
+            sys.parallel_control_flow_end // including just for parsing and verification
         }
         return
     }

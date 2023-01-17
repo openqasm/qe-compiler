@@ -962,47 +962,6 @@ def QUIR_RecvOp : QUIR_Op<"recv", [NonInterferingNonDeadSideEffect]> {
     }];
 }
 
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_ParallelControlFlowOp : QUIR_Op<"parallel_control_flow", [
-                        SingleBlockImplicitTerminator<"ParallelEndOp">,
-                        RecursiveSideEffects]> {
-    let summary = "Contain a group of control flow ops that can run in parallel";
-    let description = [{
-        The `quir.parallel_control_flow` operation has a single region and block
-        that holds a collection of scf control flow ops that can be executed in
-        parallel.
-
-        Example:
-        ```mlir
-        quir.parallel_control_flow {
-            scf.if (%c0) {
-                quir.gate_call @x(%q0) : (!quir.qubit<1>) -> ()
-            } {quir.physicalIds = [0 : i32]}
-            scf.if (%c1) {
-                quir.gate_call @x(%q1) : (!quir.qubit<1>) -> ()
-            } {quir.physicalIds = [1 : i32]}
-        }
-        ```
-    }];
-
-    let regions = (region SizedRegion<1>:$region);
-
-    let assemblyFormat = "$region attr-dict";
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_ParallelEndOp : QUIR_Op<"parallel_end", [
-    Terminator, HasParent<"ParallelControlFlowOp">, NoSideEffect]> {
-  let summary = "A pseudo op that marks the end of a `quir.parallel_control_flow` op.";
-  let description = [{
-    This op terminates the only block inside the only region of a
-    `quir.parallel_control_flow` op.
-  }];
-
-  let parser = "return success();";
-  let printer = "p << getOperationName();";
-}
-
 //===----------------------------------------------------------------------===//
 //
 // This code section was derived and modified from the LLVM project

@@ -27,7 +27,15 @@ include "mlir/IR/SymbolInterfaces.td"
 
 include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 
-// TODO: This op should be extracted to a system-level dialect
+// Define a side effect that identifies an operation as not dead while not
+// interfering with memory operations (e.g., allows store-forwarding across
+// this operation).
+// Note that operations without memory effects defined will be treated
+// conservatively (i.e., not making any assumptions).
+// see lib/Interfaces/SideEffectInterfaces.cpp:isTriviallyDeadImpl()
+// see lib/Dialect/Affine/Utils/Utils.cpp:hasNoInterveningEffect()
+def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
+
 def SYS_SystemInitOp : SYS_Op<"init", [IsolatedFromAbove]> {
     let summary = "Initializes the system";
     let description = [{
@@ -39,7 +47,6 @@ def SYS_SystemInitOp : SYS_Op<"init", [IsolatedFromAbove]> {
     }];
 }
 
-// TODO: This op should be extracted to a system-level dialect
 def SYS_SystemFinalizeOp : SYS_Op<"finalize", [IsolatedFromAbove]> {
     let summary = "Finalizes the system";
     let description = [{
@@ -49,6 +56,67 @@ def SYS_SystemFinalizeOp : SYS_Op<"finalize", [IsolatedFromAbove]> {
     let assemblyFormat = [{
         attr-dict
     }];
+}
+
+// def SYS_BroadcastOp : SYS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
+//     let summary = "Broadcast a value from this controller to all others";
+//     let description = [{
+//         The `quir.broadcast` operation represents a broadcast command that sends a value
+//         from this controller to all others. All other controllers should have a
+//         corresponding `quir.recv` operation. If only one controller should receive the
+//         message then the `quir.send` operation should be used instead.
+
+//         Example:
+//         ```mlir
+//         %angle1 = quir.constant #quir.angle<0.2 : !quir.angle<20>>
+//         quir.broadcast %angle1 : !quir.angle<20>
+//         ```
+//     }];
+
+//     let arguments = (ins AnyClassical:$val);
+
+//     let assemblyFormat = [{
+//         attr-dict $val `:` type($val)
+//     }];
+// }
+
+def SYS_ParallelControlFlowOp : SYS_Op<"parallel_control_flow", [
+                        SingleBlockImplicitTerminator<"ParallelEndOp">,
+                        RecursiveSideEffects]> {
+    let summary = "Contain a group of control flow ops that can run in parallel";
+    let description = [{
+        The `sys.parallel_control_flow` operation has a single region and block
+        that holds a collection of scf control flow ops that can be executed in
+        parallel.
+
+        Example:
+        ```mlir
+        sys.parallel_control_flow {
+            scf.if (%c0) {
+                quir.gate_call @x(%q0) : (!quir.qubit<1>) -> ()
+            } {quir.physicalIds = [0 : i32]}
+            scf.if (%c1) {
+                quir.gate_call @x(%q1) : (!quir.qubit<1>) -> ()
+            } {quir.physicalIds = [1 : i32]}
+        }
+        ```
+    }];
+
+    let regions = (region SizedRegion<1>:$region);
+
+    let assemblyFormat = "$region attr-dict";
+}
+
+def SYS_ParallelEndOp : SYS_Op<"parallel_control_flow_end", [
+    Terminator, HasParent<"ParallelControlFlowOp">, NoSideEffect]> {
+  let summary = "A pseudo op that marks the end of a `sys.parallel_control_flow` op.";
+  let description = [{
+    This op terminates the only block inside the only region of a
+    `sys.parallel_control_flow` op.
+  }];
+
+  let parser = "return success();";
+  let printer = "p << getOperationName();";
 }
 
 #endif // SYSTEM_OPS
