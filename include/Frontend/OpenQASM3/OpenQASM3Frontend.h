@@ -33,6 +33,7 @@ namespace qssc::frontend::openqasm3 {
 /// @param emitPrettyAST whether a pretty-printed AST should be dumped
 /// @param emitMLIR whether high-level IR should be emitted
 /// @param newModule ModuleOp container for emitting MLIR into
+/// @param diagnosticCb a callback that will receive emitted diagnostics
 /// @return an llvm::Error in case of failure, or llvm::Error::success()
 /// otherwise
 llvm::Error parse(std::string const &source, bool sourceIsFilename,

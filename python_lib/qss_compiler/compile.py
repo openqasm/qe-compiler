@@ -50,7 +50,7 @@ from os import environ as os_environ
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
-from .py_qssc import _compile_with_args
+from .py_qssc import _compile_with_args, Diagnostic
 
 
 # Note that we require a complete process spawn for the compiler to avoid
@@ -203,7 +203,7 @@ class _CompilerStatus:
     """Internal compiler result status dataclass."""
 
     success: bool
-    diagnostics: List
+    diagnostics: List[Diagnostic]
 
 
 def _compile_child_backend(
@@ -291,7 +291,10 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         if not status.success:
             if not hasattr(status, "diagnostics"):
                 raise QSSCompilerError(
-                    "compile process indicated failure but failed to return diagnostics information"
+                    "Compile process indicated failure but failed to return diagnostics"
+                    " information in the status object. That points to inconsistenties"
+                    " in the Python interface code between calling process and"
+                    " backend/compile process."
                 )
 
             if len(status.diagnostics) == 0:
