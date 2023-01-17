@@ -27,6 +27,7 @@
 #include "mlir/IR/Verifier.h"
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
 
@@ -54,7 +55,7 @@ static thread_local qssc::DiagnosticCallback *diagnosticCallbackPerThread;
 llvm::Error qssc::frontend::openqasm3::parse(
     std::string const &source, bool sourceIsFilename, bool emitRawAST,
     bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp &newModule,
-    qssc::DiagnosticCallback &diagnosticCallback) {
+    llvm::Optional<qssc::DiagnosticCallback> diagnosticCallback) {
   for (const auto &dirStr : includeDirs)
     QASM::QasmPreprocessor::Instance().AddIncludePath(dirStr);
 
@@ -64,7 +65,9 @@ llvm::Error qssc::frontend::openqasm3::parse(
   // Add a callback for diagnostics to the parser. Since the callback needs
   // access to diagnosticCallback to forward diagnostics, make it available in a
   // thread-local variable.
-  diagnosticCallbackPerThread = &diagnosticCallback;
+  diagnosticCallbackPerThread =
+      diagnosticCallback.hasValue() ? diagnosticCallback.getPointer() : nullptr;
+
   QASM::QasmDiagnosticEmitter::SetHandler(
       [](const std::string &Exp, const std::string &Msg,
          QASM::QasmDiagnosticEmitter::DiagLevel DL) {
@@ -104,12 +107,12 @@ llvm::Error qssc::frontend::openqasm3::parse(
 
         if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
             DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
-          assert(diagnosticCallbackPerThread &&
-                 "diagnostic callback must always be provided");
-          qssc::Diagnostic diag{diagLevel,
-                                qssc::ErrorCategory::OpenQASM3ParseFailure,
-                                Exp + "\n" + Msg};
-          (*diagnosticCallbackPerThread)(diag);
+          if (diagnosticCallbackPerThread) {
+            qssc::Diagnostic diag{diagLevel,
+                                  qssc::ErrorCategory::OpenQASM3ParseFailure,
+                                  Exp + "\n" + Msg};
+            (*diagnosticCallbackPerThread)(diag);
+          }
 
           // give up parsing after errors right away
           // TODO: update to recent qss-qasm to support continuing

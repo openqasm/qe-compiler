@@ -331,9 +331,9 @@ static void printVersion(llvm::raw_ostream &out) {
       << qssc::getQSSCVersion() << "\n";
 }
 
-static llvm::Error compile_(int argc, char const **argv,
-                            std::string *outputString,
-                            qssc::DiagnosticCallback &diagnosticCb) {
+static llvm::Error
+compile_(int argc, char const **argv, std::string *outputString,
+         llvm::Optional<qssc::DiagnosticCallback> diagnosticCb) {
   llvm::InitLLVM y(argc, argv);
 
   if (auto err = registerPasses())
@@ -548,7 +548,7 @@ static llvm::Error compile_(int argc, char const **argv,
 }
 
 int qssc::compile(int argc, char const **argv, std::string *outputString,
-                  DiagnosticCallback &diagnosticCb) {
+                  llvm::Optional<DiagnosticCallback> diagnosticCb) {
   if (auto err = compile_(argc, argv, outputString, diagnosticCb)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;
