@@ -14,6 +14,8 @@
 include "Dialect/System/IR/SystemInterfaces.td"
 include "Dialect/System/IR/SystemAttributes.td"
 
+// TODO: Temporary, until constraints between `OpenQASM3`, `QUIR`, `Pulse`, and
+// `System` dialects are ironed out.
 include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
 
 include "mlir/Interfaces/SideEffectInterfaces.td"
@@ -69,27 +71,27 @@ def SYS_ShotInitOp : SYS_Op<"shot_loop_init", [IsolatedFromAbove]> {
     }];
 }
 
-// def SYS_BroadcastOp : SYS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
-//     let summary = "Broadcast a value from this controller to all others";
-//     let description = [{
-//         The `quir.broadcast` operation represents a broadcast command that sends a value
-//         from this controller to all others. All other controllers should have a
-//         corresponding `quir.recv` operation. If only one controller should receive the
-//         message then the `quir.send` operation should be used instead.
+def SYS_BroadcastOp : SYS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
+    let summary = "Broadcast a value from this controller to all others";
+    let description = [{
+        The `sys.broadcast` operation represents a broadcast command that sends a value
+        from this controller to all others. All other controllers should have a
+        corresponding `quir.recv` operation. If only one controller should receive the
+        message then the `quir.send` operation should be used instead.
 
-//         Example:
-//         ```mlir
-//         %angle1 = quir.constant #quir.angle<0.2 : !quir.angle<20>>
-//         quir.broadcast %angle1 : !quir.angle<20>
-//         ```
-//     }];
+        Example:
+        ```mlir
+        %angle1 = quir.constant #quir.angle<0.2 : !quir.angle<20>>
+        sys.broadcast %angle1 : !quir.angle<20>
+        ```
+    }];
 
-//     let arguments = (ins AnyClassical:$val);
+    let arguments = (ins AnyClassical:$val);
 
-//     let assemblyFormat = [{
-//         attr-dict $val `:` type($val)
-//     }];
-// }
+    let assemblyFormat = [{
+        attr-dict $val `:` type($val)
+    }];
+}
 
 def SYS_ParallelControlFlowOp : SYS_Op<"parallel_control_flow", [
                         SingleBlockImplicitTerminator<"ParallelEndOp">,

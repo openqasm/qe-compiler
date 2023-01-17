@@ -11,6 +11,10 @@
 #ifndef SYSTEM_SYSTEMTYPES_H
 #define SYSTEM_SYSTEMTYPES_H
 
+// TODO: Temporary, until constraints between `OpenQASM3`, `QUIR`, `Pulse`, and
+// `System` dialects are ironed out.
+#include "Dialect/QUIR/IR/QUIRTypes.h"
+
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/OpDefinition.h"

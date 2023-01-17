@@ -7,15 +7,15 @@ module @controller attributes {quir.nodeId = 1000 : i32, quir.nodeType = "contro
   func @main() -> i32 attributes {quir.classicalOnly = false} {
     %0 = quir.declare_duration {value = "1000dt"} : !quir.duration
     %1 = quir.recv {fromId = 0 : index} : i1
-    quir.broadcast %1 : i1
+    sys.broadcast %1 : i1
     scf.if %1 {
     } {quir.classicalOnly = false}
     %2 = quir.recv {fromId = 0 : index} : i1
-    quir.broadcast %2 : i1
+    sys.broadcast %2 : i1
     scf.if %2 {
     } {quir.classicalOnly = false}
     %3 = quir.recv {fromId = 0 : index} : i1
-    quir.broadcast %3 : i1
+    sys.broadcast %3 : i1
     scf.if %3 {
     } {quir.classicalOnly = false}
     %4 = llvm.mlir.constant(1.0) : i32

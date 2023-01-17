@@ -109,8 +109,8 @@ module {
         %cb4 = quir.recv {fromId = [10 : index]} : i1
         // CHECK: %{{.*}}:2 = quir.recv {fromIds = [1 : index, 2 : index]} : i1, i1
         %mResult:2 = quir.recv {fromIds = [1 : index, 2 : index]} : i1, i1
-        // CHECK: quir.broadcast %{{.*}} : i1
-        quir.broadcast %val : i1
+        // CHECK: sys.broadcast %{{.*}} : i1
+        sys.broadcast %val : i1
         %ub = arith.constant 10 : index
         // CHECK: quir.call_subroutine @subroutine1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()
         quir.call_subroutine @subroutine1(%qa1, %ang, %ub) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()

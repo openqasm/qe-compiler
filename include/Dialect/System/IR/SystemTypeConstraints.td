@@ -12,5 +12,6 @@
 #define SYSTEM_TYPECONSTRAINTS
 
 include "mlir/IR/OpBase.td"
+include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
 
 #endif // System_TYPECONSTRAINTS

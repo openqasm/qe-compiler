@@ -879,29 +879,6 @@ def QUIR_BarrierOp : QUIR_Op<"barrier", [
 }
 
 // TODO: This op should be extracted to a system-level dialect
-def QUIR_BroadcastOp : QUIR_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
-    let summary = "Broadcast a value from this controller to all others";
-    let description = [{
-        The `quir.broadcast` operation represents a broadcast command that sends a value
-        from this controller to all others. All other controllers should have a
-        corresponding `quir.recv` operation. If only one controller should receive the
-        message then the `quir.send` operation should be used instead.
-
-        Example:
-        ```mlir
-        %angle1 = quir.constant #quir.angle<0.2 : !quir.angle<20>>
-        quir.broadcast %angle1 : !quir.angle<20>
-        ```
-    }];
-
-    let arguments = (ins AnyClassical:$val);
-
-    let assemblyFormat = [{
-        attr-dict $val `:` type($val)
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
 def QUIR_SendOp : QUIR_Op<"send", [NonInterferingNonDeadSideEffect]> {
     let summary = "Send a classical value from this controller to another";
     let description = [{
