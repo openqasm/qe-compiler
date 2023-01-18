@@ -878,55 +878,6 @@ def QUIR_BarrierOp : QUIR_Op<"barrier", [
     }];
 }
 
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SendOp : QUIR_Op<"send", [NonInterferingNonDeadSideEffect]> {
-    let summary = "Send a classical value from this controller to another";
-    let description = [{
-        The `quir.send` operation represents a send command from one controller to another.
-        A corresponding `quir.recv` operation should receive the information sent.
-
-        Example:
-        ```mlir
-        %cbit = "quir.measure"(%target) : (!quir.qubit<1>) -> i1
-        quir.send %cbit : i1
-        ```
-    }];
-
-    let arguments = (ins AnyClassical:$val, IndexAttr:$id);
-
-    let assemblyFormat = [{
-        attr-dict $val `to` $id `:` type($val)
-    }];
-}
-
-// This should be in OpBase.td but for some reason isn't, maybe in LLVM 15?
-def IndexArrayAttr : TypedArrayAttrBase<IndexAttr,
-                                        "index array attribute"> {
-  let constBuilderCall = "$_builder.getIndexArrayAttr($0)";
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_RecvOp : QUIR_Op<"recv", [NonInterferingNonDeadSideEffect]> {
-    let summary = "Receive classical values from other controllers";
-    let description = [{
-        The `quir.recv` operation represents a receive command for potentially
-        multiple values. The fromIds array attribute indicates the Id of the
-        sending control node for each independent value.
-
-        Example:
-        ```mlir
-        %meas:2 = quir.recv {fromId = [0 : index, 1 : index]} : i1, i1
-        ```
-    }];
-
-    let arguments = (ins OptionalAttr<IndexArrayAttr>:$fromIds);
-    let results = (outs Variadic<AnyClassical>:$vals);
-
-    let assemblyFormat = [{
-        attr-dict `:` type($vals)
-    }];
-}
-
 //===----------------------------------------------------------------------===//
 //
 // This code section was derived and modified from the LLVM project

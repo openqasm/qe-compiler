@@ -101,14 +101,14 @@ module {
         quir.delay_cycles () {time = 1000 : i64} : () -> ()
         // CHECK: quir.delay_cycles(%{{.*}}) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
         quir.delay_cycles (%qb1) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
-        // CHECK: quir.send %{{.*}} to 1 : i1
-        quir.send %val to 1 : i1
-        // CHECK: %{{.*}} = quir.recv : i1
-        %cb3 = quir.recv : i1
-        // CHECK: %{{.*}} = quir.recv {fromId = [10 : index]} : i1
-        %cb4 = quir.recv {fromId = [10 : index]} : i1
-        // CHECK: %{{.*}}:2 = quir.recv {fromIds = [1 : index, 2 : index]} : i1, i1
-        %mResult:2 = quir.recv {fromIds = [1 : index, 2 : index]} : i1, i1
+        // CHECK: sys.send %{{.*}} to 1 : i1
+        sys.send %val to 1 : i1
+        // CHECK: %{{.*}} = sys.recv : i1
+        %cb3 = sys.recv : i1
+        // CHECK: %{{.*}} = sys.recv {fromId = [10 : index]} : i1
+        %cb4 = sys.recv {fromId = [10 : index]} : i1
+        // CHECK: %{{.*}}:2 = sys.recv {fromIds = [1 : index, 2 : index]} : i1, i1
+        %mResult:2 = sys.recv {fromIds = [1 : index, 2 : index]} : i1, i1
         // CHECK: sys.broadcast %{{.*}} : i1
         sys.broadcast %val : i1
         %ub = arith.constant 10 : index

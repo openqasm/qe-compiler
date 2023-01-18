@@ -172,7 +172,7 @@ void MockQUIRToStdPass::runOnOperation() {
   target.addLegalDialect<StandardOpsDialect, scf::SCFDialect,
                          arith::ArithmeticDialect, LLVM::LLVMDialect,
                          quir::QUIRDialect>();
-  target.addIllegalOp<quir::RecvOp, sys::BroadcastOp>();
+  target.addIllegalOp<sys::RecvOp, sys::BroadcastOp>();
   target.addDynamicallyLegalOp<FuncOp>(
       [&](FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
   target.addDynamicallyLegalOp<CallOp>([&](CallOp op) {
@@ -190,7 +190,7 @@ void MockQUIRToStdPass::runOnOperation() {
   patterns.insert<ConstantOpConversionPat>(context, typeConverter);
 
   // Replace Receive ops with constants to be optimized away.
-  patterns.insert<CommOpConversionPat<quir::RecvOp>>(context, typeConverter);
+  patterns.insert<CommOpConversionPat<sys::RecvOp>>(context, typeConverter);
   patterns.insert<CommOpConversionPat<sys::BroadcastOp>>(context,
                                                          typeConverter);
   patterns.insert<ReturnConversionPat>(context, typeConverter);

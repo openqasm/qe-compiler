@@ -76,8 +76,8 @@ def SYS_BroadcastOp : SYS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
     let description = [{
         The `sys.broadcast` operation represents a broadcast command that sends a value
         from this controller to all others. All other controllers should have a
-        corresponding `quir.recv` operation. If only one controller should receive the
-        message then the `quir.send` operation should be used instead.
+        corresponding `sys.recv` operation. If only one controller should receive the
+        message then the `sys.send` operation should be used instead.
 
         Example:
         ```mlir
@@ -90,6 +90,52 @@ def SYS_BroadcastOp : SYS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
 
     let assemblyFormat = [{
         attr-dict $val `:` type($val)
+    }];
+}
+
+def IndexArrayAttr : TypedArrayAttrBase<IndexAttr,
+                                        "index array attribute"> {
+  let constBuilderCall = "$_builder.getIndexArrayAttr($0)";
+}
+
+def SYS_SendOp : SYS_Op<"send", [NonInterferingNonDeadSideEffect]> {
+    let summary = "Send a classical value from this controller to another";
+    let description = [{
+        The `sys.send` operation represents a send command from one controller to another.
+        A corresponding `sys.recv` operation should receive the information sent.
+
+        Example:
+        ```mlir
+        %cbit = "quir.measure"(%target) : (!quir.qubit<1>) -> i1
+        sys.send %cbit : i1
+        ```
+    }];
+
+    let arguments = (ins AnyClassical:$val, IndexAttr:$id);
+
+    let assemblyFormat = [{
+        attr-dict $val `to` $id `:` type($val)
+    }];
+}
+
+def SYS_RecvOp : SYS_Op<"recv", [NonInterferingNonDeadSideEffect]> {
+    let summary = "Receive classical values from other controllers";
+    let description = [{
+        The `sys.recv` operation represents a receive command for potentially
+        multiple values. The fromIds array attribute indicates the Id of the
+        sending control node for each independent value.
+
+        Example:
+        ```mlir
+        %meas:2 = sys.recv {fromId = [0 : index, 1 : index]} : i1, i1
+        ```
+    }];
+
+    let arguments = (ins OptionalAttr<IndexArrayAttr>:$fromIds);
+    let results = (outs Variadic<AnyClassical>:$vals);
+
+    let assemblyFormat = [{
+        attr-dict `:` type($vals)
     }];
 }
 

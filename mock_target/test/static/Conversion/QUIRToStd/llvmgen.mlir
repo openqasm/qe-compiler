@@ -6,15 +6,15 @@
 module @controller attributes {quir.nodeId = 1000 : i32, quir.nodeType = "controller"}  {
   func @main() -> i32 attributes {quir.classicalOnly = false} {
     %0 = quir.declare_duration {value = "1000dt"} : !quir.duration
-    %1 = quir.recv {fromId = 0 : index} : i1
+    %1 = sys.recv {fromId = 0 : index} : i1
     sys.broadcast %1 : i1
     scf.if %1 {
     } {quir.classicalOnly = false}
-    %2 = quir.recv {fromId = 0 : index} : i1
+    %2 = sys.recv {fromId = 0 : index} : i1
     sys.broadcast %2 : i1
     scf.if %2 {
     } {quir.classicalOnly = false}
-    %3 = quir.recv {fromId = 0 : index} : i1
+    %3 = sys.recv {fromId = 0 : index} : i1
     sys.broadcast %3 : i1
     scf.if %3 {
     } {quir.classicalOnly = false}
