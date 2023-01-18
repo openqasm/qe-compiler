@@ -11,6 +11,10 @@
 #ifndef SYSTEM_SYSTEMOPS_H
 #define SYSTEM_SYSTEMOPS_H
 
+// TODO: move necessary interfaces to `SystemInterfaces.h`
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
+#include "Dialect/QUIR/IR/QUIRTraits.h"
+
 #include "Dialect/System/IR/SystemAttributes.h"
 #include "Dialect/System/IR/SystemInterfaces.h"
 #include "Dialect/System/IR/SystemTypes.h"

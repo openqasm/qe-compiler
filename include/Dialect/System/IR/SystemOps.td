@@ -16,6 +16,8 @@ include "Dialect/System/IR/SystemAttributes.td"
 
 // TODO: Temporary, until constraints between `OpenQASM3`, `QUIR`, `Pulse`, and
 // `System` dialects are ironed out.
+include "Dialect/QUIR/IR/QUIRInterfaces.td"
+include "Dialect/QUIR/IR/QUIRTraits.td"
 include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
 
 include "mlir/Interfaces/SideEffectInterfaces.td"
@@ -60,14 +62,22 @@ def SYS_SystemFinalizeOp : SYS_Op<"finalize", [IsolatedFromAbove]> {
     }];
 }
 
-def SYS_ShotInitOp : SYS_Op<"shot_loop_init", [IsolatedFromAbove]> {
-    let summary = "Initialization for shot loops";
+def SYS_SynchronizeOp : SYS_Op<"synchronize", [
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
+    let summary = "Synchronize the system";
     let description = [{
-        The `sys.shot_loop_init` operation causes the system to initialize the shot
-        loop to maintain consistent initial conditions for each shot
+        The `sys.synchronize` operation causes the system to perform a
+        synchronization so that each of the independent controllers is locked
+        into the same time step again. The synchronize op accepts qubit
+        arguments, this is to simplify the tracking of synchronization timing
+        relative to other qubit-based operations, like measurement and reset.
     }];
+    let arguments = (ins Variadic<AnyQubit>:$qubits);
+    let results = (outs);
+
     let assemblyFormat = [{
-        attr-dict
+        $qubits attr-dict `:` functional-type($qubits, results)
     }];
 }
 
@@ -90,6 +100,31 @@ def SYS_BroadcastOp : SYS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
 
     let assemblyFormat = [{
         attr-dict $val `:` type($val)
+    }];
+}
+
+// TODO: Should this be a "unitary op" at the system level?
+def SYS_DelayCyclesOp : SYS_Op<"delay_cycles", [
+            UnitaryOp,
+            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
+            NonInterferingNonDeadSideEffect]> {
+    let summary = "Add a delay operation of a given number of cycles to a qubit";
+    let description = [{
+        The `sys.delay_cycles` operation represents a delay operation of the given
+        number of cycles to a qubit, group of qubits, or all qubits (when no
+        target qubit is given).
+
+        Example:
+        ```mlir
+        "sys.delay_cycles"(%q1_1) { time = 1000 : i64}: (!quir.qubit) -> ()
+        ```
+    }];
+
+    let arguments = (ins I64Attr:$time, Variadic<AnyQubit>:$qubits);
+    let results = (outs );
+
+    let assemblyFormat = [{
+        `(` $qubits `)` attr-dict `:` functional-type($qubits, results)
     }];
 }
 
@@ -176,6 +211,17 @@ def SYS_ParallelEndOp : SYS_Op<"parallel_control_flow_end", [
 
   let parser = "return success();";
   let printer = "p << getOperationName();";
+}
+
+def SYS_ShotInitOp : SYS_Op<"shot_loop_init", [IsolatedFromAbove]> {
+    let summary = "Initialization for shot loops";
+    let description = [{
+        The `sys.shot_loop_init` operation causes the system to initialize the shot
+        loop to maintain consistent initial conditions for each shot
+    }];
+    let assemblyFormat = [{
+        attr-dict
+    }];
 }
 
 #endif // SYSTEM_OPS

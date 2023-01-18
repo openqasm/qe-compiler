@@ -65,10 +65,10 @@ module {
         // CHECK: quir.call_gate @gateCall1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         "quir.call_gate"(%qb1, %theta) {callee = @gateCall1} : (!quir.qubit<1>, !quir.angle<1>) -> ()
         %res10 = "quir.measure"(%qb1) : (!quir.qubit<1>) -> i1
-        // CHECK: quir.synchronize %{{.*}} : (!quir.qubit<1>) -> ()
-        quir.synchronize %qb1 : (!quir.qubit<1>) -> ()
-        // CHECK: quir.synchronize %{{.*}} %{{.*}} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
-        quir.synchronize %qa1, %qb1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+        // CHECK: sys.synchronize %{{.*}} : (!quir.qubit<1>) -> ()
+        sys.synchronize %qb1 : (!quir.qubit<1>) -> ()
+        // CHECK: sys.synchronize %{{.*}} %{{.*}} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+        sys.synchronize %qa1, %qb1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
         // CHECK: %{{.*}}:2 = quir.measure(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
         %mm1:2 = quir.measure(%qa1, %qb1) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
         // another form with individually named outputs:
@@ -97,10 +97,10 @@ module {
         "quir.delay"(%len1, %qb1) : (!quir.duration, !quir.qubit<1>) -> ()
         // CHECK: quir.delay %{{.*}}, () : !quir.duration, () -> ()
         "quir.delay"(%len1) : (!quir.duration) -> ()
-        // CHECK: quir.delay_cycles() {time = 1000 : i64} : () -> ()
-        quir.delay_cycles () {time = 1000 : i64} : () -> ()
-        // CHECK: quir.delay_cycles(%{{.*}}) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
-        quir.delay_cycles (%qb1) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
+        // CHECK: sys.delay_cycles() {time = 1000 : i64} : () -> ()
+        sys.delay_cycles () {time = 1000 : i64} : () -> ()
+        // CHECK: sys.delay_cycles(%{{.*}}) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
+        sys.delay_cycles (%qb1) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
         // CHECK: sys.send %{{.*}} to 1 : i1
         sys.send %val to 1 : i1
         // CHECK: %{{.*}} = sys.recv : i1

@@ -35,26 +35,6 @@ include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 // see lib/Dialect/Affine/Utils/Utils.cpp:hasNoInterveningEffect()
 def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
 
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SynchronizeOp : QUIR_Op<"synchronize", [
-            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
-            NonInterferingNonDeadSideEffect]> {
-    let summary = "Synchronize the system";
-    let description = [{
-        The `quir.synchronize` operation causes the system to perform a
-        synchronization so that each of the independent controllers is locked
-        into the same time step again. The synchronize op accepts qubit
-        arguments, this is to simplify the tracking of synchronization timing
-        relative to other qubit-based operations, like measurement and reset.
-    }];
-    let arguments = (ins Variadic<AnyQubit>:$qubits);
-    let results = (outs);
-
-    let assemblyFormat = [{
-        $qubits attr-dict `:` functional-type($qubits, results)
-    }];
-}
-
 def QUIR_ConstantOp : QUIR_Op<"constant",
     [ConstantLike, NoSideEffect,
      DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
@@ -826,30 +806,6 @@ def QUIR_DelayOp : QUIR_Op<"delay", [
 
     let assemblyFormat = [{
         attr-dict $time `,` `(` $qubits `)` `:` type($time) `,` functional-type($qubits, results)
-    }];
-}
-
-def QUIR_DelayCyclesOp : QUIR_Op<"delay_cycles", [
-            UnitaryOp,
-            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
-            NonInterferingNonDeadSideEffect]> {
-    let summary = "Add a delay operation of a given number of cycles to a qubit";
-    let description = [{
-        The `quir.delay_cycles` operation represents a delay operation of the given
-        number of cycles to a qubit, group of qubits, or all qubits (when no
-        target qubit is given).
-
-        Example:
-        ```mlir
-        "quir.delay_cycles"(%q1_1) { time = 1000 : i64}: (!quir.qubit) -> ()
-        ```
-    }];
-
-    let arguments = (ins I64Attr:$time, Variadic<AnyQubit>:$qubits);
-    let results = (outs );
-
-    let assemblyFormat = [{
-        `(` $qubits `)` attr-dict `:` functional-type($qubits, results)
     }];
 }
 

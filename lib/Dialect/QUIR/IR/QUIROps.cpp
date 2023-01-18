@@ -13,6 +13,7 @@
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Dialect/System/IR/SystemOps.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/BlockAndValueMapping.h"
@@ -98,10 +99,12 @@ std::set<uint32_t> ResetQubitOp::getOperatedQubits() {
 
 //===----------------------------------------------------------------------===//
 // SynchronizeOp
+//
+// TODO: Move to `System` dialect once "lower qubits to channels/ports."
 //===----------------------------------------------------------------------===//
 
-std::set<uint32_t> SynchronizeOp::getOperatedQubits() {
-  return getQubitIds<SynchronizeOp>(*this);
+std::set<uint32_t> sys::SynchronizeOp::getOperatedQubits() {
+  return getQubitIds<sys::SynchronizeOp>(*this);
 }
 
 //===----------------------------------------------------------------------===//
@@ -114,10 +117,12 @@ std::set<uint32_t> DelayOp::getOperatedQubits() {
 
 //===----------------------------------------------------------------------===//
 // DelayCyclesOp
+//
+// TODO: Move to `System` dialect once "lower qubits to channels/ports."
 //===----------------------------------------------------------------------===//
 
-std::set<uint32_t> DelayCyclesOp::getOperatedQubits() {
-  return getQubitIds<DelayCyclesOp>(*this);
+std::set<uint32_t> sys::DelayCyclesOp::getOperatedQubits() {
+  return getQubitIds<sys::DelayCyclesOp>(*this);
 }
 
 //===----------------------------------------------------------------------===//
