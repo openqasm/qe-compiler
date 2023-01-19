@@ -6,7 +6,7 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 //
-//===----------------------------------------------------------------------===//
+//===--------------------------------------------------------------------------===//
 
 #ifndef SYSTEM_TD
 #define SYSTEM_TD
