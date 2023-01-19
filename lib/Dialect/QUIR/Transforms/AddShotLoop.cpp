@@ -1,6 +1,6 @@
 //===- AddShotLoop.cpp - Add shot loop --------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021-2023.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -21,7 +21,8 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
-#include "Dialect/System/IR/SystemOps.h"
+#include "Dialect/QuSys/IR/QuSysAttributes.h"
+#include "Dialect/QuSys/IR/QuSysOps.h"
 
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/SCF/SCF.h"
@@ -32,7 +33,7 @@
 
 using namespace mlir;
 using namespace mlir::quir;
-using namespace mlir::sys;
+using namespace mlir::qusys;
 
 // Entry point for the pass.
 void AddShotLoopPass::runOnOperation() {

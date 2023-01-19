@@ -1,6 +1,6 @@
 //===- QuirDialect.td - Quir dialect -----------------------*- tablegen -*-===//
 //
-// (C) Copyright IBM 2021-2023.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -26,7 +26,7 @@ def QUIRDialect : Dialect {
     }];
     let cppNamespace = "::mlir::quir";
     let dependentDialects = [
-        "mlir::sys::SystemDialect",
+        "mlir::qusys::QuSysDialect",
         "mlir::arith::ArithmeticDialect",
         "mlir::scf::SCFDialect",
         "mlir::LLVM::LLVMDialect"

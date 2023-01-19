@@ -43,7 +43,7 @@
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 
-#include "Dialect/System/IR/SystemDialect.h"
+#include "Dialect/QuSys/IR/QuSysDialect.h"
 
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 

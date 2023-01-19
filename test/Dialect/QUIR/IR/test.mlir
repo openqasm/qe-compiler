@@ -28,12 +28,12 @@ module {
     }
     // CHECK-LABEL: func @bar()
     func @bar() {
-        // CHECK: sys.init
-        sys.init
-        // CHECK: sys.finalize
-        sys.finalize
-        // CHECK: sys.shot_loop_init
-        sys.shot_loop_init
+        // CHECK: qusys.init
+        qusys.init
+        // CHECK: qusys.finalize
+        qusys.finalize
+        // CHECK: qusys.shot_init
+        qusys.shot_init
         %0 = arith.constant 1 : i32
         %val = arith.constant 1 : i1
         // quir.constant canonical form example with angle attribute
@@ -65,10 +65,10 @@ module {
         // CHECK: quir.call_gate @gateCall1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         "quir.call_gate"(%qb1, %theta) {callee = @gateCall1} : (!quir.qubit<1>, !quir.angle<1>) -> ()
         %res10 = "quir.measure"(%qb1) : (!quir.qubit<1>) -> i1
-        // CHECK: sys.synchronize %{{.*}} : (!quir.qubit<1>) -> ()
-        sys.synchronize %qb1 : (!quir.qubit<1>) -> ()
-        // CHECK: sys.synchronize %{{.*}} %{{.*}} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
-        sys.synchronize %qa1, %qb1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+        // CHECK: qusys.synchronize %{{.*}} : (!quir.qubit<1>) -> ()
+        qusys.synchronize %qb1 : (!quir.qubit<1>) -> ()
+        // CHECK: qusys.synchronize %{{.*}} %{{.*}} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+        qusys.synchronize %qa1, %qb1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
         // CHECK: %{{.*}}:2 = quir.measure(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
         %mm1:2 = quir.measure(%qa1, %qb1) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
         // another form with individually named outputs:
@@ -97,26 +97,26 @@ module {
         "quir.delay"(%len1, %qb1) : (!quir.duration, !quir.qubit<1>) -> ()
         // CHECK: quir.delay %{{.*}}, () : !quir.duration, () -> ()
         "quir.delay"(%len1) : (!quir.duration) -> ()
-        // CHECK: sys.delay_cycles() {time = 1000 : i64} : () -> ()
-        sys.delay_cycles () {time = 1000 : i64} : () -> ()
-        // CHECK: sys.delay_cycles(%{{.*}}) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
-        sys.delay_cycles (%qb1) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
-        // CHECK: sys.send %{{.*}} to 1 : i1
-        sys.send %val to 1 : i1
-        // CHECK: %{{.*}} = sys.recv : i1
-        %cb3 = sys.recv : i1
-        // CHECK: %{{.*}} = sys.recv {fromId = [10 : index]} : i1
-        %cb4 = sys.recv {fromId = [10 : index]} : i1
-        // CHECK: %{{.*}}:2 = sys.recv {fromIds = [1 : index, 2 : index]} : i1, i1
-        %mResult:2 = sys.recv {fromIds = [1 : index, 2 : index]} : i1, i1
-        // CHECK: sys.broadcast %{{.*}} : i1
-        sys.broadcast %val : i1
+        // CHECK: qusys.delay_cycles() {time = 1000 : i64} : () -> ()
+        qusys.delay_cycles () {time = 1000 : i64} : () -> ()
+        // CHECK: qusys.delay_cycles(%{{.*}}) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
+        qusys.delay_cycles (%qb1) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
+        // CHECK: qusys.send %{{.*}} to 1 : i1
+        qusys.send %val to 1 : i1
+        // CHECK: %{{.*}} = qusys.recv : i1
+        %cb3 = qusys.recv : i1
+        // CHECK: %{{.*}} = qusys.recv {fromId = [10 : index]} : i1
+        %cb4 = qusys.recv {fromId = [10 : index]} : i1
+        // CHECK: %{{.*}}:2 = qusys.recv {fromIds = [1 : index, 2 : index]} : i1, i1
+        %mResult:2 = qusys.recv {fromIds = [1 : index, 2 : index]} : i1, i1
+        // CHECK: qusys.broadcast %{{.*}} : i1
+        qusys.broadcast %val : i1
         %ub = arith.constant 10 : index
         // CHECK: quir.call_subroutine @subroutine1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()
         quir.call_subroutine @subroutine1(%qa1, %ang, %ub) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()
-        // CHECK: sys.parallel_control_flow
-        sys.parallel_control_flow {
-            sys.parallel_control_flow_end // including just for parsing and verification
+        // CHECK: qusys.parallel_control_flow
+        qusys.parallel_control_flow {
+            qusys.parallel_control_flow_end // including just for parsing and verification
         }
         return
     }

@@ -20,5 +20,5 @@ add_mlir_dialect_library(MLIRQUIRDialect
 
 	LINK_LIBS PUBLIC
 	MLIRIR
-        MLIRSystemDialect
+        MLIRQuSysDialect
 	)

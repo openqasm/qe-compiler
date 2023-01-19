@@ -1,4 +1,4 @@
-//===- OpenQASM3Interfaces.td - OpenQASM3 dialect interfaces -*- C++ -*-================//
+//===- QuSysDialect.h - Quantum System dialect ------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -8,14 +8,15 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  Interfaces for the System dialect
+///  This file declares the Quantum System dialect in MLIR.
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef SYSTEM_INTERFACES
-#define SYSTEM_INTERFACES
+#ifndef DIALECT_QUSYS_QUSYSDIALECT_H_
+#define DIALECT_QUSYS_QUSYSDIALECT_H_
 
-include "mlir/IR/OpBase.td"
+#include "mlir/IR/Dialect.h"
 
+#include "Dialect/QuSys/IR/QuSysOpsDialect.h.inc"
 
-#endif // SYSTEM_INTERFACES
+#endif // DIALECT_QUSYS_QUSYSDIALECT_H_

@@ -21,7 +21,7 @@ from qss_compiler import (
 def check_mlir_string(mlir):
     assert isinstance(mlir, str)
     assert "module" in mlir
-    assert "sys.init" in mlir
+    assert "qusys.init" in mlir
 
 
 def test_attributes():

@@ -1,6 +1,6 @@
 //===- qss-opt.cpp ----------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021-2023.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -39,7 +39,7 @@
 #include "Dialect/Pulse/Transforms/Passes.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
-#include "Dialect/System/IR/SystemDialect.h"
+#include "Dialect/QuSys/IR/QuSysDialect.h"
 
 using namespace qssc::hal;
 
@@ -114,7 +114,7 @@ auto main(int argc, char **argv) -> int {
   // will be *parsed* by the tool, not the one generated
   registerAllDialects(registry);
   registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect,
-                  mlir::sys::SystemDialect>();
+                  mlir::qusys::QuSysDialect>();
 
   llvm::InitLLVM y(argc, argv);
 

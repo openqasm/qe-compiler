@@ -7,24 +7,18 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
+///
+/// This file declares the types in the Quantum System dialect.
+///
+//===----------------------------------------------------------------------===//
 
-#ifndef SYSTEM_SYSTEMTYPES_H
-#define SYSTEM_SYSTEMTYPES_H
+#ifndef DIALECT_QUSYS_QUSYSTYPES_H_
+#define DIALECT_QUSYS_QUSYSTYPES_H_
 
 // TODO: Temporary, until constraints between `OpenQASM3`, `QUIR`, `Pulse`, and
 // `System` dialects are ironed out.
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-#include "mlir/IR/BuiltinTypes.h"
-#include "mlir/IR/Dialect.h"
-#include "mlir/IR/OpDefinition.h"
-#include "mlir/IR/Types.h"
-#include "mlir/Interfaces/InferTypeOpInterface.h"
-#include "mlir/Interfaces/SideEffectInterfaces.h"
+namespace mlir::qusys {} // namespace mlir::qusys
 
-#define GET_TYPEDEF_CLASSES
-#include "Dialect/System/IR/SystemTypes.h.inc"
-
-namespace mlir::sys {} // namespace mlir::sys
-
-#endif // SYSTEM_SYSTEMTYPES_H
+#endif // DIALECT_QUSYS_QUSYSTYPES_H_

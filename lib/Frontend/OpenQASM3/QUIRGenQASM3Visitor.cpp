@@ -1,6 +1,6 @@
 //===- QUIRGenQASM3Visitor.cpp ----------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021-2023.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -31,7 +31,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/System/IR/SystemOps.h"
+#include "Dialect/QuSys/IR/QuSysAttributes.h"
+#include "Dialect/QuSys/IR/QuSysOps.h"
 
 #include <Frontend/OpenQASM3/QUIRGenQASM3Visitor.h>
 
@@ -60,7 +61,7 @@
 
 using namespace mlir;
 using namespace mlir::quir;
-using namespace mlir::sys;
+using namespace mlir::qusys;
 using namespace QASM;
 
 namespace qssc::frontend::openqasm3 {

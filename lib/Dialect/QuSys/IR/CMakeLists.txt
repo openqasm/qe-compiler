@@ -4,16 +4,12 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-add_mlir_dialect_library(MLIRSystemDialect
-        SystemDialect.cpp
-        SystemInterfaces.cpp
-        SystemOps.cpp
+add_mlir_dialect_library(MLIRQuSysDialect
+        QuSysDialect.cpp
+        QuSysOps.cpp
 
         ADDITIONAL_HEADER_DIRS
-        ${PROJECT_SOURCE_DIR}/include/System
-
-        DEPENDS
-        MLIRSystemIncGen
+        ${PROJECT_SOURCE_DIR}/include/QuSys
 
 	LINK_LIBS PUBLIC
 	MLIRIR

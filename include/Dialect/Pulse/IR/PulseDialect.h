@@ -7,6 +7,10 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
+///
+///  This file declares the Pulse dialect in MLIR.
+///
+//===----------------------------------------------------------------------===//
 
 #ifndef PULSE_PULSEDIALECT_H
 #define PULSE_PULSEDIALECT_H

@@ -22,7 +22,6 @@
 #include "llvm/Support/Path.h"
 
 #include "Config.h"
-// #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "HAL/TargetSystem.h"
 
 #include <cstdlib>

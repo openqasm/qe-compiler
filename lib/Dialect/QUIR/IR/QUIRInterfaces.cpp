@@ -1,11 +1,15 @@
 //===- QUIRInterfaces.cpp - QUIR dialect interfaces ------------ *- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 //
+//===----------------------------------------------------------------------===//
+///
+///  This file defines the QUIR dialect interfaces.
+///
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
