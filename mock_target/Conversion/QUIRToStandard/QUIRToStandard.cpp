@@ -17,9 +17,9 @@
 #include "MockUtils.h"
 
 #include "Conversion/QUIRToStandard/TypeConversion.h"
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QuSys/IR/QuSysOps.h"
 
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
@@ -172,7 +172,7 @@ void MockQUIRToStdPass::runOnOperation() {
   target.addLegalDialect<StandardOpsDialect, scf::SCFDialect,
                          arith::ArithmeticDialect, LLVM::LLVMDialect,
                          quir::QUIRDialect>();
-  target.addIllegalOp<qusys::RecvOp, qusys::BroadcastOp>();
+  target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
   target.addDynamicallyLegalOp<FuncOp>(
       [&](FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
   target.addDynamicallyLegalOp<CallOp>([&](CallOp op) {
@@ -190,9 +190,9 @@ void MockQUIRToStdPass::runOnOperation() {
   patterns.insert<ConstantOpConversionPat>(context, typeConverter);
 
   // Replace Receive ops with constants to be optimized away.
-  patterns.insert<CommOpConversionPat<qusys::RecvOp>>(context, typeConverter);
-  patterns.insert<CommOpConversionPat<qusys::BroadcastOp>>(context,
-                                                           typeConverter);
+  patterns.insert<CommOpConversionPat<qcs::RecvOp>>(context, typeConverter);
+  patterns.insert<CommOpConversionPat<qcs::BroadcastOp>>(context,
+                                                         typeConverter);
   patterns.insert<ReturnConversionPat>(context, typeConverter);
   patterns
       .insert<AngleBinOpConversionPat<quir::Angle_AddOp, mlir::arith::AddIOp>>(

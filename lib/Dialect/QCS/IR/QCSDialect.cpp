@@ -1,4 +1,4 @@
-//===- QuSysDialect.cpp - Quantum System dialect ----------------*- C++ -*-===//
+//===- QCSDialect.cpp - Quantum Control System dialect ----------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -8,29 +8,29 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file defines the Quantum System dialect in MLIR.
+///  This file defines the Quantum Control System dialect in MLIR.
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/QuSys/IR/QuSysDialect.h"
-#include "Dialect/QuSys/IR/QuSysAttributes.h"
-#include "Dialect/QuSys/IR/QuSysOps.h"
-#include "Dialect/QuSys/IR/QuSysTypes.h"
+#include "Dialect/QCS/IR/QCSDialect.h"
+#include "Dialect/QCS/IR/QCSAttributes.h"
+#include "Dialect/QCS/IR/QCSOps.h"
+#include "Dialect/QCS/IR/QCSTypes.h"
 
 using namespace mlir;
-using namespace mlir::qusys;
+using namespace mlir::qcs;
 
 /// Tablegen Definitions
-#include "Dialect/QuSys/IR/QuSysOpsDialect.cpp.inc"
+#include "Dialect/QCS/IR/QCSOpsDialect.cpp.inc"
 
 //===----------------------------------------------------------------------===//
-// Quantum System dialect.
+// Quantum Control System dialect
 //===----------------------------------------------------------------------===//
 
-void QuSysDialect::initialize() {
+void QCSDialect::initialize() {
 
   addOperations<
 #define GET_OP_LIST
-#include "Dialect/QuSys/IR/QuSysOps.cpp.inc"
+#include "Dialect/QCS/IR/QCSOps.cpp.inc"
       >();
 }

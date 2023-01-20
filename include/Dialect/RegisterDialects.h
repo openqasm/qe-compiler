@@ -18,8 +18,8 @@
 #include "mlir/InitAllDialects.h"
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
+#include "Dialect/QCS/IR/QCSDialect.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QuSys/IR/QuSysDialect.h"
 
 namespace qssc::dialect {
 
@@ -28,7 +28,7 @@ inline mlir::DialectRegistry registerDialects() {
   mlir::DialectRegistry registry;
   mlir::registerAllDialects(registry);
   registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect,
-                  mlir::qusys::QuSysDialect>();
+                  mlir::qcs::QCSDialect>();
   return registry;
 }
 } // namespace qssc::dialect

@@ -20,7 +20,7 @@ module {
   func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
     %c1_i32 = arith.constant 1 : i32
-    qusys.shot_init {qusys.num_shots = 1000 : i32}
+    qcs.shot_init {qcs.num_shots = 1000 : i32}
 // CHECK:  [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
 // CHECK:  [[QUBIT2:%.*]] = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
 // CHECK:  [[QUBIT3:%.*]] = quir.declare_qubit {id = 3 : i32} : !quir.qubit<1>
@@ -53,7 +53,7 @@ module {
     scf.if %14 {
       quir.call_gate @x(%0) : (!quir.qubit<1>) -> ()
     } {quir.classicalOnly = false, quir.physicalIds = [1 : i32]}
-    qusys.finalize
+    qcs.finalize
     return %c0_i32 : i32
   }
 }

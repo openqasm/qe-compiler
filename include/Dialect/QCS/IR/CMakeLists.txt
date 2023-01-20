@@ -4,13 +4,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-add_mlir_dialect_library(MLIRQuSysDialect
-        QuSysDialect.cpp
-        QuSysOps.cpp
+add_mlir_dialect(QCSOps qcs)
+qssc_add_mlir_doc(QCSOps QCSOps generated/Dialect/QCS/ -gen-dialect-doc)
 
-        ADDITIONAL_HEADER_DIRS
-        ${PROJECT_SOURCE_DIR}/include/QuSys
-
-	LINK_LIBS PUBLIC
-	MLIRIR
-	)
+set(LLVM_TARGET_DEFINITIONS QCSDialect.td)

@@ -1,4 +1,4 @@
-//===- SystemOps.td - System dialect ops -------------------*- tablegen -*-===//
+//===- QCSOps.td - System dialect ops ----------------------*- tablegen -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -8,12 +8,13 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// This is the main operation definition file for Quantum System operations.
+/// This is the main operation definition file for Quantum Control System
+/// operations.
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef QUSYS_OPS
-#define QUSYS_OPS
+#ifndef QCS_OPS
+#define QCS_OPS
 
 // TODO: Temporary, until constraints between `OpenQASM3`, `QUIR`, `Pulse`, and
 // `System` dialects are ironed out.
@@ -21,7 +22,7 @@ include "Dialect/QUIR/IR/QUIRInterfaces.td"
 include "Dialect/QUIR/IR/QUIRTraits.td"
 include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
 
-include "Dialect/QuSys/IR/QuSysBase.td"
+include "Dialect/QCS/IR/QCSBase.td"
 
 include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 
@@ -34,10 +35,10 @@ include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 // see lib/Dialect/Affine/Utils/Utils.cpp:hasNoInterveningEffect()
 def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
 
-def QuSys_SystemInitOp : QuSys_Op<"init", [IsolatedFromAbove]> {
+def QCS_SystemInitOp : QCS_Op<"init", [IsolatedFromAbove]> {
     let summary = "Initializes the system";
     let description = [{
-        The `qusys.system_init` operation causes the system to be initialized,
+        The `qcs.system_init` operation causes the system to be initialized,
         preparing for execution and synchronizing the system.
     }];
     let assemblyFormat = [{
@@ -45,10 +46,10 @@ def QuSys_SystemInitOp : QuSys_Op<"init", [IsolatedFromAbove]> {
     }];
 }
 
-def QuSys_SystemFinalizeOp : QuSys_Op<"finalize", [IsolatedFromAbove]> {
+def QCS_SystemFinalizeOp : QCS_Op<"finalize", [IsolatedFromAbove]> {
     let summary = "Finalizes the system";
     let description = [{
-        The `qusys.system_finalize` operation causes the system to be finalized,
+        The `qcs.system_finalize` operation causes the system to be finalized,
         cleaning up results and shutting down execution.
     }];
     let assemblyFormat = [{
@@ -56,12 +57,12 @@ def QuSys_SystemFinalizeOp : QuSys_Op<"finalize", [IsolatedFromAbove]> {
     }];
 }
 
-def QuSys_SynchronizeOp : QuSys_Op<"synchronize", [
+def QCS_SynchronizeOp : QCS_Op<"synchronize", [
             DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
             NonInterferingNonDeadSideEffect]> {
     let summary = "Synchronize the system";
     let description = [{
-        The `qusys.synchronize` operation causes the system to perform a
+        The `qcs.synchronize` operation causes the system to perform a
         synchronization so that each of the independent controllers is locked
         into the same time step again. The synchronize op accepts qubit
         arguments, this is to simplify the tracking of synchronization timing
@@ -75,18 +76,18 @@ def QuSys_SynchronizeOp : QuSys_Op<"synchronize", [
     }];
 }
 
-def QuSys_BroadcastOp : QuSys_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
+def QCS_BroadcastOp : QCS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
     let summary = "Broadcast a value from this controller to all others";
     let description = [{
-        The `qusys.broadcast` operation represents a broadcast command that sends a value
+        The `qcs.broadcast` operation represents a broadcast command that sends a value
         from this controller to all others. All other controllers should have a
-        corresponding `qusys.recv` operation. If only one controller should receive the
-        message then the `qusys.send` operation should be used instead.
+        corresponding `qcs.recv` operation. If only one controller should receive the
+        message then the `qcs.send` operation should be used instead.
 
         Example:
         ```mlir
         %angle1 = quir.constant #quir.angle<0.2 : !quir.angle<20>>
-        qusys.broadcast %angle1 : !quir.angle<20>
+        qcs.broadcast %angle1 : !quir.angle<20>
         ```
     }];
 
@@ -98,19 +99,19 @@ def QuSys_BroadcastOp : QuSys_Op<"broadcast", [NonInterferingNonDeadSideEffect]>
 }
 
 // TODO: Should this be a "unitary op" at the system level?
-def QuSys_DelayCyclesOp : QuSys_Op<"delay_cycles", [
+def QCS_DelayCyclesOp : QCS_Op<"delay_cycles", [
             UnitaryOp,
             DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
             NonInterferingNonDeadSideEffect]> {
     let summary = "Add a delay operation of a given number of cycles to a qubit";
     let description = [{
-        The `qusys.delay_cycles` operation represents a delay operation of the given
+        The `qcs.delay_cycles` operation represents a delay operation of the given
         number of cycles to a qubit, group of qubits, or all qubits (when no
         target qubit is given).
 
         Example:
         ```mlir
-        "qusys.delay_cycles"(%q1_1) { time = 1000 : i64}: (!quir.qubit) -> ()
+        "qcs.delay_cycles"(%q1_1) { time = 1000 : i64}: (!quir.qubit) -> ()
         ```
     }];
 
@@ -127,16 +128,16 @@ def IndexArrayAttr : TypedArrayAttrBase<IndexAttr,
   let constBuilderCall = "$_builder.getIndexArrayAttr($0)";
 }
 
-def QuSys_SendOp : QuSys_Op<"send", [NonInterferingNonDeadSideEffect]> {
+def QCS_SendOp : QCS_Op<"send", [NonInterferingNonDeadSideEffect]> {
     let summary = "Send a classical value from this controller to another";
     let description = [{
-        The `qusys.send` operation represents a send command from one controller to another.
-        A corresponding `qusys.recv` operation should receive the information sent.
+        The `qcs.send` operation represents a send command from one controller to another.
+        A corresponding `qcs.recv` operation should receive the information sent.
 
         Example:
         ```mlir
         %cbit = "quir.measure"(%target) : (!quir.qubit<1>) -> i1
-        qusys.send %cbit : i1
+        qcs.send %cbit : i1
         ```
     }];
 
@@ -147,16 +148,16 @@ def QuSys_SendOp : QuSys_Op<"send", [NonInterferingNonDeadSideEffect]> {
     }];
 }
 
-def QuSys_RecvOp : QuSys_Op<"recv", [NonInterferingNonDeadSideEffect]> {
+def QCS_RecvOp : QCS_Op<"recv", [NonInterferingNonDeadSideEffect]> {
     let summary = "Receive classical values from other controllers";
     let description = [{
-        The `qusys.recv` operation represents a receive command for potentially
+        The `qcs.recv` operation represents a receive command for potentially
         multiple values. The fromIds array attribute indicates the Id of the
         sending control node for each independent value.
 
         Example:
         ```mlir
-        %meas:2 = qusys.recv {fromId = [0 : index, 1 : index]} : i1, i1
+        %meas:2 = qcs.recv {fromId = [0 : index, 1 : index]} : i1, i1
         ```
     }];
 
@@ -168,18 +169,18 @@ def QuSys_RecvOp : QuSys_Op<"recv", [NonInterferingNonDeadSideEffect]> {
     }];
 }
 
-def QuSys_ParallelControlFlowOp : QuSys_Op<"parallel_control_flow", [
+def QCS_ParallelControlFlowOp : QCS_Op<"parallel_control_flow", [
                         SingleBlockImplicitTerminator<"ParallelEndOp">,
                         RecursiveSideEffects]> {
     let summary = "Contain a group of control flow ops that can run in parallel";
     let description = [{
-        The `qusys.parallel_control_flow` operation has a single region and block
+        The `qcs.parallel_control_flow` operation has a single region and block
         that holds a collection of scf control flow ops that can be executed in
         parallel.
 
         Example:
         ```mlir
-        qusys.parallel_control_flow {
+        qcs.parallel_control_flow {
             scf.if (%c0) {
                 quir.gate_call @x(%q0) : (!quir.qubit<1>) -> ()
             } {quir.physicalIds = [0 : i32]}
@@ -195,22 +196,22 @@ def QuSys_ParallelControlFlowOp : QuSys_Op<"parallel_control_flow", [
     let assemblyFormat = "$region attr-dict";
 }
 
-def QuSys_ParallelEndOp : QuSys_Op<"parallel_control_flow_end", [
+def QCS_ParallelEndOp : QCS_Op<"parallel_control_flow_end", [
     Terminator, HasParent<"ParallelControlFlowOp">, NoSideEffect]> {
-  let summary = "A pseudo-op that marks the end of a `qusys.parallel_control_flow` op.";
+  let summary = "A pseudo-op that marks the end of a `qcs.parallel_control_flow` op.";
   let description = [{
     This op terminates the only block inside the only region of a
-    `qusys.parallel_control_flow` op.
+    `qcs.parallel_control_flow` op.
   }];
 
   let parser = "return success();";
   let printer = "p << getOperationName();";
 }
 
-def QuSys_ShotInitOp : QuSys_Op<"shot_init", [IsolatedFromAbove]> {
+def QCS_ShotInitOp : QCS_Op<"shot_init", [IsolatedFromAbove]> {
     let summary = "Initialization for shots";
     let description = [{
-        The `qusys.shot_init` operation causes the system to initialize a shot to ensure
+        The `qcs.shot_init` operation causes the system to initialize a shot to ensure
         consistent initial conditions for each execution of a given quantum algorithm.
     }];
     let assemblyFormat = [{
@@ -218,4 +219,4 @@ def QuSys_ShotInitOp : QuSys_Op<"shot_init", [IsolatedFromAbove]> {
     }];
 }
 
-#endif // QUSYS_OPS
+#endif // QCS_OPS

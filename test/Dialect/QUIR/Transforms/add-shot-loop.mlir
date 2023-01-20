@@ -1,10 +1,10 @@
 // RUN: qss-compiler -X=mlir --add-shot-loop %s | FileCheck %s
 
 func @main() {
-  qusys.init
+  qcs.init
   // CHECK: scf.for
-  // CHECK: qusys.shot_init
-  // CHECK: qusys.shot_loop
-  qusys.finalize
+  // CHECK: qcs.shot_init
+  // CHECK: qcs.shot_loop
+  qcs.finalize
   return
 }

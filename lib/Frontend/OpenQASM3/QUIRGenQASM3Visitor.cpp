@@ -31,8 +31,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/QuSys/IR/QuSysAttributes.h"
-#include "Dialect/QuSys/IR/QuSysOps.h"
+#include "Dialect/QCS/IR/QCSAttributes.h"
+#include "Dialect/QCS/IR/QCSOps.h"
 
 #include <Frontend/OpenQASM3/QUIRGenQASM3Visitor.h>
 
@@ -61,7 +61,7 @@
 
 using namespace mlir;
 using namespace mlir::quir;
-using namespace mlir::qusys;
+using namespace mlir::qcs;
 using namespace QASM;
 
 namespace qssc::frontend::openqasm3 {

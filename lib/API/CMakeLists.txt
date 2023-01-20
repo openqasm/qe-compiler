@@ -12,4 +12,4 @@ set(LIBS
         )
 target_link_libraries(QSSCAPI ${LIBS})
 
-add_dependencies(QSSCAPI MLIRQuSysDialect MLIRQUIRDialect)
+add_dependencies(QSSCAPI MLIRQCSDialect MLIRQUIRDialect)

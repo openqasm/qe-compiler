@@ -29,7 +29,7 @@ from qss_compiler import (
 def check_mlir_string(mlir):
     assert isinstance(mlir, str)
     assert "module" in mlir
-    assert "qusys.init" in mlir
+    assert "qcs.init" in mlir
 
 
 def test_compile_file_to_qem(example_qasm3_tmpfile, mock_config_file, check_payload):

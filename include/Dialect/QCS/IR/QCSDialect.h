@@ -1,4 +1,4 @@
-//===- QuSysDialect.h - Quantum System dialect ------------------*- C++ -*-===//
+//===- QCSDialect.h - Quantum Control System dialect ------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -8,15 +8,15 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file declares the Quantum System dialect in MLIR.
+///  This file declares the Quantum Control System dialect in MLIR.
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef DIALECT_QUSYS_QUSYSDIALECT_H_
-#define DIALECT_QUSYS_QUSYSDIALECT_H_
+#ifndef DIALECT_QCS_QCSDIALECT_H_
+#define DIALECT_QCS_QCSDIALECT_H_
 
 #include "mlir/IR/Dialect.h"
 
-#include "Dialect/QuSys/IR/QuSysOpsDialect.h.inc"
+#include "Dialect/QCS/IR/QCSOpsDialect.h.inc"
 
-#endif // DIALECT_QUSYS_QUSYSDIALECT_H_
+#endif // DIALECT_QCS_QCSDIALECT_H_

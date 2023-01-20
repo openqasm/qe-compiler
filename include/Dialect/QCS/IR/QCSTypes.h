@@ -1,4 +1,4 @@
-//===- SystemTypes.h - System dialect types ---------------*- C++ -*-=========//
+//===- QCSTypes.h - Quantum Control System dialect types --*- C++ -*-=========//
 //
 // (C) Copyright IBM 2023.
 //
@@ -8,17 +8,17 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// This file declares the types in the Quantum System dialect.
+/// This file declares the types in the Quantum Control System dialect.
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef DIALECT_QUSYS_QUSYSTYPES_H_
-#define DIALECT_QUSYS_QUSYSTYPES_H_
+#ifndef DIALECT_QCS_QCSTYPES_H_
+#define DIALECT_QCS_QCSTYPES_H_
 
 // TODO: Temporary, until constraints between `OpenQASM3`, `QUIR`, `Pulse`, and
 // `System` dialects are ironed out.
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-namespace mlir::qusys {} // namespace mlir::qusys
+namespace mlir::qcs {} // namespace mlir::qcs
 
-#endif // DIALECT_QUSYS_QUSYSTYPES_H_
+#endif // DIALECT_QCS_QCSTYPES_H_

@@ -37,9 +37,9 @@
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
+#include "Dialect/QCS/IR/QCSDialect.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
-#include "Dialect/QuSys/IR/QuSysDialect.h"
 
 using namespace qssc::hal;
 
@@ -114,7 +114,7 @@ auto main(int argc, char **argv) -> int {
   // will be *parsed* by the tool, not the one generated
   registerAllDialects(registry);
   registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect,
-                  mlir::qusys::QuSysDialect>();
+                  mlir::qcs::QCSDialect>();
 
   llvm::InitLLVM y(argc, argv);
 

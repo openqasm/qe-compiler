@@ -1,4 +1,4 @@
-//===- QuSysOps.h - System dialect ops -------------------------*- C++ -*-===//
+//===- QCSOps.h - Quantum Control System dialect ops ------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -8,20 +8,20 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// This file declares the operations in the Quantum System dialect.
+/// This file declares the operations in the Quantum Control System dialect.
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef DIALECT_QUSYS_QUSYSOPS_H_
-#define DIALECT_QUSYS_QUSYSOPS_H_
+#ifndef DIALECT_QCS_QCSOPS_H_
+#define DIALECT_QCS_QCSOPS_H_
 
-// TODO: move necessary components to `QuSys`
+// TODO: move necessary components to `QCS`
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIRTraits.h"
 
-#include "Dialect/QuSys/IR/QuSysTypes.h"
+#include "Dialect/QCS/IR/QCSTypes.h"
 
 #define GET_OP_CLASSES
-#include "Dialect/QuSys/IR/QuSysOps.h.inc"
+#include "Dialect/QCS/IR/QCSOps.h.inc"
 
-#endif // DIALECT_QUSYS_QUSYSOPS_H_
+#endif // DIALECT_QCS_QCSOPS_H_

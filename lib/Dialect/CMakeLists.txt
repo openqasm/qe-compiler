@@ -6,4 +6,4 @@
 
 add_subdirectory(QUIR)
 add_subdirectory(Pulse)
-add_subdirectory(QuSys)
+add_subdirectory(QCS)

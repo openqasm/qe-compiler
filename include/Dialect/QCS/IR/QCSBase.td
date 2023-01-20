@@ -1,4 +1,4 @@
-//===- QuSysDialect.td - MLIR Quantum System dialect -------*- tablegen -*-===//
+//===- QCSDialect.td - MLIR Quantum Control System dialect -*- tablegen -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -13,40 +13,40 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef DIALECTS_QUSYS_IR_BASE
-#define DIALECTS_QUSYS_IR_BASE
+#ifndef QCS_BASE_H
+#define QCS_BASE_H
 
 //===----------------------------------------------------------------------===//
 // Quantum System dialect definition
 //===----------------------------------------------------------------------===//
 
-def QuSys_Dialect : Dialect {
-    let name = "qusys";
-    let summary = "The Quantum System MLIR dialect.";
+def QCS_Dialect : Dialect {
+    let name = "qcs";
+    let summary = "The Quantum Control System MLIR dialect.";
     let description = [{
         This is a low-level dialect that sits directly above target-dependent
-        code generation. As such, the `QuSys` dialect has no conception of,
-        e.g., a 'qubit' or 'angle'. The `QuSys` dialect aims to provide
+        code generation. As such, the `QCS` dialect has no conception of,
+        e.g., a 'qubit' or 'angle'. The `QCS` dialect aims to provide
         fundamental types and operations that can be used at higher levels;
         e.g., OpenQASM 3, QUIR, and Pulse dilects.
     }];
-    let cppNamespace = "::mlir::qusys";
+    let cppNamespace = "::mlir::qcs";
 }
 
 //===----------------------------------------------------------------------===//
 // Base class for Quantum System dialect operations
 //===----------------------------------------------------------------------===//
 
-class QuSys_Op<string mnemonic, list<Trait> traits = []> :
-        Op<QuSys_Dialect, mnemonic, traits>;
+class QCS_Op<string mnemonic, list<Trait> traits = []> :
+        Op<QCS_Dialect, mnemonic, traits>;
 
 //===----------------------------------------------------------------------===//
 // Base class for Quantum System dialect attributes
 //===----------------------------------------------------------------------===//
 
-class QuSys_Attr<string name, string attrMnemonic, list<Trait> traits = []>
-    : AttrDef<QuSys_Dialect, name, traits> {
+class QCS_Attr<string name, string attrMnemonic, list<Trait> traits = []>
+    : AttrDef<QCS_Dialect, name, traits> {
   let mnemonic = attrMnemonic;
 }
 
-#endif // DIALECTS_QUSYS_IR_BASE
+#endif // QCS_BASE_H

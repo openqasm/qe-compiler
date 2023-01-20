@@ -1,4 +1,4 @@
-//===- SystemOps.cpp - System dialect ops -----------------------*- C++ -*-===//
+//===- QCSOps.cpp - Quantum Control System dialect ops ----------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -8,18 +8,18 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// This file defines the operations in the Quantum System dialect.
+/// This file defines the operations in the Quantum Control System dialect.
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/QuSys/IR/QuSysOps.h"
-#include "Dialect/QuSys/IR/QuSysDialect.h"
-#include "Dialect/QuSys/IR/QuSysTypes.h"
+#include "Dialect/QCS/IR/QCSOps.h"
+#include "Dialect/QCS/IR/QCSDialect.h"
+#include "Dialect/QCS/IR/QCSTypes.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 
 using namespace mlir;
-using namespace mlir::qusys;
+using namespace mlir::qcs;
 
 #define GET_OP_CLASSES
-#include "Dialect/QuSys/IR/QuSysOps.cpp.inc"
+#include "Dialect/QCS/IR/QCSOps.cpp.inc"

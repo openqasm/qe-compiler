@@ -14,11 +14,11 @@
 
 #include "QubitLocalization.h"
 
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
-#include "Dialect/QuSys/IR/QuSysOps.h"
 
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/SCF/SCF.h"
@@ -30,7 +30,7 @@
 
 using namespace mlir;
 using namespace mlir::quir;
-using namespace mlir::qusys;
+using namespace mlir::qcs;
 namespace mock = qssc::targets::mock;
 using namespace mock;
 

@@ -9,7 +9,7 @@ module  {
     // CHECK: {{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
     %1 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<32>>
     quir.call_gate @rz(%0, %1) : (!quir.qubit<1>, !quir.angle<32>) -> ()
-    qusys.finalize
+    qcs.finalize
     return %c0_i32 : i32
   }
 }
