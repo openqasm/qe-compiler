@@ -14,7 +14,7 @@ module {
         // CHECK: quir.measure(%{{.*}}) : (!quir.qubit<1>) -> i1
         %res1 = "quir.measure"(%qb1) : (!quir.qubit<1>) -> i1
         // SYNCH: quir.measure(%{{.*}}) : (!quir.qubit<1>) -> i1
-        // SYNCH-NEXT: quir.synchronize %{{.*}} : (!quir.qubit<1>) -> ()
+        // SYNCH-NEXT: qcs.synchronize %{{.*}} : (!quir.qubit<1>) -> ()
         return
     }
 }

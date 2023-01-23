@@ -1,6 +1,6 @@
 //===- QUIROps.cpp - QUIR dialect ops ---------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2020, 2022.
+// (C) Copyright IBM 2020, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
@@ -98,10 +99,12 @@ std::set<uint32_t> ResetQubitOp::getOperatedQubits() {
 
 //===----------------------------------------------------------------------===//
 // SynchronizeOp
+//
+// TODO: Move to `System` dialect once "lower qubits to channels/ports."
 //===----------------------------------------------------------------------===//
 
-std::set<uint32_t> SynchronizeOp::getOperatedQubits() {
-  return getQubitIds<SynchronizeOp>(*this);
+std::set<uint32_t> qcs::SynchronizeOp::getOperatedQubits() {
+  return getQubitIds<qcs::SynchronizeOp>(*this);
 }
 
 //===----------------------------------------------------------------------===//
@@ -114,10 +117,12 @@ std::set<uint32_t> DelayOp::getOperatedQubits() {
 
 //===----------------------------------------------------------------------===//
 // DelayCyclesOp
+//
+// TODO: Move to `System` dialect once "lower qubits to channels/ports."
 //===----------------------------------------------------------------------===//
 
-std::set<uint32_t> DelayCyclesOp::getOperatedQubits() {
-  return getQubitIds<DelayCyclesOp>(*this);
+std::set<uint32_t> qcs::DelayCyclesOp::getOperatedQubits() {
+  return getQubitIds<qcs::DelayCyclesOp>(*this);
 }
 
 //===----------------------------------------------------------------------===//

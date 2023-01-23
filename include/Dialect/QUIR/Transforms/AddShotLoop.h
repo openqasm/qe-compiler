@@ -1,6 +1,6 @@
 //===- AddShotLoop.h - Add shot loop ----------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -15,6 +15,8 @@
 
 #ifndef QUIR_ADD_SHOT_LOOP_H
 #define QUIR_ADD_SHOT_LOOP_H
+
+#include "Dialect/QUIR/IR/QUIRDialect.h"
 
 #include "mlir/Pass/Pass.h"
 
@@ -45,6 +47,10 @@ struct AddShotLoopPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+
+  void getDependentDialects(DialectRegistry &registry) const override {
+    registry.insert<mlir::quir::QUIRDialect>();
+  }
 }; // struct AddShotLoopPass
 } // namespace mlir::quir
 

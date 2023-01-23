@@ -6,7 +6,7 @@
 
 set(SOURCES LegacyInputConversion.cpp SystemDefinition.cpp DebugIndent.cpp)
 
-find_package(Boost 1.77.0 REQUIRED)
+find_package(boost 1.77.0 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_library(Utils ${SOURCES})

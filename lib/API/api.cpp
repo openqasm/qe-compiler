@@ -1,6 +1,6 @@
 //===- api.cpp --------------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -42,6 +42,8 @@
 
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
+
+#include "Dialect/QCS/IR/QCSDialect.h"
 
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 

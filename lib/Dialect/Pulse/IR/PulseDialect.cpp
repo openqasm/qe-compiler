@@ -7,6 +7,10 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
+///
+///  This file defines the Pulse dialect in MLIR.
+///
+//===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/IR/PulseOps.h"

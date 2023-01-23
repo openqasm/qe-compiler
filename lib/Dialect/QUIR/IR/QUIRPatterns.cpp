@@ -1,11 +1,15 @@
 //===- Patterns.cpp - QUIR Declarative Rewrite Patterns ----------*-C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 //
+//===----------------------------------------------------------------------===//
+///
+///  This file defines the QUIR dialect patterns in MLIR.
+///
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIRDialect.h"
