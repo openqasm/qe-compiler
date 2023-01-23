@@ -41,7 +41,7 @@ module {
     %8 = "quir.cast"(%7) : (i1) -> !quir.cbit<1>
     oq3.assign_variable @a : !quir.cbit<1> = %8
 
-    %9 = quir.use_variable @b : !quir.cbit<2>
+    %9 = oq3.use_variable @b : !quir.cbit<2>
     %10 = quir.cbit_extractbit(%9 : !quir.cbit<2>) [0] : i1
 
     // CHECK: scf.if [[MEASURE0]]
@@ -49,7 +49,7 @@ module {
       quir.call_gate @x(%0) : (!quir.qubit<1>) -> ()
     }
 
-    %11 = quir.use_variable @b : !quir.cbit<2>
+    %11 = oq3.use_variable @b : !quir.cbit<2>
     %12 = quir.cbit_extractbit(%11 : !quir.cbit<2>) [1] : i1
 
     // CHECK: scf.if [[MEASURE1]]
@@ -57,7 +57,7 @@ module {
       quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
     }
 
-    %13 = quir.use_variable @a : !quir.cbit<1>
+    %13 = oq3.use_variable @a : !quir.cbit<1>
     %14 = "quir.cast"(%13) : (!quir.cbit<1>) -> i1
 
     // CHECK: scf.if [[MEASURE2]]

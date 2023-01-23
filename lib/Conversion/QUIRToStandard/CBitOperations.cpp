@@ -95,7 +95,7 @@ struct CbitAssignBitOpConversionPattern
     if (cbitWidth.ugt(64)) // the IndexAttr is turned into an llvm::APInt
       return failure();
 
-    auto oldRegisterValue = rewriter.create<mlir::quir::UseVariableOp>(
+    auto oldRegisterValue = rewriter.create<mlir::oq3::UseVariableOp>(
         location,
         /*rewriter.getType<mlir::quir::CBitType>(cbitWidth.getZExtValue())*/
         rewriter.getIntegerType(cbitWidth.getZExtValue()),

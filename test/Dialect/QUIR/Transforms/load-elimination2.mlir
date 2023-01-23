@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --quir-eliminate-loads %s | FileCheck %s --implicit-check-not 'quir.use_variable @a'
+// RUN: qss-compiler -X=mlir --quir-eliminate-loads %s | FileCheck %s --implicit-check-not 'oq3.use_variable @a'
 // RUN: qss-compiler -X=mlir --quir-eliminate-loads --remove-unused-variables %s | FileCheck %s --check-prefix REMOVE-UNUSED
 //
 // This test case serves to validate the behavior of the load elimination pass.
@@ -29,11 +29,11 @@ module {
     // assignment of b.
     // CHECK: oq3.assign_variable @b : !quir.angle<64> = [[CONST314_ANGLE]]
     // The variable a should never be read.
-    // REMOVE-UNUSED-NOT: quir.use_variable @a
-    %1 = quir.use_variable @a : !quir.angle<64>
+    // REMOVE-UNUSED-NOT: oq3.use_variable @a
+    %1 = oq3.use_variable @a : !quir.angle<64>
     oq3.assign_variable @b : !quir.angle<64> = %1
 
-    %2 = quir.use_variable @b : !quir.angle<64>
+    %2 = oq3.use_variable @b : !quir.angle<64>
     return %2 : !quir.angle<64>
   }
 }

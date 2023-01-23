@@ -68,7 +68,7 @@ void QUIRVariableBuilder::generateArrayVariableDeclaration(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Type elementType, int64_t width) {
 
-  builder.create<mlir::quir::DeclareArrayOp>(
+  builder.create<mlir::oq3::DeclareArrayOp>(
       location, builder.getStringAttr(variableName),
       mlir::TypeAttr::get(elementType), builder.getIndexAttr(width));
   variables.emplace(
@@ -121,15 +121,15 @@ mlir::Value
 QUIRVariableBuilder::generateVariableUse(mlir::Location location,
                                          llvm::StringRef variableName,
                                          mlir::Type variableType) {
-  return builder.create<mlir::quir::UseVariableOp>(location, variableType,
-                                                   variableName);
+  return builder.create<mlir::oq3::UseVariableOp>(location, variableType,
+                                                  variableName);
 }
 
 mlir::Value QUIRVariableBuilder::generateArrayVariableElementUse(
     mlir::Location location, llvm::StringRef variableName, size_t elementIndex,
     mlir::Type elementType) {
 
-  return builder.create<mlir::quir::UseArrayElementOp>(
+  return builder.create<mlir::oq3::UseArrayElementOp>(
       location, elementType,
       mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)),
       builder.getIndexAttr(elementIndex));

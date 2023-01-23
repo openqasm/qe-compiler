@@ -30,12 +30,12 @@ r[2] = measure $2; // expected "1"
 bit meas_and;
 // MLIR-DAG: oq3.declare_variable @meas_and : !quir.cbit<1>
 
-// MLIR: [[R:%.*]] = quir.use_variable @r
+// MLIR: [[R:%.*]] = oq3.use_variable @r
 // MLIR: [[R0:%.*]] = quir.cbit_extractbit([[R]] : !quir.cbit<6>) [0] : i1
-// MLIR: [[R:%.*]] = quir.use_variable @r
+// MLIR: [[R:%.*]] = oq3.use_variable @r
 // MLIR: [[R2:%.*]] = quir.cbit_extractbit([[R]] : !quir.cbit<6>) [2] : i1
 // MLIR-DAG: [[R0_OR_R2:%.*]] = quir.cbit_or [[R0]], [[R2]] : i1
-// MLIR: [[R:%.*]] = quir.use_variable @r
+// MLIR: [[R:%.*]] = oq3.use_variable @r
 // MLIR: [[R1:%.*]] = quir.cbit_extractbit([[R]] : !quir.cbit<6>) [1] : i1
 // MLIR-DAG: [[R0_OR_R2__AND_R1:%.*]] = quir.cbit_and [[R0_OR_R2]], [[R1]]
 

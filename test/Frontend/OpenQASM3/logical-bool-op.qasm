@@ -16,8 +16,8 @@ bool c = 13;
 // AST-PRETTY: statements=
 // AST-PRETTY: UGateOpNode{{.*}}
 // AST-PRETTY: )
-// MLIR: [[A:%.*]] = quir.use_variable @a : i1
-// MLIR: [[B:%.*]] = quir.use_variable @b : i1
+// MLIR: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR: [[B:%.*]] = oq3.use_variable @b : i1
 // MLIR: [[COND:%.*]] = arith.ori [[A]], [[B]] : i1
 // MLIR: scf.if [[COND]] {
 if (a || b) {
@@ -29,8 +29,8 @@ if (a || b) {
 // AST-PRETTY: statements=
 // AST-PRETTY: UGateOpNode{{.*}}
 // AST-PRETTY: )
-// MLIR: [[A:%.*]] = quir.use_variable @a : i1
-// MLIR: [[B:%.*]] = quir.use_variable @b : i1
+// MLIR: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR: [[B:%.*]] = oq3.use_variable @b : i1
 // MLIR: [[COND:%.*]] = arith.andi [[A]], [[B]] : i1
 // MLIR: scf.if [[COND]] {
 if (a && b) {
@@ -43,9 +43,9 @@ if (a && b) {
 // AST-PRETTY: statements=
 // AST-PRETTY: UGateOpNode{{.*}}
 // AST-PRETTY: )
-// MLIR-DAG: [[A:%.*]] = quir.use_variable @a : i1
-// MLIR-DAG: [[B:%.*]] = quir.use_variable @b : i1
-// MLIR-DAG: [[C:%.*]] = quir.use_variable @c : i1
+// MLIR-DAG: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR-DAG: [[B:%.*]] = oq3.use_variable @b : i1
+// MLIR-DAG: [[C:%.*]] = oq3.use_variable @c : i1
 // MLIR-DAG: [[TMP:%.*]] = arith.andi [[A]], [[B]] : i1
 // MLIR-DAG: [[COND:%.*]] = arith.andi [[TMP]], [[C]] : i1
 // MLIR: scf.if [[COND]] {

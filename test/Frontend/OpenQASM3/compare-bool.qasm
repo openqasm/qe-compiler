@@ -6,8 +6,8 @@ bool a = true;
 bool b = false;
 
 // Test for ==
-// MLIR: [[A:%.*]] = quir.use_variable @a : i1
-// MLIR: [[B:%.*]] = quir.use_variable @b : i1
+// MLIR: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR: [[B:%.*]] = oq3.use_variable @b : i1
 // MLIR: [[CMP:%.*]] = arith.cmpi eq, [[A]], [[B]] : i1
 // MLIR: scf.if [[CMP:%.*]] {
 if (a == b){
@@ -15,8 +15,8 @@ if (a == b){
 }
 
 // Test for <
-// MLIR: [[A:%.*]] = quir.use_variable @a : i1
-// MLIR: [[B:%.*]] = quir.use_variable @b : i1
+// MLIR: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR: [[B:%.*]] = oq3.use_variable @b : i1
 // MLIR: [[CMP:%.*]] = arith.cmpi slt, [[A]], [[B]] : i1
 // MLIR: scf.if [[CMP:%.*]] {
 if (a < b){
@@ -24,8 +24,8 @@ if (a < b){
 }
 
 // Test for >
-// MLIR: [[A:%.*]] = quir.use_variable @a : i1
-// MLIR: [[B:%.*]] = quir.use_variable @b : i1
+// MLIR: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR: [[B:%.*]] = oq3.use_variable @b : i1
 // MLIR: [[CMP:%.*]] = arith.cmpi sgt, [[A]], [[B]] : i1
 // MLIR: scf.if [[CMP:%.*]] {
 if (a > b){
@@ -33,8 +33,8 @@ if (a > b){
 }
 
 // Test for >=
-// MLIR: [[A:%.*]] = quir.use_variable @a : i1
-// MLIR: [[B:%.*]] = quir.use_variable @b : i1
+// MLIR: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR: [[B:%.*]] = oq3.use_variable @b : i1
 // MLIR: [[CMP:%.*]] = arith.cmpi sge, [[A]], [[B]] : i1
 // MLIR: scf.if [[CMP:%.*]] {
 if (a >= b){
@@ -42,8 +42,8 @@ if (a >= b){
 }
 
 // Test for <=
-// MLIR: [[A:%.*]] = quir.use_variable @a : i1
-// MLIR: [[B:%.*]] = quir.use_variable @b : i1
+// MLIR: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR: [[B:%.*]] = oq3.use_variable @b : i1
 // MLIR: [[CMP:%.*]] = arith.cmpi sle, [[A]], [[B]] : i1
 // MLIR: scf.if [[CMP:%.*]] {
 if (a <= b){
@@ -51,8 +51,8 @@ if (a <= b){
 }
 
 // Test for !=
-// MLIR: [[A:%.*]] = quir.use_variable @a : i1
-// MLIR: [[B:%.*]] = quir.use_variable @b : i1
+// MLIR: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR: [[B:%.*]] = oq3.use_variable @b : i1
 // MLIR: [[CMP:%.*]] = arith.cmpi ne, [[A]], [[B]] : i1
 // MLIR: scf.if [[CMP:%.*]] {
 if (a != b){

@@ -37,7 +37,7 @@ module {
     }
 
     // CHECK: [[LOAD:%.*]] = affine.load [[MEMREF]]
-    %10 = quir.use_variable @b : !quir.cbit<1>
+    %10 = oq3.use_variable @b : !quir.cbit<1>
     %c1_i32_1 = arith.constant 1 : i32
     %11 = "quir.cast"(%10) : (!quir.cbit<1>) -> i32
 

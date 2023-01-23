@@ -141,7 +141,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
       scf::SCFDialect, StandardOpsDialect, quir::QUIRDialect, AffineDialect>();
   target.addIllegalOp<oq3::DeclareVariableOp>();
   target.addIllegalOp<oq3::AssignVariableOp>();
-  target.addIllegalOp<quir::UseVariableOp>();
+  target.addIllegalOp<oq3::UseVariableOp>();
   // TODO add additional QUIR variable operations here
   RewritePatternSet patterns(&context);
 

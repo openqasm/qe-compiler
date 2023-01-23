@@ -18,7 +18,7 @@ int c = 5;
 // MLIR: oq3.assign_variable @a : !quir.cbit<1> = [[CONSTCAST]]
 a = 1;
 
-// MLIR: [[A:%.*]] = quir.use_variable @a : !quir.cbit<1>
+// MLIR: [[A:%.*]] = oq3.use_variable @a : !quir.cbit<1>
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
 // MLIR: [[ACAST:%[0-9]+]] = "quir.cast"([[A]]) : (!quir.cbit<1>) -> i32
 // MLIR: [[COND:%.*]] = arith.cmpi eq, [[ACAST]], [[CONST]] : i32
@@ -33,7 +33,7 @@ if (a == 1) {
 // MLIR: }
 
 // AST-PRETTY: IdentifierRefNode(name=b[1], IdentifierNode(name=b, bits=2), index=1)
-// MLIR: [[B:%.*]] = quir.use_variable @b : !quir.cbit<2>
+// MLIR: [[B:%.*]] = oq3.use_variable @b : !quir.cbit<2>
 // MLIR: [[BIT:%.*]] = quir.cbit_extractbit([[B]] : !quir.cbit<2>) [1] : i1
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 0 : i32
 // MLIR: [[BITCAST:%[0-9]+]] = "quir.cast"([[BIT]]) : (i1) -> i32
@@ -59,7 +59,7 @@ if (d[0] == 1) {
 d[1] = measure $0;
 
 // AST-PRETTY: operand=OperatorNode(op=!, target-identifier=IdentifierRefNode(name=b[0], IdentifierNode(name=b, bits=2), index=0)
-// MLIR: [[B:%.*]] = quir.use_variable @b
+// MLIR: [[B:%.*]] = oq3.use_variable @b
 // MLIR: [[B0:%.*]] = quir.cbit_extractbit([[B]] : {{.*}}) [0]
 // MLIR: [[NOTB0:%.*]] = {{.*}} [[B0]]
 // MLIR: quir.assign_cbit_bit @d<2> [0] : i1 = [[NOTB0]]

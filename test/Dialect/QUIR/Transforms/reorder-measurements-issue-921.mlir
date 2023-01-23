@@ -34,7 +34,7 @@ module {
     %5 = quir.measure(%1) : (!quir.qubit<1>) -> i1
     %6 = "quir.cast"(%5) : (i1) -> !quir.cbit<1>
     oq3.assign_variable @a : !quir.cbit<1> = %6
-    %7 = quir.use_variable @a : !quir.cbit<1>
+    %7 = oq3.use_variable @a : !quir.cbit<1>
     %8 = "quir.cast"(%7) : (!quir.cbit<1>) -> i32
     %9 = arith.cmpi eq, %8, %c1_i32 : i32
     scf.if %9 {
@@ -47,7 +47,7 @@ module {
     %10 = quir.measure(%0) : (!quir.qubit<1>) -> i1
     %11 = "quir.cast"(%10) : (i1) -> !quir.cbit<1>
     oq3.assign_variable @b : !quir.cbit<1> = %11
-    %12 = quir.use_variable @b : !quir.cbit<1>
+    %12 = oq3.use_variable @b : !quir.cbit<1>
     %13 = "quir.cast"(%12) : (!quir.cbit<1>) -> i32
     %14 = arith.cmpi eq, %13, %c1_i32 : i32
     scf.if %14 {

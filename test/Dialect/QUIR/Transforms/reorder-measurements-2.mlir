@@ -28,7 +28,7 @@ module {
     // CHECK: quir.measure([[QUBIT0]])
     %4 = quir.measure(%0) : (!quir.qubit<1>) -> i1
 
-    %6 = quir.use_variable @b : !quir.cbit<1>
+    %6 = oq3.use_variable @b : !quir.cbit<1>
     %7 = "quir.cast"(%6) : (!quir.cbit<1>) -> i1
     // CHECK: scf.if
     scf.if %7 {

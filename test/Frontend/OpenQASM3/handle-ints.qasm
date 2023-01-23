@@ -26,8 +26,8 @@ int b = 4;
 qubit $0;
 qubit $1;
 
-// MLIR: [[USE_X:%.*]] = quir.use_variable @x : i32
-// MLIR: [[USE_Y:%.*]] = quir.use_variable @y : i32
+// MLIR: [[USE_X:%.*]] = oq3.use_variable @x : i32
+// MLIR: [[USE_Y:%.*]] = oq3.use_variable @y : i32
 // MLIR: %{{.*}} = arith.cmpi eq, [[USE_X]], [[USE_Y]] : i32
 // AST-PRETTY: condition=BinaryOpNode(type=ASTOpTypeCompEq, left=IdentifierNode(name=x, bits=32), right=IdentifierNode(name=y, bits=32))
 if (x == y) {
@@ -41,7 +41,7 @@ if (x == y) {
   U(0, 0, 0) $0;
 }
 
-// MLIR: [[USE_A:%.*]] = quir.use_variable @a : i3
+// MLIR: [[USE_A:%.*]] = oq3.use_variable @a : i3
 // MLIR: %c2_i32 = arith.constant 2 : i32
 // MLIR: [[CAST_A:%.*]] = "quir.cast"([[USE_A]]) : (i3) -> i32
 // MLIR: %{{.*}} = arith.cmpi eq, [[CAST_A]], %c2_i32 : i32
@@ -49,7 +49,7 @@ if (a == 2) {
   U(0, 0, 0) $1;
 }
 
-// MLIR: [[USE_B:%.*]] = quir.use_variable @b : i32
+// MLIR: [[USE_B:%.*]] = oq3.use_variable @b : i32
 // MLIR: %c3_i32 = arith.constant 3 : i32
 // MLIR:  %{{.*}} = arith.cmpi eq, [[USE_B]], %c3_i32 : i32
 if (b == 3) {

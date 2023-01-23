@@ -82,10 +82,10 @@ void LoadEliminationPass::runOnOperation() {
 
     for (auto *userOp : symbolUses) {
 
-      if (!mlir::isa<mlir::quir::UseVariableOp>(userOp))
+      if (!mlir::isa<mlir::oq3::UseVariableOp>(userOp))
         continue;
 
-      auto variableUse = mlir::cast<mlir::quir::UseVariableOp>(userOp);
+      auto variableUse = mlir::cast<mlir::oq3::UseVariableOp>(userOp);
 
       // If this use of the variable is always executed after the assignment,
       // then the variable will have the assigned value at the time of this

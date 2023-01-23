@@ -64,7 +64,7 @@ module {
         %qb1 = quir.declare_qubit { id = 2 : i32 } : !quir.qubit<1>
         %qc1 = quir.declare_qubit { id = 3 : i32 } : !quir.qubit<1>
         quir.reset %qc1 : !quir.qubit<1>
-        %cb1 = quir.use_variable @cb1 : !quir.cbit<1>
+        %cb1 = oq3.use_variable @cb1 : !quir.cbit<1>
         %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
         // CHECK: quir.call_gate @gateCall1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         "quir.call_gate"(%qb1, %theta) {callee = @gateCall1} : (!quir.qubit<1>, !quir.angle<1>) -> ()
@@ -74,7 +74,7 @@ module {
         "quir.call_gate"(%qb1, %theta) {callee = @gateCall2} : (!quir.qubit<1>, !quir.angle<1>) -> ()
         "quir.call_gate"(%qb1) {callee = @proto} : (!quir.qubit<1>) -> ()
         quir.call_gate @proto(%qb1) : (!quir.qubit<1>) -> ()
-        %cb2 = quir.use_variable @cb2 : !quir.cbit<1>
+        %cb2 = oq3.use_variable @cb2 : !quir.cbit<1>
         // CHECK: %{{.*}} = quir.call_kernel @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
         %cc1 = quir.call_kernel @kernel1(%cb2, %cb2, %cb2) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
         // CHECK: quir.call_defcal_gate @defcalGate1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()

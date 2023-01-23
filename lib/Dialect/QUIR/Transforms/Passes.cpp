@@ -199,7 +199,7 @@ struct DumpVariableDominanceInfoPass
         if (mlir::isa<mlir::oq3::AssignVariableOp>(userOp) ||
             mlir::isa<mlir::quir::AssignCbitBitOp>(userOp))
           varAssignments.push_back(use.getUser());
-        else if (mlir::isa<mlir::quir::UseVariableOp>(userOp) ||
+        else if (mlir::isa<mlir::oq3::UseVariableOp>(userOp) ||
                  mlir::isa<mlir::quir::Cbit_ExtractBitOp>(userOp))
           varUses.push_back(userOp);
       }

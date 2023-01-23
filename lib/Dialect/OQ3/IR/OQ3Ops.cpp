@@ -18,8 +18,8 @@
 
 using namespace mlir;
 using namespace mlir::oq3;
-
 static LogicalResult
+
 verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
                               mlir::Operation *op,
                               bool operandMustMatchSymbolType = false) {
@@ -62,32 +62,33 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
 }
 
 //===----------------------------------------------------------------------===//
-// AssignArrayElementOp
+// Variable ops
 //===----------------------------------------------------------------------===//
-
-LogicalResult
-AssignArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-
-  return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
-}
-
-//===----------------------------------------------------------------------===//
-// end AssignArrayElementOp
-//===----------------------------------------------------------------------===//
-
-//===----------------------------------------------------------------------===//
-// AssignVariableOp
-//===----------------------------------------------------------------------===//
-
 LogicalResult
 AssignVariableOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation(), true);
 }
 
+LogicalResult
+UseVariableOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+
+  return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
+}
+
 //===----------------------------------------------------------------------===//
-// end VariableAssignOp
+// Array ops
 //===----------------------------------------------------------------------===//
+
+LogicalResult
+AssignArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+  return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
+}
+
+LogicalResult
+UseArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+  return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
+}
 
 #define GET_OP_CLASSES
 #include "Dialect/OQ3/IR/OQ3Ops.cpp.inc"

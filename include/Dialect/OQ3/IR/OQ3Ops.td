@@ -25,6 +25,42 @@ include "Dialect/OQ3/IR/OQ3Base.td"
 
 include "mlir/IR/SymbolInterfaces.td"
 
+//===----------------------------------------------------------------------===//
+// Array ops
+//===----------------------------------------------------------------------===//
+def OQ3_DeclareArrayOp : OQ3_Op<"declare_array", [Symbol]> {
+    let summary = "Declares a classical array";
+    let description = [{
+        The `oq3.declare_array` operation declares a classical array
+        with the given name (sym_name), element type, and number of elements.
+
+        Example:
+        ```mlir
+        oq3.declare_array "myVar" : i1[2]
+        ```
+    }];
+
+    let arguments = (ins
+        SymbolNameAttr:$sym_name,
+        TypeAttr:$type,
+        IndexAttr:$num_elements
+    );
+
+    let results = (outs);
+
+    let assemblyFormat = [{
+        attr-dict $sym_name `:` $type `[` $num_elements `]`
+    }];
+
+    let verifier = [{
+        auto t = (*this).type();
+
+        if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat())
+            return success();
+        return failure();
+    }];
+}
+
 def OQ3_AssignArrayElementOp : OQ3_Op<"assign_array_element",
                         [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
     let summary = "Assigns a new value to an element of a classical array";
@@ -49,28 +85,38 @@ def OQ3_AssignArrayElementOp : OQ3_Op<"assign_array_element",
     let verifier = ?;
 }
 
-def OQ3_AssignVariableOp : OQ3_Op<"assign_variable",
+def OQ3_UseArrayElementOp : OQ3_Op<"use_array_element",
                         [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-    let summary = "Assign a new value to a classical variable";
+    let summary = "Use the current value of an array element";
     let description = [{
-        The operation `oq3.assign_variable` assigns a new value to a classical
-        variable given by name.
+        The operation `oq3.use_array_element` returns the current value (wrt
+        to `oq3.assign_array_element` operations) of an element in a classical
+        array, where the array is specified by name and the element by index.
+
+        Example:
+
+        ```mlir
+        %2 = oq3.use_array_element "result"[6] : i1
+        ```
     }];
 
     let arguments = (ins
         FlatSymbolRefAttr:$variable_name,
-        AnyClassical:$assigned_value
+        IndexAttr:$index
     );
 
-    let results = (outs);
+    let results = (outs AnyClassical:$res);
 
     let assemblyFormat = [{
-        attr-dict $variable_name `:` type($assigned_value) `=` $assigned_value
+        $variable_name `[` $index `]` `:` type($res) attr-dict
     }];
     // op is verified by its traits
     let verifier = ?;
 }
 
+//===----------------------------------------------------------------------===//
+// Variable ops
+//===----------------------------------------------------------------------===//
 def OQ3_DeclareVariableOp : OQ3_Op<"declare_variable", [Symbol]> {
     let summary = "Declares a classical variable";
     let description = [{
@@ -124,6 +170,56 @@ def OQ3_DeclareVariableOp : OQ3_Op<"declare_variable", [Symbol]> {
         bool isInputVariable() { return input(); }
         bool isOutputVariable() { return output(); }
     }];
+}
+
+def OQ3_AssignVariableOp : OQ3_Op<"assign_variable",
+                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+    let summary = "Assign a new value to a classical variable";
+    let description = [{
+        The operation `oq3.assign_variable` assigns a new value to a classical
+        variable given by name.
+    }];
+
+    let arguments = (ins
+        FlatSymbolRefAttr:$variable_name,
+        AnyClassical:$assigned_value
+    );
+
+    let results = (outs);
+
+    let assemblyFormat = [{
+        attr-dict $variable_name `:` type($assigned_value) `=` $assigned_value
+    }];
+    // op is verified by its traits
+    let verifier = ?;
+}
+
+def OQ3_UseVariableOp : OQ3_Op<"use_variable",
+                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+    let summary = "Use the current value of a variable";
+    let description = [{
+        The operation `oq3.use_variable` returns the current value (wrt to
+        `oq3.assign_variable` operations) of the classical variable with the
+        given name.
+
+        Example:
+
+        ```mlir
+        %2 = oq3.use_variable "a" : !quir.cbit<1>
+        ```
+    }];
+
+    let arguments = (ins
+        FlatSymbolRefAttr:$variable_name
+    );
+
+    let results = (outs AnyClassical:$res);
+
+    let assemblyFormat = [{
+        $variable_name `:` type($res) attr-dict
+    }];
+    // op is verified by its traits
+    let verifier = ?;
 }
 
 #endif // OQ3_OPS

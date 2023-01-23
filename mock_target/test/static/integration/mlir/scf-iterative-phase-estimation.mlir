@@ -148,7 +148,7 @@ quir.call_gate @gateH(%q1) : (!quir.qubit<1>) -> ()
   quir.call_gate @cphase(%q0, %q1, %phase_ang) : (!quir.qubit<1>, !quir.qubit<1>, !quir.angle<20>) -> ()
   // phase(-c) q;
   %neg_ang = quir.constant #quir.angle<-1.0 : !quir.angle<20>>
-  %ang_c = quir.use_variable @c : !quir.cbit<3>
+  %ang_c = oq3.use_variable @c : !quir.cbit<3>
   %ang_iter_extended = "quir.cast"(%ang_c) : (!quir.cbit<3>) -> !quir.angle<20>
   %neg_ang_mul = quir.angle_mul %neg_ang, %ang_iter_extended : !quir.angle<20>
   quir.call_gate @defcalPhase(%neg_ang_mul, %q0) : (!quir.angle<20>, !quir.qubit<1>) -> ()
@@ -160,7 +160,7 @@ quir.call_gate @gateH(%q1) : (!quir.qubit<1>) -> ()
   quir.assign_cbit_bit @c<3> [0] : i1 = %bitM_1
   // c <<= 1;
   %c1_i32 = arith.constant 1 : i32
-  %ang_prev = quir.use_variable @c : !quir.cbit<3>
+  %ang_prev = oq3.use_variable @c : !quir.cbit<3>
   %ang_shifted = quir.cbit_lshift %ang_prev, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
   // power <<= 1;
   %c1_i3 = arith.constant 1 : i3

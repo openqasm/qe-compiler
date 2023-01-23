@@ -150,7 +150,7 @@ module {
     quir.assign_cbit_bit @cbitarray<3> [0] : i1 = %bitM_1
     // c <<= 1;
     %c1_i32 = arith.constant 1 : i32
-    %creg_X = quir.use_variable @cbitarray : !quir.cbit<3>
+    %creg_X = oq3.use_variable @cbitarray : !quir.cbit<3>
     %creg_1 = quir.cbit_lshift %creg_X, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
     // reset %0;
     quir.reset %q0_0 : !quir.qubit<1>
@@ -186,7 +186,7 @@ module {
     // recent MLIR releases can express "tensor insert element", which we code around here:
     oq3.assign_variable @cbitarray : !quir.cbit<3> = %creg_1
     quir.assign_cbit_bit @cbitarray<3> [0] : i1 = %bitM_2
-    %creg_2 = quir.use_variable @cbitarray : !quir.cbit<3>
+    %creg_2 = oq3.use_variable @cbitarray : !quir.cbit<3>
     // c <<= 1;
     %creg_3 = quir.cbit_lshift %creg_2, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
     // reset %0;

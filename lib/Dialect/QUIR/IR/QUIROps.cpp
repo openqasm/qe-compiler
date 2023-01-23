@@ -526,20 +526,6 @@ verifyQuirVariableOpSymbolUses(SymbolTableCollection &symbolTable,
 }
 
 //===----------------------------------------------------------------------===//
-// UseVariableOp
-//===----------------------------------------------------------------------===//
-
-LogicalResult
-UseVariableOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-
-  return verifyQuirVariableOpSymbolUses(symbolTable, getOperation());
-}
-
-//===----------------------------------------------------------------------===//
-// end UseVariableOp
-//===----------------------------------------------------------------------===//
-
-//===----------------------------------------------------------------------===//
 // AssignCbitBitOp
 //===----------------------------------------------------------------------===//
 
@@ -551,20 +537,6 @@ AssignCbitBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
 //===----------------------------------------------------------------------===//
 // end AssignCbitBitOp
-//===----------------------------------------------------------------------===//
-
-//===----------------------------------------------------------------------===//
-// UseArrayElementOp
-//===----------------------------------------------------------------------===//
-
-LogicalResult
-UseArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-
-  return verifyQuirVariableOpSymbolUses(symbolTable, getOperation());
-}
-
-//===----------------------------------------------------------------------===//
-// end UseArrayElementOp
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
