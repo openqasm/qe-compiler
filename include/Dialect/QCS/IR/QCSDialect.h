@@ -1,6 +1,6 @@
-//===- PulseDialect.h - Pulse dialect ---------------------------*- C++ -*-===//
+//===- QCSDialect.h - Quantum Control System dialect ------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021.
+// (C) Copyright IBM 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -8,15 +8,15 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file declares the Pulse dialect in MLIR.
+///  This file declares the Quantum Control System dialect in MLIR.
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef PULSE_PULSEDIALECT_H
-#define PULSE_PULSEDIALECT_H
+#ifndef DIALECT_QCS_QCSDIALECT_H_
+#define DIALECT_QCS_QCSDIALECT_H_
 
-#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+#include "mlir/IR/Dialect.h"
 
-#include "Dialect/Pulse/IR/PulseDialect.h.inc"
+#include "Dialect/QCS/IR/QCSOpsDialect.h.inc"
 
-#endif // PULSE_PULSEDIALECT_H
+#endif // DIALECT_QCS_QCSDIALECT_H_

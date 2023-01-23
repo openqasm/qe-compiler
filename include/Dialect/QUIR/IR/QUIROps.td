@@ -1,6 +1,6 @@
 //===- QUIROps.td - QUIR dialect ops -----------------------*- tablegen -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -34,62 +34,6 @@ include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 // see lib/Interfaces/SideEffectInterfaces.cpp:isTriviallyDeadImpl()
 // see lib/Dialect/Affine/Utils/Utils.cpp:hasNoInterveningEffect()
 def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SystemInitOp : QUIR_Op<"system_init", [IsolatedFromAbove]> {
-    let summary = "Initializes the system";
-    let description = [{
-        The `quir.system_init` operation causes the system to be initialized,
-        preparing for execution and synchronizing the system.
-    }];
-    let assemblyFormat = [{
-        attr-dict
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SystemFinalizeOp : QUIR_Op<"system_finalize", [IsolatedFromAbove]> {
-    let summary = "Finalizes the system";
-    let description = [{
-        The `quir.system_finalize` operation causes the system to be finalized,
-        cleaning up results and shutting down execution.
-    }];
-    let assemblyFormat = [{
-        attr-dict
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_ShotInitOp : QUIR_Op<"shot_init", [IsolatedFromAbove]> {
-    let summary = "Initialization for shot loops";
-    let description = [{
-        The `quir.shot_init` operation causes the system to initialize the shot
-        loop to maintain consistent initial conditions for each shot
-    }];
-    let assemblyFormat = [{
-        attr-dict
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SynchronizeOp : QUIR_Op<"synchronize", [
-            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
-            NonInterferingNonDeadSideEffect]> {
-    let summary = "Synchronize the system";
-    let description = [{
-        The `quir.synchronize` operation causes the system to perform a
-        synchronization so that each of the independent controllers is locked
-        into the same time step again. The synchronize op accepts qubit
-        arguments, this is to simplify the tracking of synchronization timing
-        relative to other qubit-based operations, like measurement and reset.
-    }];
-    let arguments = (ins Variadic<AnyQubit>:$qubits);
-    let results = (outs);
-
-    let assemblyFormat = [{
-        $qubits attr-dict `:` functional-type($qubits, results)
-    }];
-}
 
 def QUIR_ConstantOp : QUIR_Op<"constant",
     [ConstantLike, NoSideEffect,
@@ -865,30 +809,6 @@ def QUIR_DelayOp : QUIR_Op<"delay", [
     }];
 }
 
-def QUIR_DelayCyclesOp : QUIR_Op<"delay_cycles", [
-            UnitaryOp,
-            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
-            NonInterferingNonDeadSideEffect]> {
-    let summary = "Add a delay operation of a given number of cycles to a qubit";
-    let description = [{
-        The `quir.delay_cycles` operation represents a delay operation of the given
-        number of cycles to a qubit, group of qubits, or all qubits (when no
-        target qubit is given).
-
-        Example:
-        ```mlir
-        "quir.delay_cycles"(%q1_1) { time = 1000 : i64}: (!quir.qubit) -> ()
-        ```
-    }];
-
-    let arguments = (ins I64Attr:$time, Variadic<AnyQubit>:$qubits);
-    let results = (outs );
-
-    let assemblyFormat = [{
-        `(` $qubits `)` attr-dict `:` functional-type($qubits, results)
-    }];
-}
-
 def QUIR_BarrierOp : QUIR_Op<"barrier", [
             UnitaryOp,
             DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
@@ -912,119 +832,6 @@ def QUIR_BarrierOp : QUIR_Op<"barrier", [
     let assemblyFormat = [{
         $qubits attr-dict `:` functional-type($qubits, results)
     }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_BroadcastOp : QUIR_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
-    let summary = "Broadcast a value from this controller to all others";
-    let description = [{
-        The `quir.broadcast` operation represents a broadcast command that sends a value
-        from this controller to all others. All other controllers should have a
-        corresponding `quir.recv` operation. If only one controller should receive the
-        message then the `quir.send` operation should be used instead.
-
-        Example:
-        ```mlir
-        %angle1 = quir.constant #quir.angle<0.2 : !quir.angle<20>>
-        quir.broadcast %angle1 : !quir.angle<20>
-        ```
-    }];
-
-    let arguments = (ins AnyClassical:$val);
-
-    let assemblyFormat = [{
-        attr-dict $val `:` type($val)
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SendOp : QUIR_Op<"send", [NonInterferingNonDeadSideEffect]> {
-    let summary = "Send a classical value from this controller to another";
-    let description = [{
-        The `quir.send` operation represents a send command from one controller to another.
-        A corresponding `quir.recv` operation should receive the information sent.
-
-        Example:
-        ```mlir
-        %cbit = "quir.measure"(%target) : (!quir.qubit<1>) -> i1
-        quir.send %cbit : i1
-        ```
-    }];
-
-    let arguments = (ins AnyClassical:$val, IndexAttr:$id);
-
-    let assemblyFormat = [{
-        attr-dict $val `to` $id `:` type($val)
-    }];
-}
-
-// This should be in OpBase.td but for some reason isn't, maybe in LLVM 15?
-def IndexArrayAttr : TypedArrayAttrBase<IndexAttr,
-                                        "index array attribute"> {
-  let constBuilderCall = "$_builder.getIndexArrayAttr($0)";
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_RecvOp : QUIR_Op<"recv", [NonInterferingNonDeadSideEffect]> {
-    let summary = "Receive classical values from other controllers";
-    let description = [{
-        The `quir.recv` operation represents a receive command for potentially
-        multiple values. The fromIds array attribute indicates the Id of the
-        sending control node for each independent value.
-
-        Example:
-        ```mlir
-        %meas:2 = quir.recv {fromId = [0 : index, 1 : index]} : i1, i1
-        ```
-    }];
-
-    let arguments = (ins OptionalAttr<IndexArrayAttr>:$fromIds);
-    let results = (outs Variadic<AnyClassical>:$vals);
-
-    let assemblyFormat = [{
-        attr-dict `:` type($vals)
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_ParallelControlFlowOp : QUIR_Op<"parallel_control_flow", [
-                        SingleBlockImplicitTerminator<"ParallelEndOp">,
-                        RecursiveSideEffects]> {
-    let summary = "Contain a group of control flow ops that can run in parallel";
-    let description = [{
-        The `quir.parallel_control_flow` operation has a single region and block
-        that holds a collection of scf control flow ops that can be executed in
-        parallel.
-
-        Example:
-        ```mlir
-        quir.parallel_control_flow {
-            scf.if (%c0) {
-                quir.gate_call @x(%q0) : (!quir.qubit<1>) -> ()
-            } {quir.physicalIds = [0 : i32]}
-            scf.if (%c1) {
-                quir.gate_call @x(%q1) : (!quir.qubit<1>) -> ()
-            } {quir.physicalIds = [1 : i32]}
-        }
-        ```
-    }];
-
-    let regions = (region SizedRegion<1>:$region);
-
-    let assemblyFormat = "$region attr-dict";
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_ParallelEndOp : QUIR_Op<"parallel_end", [
-    Terminator, HasParent<"ParallelControlFlowOp">, NoSideEffect]> {
-  let summary = "A pseudo op that marks the end of a `quir.parallel_control_flow` op.";
-  let description = [{
-    This op terminates the only block inside the only region of a
-    `quir.parallel_control_flow` op.
-  }];
-
-  let parser = "return success();";
-  let printer = "p << getOperationName();";
 }
 
 //===----------------------------------------------------------------------===//

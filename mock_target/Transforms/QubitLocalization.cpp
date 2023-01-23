@@ -1,6 +1,6 @@
 //===- QubitLocalization.cpp - Create modules for qubit control -*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -14,6 +14,7 @@
 
 #include "QubitLocalization.h"
 
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
@@ -29,6 +30,7 @@
 
 using namespace mlir;
 using namespace mlir::quir;
+using namespace mlir::qcs;
 namespace mock = qssc::targets::mock;
 using namespace mock;
 

@@ -1,6 +1,6 @@
 //===- QSSC.cpp -------------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -22,7 +22,6 @@
 #include "llvm/Support/Path.h"
 
 #include "Config.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "HAL/TargetSystem.h"
 
 #include <cstdlib>

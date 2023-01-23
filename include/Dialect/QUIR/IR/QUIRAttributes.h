@@ -1,6 +1,6 @@
 //===- QUIRAttributes.h - QUIR dialect attributes ---------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -36,8 +36,6 @@ static inline llvm::StringRef getPhysicalIdAttrName() {
 static inline llvm::StringRef getPhysicalIdsAttrName() {
   return "quir.physicalIds";
 }
-static inline llvm::StringRef getShotLoopAttrName() { return "quir.shotLoop"; }
-static inline llvm::StringRef getNumShotsAttrName() { return "quir.numShots"; }
 static inline llvm::StringRef getNoReportRuntimeAttrName() {
   return "quir.noReportRuntime";
 }
