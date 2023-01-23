@@ -37,6 +37,8 @@
 
 #include "Dialect/RegisterDialects.h"
 
+#include "Dialect/OQ3/IR/OQ3Dialect.h"
+
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
 

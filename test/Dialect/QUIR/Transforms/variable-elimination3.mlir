@@ -4,8 +4,8 @@
 
 // CHECK: module
 module {
-  quir.declare_variable @a : !quir.cbit<1>
-  quir.declare_variable @b : !quir.cbit<2>
+  oq3.declare_variable @a : !quir.cbit<1>
+  oq3.declare_variable @b : !quir.cbit<2>
   func @x(%arg0: !quir.qubit<1>) {
     return
   }
@@ -24,9 +24,9 @@ module {
     %2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
 
     %3 = "quir.cast"(%true) : (i1) -> !quir.cbit<1>
-    quir.assign_variable @a : !quir.cbit<1> = %3
+    oq3.assign_variable @a : !quir.cbit<1> = %3
     %4 = "quir.cast"(%c0_i2) : (i2) -> !quir.cbit<2>
-    quir.assign_variable @b : !quir.cbit<2> = %4
+    oq3.assign_variable @b : !quir.cbit<2> = %4
 
     // CHECK: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
     %5 = quir.measure(%0) : (!quir.qubit<1>) -> i1
@@ -39,7 +39,7 @@ module {
     // CHECK: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]])
     %7 = quir.measure(%2) : (!quir.qubit<1>) -> i1
     %8 = "quir.cast"(%7) : (i1) -> !quir.cbit<1>
-    quir.assign_variable @a : !quir.cbit<1> = %8
+    oq3.assign_variable @a : !quir.cbit<1> = %8
 
     %9 = quir.use_variable @b : !quir.cbit<2>
     %10 = quir.cbit_extractbit(%9 : !quir.cbit<2>) [0] : i1

@@ -15,6 +15,7 @@
 
 #include "Frontend/OpenQASM3/QUIRVariableBuilder.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
@@ -48,7 +49,7 @@ void QUIRVariableBuilder::generateVariableDeclaration(
   assert(surroundingModuleOp && "assume symbol table residing in module");
   builder.setInsertionPoint(&surroundingModuleOp.front());
 
-  auto declareOp = builder.create<mlir::quir::DeclareVariableOp>(
+  auto declareOp = builder.create<mlir::oq3::DeclareVariableOp>(
       location, variableName, mlir::TypeAttr::get(type));
 
   if (lastDeclaration.count(surroundingModuleOp))
@@ -79,15 +80,15 @@ void QUIRVariableBuilder::generateVariableAssignment(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Value assignedValue) {
 
-  builder.create<mlir::quir::VariableAssignOp>(location, variableName,
-                                               assignedValue);
+  builder.create<mlir::oq3::AssignVariableOp>(location, variableName,
+                                              assignedValue);
 }
 
 void QUIRVariableBuilder::generateArrayVariableElementAssignment(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Value assignedValue, size_t elementIndex) {
 
-  builder.create<mlir::quir::AssignArrayElementOp>(
+  builder.create<mlir::oq3::AssignArrayElementOp>(
       location,
       mlir::FlatSymbolRefAttr::get(builder.getStringAttr(variableName)),
       builder.getIndexAttr(elementIndex), assignedValue);
@@ -105,7 +106,7 @@ void QUIRVariableBuilder::generateCBitSingleBitAssignment(
             location, oldCbitValue.getType(), oldCbitValue,
             assignedValue, builder.getIndexAttr(bitPosition));
 
-  builder.create<mlir::quir::VariableAssignOp>(
+  builder.create<mlir::oq3::AssignVariableOp>(
         location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)), cbitWithInsertedBit);
 
 #else

@@ -4,8 +4,8 @@
 // This test case validates MLIR with and without argument specialization.
 
 module {
-    quir.declare_variable @cb1 : !quir.cbit<1>
-    quir.declare_variable @cb2 : !quir.cbit<1>
+    oq3.declare_variable @cb1 : !quir.cbit<1>
+    oq3.declare_variable @cb2 : !quir.cbit<1>
 
     func private @kernel1 (%ca1 : !quir.cbit<1>, %ca2 : !quir.cbit<1>, %ca3 : !quir.cbit<1>) -> !quir.cbit<1>
     func private @kernel2 (memref<?xi1>) -> memref<1xi1>

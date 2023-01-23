@@ -14,6 +14,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/VariableElimination.h"
+
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
@@ -137,8 +139,8 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   target.addLegalDialect<
       arith::ArithmeticDialect, LLVM::LLVMDialect, memref::MemRefDialect,
       scf::SCFDialect, StandardOpsDialect, quir::QUIRDialect, AffineDialect>();
-  target.addIllegalOp<quir::DeclareVariableOp>();
-  target.addIllegalOp<quir::VariableAssignOp>();
+  target.addIllegalOp<oq3::DeclareVariableOp>();
+  target.addIllegalOp<oq3::AssignVariableOp>();
   target.addIllegalOp<quir::UseVariableOp>();
   // TODO add additional QUIR variable operations here
   RewritePatternSet patterns(&context);

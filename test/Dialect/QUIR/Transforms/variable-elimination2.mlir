@@ -5,7 +5,7 @@
 
 // CHECK: module
 module {
-  quir.declare_variable @b : !quir.cbit<1>
+  oq3.declare_variable @b : !quir.cbit<1>
   func @x(%arg0: !quir.qubit<1>) {
     return
   }
@@ -18,7 +18,7 @@ module {
 
     %false = arith.constant false
     %4 = "quir.cast"(%false) : (i1) -> !quir.cbit<1>
-    quir.assign_variable @b : !quir.cbit<1> = %4
+    oq3.assign_variable @b : !quir.cbit<1> = %4
 
     // CHECK: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
     %5 = quir.measure(%1) : (!quir.qubit<1>) -> i1

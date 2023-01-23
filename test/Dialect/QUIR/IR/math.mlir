@@ -1,6 +1,6 @@
 // RUN: qss-compiler -X=mlir %s | FileCheck %s
 module {
-    quir.declare_variable @cb1 : !quir.cbit<10>
+    oq3.declare_variable @cb1 : !quir.cbit<10>
     %cb1 = quir.use_variable @cb1 : !quir.cbit<10>
 
     // CHECK: %{{.*}} = quir.cbit_not %{{.*}} : !quir.cbit<10>

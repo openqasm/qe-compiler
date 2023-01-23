@@ -111,7 +111,7 @@ func @defcalMeasure_q0(%q0_1 : !quir.qubit<1> {quir.physicalId = 0 : i32}) -> i1
 }
 
 // angle[3] c = 0;
-quir.declare_variable @c : !quir.cbit<3>
+oq3.declare_variable @c : !quir.cbit<3>
 
 func @main() -> i32 {
 // qubit q;

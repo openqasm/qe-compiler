@@ -3,7 +3,7 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-// MLIR: quir.declare_variable @c : !quir.cbit<2>
+// MLIR: oq3.declare_variable @c : !quir.cbit<2>
 
 // Define a hadamard gate
 

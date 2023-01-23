@@ -20,8 +20,8 @@ module {
         %s1 = "quir.declare_stretch"() : () -> !quir.stretch
         // CHECK %{{.*}} = quir.declare_stretch : !quir.stretch
         %s2 = quir.declare_stretch : !quir.stretch
-        quir.declare_variable { input } @flags : !quir.cbit<32>
-        quir.declare_variable { output } @result : !quir.cbit<1>
+        oq3.declare_variable { input } @flags : !quir.cbit<32>
+        oq3.declare_variable { output } @result : !quir.cbit<1>
         return
     }
 }

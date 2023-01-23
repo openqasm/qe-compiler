@@ -8,7 +8,7 @@ OPENQASM 3.0;
 bit[6] r;
 
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset
-// MLIR-DAG: quir.declare_variable @r : !quir.cbit<6>
+// MLIR-DAG: oq3.declare_variable @r : !quir.cbit<6>
 
 qubit $0;
 qubit $1;
@@ -28,7 +28,7 @@ r[1] = measure $1; // expected "0"
 r[2] = measure $2; // expected "1"
 
 bit meas_and;
-// MLIR-DAG: quir.declare_variable @meas_and : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @meas_and : !quir.cbit<1>
 
 // MLIR: [[R:%.*]] = quir.use_variable @r
 // MLIR: [[R0:%.*]] = quir.cbit_extractbit([[R]] : !quir.cbit<6>) [0] : i1

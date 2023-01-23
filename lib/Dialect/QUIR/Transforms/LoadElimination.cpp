@@ -14,6 +14,7 @@
 
 #include "Dialect/QUIR/Transforms/LoadElimination.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 #include "mlir/IR/Dominance.h"
@@ -40,7 +41,7 @@ void LoadEliminationPass::runOnOperation() {
   auto &domInfo = getAnalysis<mlir::DominanceInfo>();
   SmallVector<Operation *, 4> varUsesToErase;
 
-  op->walk([&](mlir::quir::DeclareVariableOp decl) {
+  op->walk([&](mlir::oq3::DeclareVariableOp decl) {
     // Each variable must only have a single assigment statement
 
     auto symbolUses = symbolUsers.getUsers(decl);
@@ -49,7 +50,7 @@ void LoadEliminationPass::runOnOperation() {
 
     auto numAssignments = std::count_if(
         symbolUses.begin(), symbolUses.end(), [&](Operation *userOp) {
-          if (mlir::isa<mlir::quir::VariableAssignOp>(userOp) ||
+          if (mlir::isa<mlir::oq3::AssignVariableOp>(userOp) ||
               mlir::isa<mlir::quir::AssignCbitBitOp>(userOp)) {
             // TODO have a common interface that identifies any
             // assignment to a variable
@@ -62,11 +63,11 @@ void LoadEliminationPass::runOnOperation() {
     if (numAssignments > 1)
       return WalkResult::advance();
 
-    // only support assignment by VariableAssignOp, for now
-    if (!mlir::isa<mlir::quir::VariableAssignOp>(assignment))
+    // only support assignment by AssignVariableOp, for now
+    if (!mlir::isa<mlir::oq3::AssignVariableOp>(assignment))
       return WalkResult::advance();
 
-    auto varAssignmentOp = mlir::cast<mlir::quir::VariableAssignOp>(assignment);
+    auto varAssignmentOp = mlir::cast<mlir::oq3::AssignVariableOp>(assignment);
 
     // Transfer marker for input parameters
     // Note: for arith.constant operations, canonicalization will drop these

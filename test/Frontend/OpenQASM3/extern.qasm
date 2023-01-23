@@ -52,18 +52,18 @@ int[64] f;
 
 // AST-PRETTY: FunctionCallNode(type=ASTTypeFunctionCallExpression, expressions=IdentifierNode(name=a, bits=32), kernelDefinition=DeclarationNode(type=ASTTypeInt, IntNode(signed=true, value=10, bits=32)
 // MLIR: [[RES3:%[0-9]*]] = call @test3(%{{[0-9]+}}) : (i32) -> !quir.cbit<1>
-// MLIR-NEXT: quir.assign_variable @b : !quir.cbit<1> = [[RES3]]
+// MLIR-NEXT: oq3.assign_variable @b : !quir.cbit<1> = [[RES3]]
 b = test3(a);
 
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=d, bits=32), right=FunctionCallNode(type=ASTTypeFunctionCallExpression, expressions=IdentifierNode(name=a, bits=32)IdentifierNode(name=c, bits=32), kernelDefinition=DeclarationNode(type=ASTTypeInt, IntNode(signed=true, value=10, bits=32))
 // AST-PRETTY: DeclarationNode(type=ASTTypeFloat, IdentifierNode(name=b, bits=32))
 // AST-PRETTY: ResultNode(MPDecimalNode(name=ast-mpdecimal-type-param-{{.*}}, bits=32)))
 // MLIR: [[RES4:%[0-9]*]] = call @test4(%{{[0-9]+}}, %{{[0-9]+}}) : (i32, f32) -> f32
-// MLIR-NEXT: quir.assign_variable @d : f32 = [[RES4]]
+// MLIR-NEXT: oq3.assign_variable @d : f32 = [[RES4]]
 d = test4(a, c);
 
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f, bits=64), right=FunctionCallNode(type=ASTTypeFunctionCallExpression, expressions=IdentifierNode(name=e, bits=32), kernelDefinition=DeclarationNode(type=ASTTypeMPInteger, IdentifierNode(name=a, bits=32))
 // AST-PRETTY: ResultNode(MPIntegerNode(name=ast-mpinteger-type-param-{{.*}}, value=0, bits=64, signed=1)))
 // MLIR: [[RES5:%[0-9]*]] = call @test5(%{{[0-9]+}}) : (i32) -> i64
-// MLIR-NEXT: quir.assign_variable @f : i64 = [[RES5]]
+// MLIR-NEXT: oq3.assign_variable @f : i64 = [[RES5]]
 f = test5(e);

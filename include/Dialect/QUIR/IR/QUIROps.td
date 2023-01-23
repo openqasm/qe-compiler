@@ -78,61 +78,6 @@ def QUIR_ConstantOp : QUIR_Op<"constant",
   let assemblyFormat = "attr-dict $value";
 }
 
-def QUIR_DeclareVariableOp : QUIR_Op<"declare_variable", [Symbol]> {
-    let summary = "Declares a classical variable";
-    let description = [{
-        The `quir.declare_variable` operation declares a classical variable
-        with the given name (sym_name), type, and an optional constant
-        initializer.
-        If present, the attributes `input` and `output` indicate that this
-        variable is an input or output variable, respectively.
-
-        Example:
-
-        ```mlir
-        quir.declare_variable "myVar" : i1 = true
-        ```
-    }];
-
-    let arguments = (ins
-        SymbolNameAttr:$sym_name,
-        TypeAttr:$type,
-        UnitAttr:$input,
-        UnitAttr:$output,
-        OptionalAttr<AnyAttr>:$initial_value
-    );
-
-    let results = (outs);
-
-    let assemblyFormat = [{
-        attr-dict $sym_name `:` $type (`=` $initial_value^)?
-    }];
-
-    let builders = [
-        OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::TypeAttr":$type), [{
-            $_state.addAttribute("sym_name", $_builder.getStringAttr(sym_name));
-            $_state.addAttribute("type", type);
-        }]>
-    ];
-
-    let verifier = [{
-        auto t = (*this).type();
-
-        if( t.isa<AngleType>() || t.isa<CBitType>() || t.isa<DurationType>() || t.isa<StretchType>() || t.isIntOrIndexOrFloat() || t.isa<ComplexType>())
-            return success();
-        std::string str;
-        llvm::raw_string_ostream os(str);
-        t.print(os);
-
-        return emitOpError("MLIR type " + str + " not supported for declarations.");
-    }];
-
-    let extraClassDeclaration = [{
-        bool isInputVariable() { return input(); }
-        bool isOutputVariable() { return output(); }
-    }];
-}
-
 def QUIR_DeclareArrayOp : QUIR_Op<"declare_array", [Symbol]> {
     let summary = "Declares a classical array";
     let description = [{
@@ -171,7 +116,7 @@ def QUIR_UseVariableOp : QUIR_Op<"use_variable",
     let summary = "Use the current value of a variable";
     let description = [{
         The operation `quir.use_variable` returns the current value (wrt to
-        `quir.assign_variable` operations) of the classical variable with the
+        `oq3.assign_variable` operations) of the classical variable with the
         given name.
 
         Example:
@@ -218,52 +163,6 @@ def QUIR_UseArrayElementOp : QUIR_Op<"use_array_element",
 
     let assemblyFormat = [{
         $variable_name `[` $index `]` `:` type($res) attr-dict
-    }];
-    // op is verified by its traits
-    let verifier = ?;
-}
-
-def QUIR_VariableAssignOp : QUIR_Op<"assign_variable",
-                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-    let summary = "Assign a new value to a classical variable";
-    let description = [{
-        The operation `quir.assign_variable` assigns a new value to a classical
-        variable given by name.
-    }];
-
-    let arguments = (ins
-        FlatSymbolRefAttr:$variable_name,
-        AnyClassical:$assigned_value
-    );
-
-    let results = (outs);
-
-    let assemblyFormat = [{
-        attr-dict $variable_name `:` type($assigned_value) `=` $assigned_value
-    }];
-    // op is verified by its traits
-    let verifier = ?;
-}
-
-def QUIR_AssignArrayElementOp : QUIR_Op<"assign_array_element",
-                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-    let summary = "Assigns a new value to an element of a classical array";
-    let description = [{
-        The operation `quir.assign_array_element` assigns a new value to an
-        element of a classical array, where the array is specified by name and
-        the element by index.
-    }];
-
-    let arguments = (ins
-        FlatSymbolRefAttr:$variable_name,
-        IndexAttr:$index,
-        AnyClassical:$assigned_value
-    );
-
-    let results = (outs);
-
-    let assemblyFormat = [{
-        attr-dict $variable_name `[` $index `]` `:` type($assigned_value) `=` $assigned_value
     }];
     // op is verified by its traits
     let verifier = ?;

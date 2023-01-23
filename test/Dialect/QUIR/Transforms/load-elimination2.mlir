@@ -5,12 +5,12 @@
 
 module {
 
-  // CHECK: quir.declare_variable {input} @a : !quir.angle<64>
-  // CHECK: quir.declare_variable @b : !quir.angle<64>
-  quir.declare_variable {input} @a : !quir.angle<64>
-  quir.declare_variable @b : !quir.angle<64>
+  // CHECK: oq3.declare_variable {input} @a : !quir.angle<64>
+  // CHECK: oq3.declare_variable @b : !quir.angle<64>
+  oq3.declare_variable {input} @a : !quir.angle<64>
+  oq3.declare_variable @b : !quir.angle<64>
 
-  // REMOVE-UNUSED-NOT: quir.declare_variable {input} @a
+  // REMOVE-UNUSED-NOT: oq3.declare_variable {input} @a
 
   func @main() -> !quir.angle<64> {
 
@@ -19,19 +19,19 @@ module {
     %angle = quir.constant #quir.angle<3.140000e+00 : !quir.angle<64>>
     %angle2 = quir.constant #quir.angle<3.140000e+00 : !quir.angle<64>>
 
-    // REMOVE-UNUSED-NOT: quir.assign_variable @a
-    quir.assign_variable @a : !quir.angle<64> = %angle
+    // REMOVE-UNUSED-NOT: oq3.assign_variable @a
+    oq3.assign_variable @a : !quir.angle<64> = %angle
 
     %angle_0 = quir.constant #quir.angle<1.000000e+00 : !quir.angle<64>>
-    quir.assign_variable @b : !quir.angle<64> = %angle_0
+    oq3.assign_variable @b : !quir.angle<64> = %angle_0
 
     // The load elimination pass should forward-propagate the initializer to the
     // assignment of b.
-    // CHECK: quir.assign_variable @b : !quir.angle<64> = [[CONST314_ANGLE]]
+    // CHECK: oq3.assign_variable @b : !quir.angle<64> = [[CONST314_ANGLE]]
     // The variable a should never be read.
     // REMOVE-UNUSED-NOT: quir.use_variable @a
     %1 = quir.use_variable @a : !quir.angle<64>
-    quir.assign_variable @b : !quir.angle<64> = %1
+    oq3.assign_variable @b : !quir.angle<64> = %1
 
     %2 = quir.use_variable @b : !quir.angle<64>
     return %2 : !quir.angle<64>

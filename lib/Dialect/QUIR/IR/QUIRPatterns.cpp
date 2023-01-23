@@ -12,6 +12,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
@@ -128,8 +129,8 @@ struct AssignSingleCbitToAssignVariablePattern
     auto castOp = rewriter.create<CastOp>(
         op.getLoc(), quir::CBitType::get(context, 1), op.assigned_bit());
 
-    rewriter.replaceOpWithNewOp<VariableAssignOp>(op, op.variable_nameAttr(),
-                                                  castOp.getResult());
+    rewriter.replaceOpWithNewOp<oq3::AssignVariableOp>(
+        op, op.variable_nameAttr(), castOp.getResult());
 
     return success();
   }

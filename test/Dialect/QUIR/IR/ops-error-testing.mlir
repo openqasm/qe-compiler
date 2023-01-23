@@ -34,8 +34,8 @@ quir.circuit @circuit3 (%q0 : !quir.qubit<1>, %omega1: !quir.angle<32>) -> i1 {
 // -----
 
 quir.circuit @circuit4 (%q0 : !quir.qubit<1>, %omega1: !quir.angle<32>) -> i1 {
-	// expected-error@+1 {{'quir.declare_variable' op is classical and should not be inside a circuit.}}
-	quir.declare_variable @c1 : !quir.cbit<1>
+	// expected-error@+1 {{'oq3.declare_variable' op is classical and should not be inside a circuit.}}
+	oq3.declare_variable @c1 : !quir.cbit<1>
 	%res0 = "quir.measure"(%q0) : (!quir.qubit<1>) -> i1
 	quir.return %res0 : i1
 }

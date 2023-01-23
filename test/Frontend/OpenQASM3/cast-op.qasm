@@ -4,7 +4,7 @@ OPENQASM 3.0;
 
 qubit $0;
 bit result;
-// MLIR: quir.declare_variable @result : !quir.cbit<1>
+// MLIR: oq3.declare_variable @result : !quir.cbit<1>
 // MLIR: %[[MEASURE_RESULT:.*]] = quir.measure({{.*}} -> i1
 // MLIR quir.assign_cbit_bit @result<1> [0] : i1 =  %[[MEASURE_RESULT]]
 result = measure $0;

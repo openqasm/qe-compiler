@@ -6,9 +6,9 @@ OPENQASM 3.0;
 qubit $2;
 qubit $3;
 
-// MLIR-DAG: quir.declare_variable @is_excited : !quir.cbit<1>
-// MLIR-DAG: quir.declare_variable @other : !quir.cbit<1>
-// MLIR-DAG: quir.declare_variable @result : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @is_excited : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @other : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @result : !quir.cbit<1>
 bit is_excited;
 bit other;
 bit result;

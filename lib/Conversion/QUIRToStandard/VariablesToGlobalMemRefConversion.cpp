@@ -1,6 +1,6 @@
 //===- VariablesToGobalMemRefConversion.cpp ---------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -18,6 +18,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 
@@ -30,6 +31,7 @@
 #include "mlir/Transforms/DialectConversion.h"
 
 using namespace mlir;
+using namespace mlir::oq3;
 using namespace mlir::quir;
 
 namespace {
@@ -240,14 +242,14 @@ struct ArrayElementUseConversionPattern
 };
 
 struct VariableAssignConversionPattern
-    : public OpConversionPattern<VariableAssignOp> {
+    : public OpConversionPattern<AssignVariableOp> {
   explicit VariableAssignConversionPattern(MLIRContext *ctx,
                                            TypeConverter &typeConverter)
-      : OpConversionPattern<VariableAssignOp>(typeConverter, ctx,
+      : OpConversionPattern<AssignVariableOp>(typeConverter, ctx,
                                               /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(VariableAssignOp assignOp, OpAdaptor adaptor,
+  matchAndRewrite(AssignVariableOp assignOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto varRefOrNone = findOrCreateGetGlobalMemref(assignOp, rewriter);
     if (!varRefOrNone)

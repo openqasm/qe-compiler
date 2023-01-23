@@ -49,15 +49,15 @@ identifies a location in memory and each reference or assignment to that
 variables reads or writes that location.
 
 -  Variables are declared by the QUIR operation
-   ``quir.declare_variable`` and identified as `MLIR
+   ``oq3.declare_variable`` and identified as `MLIR
    symbols <https://mlir.llvm.org/docs/SymbolsAndSymbolTables/>`__.
 -  Each reference to a variable is modeled as an operation
    ``quir.use_variable`` that returns the variables value at that point.
--  The operation ``quir.assign_variable`` updates the variable’s value
+-  The operation ``oq3.assign_variable`` updates the variable’s value
    (visible from that operation forward until a subsequent
-   ``quir.assign_variable`` that operates on the same variable).
--  Both ``quir.use_variable`` and ``quir.assign_variable`` refer the
-   MLIR symbol defined by the operations ``quir.declare_variable`` (the
+   ``oq3.assign_variable`` that operates on the same variable).
+-  Both ``quir.use_variable`` and ``oq3.assign_variable`` refer the
+   MLIR symbol defined by the operations ``oq3.declare_variable`` (the
    symbol’s name is a string).
 
 As an example, the OpenQASM 3 statement ``a = a ^ b`` (with ``a`` and
@@ -69,7 +69,7 @@ for clarity):
       %0 = quir.use_variable @a
       %1 = quir.use_variable @b
       %2 = quir.cbit_xor %s02, %s13
-      quir.assign_variable @a = %2
+      oq3.assign_variable @a = %2
 
 Variable scoping is not supported yet (there is only the global scope). Adding
 support is future work.
@@ -108,8 +108,8 @@ and use around control flow will be left as memory operations. The
 Lowering to Memory Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The operations ``quir.declare_variable``, ``quir.use_variable``, and
-``quir.assign_variable`` are converted to MLIR’s ``memref`` and
+The operations ``oq3.declare_variable``, ``quir.use_variable``, and
+``oq3.assign_variable`` are converted to MLIR’s ``memref`` and
 ``affine`` dialects. Each variable declaration is turned into a global
 variable (``memref.global``) and variable reads/writes are converted
 into ``load`` and ``store`` operations from the ``affine`` dialect (only

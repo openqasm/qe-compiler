@@ -2,8 +2,8 @@
 
 // bit c0;
 // bit c1;
-quir.declare_variable @c0 : !quir.cbit<1>
-quir.declare_variable @c1 : !quir.cbit<1>
+oq3.declare_variable @c0 : !quir.cbit<1>
+oq3.declare_variable @c1 : !quir.cbit<1>
 
 func @main () -> i32 {
 

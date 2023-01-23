@@ -145,7 +145,7 @@ module {
     "quir.call_gate"(%q0_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     // measure %0 -> c[0]; // this should not be allowed
     %zeroind = arith.constant 0 : index
-    quir.declare_variable @cbitarray : !quir.cbit<3>
+    oq3.declare_variable @cbitarray : !quir.cbit<3>
     %bitM_1 = quir.call_defcal_measure @defcalMeasure(%q0_0) : (!quir.qubit<1>) -> (i1)
     quir.assign_cbit_bit @cbitarray<3> [0] : i1 = %bitM_1
     // c <<= 1;
@@ -184,7 +184,7 @@ module {
     // measure %0 -> c[0];
     %bitM_2 = quir.call_defcal_measure @defcalMeasure(%q0_0) : (!quir.qubit<1>) -> (i1)
     // recent MLIR releases can express "tensor insert element", which we code around here:
-    quir.assign_variable @cbitarray : !quir.cbit<3> = %creg_1
+    oq3.assign_variable @cbitarray : !quir.cbit<3> = %creg_1
     quir.assign_cbit_bit @cbitarray<3> [0] : i1 = %bitM_2
     %creg_2 = quir.use_variable @cbitarray : !quir.cbit<3>
     // c <<= 1;

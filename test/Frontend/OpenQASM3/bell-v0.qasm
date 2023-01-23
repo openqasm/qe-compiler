@@ -27,8 +27,8 @@ qubit $1;
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=c0, bits=1))
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=c1, bits=1))
 
-// MLIR-DAG: quir.declare_variable @c0 : !quir.cbit<1>
-// MLIR-DAG: quir.declare_variable @c1 : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @c0 : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @c1 : !quir.cbit<1>
 bit c0;
 bit c1;
 

@@ -15,6 +15,7 @@
 
 #include "Dialect/QUIR/Transforms/UnusedVariable.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
@@ -27,6 +28,7 @@
 
 using namespace mlir;
 using namespace quir;
+using namespace oq3;
 
 namespace {
 /// This pattern matches on variable declarations that are not marked 'output'

@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
@@ -495,8 +496,8 @@ verifyQuirVariableOpSymbolUses(SymbolTableCollection &symbolTable,
         "requires a symbol reference attribute 'variable_name'");
 
   // Check that symbol reference resolves to a variable declaration
-  auto declOp =
-      symbolTable.lookupNearestSymbolFrom<DeclareVariableOp>(op, varRefAttr);
+  auto declOp = symbolTable.lookupNearestSymbolFrom<oq3::DeclareVariableOp>(
+      op, varRefAttr);
   if (!declOp)
     return op->emitOpError() << "no valid reference to a variable '"
                              << varRefAttr.getValue() << "'";
@@ -539,20 +540,6 @@ UseVariableOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
-// AssignArrayElementOp
-//===----------------------------------------------------------------------===//
-
-LogicalResult
-AssignArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-
-  return verifyQuirVariableOpSymbolUses(symbolTable, getOperation());
-}
-
-//===----------------------------------------------------------------------===//
-// end AssignArrayElementOp
-//===----------------------------------------------------------------------===//
-
-//===----------------------------------------------------------------------===//
 // AssignCbitBitOp
 //===----------------------------------------------------------------------===//
 
@@ -578,20 +565,6 @@ UseArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
 //===----------------------------------------------------------------------===//
 // end UseArrayElementOp
-//===----------------------------------------------------------------------===//
-
-//===----------------------------------------------------------------------===//
-// VariableAssignOp
-//===----------------------------------------------------------------------===//
-
-LogicalResult
-VariableAssignOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-
-  return verifyQuirVariableOpSymbolUses(symbolTable, getOperation(), true);
-}
-
-//===----------------------------------------------------------------------===//
-// end VariableAssignOp
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//

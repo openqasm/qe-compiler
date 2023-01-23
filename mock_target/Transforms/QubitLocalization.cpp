@@ -14,6 +14,7 @@
 
 #include "QubitLocalization.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -31,6 +32,7 @@
 using namespace mlir;
 using namespace mlir::quir;
 using namespace mlir::qcs;
+using namespace mlir::oq3;
 namespace mock = qssc::targets::mock;
 using namespace mock;
 
@@ -889,7 +891,7 @@ void mock::MockQubitLocalizationPass::cloneVariableDeclarations(
   mlir::OpBuilder controllerModuleBuilder(controllerModule.getBodyRegion());
 
   // clone variable declarations into all target modules
-  for (auto variableDeclaration : topModuleOp.getOps<quir::DeclareVariableOp>())
+  for (auto variableDeclaration : topModuleOp.getOps<DeclareVariableOp>())
     controllerModuleBuilder.clone(*variableDeclaration.getOperation());
 }
 

@@ -6,8 +6,8 @@
 
 // CHECK: module
 module {
-  quir.declare_variable @a : !quir.cbit<1>
-  quir.declare_variable @b : !quir.cbit<1>
+  oq3.declare_variable @a : !quir.cbit<1>
+  oq3.declare_variable @b : !quir.cbit<1>
 
   func @main() -> i32 {
     %1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
@@ -21,14 +21,14 @@ module {
 
     // CHECK: [[MEAS0:%.*]] = quir.measure([[QUBIT0]])
     // CHECK: [[CAST0:%.*]] = "quir.cast"([[MEAS0]]) : (i1) -> !quir.cbit<1>
-    // CHECK: quir.assign_variable @a : !quir.cbit<1> = [[CAST0]]
+    // CHECK: oq3.assign_variable @a : !quir.cbit<1> = [[CAST0]]
 
     %6 = quir.measure(%2) : (!quir.qubit<1>) -> i1
     quir.assign_cbit_bit @b<1> [0] : i1 = %6
 
     // CHECK: [[MEAS1:%.*]] = quir.measure([[QUBIT1]])
     // CHECK: [[CAST1:%.*]] = "quir.cast"([[MEAS1]]) : (i1) -> !quir.cbit<1>
-    // CHECK: quir.assign_variable @b : !quir.cbit<1> = [[CAST1]]
+    // CHECK: oq3.assign_variable @b : !quir.cbit<1> = [[CAST1]]
 
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32

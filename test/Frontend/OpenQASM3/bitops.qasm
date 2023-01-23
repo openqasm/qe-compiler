@@ -11,9 +11,9 @@ bit b;
 bit c;
 
 // AST-PRETTY-COUNT-2: DeclarationNode(type=ASTTypeBitset
-// MLIR-DAG: quir.declare_variable @a : !quir.cbit<1>
-// MLIR-DAG: quir.declare_variable @b : !quir.cbit<1>
-// MLIR-DAG: quir.declare_variable @c : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @a : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @b : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @c : !quir.cbit<1>
 
 qubit $0;
 qubit $1;
@@ -34,7 +34,7 @@ b = measure $1; // expected "0"
 c = measure $2; // expected "1"
 
 bit meas_and;
-// MLIR-DAG: quir.declare_variable @meas_and : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @meas_and : !quir.cbit<1>
 
 // MLIR-DAG: [[A:%.*]] = quir.use_variable @a
 // MLIR-DAG: [[B:%.*]] = quir.use_variable @b
@@ -92,5 +92,5 @@ f = e | d;
 // MLIR: [[TRUE:%.*]] = arith.constant true
 // MLIR: [[NOT:%.*]] = arith.cmpi ne, [[BOOL_F]], [[TRUE]] : i1
 // MLIR: [[NOT_CBIT:%.*]] = "quir.cast"([[NOT]]) : (i1) -> !quir.cbit<1>
-// MLIR: quir.assign_variable @f : !quir.cbit<1> = [[NOT_CBIT]]
+// MLIR: oq3.assign_variable @f : !quir.cbit<1> = [[NOT_CBIT]]
 f = !f;

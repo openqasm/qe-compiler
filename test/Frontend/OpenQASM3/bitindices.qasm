@@ -7,15 +7,15 @@ OPENQASM 3.0;
 
 // AST-PRETTY DeclarationNode(type=ASTTypeBitset, CBitNode(name=a, bits=1))
 // DeclarationNode(type=ASTTypeBitset, CBitNode(name=b, bits=2, value=10))
-// MLIR-DAG: quir.declare_variable @a : !quir.cbit<1>
-// MLIR-DAG: quir.declare_variable @b : !quir.cbit<2>
+// MLIR-DAG: oq3.declare_variable @a : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @b : !quir.cbit<2>
 bit a;
 bit[2] b = "10";
 int c = 5;
 
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
 // MLIR: [[CONSTCAST:%[0-9]+]] = "quir.cast"([[CONST]]) : (i32) -> !quir.cbit<1>
-// MLIR: quir.assign_variable @a : !quir.cbit<1> = [[CONSTCAST]]
+// MLIR: oq3.assign_variable @a : !quir.cbit<1> = [[CONSTCAST]]
 a = 1;
 
 // MLIR: [[A:%.*]] = quir.use_variable @a : !quir.cbit<1>

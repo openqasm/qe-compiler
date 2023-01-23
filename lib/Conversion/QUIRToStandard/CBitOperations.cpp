@@ -15,6 +15,7 @@
 
 #include "Dialect/QUIR/Transforms/Passes.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
@@ -84,7 +85,7 @@ struct CbitAssignBitOpConversionPattern
     // just a single bit? then generate a value assign
     if (cbitWidth == 1) {
 
-      rewriter.create<mlir::quir::VariableAssignOp>(
+      rewriter.create<mlir::oq3::AssignVariableOp>(
           location, bitOp.variable_nameAttr(), adaptor.assigned_bit());
 
       rewriter.replaceOp(bitOp, mlir::ValueRange({}));
@@ -105,7 +106,7 @@ struct CbitAssignBitOpConversionPattern
             location, oldRegisterValue.getType(), oldRegisterValue,
             adaptor.assigned_bit(), adaptor.indexAttr());
 
-    rewriter.create<mlir::quir::VariableAssignOp>(
+    rewriter.create<mlir::oq3::AssignVariableOp>(
         location, bitOp.variable_nameAttr(), registerWithInsertedBit);
     rewriter.replaceOp(bitOp, mlir::ValueRange({}));
     return success();
