@@ -8,8 +8,8 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// This file defines the Quantum System MLIR dialect, its base operators, and
-/// attributes.
+/// This file defines the Quantum Control System MLIR dialect, its base
+/// operators, and attributes.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -17,7 +17,7 @@
 #define QCS_BASE_H
 
 //===----------------------------------------------------------------------===//
-// Quantum System dialect definition
+// Quantum Control System dialect definition
 //===----------------------------------------------------------------------===//
 
 def QCS_Dialect : Dialect {
@@ -34,14 +34,14 @@ def QCS_Dialect : Dialect {
 }
 
 //===----------------------------------------------------------------------===//
-// Base class for Quantum System dialect operations
+// Base class for Quantum Control System dialect operations
 //===----------------------------------------------------------------------===//
 
 class QCS_Op<string mnemonic, list<Trait> traits = []> :
         Op<QCS_Dialect, mnemonic, traits>;
 
 //===----------------------------------------------------------------------===//
-// Base class for Quantum System dialect attributes
+// Base class for Quantum Control System dialect attributes
 //===----------------------------------------------------------------------===//
 
 class QCS_Attr<string name, string attrMnemonic, list<Trait> traits = []>
