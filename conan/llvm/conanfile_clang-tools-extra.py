@@ -45,7 +45,7 @@ class ClangToolsExtraConan(ConanFile):
 
         # Check out LLVM at correct tag. This will fail if you have local changes
         # to llvm-project.
-        self.run(f"git checkout {LLVM_TAG}")
+        self.run(f"cd llvm-project && git checkout {LLVM_TAG}")
 
     @property
     def _source_subfolder(self):
