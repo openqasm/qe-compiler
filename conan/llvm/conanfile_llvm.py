@@ -11,7 +11,7 @@ import shutil
 
 from conan.tools.apple import is_apple_os
 
-LLVM_TAG = "14.0.6"
+LLVM_TAG = "llvmorg-14.0.6"
 
 
 class LLVMConan(ConanFile):

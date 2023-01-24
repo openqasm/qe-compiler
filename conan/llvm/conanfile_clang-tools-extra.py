@@ -9,7 +9,7 @@ import os.path
 import os
 import shutil
 
-LLVM_TAG = "14.0.6"
+LLVM_TAG = "llvmorg-14.0.6"
 
 
 class ClangToolsExtraConan(ConanFile):
