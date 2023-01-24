@@ -13,7 +13,7 @@ LLVM_TAG = "14.0.6"
 
 class ClangToolsExtraConan(ConanFile):
     name = 'clang-tools-extra'
-    version = f"{LLVM_TAG}"
+    version = "14.0.6"
     description = (
         'A toolkit for analysis of c++ projects.'
     )

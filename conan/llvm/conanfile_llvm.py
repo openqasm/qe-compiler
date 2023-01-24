@@ -8,12 +8,14 @@ import re
 import os.path
 import os
 
+from conan.tools.apple import is_apple_os
+
 LLVM_TAG = "14.0.6"
 
 
 class LLVMConan(ConanFile):
     name = 'llvm'
-    version = f"{LLVM_TAG}-1"
+    version = "14.0.6-1"
     description = (
         'A toolkit for the construction of highly optimized compilers,'
         'optimizers, and runtime environments.'
@@ -204,7 +206,7 @@ class LLVMConan(ConanFile):
         if self.options.with_ffi:
             self.requires('libffi/3.3')
         if self.options.get_safe('with_zlib', False):
-            self.requires('zlib/1.2.12')
+            self.requires('zlib/1.2.13')
         if self.options.get_safe('with_xml2', False):
             self.requires('libxml2/2.9.10')
 
@@ -219,6 +221,9 @@ class LLVMConan(ConanFile):
         if self.options.exceptions and not self.options.rtti:
             message = 'Cannot enable exceptions without rtti support'
             raise ConanInvalidConfiguration(message)
+        if tools.is_apple_os(self.settings.os) and self.settings.arch == 'armv8':
+            self.options.targets = self.options.targets.value + ';AArch64'
+
         self._supports_compiler()
 
     def build(self):
