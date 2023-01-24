@@ -7,7 +7,8 @@ import json
 import re
 import os.path
 import os
-from version import LLVM_TAG, get_or_update_llvm
+
+LLVM_TAG = "14.0.6"
 
 
 class ClangToolsExtraConan(ConanFile):
@@ -33,10 +34,16 @@ class ClangToolsExtraConan(ConanFile):
 
     generators = ['cmake']
     no_copy_source = True
-    exports_sources = "llvm-project/*", "version.py"
+    exports_sources = "llvm-project/*"
 
     def source(self):
-        get_or_update_llvm(self)
+        if not os.path.exists("llvm-project/.git"):
+            # Sources not yet downloaded.
+            self.run(f"git clone -b git@github.com:llvm/llvm-project.git")
+
+        # Check out LLVM at correct tag. This will fail if you have local changes
+        # to llvm-project.
+        self.run(f"git checkout {LLVM_TAG}")
 
     @property
     def _source_subfolder(self):
