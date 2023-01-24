@@ -39,7 +39,7 @@ class ClangToolsExtraConan(ConanFile):
     def source(self):
         if not os.path.exists("llvm-project/.git"):
             # Sources not yet downloaded.
-            self.run(f"git clone -b git@github.com:llvm/llvm-project.git")
+            self.run(f"git clone git@github.com:llvm/llvm-project.git")
 
         # Check out LLVM at correct tag. This will fail if you have local changes
         # to llvm-project.
