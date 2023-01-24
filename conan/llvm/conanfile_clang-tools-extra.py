@@ -7,6 +7,7 @@ import json
 import re
 import os.path
 import os
+import shutil
 
 LLVM_TAG = "14.0.6"
 
@@ -39,6 +40,7 @@ class ClangToolsExtraConan(ConanFile):
     def source(self):
         if not os.path.exists("llvm-project/.git"):
             # Sources not yet downloaded.
+            shutil.rmtree("llvm-project")
             self.run(f"git clone git@github.com:llvm/llvm-project.git")
 
         # Check out LLVM at correct tag. This will fail if you have local changes
