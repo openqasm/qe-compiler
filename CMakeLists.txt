@@ -51,11 +51,20 @@ find_package(GTest REQUIRED)
 if(DEFINED ENV{VERSION_STRING})
     set(VERSION_STRING $ENV{VERSION_STRING})
 else()
+    # Get the SCM version from whichever repo contains the root CMakeLists.txt.
     execute_process(
-     COMMAND ${Python_EXECUTABLE} -c "from setuptools_scm import get_version; print(get_version())"
-     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-     OUTPUT_VARIABLE VERSION_STRING
+        COMMAND git rev-parse --show-toplevel
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE QSS_ROOT_GIT_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    message(STATUS "Root CMake project Git directory (used for version): ${QSS_ROOT_GIT_DIR}")
+    execute_process(
+        COMMAND ${Python_EXECUTABLE} -c "from setuptools_scm import get_version; print(get_version(root='${QSS_ROOT_GIT_DIR}'))"
+        OUTPUT_VARIABLE VERSION_STRING
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    unset(QSS_ROOT_GIT_DIR)
 endif()
 
 message(STATUS "SCM Version: ${VERSION_STRING}")
