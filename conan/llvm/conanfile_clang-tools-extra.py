@@ -33,7 +33,7 @@ class ClangToolsExtraConan(ConanFile):
 
     generators = ['cmake']
     no_copy_source = True
-    exports_sources = "llvm-project/*"
+    exports_sources = "llvm-project/*", "version.py"
 
     def source(self):
         get_or_update_llvm(self)
