@@ -26,22 +26,15 @@ while (i != 0) {
     // MLIR:         scf.condition(%4)
     // MLIR:     } do {
     while (j != 0) {
-        // AST-PRETTY: statements=
-        // AST-PRETTY: HGateOpNode(params=[], qubits=[], qcparams=[$0],
-        // AST-PRETTY: ops=[
-        // AST-PRETTY: UGateOpNode(params=[AngleNode(value=1.57079632679000003037, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=3.14159265359000006157, bits=64)], qubits=[], qcparams=[q])
-        // AST-PRETTY: ,
-        // AST-PRETTY: ]
-        // AST-PRETTY: )
-        // MLIR:         quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-        // MLIR:         %cst = constant unit
-        // MLIR:         %c0_i32_4 = arith.constant 0 : i32
-        // MLIR:         quir.assign_variable @j : i32 = %c0_i32_4
-        // MLIR:         scf.yield
-        // MLIR:     }
+        // MLIR: %angle_4 = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
+        // MLIR: %angle_5 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
+        // MLIR: %angle_6 = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+        // MLIR: quir.builtin_U %0, %angle_4, %angle_5, %angle_6 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
         U(1.57079632679, 0.0, 3.14159265359) $0;
-        // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=j, bits=32), right=IntNode(signed=true, value=0, bits=32))
+        // MLIR: %c0_i32_7 = arith.constant 0 : i32
+        // MLIR: quir.assign_variable @j : i32 = %c0_i32_7
         j = 0;
+        // MLIR: scf.yield
     }
     // MLIR:     %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
     // MLIR:     %angle_1 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>

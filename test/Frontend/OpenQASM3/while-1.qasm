@@ -18,7 +18,7 @@ while (n != 0) {
     // AST-PRETTY: statements=
     // AST-PRETTY: HGateOpNode(params=[], qubits=[], qcparams=[$0],
     // AST-PRETTY: ops=[
-    // AST-PRETTY: UGateOpNode(params=[AngleNode(value=1.57079632679000003037, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=3.14159265359000006157, bits=64)], qubits=[], qcparams=[q])
+    // AST-PRETTY: UGateOpNode(params=[AngleNode(value=1.57079632679000003037, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=3.14159265359000006157, bits=64)], qubits=[], qcparams=[$0])
     // MLIR: %angle = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
     // MLIR: %angle_0 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
     // MLIR: %angle_1 = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
