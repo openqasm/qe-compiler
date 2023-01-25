@@ -16,8 +16,6 @@ bit is_excited;
 // MLIR: } do {
 while (n != 0) {
     // AST-PRETTY: statements=
-    // AST-PRETTY: HGateOpNode(params=[], qubits=[], qcparams=[$0],
-    // AST-PRETTY: ops=[
     // AST-PRETTY: UGateOpNode(params=[AngleNode(value=1.57079632679000003037, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=3.14159265359000006157, bits=64)], qubits=[], qcparams=[$0])
     // MLIR: %angle = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
     // MLIR: %angle_0 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
@@ -39,8 +37,8 @@ while (n != 0) {
     }
     // error: Binary operation ASTOpTypeSub not supported yet.
     // n = n - 1;
-    // MLIR: %c0_i32_0 = arith.constant 0 : i32
-    // MLIR: quir.assign_variable @n : i32 = %c0_i32_0
+    // MLIR: %c0_i32_2 = arith.constant 0 : i32
+    // MLIR: quir.assign_variable @n : i32 = %c0_i32_2
     n = 0;  // workaround for n = n - 1
     // MLIR: scf.yield
 }

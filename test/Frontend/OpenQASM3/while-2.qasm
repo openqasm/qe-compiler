@@ -37,8 +37,8 @@ while (n != 0) {
         // MLIR: %4 = quir.measure(%0) : (!quir.qubit<1>) -> i1
         // MLIR: quir.assign_cbit_bit @is_excited<1> [0] : i1 = %4
         is_excited = measure $0;
-        // MLIR: %c0_i32_1 = arith.constant 0 : i32
-        // MLIR: quir.assign_variable @n : i32 = %c0_i32_1
+        // MLIR: %c0_i32_3 = arith.constant 0 : i32
+        // MLIR: quir.assign_variable @n : i32 = %c0_i32_3
         n = 0;
     }
     // MLIR: scf.yield
