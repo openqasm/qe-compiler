@@ -2,20 +2,20 @@
 
 // CHECK: func @t1
 func @t1 (%arg1 : !quir.cbit<1>) -> (!quir.cbit<1>) {
-// CHECK: quir.cbit_not %{{.*}} : !quir.cbit<1>
-// CHECK-NOT: quir.cbit_not %{{.*}} : !quir.cbit<1>
-    %c2 = quir.cbit_not %arg1 : !quir.cbit<1>
-    %c3 = quir.cbit_not %c2 : !quir.cbit<1>
-    %c4 = quir.cbit_not %c3 : !quir.cbit<1>
+// CHECK: oq3.cbit_not %{{.*}} : !quir.cbit<1>
+// CHECK-NOT: oq3.cbit_not %{{.*}} : !quir.cbit<1>
+    %c2 = oq3.cbit_not %arg1 : !quir.cbit<1>
+    %c3 = oq3.cbit_not %c2 : !quir.cbit<1>
+    %c4 = oq3.cbit_not %c3 : !quir.cbit<1>
     return %c4 : !quir.cbit<1>
 }
 
 // CHECK: func @t2
 func @t2 (%arg1 : !quir.cbit<1>) -> (!quir.cbit<1>) {
-// CHECK-NOT: quir.cbit_not %{{.*}} : !quir.cbit<1>
-// CHECK-NOT: quir.cbit_not %{{.*}} : !quir.cbit<1>
-    %c2 = quir.cbit_not %arg1 : !quir.cbit<1>
-    %c3 = quir.cbit_not %c2 : !quir.cbit<1>
+// CHECK-NOT: oq3.cbit_not %{{.*}} : !quir.cbit<1>
+// CHECK-NOT: oq3.cbit_not %{{.*}} : !quir.cbit<1>
+    %c2 = oq3.cbit_not %arg1 : !quir.cbit<1>
+    %c3 = oq3.cbit_not %c2 : !quir.cbit<1>
     return %c3 : !quir.cbit<1>
 }
 

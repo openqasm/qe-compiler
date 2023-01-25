@@ -22,7 +22,7 @@ x $2;
 x $3;
 
 // MLIR: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @is_excited<1> [0] : i1 = [[MEASURE2]]
+// MLIR: oq3.assign_cbit_bit @is_excited<1> [0] : i1 = [[MEASURE2]]
 is_excited = measure $2;
 
 // Apply reset operation
@@ -34,7 +34,7 @@ is_excited = measure $2;
 // MLIR: scf.if [[COND0]] {
 if (is_excited == 1) {
 // MLIR: [[MEASURE3:%.*]] = quir.measure([[QUBIT3]]) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @other<1> [0] : i1 = [[MEASURE3]]
+// MLIR: oq3.assign_cbit_bit @other<1> [0] : i1 = [[MEASURE3]]
   other = measure $3;
 // MLIR: [[OTHER:%.*]] = oq3.use_variable @other : !quir.cbit<1>
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
@@ -47,5 +47,5 @@ if (is_excited == 1) {
   }
 }
 // MLIR: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @result<1> [0] : i1 = [[MEASURE2]]
+// MLIR: oq3.assign_cbit_bit @result<1> [0] : i1 = [[MEASURE2]]
 result = measure $2;

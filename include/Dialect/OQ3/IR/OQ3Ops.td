@@ -222,4 +222,7 @@ def OQ3_UseVariableOp : OQ3_Op<"use_variable",
     let verifier = ?;
 }
 
+include "Dialect/OQ3/IR/OQ3ArithmeticOps.td"
+include "Dialect/OQ3/IR/OQ3CBitOps.td"
+
 #endif // OQ3_OPS

@@ -6,7 +6,7 @@ qubit $0;
 bit result;
 // MLIR: oq3.declare_variable @result : !quir.cbit<1>
 // MLIR: %[[MEASURE_RESULT:.*]] = quir.measure({{.*}} -> i1
-// MLIR quir.assign_cbit_bit @result<1> [0] : i1 =  %[[MEASURE_RESULT]]
+// MLIR oq3.assign_cbit_bit @result<1> [0] : i1 =  %[[MEASURE_RESULT]]
 result = measure $0;
 
 // MLIR: %[[RESULT:.*]] = oq3.use_variable @result : !quir.cbit<1>
@@ -26,7 +26,7 @@ bool b;
 
 // MLIR-DAG: %[[FOO:.*]] = oq3.use_variable @foo : !quir.cbit<1>
 // MLIR-DAG: %[[RESULT:.*]] = oq3.use_variable @result : !quir.cbit<1>
-// MLIR: %[[OR:.*]] = quir.cbit_or %[[FOO]], %[[RESULT]] : !quir.cbit<1>
+// MLIR: %[[OR:.*]] = oq3.cbit_or %[[FOO]], %[[RESULT]] : !quir.cbit<1>
 // MLIR: %[[RES2:.*]] = "quir.cast"(%[[OR]]) : (!quir.cbit<1>) -> i1
 // MLIR: scf.if %[[RES2]] {
 // AST-PRETTY: condition=CastNode(from=ASTTypeBinaryOp, to=ASTTypeBool, expression=BinaryOpNode(type=ASTOpTypeBitOr, left=IdentifierNode(name=foo, bits=1), right=IdentifierNode(name=result, bits=1))

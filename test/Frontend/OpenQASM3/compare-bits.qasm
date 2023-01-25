@@ -20,7 +20,7 @@ if (bit_one == bit_two){
 }
 
 // MLIR-DAG: [[BITSTRING:%.*]] = oq3.use_variable @bitstring : !quir.cbit<2>
-// MLIR-DAG: [[LHS:%.*]] = quir.cbit_extractbit([[BITSTRING]] : !quir.cbit<2>) [1] : i1
+// MLIR-DAG: [[LHS:%.*]] = oq3.cbit_extractbit([[BITSTRING]] : !quir.cbit<2>) [1] : i1
 // MLIR-DAG: [[BIT_ONE:%.*]] = oq3.use_variable @bit_one : !quir.cbit<1>
 // MLIR-DAG: [[RHS:%.*]] = "quir.cast"([[BIT_ONE]]) : (!quir.cbit<1>) -> i1
 // MLIR: [[CMP:%.*]] = arith.cmpi eq, [[LHS]], [[RHS]] : i1
@@ -89,7 +89,7 @@ if (bit_two != bit_one){
 // MLIR-DAG: [[BIT_ONE:%.*]] = oq3.use_variable @bit_one : !quir.cbit<1>
 // MLIR-DAG: [[LHS:%.*]] = "quir.cast"([[BIT_ONE]]) : (!quir.cbit<1>) -> i1
 // MLIR-DAG: [[BITSTRING:%.*]] = oq3.use_variable @bitstring : !quir.cbit<2>
-// MLIR-DAG: [[RHS:%.*]] = quir.cbit_extractbit([[BITSTRING]] : !quir.cbit<2>) [0] : i1
+// MLIR-DAG: [[RHS:%.*]] = oq3.cbit_extractbit([[BITSTRING]] : !quir.cbit<2>) [0] : i1
 // MLIR: [[CMP:%.*]] = arith.cmpi ne, [[LHS]], [[RHS]] : i1
 // MLIR: scf.if [[CMP]] {
 if (bit_one != bitstring[0]) {

@@ -39,8 +39,8 @@ bit meas_and;
 // MLIR-DAG: [[A:%.*]] = oq3.use_variable @a
 // MLIR-DAG: [[B:%.*]] = oq3.use_variable @b
 // MLIR-DAG: [[C:%.*]] = oq3.use_variable @c
-// MLIR-DAG: [[A_OR_C:%.*]] = quir.cbit_or [[A]], [[C]] : !quir.cbit<1>
-// MLIR-DAG: [[A_OR_C__AND_B:%.*]] = quir.cbit_and [[A_OR_C]], [[B]]
+// MLIR-DAG: [[A_OR_C:%.*]] = oq3.cbit_or [[A]], [[C]] : !quir.cbit<1>
+// MLIR-DAG: [[A_OR_C__AND_B:%.*]] = oq3.cbit_and [[A_OR_C]], [[B]]
 
 // AST-PRETTY: condition=BinaryOpNode(type=ASTOpTypeCompEq, left=BinaryOpNode(type=ASTOpTypeBitAnd, left=BinaryOpNode(type=ASTOpTypeBitOr, left=IdentifierNode(name=a, bits=1), right=IdentifierNode(name=c, bits=1))
 // AST-PRETTY: , right=IdentifierNode(name=b, bits=1))
@@ -50,7 +50,7 @@ if (((a | c) & b) == 1) {
 } else {
     meas_and = measure $1;
 }
-// MLIR: quir.assign_cbit_bit @meas_and<1> [0] : i1 =
+// MLIR: oq3.assign_cbit_bit @meas_and<1> [0] : i1 =
 // on hardware, expect meas_and to become 0
 
 bit d;
@@ -59,13 +59,13 @@ if (bool(a | b)) {
 // AST-PRETTY: condition=CastNode(from=ASTTypeBinaryOp, to=ASTTypeBool, expression=BinaryOpNode(type=ASTOpTypeBitOr, left=IdentifierNode(name=a, bits=1), right=IdentifierNode(name=b, bits=1))
 // MLIR-DAG: [[A:%.*]] = oq3.use_variable @a
 // MLIR-DAG: [[B:%.*]] = oq3.use_variable @b
-// MLIR: [[CBIT_OR_RES:%[0-9]+]] = quir.cbit_or [[A]], [[B]]
+// MLIR: [[CBIT_OR_RES:%[0-9]+]] = oq3.cbit_or [[A]], [[B]]
 // MLIR: "quir.cast"([[CBIT_OR_RES]]) {{.*}} -> i1
     d = measure $0;
 } else {
     d = measure $1;
 }
-// MLIR: quir.assign_cbit_bit @d<1> [0] : i1 =
+// MLIR: oq3.assign_cbit_bit @d<1> [0] : i1 =
 // on hardware, expect d to be 1
 
 bit e;
@@ -74,13 +74,13 @@ if (bool(a ^ b))  {
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeXor, left=IdentifierNode(name=a, bits=1), right=IdentifierNode(name=b, bits=1))
 // MLIR-DAG: [[A:%.*]] = oq3.use_variable @a
 // MLIR-DAG: [[B:%.*]] = oq3.use_variable @b
-// MLIR: [[CBIT_XOR_RES:%[0-9]+]] = quir.cbit_xor [[A]], [[B]]
+// MLIR: [[CBIT_XOR_RES:%[0-9]+]] = oq3.cbit_xor [[A]], [[B]]
 // MLIR: "quir.cast"([[CBIT_XOR_RES]]) {{.*}} -> i1
     e = measure $0;
 } else {
     e = measure $1;
 }
-// MLIR: quir.assign_cbit_bit @e<1> [0] : i1 =
+// MLIR: oq3.assign_cbit_bit @e<1> [0] : i1 =
 // on hardware, expect e to be 1
 
 bit f = "0";

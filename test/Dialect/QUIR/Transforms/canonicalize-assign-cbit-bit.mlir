@@ -17,14 +17,14 @@ module {
     // CHECK: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1
 
     %5 = quir.measure(%1) : (!quir.qubit<1>) -> i1
-    quir.assign_cbit_bit @a<1> [0] : i1 = %5
+    oq3.assign_cbit_bit @a<1> [0] : i1 = %5
 
     // CHECK: [[MEAS0:%.*]] = quir.measure([[QUBIT0]])
     // CHECK: [[CAST0:%.*]] = "quir.cast"([[MEAS0]]) : (i1) -> !quir.cbit<1>
     // CHECK: oq3.assign_variable @a : !quir.cbit<1> = [[CAST0]]
 
     %6 = quir.measure(%2) : (!quir.qubit<1>) -> i1
-    quir.assign_cbit_bit @b<1> [0] : i1 = %6
+    oq3.assign_cbit_bit @b<1> [0] : i1 = %6
 
     // CHECK: [[MEAS1:%.*]] = quir.measure([[QUBIT1]])
     // CHECK: [[CAST1:%.*]] = "quir.cast"([[MEAS1]]) : (i1) -> !quir.cbit<1>

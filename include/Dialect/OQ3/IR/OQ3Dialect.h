@@ -15,6 +15,12 @@
 #ifndef DIALECT_OQ3_OQ3DIALECT_H_
 #define DIALECT_OQ3_OQ3DIALECT_H_
 
+// #include "Dialect/QCS/IR/QCSDialect.h"
+
+#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
+#include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+#include "mlir/Dialect/SCF/SCF.h"
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dialect.h"
 
 #include "Dialect/OQ3/IR/OQ3OpsDialect.h.inc"

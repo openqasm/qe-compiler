@@ -18,8 +18,8 @@
 
 using namespace mlir;
 using namespace mlir::oq3;
-static LogicalResult
 
+static LogicalResult
 verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
                               mlir::Operation *op,
                               bool operandMustMatchSymbolType = false) {
@@ -59,6 +59,50 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
   // OQ3VariableOps with bool predicates for assigning / referencing ops)
 
   return success();
+}
+
+//===----------------------------------------------------------------------===//
+// CBit ops
+//===----------------------------------------------------------------------===//
+
+static llvm::Optional<mlir::Value>
+findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
+
+  mlir::Operation *op = val.getDefiningOp();
+
+  // follow chains of CBit_InsertBit operations and try to find one matching the
+  // requested bit
+  while (auto insertBitOp = mlir::dyn_cast_or_null<CBitInsertBitOp>(op)) {
+    if (insertBitOp.indexAttr() == bitIndex)
+      return insertBitOp.assigned_bit();
+
+    op = insertBitOp.operand().getDefiningOp();
+  }
+
+  // is the value defined by an i1 constant? then that would be the bit
+  if (auto constantOp =
+          mlir::dyn_cast_or_null<mlir::arith::ConstantIntOp>(op)) {
+    if (constantOp.getType().isInteger(1))
+      return constantOp.getResult();
+  }
+
+  return llvm::None;
+}
+
+::mlir::OpFoldResult
+CBitExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
+
+  auto foundDefiningBitOrNone = findDefiningBitInBitmap(operand(), indexAttr());
+
+  if (foundDefiningBitOrNone)
+    return foundDefiningBitOrNone.getValue();
+  return nullptr;
+}
+
+LogicalResult
+AssignCBitBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+
+  return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
 }
 
 //===----------------------------------------------------------------------===//

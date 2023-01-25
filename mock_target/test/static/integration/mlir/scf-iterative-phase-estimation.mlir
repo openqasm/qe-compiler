@@ -157,11 +157,11 @@ quir.call_gate @gateH(%q1) : (!quir.qubit<1>) -> ()
   // measure q -> c[0];
   %zeroind = arith.constant 0 : index
   %bitM_1 = quir.call_defcal_measure @defcalMeasure(%q0) : (!quir.qubit<1>) -> (i1)
-  quir.assign_cbit_bit @c<3> [0] : i1 = %bitM_1
+  oq3.assign_cbit_bit @c<3> [0] : i1 = %bitM_1
   // c <<= 1;
   %c1_i32 = arith.constant 1 : i32
   %ang_prev = oq3.use_variable @c : !quir.cbit<3>
-  %ang_shifted = quir.cbit_lshift %ang_prev, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
+  %ang_shifted = oq3.cbit_lshift %ang_prev, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
   // power <<= 1;
   %c1_i3 = arith.constant 1 : i3
   %pow_shifted = arith.shli %pow_iter, %c1_i3 : i3

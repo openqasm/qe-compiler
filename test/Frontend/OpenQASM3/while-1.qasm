@@ -27,7 +27,7 @@ while (n != 0) {
     // MLIR: %cst = constant unit
     h $0;
     // MLIR: %2 = quir.measure(%0) : (!quir.qubit<1>) -> i1
-    // MLIR: quir.assign_cbit_bit @is_excited<1> [0] : i1 = %2
+    // MLIR: oq3.assign_cbit_bit @is_excited<1> [0] : i1 = %2
     // MLIR: %3 = oq3.use_variable @is_excited : !quir.cbit<1>
     // MLIR: %4 = "quir.cast"(%3) : (!quir.cbit<1>) -> i1
     is_excited = measure $0;

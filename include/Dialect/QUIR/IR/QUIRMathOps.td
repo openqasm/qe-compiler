@@ -87,152 +87,152 @@ class QUIR_Binary_CmpOp<string mnemonic, list<Trait> traits = []> :
     }];
 }
 
-def QUIR_CBit_NotOp : QUIR_Unary_CBitOp<"cbit_not"> {
-    let summary = "cbit and register bit-wise negation";
-    let description = [{
-        The `quir.cbit_not` operation takes one cbit operand and returns one cbit
-        result, which is the bit-wise negation of the operand.
-    }];
+// def QUIR_CBit_NotOp : QUIR_Unary_CBitOp<"cbit_not"> {
+//     let summary = "cbit and register bit-wise negation";
+//     let description = [{
+//         The `oq3.cbit_not` operation takes one cbit operand and returns one cbit
+//         result, which is the bit-wise negation of the operand.
+//     }];
 
-    let hasCanonicalizer = 1;
-}
+//     let hasCanonicalizer = 1;
+// }
 
-def QUIR_CBit_RotLOp : QUIR_BinaryOp<"cbit_rotl"> {
-    let summary = "cbit and register barrel-shift left";
-    let description = [{
-        The `quir.cbit_rotl` operation takes one cbit operand and one unsigned operand
-        and returns one cbit result, which is the bit-wise barrel-shift left by the
-        amount specified.
-    }];
+// def QUIR_CBit_RotLOp : QUIR_BinaryOp<"cbit_rotl"> {
+//     let summary = "cbit and register barrel-shift left";
+//     let description = [{
+//         The `quir.cbit_rotl` operation takes one cbit operand and one unsigned operand
+//         and returns one cbit result, which is the bit-wise barrel-shift left by the
+//         amount specified.
+//     }];
 
-    let arguments = (ins AnyCBit:$lhs, AnyInteger:$rhs);
-}
+//     let arguments = (ins AnyCBit:$lhs, AnyInteger:$rhs);
+// }
 
-def QUIR_CBit_RotROp : QUIR_BinaryOp<"cbit_rotr"> {
-    let summary = "cbit and register barrel-shift right";
-    let description = [{
-        The `quir.cbit_rotr` operation takes one cbit operand and one unsigned operand
-        and returns one cbit result, which is the bit-wise barrel-shift right by the
-        amount specified.
-    }];
+// def QUIR_CBit_RotROp : QUIR_BinaryOp<"cbit_rotr"> {
+//     let summary = "cbit and register barrel-shift right";
+//     let description = [{
+//         The `quir.cbit_rotr` operation takes one cbit operand and one unsigned operand
+//         and returns one cbit result, which is the bit-wise barrel-shift right by the
+//         amount specified.
+//     }];
 
-    let arguments = (ins AnyCBit:$lhs, AnyInteger:$rhs);
-}
+//     let arguments = (ins AnyCBit:$lhs, AnyInteger:$rhs);
+// }
 
-def QUIR_CBit_PopcountOp : QUIR_UnaryOp<"cbit_popcount"> {
-    let summary = "cbit and register bit-wise population count";
-    let description = [{
-        The `quir.cbit_popcount` operation takes one cbit operand and returns one cbit
-        result, which is the bit-wise negation of the operand.
-    }];
+// def QUIR_CBit_PopcountOp : QUIR_UnaryOp<"cbit_popcount"> {
+//     let summary = "cbit and register bit-wise population count";
+//     let description = [{
+//         The `quir.cbit_popcount` operation takes one cbit operand and returns one cbit
+//         result, which is the bit-wise negation of the operand.
+//     }];
 
-    let arguments = (ins AnyCBit:$operand);
-    let results = (outs AnyInteger:$result);
-    let assemblyFormat = [{
-        attr-dict $operand `:` `(` type($operand) `)` `->` type($result)
-    }];
-}
+//     let arguments = (ins AnyCBit:$operand);
+//     let results = (outs AnyInteger:$result);
+//     let assemblyFormat = [{
+//         attr-dict $operand `:` `(` type($operand) `)` `->` type($result)
+//     }];
+// }
 
-def QUIR_CBit_AndOp : QUIR_Binary_CBitOp<"cbit_and"> {
-    let summary = "cbit and register bit-wise and";
-    let description = [{
-        The `quir.cbit_and` operation takes two cbit operands and returns one cbit
-        result, which is the bit-wise and of the operands.
-    }];
-}
+// def QUIR_CBit_AndOp : QUIR_Binary_CBitOp<"cbit_and"> {
+//     let summary = "cbit and register bit-wise and";
+//     let description = [{
+//         The `quir.cbit_and` operation takes two cbit operands and returns one cbit
+//         result, which is the bit-wise and of the operands.
+//     }];
+// }
 
-def QUIR_CBit_OrOp : QUIR_Binary_CBitOp<"cbit_or"> {
-    let summary = "cbit and register bit-wise or";
-    let description = [{
-        The `quir.cbit_or` operation takes two cbit operands and returns one cbit
-        result, which is the bit-wise or of the operands.
-    }];
-}
+// def QUIR_CBit_OrOp : QUIR_Binary_CBitOp<"cbit_or"> {
+//     let summary = "cbit and register bit-wise or";
+//     let description = [{
+//         The `quir.cbit_or` operation takes two cbit operands and returns one cbit
+//         result, which is the bit-wise or of the operands.
+//     }];
+// }
 
-def QUIR_CBit_XorOp : QUIR_Binary_CBitOp<"cbit_xor"> {
-    let summary = "cbit and register bit-wise xor";
-    let description = [{
-        The `quir.cbit_xor` operation takes two cbit operands and returns one cbit
-        result, which is the bit-wise xor of the operands.
-    }];
-}
+// def QUIR_CBit_XorOp : QUIR_Binary_CBitOp<"cbit_xor"> {
+//     let summary = "cbit and register bit-wise xor";
+//     let description = [{
+//         The `quir.cbit_xor` operation takes two cbit operands and returns one cbit
+//         result, which is the bit-wise xor of the operands.
+//     }];
+// }
 
-def QUIR_CBit_RshiftOp : QUIR_BinaryOp<"cbit_rshift"> {
-    let summary = "cbit and register logical shift right";
-    let description = [{
-        The `quir.cbit_rshift` operation takes one cbit operand and one unsigned operand
-        and returns one cbit result, which is the bit-wise logical-shift right by the
-        amount specified.
-    }];
+// def QUIR_CBit_RshiftOp : QUIR_BinaryOp<"cbit_rshift"> {
+//     let summary = "cbit and register logical shift right";
+//     let description = [{
+//         The `quir.cbit_rshift` operation takes one cbit operand and one unsigned operand
+//         and returns one cbit result, which is the bit-wise logical-shift right by the
+//         amount specified.
+//     }];
 
-    let arguments = (ins AnyCBit:$lhs, AnyInteger:$rhs);
-}
+//     let arguments = (ins AnyCBit:$lhs, AnyInteger:$rhs);
+// }
 
-def QUIR_CBit_LshiftOp : QUIR_BinaryOp<"cbit_lshift"> {
-    let summary = "cbit and register logical shift left";
-    let description = [{
-        The `quir.cbit_lshift` operation takes one cbit operand and one unsigned operand
-        and returns one cbit result, which is the bit-wise logical-shift left by the
-        amount specified.
-    }];
+// def QUIR_CBit_LshiftOp : QUIR_BinaryOp<"cbit_lshift"> {
+//     let summary = "cbit and register logical shift left";
+//     let description = [{
+//         The `quir.cbit_lshift` operation takes one cbit operand and one unsigned operand
+//         and returns one cbit result, which is the bit-wise logical-shift left by the
+//         amount specified.
+//     }];
 
-    let arguments = (ins AnyCBit:$lhs, AnyInteger:$rhs);
-}
+//     let arguments = (ins AnyCBit:$lhs, AnyInteger:$rhs);
+// }
 
-def QUIR_CBit_ExtractBitOp : QUIR_Op<"cbit_extractbit", [NoSideEffect]> {
-    let summary = "extract single bit from a bitmap";
-    let description = [{
-        The `quir.cbit_extractbit` operations takes a bitmap operand (cbit or
-        integer) and one index attribute and returns one i1 result, which is
-        the bit at the position with the given index.
+// def QUIR_CBit_ExtractBitOp : QUIR_Op<"cbit_extractbit", [NoSideEffect]> {
+//     let summary = "extract single bit from a bitmap";
+//     let description = [{
+//         The `quir.cbit_extractbit` operations takes a bitmap operand (cbit or
+//         integer) and one index attribute and returns one i1 result, which is
+//         the bit at the position with the given index.
 
-        Example:
+//         Example:
 
-        ```mlir
-        %6 = quir.cbit_extractbit(%5 : !quir.cbit<2>) [1] : i1
+//         ```mlir
+//         %6 = quir.cbit_extractbit(%5 : !quir.cbit<2>) [1] : i1
 
-        ```
-    }];
+//         ```
+//     }];
 
-    let arguments = (ins AnyCBitOrSignlessInteger:$operand, IndexAttr:$index);
+//     let arguments = (ins AnyCBitOrSignlessInteger:$operand, IndexAttr:$index);
 
-    let results = (outs I1:$result);
+//     let results = (outs I1:$result);
 
-    let assemblyFormat = [{
-        attr-dict `(` $operand `:` type($operand) `)` `[` $index `]` `:` type($result)
-    }];
+//     let assemblyFormat = [{
+//         attr-dict `(` $operand `:` type($operand) `)` `[` $index `]` `:` type($result)
+//     }];
 
-    let hasFolder = 1;
-}
+//     let hasFolder = 1;
+// }
 
-def QUIR_CBit_InsertBitOp : QUIR_Op<"cbit_insertbit", [
-            NoSideEffect,
-            TypesMatchWith<
-                "first operand and result have the same type",
-                "operand", "result", "$_self">]> {
-    let summary = "insert single bit into a bitmap";
-    let description = [{
-        The `quir.cbit_insertbit` operations takes a bitmap operand (cbit or
-        integer), a i1 operand, and one index attribute and returns the bitmap
-        with the bit at the position with the given index replaced by the
-        provided bit operand.
+// def QUIR_CBit_InsertBitOp : QUIR_Op<"cbit_insertbit", [
+//             NoSideEffect,
+//             TypesMatchWith<
+//                 "first operand and result have the same type",
+//                 "operand", "result", "$_self">]> {
+//     let summary = "insert single bit into a bitmap";
+//     let description = [{
+//         The `quir.cbit_insertbit` operations takes a bitmap operand (cbit or
+//         integer), a i1 operand, and one index attribute and returns the bitmap
+//         with the bit at the position with the given index replaced by the
+//         provided bit operand.
 
-        Example:
+//         Example:
 
-        ```mlir
-        %6 = quir.cbit_insertbit(%5 : !quir.cbit<2>) [1] = %4 : !quir.cbit<2>
+//         ```mlir
+//         %6 = quir.cbit_insertbit(%5 : !quir.cbit<2>) [1] = %4 : !quir.cbit<2>
 
-        ```
-    }];
+//         ```
+//     }];
 
-    let arguments = (ins AnyCBitOrSignlessInteger:$operand, I1:$assigned_bit, IndexAttr:$index);
+//     let arguments = (ins AnyCBitOrSignlessInteger:$operand, I1:$assigned_bit, IndexAttr:$index);
 
-    let results = (outs AnyCBitOrSignlessInteger:$result);
+//     let results = (outs AnyCBitOrSignlessInteger:$result);
 
-    let assemblyFormat = [{
-        attr-dict `(` $operand `:` type($operand) `)` `[` $index `]` `=` $assigned_bit `:` type($result)
-    }];
-}
+//     let assemblyFormat = [{
+//         attr-dict `(` $operand `:` type($operand) `)` `[` $index `]` `=` $assigned_bit `:` type($result)
+//     }];
+// }
 
 
 

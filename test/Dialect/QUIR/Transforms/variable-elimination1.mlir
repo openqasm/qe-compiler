@@ -27,11 +27,11 @@ module {
 
     // CHECK: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
     %5 = quir.measure(%1) : (!quir.qubit<1>) -> i1
-    quir.assign_cbit_bit @a<1> [0] : i1 = %5
+    oq3.assign_cbit_bit @a<1> [0] : i1 = %5
 
     // CHECK: [[MEASURE1:%.*]] = quir.measure([[QUBIT1]])
     %6 = quir.measure(%2) : (!quir.qubit<1>) -> i1
-    quir.assign_cbit_bit @b<1> [0] : i1 = %6
+    oq3.assign_cbit_bit @b<1> [0] : i1 = %6
 
     %7 = oq3.use_variable @a : !quir.cbit<1>
     %c1_i32 = arith.constant 1 : i32

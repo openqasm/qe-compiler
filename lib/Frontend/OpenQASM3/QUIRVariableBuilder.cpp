@@ -110,7 +110,7 @@ void QUIRVariableBuilder::generateCBitSingleBitAssignment(
         location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)), cbitWithInsertedBit);
 
 #else
-  builder.create<mlir::quir::AssignCBitBitOp>(
+  builder.create<mlir::oq3::AssignCBitBitOp>(
       location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)),
       builder.getIndexAttr(bitPosition), builder.getIndexAttr(registerWidth),
       assignedValue);

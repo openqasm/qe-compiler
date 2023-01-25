@@ -78,36 +78,6 @@ def QUIR_ConstantOp : QUIR_Op<"constant",
   let assemblyFormat = "attr-dict $value";
 }
 
-def QUIR_AssignCBitBitOp : QUIR_Op<"assign_cbit_bit",
-                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-    let summary = "Assign a single bit in a classical bit register";
-    let description = [{
-        The operation `quir.assign_cbit_bit` assigns a new value to an
-        individual bit of a classical bit register in a variable.
-
-        Example:
-
-        ```mlir
-        quir.assign_cbit_bit "b"<2> [0] : i1 = %9
-        ```
-    }];
-
-    let arguments = (ins
-        FlatSymbolRefAttr:$variable_name,
-        IndexAttr:$index,
-        IndexAttr:$cbit_width,
-        I1:$assigned_bit
-    );
-
-    let results = (outs);
-
-    let assemblyFormat = [{
-        attr-dict $variable_name `<` $cbit_width `>` `[` $index `]` `:` type($assigned_bit) `=` $assigned_bit
-    }];
-    // op is verified by its traits
-    let verifier = ?;
-}
-
 def QUIR_DeclareQubitOp : QUIR_Op<"declare_qubit", [NonInterferingNonDeadSideEffect]> {
     let summary = "Declare a new physical qubit.";
     let description = [{

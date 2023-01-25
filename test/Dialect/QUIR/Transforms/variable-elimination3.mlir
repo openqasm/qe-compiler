@@ -30,11 +30,11 @@ module {
 
     // CHECK: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
     %5 = quir.measure(%0) : (!quir.qubit<1>) -> i1
-    quir.assign_cbit_bit @b<2> [0] : i1 = %5
+    oq3.assign_cbit_bit @b<2> [0] : i1 = %5
 
     // CHECK: [[MEASURE1:%.*]] = quir.measure([[QUBIT1]])
     %6 = quir.measure(%1) : (!quir.qubit<1>) -> i1
-    quir.assign_cbit_bit @b<2> [1] : i1 = %6
+    oq3.assign_cbit_bit @b<2> [1] : i1 = %6
 
     // CHECK: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]])
     %7 = quir.measure(%2) : (!quir.qubit<1>) -> i1
@@ -42,7 +42,7 @@ module {
     oq3.assign_variable @a : !quir.cbit<1> = %8
 
     %9 = oq3.use_variable @b : !quir.cbit<2>
-    %10 = quir.cbit_extractbit(%9 : !quir.cbit<2>) [0] : i1
+    %10 = oq3.cbit_extractbit(%9 : !quir.cbit<2>) [0] : i1
 
     // CHECK: scf.if [[MEASURE0]]
     scf.if %10 {
@@ -50,7 +50,7 @@ module {
     }
 
     %11 = oq3.use_variable @b : !quir.cbit<2>
-    %12 = quir.cbit_extractbit(%11 : !quir.cbit<2>) [1] : i1
+    %12 = oq3.cbit_extractbit(%11 : !quir.cbit<2>) [1] : i1
 
     // CHECK: scf.if [[MEASURE1]]
     scf.if %12 {

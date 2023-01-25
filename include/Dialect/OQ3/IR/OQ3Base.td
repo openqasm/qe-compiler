@@ -28,14 +28,40 @@ def OQ3_Dialect : Dialect {
         quantum abstractions.
     }];
     let cppNamespace = "::mlir::oq3";
+    let dependentDialects = [
+        // "mlir::qcs::QCSDialect",
+        "mlir::arith::ArithmeticDialect",
+        "mlir::LLVM::LLVMDialect"
+    ];
 }
 
 //===----------------------------------------------------------------------===//
-// Base class for OpenQASM 3 dialect operations
+// OpenQASM 3 dialect base operations
 //===----------------------------------------------------------------------===//
 
 class OQ3_Op<string mnemonic, list<Trait> traits = []> :
-        Op<OQ3_Dialect, mnemonic, traits>;
+    Op<OQ3_Dialect, mnemonic, traits>;
+
+class OQ3_UnaryOp<string mnemonic, list<Trait> traits = []> :
+      OQ3_Op<mnemonic, traits> {
+  let arguments = (ins AnyClassical:$operand);
+  let results = (outs AnyClassical:$result);
+  let verifier = [{ return success(); }];
+  // In LLVM 15+,
+  // let hasVerifier = 0;
+}
+
+class OQ3_BinaryOp<string mnemonic, list<Trait> traits = []> :
+    OQ3_Op<mnemonic, traits> {
+  let arguments = (ins AnyClassical:$operand1, AnyClassical:$operand2);
+  let results = (outs AnyClassical:$result);
+  let assemblyFormat = [{
+        attr-dict $lhs `,` $rhs `:` `(` type($lhs) `,` type($rhs) `)` `->` type($result)
+  }];
+  let verifier = [{ return success(); }];
+  // In LLVM 15+,
+  // let hasVerifier = 0;
+}
 
 //===----------------------------------------------------------------------===//
 // Base class for OpenQASM 3 dialect attributes

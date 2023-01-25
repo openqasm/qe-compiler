@@ -26,13 +26,13 @@ module {
     // CHECK: [[MEASURE1:%.*]] = quir.measure([[QUBIT1]])
     // CHECK: affine.store [[MEASURE1]], [[MEMREF]]
     %6 = quir.measure(%2) : (!quir.qubit<1>) -> i1
-    quir.assign_cbit_bit @b<1> [0] : i1 = %6
+    oq3.assign_cbit_bit @b<1> [0] : i1 = %6
 
     // A variable update inside a control flow branch currently cannot be
     // simplified. Thus the store and load operations must be kept.
     scf.if %5 {
       quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
-      quir.assign_cbit_bit @b<1> [0] : i1 = %5
+      oq3.assign_cbit_bit @b<1> [0] : i1 = %5
       %cst = constant unit
     }
 

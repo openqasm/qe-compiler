@@ -7,9 +7,13 @@
 add_mlir_dialect_library(MLIROQ3Dialect
         OQ3Dialect.cpp
         OQ3Ops.cpp
+        OQ3Patterns.cpp
 
         ADDITIONAL_HEADER_DIRS
         ${PROJECT_SOURCE_DIR}/include/OQ3
+
+        DEPENDS
+        MLIROQ3PatternsIncGen
 
 	LINK_LIBS PUBLIC
 	MLIRIR

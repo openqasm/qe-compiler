@@ -34,7 +34,7 @@ while (n != 0) {
         // MLIR: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
         // MLIR: %cst = constant unit
         // MLIR: %4 = quir.measure(%0) : (!quir.qubit<1>) -> i1
-        // MLIR: quir.assign_cbit_bit @is_excited<1> [0] : i1 = %4
+        // MLIR: oq3.assign_cbit_bit @is_excited<1> [0] : i1 = %4
         // MLIR: %c0_i32_1 = arith.constant 0 : i32
         // MLIR: oq3.assign_variable @n : i32 = %c0_i32_1
         h $0;

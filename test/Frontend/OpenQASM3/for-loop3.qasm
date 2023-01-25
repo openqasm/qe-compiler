@@ -13,7 +13,7 @@ for i in [0 : 4] {
     // AST-PRETTY: )
     // MLIR: %1 = oq3.use_variable @bs : !quir.cbit<32>
     // MLIR: %2 = "quir.cast"(%arg1) : (index) -> !quir.cbit<32>
-    // MLIR: %3 = quir.cbit_or %1, %2 : !quir.cbit<32>
+    // MLIR: %3 = oq3.cbit_or %1, %2 : !quir.cbit<32>
     // MLIR: oq3.assign_variable @bs : !quir.cbit<32> = %3
     bs = bs | i;
 }
@@ -26,7 +26,7 @@ for i in [0 : 3] {
     // AST-PRETTY: )
     // MLIR: %1 = oq3.use_variable @bs : !quir.cbit<32>
     // MLIR: %2 = "quir.cast"(%arg1) : (index) -> !quir.cbit<32>
-    // MLIR: %3 = quir.cbit_and %1, %2 : !quir.cbit<32>
+    // MLIR: %3 = oq3.cbit_and %1, %2 : !quir.cbit<32>
     // MLIR: oq3.assign_variable @bs : !quir.cbit<32> = %3
     bs = bs & i;
 }
@@ -39,7 +39,7 @@ for i in [0 : 5] {
     // AST-PRETTY: )
     // MLIR: %1 = oq3.use_variable @bs : !quir.cbit<32>
     // MLIR: %2 = "quir.cast"(%arg1) : (index) -> !quir.cbit<32>
-    // MLIR: %3 = quir.cbit_xor %1, %2 : !quir.cbit<32>
+    // MLIR: %3 = oq3.cbit_xor %1, %2 : !quir.cbit<32>
     // MLIR: oq3.assign_variable @bs : !quir.cbit<32> = %3
     bs = bs ^ i;
 }

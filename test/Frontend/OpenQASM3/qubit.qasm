@@ -11,9 +11,9 @@ result[4] = measure $0;
 result[5] = measure $1;
 
 // MLIR: %[[LOAD1:.*]] = oq3.use_variable @result : !quir.cbit<10>
-// MLIR: %[[BIT4:.*]] = quir.cbit_extractbit(%[[LOAD1]] : !quir.cbit<10>) [4] : i1
+// MLIR: %[[BIT4:.*]] = oq3.cbit_extractbit(%[[LOAD1]] : !quir.cbit<10>) [4] : i1
 // MLIR: %[[LOAD2:.*]] = oq3.use_variable @result : !quir.cbit<10>
-// MLIR: %[[BIT5:.*]] = quir.cbit_extractbit(%[[LOAD2]] : !quir.cbit<10>) [5] : i1
+// MLIR: %[[BIT5:.*]] = oq3.cbit_extractbit(%[[LOAD2]] : !quir.cbit<10>) [5] : i1
 // MLIR: %[[CMP1:.*]] = arith.cmpi eq, %[[BIT4]], %[[BIT5]] : i1
 // MLIR: scf.if %[[CMP1]] {
 if (result[4]==result[5]) {
@@ -32,7 +32,7 @@ if (2 < 100) {
 
 // Always re-load classical bits
 // MLIR: %[[LOAD3:.*]] = oq3.use_variable @result : !quir.cbit<10>
-// MLIR-DAG: %[[BIT4:.*]] = quir.cbit_extractbit(%[[LOAD3]] : !quir.cbit<10>) [4] : i1
+// MLIR-DAG: %[[BIT4:.*]] = oq3.cbit_extractbit(%[[LOAD3]] : !quir.cbit<10>) [4] : i1
 // MLIR-DAG: %[[CONST1:.*]] = arith.constant 1 : i32
 // MLIR-DAG: %[[CAST3:.*]] = "quir.cast"(%[[BIT4]]) : (i1) -> i32
 // MLIR: %[[CMP3:.*]] = arith.cmpi ne, %[[CAST3]], %[[CONST1]] : i32
@@ -42,7 +42,7 @@ if (result[4] != 1) {
 }
 
 // MLIR: %[[LOAD4:.*]] = oq3.use_variable @result : !quir.cbit<10>
-// MLIR: %[[BIT5:.*]] = quir.cbit_extractbit(%[[LOAD4]] : !quir.cbit<10>) [5] : i1
+// MLIR: %[[BIT5:.*]] = oq3.cbit_extractbit(%[[LOAD4]] : !quir.cbit<10>) [5] : i1
 // MLIR: %[[CAST4:.*]] = "quir.cast"(%[[BIT5]]) : (i1) -> i32
 // MLIR: %[[CMP4:.*]] = arith.cmpi eq, %c0_i32_{{.*}}, %[[CAST4]] : i32
 // MLIR: scf.if %[[CMP4]] {
