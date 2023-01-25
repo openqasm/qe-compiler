@@ -78,7 +78,7 @@ def QUIR_ConstantOp : QUIR_Op<"constant",
   let assemblyFormat = "attr-dict $value";
 }
 
-def QUIR_AssignCbitBitOp : QUIR_Op<"assign_cbit_bit",
+def QUIR_AssignCBitBitOp : QUIR_Op<"assign_cbit_bit",
                         [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
     let summary = "Assign a single bit in a classical bit register";
     let description = [{

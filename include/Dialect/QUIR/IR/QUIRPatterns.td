@@ -15,7 +15,7 @@
 include "mlir/Dialect/StandardOps/IR/Ops.td"
 include "Dialect/QUIR/IR/QUIR.td"
 
-def CbitNotNotPat : Pat<
-    (QUIR_Cbit_NotOp (QUIR_Cbit_NotOp $in)), (replaceWithValue $in)>;
+def CBitNotNotPat : Pat<
+    (QUIR_CBit_NotOp (QUIR_CBit_NotOp $in)), (replaceWithValue $in)>;
 
 #endif // QUIR_PATTERNS

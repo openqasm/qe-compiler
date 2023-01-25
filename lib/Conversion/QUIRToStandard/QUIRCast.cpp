@@ -174,8 +174,8 @@ struct RemoveConvertedNilCastsPat : public OpConversionPattern<CastOp> {
 
 }; // struct RemoveConvertedNilCastsPat
 
-struct RemoveI1ToCbitCastsPattern : public OpConversionPattern<CastOp> {
-  explicit RemoveI1ToCbitCastsPattern(MLIRContext *ctx,
+struct RemoveI1ToCBitCastsPattern : public OpConversionPattern<CastOp> {
+  explicit RemoveI1ToCBitCastsPattern(MLIRContext *ctx,
                                       mlir::TypeConverter &typeConverter)
       : OpConversionPattern(typeConverter, ctx, /*benefit=*/1) {}
 
@@ -192,7 +192,7 @@ struct RemoveI1ToCbitCastsPattern : public OpConversionPattern<CastOp> {
     return success();
   } // matchAndRewrite
 
-}; // struct RemoveI1ToCbitCastsPattern
+}; // struct RemoveI1ToCBitCastsPattern
 
 struct WideningIntegerCastsPattern : public OpConversionPattern<quir::CastOp> {
   explicit WideningIntegerCastsPattern(MLIRContext *ctx,
@@ -232,6 +232,6 @@ void mlir::quir::populateQUIRCastPatterns(RewritePatternSet &patterns,
   patterns.insert<CastIntegerToBoolConversionPattern>(ctx, typeConverter);
   patterns.insert<CastIndexToIntegerPat>(ctx, typeConverter);
   patterns.insert<RemoveConvertedNilCastsPat>(ctx, typeConverter);
-  patterns.insert<RemoveI1ToCbitCastsPattern>(ctx, typeConverter);
+  patterns.insert<RemoveI1ToCBitCastsPattern>(ctx, typeConverter);
   patterns.insert<WideningIntegerCastsPattern>(ctx, typeConverter);
 }

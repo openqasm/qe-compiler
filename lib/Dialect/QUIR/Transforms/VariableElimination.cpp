@@ -41,7 +41,7 @@ void affineScalarReplaceCopy(FuncOp f, DominanceInfo &domInfo,
 namespace mlir::quir {
 
 namespace {
-Optional<Type> convertCbitType(quir::CBitType t) {
+Optional<Type> convertCBitType(quir::CBitType t) {
 
   if (t.getWidth() <= 64)
     return IntegerType::get(t.getContext(), t.getWidth());
@@ -59,7 +59,7 @@ class CBitTypeConverter : public TypeConverter {
 
 public:
   CBitTypeConverter() {
-    addConversion(convertCbitType);
+    addConversion(convertCBitType);
     addConversion(legalizeType<mlir::quir::AngleType>);
     addConversion(legalizeType<mlir::IntegerType>);
   }
@@ -151,16 +151,16 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   // Convert CBit type and operations
   quir::populateCBitOperationsPatterns(patterns, typeConverter, false);
   // TODO transform to making the OpenQASM dialect invalid
-  target.addIllegalOp<quir::AssignCbitBitOp>();
-  target.addIllegalOp<quir::Cbit_NotOp>();
-  target.addIllegalOp<quir::Cbit_RotLOp>();
-  target.addIllegalOp<quir::Cbit_RotROp>();
-  target.addIllegalOp<quir::Cbit_PopcountOp>();
-  target.addIllegalOp<quir::Cbit_AndOp>();
-  target.addIllegalOp<quir::Cbit_OrOp>();
-  target.addIllegalOp<quir::Cbit_XorOp>();
-  target.addIllegalOp<quir::Cbit_RshiftOp>();
-  target.addIllegalOp<quir::Cbit_LshiftOp>();
+  target.addIllegalOp<quir::AssignCBitBitOp>();
+  target.addIllegalOp<quir::CBit_NotOp>();
+  target.addIllegalOp<quir::CBit_RotLOp>();
+  target.addIllegalOp<quir::CBit_RotROp>();
+  target.addIllegalOp<quir::CBit_PopcountOp>();
+  target.addIllegalOp<quir::CBit_AndOp>();
+  target.addIllegalOp<quir::CBit_OrOp>();
+  target.addIllegalOp<quir::CBit_XorOp>();
+  target.addIllegalOp<quir::CBit_RshiftOp>();
+  target.addIllegalOp<quir::CBit_LshiftOp>();
 
   // TODO move quir.cast and patterns for CBit types into OpenQASM 3 dialect.
   quir::populateQUIRCastPatterns(patterns, typeConverter);
@@ -172,22 +172,22 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
     return true;
   });
 
-  // Materialize Cbit_ExtractBitOp and Cbit_InsertBitOp with integer operands.
-  patterns.insert<MaterializeBitOpForInt<quir::Cbit_ExtractBitOp>>(
+  // Materialize CBit_ExtractBitOp and CBit_InsertBitOp with integer operands.
+  patterns.insert<MaterializeBitOpForInt<quir::CBit_ExtractBitOp>>(
       &context, typeConverter);
-  patterns.insert<MaterializeBitOpForInt<quir::Cbit_InsertBitOp>>(
+  patterns.insert<MaterializeBitOpForInt<quir::CBit_InsertBitOp>>(
       &context, typeConverter);
 
-  target.addDynamicallyLegalOp<mlir::quir::Cbit_ExtractBitOp>(
-      [](mlir::quir::Cbit_ExtractBitOp op) {
+  target.addDynamicallyLegalOp<mlir::quir::CBit_ExtractBitOp>(
+      [](mlir::quir::CBit_ExtractBitOp op) {
         if (op.getType().isa<mlir::quir::CBitType>() ||
             op.operand().getType().isa<mlir::quir::CBitType>())
           return false;
 
         return true;
       });
-  target.addDynamicallyLegalOp<mlir::quir::Cbit_InsertBitOp>(
-      [](mlir::quir::Cbit_InsertBitOp op) {
+  target.addDynamicallyLegalOp<mlir::quir::CBit_InsertBitOp>(
+      [](mlir::quir::CBit_InsertBitOp op) {
         if (op.getType().isa<mlir::quir::CBitType>() ||
             op.operand().getType().isa<mlir::quir::CBitType>())
           return false;

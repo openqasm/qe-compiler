@@ -526,17 +526,17 @@ verifyQuirVariableOpSymbolUses(SymbolTableCollection &symbolTable,
 }
 
 //===----------------------------------------------------------------------===//
-// AssignCbitBitOp
+// AssignCBitBitOp
 //===----------------------------------------------------------------------===//
 
 LogicalResult
-AssignCbitBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+AssignCBitBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   return verifyQuirVariableOpSymbolUses(symbolTable, getOperation());
 }
 
 //===----------------------------------------------------------------------===//
-// end AssignCbitBitOp
+// end AssignCBitBitOp
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
@@ -695,7 +695,7 @@ static LogicalResult verify(quir::YieldOp op) {
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
-// Cbit_ExtractBitOp
+// CBit_ExtractBitOp
 //===----------------------------------------------------------------------===//
 
 static llvm::Optional<mlir::Value>
@@ -703,10 +703,10 @@ findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
 
   mlir::Operation *op = val.getDefiningOp();
 
-  // follow chains of Cbit_InsertBit operations and try to find one matching the
+  // follow chains of CBit_InsertBit operations and try to find one matching the
   // requested bit
   while (auto insertBitOp =
-             mlir::dyn_cast_or_null<mlir::quir::Cbit_InsertBitOp>(op)) {
+             mlir::dyn_cast_or_null<mlir::quir::CBit_InsertBitOp>(op)) {
     if (insertBitOp.indexAttr() == bitIndex)
       return insertBitOp.assigned_bit();
 
@@ -724,7 +724,7 @@ findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
 }
 
 ::mlir::OpFoldResult
-quir::Cbit_ExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
+quir::CBit_ExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
 
   auto foundDefiningBitOrNone = findDefiningBitInBitmap(operand(), indexAttr());
 
@@ -734,7 +734,7 @@ quir::Cbit_ExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
 }
 
 //===----------------------------------------------------------------------===//
-// end Cbit_ExtractBitOp
+// end CBit_ExtractBitOp
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//

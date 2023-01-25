@@ -113,13 +113,13 @@ struct CastToSameType : public OpRewritePattern<CastOp> {
 /// This pattern simplifies quir.assign_cbit_bit operations for single-cbit
 /// registers to assign_variable operations. The assigned bit is first cast to a
 /// !quir.cbit<1> (which is transparent) and then directly assigned.
-struct AssignSingleCbitToAssignVariablePattern
-    : public OpRewritePattern<AssignCbitBitOp> {
-  AssignSingleCbitToAssignVariablePattern(MLIRContext *context)
-      : OpRewritePattern<AssignCbitBitOp>(context, /*benefit=*/1) {}
+struct AssignSingleCBitToAssignVariablePattern
+    : public OpRewritePattern<AssignCBitBitOp> {
+  AssignSingleCBitToAssignVariablePattern(MLIRContext *context)
+      : OpRewritePattern<AssignCBitBitOp>(context, /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(AssignCbitBitOp op,
+  matchAndRewrite(AssignCBitBitOp op,
                   mlir::PatternRewriter &rewriter) const override {
 
     if (op.cbit_width() != 1)
@@ -139,14 +139,14 @@ struct AssignSingleCbitToAssignVariablePattern
 } // anonymous namespace
 
 // this pattern is defined by the TableGen DRR in QUIRPatterns.td
-void Cbit_NotOp::getCanonicalizationPatterns(RewritePatternSet &results,
+void CBit_NotOp::getCanonicalizationPatterns(RewritePatternSet &results,
                                              MLIRContext *context) {
-  results.insert<CbitNotNotPat>(context);
+  results.insert<CBitNotNotPat>(context);
 }
 
 void CastOp::getCanonicalizationPatterns(RewritePatternSet &results,
                                          MLIRContext *context) {
   results.insert<CastToSameType>(context);
   results.insert<EqEqOnePat>(context);
-  results.insert<AssignSingleCbitToAssignVariablePattern>(context);
+  results.insert<AssignSingleCBitToAssignVariablePattern>(context);
 }

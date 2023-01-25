@@ -1031,7 +1031,7 @@ QUIRGenQASM3Visitor::visit_(const ASTIdentifierRefNode *node) {
       // single cbit out of a cbit register
       auto cbit = varHandler.generateVariableUse(getLocation(node),
                                                  variableName, symTableEntry);
-      return builder.create<quir::Cbit_ExtractBitOp>(
+      return builder.create<quir::CBit_ExtractBitOp>(
           getLocation(node), builder.getI1Type(), cbit,
           builder.getIndexAttr(node->GetIndex()));
     }
@@ -1296,17 +1296,17 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
 
   case ASTOpTypeBitAnd:
     createCastIfTypeMismatch();
-    opRef = builder.create<mlir::quir::Cbit_AndOp>(loc, leftRef, rightRef);
+    opRef = builder.create<mlir::quir::CBit_AndOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeBitOr:
     createCastIfTypeMismatch();
-    opRef = builder.create<mlir::quir::Cbit_OrOp>(loc, leftRef, rightRef);
+    opRef = builder.create<mlir::quir::CBit_OrOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeXor:
     createCastIfTypeMismatch();
-    opRef = builder.create<mlir::quir::Cbit_XorOp>(loc, leftRef, rightRef);
+    opRef = builder.create<mlir::quir::CBit_XorOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeCompEq:

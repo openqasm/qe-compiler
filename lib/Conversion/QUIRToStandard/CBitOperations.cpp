@@ -68,15 +68,15 @@ struct BinaryCBitCBitOpConversionPattern : public OpConversionPattern<QuirOp> {
   }
 };
 
-struct CbitAssignBitOpConversionPattern
-    : public OpConversionPattern<AssignCbitBitOp> {
-  explicit CbitAssignBitOpConversionPattern(MLIRContext *ctx,
+struct CBitAssignBitOpConversionPattern
+    : public OpConversionPattern<AssignCBitBitOp> {
+  explicit CBitAssignBitOpConversionPattern(MLIRContext *ctx,
                                             mlir::TypeConverter &typeConverter)
-      : OpConversionPattern<AssignCbitBitOp>(typeConverter, ctx,
+      : OpConversionPattern<AssignCBitBitOp>(typeConverter, ctx,
                                              /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(AssignCbitBitOp bitOp, AssignCbitBitOpAdaptor adaptor,
+  matchAndRewrite(AssignCBitBitOp bitOp, AssignCBitBitOpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
     auto const location = bitOp.getLoc();
@@ -102,7 +102,7 @@ struct CbitAssignBitOpConversionPattern
         bitOp.variable_name());
 
     auto registerWithInsertedBit =
-        rewriter.create<mlir::quir::Cbit_InsertBitOp>(
+        rewriter.create<mlir::quir::CBit_InsertBitOp>(
             location, oldRegisterValue.getType(), oldRegisterValue,
             adaptor.assigned_bit(), adaptor.indexAttr());
 
@@ -113,7 +113,7 @@ struct CbitAssignBitOpConversionPattern
   }
 };
 
-static int getCbitOrIntBitWidth(mlir::Type t) {
+static int getCBitOrIntBitWidth(mlir::Type t) {
   assert((t.isa<quir::CBitType>() || t.isSignlessInteger()) &&
          "expect CBitType or integer type");
 
@@ -126,19 +126,19 @@ static int getCbitOrIntBitWidth(mlir::Type t) {
   llvm::report_fatal_error("unhandled type");
 }
 
-struct CbitInsertBitOpConversionPattern
-    : public OpConversionPattern<Cbit_InsertBitOp> {
-  explicit CbitInsertBitOpConversionPattern(MLIRContext *ctx,
+struct CBitInsertBitOpConversionPattern
+    : public OpConversionPattern<CBit_InsertBitOp> {
+  explicit CBitInsertBitOpConversionPattern(MLIRContext *ctx,
                                             mlir::TypeConverter &typeConverter)
-      : OpConversionPattern<Cbit_InsertBitOp>(typeConverter, ctx,
+      : OpConversionPattern<CBit_InsertBitOp>(typeConverter, ctx,
                                               /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(Cbit_InsertBitOp bitOp, Cbit_InsertBitOpAdaptor adaptor,
+  matchAndRewrite(CBit_InsertBitOp bitOp, CBit_InsertBitOpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
     auto const location = bitOp.getLoc();
-    auto cbitWidth = getCbitOrIntBitWidth(adaptor.operand().getType());
+    auto cbitWidth = getCBitOrIntBitWidth(adaptor.operand().getType());
 
     // just a single bit? then replace whole bitmap
     if (cbitWidth == 1) {
@@ -174,15 +174,15 @@ struct CbitInsertBitOpConversionPattern
   }
 };
 
-struct CbitExtractBitOpConversionPattern
-    : public OpConversionPattern<Cbit_ExtractBitOp> {
-  explicit CbitExtractBitOpConversionPattern(MLIRContext *ctx,
+struct CBitExtractBitOpConversionPattern
+    : public OpConversionPattern<CBit_ExtractBitOp> {
+  explicit CBitExtractBitOpConversionPattern(MLIRContext *ctx,
                                              mlir::TypeConverter &typeConverter)
-      : OpConversionPattern<Cbit_ExtractBitOp>(typeConverter, ctx,
+      : OpConversionPattern<CBit_ExtractBitOp>(typeConverter, ctx,
                                                /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(Cbit_ExtractBitOp bitOp, Cbit_ExtractBitOpAdaptor adaptor,
+  matchAndRewrite(CBit_ExtractBitOp bitOp, CBit_ExtractBitOpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto const location = bitOp.getLoc();
     auto convertedOperand = adaptor.operand();
@@ -192,7 +192,7 @@ struct CbitExtractBitOpConversionPattern
 
            "expect operand of CBitType for quir.cbit_extractbit");
 
-    auto bitWidth = getCbitOrIntBitWidth(bitOp.operand().getType());
+    auto bitWidth = getCBitOrIntBitWidth(bitOp.operand().getType());
 
     if (bitWidth == 1) {
       // just pass-through single bit values
@@ -220,20 +220,20 @@ void populateCBitOperationsPatterns(RewritePatternSet &patterns,
   auto *context = patterns.getContext();
   assert(context);
 
-  patterns.insert<BinaryCBitCBitOpConversionPattern<mlir::quir::Cbit_AndOp,
+  patterns.insert<BinaryCBitCBitOpConversionPattern<mlir::quir::CBit_AndOp,
                                                     mlir::LLVM::AndOp>>(
       context, typeConverter);
-  patterns.insert<BinaryCBitCBitOpConversionPattern<mlir::quir::Cbit_OrOp,
+  patterns.insert<BinaryCBitCBitOpConversionPattern<mlir::quir::CBit_OrOp,
                                                     mlir::LLVM::OrOp>>(
       context, typeConverter);
-  patterns.insert<BinaryCBitCBitOpConversionPattern<mlir::quir::Cbit_XorOp,
+  patterns.insert<BinaryCBitCBitOpConversionPattern<mlir::quir::CBit_XorOp,
                                                     mlir::LLVM::XOrOp>>(
       context, typeConverter);
-  patterns.insert<CbitAssignBitOpConversionPattern>(context, typeConverter);
+  patterns.insert<CBitAssignBitOpConversionPattern>(context, typeConverter);
 
   if (includeBitmapOperationPatterns) {
-    patterns.insert<CbitExtractBitOpConversionPattern>(context, typeConverter);
-    patterns.insert<CbitInsertBitOpConversionPattern>(context, typeConverter);
+    patterns.insert<CBitExtractBitOpConversionPattern>(context, typeConverter);
+    patterns.insert<CBitInsertBitOpConversionPattern>(context, typeConverter);
   }
 }
 

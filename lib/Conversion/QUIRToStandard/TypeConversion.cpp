@@ -18,7 +18,7 @@
 namespace mlir {
 
 namespace {
-Optional<Type> convertCbitType(quir::CBitType t) {
+Optional<Type> convertCBitType(quir::CBitType t) {
 
   if (t.getWidth() <= 64)
     return IntegerType::get(t.getContext(), t.getWidth());
@@ -33,7 +33,7 @@ QuirTypeConverter::QuirTypeConverter() {
   addConversion(convertAngleType);
   addSourceMaterialization(angleSourceMaterialization);
 
-  addConversion(convertCbitType);
+  addConversion(convertCBitType);
   addConversion(legalizeIndexType);
 }
 

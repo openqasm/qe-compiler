@@ -197,10 +197,10 @@ struct DumpVariableDominanceInfoPass
         Operation *userOp = use.getUser();
 
         if (mlir::isa<mlir::oq3::AssignVariableOp>(userOp) ||
-            mlir::isa<mlir::quir::AssignCbitBitOp>(userOp))
+            mlir::isa<mlir::quir::AssignCBitBitOp>(userOp))
           varAssignments.push_back(use.getUser());
         else if (mlir::isa<mlir::oq3::UseVariableOp>(userOp) ||
-                 mlir::isa<mlir::quir::Cbit_ExtractBitOp>(userOp))
+                 mlir::isa<mlir::quir::CBit_ExtractBitOp>(userOp))
           varUses.push_back(userOp);
       }
 
