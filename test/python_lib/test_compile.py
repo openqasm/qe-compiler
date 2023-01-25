@@ -16,6 +16,7 @@ from qss_compiler import (
     InputType,
     OutputType,
     QSSCompilationFailure,
+    Severity,
 )
 
 
@@ -102,6 +103,12 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
             output_type=OutputType.MLIR,
             output_file=None,
         )
-    assert compfail.value.severity == "Error"
-    assert compfail.value.error_category == ErrorCategory.OpenQASM3ParseFailure.name
-    assert compfail.value.error_label == "OpenQASM 3 parse error"
+    assert hasattr(compfail.value, "diagnostics")
+    diags = compfail.value.diagnostics
+    assert any(
+        diag.severity == Severity.Error
+        and diag.category == ErrorCategory.OpenQASM3ParseFailure
+        and "unknown version number" in diag.message
+        for diag in diags
+    )
+    assert any("OpenQASM 3 parse error" in str(diag) for diag in diags)

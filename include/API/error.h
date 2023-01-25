@@ -17,6 +17,7 @@
 
 #include <functional>
 #include <string>
+#include <string_view>
 
 namespace qssc {
 
@@ -33,19 +34,19 @@ enum class Severity {
 };
 
 struct Diagnostic {
-  static std::string getErrorForCategory(qssc::ErrorCategory category);
+  static std::string_view getErrorForCategory(qssc::ErrorCategory category);
 
 public:
   Severity severity;
   ErrorCategory category;
-  std::string error;   /// a brief description of the error
   std::string message; /// a detailed and actionable error message
 
   Diagnostic(Severity severity_, ErrorCategory category_,
              std::string &&message_)
       : severity(severity_), category(category_), message(std::move(message_)) {
-    error = getErrorForCategory(category_);
   }
+
+  std::string toString() const;
 };
 
 using DiagnosticCallback = std::function<void(const Diagnostic &)>;

@@ -577,17 +577,3 @@ llvm::Error qssc::bindParameters(
 
   return llvm::Error::success();
 }
-
-std::string
-qssc::Diagnostic::getErrorForCategory(qssc::ErrorCategory category) {
-  using namespace qssc;
-  switch (category) {
-  case ErrorCategory::OpenQASM3ParseFailure:
-    return "OpenQASM 3 parse error";
-
-  case ErrorCategory::UncategorizedError:
-    return "Compilation failure";
-  }
-
-  llvm_unreachable("unhandled category");
-}

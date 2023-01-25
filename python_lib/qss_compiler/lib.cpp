@@ -47,6 +47,7 @@
 
 #include "API/api.h"
 
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
@@ -62,7 +63,8 @@
 /// Call into the qss-compiler via an interface to qss-compile's command line
 /// argument.
 pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
-                                   bool outputAsStr) {
+                                   bool outputAsStr,
+                                   qssc::DiagnosticCallback onDiagnostic) {
   std::string outputStr("");
 
 #ifndef NDEBUG
@@ -79,25 +81,16 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
     argv.push_back(str.c_str());
   argv.push_back(nullptr);
 
-  std::vector<qssc::Diagnostic> diagnostics;
-  qssc::DiagnosticCallback diagnosticCallback{
-      [&diagnostics](qssc::Diagnostic const &diag) {
-        diagnostics.push_back(diag);
-      }};
-
-  int status =
-      qssc::compile(args.size(), argv.data(),
-                    outputAsStr ? &outputStr : nullptr, {diagnosticCallback});
+  int status = qssc::compile(args.size(), argv.data(),
+                             outputAsStr ? &outputStr : nullptr,
+                             std::move(onDiagnostic));
   bool success = status == 0;
 
 #ifndef NDEBUG
   std::cerr << "Compile " << (success ? "successful" : "failed") << std::endl;
 #endif
 
-  if (success)
-    return pybind11::make_tuple(success, pybind11::bytes(outputStr),
-                                /* diagnostic */ pybind11::none());
-  return pybind11::make_tuple(success, pybind11::bytes(outputStr), diagnostics);
+  return pybind11::make_tuple(success, pybind11::bytes(outputStr));
 }
 
 pybind11::tuple
@@ -153,8 +146,8 @@ PYBIND11_MODULE(py_qssc, m) {
   pybind11::class_<qssc::Diagnostic>(m, "Diagnostic")
       .def_readonly("severity", &qssc::Diagnostic::severity)
       .def_readonly("category", &qssc::Diagnostic::category)
-      .def_readonly("error", &qssc::Diagnostic::error)
       .def_readonly("message", &qssc::Diagnostic::message)
+      .def("__str__", &qssc::Diagnostic::toString)
       .def(pybind11::pickle(
           [](const qssc::Diagnostic &d) {
             // __getstate__ serializes the C++ object into a tuple

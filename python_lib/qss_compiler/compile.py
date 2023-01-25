@@ -48,9 +48,9 @@ import multiprocessing as mp
 from multiprocessing import connection
 from os import environ as os_environ
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
-from .py_qssc import _compile_with_args, Diagnostic, ErrorCategory, Severity
+from .py_qssc import _compile_with_args, Diagnostic
 
 
 # Note that we require a complete process spawn for the compiler to avoid
@@ -68,29 +68,13 @@ class QSSCompilerError(Exception):
 class QSSCompilationFailure(Exception):
     """Raised on compilation failure."""
 
-    def __init__(
-        self,
-        severity,
-        error_category,
-        error_label,
-        message,
-    ):
-        self.severity = severity
-        self.error_category = error_category
-        self.error_label = error_label
+    def __init__(self, message: str, diagnostics: Optional[List[Diagnostic]] = None):
         self.message = message
+        self.diagnostics = [] if diagnostics is None else diagnostics
 
-    def get_severity(self):
-        return self.severity
+    def __str__(self):
 
-    def get_error_category(self):
-        return self.error_category
-
-    def get_error_label(self):
-        return self.error_label
-
-    def get_message(self):
-        return self.message
+        return "\n".join([self.message, "\n".join([str(diag) for diag in self.diagnostics])])
 
 
 class InputType(Enum):
@@ -146,6 +130,8 @@ class CompileOptions:
     resulting in args being set twice, eg., `num_shots` and `--num-shots`.
     This will result in an error.
     """
+    on_diagnostic: Optional[Callable[[Diagnostic], Any]] = None
+    """Optional callback for processing diagnostic messages from the compiler."""
 
     def prepare_compiler_option_args(self) -> List[str]:
         """Prepare the compiler option arguments from this dataclass."""
@@ -203,18 +189,16 @@ class _CompilerStatus:
     """Internal compiler result status dataclass."""
 
     success: bool
-    diagnostics: List[Diagnostic]
 
 
 def _compile_child_backend(
     execution: _CompilerExecution,
+    on_diagnostic: Callable[[Diagnostic], Any],
 ) -> Tuple[_CompilerStatus, Union[bytes, None]]:
     # TODO: want a corresponding C++ interface to avoid overhead
 
     options = execution.options
-
     args = execution.prepare_compiler_args()
-
     output_as_return = False if options.output_file else True
 
     # The qss-compiler expects the path to static resources in the environment
@@ -225,9 +209,9 @@ def _compile_child_backend(
     with importlib_resources.path("qss_compiler", "_version.py") as version_py_path:
         resources_path = version_py_path.parent / "resources"
         os_environ["QSSC_RESOURCES"] = str(resources_path)
-        success, output, diagnostics = _compile_with_args(args, output_as_return)
+        success, output = _compile_with_args(args, output_as_return, on_diagnostic)
 
-    status = _CompilerStatus(success, diagnostics)
+    status = _CompilerStatus(success)
     if output_as_return:
         return status, output
     else:
@@ -236,7 +220,11 @@ def _compile_child_backend(
 
 def _compile_child_runner(conn: connection.Connection) -> None:
     execution = conn.recv()
-    status, output = _compile_child_backend(execution)
+
+    def on_diagnostic(diag):
+        conn.send(diag)
+
+    status, output = _compile_child_backend(execution, on_diagnostic)
     conn.send(status)
     if output is not None:
         conn.send_bytes(output)
@@ -264,8 +252,28 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         # exits and closes its end of the pipe.
         child_side.close()
 
+        success = False
+        # when no callback was provided, collect diagnostics and return in case of error
+        diagnostics = []
         try:
-            status = parent_side.recv()
+            while True:
+                received = parent_side.recv()
+
+                if isinstance(received, Diagnostic):
+                    if execution.options.on_diagnostic:
+                        execution.options.on_diagnostic(received)
+                    else:
+                        diagnostics.append(received)
+                elif isinstance(received, _CompilerStatus):
+                    success = received.success
+                    break
+                else:
+                    childproc.kill()
+                    childproc.join()
+                    raise QSSCompilerError(
+                        "compile process delivered unexpected object instead of status or "
+                        "diagnostics."
+                    )
 
             if options.output_file is None:
                 # return compilation result via IPC instead of in a file.
@@ -288,29 +296,8 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                 )
             )
 
-        if not status.success:
-            if not hasattr(status, "diagnostics"):
-                raise QSSCompilerError(
-                    "Compile process indicated failure but failed to return diagnostics"
-                    " information in the status object. That points to inconsistenties"
-                    " in the Python interface code between calling process and"
-                    " backend/compile process."
-                )
-
-            if len(status.diagnostics) == 0:
-                raise QSSCompilationFailure(
-                    Severity.Error.name,
-                    ErrorCategory.UncategorizedError.name,
-                    "Compilation failure",
-                    "Compilation failure. No detailed messages available.",
-                )
-
-            # For now, report the first diagnostic as an exception
-            # (tbd in followup PRs, pass along all diagnostics and enable proper formatting)
-            diag = status.diagnostics[0]
-            raise QSSCompilationFailure(
-                diag.severity.name, diag.category.name, diag.error, diag.message
-            )
+        if not success:
+            raise QSSCompilationFailure("Failure during compilation", diagnostics)
 
     except mp.ProcessError as e:
         raise QSSCompilerError(

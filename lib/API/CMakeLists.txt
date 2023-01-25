@@ -5,7 +5,7 @@
 # that they have been altered from the originals.
 
 
-add_library(QSSCAPI api.cpp)
+add_library(QSSCAPI api.cpp error.cpp)
 
 set(LIBS
         qasm::qasm
