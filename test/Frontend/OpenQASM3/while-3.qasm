@@ -2,10 +2,6 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-gate h q {
-    U(1.57079632679, 0.0, 3.14159265359) q;
-}
-
 qubit $0;
 int i = 1;
 int j = 0;
@@ -43,7 +39,7 @@ while (i != 0) {
         // MLIR:         quir.assign_variable @j : i32 = %c0_i32_4
         // MLIR:         scf.yield
         // MLIR:     }
-        h $0;
+        U(1.57079632679, 0.0, 3.14159265359) $0;
         // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=j, bits=32), right=IntNode(signed=true, value=0, bits=32))
         j = 0;
     }
