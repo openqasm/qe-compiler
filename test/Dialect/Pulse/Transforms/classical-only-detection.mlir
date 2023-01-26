@@ -12,7 +12,7 @@ func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir
     // CHECK: func @subroutine1
     // CHECK: attributes {quir.classicalOnly = false} {
     %zero = arith.constant 0 : index
-    %ang3 = quir.angle_add %ang1, %ang2 : !quir.angle<20>
+    %ang3 = oq3.angle_add %ang1, %ang2 : !quir.angle<20>
     %ang4 = quir.constant #quir.angle<0.9 : !quir.angle<20>>
     %f1 = "quir.cast"(%ang3) : (!quir.angle<20>) -> f64
     %f2 = "quir.cast"(%ang4) : (!quir.angle<20>) -> f64

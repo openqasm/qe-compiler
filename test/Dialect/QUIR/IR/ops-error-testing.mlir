@@ -3,8 +3,8 @@
 // -----
 
 quir.circuit @circuit1 (%q0 : !quir.qubit<1>, %omega1: !quir.angle<32>, %omega2: !quir.angle<32>) -> i1 {
-	// expected-error@+1 {{'quir.angle_add' op is classical and should not be inside a circuit.}}
-	%omega3 = quir.angle_add %omega1, %omega2 : !quir.angle<32>
+	// expected-error@+1 {{'oq3.angle_add' op is classical and should not be inside a circuit.}}
+	%omega3 = oq3.angle_add %omega1, %omega2 : !quir.angle<32>
 	quir.call_gate @rx(%q0, %omega3) : (!quir.qubit<1>, !quir.angle<32>) -> ()
 	%res0 = "quir.measure"(%q0) : (!quir.qubit<1>) -> i1
 	quir.return %res0 : i1
@@ -55,8 +55,8 @@ quir.circuit @circuit5 (%q0 : !quir.qubit<1>, %q1 : !quir.qubit<1>, %omega1: !qu
 // -----
 
 quir.circuit @circuit6 (%q0 : !quir.qubit<1>, %omega1: !quir.angle<32>, %omega2: !quir.angle<32>) -> i1 {
-	// expected-error@+1 {{'quir.angle_cmp' op is classical and should not be inside a circuit.}}
-	%b0 = quir.angle_cmp {predicate = "eq"} %omega1, %omega2 : !quir.angle<32> -> i1
+	// expected-error@+1 {{'oq3.angle_cmp' op is classical and should not be inside a circuit.}}
+	%b0 = oq3.angle_cmp {predicate = "eq"} %omega1, %omega2 : !quir.angle<32> -> i1
 	%res0 = "quir.measure"(%q0) : (!quir.qubit<1>) -> i1
 	quir.return %res0 : i1
 }

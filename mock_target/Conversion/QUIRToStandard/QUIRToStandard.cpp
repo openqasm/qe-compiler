@@ -17,6 +17,7 @@
 #include "MockUtils.h"
 
 #include "Conversion/QUIRToStandard/TypeConversion.h"
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -195,16 +196,16 @@ void MockQUIRToStdPass::runOnOperation() {
                                                          typeConverter);
   patterns.insert<ReturnConversionPat>(context, typeConverter);
   patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_AddOp, mlir::arith::AddIOp>>(
+      .insert<AngleBinOpConversionPat<oq3::AngleAddOp, mlir::arith::AddIOp>>(
           context, typeConverter);
   patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_SubOp, mlir::arith::SubIOp>>(
+      .insert<AngleBinOpConversionPat<oq3::AngleSubOp, mlir::arith::SubIOp>>(
           context, typeConverter);
   patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_MulOp, mlir::arith::MulIOp>>(
+      .insert<AngleBinOpConversionPat<oq3::AngleMulOp, mlir::arith::MulIOp>>(
           context, typeConverter);
   patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_DivOp, mlir::arith::DivSIOp>>(
+      .insert<AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>>(
           context, typeConverter);
 
   // With the target and rewrite patterns defined, we can now attempt the

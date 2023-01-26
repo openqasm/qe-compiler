@@ -26,14 +26,14 @@ module {
     // CHECK: %{{.*}} = quir.constant #quir.angle<1.000000e-01 : !quir.angle<20>>
     %theta = quir.constant #quir.angle<0.1 : !quir.angle<20>>
     %phi = quir.constant #quir.angle<0.2 : !quir.angle<20>>
-    // CHECK: %{{.*}} = quir.angle_add %{{.*}}, %{{.*}} : !quir.angle<20>
-    %add_res = quir.angle_add %theta, %phi : !quir.angle<20>
-    // CHECK: %{{.*}} = quir.angle_sub %{{.*}}, %{{.*}} : !quir.angle<20>
-    %sub_res = quir.angle_sub %theta, %phi : !quir.angle<20>
-    // CHECK: %{{.*}} = quir.angle_mul %{{.*}}, %{{.*}} : !quir.angle<20>
-    %mul_res = quir.angle_mul %theta, %phi : !quir.angle<20>
-    // CHECK: %{{.*}} = quir.angle_div %{{.*}}, %{{.*}} : !quir.angle<20>
-    %div_res = quir.angle_div %theta, %phi : !quir.angle<20>
+    // CHECK: %{{.*}} = oq3.angle_add %{{.*}}, %{{.*}} : !quir.angle<20>
+    %add_res = oq3.angle_add %theta, %phi : !quir.angle<20>
+    // CHECK: %{{.*}} = oq3.angle_sub %{{.*}}, %{{.*}} : !quir.angle<20>
+    %sub_res = oq3.angle_sub %theta, %phi : !quir.angle<20>
+    // CHECK: %{{.*}} = oq3.angle_mul %{{.*}}, %{{.*}} : !quir.angle<20>
+    %mul_res = oq3.angle_mul %theta, %phi : !quir.angle<20>
+    // CHECK: %{{.*}} = oq3.angle_div %{{.*}}, %{{.*}} : !quir.angle<20>
+    %div_res = oq3.angle_div %theta, %phi : !quir.angle<20>
 
     // CHECK: %{{.*}} = quir.declare_duration {value = "10ns"} : !quir.duration
     %l1 = quir.declare_duration {value = "10ns"} : !quir.duration

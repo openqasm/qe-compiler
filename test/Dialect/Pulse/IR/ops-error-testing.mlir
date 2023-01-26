@@ -3,8 +3,8 @@
 // -----
 
 pulse.sequence @sequence0 (%omega1: !quir.angle<32>, %omega2: !quir.angle<32>) {
-	// expected-error@+1 {{'quir.angle_add' op is not valid within a real-time pulse sequence.}}
-	%omega3 = quir.angle_add %omega1, %omega2 : !quir.angle<32>
+	// expected-error@+1 {{'oq3.angle_add' op is not valid within a real-time pulse sequence.}}
+	%omega3 = oq3.angle_add %omega1, %omega2 : !quir.angle<32>
 	pulse.return
 }
 

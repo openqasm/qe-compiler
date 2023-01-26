@@ -4,7 +4,7 @@ func private @kernel1 (%ca1 : memref<1xi1>, %ca2 : memref<1xi1>, %ca3 : memref<1
 func private @kernel2 (memref<?xi1>) -> memref<1xi1>
 func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) {
     %zero = arith.constant 0 : index
-    %ang3 = quir.angle_add %ang1, %ang2 : !quir.angle<20>
+    %ang3 = oq3.angle_add %ang1, %ang2 : !quir.angle<20>
     %ang4 = quir.constant #quir.angle<0.9 : !quir.angle<20>>
     %f1 = "quir.cast"(%ang3) : (!quir.angle<20>) -> f64
     %f2 = "quir.cast"(%ang4) : (!quir.angle<20>) -> f64
@@ -69,7 +69,7 @@ func @defcalRX_q0_api2(%qa1 : !quir.qubit<1> {quir.qubit_id = 0 : i32}, %theta :
 %q2 = quir.declare_qubit {id = 5 : i32} : !quir.qubit<1>
 
 %zero = arith.constant 0 : index
-%ang3 = quir.angle_add %ang1, %ang2 : !quir.angle<20>
+%ang3 = oq3.angle_add %ang1, %ang2 : !quir.angle<20>
 %ang4 = quir.constant #quir.angle<0.9 : !quir.angle<20>>
 %f1 = "quir.cast"(%ang3) : (!quir.angle<20>) -> f64
 %f2 = "quir.cast"(%ang4) : (!quir.angle<20>) -> f64
@@ -138,10 +138,10 @@ quir.reset %qr1 : !quir.qubit<1>
 //   cphase(power*3*pi/8) q, r;
     %power1_angle = "quir.cast"(%power1_iter) : (i3) -> !quir.angle<3>
     %angle_multiplicand = quir.constant #quir.angle<0.375 : !quir.angle<3>>
-    %angleP = quir.angle_mul %power1_angle, %angle_multiplicand : !quir.angle<3>
+    %angleP = oq3.angle_mul %power1_angle, %angle_multiplicand : !quir.angle<3>
     "quir.call_gate"(%qq1, %qr1, %angleP) {callee = @cphase} : (!quir.qubit<1>, !quir.qubit<1>, !quir.angle<3>) -> ()
     %angle_zero = quir.constant #quir.angle<0.0 : !quir.angle<3>>
-    %negC = quir.angle_sub %angle_zero, %angleC_iter : !quir.angle<3>
+    %negC = oq3.angle_sub %angle_zero, %angleC_iter : !quir.angle<3>
 //   phase(-c) q;
 //   h q;
 //   measure q -> c[0];
