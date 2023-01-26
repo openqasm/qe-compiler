@@ -268,9 +268,7 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
         auto nextTime = getTimepoint(&op2);
 
         // order by timepoint
-        if (currentTime < nextTime)
-          return true;
-        return false;
+        return currentTime < nextTime;
       }); // blockOps.sort
     }
   }

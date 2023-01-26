@@ -40,10 +40,10 @@ MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
       pulseOp.target().template dyn_cast<BlockArgument>().getArgNumber();
   auto frameOp = callSequenceOp.getOperand(frameArgIndex).getDefiningOp();
 
-  if (!isa<mlir::pulse::MixFrameOp>(frameOp))
-    pulseOp->emitError() << "The target argument is not a MixFrameOp.";
-
   auto mixFrameOp = dyn_cast<mlir::pulse::MixFrameOp>(frameOp);
+
+  if (!mixFrameOp)
+      pulseOp->emitError() << "The target argument is not a MixFrameOp.";
   return mixFrameOp;
 }
 
