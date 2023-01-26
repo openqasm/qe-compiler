@@ -20,7 +20,7 @@
 #include <string>
 
 namespace qssc {
-std::string_view Diagnostic::getErrorForCategory(ErrorCategory category) {
+static std::string_view getErrorForCategory(ErrorCategory category) {
   using namespace qssc;
   switch (category) {
   case ErrorCategory::OpenQASM3ParseFailure:

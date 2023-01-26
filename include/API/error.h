@@ -34,8 +34,6 @@ enum class Severity {
 };
 
 struct Diagnostic {
-  static std::string_view getErrorForCategory(qssc::ErrorCategory category);
-
 public:
   Severity severity;
   ErrorCategory category;
