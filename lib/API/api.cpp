@@ -19,6 +19,7 @@
 #include "mlir/Parser.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/FileUtilities.h"
+#include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/MC/TargetRegistry.h"
@@ -280,6 +281,7 @@ auto registerPassManagerCLOpts() {
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
+  mlir::registerDefaultTimingManagerCLOptions();
 }
 
 llvm::Error determineInputType() {
@@ -488,6 +490,7 @@ static llvm::Error compile_(int argc, char const **argv,
   // Apply any pass manager command line options.
   mlir::PassManager pm(&context);
   mlir::applyPassManagerCLOptions(pm);
+  mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
   auto errorHandler = [&](const Twine &msg) {
     emitError(UnknownLoc::get(&context)) << msg;
