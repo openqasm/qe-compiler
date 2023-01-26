@@ -104,19 +104,18 @@ llvm::Error qssc::frontend::openqasm3::parse(
         llvm::errs() << level << " while parsing OpenQASM 3 input\n"
                      << Exp << " " << Msg << "\n";
 
-        if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
-            DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
-          if (diagnosticCallbackPerThread) {
-            qssc::Diagnostic diag{diagLevel,
-                                  qssc::ErrorCategory::OpenQASM3ParseFailure,
-                                  Exp + "\n" + Msg};
-            (*diagnosticCallbackPerThread)(diag);
-          }
+        if (diagnosticCallbackPerThread) {
+          qssc::Diagnostic diag{diagLevel,
+                                qssc::ErrorCategory::OpenQASM3ParseFailure,
+                                Exp + "\n" + Msg};
+          (*diagnosticCallbackPerThread)(diag);
+        }
 
+        if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
+            DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE)
           // give up parsing after errors right away
           // TODO: update to recent qss-qasm to support continuing
           throw std::runtime_error("Failure parsing");
-        }
       });
 
   try {
