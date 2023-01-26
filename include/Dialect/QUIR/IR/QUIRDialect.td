@@ -56,6 +56,5 @@ include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
 include "Dialect/QUIR/IR/QUIRAttributes.td"
 include "Dialect/QUIR/IR/QUIRTraits.td"
 include "Dialect/QUIR/IR/QUIROps.td"
-include "Dialect/QUIR/IR/QUIRMathOps.td"
 
 #endif // QUIR_DIALECT

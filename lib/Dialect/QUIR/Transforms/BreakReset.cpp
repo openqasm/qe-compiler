@@ -15,6 +15,7 @@
 
 #include "Dialect/QUIR/Transforms/BreakReset.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
@@ -26,6 +27,7 @@
 #include <unordered_set>
 
 using namespace mlir;
+using namespace mlir::oq3;
 using namespace mlir::quir;
 
 namespace {

@@ -16,6 +16,7 @@
 #define DIALECT_OQ3_OQ3OPS_H_
 
 #include "Dialect/OQ3/IR/OQ3Types.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 
 #include "mlir/IR/BuiltinOps.h"
 

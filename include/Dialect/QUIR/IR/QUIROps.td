@@ -97,25 +97,7 @@ def QUIR_DeclareQubitOp : QUIR_Op<"declare_qubit", [NonInterferingNonDeadSideEff
     }];
 }
 
-def QUIR_DeclareDurationOp : QUIR_Op<"declare_duration", [NoSideEffect]> {
-    let summary = "Declare a new duration.";
-    let description = [{
-        The `quir.declare_duration` operation creates a new OpenQASM3.0 duration, representing a duration of time.
-
-        Example:
-        ```mlir
-        %dur = quir.declare_duration {value = "10ns"} : !quir.duration
-        ```
-    }];
-
-    let arguments = (ins StrAttr:$value);
-    let results = (outs QUIR_DurationType:$out);
-
-    let assemblyFormat = [{
-        attr-dict `:` type($out)
-    }];
-}
-
+////// TODO: -> OQ3
 def QUIR_DeclareStretchOp : QUIR_Op<"declare_stretch", [NoSideEffect]> {
     let summary = "Declare a new stretch.";
     let description = [{
@@ -575,7 +557,7 @@ def QUIR_DelayOp : QUIR_Op<"delay", [
 
         Example:
         ```mlir
-        %dur1 = quir.declare_duration {value = "10ns"} : !quir.duration
+        %dur1 = oq3.declare_duration {value = "10ns"} : !quir.duration
         "quir.delay"(%dur1, %q1_1) : (!quir.duration, !quir.qubit)
         ```
     }];
