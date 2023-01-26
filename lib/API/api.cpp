@@ -48,7 +48,6 @@
 
 #include <filesystem>
 
-
 using namespace mlir;
 
 // The space below at the front of the string causes this category to be printed
