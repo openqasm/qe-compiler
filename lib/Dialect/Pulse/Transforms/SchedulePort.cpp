@@ -172,7 +172,7 @@ SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
   for (Region &region : sequenceOp->getRegions()) {
     for (Block &block : region.getBlocks()) {
       for (Operation &op : block.getOperations()) {
-        if (op.hasTrait<mlir::pulse::HasTarget>()) {
+        if (op.hasTrait<mlir::pulse::HasTargetFrame>()) {
           Value target;
           // get mixed_frames
           if (isa<DelayOp>(op))
@@ -260,8 +260,8 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
         if (isa<arith::ConstantIntOp>(op1) && !isa<arith::ConstantIntOp>(op2))
           return true;
 
-        if (!op1.hasTrait<mlir::pulse::HasTarget>() ||
-            !op2.hasTrait<mlir::pulse::HasTarget>())
+        if (!op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
+            !op2.hasTrait<mlir::pulse::HasTargetFrame>())
           return false;
 
         auto currentTime = getTimepoint(&op1);

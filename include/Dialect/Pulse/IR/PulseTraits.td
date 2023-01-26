@@ -30,7 +30,7 @@ def SequenceRequired : NativeOpTrait<"SequenceRequired">{
 }
 
 /// Operation receives a target argument
-def HasTarget : NativeOpTrait<"HasTarget">{
+def HasTargetFrame : NativeOpTrait<"HasTargetFrame">{
     let cppNamespace= "::mlir::pulse";
 }
 

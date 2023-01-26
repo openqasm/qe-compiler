@@ -33,9 +33,6 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
 template <typename PulseOpTy>
 MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
 
-  if (!pulseOp.template hasTrait<mlir::pulse::HasTarget>())
-    pulseOp->emitError() << "The pulseOp does not have a frame argument.";
-
   auto frameArgIndex =
       pulseOp.target().template dyn_cast<BlockArgument>().getArgNumber();
   auto frameOp = callSequenceOp.getOperand(frameArgIndex).getDefiningOp();
@@ -43,7 +40,7 @@ MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
   auto mixFrameOp = dyn_cast<mlir::pulse::MixFrameOp>(frameOp);
 
   if (!mixFrameOp)
-      pulseOp->emitError() << "The target argument is not a MixFrameOp.";
+    pulseOp->emitError() << "The target argument is not a MixFrameOp.";
   return mixFrameOp;
 }
 

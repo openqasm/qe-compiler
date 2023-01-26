@@ -308,7 +308,7 @@ def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAll
     }];
 }
 
-def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTarget]> {
+def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame]> {
     let summary = "Play a waveform on a given frame.";
     let description = [{
         The `pulse.play` operation plays a waveform on a frame,
@@ -353,7 +353,7 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTarget]> {
     }];
 }
 
-def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTarget]> {
+def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTargetFrame]> {
     let summary = "Set a frequency of a frame.";
     let description = [{
         The `pulse.set_frequency` operation sets the frequency of a frame.
@@ -384,7 +384,7 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTarge
     }];
 }
 
-def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasTarget]> {
+def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasTargetFrame]> {
     let summary = "Shift the frequency of a frame.";
     let description = [{
         The `pulse.shift_frequency` operation shifts the frequency of a frame.
@@ -415,7 +415,7 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasT
     }];
 }
 
-def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTarget]> {
+def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]> {
     let summary = "Set the phase of a frame.";
     let description = [{
         The `pulse.set_phase` operation sets the phase of a frame.
@@ -446,7 +446,7 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTarget]> {
     }];
 }
 
-def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTarget]> {
+def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFrame]> {
     let summary = "Shift a phase of a frame.";
     let description = [{
         The `pulse.shift_phase` operation shifts the phase of a frame.
@@ -477,7 +477,7 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTarget]> 
     }];
 }
 
-def Pulse_SetAmplitudeOp : Pulse_Op<"set_amplitude", [SequenceRequired, HasTarget]> {
+def Pulse_SetAmplitudeOp : Pulse_Op<"set_amplitude", [SequenceRequired, HasTargetFrame]> {
 let summary = "Set a scaling factor for pulses of a frame.";
     let description = [{
         The `pulse.set_amplitude` operation sets a scaling factor for pulses of a frame.
@@ -505,7 +505,7 @@ let summary = "Set a scaling factor for pulses of a frame.";
     }];
 }
 
-def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTarget]> {
+def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
     let summary = "Capture the incoming port and use a kernel for integration.";
     let description = [{
         The `pulse.capture` operation captures the incoming data on a frame using a kernel.
@@ -530,7 +530,7 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTarget]> {
     }];
 }
 
-def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTarget]> {
+def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
     let summary = "Delay by an integer duration of samples on a set of pulse frames.";
     let description = [{
         The `pulse.delay` operation represents a delay operation of integer length on a set of pulse

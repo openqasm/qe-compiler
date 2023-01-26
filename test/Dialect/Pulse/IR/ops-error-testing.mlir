@@ -70,7 +70,7 @@ pulse.sequence @sequence6 () {
 
 // verify MLIR kind error is reported when a port is passed to pulse.play rather than a frame
 pulse.sequence @sequence7 (%port : !pulse.port, %waveform: !pulse.waveform) {
-	// expected-error@+1 {{'pulse.play' op operand #0 must be Frame of reference for interacting with qubits. or A frame associated with a port for interacting with qubits., but got '!pulse.port'}}
+	// expected-error@+1 {{'pulse.play' op operand #0 must be a frame of reference for interacting with qubits or a frame associated with a port for interacting with qubits, but got '!pulse.port'}}
     pulse.play(%port, %waveform) : (!pulse.port, !pulse.waveform)
 	pulse.return
 }
