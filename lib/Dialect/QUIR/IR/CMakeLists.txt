@@ -16,7 +16,6 @@ add_mlir_dialect_library(MLIRQUIRDialect
 
         DEPENDS
         MLIRQUIRIncGen
-        MLIRQUIRPatternsIncGen
 
 	LINK_LIBS PUBLIC
 	MLIRIR
