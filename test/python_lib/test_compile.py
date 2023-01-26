@@ -103,7 +103,9 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
             output_type=OutputType.MLIR,
             output_file=None,
         )
+
     assert hasattr(compfail.value, "diagnostics")
+
     diags = compfail.value.diagnostics
     assert any(
         diag.severity == Severity.Error
@@ -112,3 +114,7 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
         for diag in diags
     )
     assert any("OpenQASM 3 parse error" in str(diag) for diag in diags)
+
+    # check string representation of the exception to contain diagnostic messages
+    assert "OpenQASM 3 parse error" in str(compfail.value)
+    assert "unknown version number" in str(compfail.value)
