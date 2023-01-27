@@ -19,6 +19,7 @@
 #include "Dialect/Pulse/Transforms/MergeDelays.h"
 #include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
 #include "Dialect/Pulse/Transforms/SchedulePort.h"
+#include "Dialect/Pulse/Transforms/SchedulePortModule.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Transforms/Passes.h"

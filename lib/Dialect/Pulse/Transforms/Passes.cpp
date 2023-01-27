@@ -36,6 +36,7 @@ void registerPulsePasses() {
   PassRegistration<MergeDelayPass>();
   PassRegistration<RemoveUnusedArgumentsPass>();
   PassRegistration<SchedulePortPass>();
+  PassRegistration<SchedulePortModulePass>();
   PassRegistration<ClassicalOnlyDetectionPass>();
 }
 

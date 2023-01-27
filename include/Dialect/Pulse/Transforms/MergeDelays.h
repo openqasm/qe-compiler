@@ -17,12 +17,14 @@
 #ifndef PULSE_MERGE_DELAYS_H
 #define PULSE_MERGE_DELAYS_H
 
+#include "Dialect/Pulse/IR/PulseOps.h"
+
 #include "mlir/Pass/Pass.h"
 
 namespace mlir::pulse {
 
 class MergeDelayPass
-    : public PassWrapper<MergeDelayPass, OperationPass<ModuleOp>> {
+    : public PassWrapper<MergeDelayPass, OperationPass<SequenceOp>> {
 public:
   void runOnOperation() override;
 
