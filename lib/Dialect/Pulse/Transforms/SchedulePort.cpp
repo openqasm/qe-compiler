@@ -56,6 +56,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/SchedulePort.h"
+#include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/Pulse/Utils/Utils.h"
 
 #include "llvm/Support/Debug.h"
@@ -76,40 +77,27 @@ uint SchedulePortPass::processCall(Operation *module,
   // look for sequence def match
   auto callee = callSequenceOp.getCallee();
   Operation *findOp = SymbolTable::lookupSymbolIn(module, callee);
-  uint calleeDuration = processCallee(module, callSequenceOp, findOp);
+  //uint calleeDuration = processCallee(module, callSequenceOp, findOp);
 
   INDENT_DEBUG("====  processCall - end  ====================\n");
   INDENT_DUMP(callSequenceOp.dump());
   INDENT_DEBUG("=============================================\n");
-  return calleeDuration;
+  return 0;//calleeDuration;
 }
 
-uint SchedulePortPass::processCallee(Operation *module,
-                                     CallSequenceOp &callSequenceOp,
-                                     Operation *findOp) {
+uint SchedulePortPass::processCallee(SequenceOp sequenceOp) {
 
   // TODO: Consider returning overall length of sequence to help schedule
   // across sequences
 
-  auto sequenceOp = dyn_cast<SequenceOp>(findOp);
-  if (!sequenceOp)
-    return 0;
-
   mlir::OpBuilder builder(sequenceOp);
 
   uint numMixedFrames = 0;
-  auto mixedFrameSequences =
-      buildMixedFrameMap(callSequenceOp, sequenceOp, numMixedFrames);
-
-  if (numMixedFrames < 2) {
-    // if there is less than 2 mixed frames in this sequence then there is
-    // no reason to change the schedule of the sequence
-    return 0;
-  }
+  auto mixedFrameSequences = buildMixedFrameMap(sequenceOp, numMixedFrames);
 
   uint maxTime = 0;
 
-  addTimepoints(callSequenceOp, builder, mixedFrameSequences, maxTime);
+  addTimepoints(builder, mixedFrameSequences, maxTime);
 
   // remove all DelayOps - they are no longer required now that we have
   // timepoints
@@ -137,8 +125,7 @@ uint SchedulePortPass::processCallee(Operation *module,
 }
 
 SchedulePortPass::mixedFrameMap_t
-SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
-                                     SequenceOp &sequenceOp,
+SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
                                      uint &numMixedFrames) {
 
   // build a map between mixed frame (as represented by the arg index)
@@ -149,8 +136,8 @@ SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
   for (auto const &argumentResult :
        llvm::enumerate(sequenceOp.getArguments())) {
     auto index = argumentResult.index();
-    auto *definingOp = callSequenceOp.getOperand(index).getDefiningOp();
-    if (isa<MixFrameOp>(definingOp)) {
+    auto argumentType = argumentResult.value().getType();
+    if (argumentType.isa<MixedFrameType>()) {
       numMixedFrames++;
       mixedFrameSequences[index] = {};
     }
@@ -201,8 +188,7 @@ SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
   return mixedFrameSequences;
 } // buildMixedFrameMap
 
-void SchedulePortPass::addTimepoints(CallSequenceOp &callSequenceOp,
-                                     mlir::OpBuilder &builder,
+void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
                                      mixedFrameMap_t &mixedFrameSequences,
                                      uint &maxTime) {
 
@@ -231,12 +217,12 @@ void SchedulePortPass::addTimepoints(CallSequenceOp &callSequenceOp,
       if (auto castOp = dyn_cast<DelayOp>(op)) {
         currentTimepoint += castOp.getDuration();
       } else if (auto castOp = dyn_cast<PlayOp>(op)) {
-        auto duration = castOp.getDuration(callSequenceOp);
-        if (auto err = duration.takeError()) {
-          op->emitOpError() << toString(std::move(err));
-          signalPassFailure();
-        }
-        currentTimepoint += duration.get();
+        // auto duration = 10000; // castOp.getDuration(callSequenceOp);
+        // if (auto err = duration.takeError()) {
+        //   op->emitOpError() << toString(std::move(err));
+        //   signalPassFailure();
+        // }
+        currentTimepoint += 100000; ///duration.get();
       }
     }
     if (currentTimepoint > maxTime)
@@ -274,11 +260,19 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
 
 void SchedulePortPass::runOnOperation() {
 
-  Operation *module = getOperation();
+  //Operation *module = getOperation();
+
+  // auto &pulseSequenceAnalysis = getAnalysis<PulseSequenceAnalysis>();
+
+  // auto sequenceOp = op.getParentOfType<mlir::pulse::SequenceOp>();
+  // auto sequenceStr = sequenceOp.sym_name().str();
+  // auto &argumentsToDuration =
+  //     pulseSequenceAnalysis.argumentToDuration[sequenceStr];
 
   INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
 
-  module->walk([&](CallSequenceOp op) { processCall(module, op); });
+  //module->walk([&](CallSequenceOp op) { processCall(module, op); });
+  processCallee(getOperation());
 
   INDENT_DEBUG("=====  SchedulePortPass - end ===========\n");
 

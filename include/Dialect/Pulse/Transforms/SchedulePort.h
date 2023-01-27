@@ -31,7 +31,7 @@
 namespace mlir::pulse {
 
 class SchedulePortPass
-    : public PassWrapper<SchedulePortPass, OperationPass<ModuleOp>>,
+    : public PassWrapper<SchedulePortPass, OperationPass<SequenceOp>>,
       protected qssc::utils::DebugIndent {
 public:
   void runOnOperation() override;
@@ -45,14 +45,12 @@ private:
   using opQueue_t = std::deque<Operation *>;
 
   uint processCall(Operation *module, CallSequenceOp &callSequenceOp);
-  uint processCallee(Operation *module, CallSequenceOp &callSequenceOp,
-                     Operation *findOp);
+  uint processCallee(SequenceOp sequenceOp);
 
-  mixedFrameMap_t buildMixedFrameMap(CallSequenceOp &callSequenceOp,
-                                     SequenceOp &sequenceOp,
+  mixedFrameMap_t buildMixedFrameMap(SequenceOp &sequenceOp,
                                      uint &numMixedFrames);
 
-  void addTimepoints(CallSequenceOp &callSequenceOp, mlir::OpBuilder &builder,
+  void addTimepoints(mlir::OpBuilder &builder,
                      mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
 
   void sortOpsByTimepoint(SequenceOp &sequenceOp);
