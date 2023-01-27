@@ -24,11 +24,7 @@ jobs:
           version=`python -c "from setuptools_scm import get_version; print(get_version())"`
           echo "QSSC_VERSION=$version" >> $GITHUB_ENV
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
-        working-directory: ./conan
-        run: |
-          conan export ./qasm qss/stable
-          conan export ./llvm/conanfile_llvm.py qss/stable
-          conan export ./llvm/conanfile_clang-tools-extra.py qss/stable
+        run: ./conan_deps.sh
       - name: Build QSS compiler Conan package
         run: |
           conan create . qss/stable --build=missing
