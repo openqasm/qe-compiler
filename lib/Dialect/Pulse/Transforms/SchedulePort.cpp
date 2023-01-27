@@ -115,15 +115,13 @@ uint SchedulePortPass::processCallee(Operation *module,
   // timepoints
   sequenceOp->walk([&](DelayOp op) { op->erase(); });
 
-  sortOpsByTimepoint(sequenceOp);
-
   // clean up
   sequenceOp->walk([&](arith::ConstantOp op) {
     if (op->getUsers().empty())
-      removeList.push_back(op);
+      op->erase();
   });
 
-  removePendingOps();
+  sortOpsByTimepoint(sequenceOp);
 
   // assign timepoint to return
   // TODO: check for a better way to do this with getTerminator or back()
@@ -280,24 +278,12 @@ void SchedulePortPass::runOnOperation() {
 
   INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
 
-  removeList.clear();
-
   module->walk([&](CallSequenceOp op) { processCall(module, op); });
 
   INDENT_DEBUG("=====  SchedulePortPass - end ===========\n");
 
 } // runOnOperation
 
-void SchedulePortPass::removePendingOps() {
-  // remove any ops that were scheduled to be removed above.
-  while (!removeList.empty()) {
-    auto *op = removeList.front();
-    INDENT_DEBUG("Removing ");
-    LLVM_DEBUG(op->dump());
-    removeList.pop_front();
-    op->erase();
-  }
-}
 
 llvm::StringRef SchedulePortPass::getArgument() const {
   return "pulse-schedule-port";

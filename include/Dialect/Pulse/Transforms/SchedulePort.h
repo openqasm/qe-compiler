@@ -44,7 +44,6 @@ private:
   using mixedFrameMap_t = std::map<uint, std::vector<Operation *>>;
   using opQueue_t = std::deque<Operation *>;
 
-  std::deque<Operation *> removeList;
   uint processCall(Operation *module, CallSequenceOp &callSequenceOp);
   uint processCallee(Operation *module, CallSequenceOp &callSequenceOp,
                      Operation *findOp);
@@ -57,7 +56,6 @@ private:
                      mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
 
   void sortOpsByTimepoint(SequenceOp &sequenceOp);
-  void removePendingOps();
 };
 } // namespace mlir::pulse
 
