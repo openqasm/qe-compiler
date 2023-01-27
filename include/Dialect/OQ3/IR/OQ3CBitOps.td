@@ -154,7 +154,7 @@ def OQ3_CBitXorOp : OQ3_CBitBinaryOp<"cbit_xor"> {
 
 // -----
 
-def OQ3_CBitRshiftOp : OQ3_BinaryOp<"cbit_rshift"> {
+def OQ3_CBitRShiftOp : OQ3_BinaryOp<"cbit_rshift"> {
     let summary = "cbit and register logical shift right";
     let description = [{
         The `oq3.cbit_rshift` operation takes one cbit operand and one unsigned operand
@@ -167,7 +167,7 @@ def OQ3_CBitRshiftOp : OQ3_BinaryOp<"cbit_rshift"> {
 
 // -----
 
-def OQ3_CBitLshiftOp : OQ3_BinaryOp<"cbit_lshift"> {
+def OQ3_CBitLShiftOp : OQ3_BinaryOp<"cbit_lshift"> {
     let summary = "cbit and register logical shift left";
     let description = [{
         The `oq3.cbit_lshift` operation takes one cbit operand and one unsigned operand

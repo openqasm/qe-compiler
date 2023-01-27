@@ -92,9 +92,8 @@ struct CBitAssignBitOpConversionPattern
       return failure();
 
     auto oldRegisterValue = rewriter.create<mlir::oq3::UseVariableOp>(
-        loc,
-        /*rewriter.getType<mlir::quir::CBitType>(cbitWidth.getZExtValue())*/
-        rewriter.getIntegerType(cbitWidth.getZExtValue()), op.variable_name());
+        loc, rewriter.getIntegerType(cbitWidth.getZExtValue()),
+        op.variable_name());
 
     auto registerWithInsertedBit = rewriter.create<mlir::oq3::CBitInsertBitOp>(
         loc, oldRegisterValue.getType(), oldRegisterValue,

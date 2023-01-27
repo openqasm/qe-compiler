@@ -509,24 +509,6 @@ def QUIR_MeasureOp : QUIR_Op<"measure", [
     }];
 }
 
-////// TODO: remove
-// def QUIR_CastOp : QUIR_Op<"cast", [NoSideEffect]> {
-//     let summary = "Cast between classical types";
-//     let description = [{
-//         The `quir.cast` operation represents a cast between different classical types, including non-QUIR types.
-
-//         Example:
-//         ```mlir
-//         %ang1 = "quir.cast"(%creg) : (memref<10xi1>) -> !quir.angle<20>
-//         ```
-//     }];
-
-//     let arguments = (ins AnyClassical:$arg);
-//     let results = (outs AnyClassical:$out);
-
-//     let hasCanonicalizer = 1;
-// }
-
 def QUIR_DelayOp : QUIR_Op<"delay", [
             UnitaryOp,
             DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,

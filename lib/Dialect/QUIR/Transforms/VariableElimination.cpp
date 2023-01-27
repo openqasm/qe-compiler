@@ -49,7 +49,10 @@ Optional<Type> convertCBitType(quir::CBitType t) {
   return llvm::None;
 }
 
-template <typename T> Optional<Type> legalizeType(T t) { return t; }
+template <typename T>
+Optional<Type> legalizeType(T t) {
+  return t;
+}
 
 class CBitTypeConverter : public TypeConverter {
   using TypeConverter::TypeConverter;
@@ -134,13 +137,11 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   CBitTypeConverter typeConverter;
 
   // Only convert QUIR variable operations
-  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
-                         memref::MemRefDialect, scf::SCFDialect,
-                         StandardOpsDialect, oq3::OQ3Dialect, quir::QUIRDialect,
-                         AffineDialect>();
-  target.addIllegalOp<oq3::DeclareVariableOp>();
-  target.addIllegalOp<oq3::AssignVariableOp>();
-  target.addIllegalOp<oq3::UseVariableOp>();
+  target.addLegalDialect<
+      arith::ArithmeticDialect, LLVM::LLVMDialect, memref::MemRefDialect,
+      scf::SCFDialect, StandardOpsDialect, quir::QUIRDialect, AffineDialect>();
+  target.addIllegalOp<oq3::DeclareVariableOp, oq3::AssignVariableOp,
+                      oq3::UseVariableOp>();
   // TODO add additional QUIR variable operations here
   RewritePatternSet patterns(&context);
 
@@ -149,16 +150,10 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
 
   // Convert `CBit` type and operations
   oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns, false);
-  target.addIllegalOp<oq3::CBitAssignBitOp>();
-  target.addIllegalOp<oq3::CBitNotOp>();
-  target.addIllegalOp<oq3::CBitRotLOp>();
-  target.addIllegalOp<oq3::CBitRotROp>();
-  target.addIllegalOp<oq3::CBitPopcountOp>();
-  target.addIllegalOp<oq3::CBitAndOp>();
-  target.addIllegalOp<oq3::CBitOrOp>();
-  target.addIllegalOp<oq3::CBitXorOp>();
-  target.addIllegalOp<oq3::CBitRshiftOp>();
-  target.addIllegalOp<oq3::CBitLshiftOp>();
+  target.addIllegalOp<oq3::CBitAssignBitOp, oq3::CBitNotOp, oq3::CBitRotLOp,
+                      oq3::CBitRotROp, oq3::CBitPopcountOp, oq3::CBitAndOp,
+                      oq3::CBitOrOp, oq3::CBitXorOp, oq3::CBitRShiftOp,
+                      oq3::CBitLShiftOp>();
 
   target.addDynamicallyLegalOp<oq3::CastOp>([](oq3::CastOp op) {
     if (op.getType().isa<mlir::quir::CBitType>() ||
@@ -168,9 +163,8 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   });
 
   // Materialize CBitExtractBitOp and CBitInsertBitOp with integer operands.
-  patterns.insert<MaterializeBitOpForInt<oq3::CBitExtractBitOp>>(&context,
-                                                                 typeConverter);
-  patterns.insert<MaterializeBitOpForInt<oq3::CBitInsertBitOp>>(&context,
+  patterns.insert<MaterializeBitOpForInt<oq3::CBitExtractBitOp>,
+                  MaterializeBitOpForInt<oq3::CBitInsertBitOp>>(&context,
                                                                 typeConverter);
 
   target.addDynamicallyLegalOp<mlir::oq3::CBitExtractBitOp>(
