@@ -79,8 +79,8 @@ module {
         "quir.barrier"(%qb1) : (!quir.qubit<1>) -> ()
         // CHECK: quir.barrier %{{.*}}, %{{.*}} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
         quir.barrier %qb1, %qc1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
-        // CHECK: %{{.*}} = quir.call_kernel @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (i1, i1, i1) -> i1
-        %cc1 = quir.call_kernel @kernel1(%val, %val, %val) : (i1, i1, i1) -> i1
+        // CHECK: %{{.*}} = oq3.kernel_call @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (i1, i1, i1) -> i1
+        %cc1 = oq3.kernel_call @kernel1(%val, %val, %val) : (i1, i1, i1) -> i1
         // CHECK: quir.call_defcal_gate @defcalGate1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         quir.call_defcal_gate @defcalGate1(%qa1, %theta) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         // CHECK: %{{.*}} = quir.call_defcal_measure @defcalMeas1(%{{.*}}) : (!quir.qubit<1>) -> i1

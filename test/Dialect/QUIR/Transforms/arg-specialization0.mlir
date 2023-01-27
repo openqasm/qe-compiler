@@ -67,9 +67,9 @@ module {
         quir.call_gate @proto(%qb1) : (!quir.qubit<1>) -> ()
         %cb2 = oq3.use_variable @cb2 : !quir.cbit<1>
 
-        // CHECK: %{{.*}} = quir.call_kernel @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
-        // MLIR: %{{.*}} = quir.call_kernel @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
-        %cc1 = quir.call_kernel @kernel1(%cb2, %cb2, %cb2) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
+        // CHECK: %{{.*}} = oq3.kernel_call @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
+        // MLIR: %{{.*}} = oq3.kernel_call @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
+        %cc1 = oq3.kernel_call @kernel1(%cb2, %cb2, %cb2) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
 
         // CHECK: quir.call_defcal_gate @defcalGate1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         // MLIR: quir.call_defcal_gate @defcalGate1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()

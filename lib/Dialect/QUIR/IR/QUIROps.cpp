@@ -41,8 +41,7 @@ static uint lookupQubitIdHandleError_(const Value &val) {
   return id.getValue();
 } // lookupQubitIdHandleError_
 
-template <class Op>
-std::set<uint32_t> getQubitIds(Op &op) {
+template <class Op> std::set<uint32_t> getQubitIds(Op &op) {
   std::set<uint32_t> opQubits;
   std::vector<Value> vals;
   qubitCallOperands<Op>(op, vals);
@@ -194,9 +193,9 @@ auto CallDefCalGateOp::getCallableForCallee() -> CallInterfaceCallable {
 auto CallDefcalMeasureOp::getCallableForCallee() -> CallInterfaceCallable {
   return (*this)->getAttrOfType<SymbolRefAttr>("callee");
 }
-auto CallKernelOp::getCallableForCallee() -> CallInterfaceCallable {
-  return (*this)->getAttrOfType<SymbolRefAttr>("callee");
-}
+// auto CallKernelOp::getCallableForCallee() -> CallInterfaceCallable {
+//   return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+// }
 
 auto CallDefCalGateOp::getArgOperands() -> Operation::operand_range {
   return operands();
@@ -204,9 +203,9 @@ auto CallDefCalGateOp::getArgOperands() -> Operation::operand_range {
 auto CallDefcalMeasureOp::getArgOperands() -> Operation::operand_range {
   return operands();
 }
-auto CallKernelOp::getArgOperands() -> Operation::operand_range {
-  return operands();
-}
+// auto CallKernelOp::getArgOperands() -> Operation::operand_range {
+//   return operands();
+// }
 
 auto CallDefCalGateOp::getCalleeType() -> FunctionType {
   return FunctionType::get(getContext(), getOperandTypes(), TypeRange{});

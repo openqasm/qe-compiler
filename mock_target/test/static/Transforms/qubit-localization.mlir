@@ -46,7 +46,7 @@ func @main () -> i32 {
   quir.call_subroutine @subroutine2(%q1, %q0) : (!quir.qubit<1>, !quir.qubit<1>) -> ()
   %c0 = quir.call_defcal_measure @defcalMeasure_q0(%q0) : (!quir.qubit<1>) -> i1
   %c1 = quir.call_defcal_measure @defcalMeasure_q1(%q0) : (!quir.qubit<1>) -> i1
-  %res = quir.call_kernel @kernel1(%c0, %c1, %c0) : (i1, i1, i1) -> i1
+  %res = oq3.kernel_call @kernel1(%c0, %c1, %c0) : (i1, i1, i1) -> i1
   %zero = arith.constant 0 : i32
   return %zero : i32
 }
@@ -66,7 +66,7 @@ func @main () -> i32 {
 // CHECK:       quir.call_subroutine @"subroutine1_q0_!quir.angle<20>_index"(%angle, %c10) : (!quir.angle<20>, index) -> ()
 // CHECK:       quir.call_subroutine @subroutine2_q0_q1() : () -> ()
 // CHECK:       quir.call_subroutine @subroutine2_q1_q0() : () -> ()
-// CHECK:       %2 = quir.call_kernel @kernel1(%0, %1, %0) : (i1, i1, i1) -> i1
+// CHECK:       %2 = oq3.kernel_call @kernel1(%0, %1, %0) : (i1, i1, i1) -> i1
 // CHECK:   module @mock_drive_0 attributes {quir.nodeId = 1 : i32, quir.nodeType = "drive", quir.physicalId = 0 : i32} {
 // CHECK:     func @gateH_q0(%arg0: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.classicalOnly = false, quir.orig_func_name = "gateH"} {
 // CHECK:     func @subroutine2_q1_q0() attributes {quir.classicalOnly = false} {

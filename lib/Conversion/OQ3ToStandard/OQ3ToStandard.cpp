@@ -409,6 +409,20 @@ void oq3::populateOQ3ToStandardConversionPatterns(
   }
 
   // Cast ops
+  // patterns.add<CastCBitToIntConversionPat,
+  //     CastIntToCBitConversionPat,
+  //     CastIntegerToBoolConversionPattern,
+  //     CastIndexToIntegerPat,
+  //     RemoveConvertedNilCastsPat,
+  //     RemoveI1ToCBitCastsPattern,
+  //     WideningIntegerCastsPattern>(patterns.getContext(), typeConverter);
+  // clang-format on
+}
+
+void oq3::populateOQ3ToStandardCastConversionPatterns(
+    TypeConverter &typeConverter, RewritePatternSet &patterns) {
+  // clang-format off
+  // Cast ops
   patterns.add<CastCBitToIntConversionPat,
       CastIntToCBitConversionPat,
       CastIntegerToBoolConversionPattern,

@@ -337,7 +337,7 @@ void mock::MockQubitLocalizationPass::processOp(
 } // processOp CallSubroutineOp
 
 void mock::MockQubitLocalizationPass::processOp(
-    CallKernelOp &callOp,
+    KernelCallOp &callOp,
     std::deque<
         std::tuple<Block *, OpBuilder *,
                    std::unique_ptr<std::unordered_map<uint, OpBuilder *>>>>
@@ -357,7 +357,7 @@ void mock::MockQubitLocalizationPass::processOp(
     controllerBuilder->clone(*findOp, controllerMapping);
     controllerBuilder->restoreInsertionPoint(savedPoint);
   }
-} // processOp CallKernelOp
+} // processOp KernelCallOp
 
 void mock::MockQubitLocalizationPass::processOp(CallGateOp &callOp) {
   Operation *op = callOp.getOperation();
@@ -840,7 +840,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         processOp(measureOp);
       } else if (auto callOp = dyn_cast<CallSubroutineOp>(op)) {
         processOp(callOp, blockAndBuilderWorkList);
-      } else if (auto callOp = dyn_cast<CallKernelOp>(op)) {
+      } else if (auto callOp = dyn_cast<KernelCallOp>(op)) {
         processOp(callOp, blockAndBuilderWorkList);
       } else if (auto callOp = dyn_cast<CallGateOp>(op)) {
         processOp(callOp);

@@ -379,48 +379,6 @@ def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [DeclareOpInterfaceMethod
     }];
 }
 
-def QUIR_CallKernelOp : QUIR_Op<"call_kernel", [DeclareOpInterfaceMethods<CallOpInterface>]> {
-    let summary = "A call to a user-defined kernel function that needs to be specialized for input operands";
-    let description = [{
-        The `quir.call_kernel` operation represents calls to user-defined kernel function
-        that needs to be specialized for its arguments. The callee function is attached to a symbol reference via
-        an attribute. The arguments list must match the arguments provided by the callee. Kernels may only receive
-        and return classical types.
-
-        Example:
-        ```mlir
-        %majority = quir.call_kernel @majority_vote(%cbitarray) : (memref<3xi1>) -> i1
-        ```
-        This is valid only if the named kernel @majority_vote exists and takes a cbit array as arguments and
-        returns an i1 as a result.
-    }];
-
-    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyClassical>:$operands);
-    let results = (outs Optional<AnyClassical>:$res);
-
-    let assemblyFormat = [{
-        $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
-    }];
-
-    let builders = [
-        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
-            $_state.addOperands(operands);
-            $_state.addAttribute("callee", SymbolRefAttr::get(callee));
-            $_state.addTypes(callee.getType().getResults());
-        }]>,
-        OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$operands), [{
-            $_state.addOperands(operands);
-            $_state.addAttribute("callee", callee);
-            $_state.addTypes(res);
-        }]>,
-        OpBuilder<(ins "StringRef":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$operands), [{
-            build($_builder, $_state, SymbolRefAttr::get($_builder.getContext(), callee), res,
-                    operands);
-        }]>];
-}
-
 def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormalizable, DeclareOpInterfaceMethods<SymbolUserOpInterface>, DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>]> {
     let summary = "Call a circuit operation";
     let description = [{

@@ -5,7 +5,6 @@
 # that they have been altered from the originals.
 
 add_mlir_conversion_library(QUIRToStandard
-QUIRCast.cpp
 SwitchOpLowering.cpp
 TypeConversion.cpp
 VariablesToGlobalMemRefConversion.cpp

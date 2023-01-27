@@ -20,7 +20,6 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 #include "Conversion/OQ3ToStandard/OQ3ToStandard.h"
-#include "Conversion/QUIRToStandard/QUIRCast.h"
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
@@ -49,10 +48,7 @@ Optional<Type> convertCBitType(quir::CBitType t) {
   return llvm::None;
 }
 
-template <typename T>
-Optional<Type> legalizeType(T t) {
-  return t;
-}
+template <typename T> Optional<Type> legalizeType(T t) { return t; }
 
 class CBitTypeConverter : public TypeConverter {
   using TypeConverter::TypeConverter;
@@ -77,7 +73,7 @@ struct MemrefGlobalToAllocaPattern
   mlir::Operation *toplevel;
 };
 
-/// Materialize quir casts to !quir.angle into a new cast when the argument can
+/// Materialize OQ3 casts to !quir.angle into a new cast when the argument can
 /// be type-converted to integer.
 struct MaterializeIntToAngleCastPattern
     : public OpConversionPattern<oq3::CastOp> {
@@ -155,6 +151,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
                       oq3::CBitOrOp, oq3::CBitXorOp, oq3::CBitRShiftOp,
                       oq3::CBitLShiftOp>();
 
+  oq3::populateOQ3ToStandardCastConversionPatterns(typeConverter, patterns);
   target.addDynamicallyLegalOp<oq3::CastOp>([](oq3::CastOp op) {
     if (op.getType().isa<mlir::quir::CBitType>() ||
         op.arg().getType().isa<mlir::quir::CBitType>())

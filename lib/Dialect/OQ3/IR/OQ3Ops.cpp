@@ -106,6 +106,18 @@ CBitAssignBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 }
 
 //===----------------------------------------------------------------------===//
+// Kernel ops
+//===----------------------------------------------------------------------===//
+
+auto KernelCallOp::getCallableForCallee() -> CallInterfaceCallable {
+  return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+}
+
+auto KernelCallOp::getArgOperands() -> Operation::operand_range {
+  return operands();
+}
+
+//===----------------------------------------------------------------------===//
 // Variable ops
 //===----------------------------------------------------------------------===//
 LogicalResult
