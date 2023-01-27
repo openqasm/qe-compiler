@@ -32,7 +32,7 @@ qubit $1;
 // AST-PRETTY: condition=BinaryOpNode(type=ASTOpTypeCompEq, left=IdentifierNode(name=x, bits=32), right=IdentifierNode(name=y, bits=32))
 if (x == y) {
 // MLIR: %c2_i32_1 = arith.constant 2 : i32
-// MLIR: [[CAST_A:%.*]] = "quir.cast"(%c2_i32_1) : (i32) -> i3
+// MLIR: [[CAST_A:%.*]] = "oq3.cast"(%c2_i32_1) : (i32) -> i3
 // MLIR: oq3.assign_variable @a : i3 = [[CAST_A]]
 // MLIR: %c3_i32_2 = arith.constant 3 : i32
 // MLIR: oq3.assign_variable @b : i32 = %c3_i32_2
@@ -43,7 +43,7 @@ if (x == y) {
 
 // MLIR: [[USE_A:%.*]] = oq3.use_variable @a : i3
 // MLIR: %c2_i32 = arith.constant 2 : i32
-// MLIR: [[CAST_A:%.*]] = "quir.cast"([[USE_A]]) : (i3) -> i32
+// MLIR: [[CAST_A:%.*]] = "oq3.cast"([[USE_A]]) : (i3) -> i32
 // MLIR: %{{.*}} = arith.cmpi eq, [[CAST_A]], %c2_i32 : i32
 if (a == 2) {
   U(0, 0, 0) $1;

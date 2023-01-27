@@ -14,8 +14,8 @@ quir.circuit @circuit1 (%q0 : !quir.qubit<1>, %omega1: !quir.angle<32>, %omega2:
 
 quir.circuit @circuit2 (%q0 : !quir.qubit<1>, %omega1: !quir.angle<32>) -> i1 {
 	quir.call_gate @rx(%q0, %omega1) : (!quir.qubit<1>, !quir.angle<32>) -> ()
-	// expected-error@+1 {{'quir.cast' op is classical and should not be inside a circuit.}}
-	%f1 = "quir.cast"(%omega1) : (!quir.angle<32>) -> f64
+	// expected-error@+1 {{'oq3.cast' op is classical and should not be inside a circuit.}}
+	%f1 = "oq3.cast"(%omega1) : (!quir.angle<32>) -> f64
 	%res0 = "quir.measure"(%q0) : (!quir.qubit<1>) -> i1
 	quir.return %res0 : i1
 }

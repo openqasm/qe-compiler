@@ -38,7 +38,7 @@ class OQ3_CBitBinaryOp<string mnemonic, list<Trait> traits = []> :
 
 // -----
 
-def OQ3_AssignCBitBitOp : OQ3_Op<"assign_cbit_bit",
+def OQ3_CBitAssignBitOp : OQ3_Op<"assign_cbit_bit",
                         [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
     let summary = "Assign a single bit in a classical bit register";
     let description = [{

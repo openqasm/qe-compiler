@@ -100,7 +100,7 @@ CBitExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
 }
 
 LogicalResult
-AssignCBitBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+CBitAssignBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
 }

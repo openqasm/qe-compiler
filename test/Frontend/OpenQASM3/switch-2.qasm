@@ -22,7 +22,7 @@ qubit[8] $0;
 // MLIR:     oq3.assign_variable @j : i32 = %{{.*}}
 // MLIR: }2 : {
 // MLIR:     %{{.*}} = oq3.use_variable @k : i32
-// MLIR:     %{{.*}} = "quir.cast"(%{{.*}}) : (i32) -> f64
+// MLIR:     %{{.*}} = "oq3.cast"(%{{.*}}) : (i32) -> f64
 // MLIR:     oq3.assign_variable @d : f64 = %{{.*}}
 // MLIR: }3 : {
 // MLIR:     %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>

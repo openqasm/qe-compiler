@@ -11,12 +11,12 @@ oq3.declare_variable @notUsed : !quir.cbit<1>
 // UNUSED: func @variableTests
 func @variableTests(%ref : memref<1xi1>, %ind : index) {
     %false = arith.constant false
-    %false_cbit = "quir.cast"(%false) : (i1) -> !quir.cbit<1>
+    %false_cbit = "oq3.cast"(%false) : (i1) -> !quir.cbit<1>
 
     // isUsed has a use
     oq3.assign_variable @isUsed : !quir.cbit<1> = %false_cbit
     %use = oq3.use_variable @isUsed : !quir.cbit<1>
-    %cast = "quir.cast"(%use) : (!quir.cbit<1>) -> i1
+    %cast = "oq3.cast"(%use) : (!quir.cbit<1>) -> i1
     memref.store %cast, %ref[%ind] : memref<1xi1>
 
     // isOutput doesn't have a use, but is output

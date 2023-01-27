@@ -29,7 +29,7 @@ module {
     %4 = quir.measure(%0) : (!quir.qubit<1>) -> i1
 
     %6 = oq3.use_variable @b : !quir.cbit<1>
-    %7 = "quir.cast"(%6) : (!quir.cbit<1>) -> i1
+    %7 = "oq3.cast"(%6) : (!quir.cbit<1>) -> i1
     // CHECK: scf.if
     scf.if %7 {
       // CHECK: quir.call_gate @x([[QUBIT0]])
@@ -43,7 +43,7 @@ module {
 
     // CHECK: quir.measure([[QUBIT0]])
     %8 = quir.measure(%0) : (!quir.qubit<1>) -> i1
-    %9 = "quir.cast"(%8) : (i1) -> !quir.cbit<1>
+    %9 = "oq3.cast"(%8) : (i1) -> !quir.cbit<1>
     oq3.assign_variable @results : !quir.cbit<1> = %9
     return %c0_i32 : i32
   }

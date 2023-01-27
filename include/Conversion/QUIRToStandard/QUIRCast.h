@@ -24,8 +24,8 @@
 
 namespace mlir::quir {
 
-void populateQUIRCastPatterns(RewritePatternSet &patterns,
-                              mlir::TypeConverter &typeConverter);
+// void populateQUIRCastPatterns(RewritePatternSet &patterns,
+//                               mlir::TypeConverter &typeConverter);
 
 } // namespace mlir::quir
 

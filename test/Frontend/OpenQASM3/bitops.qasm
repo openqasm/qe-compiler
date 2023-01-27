@@ -60,7 +60,7 @@ if (bool(a | b)) {
 // MLIR-DAG: [[A:%.*]] = oq3.use_variable @a
 // MLIR-DAG: [[B:%.*]] = oq3.use_variable @b
 // MLIR: [[CBIT_OR_RES:%[0-9]+]] = oq3.cbit_or [[A]], [[B]]
-// MLIR: "quir.cast"([[CBIT_OR_RES]]) {{.*}} -> i1
+// MLIR: "oq3.cast"([[CBIT_OR_RES]]) {{.*}} -> i1
     d = measure $0;
 } else {
     d = measure $1;
@@ -75,7 +75,7 @@ if (bool(a ^ b))  {
 // MLIR-DAG: [[A:%.*]] = oq3.use_variable @a
 // MLIR-DAG: [[B:%.*]] = oq3.use_variable @b
 // MLIR: [[CBIT_XOR_RES:%[0-9]+]] = oq3.cbit_xor [[A]], [[B]]
-// MLIR: "quir.cast"([[CBIT_XOR_RES]]) {{.*}} -> i1
+// MLIR: "oq3.cast"([[CBIT_XOR_RES]]) {{.*}} -> i1
     e = measure $0;
 } else {
     e = measure $1;
@@ -88,9 +88,9 @@ bit f = "0";
 f = e | d;
 
 // MLIR: [[F:%.*]] = oq3.use_variable @f : !quir.cbit<1>
-// MLIR: [[BOOL_F:%.*]] = "quir.cast"([[F]]) : (!quir.cbit<1>) -> i1
+// MLIR: [[BOOL_F:%.*]] = "oq3.cast"([[F]]) : (!quir.cbit<1>) -> i1
 // MLIR: [[TRUE:%.*]] = arith.constant true
 // MLIR: [[NOT:%.*]] = arith.cmpi ne, [[BOOL_F]], [[TRUE]] : i1
-// MLIR: [[NOT_CBIT:%.*]] = "quir.cast"([[NOT]]) : (i1) -> !quir.cbit<1>
+// MLIR: [[NOT_CBIT:%.*]] = "oq3.cast"([[NOT]]) : (i1) -> !quir.cbit<1>
 // MLIR: oq3.assign_variable @f : !quir.cbit<1> = [[NOT_CBIT]]
 f = !f;

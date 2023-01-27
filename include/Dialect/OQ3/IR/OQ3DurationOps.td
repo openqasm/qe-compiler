@@ -75,6 +75,4 @@ def OQ3_DurationMulOp : OQ3_BinaryDurationOp<"duration_mul"> {
     }];
 }
 
-// -----
-
 #endif // OQ3_DURATION_OPS

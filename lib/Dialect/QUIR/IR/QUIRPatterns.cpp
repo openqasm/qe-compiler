@@ -25,19 +25,19 @@
 #include "mlir/IR/SymbolTable.h"
 
 using namespace mlir;
+using namespace oq3;
 using namespace quir;
 
 namespace {
 /// Include the patterns defined in the Declarative Rewrite framework.
-#include "Dialect/QUIR/IR/QUIRPatterns.inc"
+// #include "Dialect/QUIR/IR/QUIRPatterns.inc"
 
 static llvm::Optional<mlir::Value>
 getI1InputFromExtensionOp(mlir::Operation *op) {
   if (!op)
     return llvm::None;
 
-  if (!mlir::isa<mlir::arith::ExtUIOp>(op) &&
-      !mlir::isa<mlir::quir::CastOp>(op))
+  if (!mlir::isa<mlir::arith::ExtUIOp>(op) && !mlir::isa<CastOp>(op))
     return llvm::None;
 
   assert(op->getNumOperands() == 1 &&
@@ -114,12 +114,12 @@ struct CastToSameType : public OpRewritePattern<CastOp> {
 /// registers to assign_variable operations. The assigned bit is first cast to a
 /// !quir.cbit<1> (which is transparent) and then directly assigned.
 struct AssignSingleCBitToAssignVariablePattern
-    : public OpRewritePattern<oq3::AssignCBitBitOp> {
+    : public OpRewritePattern<oq3::CBitAssignBitOp> {
   AssignSingleCBitToAssignVariablePattern(MLIRContext *context)
-      : OpRewritePattern<oq3::AssignCBitBitOp>(context, /*benefit=*/1) {}
+      : OpRewritePattern<oq3::CBitAssignBitOp>(context, /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(oq3::AssignCBitBitOp op,
+  matchAndRewrite(oq3::CBitAssignBitOp op,
                   mlir::PatternRewriter &rewriter) const override {
 
     if (op.cbit_width() != 1)

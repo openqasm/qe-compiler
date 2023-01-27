@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Conversion/QUIRToStandard/TypeConversion.h"
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 namespace mlir {
@@ -63,7 +64,7 @@ Optional<Value> QuirTypeConverter::angleSourceMaterialization(
     OpBuilder &builder, quir::AngleType aType, ValueRange valRange,
     Location loc) {
   for (Value val : valRange) {
-    auto castOp = builder.create<quir::CastOp>(loc, aType, val);
+    auto castOp = builder.create<oq3::CastOp>(loc, aType, val);
     return castOp.out();
   } // for val : valRange
   return llvm::None;

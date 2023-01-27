@@ -14,19 +14,19 @@ bit[2] b = "10";
 int c = 5;
 
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
-// MLIR: [[CONSTCAST:%[0-9]+]] = "quir.cast"([[CONST]]) : (i32) -> !quir.cbit<1>
+// MLIR: [[CONSTCAST:%[0-9]+]] = "oq3.cast"([[CONST]]) : (i32) -> !quir.cbit<1>
 // MLIR: oq3.assign_variable @a : !quir.cbit<1> = [[CONSTCAST]]
 a = 1;
 
 // MLIR: [[A:%.*]] = oq3.use_variable @a : !quir.cbit<1>
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
-// MLIR: [[ACAST:%[0-9]+]] = "quir.cast"([[A]]) : (!quir.cbit<1>) -> i32
+// MLIR: [[ACAST:%[0-9]+]] = "oq3.cast"([[A]]) : (!quir.cbit<1>) -> i32
 // MLIR: [[COND:%.*]] = arith.cmpi eq, [[ACAST]], [[CONST]] : i32
 // MLIR: scf.if [[COND]] {
 if (a == 1) {
 // AST-PRETTY: IdentifierRefNode(name=b[0], IdentifierNode(name=b, bits=2), index=0)
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
-// MLIR: [[CONSTCAST:%[0-9]+]] = "quir.cast"([[CONST]]) : (i32) -> i1
+// MLIR: [[CONSTCAST:%[0-9]+]] = "oq3.cast"([[CONST]]) : (i32) -> i1
 // MLIR: oq3.assign_cbit_bit @b<2> [0] : i1 = [[CONSTCAST]]
   b[0] = 1;
 }
@@ -36,7 +36,7 @@ if (a == 1) {
 // MLIR: [[B:%.*]] = oq3.use_variable @b : !quir.cbit<2>
 // MLIR: [[BIT:%.*]] = oq3.cbit_extractbit([[B]] : !quir.cbit<2>) [1] : i1
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 0 : i32
-// MLIR: [[BITCAST:%[0-9]+]] = "quir.cast"([[BIT]]) : (i1) -> i32
+// MLIR: [[BITCAST:%[0-9]+]] = "oq3.cast"([[BIT]]) : (i1) -> i32
 // MLIR: [[COND:%.*]] = arith.cmpi eq, [[BITCAST]], [[CONST]] : i32
 // MLIR: scf.if [[COND]] {
 if (b[1] == 0) {

@@ -85,8 +85,8 @@ module {
         quir.call_defcal_gate @defcalGate1(%qa1, %theta) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         // CHECK: %{{.*}} = quir.call_defcal_measure @defcalMeas1(%{{.*}}) : (!quir.qubit<1>) -> i1
         %ca3 = quir.call_defcal_measure @defcalMeas1(%qa1) : (!quir.qubit<1>) -> i1
-        // CHECK: %{{.*}} = "quir.cast"(%{{.*}}) : (i1) -> !quir.angle<20>
-        %ang = "quir.cast"(%ca3) : (i1) -> !quir.angle<20>
+        // CHECK: %{{.*}} = "oq3.cast"(%{{.*}}) : (i1) -> !quir.angle<20>
+        %ang = "oq3.cast"(%ca3) : (i1) -> !quir.angle<20>
         // CHECK: %{{.*}} = oq3.declare_duration {value = "10ns"} : !quir.duration
         %len1 = "oq3.declare_duration"() {value = "10ns"} : () -> !quir.duration
         // CHECK: %{{.*}} = quir.declare_stretch : !quir.stretch

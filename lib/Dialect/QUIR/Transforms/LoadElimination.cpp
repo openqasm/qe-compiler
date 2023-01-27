@@ -51,7 +51,7 @@ void LoadEliminationPass::runOnOperation() {
     auto numAssignments = std::count_if(
         symbolUses.begin(), symbolUses.end(), [&](Operation *userOp) {
           if (mlir::isa<mlir::oq3::AssignVariableOp>(userOp) ||
-              mlir::isa<mlir::oq3::AssignCBitBitOp>(userOp)) {
+              mlir::isa<mlir::oq3::CBitAssignBitOp>(userOp)) {
             // TODO have a common interface that identifies any
             // assignment to a variable
             assignment = userOp;

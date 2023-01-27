@@ -1,6 +1,6 @@
 //===- VariableElimination.cpp - Lower and eliminate variables --*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -79,21 +79,22 @@ struct MemrefGlobalToAllocaPattern
 
 /// Materialize quir casts to !quir.angle into a new cast when the argument can
 /// be type-converted to integer.
-struct MaterializeIntToAngleCastPattern : public OpConversionPattern<CastOp> {
+struct MaterializeIntToAngleCastPattern
+    : public OpConversionPattern<oq3::CastOp> {
   explicit MaterializeIntToAngleCastPattern(MLIRContext *ctx,
                                             mlir::TypeConverter &typeConverter)
       : OpConversionPattern(typeConverter, ctx, /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(CastOp castOp, CastOpAdaptor adaptor,
+  matchAndRewrite(oq3::CastOp castOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
     if (!adaptor.arg().getType().isIntOrIndexOrFloat() ||
         !castOp.out().getType().isa<mlir::quir::AngleType>())
       return failure();
 
-    rewriter.replaceOpWithNewOp<mlir::quir::CastOp>(
-        castOp, castOp.out().getType(), adaptor.arg());
+    rewriter.replaceOpWithNewOp<oq3::CastOp>(castOp, castOp.out().getType(),
+                                             adaptor.arg());
 
     return success();
   } // matchAndRewrite
@@ -136,9 +137,10 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   CBitTypeConverter typeConverter;
 
   // Only convert QUIR variable operations
-  target.addLegalDialect<
-      arith::ArithmeticDialect, LLVM::LLVMDialect, memref::MemRefDialect,
-      scf::SCFDialect, StandardOpsDialect, quir::QUIRDialect, AffineDialect>();
+  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
+                         memref::MemRefDialect, scf::SCFDialect,
+                         StandardOpsDialect, oq3::OQ3Dialect, quir::QUIRDialect,
+                         AffineDialect>();
   target.addIllegalOp<oq3::DeclareVariableOp>();
   target.addIllegalOp<oq3::AssignVariableOp>();
   target.addIllegalOp<oq3::UseVariableOp>();
@@ -148,10 +150,10 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   quir::populateVariableToGlobalMemRefConversionPatterns(
       patterns, typeConverter, externalizeOutputVariables);
 
-  // Convert CBit type and operations
-  oq3::populateOQ3ToStandardConversionPatterns(patterns, false);
+  // Convert `CBit` type and operations
+  oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns, false);
   // TODO transform to making the OpenQASM dialect invalid
-  target.addIllegalOp<oq3::AssignCBitBitOp>();
+  target.addIllegalOp<oq3::CBitAssignBitOp>();
   target.addIllegalOp<oq3::CBitNotOp>();
   target.addIllegalOp<oq3::CBitRotLOp>();
   target.addIllegalOp<oq3::CBitRotROp>();
@@ -163,9 +165,9 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   target.addIllegalOp<oq3::CBitLshiftOp>();
 
   // TODO move quir.cast and patterns for CBit types into OpenQASM 3 dialect.
-  quir::populateQUIRCastPatterns(patterns, typeConverter);
+  // oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns);
   // QUIR Casts from / to cbit must be converted
-  target.addDynamicallyLegalOp<mlir::quir::CastOp>([](mlir::quir::CastOp op) {
+  target.addDynamicallyLegalOp<oq3::CastOp>([](oq3::CastOp op) {
     if (op.getType().isa<mlir::quir::CBitType>() ||
         op.arg().getType().isa<mlir::quir::CBitType>())
       return false;
@@ -195,7 +197,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
         return true;
       });
 
-  // Support cbit to angle casts by materializing them into a new quir.cast with
+  // Support cbit to angle casts by materializing them into a new oq3.cast with
   // the argument type-converted to integer.
   patterns.insert<MaterializeIntToAngleCastPattern>(&context, typeConverter);
 

@@ -29,7 +29,7 @@ is_excited = measure $2;
 
 // MLIR: [[EXCITED:%.*]] = oq3.use_variable @is_excited : !quir.cbit<1>
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
-// MLIR: [[EXCITEDCAST:%[0-9]+]] = "quir.cast"([[EXCITED]]) : (!quir.cbit<1>) -> i32
+// MLIR: [[EXCITEDCAST:%[0-9]+]] = "oq3.cast"([[EXCITED]]) : (!quir.cbit<1>) -> i32
 // MLIR: [[COND0:%.*]] = arith.cmpi eq, [[EXCITEDCAST]], [[CONST]] : i32
 // MLIR: scf.if [[COND0]] {
 if (is_excited == 1) {
@@ -38,7 +38,7 @@ if (is_excited == 1) {
   other = measure $3;
 // MLIR: [[OTHER:%.*]] = oq3.use_variable @other : !quir.cbit<1>
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
-// MLIR: [[OTHERCAST:%[0-9]+]] = "quir.cast"([[OTHER]]) : (!quir.cbit<1>) -> i32
+// MLIR: [[OTHERCAST:%[0-9]+]] = "oq3.cast"([[OTHER]]) : (!quir.cbit<1>) -> i32
 // MLIR: [[COND1:%.*]] = arith.cmpi eq, [[OTHERCAST]], [[CONST]] : i32
 // MLIR: scf.if [[COND1]] {
   if (other == 1){

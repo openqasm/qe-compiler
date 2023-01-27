@@ -19,10 +19,10 @@ module {
     %2 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
 
     %false = arith.constant false
-    %3 = "quir.cast"(%false) : (i1) -> !quir.cbit<1>
+    %3 = "oq3.cast"(%false) : (i1) -> !quir.cbit<1>
     oq3.assign_variable @a : !quir.cbit<1> = %3
     %false_0 = arith.constant false
-    %4 = "quir.cast"(%false_0) : (i1) -> !quir.cbit<1>
+    %4 = "oq3.cast"(%false_0) : (i1) -> !quir.cbit<1>
     oq3.assign_variable @b : !quir.cbit<1> = %4
 
     // CHECK: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
@@ -37,7 +37,7 @@ module {
     %c1_i32 = arith.constant 1 : i32
     // measurement value has been forwarded, there is no load
     // CHECK: arith.extui [[MEASURE0]]
-    %8 = "quir.cast"(%7) : (!quir.cbit<1>) -> i32
+    %8 = "oq3.cast"(%7) : (!quir.cbit<1>) -> i32
     %9 = arith.cmpi eq, %8, %c1_i32 : i32
 
     scf.if %9 {
@@ -46,7 +46,7 @@ module {
     }
     %10 = oq3.use_variable @b : !quir.cbit<1>
     %c1_i32_1 = arith.constant 1 : i32
-    %11 = "quir.cast"(%10) : (!quir.cbit<1>) -> i32
+    %11 = "oq3.cast"(%10) : (!quir.cbit<1>) -> i32
 
     // measurement value has been forwarded, there is no load
     // CHECK: arith.extui [[MEASURE1]]

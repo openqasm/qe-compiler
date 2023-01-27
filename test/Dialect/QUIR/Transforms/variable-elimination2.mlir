@@ -17,7 +17,7 @@ module {
     %2 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
 
     %false = arith.constant false
-    %4 = "quir.cast"(%false) : (i1) -> !quir.cbit<1>
+    %4 = "oq3.cast"(%false) : (i1) -> !quir.cbit<1>
     oq3.assign_variable @b : !quir.cbit<1> = %4
 
     // CHECK: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
@@ -39,7 +39,7 @@ module {
     // CHECK: [[LOAD:%.*]] = affine.load [[MEMREF]]
     %10 = oq3.use_variable @b : !quir.cbit<1>
     %c1_i32_1 = arith.constant 1 : i32
-    %11 = "quir.cast"(%10) : (!quir.cbit<1>) -> i32
+    %11 = "oq3.cast"(%10) : (!quir.cbit<1>) -> i32
 
     %12 = arith.cmpi eq, %11, %c1_i32_1 : i32
     // CHECK: scf.if [[LOAD]]

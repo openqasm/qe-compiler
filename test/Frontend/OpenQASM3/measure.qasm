@@ -18,6 +18,6 @@ qubit $1;
 // AST-PRETTY: ))
 // MLIR: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1
 // MLIR: [[MEASURE1:%.*]] = quir.measure([[QUBIT1]])
-// MLIR: [[MEASURE1_CAST:%.*]] = "quir.cast"([[MEASURE1]]) : (i1) -> !quir.cbit<1>
+// MLIR: [[MEASURE1_CAST:%.*]] = "oq3.cast"([[MEASURE1]]) : (i1) -> !quir.cbit<1>
 // MLIR: oq3.assign_variable @b : !quir.cbit<1> = [[MEASURE1_CAST]]
 bit b = measure $1;

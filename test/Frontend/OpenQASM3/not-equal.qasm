@@ -9,7 +9,7 @@ measure $0 -> a;
 // AST-PRETTY: IfStatementNode(
 // AST-PRETTY: condition=UnaryOpNode(type=ASTOpTypeLogicalNot, operand=OperatorNode(op=!, target-identifier=IdentifierNode(name=a, bits=1))
 // MLIR: %[[A:.*]] = oq3.use_variable @a : !quir.cbit<1>
-// MLIR: %[[CAST1:.*]] = "quir.cast"(%[[A]]) : (!quir.cbit<1>) -> i1
+// MLIR: %[[CAST1:.*]] = "oq3.cast"(%[[A]]) : (!quir.cbit<1>) -> i1
 // MLIR: %[[CMP1:.*]] = arith.cmpi ne, %[[CAST1]], %true{{.*}}  : i1
 // MLIR: scf.if %[[CMP1]] {
 if (!a) {
@@ -31,7 +31,7 @@ c = 0;
 // AST-PRETTY: IfStatementNode(
 // AST-PRETTY: condition=UnaryOpNode(type=ASTOpTypeLogicalNot, operand=OperatorNode(op=!, target-identifier=IdentifierNode(name=c, bits=1))
 // MLIR: %[[C:.*]] = oq3.use_variable @c : !quir.cbit<1>
-// MLIR: %[[CAST4:.*]] = "quir.cast"(%[[C]]) : (!quir.cbit<1>) -> i1
+// MLIR: %[[CAST4:.*]] = "oq3.cast"(%[[C]]) : (!quir.cbit<1>) -> i1
 // MLIR: %[[CMP3:.*]] = arith.cmpi ne, %[[CAST4]], %true{{.*}} : i1
 // MLIR: scf.if %[[CMP3]] {
 if (!c) {

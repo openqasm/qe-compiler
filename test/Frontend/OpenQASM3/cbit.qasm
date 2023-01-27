@@ -35,7 +35,7 @@ result[6] = measure $0;
 
 // AST-PRETTY: condition=IdentifierNode(name=my_one_bits, bits=2),
 // MLIR: %[[MY_ONE_BITS:.*]] = oq3.use_variable @my_one_bits : !quir.cbit<2>
-// MLIR: %{{.*}} = "quir.cast"(%[[MY_ONE_BITS]]) : (!quir.cbit<2>) -> i1
+// MLIR: %{{.*}} = "oq3.cast"(%[[MY_ONE_BITS]]) : (!quir.cbit<2>) -> i1
 if (my_one_bits) {
     U(3.1415926, 0, 3.1415926) $0;
 }

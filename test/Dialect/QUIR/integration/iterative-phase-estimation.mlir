@@ -173,10 +173,10 @@ module {
     // angle[32] temp_1 = 0.375*pi;
     // temp_1 -= c;  // cast and do arithmetic mod 2 pi
     %tmp_angle_1 = quir.constant #quir.angle<0.375  : !quir.angle<32>>
-    %cast_c = "quir.cast"(%creg_1) : (!quir.cbit<3>) -> !quir.angle<32>
+    %cast_c = "oq3.cast"(%creg_1) : (!quir.cbit<3>) -> !quir.angle<32>
     // Math Ops resulting in !quir.angle<32>
     %tmp_angle_2 = quir.constant #quir.angle<0.0  : !quir.angle<32>>
-    %tmp_angle_2_cast = "quir.cast"(%tmp_angle_2) : (!quir.angle<32>) -> !quir.angle<20>
+    %tmp_angle_2_cast = "oq3.cast"(%tmp_angle_2) : (!quir.angle<32>) -> !quir.angle<20>
     // phase(temp_1) %0;
     "quir.call_gate"(%tmp_angle_2_cast, %q1_0) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     // h %0;

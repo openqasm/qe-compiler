@@ -63,6 +63,7 @@
 using namespace mlir;
 using namespace mlir::quir;
 using namespace mlir::qcs;
+using namespace oq3;
 using namespace QASM;
 
 namespace qssc::frontend::openqasm3 {
@@ -965,7 +966,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
           getLocation(node), builder.getBoolAttr(false));
     }
     auto measurement = createMeasurement(nodeGateOp, false);
-    return builder.create<mlir::quir::CastOp>(
+    return builder.create<mlir::oq3::CastOp>(
         getLocation(node), builder.getType<mlir::quir::CBitType>(1),
         measurement);
   }
@@ -976,14 +977,14 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
   auto stringRepr = llvm::StringRef(node->AsString()).take_back(node->Size());
   llvm::APInt initializer(node->Size(), stringRepr, /* radix */ 2);
 
-  // build an arbitrary-precision integer and let QUIR_CastOp take care of
+  // build an arbitrary-precision integer and let OQ3_CastOp take care of
   // initializing a classical register value from it.
   auto location = getLocation(node);
   auto initializerVal = builder.create<mlir::arith::ConstantOp>(
       location, builder.getIntegerAttr(builder.getIntegerType(node->Size()),
                                        initializer));
 
-  return builder.create<mlir::quir::CastOp>(
+  return builder.create<mlir::oq3::CastOp>(
       location, builder.getType<mlir::quir::CBitType>(node->Size()),
       initializerVal);
 }

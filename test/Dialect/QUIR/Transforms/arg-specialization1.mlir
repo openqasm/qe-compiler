@@ -49,8 +49,8 @@ module {
     func @gateCall3(%q1 : !quir.qubit<1>, %phi : !quir.angle) {
         %zero = quir.constant #quir.angle<0.0 : !quir.angle<20>>
         %cmpval = quir.constant #quir.angle<0.3 : !quir.angle<20>>
-        %farg = "quir.cast"(%phi) : (!quir.angle) -> f64
-        %cval = "quir.cast"(%cmpval) : (!quir.angle<20>) -> f64
+        %farg = "oq3.cast"(%phi) : (!quir.angle) -> f64
+        %cval = "oq3.cast"(%cmpval) : (!quir.angle<20>) -> f64
         %cond = arith.cmpf "ogt", %farg, %cval : f64
         scf.if %cond {
             quir.builtin_U %q1, %zero, %zero, %phi : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle

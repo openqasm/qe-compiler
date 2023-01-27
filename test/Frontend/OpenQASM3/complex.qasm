@@ -21,7 +21,7 @@ complex[32] a = 3 + 7.35 im;
 complex[65] my_complex = 3000 + 7.352322 im;
 
 // MLIR: %{{.*}} = oq3.use_variable @a : complex<f32>
-// MLIR: [[CAST_1:%.*]] = "quir.cast"(%{{.*}}) : (complex<f32>) -> complex<f80>
+// MLIR: [[CAST_1:%.*]] = "oq3.cast"(%{{.*}}) : (complex<f32>) -> complex<f80>
 // MLIR: oq3.assign_variable @my_complex : complex<f80> = [[CAST_1]]
 my_complex = a;
 

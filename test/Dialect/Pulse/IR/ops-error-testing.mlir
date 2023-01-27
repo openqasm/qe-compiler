@@ -12,8 +12,8 @@ pulse.sequence @sequence0 (%omega1: !quir.angle<32>, %omega2: !quir.angle<32>) {
 
 pulse.sequence @sequence1 (%omega1: !quir.angle<32>) {
 	pulse.call_sequence @x() : () -> ()
-	// expected-error@+1 {{'quir.cast' op is not valid within a real-time pulse sequence.}}
-	%f1 = "quir.cast"(%omega1) : (!quir.angle<32>) -> f64
+	// expected-error@+1 {{'oq3.cast' op is not valid within a real-time pulse sequence.}}
+	%f1 = "oq3.cast"(%omega1) : (!quir.angle<32>) -> f64
 	pulse.return
 }
 
@@ -52,7 +52,7 @@ pulse.sequence @sequence4 () -> i1 {
 pulse.sequence @sequence5 (%omega1: !quir.angle<32>) {
     // expected-error@+1 {{'quir.call_gate' op is not valid within a real-time pulse sequence.}}
 	quir.call_gate @x() : () -> ()
-	%f1 = "quir.cast"(%omega1) : (!quir.angle<32>) -> f64
+	%f1 = "oq3.cast"(%omega1) : (!quir.angle<32>) -> f64
 	pulse.return
 }
 

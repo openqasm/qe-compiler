@@ -21,10 +21,23 @@
 #include "mlir/Transforms/DialectConversion.h"
 
 namespace mlir::oq3 {
+template <typename OQ3Op>
+class OQ3ToStandardConversion : public OpConversionPattern<OQ3Op> {
+public:
+  OQ3ToStandardConversion(MLIRContext *context, TypeConverter &typeConverter,
+                          PatternBenefit benefit = 1)
+      : OpConversionPattern<OQ3Op>(typeConverter, context, benefit),
+        typeConverter(typeConverter) {}
+
+protected:
+  TypeConverter &typeConverter;
+};
+
 // Appends to a pattern list additional patterns for translating OpenQASM 3
 // ops to Standard ops.
 void populateOQ3ToStandardConversionPatterns(
-    RewritePatternSet &patterns, bool includeBitmapOperationPatterns = true);
+    TypeConverter &typeConverter, RewritePatternSet &patterns,
+    bool includeBitmapOperationPatterns = true);
 }; // namespace mlir::oq3
 
 #endif // CONVERSION_OQ3TOSTANDARD_OQ3TOSTANDARD_H_

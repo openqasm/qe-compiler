@@ -25,11 +25,15 @@
 #include "mlir/Transforms/DialectConversion.h"
 
 using namespace mlir;
+using namespace oq3;
+using namespace quir;
 
-namespace mlir::oq3 {
+//===----------------------------------------------------------------------===//
+// CBitOp conversion
+//===----------------------------------------------------------------------===//
 template <class OQ3Op, class StdOp>
-struct CBitBinaryOpConversionPattern : public OpConversionPattern<OQ3Op> {
-  using OpConversionPattern<OQ3Op>::OpConversionPattern;
+struct CBitBinaryOpConversionPattern : public OQ3ToStandardConversion<OQ3Op> {
+  using OQ3ToStandardConversion<OQ3Op>::OQ3ToStandardConversion;
 
   LogicalResult
   matchAndRewrite(OQ3Op op, typename OQ3Op::Adaptor adaptor,
@@ -64,11 +68,11 @@ struct CBitBinaryOpConversionPattern : public OpConversionPattern<OQ3Op> {
 };
 
 struct CBitAssignBitOpConversionPattern
-    : public OpConversionPattern<AssignCBitBitOp> {
-  using OpConversionPattern<AssignCBitBitOp>::OpConversionPattern;
+    : public OQ3ToStandardConversion<CBitAssignBitOp> {
+  using OQ3ToStandardConversion<CBitAssignBitOp>::OQ3ToStandardConversion;
 
   LogicalResult
-  matchAndRewrite(AssignCBitBitOp op, OpAdaptor adaptor,
+  matchAndRewrite(CBitAssignBitOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
     auto const loc = op.getLoc();
@@ -117,8 +121,8 @@ static int getCBitOrIntBitWidth(mlir::Type t) {
 }
 
 struct CBitInsertBitOpConversionPattern
-    : public OpConversionPattern<CBitInsertBitOp> {
-  using OpConversionPattern<CBitInsertBitOp>::OpConversionPattern;
+    : public OQ3ToStandardConversion<CBitInsertBitOp> {
+  using OQ3ToStandardConversion<CBitInsertBitOp>::OQ3ToStandardConversion;
 
   LogicalResult
   matchAndRewrite(CBitInsertBitOp op, CBitInsertBitOpAdaptor adaptor,
@@ -162,8 +166,8 @@ struct CBitInsertBitOpConversionPattern
 };
 
 struct CBitExtractBitOpConversionPattern
-    : public OpConversionPattern<CBitExtractBitOp> {
-  using OpConversionPattern<CBitExtractBitOp>::OpConversionPattern;
+    : public OQ3ToStandardConversion<CBitExtractBitOp> {
+  using OQ3ToStandardConversion<CBitExtractBitOp>::OQ3ToStandardConversion;
 
   LogicalResult
   matchAndRewrite(CBitExtractBitOp op, OpAdaptor adaptor,
@@ -198,9 +202,198 @@ struct CBitExtractBitOpConversionPattern
   }
 };
 
-void populateOQ3ToStandardConversionPatterns(
-    RewritePatternSet &patterns, bool includeBitmapOperationPatterns) {
+//===----------------------------------------------------------------------===//
+// Cast conversion
+//===----------------------------------------------------------------------===//
+namespace {
+/// @brief Pattern for converting cast ops that produce bools from
+/// integers
+struct CastIntegerToBoolConversionPattern
+    : public OQ3ToStandardConversion<CastOp> {
+  using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
+
+  LogicalResult match(CastOp castOp) const override {
+    if (!isBoolType(castOp.getType()))
+      return failure();
+
+    auto argType = castOp.arg().getType();
+
+    if (argType.isIntOrIndex())
+      return success();
+
+    return failure();
+  } // match
+
+  void rewrite(CastOp castOp, CastOp::Adaptor adaptor,
+               ConversionPatternRewriter &rewriter) const override {
+
+    auto argType = castOp.arg().getType();
+
+    // per OpenQASM3 spec, cast from int to bool by comparing val != 0
+    auto constInt0Op = rewriter.create<mlir::arith::ConstantOp>(
+        castOp.getLoc(), argType, rewriter.getIntegerAttr(argType, 0));
+    auto cmpOp = rewriter.create<mlir::LLVM::ICmpOp>(
+        castOp.getLoc(), mlir::LLVM::ICmpPredicate::ne, castOp.arg(),
+        constInt0Op.getResult());
+    rewriter.replaceOp(castOp, ValueRange{cmpOp});
+  }
+};
+
+/// @brief Struct for converting cast ops that produce integers from cbits
+struct CastCBitToIntConversionPat : public OQ3ToStandardConversion<CastOp> {
+  using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
+
+  LogicalResult
+  matchAndRewrite(CastOp castOp, CastOp::Adaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    if (!castOp.arg().getType().isa<CBitType>())
+      return failure();
+    if (!castOp.out().getType().isIntOrIndex())
+      return failure();
+
+    auto cbitType = castOp.arg().getType().dyn_cast<CBitType>();
+    auto outWidth = castOp.out().getType().getIntOrFloatBitWidth();
+
+    if (cbitType.getWidth() > outWidth)
+      // cannot reinterpret without losing bits!
+      return failure();
+
+    if (cbitType.getWidth() < outWidth) {
+      // need to zero-extend to match output type width
+      rewriter.replaceOpWithNewOp<mlir::arith::ExtUIOp>(
+          castOp, castOp.out().getType(), adaptor.arg());
+      return success();
+    }
+
+    // 1:1 conversion of cbit (which is lowered to int) to int
+    assert(castOp.out().getType() == adaptor.arg().getType() &&
+           "cbit lowers to int");
+    rewriter.replaceOp(castOp, adaptor.arg());
+    return success();
+  } // matchAndRewrite
+};  // struct CastCBitToIntConversionPat
+
+/// @brief Conversion pattern for cast ops that produce cbits from integers
+struct CastIntToCBitConversionPat : public OQ3ToStandardConversion<CastOp> {
+  using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
+
+  LogicalResult
+  matchAndRewrite(CastOp castOp, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    if (!castOp.arg().getType().isIntOrIndexOrFloat())
+      return failure();
+    if (!castOp.out().getType().isa<CBitType>())
+      return failure();
+
+    auto cbitType = castOp.out().getType().dyn_cast<CBitType>();
+
+    // assign single bit from an integer
+    if (cbitType.getWidth() == 1) {
+      auto truncateOp = rewriter.create<mlir::LLVM::TruncOp>(
+          castOp.getLoc(), rewriter.getI1Type(), adaptor.arg());
+
+      rewriter.replaceOp(castOp, mlir::ValueRange{truncateOp});
+      return success();
+    }
+    if (castOp.arg().getType().getIntOrFloatBitWidth() == cbitType.getWidth()) {
+      // 1:1 conversion of int to cbit
+      if (cbitType.getWidth() > 64)
+        return failure();
+
+      rewriter.replaceOp(castOp, adaptor.arg());
+      return success();
+    }
+
+    return failure();
+  } // matchAndRewrite
+};  // struct CastIntToCBitConversionPat
+
+/// @brief Conversion pattern for cast ops that produce integers from index
+/// values
+struct CastIndexToIntegerPat : public OQ3ToStandardConversion<CastOp> {
+  using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
+
+  LogicalResult
+  matchAndRewrite(CastOp castOp, CastOp::Adaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    // check if the input is index type
+    if (!castOp.arg().getType().isIndex())
+      return failure();
+
+    rewriter.replaceOpWithNewOp<mlir::arith::IndexCastOp>(
+        castOp, castOp.out().getType(), adaptor.arg());
+    return success();
+  } // matchAndRewrite
+};  // struct CastIndexToIntegerPat
+
+/// @brief Conversion pattern that drops CastOps that have been made redundant
+/// by type conversion (e.g., cbit<1> -> i1)
+struct RemoveConvertedNilCastsPat : public OQ3ToStandardConversion<CastOp> {
+  using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
+
+  LogicalResult
+  matchAndRewrite(CastOp castOp, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    if (castOp.getType() != adaptor.arg().getType())
+      return failure();
+
+    rewriter.replaceOp(castOp, {adaptor.arg()});
+    return success();
+  } // matchAndRewrite
+
+}; // struct RemoveConvertedNilCastsPat
+
+struct RemoveI1ToCBitCastsPattern : public OQ3ToStandardConversion<CastOp> {
+  using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
+
+  LogicalResult
+  matchAndRewrite(CastOp castOp, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    if (adaptor.arg().getType() != rewriter.getI1Type())
+      return failure();
+    auto cbitType = castOp.getType().dyn_cast<CBitType>();
+    if (!cbitType || cbitType.getWidth() != 1)
+      return failure();
+
+    rewriter.replaceOp(castOp, {adaptor.arg()});
+    return success();
+  } // matchAndRewrite
+
+}; // struct RemoveI1ToCBitCastsPattern
+
+struct WideningIntegerCastsPattern : public OQ3ToStandardConversion<CastOp> {
+  using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
+
+  LogicalResult
+  matchAndRewrite(CastOp castOp, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    if (!castOp.getOperand().getType().isSignlessInteger())
+      return failure();
+    if (!castOp.getType().isSignlessInteger())
+      return failure();
+
+    assert(castOp.getOperand().getType() == adaptor.arg().getType() &&
+           "unexpected type conversion for built-in integer types");
+
+    if (castOp.getOperand().getType().getIntOrFloatBitWidth() >=
+        castOp.getType().getIntOrFloatBitWidth())
+      return failure();
+
+    rewriter.replaceOpWithNewOp<mlir::arith::ExtUIOp>(castOp, castOp.getType(),
+                                                      adaptor.arg());
+    return success();
+  } // matchAndRewrite
+};  // struct WideningIntegerCastsPattern
+} // namespace
+
+//===----------------------------------------------------------------------===//
+// Pattern population
+//===----------------------------------------------------------------------===//
+void oq3::populateOQ3ToStandardConversionPatterns(
+    TypeConverter &typeConverter, RewritePatternSet &patterns,
+    bool includeBitmapOperationPatterns) {
   // clang-format off
+  // CBit ops
   patterns.add<
       CBitBinaryOpConversionPattern<oq3::CBitAndOp,
                                     LLVM::AndOp>,
@@ -208,14 +401,21 @@ void populateOQ3ToStandardConversionPatterns(
                                     LLVM::OrOp>,
       CBitBinaryOpConversionPattern<oq3::CBitXorOp,
                                     LLVM::XOrOp>,
-      CBitAssignBitOpConversionPattern>(patterns.getContext());
+      CBitAssignBitOpConversionPattern>(patterns.getContext(), typeConverter);
 
   if (includeBitmapOperationPatterns) {
     patterns.add<
         CBitExtractBitOpConversionPattern,
-        CBitInsertBitOpConversionPattern>(patterns.getContext());
+        CBitInsertBitOpConversionPattern>(patterns.getContext(), typeConverter);
   }
+
+  // Cast ops
+  patterns.add<CastCBitToIntConversionPat,
+      CastIntToCBitConversionPat,
+      CastIntegerToBoolConversionPattern,
+      CastIndexToIntegerPat,
+      RemoveConvertedNilCastsPat,
+      RemoveI1ToCBitCastsPattern,
+      WideningIntegerCastsPattern>(patterns.getContext(), typeConverter);
   // clang-format on
 }
-
-}; // namespace mlir::oq3
