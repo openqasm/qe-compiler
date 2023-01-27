@@ -89,10 +89,10 @@ module {
         %ang = "oq3.cast"(%ca3) : (i1) -> !quir.angle<20>
         // CHECK: %{{.*}} = oq3.declare_duration {value = "10ns"} : !quir.duration
         %len1 = "oq3.declare_duration"() {value = "10ns"} : () -> !quir.duration
-        // CHECK: %{{.*}} = quir.declare_stretch : !quir.stretch
-        %s1 = "quir.declare_stretch"() : () -> !quir.stretch
-        // CHECK: %{{.*}} = quir.declare_stretch : !quir.stretch
-        %s2 = quir.declare_stretch : !quir.stretch
+        // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
+        %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
+        // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
+        %s2 = oq3.declare_stretch : !quir.stretch
         // CHECK: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
         "quir.delay"(%len1, %qb1) : (!quir.duration, !quir.qubit<1>) -> ()
         // CHECK: quir.delay %{{.*}}, () : !quir.duration, () -> ()

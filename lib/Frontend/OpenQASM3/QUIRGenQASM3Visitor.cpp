@@ -61,9 +61,9 @@
 #define DEBUG_TYPE "QUIRGen"
 
 using namespace mlir;
-using namespace mlir::quir;
-using namespace mlir::qcs;
 using namespace oq3;
+using namespace qcs;
+using namespace mlir::quir;
 using namespace QASM;
 
 namespace qssc::frontend::openqasm3 {

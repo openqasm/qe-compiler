@@ -27,7 +27,7 @@ include "Dialect/OQ3/IR/OQ3AngleOps.td"
 include "Dialect/OQ3/IR/OQ3ArrayOps.td"
 include "Dialect/OQ3/IR/OQ3CastOps.td"
 include "Dialect/OQ3/IR/OQ3CBitOps.td"
-include "Dialect/OQ3/IR/OQ3DurationOps.td"
+include "Dialect/OQ3/IR/OQ3GateOps.td"
 include "Dialect/OQ3/IR/OQ3VariableOps.td"
 
 #endif // OQ3_OPS

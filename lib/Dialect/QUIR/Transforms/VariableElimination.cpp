@@ -49,10 +49,7 @@ Optional<Type> convertCBitType(quir::CBitType t) {
   return llvm::None;
 }
 
-template <typename T>
-Optional<Type> legalizeType(T t) {
-  return t;
-}
+template <typename T> Optional<Type> legalizeType(T t) { return t; }
 
 class CBitTypeConverter : public TypeConverter {
   using TypeConverter::TypeConverter;
@@ -152,7 +149,6 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
 
   // Convert `CBit` type and operations
   oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns, false);
-  // TODO transform to making the OpenQASM dialect invalid
   target.addIllegalOp<oq3::CBitAssignBitOp>();
   target.addIllegalOp<oq3::CBitNotOp>();
   target.addIllegalOp<oq3::CBitRotLOp>();
@@ -164,9 +160,6 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   target.addIllegalOp<oq3::CBitRshiftOp>();
   target.addIllegalOp<oq3::CBitLshiftOp>();
 
-  // TODO move quir.cast and patterns for CBit types into OpenQASM 3 dialect.
-  // oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns);
-  // QUIR Casts from / to cbit must be converted
   target.addDynamicallyLegalOp<oq3::CastOp>([](oq3::CastOp op) {
     if (op.getType().isa<mlir::quir::CBitType>() ||
         op.arg().getType().isa<mlir::quir::CBitType>())

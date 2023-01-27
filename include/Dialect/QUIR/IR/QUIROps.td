@@ -97,25 +97,6 @@ def QUIR_DeclareQubitOp : QUIR_Op<"declare_qubit", [NonInterferingNonDeadSideEff
     }];
 }
 
-////// TODO: -> OQ3
-def QUIR_DeclareStretchOp : QUIR_Op<"declare_stretch", [NoSideEffect]> {
-    let summary = "Declare a new stretch.";
-    let description = [{
-        The `quir.declare_stretch` operation creates a new OpenQASM3.0 stretch, representing an unknown duration of time.
-
-        Example:
-        ```mlir
-        %dur = "quir.declare_stretch"() : () -> !quir.stretch
-        ```
-    }];
-
-    let results = (outs QUIR_StretchType:$out);
-
-    let assemblyFormat = [{
-        attr-dict `:` type($out)
-    }];
-}
-
 def QUIR_ResetQubitOp : QUIR_Op<"reset", [
             IsolatedFromAbove, CPTPOp,
             DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
