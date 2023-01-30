@@ -20,7 +20,6 @@
 ///
 //===----------------------------------------------------------------------===//
 
-
 #include "Dialect/Pulse/Transforms/SchedulePortSequence.h"
 #include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/Pulse/Utils/SchedulePort.h"

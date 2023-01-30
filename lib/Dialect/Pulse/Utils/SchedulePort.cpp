@@ -9,7 +9,7 @@
 //===----------------------------------------------------------------------===//
 ///
 ///  This file implements the common functions for the SchedulePortModule
-///  and SchedulePortSequence passes. 
+///  and SchedulePortSequence passes.
 ///
 ///  A single port may have multiple frames mixed with it (measurement vs drive,
 ///  etc). Each mixed frame will have delay and play operations on the mixed
