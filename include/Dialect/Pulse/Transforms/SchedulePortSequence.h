@@ -41,14 +41,6 @@ public:
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
-
-private:
-  using mixedFrameMap_t = std::map<uint, std::vector<Operation *>>;
-
-  // uint processSequence(SequenceOp sequenceOp);
-
-  // void addTimepoints(mlir::OpBuilder &builder,
-  //                    mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
 };
 } // namespace mlir::pulse
 
