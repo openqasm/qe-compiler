@@ -48,7 +48,10 @@ Optional<Type> convertCBitType(quir::CBitType t) {
   return llvm::None;
 }
 
-template <typename T> Optional<Type> legalizeType(T t) { return t; }
+template <typename T>
+Optional<Type> legalizeType(T t) {
+  return t;
+}
 
 class CBitTypeConverter : public TypeConverter {
   using TypeConverter::TypeConverter;

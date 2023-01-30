@@ -41,7 +41,8 @@ static uint lookupQubitIdHandleError_(const Value &val) {
   return id.getValue();
 } // lookupQubitIdHandleError_
 
-template <class Op> std::set<uint32_t> getQubitIds(Op &op) {
+template <class Op>
+std::set<uint32_t> getQubitIds(Op &op) {
   std::set<uint32_t> opQubits;
   std::vector<Value> vals;
   qubitCallOperands<Op>(op, vals);

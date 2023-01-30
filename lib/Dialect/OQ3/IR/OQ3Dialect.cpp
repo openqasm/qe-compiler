@@ -16,6 +16,8 @@
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/OQ3/IR/OQ3Types.h"
 
+#include "mlir/Transforms/InliningUtils.h"
+
 using namespace mlir;
 using namespace mlir::oq3;
 
@@ -26,10 +28,35 @@ using namespace mlir::oq3;
 // OpenQASM 3 dialect
 //===----------------------------------------------------------------------===//
 
+// This class defines the interface for handling inlining with OQ3 operations.
+// We simplify inherit from the base interface class and override the
+// necessary methods.
+struct OQ3InlinerInterface : public DialectInlinerInterface {
+  using DialectInlinerInterface::DialectInlinerInterface;
+
+  // This hook checks to see if the given callable `operation` is legal to
+  // inline into the given call. For OQ3, this hook can simply return true, as
+  // the OQ3 `call` `Operation` is for now always inlinable.
+  auto isLegalToInline(Operation *call, Operation *callable,
+                       bool wouldBeCloned) const -> bool final {
+    return true;
+  }
+
+  // This hook checks to see if the given operation is legal to inline into the
+  // given region. For OQ3, this hook can simply return true, as all OQ3
+  // operations are currently inlinable.
+  auto isLegalToInline(Operation *, Region *, bool,
+                       BlockAndValueMapping &) const -> bool final {
+    return true;
+  }
+};
+
 void OQ3Dialect::initialize() {
 
   addOperations<
 #define GET_OP_LIST
 #include "Dialect/OQ3/IR/OQ3Ops.cpp.inc"
       >();
+
+  addInterfaces<OQ3InlinerInterface>();
 }
