@@ -1,4 +1,4 @@
-//===- SchedulePort.h  - Schedule Pulse on single port ----------*- C++ -*-===//
+//===- SchedulePortModule.h  - Schedule Pulse on single port ----*- C++ -*-===//
 //
 // (C) Copyright IBM 2022, 2023.
 //
@@ -8,7 +8,10 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file implements the pass for scheduling on a single port
+///  This file implements the pass for scheduling on a single port. The
+///  pass operates at the module level. For an alternate pass which operates
+///  at the sequence level see: SchedulePortSequence.{h,cpp}. Functionality
+///  common to both passes is implemented in Utils/SchedulePort.{h,cpp}
 ///
 ///  A single port may have multiple frames mixed with it (measurement vs drive,
 ///  etc). Each mixed frame will have delay and play operations on the mixed
@@ -40,15 +43,7 @@ public:
   llvm::StringRef getDescription() const override;
 
 private:
-  using mixedFrameMap_t = std::map<uint, std::vector<Operation *>>;
-
   uint processCall(Operation *module, CallSequenceOp &callSequenceOp);
-  // uint processCallee(Operation *module, CallSequenceOp &callSequenceOp,
-  //                   Operation *findOp);
-
-  // void addTimepoints(CallSequenceOp &callSequenceOp, mlir::OpBuilder
-  // &builder,
-  //                    mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
 };
 } // namespace mlir::pulse
 
