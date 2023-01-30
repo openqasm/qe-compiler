@@ -19,13 +19,13 @@
 ///  See SchedulePort.cpp for more detailed background.
 //===----------------------------------------------------------------------===//
 
-#ifndef PULSE_SCHEDULE_H
-#define PULSE_SCHEDULE_H
+#ifndef PULSE_SCHEDULE_PORT_H
+#define PULSE_SCHEDULE_PORT_H
 
 #include "Dialect/Pulse/IR/PulseOps.h"
 
-// #include <map>
-// #include <vector>
+#include <map>
+#include <vector>
 
 namespace mlir::pulse {
 
@@ -102,4 +102,4 @@ uint processSequence(SequenceOp sequenceOp, GetDuration getDuration) {
 
 } // namespace mlir::pulse
 
-#endif // PULSE_SCHEDULE_CHANNEL_H
+#endif // PULSE_SCHEDULE_PORT_H
