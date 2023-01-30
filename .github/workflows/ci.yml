@@ -5,7 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CONAN_USER_HOME: ${{ github.workspace }}
-      CACHE_HASH: ${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -44,7 +43,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: .conan
-          key: conan-${{ runner.os }}-${{ env.CACHE_HASH }}
+          key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
           restore-keys: conan-${{ runner.os }}
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
         run: ./conan_deps.sh
@@ -57,4 +56,4 @@ jobs:
         if: always()
         with:
           path: .conan
-          key: conan-${{ runner.os }}-${{ env.CACHE_HASH }}
+          key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
