@@ -18,20 +18,20 @@
 ///  See SchedulePort.cpp for more detailed background.
 //===----------------------------------------------------------------------===//
 
-#ifndef PULSE_SCHEDULE_PORT_H
-#define PULSE_SCHEDULE_PORT_H
+#ifndef PULSE_SCHEDULE_PORT_SEQUENCE_H
+#define PULSE_SCHEDULE_PORT_SEQUENCE_H
 
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Utils/DebugIndent.h"
 #include "mlir/Pass/Pass.h"
 
-#include <deque>
-#include <set>
+#include <map>
+#include <vector>
 
 namespace mlir::pulse {
 
-class SchedulePortPass
-    : public PassWrapper<SchedulePortPass, OperationPass<SequenceOp>>,
+class SchedulePortSequencePass
+    : public PassWrapper<SchedulePortSequencePass, OperationPass<SequenceOp>>,
       protected qssc::utils::DebugIndent {
 public:
   void runOnOperation() override;
@@ -40,20 +40,12 @@ public:
   llvm::StringRef getDescription() const override;
 
 private:
-  using opVec_t = std::vector<Operation *>;
   using mixedFrameMap_t = std::map<uint, std::vector<Operation *>>;
-  using opQueue_t = std::deque<Operation *>;
 
-  uint processCall(Operation *module, CallSequenceOp &callSequenceOp);
-  uint processCallee(SequenceOp sequenceOp);
+  // uint processSequence(SequenceOp sequenceOp);
 
-  mixedFrameMap_t buildMixedFrameMap(SequenceOp &sequenceOp,
-                                     uint &numMixedFrames);
-
-  void addTimepoints(mlir::OpBuilder &builder,
-                     mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
-
-  void sortOpsByTimepoint(SequenceOp &sequenceOp);
+  // void addTimepoints(mlir::OpBuilder &builder,
+  //                    mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
 };
 } // namespace mlir::pulse
 

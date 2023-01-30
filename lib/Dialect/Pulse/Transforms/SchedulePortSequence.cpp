@@ -55,60 +55,41 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/Pulse/Transforms/SchedulePortModule.h"
+#include "Dialect/Pulse/Transforms/SchedulePortSequence.h"
+#include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/Pulse/Utils/SchedulePort.h"
 #include "Dialect/Pulse/Utils/Utils.h"
 
 #include "llvm/Support/Debug.h"
 
-#define DEBUG_TYPE "SchedulePortModulePass"
+#define DEBUG_TYPE "SchedulePortSequencePass"
 
 using namespace mlir;
 using namespace mlir::pulse;
 
-uint SchedulePortModulePass::processCall(Operation *module,
-                                         CallSequenceOp &callSequenceOp) {
+void SchedulePortSequencePass::runOnOperation() {
 
-  INDENT_DEBUG("==== processCall - start  ===================\n");
-  INDENT_DUMP(callSequenceOp.dump());
-  INDENT_DEBUG("=============================================\n");
+  INDENT_DEBUG("===== SchedulePortSequencePass - start ==========\n");
 
-  // walk into region and check arguments
-  // look for sequence def match
-  auto callee = callSequenceOp.getCallee();
-  auto sequenceOp =
-      dyn_cast<SequenceOp>(SymbolTable::lookupSymbolIn(module, callee));
-  uint calleeDuration = processSequence(sequenceOp, [&](PlayOp playOp) {
-    auto duration = playOp.getDuration(callSequenceOp);
-    if (auto err = duration.takeError()) {
-      playOp.emitOpError() << toString(std::move(err));
-      signalPassFailure();
-    }
-    return duration.get();
-  });
+  processSequence(
+      getOperation(), [&](PlayOp playOp) {
+        if (!playOp->hasAttrOfType<IntegerAttr>("pulse.duration")) {
+          playOp.emitError()
+              << "SchedulingPortSequencePass requires that PlayOps be "
+                 "labeled with a pulse.duration attribute";
+          signalPassFailure();
+        }
+        return playOp->getAttrOfType<IntegerAttr>("pulse.duration").getUInt();
+      });
 
-  INDENT_DEBUG("====  processCall - end  ====================\n");
-  INDENT_DUMP(callSequenceOp.dump());
-  INDENT_DEBUG("=============================================\n");
-  return calleeDuration;
-}
-
-void SchedulePortModulePass::runOnOperation() {
-
-  Operation *module = getOperation();
-
-  INDENT_DEBUG("===== SchedulePortModulePass - start ==========\n");
-
-  module->walk([&](CallSequenceOp op) { processCall(module, op); });
-
-  INDENT_DEBUG("=====  SchedulePortModulePass - end ===========\n");
+  INDENT_DEBUG("=====  SchedulePortSequencePass - end ===========\n");
 
 } // runOnOperation
 
-llvm::StringRef SchedulePortModulePass::getArgument() const {
-  return "pulse-schedule-port-module";
+llvm::StringRef SchedulePortSequencePass::getArgument() const {
+  return "pulse-schedule-port";
 }
 
-llvm::StringRef SchedulePortModulePass::getDescription() const {
+llvm::StringRef SchedulePortSequencePass::getDescription() const {
   return "Schedule operations on the same port in a sequence";
 }

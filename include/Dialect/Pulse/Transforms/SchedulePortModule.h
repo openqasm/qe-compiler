@@ -40,24 +40,15 @@ public:
   llvm::StringRef getDescription() const override;
 
 private:
-  using opVec_t = std::vector<Operation *>;
   using mixedFrameMap_t = std::map<uint, std::vector<Operation *>>;
-  using opQueue_t = std::deque<Operation *>;
 
-  std::deque<Operation *> removeList;
   uint processCall(Operation *module, CallSequenceOp &callSequenceOp);
-  uint processCallee(Operation *module, CallSequenceOp &callSequenceOp,
-                     Operation *findOp);
+  // uint processCallee(Operation *module, CallSequenceOp &callSequenceOp,
+  //                   Operation *findOp);
 
-  mixedFrameMap_t buildMixedFrameMap(CallSequenceOp &callSequenceOp,
-                                     SequenceOp &sequenceOp,
-                                     uint &numMixedFrames);
-
-  void addTimepoints(CallSequenceOp &callSequenceOp, mlir::OpBuilder &builder,
-                     mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
-
-  void sortOpsByTimepoint(SequenceOp &sequenceOp);
-  void removePendingOps();
+  // void addTimepoints(CallSequenceOp &callSequenceOp, mlir::OpBuilder
+  // &builder,
+  //                    mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
 };
 } // namespace mlir::pulse
 

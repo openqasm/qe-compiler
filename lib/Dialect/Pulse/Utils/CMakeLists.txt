@@ -6,6 +6,7 @@
 
 add_mlir_dialect_library(MLIRPulseUtils
 
+    SchedulePort.cpp
     Utils.cpp
 
     ADDITIONAL_HEADER_DIRS
