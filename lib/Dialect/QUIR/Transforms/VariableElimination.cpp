@@ -153,8 +153,6 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
                       oq3::CBitRotROp, oq3::CBitPopcountOp, oq3::CBitAndOp,
                       oq3::CBitOrOp, oq3::CBitXorOp, oq3::CBitRShiftOp,
                       oq3::CBitLShiftOp>();
-
-  oq3::populateOQ3ToStandardCastConversionPatterns(typeConverter, patterns);
   target.addDynamicallyLegalOp<oq3::CastOp>([](oq3::CastOp op) {
     if (op.getType().isa<mlir::quir::CBitType>() ||
         op.arg().getType().isa<mlir::quir::CBitType>())

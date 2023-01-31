@@ -38,9 +38,6 @@ protected:
 void populateOQ3ToStandardConversionPatterns(
     TypeConverter &typeConverter, RewritePatternSet &patterns,
     bool includeBitmapOperationPatterns = true);
-
-void populateOQ3ToStandardCastConversionPatterns(TypeConverter &typeConverter,
-                                                 RewritePatternSet &patterns);
 }; // namespace mlir::oq3
 
 #endif // CONVERSION_OQ3TOSTANDARD_OQ3TOSTANDARD_H_
