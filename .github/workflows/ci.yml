@@ -44,7 +44,10 @@ jobs:
         run: ./conan_deps.sh
       - name: Build QSS compiler Conan package
         run: |
-          conan create . qss/stable --build=missing
+          mkdir build && cd build
+          conan install . --build=missing
+          conan build ..
+          ninja check-tests
       # Always save the cache if Conan succeeded.
       # TODO: we always save for testing. Add check for success.
       - uses: actions/cache/save@v3
