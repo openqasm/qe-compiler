@@ -45,6 +45,9 @@ jobs:
           path: .conan
           key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
           restore-keys: conan-${{ runner.os }}
+      - name: Remove cache download
+        run: |
+          find /home/runner/work/_temp -name cache.tzst | xargs -r rm
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
         run: ./conan_deps.sh
       - name: Build QSS compiler Conan package
