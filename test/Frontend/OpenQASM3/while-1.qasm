@@ -27,7 +27,7 @@ while (n != 0) {
     // MLIR: %cst = constant unit
     h $0;
     // MLIR: %2 = quir.measure(%0) : (!quir.qubit<1>) -> i1
-    // MLIR: oq3.assign_cbit_bit @is_excited<1> [0] : i1 = %2
+    // MLIR: oq3.cbit_assign_bit @is_excited<1> [0] : i1 = %2
     // MLIR: %3 = oq3.use_variable @is_excited : !quir.cbit<1>
     // MLIR: %4 = "oq3.cast"(%3) : (!quir.cbit<1>) -> i1
     is_excited = measure $0;
@@ -41,7 +41,7 @@ while (n != 0) {
     // error: Binary operation ASTOpTypeSub not supported yet.
     // n = n - 1;
     // MLIR: %c0_i32_0 = arith.constant 0 : i32
-    // MLIR: oq3.assign_variable @n : i32 = %c0_i32_0
+    // MLIR: oq3.variable_assign @n : i32 = %c0_i32_0
     n = 0;  // workaround for n = n - 1
     // MLIR: scf.yield
 }

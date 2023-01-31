@@ -1,8 +1,8 @@
 // RUN: qss-compiler -X=mlir --quir-arg-specialization %s | FileCheck %s
 
 module {
-    oq3.declare_variable @cb1 : !quir.cbit<1>
-    oq3.declare_variable @cb2 : !quir.cbit<1>
+    oq3.variable_decl @cb1 : !quir.cbit<1>
+    oq3.variable_decl @cb2 : !quir.cbit<1>
 
     func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) {
         %zero = quir.constant #quir.angle<0.0 : !quir.angle<1>>

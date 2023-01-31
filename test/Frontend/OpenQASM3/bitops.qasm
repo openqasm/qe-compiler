@@ -11,9 +11,9 @@ bit b;
 bit c;
 
 // AST-PRETTY-COUNT-2: DeclarationNode(type=ASTTypeBitset
-// MLIR-DAG: oq3.declare_variable @a : !quir.cbit<1>
-// MLIR-DAG: oq3.declare_variable @b : !quir.cbit<1>
-// MLIR-DAG: oq3.declare_variable @c : !quir.cbit<1>
+// MLIR-DAG: oq3.variable_decl @a : !quir.cbit<1>
+// MLIR-DAG: oq3.variable_decl @b : !quir.cbit<1>
+// MLIR-DAG: oq3.variable_decl @c : !quir.cbit<1>
 
 qubit $0;
 qubit $1;
@@ -34,7 +34,7 @@ b = measure $1; // expected "0"
 c = measure $2; // expected "1"
 
 bit meas_and;
-// MLIR-DAG: oq3.declare_variable @meas_and : !quir.cbit<1>
+// MLIR-DAG: oq3.variable_decl @meas_and : !quir.cbit<1>
 
 // MLIR-DAG: [[A:%.*]] = oq3.use_variable @a
 // MLIR-DAG: [[B:%.*]] = oq3.use_variable @b
@@ -50,7 +50,7 @@ if (((a | c) & b) == 1) {
 } else {
     meas_and = measure $1;
 }
-// MLIR: oq3.assign_cbit_bit @meas_and<1> [0] : i1 =
+// MLIR: oq3.cbit_assign_bit @meas_and<1> [0] : i1 =
 // on hardware, expect meas_and to become 0
 
 bit d;
@@ -65,7 +65,7 @@ if (bool(a | b)) {
 } else {
     d = measure $1;
 }
-// MLIR: oq3.assign_cbit_bit @d<1> [0] : i1 =
+// MLIR: oq3.cbit_assign_bit @d<1> [0] : i1 =
 // on hardware, expect d to be 1
 
 bit e;
@@ -80,7 +80,7 @@ if (bool(a ^ b))  {
 } else {
     e = measure $1;
 }
-// MLIR: oq3.assign_cbit_bit @e<1> [0] : i1 =
+// MLIR: oq3.cbit_assign_bit @e<1> [0] : i1 =
 // on hardware, expect e to be 1
 
 bit f = "0";
@@ -92,5 +92,5 @@ f = e | d;
 // MLIR: [[TRUE:%.*]] = arith.constant true
 // MLIR: [[NOT:%.*]] = arith.cmpi ne, [[BOOL_F]], [[TRUE]] : i1
 // MLIR: [[NOT_CBIT:%.*]] = "oq3.cast"([[NOT]]) : (i1) -> !quir.cbit<1>
-// MLIR: oq3.assign_variable @f : !quir.cbit<1> = [[NOT_CBIT]]
+// MLIR: oq3.variable_assign @f : !quir.cbit<1> = [[NOT_CBIT]]
 f = !f;

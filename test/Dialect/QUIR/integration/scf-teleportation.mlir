@@ -8,9 +8,9 @@
 // bit c0;
 // bit c1;
 // bit c2;
-oq3.declare_variable @c0 : !quir.cbit<1>
-oq3.declare_variable @c1 : !quir.cbit<1>
-oq3.declare_variable @c2 : !quir.cbit<1>
+oq3.variable_decl @c0 : !quir.cbit<1>
+oq3.variable_decl @c1 : !quir.cbit<1>
+oq3.variable_decl @c2 : !quir.cbit<1>
 // reset q;
 // CHECK: quir.reset %{{.*}} : !quir.qubit<1>
 quir.reset %qa1 : !quir.qubit<1>
@@ -35,10 +35,10 @@ quir.builtin_CX %qa1, %qb1 : !quir.qubit<1>, !quir.qubit<1>
 // c0 = measure q[0];
 %zeroind = arith.constant 0 : index
 %mres1 = "quir.measure"(%qa1) : (!quir.qubit<1>) -> i1
-oq3.assign_cbit_bit @c0<1> [0] : i1 = %mres1
+oq3.cbit_assign_bit @c0<1> [0] : i1 = %mres1
 // c1 = measure q[1];
 %mres2 = "quir.measure"(%qb1) : (!quir.qubit<1>) -> i1
-oq3.assign_cbit_bit @c1<1> [0] : i1 = %mres2
+oq3.cbit_assign_bit @c1<1> [0] : i1 = %mres2
 // if(c0==1) z q[2];
 %ca2 = oq3.use_variable @c0 : !quir.cbit<1>
 %cond1 = "oq3.cast"(%ca2) : (!quir.cbit<1>) -> i1
@@ -54,4 +54,4 @@ scf.if %cond2 {
 // post q[2]; // NOP/identity
 // c2 = measure q[2];
 %mres3 = "quir.measure"(%qc1) : (!quir.qubit<1>) -> i1
-oq3.assign_cbit_bit @c2<1> [0] : i1 = %mres3
+oq3.cbit_assign_bit @c2<1> [0] : i1 = %mres3

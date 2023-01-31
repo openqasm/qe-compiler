@@ -7,8 +7,8 @@
 //
 // CHECK: module
 module {
-  oq3.declare_variable @a : !quir.cbit<1>
-  oq3.declare_variable @b : !quir.cbit<1>
+  oq3.variable_decl @a : !quir.cbit<1>
+  oq3.variable_decl @b : !quir.cbit<1>
   func @x(%arg0: !quir.qubit<1>) {
     return
   }
@@ -20,18 +20,18 @@ module {
 
     %false = arith.constant false
     %3 = "oq3.cast"(%false) : (i1) -> !quir.cbit<1>
-    oq3.assign_variable @a : !quir.cbit<1> = %3
+    oq3.variable_assign @a : !quir.cbit<1> = %3
     %false_0 = arith.constant false
     %4 = "oq3.cast"(%false_0) : (i1) -> !quir.cbit<1>
-    oq3.assign_variable @b : !quir.cbit<1> = %4
+    oq3.variable_assign @b : !quir.cbit<1> = %4
 
     // CHECK: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
     %5 = quir.measure(%1) : (!quir.qubit<1>) -> i1
-    oq3.assign_cbit_bit @a<1> [0] : i1 = %5
+    oq3.cbit_assign_bit @a<1> [0] : i1 = %5
 
     // CHECK: [[MEASURE1:%.*]] = quir.measure([[QUBIT1]])
     %6 = quir.measure(%2) : (!quir.qubit<1>) -> i1
-    oq3.assign_cbit_bit @b<1> [0] : i1 = %6
+    oq3.cbit_assign_bit @b<1> [0] : i1 = %6
 
     %7 = oq3.use_variable @a : !quir.cbit<1>
     %c1_i32 = arith.constant 1 : i32

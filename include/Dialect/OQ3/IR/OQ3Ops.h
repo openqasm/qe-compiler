@@ -22,9 +22,6 @@
 
 #include "mlir/IR/BuiltinOps.h"
 
-#include <set>
-#include <vector>
-
 #define GET_OP_CLASSES
 #include "Dialect/OQ3/IR/OQ3Ops.h.inc"
 

@@ -38,17 +38,17 @@ class OQ3_CBitBinaryOp<string mnemonic, list<Trait> traits = []> :
 
 // -----
 
-def OQ3_CBitAssignBitOp : OQ3_Op<"assign_cbit_bit",
+def OQ3_CBitAssignBitOp : OQ3_Op<"cbit_assign_bit",
                         [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
     let summary = "Assign a single bit in a classical bit register";
     let description = [{
-        The operation `oq3.assign_cbit_bit` assigns a new value to an
+        The operation `oq3.cbit_assign_bit` assigns a new value to an
         individual bit of a classical bit register in a variable.
 
         Example:
 
         ```mlir
-        oq3.assign_cbit_bit "b"<2> [0] : i1 = %9
+        oq3.cbit_assign_bit "b"<2> [0] : i1 = %9
         ```
     }];
 

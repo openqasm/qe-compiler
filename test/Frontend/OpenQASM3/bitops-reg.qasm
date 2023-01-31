@@ -8,7 +8,7 @@ OPENQASM 3.0;
 bit[6] r;
 
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset
-// MLIR-DAG: oq3.declare_variable @r : !quir.cbit<6>
+// MLIR-DAG: oq3.variable_decl @r : !quir.cbit<6>
 
 qubit $0;
 qubit $1;
@@ -28,7 +28,7 @@ r[1] = measure $1; // expected "0"
 r[2] = measure $2; // expected "1"
 
 bit meas_and;
-// MLIR-DAG: oq3.declare_variable @meas_and : !quir.cbit<1>
+// MLIR-DAG: oq3.variable_decl @meas_and : !quir.cbit<1>
 
 // MLIR: [[R:%.*]] = oq3.use_variable @r
 // MLIR: [[R0:%.*]] = oq3.cbit_extractbit([[R]] : !quir.cbit<6>) [0] : i1
@@ -47,7 +47,7 @@ if (((r[0] | r[2]) & r[1]) == 1) {
 } else {
     meas_and = measure $1;
 }
-// MLIR: oq3.assign_cbit_bit @meas_and<1> [0] : i1 =
+// MLIR: oq3.cbit_assign_bit @meas_and<1> [0] : i1 =
 // on hardware, expect meas_and to become 0
 
 if (bool(r[0] | r[1])) {
@@ -56,7 +56,7 @@ if (bool(r[0] | r[1])) {
 } else {
     r[3] = measure $1;
 }
-// MLIR: oq3.assign_cbit_bit @r<6> [3] : i1 =
+// MLIR: oq3.cbit_assign_bit @r<6> [3] : i1 =
 
 if (bool(r[0] ^ r[1]))  {
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeXor, left=IdentifierRefNode(name=r[0], IdentifierNode(name=r, bits=6), index=0), right=IdentifierRefNode(name=r[1], IdentifierNode(name=r, bits=6), index=1))
@@ -65,7 +65,7 @@ if (bool(r[0] ^ r[1]))  {
 } else {
     r[4] = measure $1;
 }
-// MLIR: oq3.assign_cbit_bit @r<6> [4] : i1 =
+// MLIR: oq3.cbit_assign_bit @r<6> [4] : i1 =
 // on hardware, expect e to be 1
 
 r[5] = 0;

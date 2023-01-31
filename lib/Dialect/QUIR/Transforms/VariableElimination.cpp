@@ -139,7 +139,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   target.addLegalDialect<
       arith::ArithmeticDialect, LLVM::LLVMDialect, memref::MemRefDialect,
       scf::SCFDialect, StandardOpsDialect, quir::QUIRDialect, AffineDialect>();
-  target.addIllegalOp<oq3::DeclareVariableOp, oq3::AssignVariableOp,
+  target.addIllegalOp<oq3::DeclareVariableOp, oq3::VariableAssignOp,
                       oq3::UseVariableOp>();
   // TODO add additional QUIR variable operations here
   RewritePatternSet patterns(&context);
@@ -149,10 +149,19 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
 
   // Convert `CBit` type and operations
   oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns, false);
-  target.addIllegalOp<oq3::CBitAssignBitOp, oq3::CBitNotOp, oq3::CBitRotLOp,
-                      oq3::CBitRotROp, oq3::CBitPopcountOp, oq3::CBitAndOp,
-                      oq3::CBitOrOp, oq3::CBitXorOp, oq3::CBitRShiftOp,
-                      oq3::CBitLShiftOp>();
+  // clang-format off
+  target.addIllegalOp<
+              oq3::CBitAssignBitOp,
+              oq3::CBitNotOp,
+              oq3::CBitRotLOp,
+              oq3::CBitRotROp,
+              oq3::CBitPopcountOp,
+              oq3::CBitAndOp,
+              oq3::CBitOrOp,
+              oq3::CBitXorOp,
+              oq3::CBitRShiftOp,
+              oq3::CBitLShiftOp>();
+  // clang-format on
   target.addDynamicallyLegalOp<oq3::CastOp>([](oq3::CastOp op) {
     if (op.getType().isa<mlir::quir::CBitType>() ||
         op.arg().getType().isa<mlir::quir::CBitType>())

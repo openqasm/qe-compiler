@@ -1,6 +1,6 @@
 //===- Passes.cpp - QUIR Passes ---------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -196,7 +196,7 @@ struct DumpVariableDominanceInfoPass
       for (auto use : *symbolUses) {
         Operation *userOp = use.getUser();
 
-        if (mlir::isa<mlir::oq3::AssignVariableOp>(userOp) ||
+        if (mlir::isa<mlir::oq3::VariableAssignOp>(userOp) ||
             mlir::isa<mlir::oq3::CBitAssignBitOp>(userOp))
           varAssignments.push_back(use.getUser());
         else if (mlir::isa<mlir::oq3::UseVariableOp>(userOp) ||

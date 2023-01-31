@@ -6,10 +6,10 @@ qubit $0;
 
 // MLIR-DAG: %true = arith.constant true
 // MLIR-DAG: %false = arith.constant false
-// MLIR-DAG: oq3.declare_variable @condition_true : i1
-// MLIR-DAG: oq3.declare_variable @condition_false : i1
-// MLIR-DAG: oq3.assign_variable @condition_true : i1 = %true
-// MLIR-DAG: oq3.assign_variable @condition_false : i1 = %false
+// MLIR-DAG: oq3.variable_decl @condition_true : i1
+// MLIR-DAG: oq3.variable_decl @condition_false : i1
+// MLIR-DAG: oq3.variable_assign @condition_true : i1 = %true
+// MLIR-DAG: oq3.variable_assign @condition_false : i1 = %false
 // AST-PRETTY: DeclarationNode(type=ASTTypeBool, BoolNode(name=condition_true, true))
 // AST-PRETTY: DeclarationNode(type=ASTTypeBool, BoolNode(name=condition_false, false))
 bool condition_true = true;
@@ -29,13 +29,13 @@ if (condition_true) {
 // MLIR-DAG: [[COND_TRUE:%.*]] = oq3.use_variable @condition_true : i1
 // MLIR-DAG: [[COND_FALSE:%.*]] = oq3.use_variable @condition_false : i1
 // MLIR: [[OR:%.*]] = arith.ori [[COND_TRUE]], [[COND_FALSE]] : i1
-// MLIR: oq3.assign_variable @my_bool : i1 = [[OR]]
+// MLIR: oq3.variable_assign @my_bool : i1 = [[OR]]
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=my_bool, bits=8), right=BinaryOpNode(type=ASTOpTypeLogicalOr, left=IdentifierNode(name=condition_true, bits=8), right=IdentifierNode(name=condition_false, bits=8))
 my_bool = condition_true || condition_false;
 
 // MLIR: [[COND_TRUE:%.*]] = oq3.use_variable @condition_true : i1
 // MLIR: [[CONST_TRUE:%.*]] = arith.constant true
 // MLIR: [[NOT:%.*]] = arith.cmpi ne, [[COND_TRUE]], [[CONST_TRUE]] : i1
-// MLIR: oq3.assign_variable @my_bool : i1 = [[NOT]]
+// MLIR: oq3.variable_assign @my_bool : i1 = [[NOT]]
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=my_bool, bits=8), right=UnaryOpNode(type=ASTOpTypeLogicalNot, operand=OperatorNode(op=!, target-identifier=IdentifierNode(name=condition_true, bits=8))
 my_bool = !condition_true;

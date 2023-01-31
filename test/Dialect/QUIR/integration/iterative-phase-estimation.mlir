@@ -145,9 +145,9 @@ module {
     "quir.call_gate"(%q0_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     // measure %0 -> c[0]; // this should not be allowed
     %zeroind = arith.constant 0 : index
-    oq3.declare_variable @cbitarray : !quir.cbit<3>
+    oq3.variable_decl @cbitarray : !quir.cbit<3>
     %bitM_1 = quir.call_defcal_measure @defcalMeasure(%q0_0) : (!quir.qubit<1>) -> (i1)
-    oq3.assign_cbit_bit @cbitarray<3> [0] : i1 = %bitM_1
+    oq3.cbit_assign_bit @cbitarray<3> [0] : i1 = %bitM_1
     // c <<= 1;
     %c1_i32 = arith.constant 1 : i32
     %creg_X = oq3.use_variable @cbitarray : !quir.cbit<3>
@@ -184,8 +184,8 @@ module {
     // measure %0 -> c[0];
     %bitM_2 = quir.call_defcal_measure @defcalMeasure(%q0_0) : (!quir.qubit<1>) -> (i1)
     // recent MLIR releases can express "tensor insert element", which we code around here:
-    oq3.assign_variable @cbitarray : !quir.cbit<3> = %creg_1
-    oq3.assign_cbit_bit @cbitarray<3> [0] : i1 = %bitM_2
+    oq3.variable_assign @cbitarray : !quir.cbit<3> = %creg_1
+    oq3.cbit_assign_bit @cbitarray<3> [0] : i1 = %bitM_2
     %creg_2 = oq3.use_variable @cbitarray : !quir.cbit<3>
     // c <<= 1;
     %creg_3 = oq3.cbit_lshift %creg_2, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>

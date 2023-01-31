@@ -3,7 +3,7 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-// MLIR: oq3.declare_variable @c : !quir.cbit<2>
+// MLIR: oq3.variable_decl @c : !quir.cbit<2>
 
 // Define a hadamard gate
 
@@ -50,8 +50,8 @@ cx $0, $1;
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=c, bits=2)[index=0])
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$1:0, bits=1))], result=CBitNode(name=c, bits=2)[index=1])
 // MLIR: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.assign_cbit_bit @c<2> [0] : i1 = [[MEASURE0]]
+// MLIR: oq3.cbit_assign_bit @c<2> [0] : i1 = [[MEASURE0]]
 // MLIR: [[MEASURE1:%.*]] = quir.measure([[QUBIT1]]) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.assign_cbit_bit @c<2> [1] : i1 = [[MEASURE1]]
+// MLIR: oq3.cbit_assign_bit @c<2> [1] : i1 = [[MEASURE1]]
 measure $0 -> c[0];
 measure $1 -> c[1];

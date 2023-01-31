@@ -8,7 +8,7 @@ bool a = false;
 // MLIR: %true = arith.constant true
 bool b = true;
 // MLIR: %true_0 = arith.constant true
-// MLIR: oq3.assign_variable @c : i1 = %true_0
+// MLIR: oq3.variable_assign @c : i1 = %true_0
 bool c = 13;
 
 // AST-PRETTY: IfStatementNode(

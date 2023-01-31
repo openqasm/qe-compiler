@@ -14,7 +14,7 @@ qubit $1;
 bit clbit;
 
 // MLIR: [[MEASURE1:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.assign_cbit_bit @clbit<1> [0] : i1 = [[MEASURE1]]
+// MLIR: oq3.cbit_assign_bit @clbit<1> [0] : i1 = [[MEASURE1]]
 clbit = measure $0;
 
 barrier $0;
@@ -25,16 +25,16 @@ bit[4] clreg;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=clreg, bits=4)[index=1])
 // MLIR: [[MEASURE2:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.assign_cbit_bit @clreg<4> [1] : i1 = [[MEASURE2]]
+// MLIR: oq3.cbit_assign_bit @clreg<4> [1] : i1 = [[MEASURE2]]
 clreg[1] = measure $0;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=clreg, bits=4)[index=0])
 // MLIR: [[MEASURE3:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.assign_cbit_bit @clreg<4> [0] : i1 = [[MEASURE3]]
+// MLIR: oq3.cbit_assign_bit @clreg<4> [0] : i1 = [[MEASURE3]]
 clreg[0] = measure $0;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$1:0, bits=1))], result=CBitNode(name=clreg, bits=4)[index=3])
 // MLIR: [[MEASURE4:%.*]] = quir.measure([[QUBIT1]]) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.assign_cbit_bit @clreg<4> [3] : i1 = [[MEASURE4]]
+// MLIR: oq3.cbit_assign_bit @clreg<4> [3] : i1 = [[MEASURE4]]
 clreg[3] = measure $1;
 //

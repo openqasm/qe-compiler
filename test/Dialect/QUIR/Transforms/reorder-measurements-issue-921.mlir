@@ -15,8 +15,8 @@
 
 // CHECK: module
 module {
-  oq3.declare_variable @a : !quir.cbit<1>
-  oq3.declare_variable @b : !quir.cbit<1>
+  oq3.variable_decl @a : !quir.cbit<1>
+  oq3.variable_decl @b : !quir.cbit<1>
   func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
     %c1_i32 = arith.constant 1 : i32
@@ -33,7 +33,7 @@ module {
 // CHECK: %{{.*}} = quir.measure([[QUBIT1]]) : (!quir.qubit<1>) -> i1
     %5 = quir.measure(%1) : (!quir.qubit<1>) -> i1
     %6 = "oq3.cast"(%5) : (i1) -> !quir.cbit<1>
-    oq3.assign_variable @a : !quir.cbit<1> = %6
+    oq3.variable_assign @a : !quir.cbit<1> = %6
     %7 = oq3.use_variable @a : !quir.cbit<1>
     %8 = "oq3.cast"(%7) : (!quir.cbit<1>) -> i32
     %9 = arith.cmpi eq, %8, %c1_i32 : i32
@@ -46,7 +46,7 @@ module {
     quir.call_gate @rz(%0, %angle) : (!quir.qubit<1>, !quir.angle<64>) -> ()
     %10 = quir.measure(%0) : (!quir.qubit<1>) -> i1
     %11 = "oq3.cast"(%10) : (i1) -> !quir.cbit<1>
-    oq3.assign_variable @b : !quir.cbit<1> = %11
+    oq3.variable_assign @b : !quir.cbit<1> = %11
     %12 = oq3.use_variable @b : !quir.cbit<1>
     %13 = "oq3.cast"(%12) : (!quir.cbit<1>) -> i32
     %14 = arith.cmpi eq, %13, %c1_i32 : i32

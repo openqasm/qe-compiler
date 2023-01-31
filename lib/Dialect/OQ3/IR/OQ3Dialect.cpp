@@ -1,4 +1,4 @@
-//===- OQ3Dialect.cpp - OpenQASM 3 dialect ----------*- C++ -*-===//
+//===- OQ3Dialect.cpp - OpenQASM 3 dialect ----------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -34,16 +34,16 @@ using namespace mlir::oq3;
 struct OQ3InlinerInterface : public DialectInlinerInterface {
   using DialectInlinerInterface::DialectInlinerInterface;
 
-  // This hook checks to see if the given callable `operation` is legal to
+  // This hook checks to see if the given callable `Operation` is legal to
   // inline into the given call. For OQ3, this hook can simply return true, as
-  // the OQ3 `call` `Operation` is for now always inlinable.
+  // the OQ3 callable `Operation` is for now always inlinable.
   auto isLegalToInline(Operation *call, Operation *callable,
                        bool wouldBeCloned) const -> bool final {
     return true;
   }
 
-  // This hook checks to see if the given operation is legal to inline into the
-  // given region. For OQ3, this hook can simply return true, as all OQ3
+  // This hook checks to see if the given `Operation` is legal to inline into
+  // the given region. For OQ3, this hook can simply return true, as all OQ3
   // operations are currently inlinable.
   auto isLegalToInline(Operation *, Region *, bool,
                        BlockAndValueMapping &) const -> bool final {

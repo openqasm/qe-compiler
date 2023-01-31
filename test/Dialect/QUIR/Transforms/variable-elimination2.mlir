@@ -5,7 +5,7 @@
 
 // CHECK: module
 module {
-  oq3.declare_variable @b : !quir.cbit<1>
+  oq3.variable_decl @b : !quir.cbit<1>
   func @x(%arg0: !quir.qubit<1>) {
     return
   }
@@ -18,7 +18,7 @@ module {
 
     %false = arith.constant false
     %4 = "oq3.cast"(%false) : (i1) -> !quir.cbit<1>
-    oq3.assign_variable @b : !quir.cbit<1> = %4
+    oq3.variable_assign @b : !quir.cbit<1> = %4
 
     // CHECK: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
     %5 = quir.measure(%1) : (!quir.qubit<1>) -> i1
@@ -26,13 +26,13 @@ module {
     // CHECK: [[MEASURE1:%.*]] = quir.measure([[QUBIT1]])
     // CHECK: affine.store [[MEASURE1]], [[MEMREF]]
     %6 = quir.measure(%2) : (!quir.qubit<1>) -> i1
-    oq3.assign_cbit_bit @b<1> [0] : i1 = %6
+    oq3.cbit_assign_bit @b<1> [0] : i1 = %6
 
     // A variable update inside a control flow branch currently cannot be
     // simplified. Thus the store and load operations must be kept.
     scf.if %5 {
       quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
-      oq3.assign_cbit_bit @b<1> [0] : i1 = %5
+      oq3.cbit_assign_bit @b<1> [0] : i1 = %5
       %cst = constant unit
     }
 

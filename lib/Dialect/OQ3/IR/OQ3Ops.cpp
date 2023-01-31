@@ -120,8 +120,9 @@ auto KernelCallOp::getArgOperands() -> Operation::operand_range {
 //===----------------------------------------------------------------------===//
 // Variable ops
 //===----------------------------------------------------------------------===//
+
 LogicalResult
-AssignVariableOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+VariableAssignOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation(), true);
 }

@@ -1,4 +1,4 @@
-//===- OQ3Patterns.cpp - OpenQASM 3 DRR Patterns -*- C++ -*-===//
+//===- OQ3Patterns.cpp - OpenQASM 3 DRR Patterns ----------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -110,8 +110,8 @@ struct CastToSameType : public OpRewritePattern<CastOp> {
   } // matchAndRewrite
 };  // struct CastToSameType
 
-/// This pattern simplifies oq3.assign_cbit_bit operations for single-cbit
-/// registers to assign_variable operations. The assigned bit is first cast to a
+/// This pattern simplifies oq3.cbit_assign_bit operations for single-cbit
+/// registers to variable_assign operations. The assigned bit is first cast to a
 /// !quir.cbit<1> (which is transparent) and then directly assigned.
 struct AssignSingleCBitToAssignVariablePattern
     : public OpRewritePattern<oq3::CBitAssignBitOp> {
@@ -129,7 +129,7 @@ struct AssignSingleCBitToAssignVariablePattern
     auto castOp = rewriter.create<CastOp>(
         op.getLoc(), quir::CBitType::get(context, 1), op.assigned_bit());
 
-    rewriter.replaceOpWithNewOp<oq3::AssignVariableOp>(
+    rewriter.replaceOpWithNewOp<oq3::VariableAssignOp>(
         op, op.variable_nameAttr(), castOp.getResult());
 
     return success();
@@ -137,7 +137,7 @@ struct AssignSingleCBitToAssignVariablePattern
 };
 } // anonymous namespace
 
-// this pattern is defined by the TableGen DRR in OQ3Patterns.td
+// This pattern is defined by the TableGen DRR in `OQ3Patterns.td`
 void CBitNotOp::getCanonicalizationPatterns(RewritePatternSet &results,
                                             MLIRContext *context) {
   results.insert<CBitNotNotPat>(context);

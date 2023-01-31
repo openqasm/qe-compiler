@@ -81,7 +81,7 @@ struct CBitAssignBitOpConversionPattern
     // just a single bit? then generate a value assign
     if (cbitWidth == 1) {
 
-      rewriter.create<mlir::oq3::AssignVariableOp>(loc, op.variable_nameAttr(),
+      rewriter.create<mlir::oq3::VariableAssignOp>(loc, op.variable_nameAttr(),
                                                    adaptor.assigned_bit());
 
       rewriter.replaceOp(op, mlir::ValueRange({}));
@@ -99,7 +99,7 @@ struct CBitAssignBitOpConversionPattern
         loc, oldRegisterValue.getType(), oldRegisterValue,
         adaptor.assigned_bit(), adaptor.indexAttr());
 
-    rewriter.create<mlir::oq3::AssignVariableOp>(loc, op.variable_nameAttr(),
+    rewriter.create<mlir::oq3::VariableAssignOp>(loc, op.variable_nameAttr(),
                                                  registerWithInsertedBit);
     rewriter.replaceOp(op, mlir::ValueRange({}));
     return success();

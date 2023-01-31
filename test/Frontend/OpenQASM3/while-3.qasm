@@ -40,7 +40,7 @@ while (i != 0) {
         // MLIR:         quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
         // MLIR:         %cst = constant unit
         // MLIR:         %c0_i32_4 = arith.constant 0 : i32
-        // MLIR:         oq3.assign_variable @j : i32 = %c0_i32_4
+        // MLIR:         oq3.variable_assign @j : i32 = %c0_i32_4
         // MLIR:         scf.yield
         // MLIR:     }
         h $0;
@@ -53,10 +53,10 @@ while (i != 0) {
     // MLIR:     quir.builtin_U %0, %angle, %angle_1, %angle_2 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
     U (0, 0, 0) $0;
     // MLIR:     %2 = quir.measure(%0) : (!quir.qubit<1>) -> i1
-    // MLIR:     oq3.assign_cbit_bit @is_excited<1> [0] : i1 = %2
+    // MLIR:     oq3.cbit_assign_bit @is_excited<1> [0] : i1 = %2
     is_excited = measure $0;
     // MLIR:     %c0_i32_3 = arith.constant 0 : i32
-    // MLIR:     oq3.assign_variable @i : i32 = %c0_i32_3
+    // MLIR:     oq3.variable_assign @i : i32 = %c0_i32_3
     // MLIR:     scf.yield
     // MLIR: }
     i = 0;

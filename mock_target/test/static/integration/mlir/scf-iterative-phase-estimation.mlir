@@ -111,7 +111,7 @@ func @defcalMeasure_q0(%q0_1 : !quir.qubit<1> {quir.physicalId = 0 : i32}) -> i1
 }
 
 // angle[3] c = 0;
-oq3.declare_variable @c : !quir.cbit<3>
+oq3.variable_decl @c : !quir.cbit<3>
 
 func @main() -> i32 {
 // qubit q;
@@ -157,7 +157,7 @@ quir.call_gate @gateH(%q1) : (!quir.qubit<1>) -> ()
   // measure q -> c[0];
   %zeroind = arith.constant 0 : index
   %bitM_1 = quir.call_defcal_measure @defcalMeasure(%q0) : (!quir.qubit<1>) -> (i1)
-  oq3.assign_cbit_bit @c<3> [0] : i1 = %bitM_1
+  oq3.cbit_assign_bit @c<3> [0] : i1 = %bitM_1
   // c <<= 1;
   %c1_i32 = arith.constant 1 : i32
   %ang_prev = oq3.use_variable @c : !quir.cbit<3>

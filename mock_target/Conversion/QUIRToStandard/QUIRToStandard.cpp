@@ -188,17 +188,17 @@ void MockQUIRToStdPass::runOnOperation() {
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
-  patterns.add<ConstantOpConversionPat>(context, typeConverter);
-
-  // Replace Receive ops with constants to be optimized away.
-  patterns
-      .insert<CommOpConversionPat<qcs::RecvOp>,
-              CommOpConversionPat<qcs::BroadcastOp>, ReturnConversionPat,
-              AngleBinOpConversionPat<oq3::AngleAddOp, mlir::arith::AddIOp>,
-              AngleBinOpConversionPat<oq3::AngleSubOp, mlir::arith::SubIOp>,
-              AngleBinOpConversionPat<oq3::AngleMulOp, mlir::arith::MulIOp>,
-              AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>>(
-          context, typeConverter);
+  // clang-format off
+  patterns.add<ConstantOpConversionPat,
+               ReturnConversionPat,
+               CommOpConversionPat<qcs::RecvOp>,
+               CommOpConversionPat<qcs::BroadcastOp>,
+               AngleBinOpConversionPat<oq3::AngleAddOp, mlir::arith::AddIOp>,
+               AngleBinOpConversionPat<oq3::AngleSubOp, mlir::arith::SubIOp>,
+               AngleBinOpConversionPat<oq3::AngleMulOp, mlir::arith::MulIOp>,
+               AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>>(
+      context, typeConverter);
+  // clang-format on
 
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`

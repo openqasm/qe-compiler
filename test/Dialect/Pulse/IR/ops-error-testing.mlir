@@ -32,8 +32,8 @@ pulse.sequence @sequence2 (%cond: i1, %mixed : !pulse.mixed_frame, %waveform: !p
 // -----
 
 pulse.sequence @sequence3 () {
-	// expected-error@+1 {{'oq3.declare_variable' op is not valid within a real-time pulse sequence.}}
-	oq3.declare_variable @c1 : !quir.cbit<1>
+	// expected-error@+1 {{'oq3.variable_decl' op is not valid within a real-time pulse sequence.}}
+	oq3.variable_decl @c1 : !quir.cbit<1>
 	pulse.return
 }
 

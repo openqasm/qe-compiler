@@ -5,8 +5,8 @@ qubit $0;
 qubit $1;
 
 bit[10] result;
-// MLIR-DAG: oq3.declare_variable @result : !quir.cbit<10>
-// MLIR-DAG: oq3.declare_variable @cbits : !quir.cbit<10>
+// MLIR-DAG: oq3.variable_decl @result : !quir.cbit<10>
+// MLIR-DAG: oq3.variable_decl @cbits : !quir.cbit<10>
 result[4] = measure $0;
 result[5] = measure $1;
 

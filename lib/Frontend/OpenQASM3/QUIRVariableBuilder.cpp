@@ -1,6 +1,6 @@
 //===- QUIRVariableBuilder.cpp ----------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -80,7 +80,7 @@ void QUIRVariableBuilder::generateVariableAssignment(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Value assignedValue) {
 
-  builder.create<mlir::oq3::AssignVariableOp>(location, variableName,
+  builder.create<mlir::oq3::VariableAssignOp>(location, variableName,
                                               assignedValue);
 }
 
@@ -106,7 +106,7 @@ void QUIRVariableBuilder::generateCBitSingleBitAssignment(
             location, oldCBitValue.getType(), oldCBitValue,
             assignedValue, builder.getIndexAttr(bitPosition));
 
-  builder.create<mlir::oq3::AssignVariableOp>(
+  builder.create<mlir::oq3::VariableAssignOp>(
         location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)), cbitWithInsertedBit);
 
 #else

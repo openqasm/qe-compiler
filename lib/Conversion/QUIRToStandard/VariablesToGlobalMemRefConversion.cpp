@@ -204,11 +204,9 @@ struct VariableUseConversionPattern
   matchAndRewrite(UseVariableOp useOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto varRefOrNone = findOrCreateGetGlobalMemref(useOp, rewriter);
-    if (!varRefOrNone) {
-      llvm::outs() << "************\n***********\n ERROR\n";
+    if (!varRefOrNone)
       return failure();
-    }
-    llvm::outs() << "************\n***********\n OK\n";
+
     auto varRef = varRefOrNone.getValue();
     auto loadOp =
         rewriter.create<mlir::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
@@ -245,14 +243,14 @@ struct ArrayElementUseConversionPattern
 };
 
 struct VariableAssignConversionPattern
-    : public OpConversionPattern<AssignVariableOp> {
+    : public OpConversionPattern<VariableAssignOp> {
   explicit VariableAssignConversionPattern(MLIRContext *ctx,
                                            TypeConverter &typeConverter)
-      : OpConversionPattern<AssignVariableOp>(typeConverter, ctx,
+      : OpConversionPattern<VariableAssignOp>(typeConverter, ctx,
                                               /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(AssignVariableOp assignOp, OpAdaptor adaptor,
+  matchAndRewrite(VariableAssignOp assignOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto varRefOrNone = findOrCreateGetGlobalMemref(assignOp, rewriter);
     if (!varRefOrNone)

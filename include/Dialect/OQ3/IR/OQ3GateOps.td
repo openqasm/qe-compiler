@@ -18,6 +18,7 @@
 //===----------------------------------------------------------------------===//
 // Duration ops
 //===----------------------------------------------------------------------===//
+
 class OQ3_BinaryDurationOp<string mnemonic, list<Trait> traits = []> :
   OQ3_BinaryOp<mnemonic, !listconcat(traits, [SameOperandsAndResultType])> {
     let arguments = (ins AnyDuration:$lhs, AnyDuration:$rhs);
@@ -81,6 +82,7 @@ def OQ3_DurationMulOp : OQ3_BinaryDurationOp<"duration_mul"> {
 //===----------------------------------------------------------------------===//
 // Stretch ops
 //===----------------------------------------------------------------------===//
+
 def OQ3_DeclareStretchOp : OQ3_Op<"declare_stretch", [NoSideEffect]> {
     let summary = "Declare a new stretch.";
     let description = [{

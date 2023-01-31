@@ -16,10 +16,10 @@
 #ifndef OQ3_VARIABLE_OPS
 #define OQ3_VARIABLE_OPS
 
-def OQ3_DeclareVariableOp : OQ3_Op<"declare_variable", [Symbol]> {
+def OQ3_DeclareVariableOp : OQ3_Op<"variable_decl", [Symbol]> {
     let summary = "Declares a classical variable";
     let description = [{
-        The `oq3.declare_variable` operation declares a classical variable
+        The `oq3.variable_decl` operation declares a classical variable
         with the given name (sym_name), type, and an optional constant
         initializer.
         If present, the attributes `input` and `output` indicate that this
@@ -28,7 +28,7 @@ def OQ3_DeclareVariableOp : OQ3_Op<"declare_variable", [Symbol]> {
         Example:
 
         ```mlir
-        oq3.declare_variable "myVar" : i1 = true
+        oq3.variable_decl "myVar" : i1 = true
         ```
     }];
 
@@ -73,11 +73,11 @@ def OQ3_DeclareVariableOp : OQ3_Op<"declare_variable", [Symbol]> {
 
 // -----
 
-def OQ3_AssignVariableOp : OQ3_Op<"assign_variable",
+def OQ3_VariableAssignOp : OQ3_Op<"variable_assign",
                         [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
     let summary = "Assign a new value to a classical variable";
     let description = [{
-        The operation `oq3.assign_variable` assigns a new value to a classical
+        The operation `oq3.variable_assign` assigns a new value to a classical
         variable given by name.
     }];
 
@@ -102,7 +102,7 @@ def OQ3_UseVariableOp : OQ3_Op<"use_variable",
     let summary = "Use the current value of a variable";
     let description = [{
         The operation `oq3.use_variable` returns the current value (wrt to
-        `oq3.assign_variable` operations) of the classical variable with the
+        `oq3.variable_assign` operations) of the classical variable with the
         given name.
 
         Example:

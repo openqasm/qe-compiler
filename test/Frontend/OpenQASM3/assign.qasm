@@ -2,8 +2,8 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-// MLIR-DAG: oq3.declare_variable @a : i1
-// MLIR-DAG: oq3.declare_variable @j : !quir.cbit<1>
+// MLIR-DAG: oq3.variable_decl @a : i1
+// MLIR-DAG: oq3.variable_decl @j : !quir.cbit<1>
 
 // Angle
 // MLIR: %{{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<3>>
@@ -14,7 +14,7 @@ qubit $0;
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=c, bits=3), right=IntNode(signed=true, value=1, bits=32))
 c = 1;
 // MLIR: %[[CAST_RESULT:.*]] = "oq3.cast"(%{{.*}}) : (i32) -> !quir.angle<3>
-// MLIR:       oq3.assign_variable @c : !quir.angle<3> = %[[CAST_RESULT]]
+// MLIR:       oq3.variable_assign @c : !quir.angle<3> = %[[CAST_RESULT]]
 // MLIR:       %[[USE_RESULT:.*]] = oq3.use_variable @c : !quir.angle<3>
 // MLIR: %[[CAST_RESULT1:.*]] = "oq3.cast"(%[[USE_RESULT]]) : (!quir.angle<3>) -> i1
 // MLIR: scf.if %[[CAST_RESULT1]] {
@@ -24,10 +24,10 @@ if (c) {
 
 // Boolean
 // MLIR: %[[TRUE:.*]] = arith.constant true
-// MLIR: oq3.assign_variable @a : i1 = %[[TRUE]]
+// MLIR: oq3.variable_assign @a : i1 = %[[TRUE]]
 bool a = true;
 // MLIR: %[[FALSE:.*]] = arith.constant false
-// MLIR: oq3.assign_variable @a : i1 = %[[FALSE]]
+// MLIR: oq3.variable_assign @a : i1 = %[[FALSE]]
 // ASR-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=a, bits=8), right=BoolNode(name=bool, false))
 a = false;
 // MLIR: [[A:%.*]] = oq3.use_variable @a : i1

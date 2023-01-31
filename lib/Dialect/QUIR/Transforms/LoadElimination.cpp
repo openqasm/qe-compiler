@@ -1,6 +1,6 @@
 //===- LoadElimination.cpp - Remove unnecessary loads -----------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -50,7 +50,7 @@ void LoadEliminationPass::runOnOperation() {
 
     auto numAssignments = std::count_if(
         symbolUses.begin(), symbolUses.end(), [&](Operation *userOp) {
-          if (mlir::isa<mlir::oq3::AssignVariableOp>(userOp) ||
+          if (mlir::isa<mlir::oq3::VariableAssignOp>(userOp) ||
               mlir::isa<mlir::oq3::CBitAssignBitOp>(userOp)) {
             // TODO have a common interface that identifies any
             // assignment to a variable
@@ -63,11 +63,11 @@ void LoadEliminationPass::runOnOperation() {
     if (numAssignments > 1)
       return WalkResult::advance();
 
-    // only support assignment by AssignVariableOp, for now
-    if (!mlir::isa<mlir::oq3::AssignVariableOp>(assignment))
+    // only support assignment by VariableAssignOp, for now
+    if (!mlir::isa<mlir::oq3::VariableAssignOp>(assignment))
       return WalkResult::advance();
 
-    auto varAssignmentOp = mlir::cast<mlir::oq3::AssignVariableOp>(assignment);
+    auto varAssignmentOp = mlir::cast<mlir::oq3::VariableAssignOp>(assignment);
 
     // Transfer marker for input parameters
     // Note: for arith.constant operations, canonicalization will drop these
