@@ -9,20 +9,15 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-
       # -- REMOVE ONCE OPEN SOURCE
       # Needed until Qiskit/qss-qasm is public.
       - uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-#      - name: Setup SSH Keys and known_hosts
-#        env:
-#          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-#        run: |
-#          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-#          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
-      # --
-
+      - name: Free-up disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /usr/share/dotnet
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -45,11 +40,6 @@ jobs:
           path: .conan
           key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
           restore-keys: conan-${{ runner.os }}
-      - name: Remove cache download
-        run: |
-          sudo du -hs /home/runner/work/_temp/* | sort -h
-          sudo find /home/runner/work/_temp 
-          sudo find /home/runner/work/_temp -name cache.tzst | xargs -r rm
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
         run: ./conan_deps.sh
       - name: Build QSS compiler Conan package
