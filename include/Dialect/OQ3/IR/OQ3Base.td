@@ -1,4 +1,4 @@
-//===- OQ3Dialect.td - MLIR OpenQASM 3 dialect -------------*- tablegen -*-===//
+//===- OQ3Base.td - MLIR OpenQASM 3 dialect base -----------*- tablegen -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -16,6 +16,8 @@
 #ifndef OQ3_BASE_H
 #define OQ3_BASE_H
 
+include "mlir/Interfaces/SideEffectInterfaces.td"
+
 //===----------------------------------------------------------------------===//
 // OpenQASM 3 dialect definition
 //===----------------------------------------------------------------------===//
@@ -29,7 +31,6 @@ def OQ3_Dialect : Dialect {
     }];
     let cppNamespace = "::mlir::oq3";
     let dependentDialects = [
-        // "mlir::qcs::QCSDialect",
         "mlir::arith::ArithmeticDialect",
         "mlir::LLVM::LLVMDialect"
     ];
@@ -43,7 +44,7 @@ class OQ3_Op<string mnemonic, list<Trait> traits = []> :
     Op<OQ3_Dialect, mnemonic, traits>;
 
 class OQ3_UnaryOp<string mnemonic, list<Trait> traits = []> :
-      OQ3_Op<mnemonic, traits> {
+      OQ3_Op<mnemonic, !listconcat(traits, [NoSideEffect])> {
   let arguments = (ins AnyClassical:$operand);
   let results = (outs AnyClassical:$result);
   let verifier = [{ return success(); }];
@@ -52,7 +53,7 @@ class OQ3_UnaryOp<string mnemonic, list<Trait> traits = []> :
 }
 
 class OQ3_BinaryOp<string mnemonic, list<Trait> traits = []> :
-    OQ3_Op<mnemonic, traits> {
+    OQ3_Op<mnemonic, !listconcat(traits, [NoSideEffect])> {
   let arguments = (ins AnyClassical:$operand1, AnyClassical:$operand2);
   let results = (outs AnyClassical:$result);
   let assemblyFormat = [{

@@ -75,7 +75,7 @@ void UnusedVariablePass::runOnOperation() {
   // use cheaper top-down traversal (in this case, bottom-up would not behave
   // any differently)
   config.useTopDownTraversal = true;
-  patterns.insert<UnusedVariablePat>(&getContext(), symbolUsers);
+  patterns.add<UnusedVariablePat>(&getContext(), symbolUsers);
 
   if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
                                           config)))

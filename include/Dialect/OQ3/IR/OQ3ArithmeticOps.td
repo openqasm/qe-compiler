@@ -17,12 +17,10 @@
 #define OQ3_ARITHMETIC_OPS
 
 include "mlir/Interfaces/InferTypeOpInterface.td"
-include "mlir/Interfaces/SideEffectInterfaces.td"
 
 class OQ3_ArithmeticUnaryOp<string mnemonic, list<Trait> traits = []> :
       OQ3_UnaryOp<mnemonic,
-                  !listconcat(traits,
-                              [NoSideEffect, SameOperandsAndResultType])>;
+                  !listconcat(traits, [SameOperandsAndResultType])>;
 
 class OQ3_ArithmeticBinaryOp<string mnemonic, list<Trait> traits = []> :
       OQ3_BinaryOp<mnemonic,

@@ -90,7 +90,7 @@ void MergeResetsLexicographicPass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
 
-  patterns.insert<MergeResetsLexicographicPattern>(&getContext());
+  patterns.add<MergeResetsLexicographicPattern>(&getContext());
 
   if (mlir::failed(applyPatternsAndFoldGreedily(getOperation(),
                                                 std::move(patterns), config)))
@@ -164,7 +164,7 @@ void MergeResetsTopologicalPass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
 
-  patterns.insert<MergeResetsTopologicalPattern>(&getContext());
+  patterns.add<MergeResetsTopologicalPattern>(&getContext());
 
   if (mlir::failed(applyPatternsAndFoldGreedily(getOperation(),
                                                 std::move(patterns), config)))

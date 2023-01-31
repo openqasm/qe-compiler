@@ -67,7 +67,7 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
 void QUIRAngleConversionPass::runOnOperation() {
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<AngleConversion>(&getContext());
+  patterns.add<AngleConversion>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(getOperation(), std::move(patterns)))) {

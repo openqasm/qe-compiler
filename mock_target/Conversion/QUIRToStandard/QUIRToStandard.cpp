@@ -188,24 +188,16 @@ void MockQUIRToStdPass::runOnOperation() {
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
-  patterns.insert<ConstantOpConversionPat>(context, typeConverter);
+  patterns.add<ConstantOpConversionPat>(context, typeConverter);
 
   // Replace Receive ops with constants to be optimized away.
-  patterns.insert<CommOpConversionPat<qcs::RecvOp>>(context, typeConverter);
-  patterns.insert<CommOpConversionPat<qcs::BroadcastOp>>(context,
-                                                         typeConverter);
-  patterns.insert<ReturnConversionPat>(context, typeConverter);
   patterns
-      .insert<AngleBinOpConversionPat<oq3::AngleAddOp, mlir::arith::AddIOp>>(
-          context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<oq3::AngleSubOp, mlir::arith::SubIOp>>(
-          context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<oq3::AngleMulOp, mlir::arith::MulIOp>>(
-          context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>>(
+      .insert<CommOpConversionPat<qcs::RecvOp>,
+              CommOpConversionPat<qcs::BroadcastOp>, ReturnConversionPat,
+              AngleBinOpConversionPat<oq3::AngleAddOp, mlir::arith::AddIOp>,
+              AngleBinOpConversionPat<oq3::AngleSubOp, mlir::arith::SubIOp>,
+              AngleBinOpConversionPat<oq3::AngleMulOp, mlir::arith::MulIOp>,
+              AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>>(
           context, typeConverter);
 
   // With the target and rewrite patterns defined, we can now attempt the

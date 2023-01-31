@@ -97,8 +97,7 @@ void BreakResetPass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
 
-  patterns.insert<BreakResetsPattern>(&getContext(), numIterations,
-                                      delayCycles);
+  patterns.add<BreakResetsPattern>(&getContext(), numIterations, delayCycles);
 
   if (mlir::failed(applyPatternsAndFoldGreedily(getOperation(),
                                                 std::move(patterns), config)))

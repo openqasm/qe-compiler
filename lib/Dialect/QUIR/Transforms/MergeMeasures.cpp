@@ -101,7 +101,7 @@ void MergeMeasuresLexographicalPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<MeasureAndMeasureLexographicalPattern>(&getContext());
+  patterns.add<MeasureAndMeasureLexographicalPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
@@ -167,7 +167,7 @@ void MergeMeasuresTopologicalPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<MeasureAndMeasureTopologicalPattern>(&getContext());
+  patterns.add<MeasureAndMeasureTopologicalPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))

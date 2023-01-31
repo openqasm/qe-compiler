@@ -32,7 +32,7 @@ class OQ3_BinaryDurationOp<string mnemonic, list<Trait> traits = []> :
 def OQ3_DeclareDurationOp : OQ3_Op<"declare_duration", [NoSideEffect]> {
     let summary = "Declare a new duration.";
     let description = [{
-        The `oq3.declare_duration` operation creates a new OpenQASM3.0 duration, representing a duration of time.
+        The `oq3.declare_duration` operation creates a new OpenQASM 3 duration, representing a duration of time.
 
         Example:
         ```mlir

@@ -204,8 +204,11 @@ struct VariableUseConversionPattern
   matchAndRewrite(UseVariableOp useOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto varRefOrNone = findOrCreateGetGlobalMemref(useOp, rewriter);
-    if (!varRefOrNone)
+    if (!varRefOrNone) {
+      llvm::outs() << "************\n***********\n ERROR\n";
       return failure();
+    }
+    llvm::outs() << "************\n***********\n OK\n";
     auto varRef = varRefOrNone.getValue();
     auto loadOp =
         rewriter.create<mlir::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
@@ -300,12 +303,14 @@ void mlir::quir::populateVariableToGlobalMemRefConversionPatterns(
   auto *ctx = patterns.getContext();
   assert(ctx);
 
-  patterns.insert<VariableDeclarationConversionPattern>(
+  patterns.add<VariableDeclarationConversionPattern>(
       ctx, typeConverter, externalizeOutputVariables);
-  patterns.insert<VariableUseConversionPattern>(ctx, typeConverter);
-  patterns.insert<VariableAssignConversionPattern>(ctx, typeConverter);
-
-  patterns.insert<ArrayDeclarationConversionPattern>(ctx, typeConverter);
-  patterns.insert<ArrayElementUseConversionPattern>(ctx, typeConverter);
-  patterns.insert<ArrayElementAssignConversionPattern>(ctx, typeConverter);
+  // clang-format off
+  patterns.add<
+      VariableAssignConversionPattern,
+      VariableUseConversionPattern,
+      ArrayDeclarationConversionPattern,
+      ArrayElementUseConversionPattern,
+      ArrayElementAssignConversionPattern>(ctx, typeConverter);
+  // clang-format on
 }

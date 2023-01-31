@@ -187,16 +187,13 @@ auto CallGateOp::getCalleeType() -> FunctionType {
   return FunctionType::get(getContext(), getOperandTypes(), TypeRange{});
 }
 
-// CallKernelOp, CallDefCalGateOp, CallDefcalMeasureOp
+// CallDefCalGateOp, CallDefcalMeasureOp
 auto CallDefCalGateOp::getCallableForCallee() -> CallInterfaceCallable {
   return (*this)->getAttrOfType<SymbolRefAttr>("callee");
 }
 auto CallDefcalMeasureOp::getCallableForCallee() -> CallInterfaceCallable {
   return (*this)->getAttrOfType<SymbolRefAttr>("callee");
 }
-// auto CallKernelOp::getCallableForCallee() -> CallInterfaceCallable {
-//   return (*this)->getAttrOfType<SymbolRefAttr>("callee");
-// }
 
 auto CallDefCalGateOp::getArgOperands() -> Operation::operand_range {
   return operands();
@@ -204,9 +201,6 @@ auto CallDefCalGateOp::getArgOperands() -> Operation::operand_range {
 auto CallDefcalMeasureOp::getArgOperands() -> Operation::operand_range {
   return operands();
 }
-// auto CallKernelOp::getArgOperands() -> Operation::operand_range {
-//   return operands();
-// }
 
 auto CallDefCalGateOp::getCalleeType() -> FunctionType {
   return FunctionType::get(getContext(), getOperandTypes(), TypeRange{});

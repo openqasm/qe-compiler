@@ -102,7 +102,7 @@ void QUIRVariableBuilder::generateCBitSingleBitAssignment(
   // from CBitAssignBitOp.
 #if 0
   auto oldCBitValue = generateVariableUse(location, variableName, builder.getType<mlir::quir::CBitType>(registerWidth));
-  auto cbitWithInsertedBit = builder.create<mlir::quir::CBit_InsertBitOp>(
+  auto cbitWithInsertedBit = builder.create<mlir::oq3::CBitInsertBitOp>(
             location, oldCBitValue.getType(), oldCBitValue,
             assignedValue, builder.getIndexAttr(bitPosition));
 

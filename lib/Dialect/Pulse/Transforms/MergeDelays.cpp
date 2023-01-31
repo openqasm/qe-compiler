@@ -91,7 +91,7 @@ void MergeDelayPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<DelayAndDelayPattern>(&getContext());
+  patterns.add<DelayAndDelayPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))

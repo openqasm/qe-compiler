@@ -163,9 +163,9 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   });
 
   // Materialize CBitExtractBitOp and CBitInsertBitOp with integer operands.
-  patterns.insert<MaterializeBitOpForInt<oq3::CBitExtractBitOp>,
-                  MaterializeBitOpForInt<oq3::CBitInsertBitOp>>(&context,
-                                                                typeConverter);
+  patterns.add<MaterializeBitOpForInt<oq3::CBitExtractBitOp>,
+               MaterializeBitOpForInt<oq3::CBitInsertBitOp>>(&context,
+                                                             typeConverter);
 
   target.addDynamicallyLegalOp<mlir::oq3::CBitExtractBitOp>(
       [](mlir::oq3::CBitExtractBitOp op) {
@@ -186,7 +186,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
 
   // Support cbit to angle casts by materializing them into a new oq3.cast with
   // the argument type-converted to integer.
-  patterns.insert<MaterializeIntToAngleCastPattern>(&context, typeConverter);
+  patterns.add<MaterializeIntToAngleCastPattern>(&context, typeConverter);
 
   return applyPartialConversion(top, target, std::move(patterns));
 }
@@ -235,7 +235,7 @@ convertIsolatedMemrefGlobalToAlloca(mlir::MLIRContext &context,
 
   RewritePatternSet patterns(&context);
 
-  patterns.insert<MemrefGlobalToAllocaPattern>(&context, top);
+  patterns.add<MemrefGlobalToAllocaPattern>(&context, top);
   mlir::GreedyRewriteConfig config;
 
   config.useTopDownTraversal = true;
@@ -280,7 +280,7 @@ dropAllocaWithIsolatedStores(mlir::MLIRContext &context, mlir::Operation *top) {
 
   RewritePatternSet patterns(&context);
 
-  patterns.insert<RemoveAllocaWithIsolatedStoresPattern>(&context, top);
+  patterns.add<RemoveAllocaWithIsolatedStoresPattern>(&context, top);
   mlir::GreedyRewriteConfig config;
 
   config.useTopDownTraversal = true;

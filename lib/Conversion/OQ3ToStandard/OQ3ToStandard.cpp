@@ -211,11 +211,11 @@ struct CastIntegerToBoolConversionPattern
     : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
-  LogicalResult match(CastOp castOp) const override {
-    if (!isBoolType(castOp.getType()))
+  LogicalResult match(CastOp op) const override {
+    if (!isBoolType(op.getType()))
       return failure();
 
-    auto argType = castOp.arg().getType();
+    auto argType = op.arg().getType();
 
     if (argType.isIntOrIndex())
       return success();
@@ -223,18 +223,18 @@ struct CastIntegerToBoolConversionPattern
     return failure();
   } // match
 
-  void rewrite(CastOp castOp, CastOp::Adaptor adaptor,
+  void rewrite(CastOp op, CastOp::Adaptor adaptor,
                ConversionPatternRewriter &rewriter) const override {
 
-    auto argType = castOp.arg().getType();
+    auto argType = op.arg().getType();
 
     // per OpenQASM3 spec, cast from int to bool by comparing val != 0
     auto constInt0Op = rewriter.create<mlir::arith::ConstantOp>(
-        castOp.getLoc(), argType, rewriter.getIntegerAttr(argType, 0));
+        op.getLoc(), argType, rewriter.getIntegerAttr(argType, 0));
     auto cmpOp = rewriter.create<mlir::LLVM::ICmpOp>(
-        castOp.getLoc(), mlir::LLVM::ICmpPredicate::ne, castOp.arg(),
+        op.getLoc(), mlir::LLVM::ICmpPredicate::ne, op.arg(),
         constInt0Op.getResult());
-    rewriter.replaceOp(castOp, ValueRange{cmpOp});
+    rewriter.replaceOp(op, ValueRange{cmpOp});
   }
 };
 
@@ -243,15 +243,15 @@ struct CastCBitToIntConversionPat : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
-  matchAndRewrite(CastOp castOp, CastOp::Adaptor adaptor,
+  matchAndRewrite(CastOp op, CastOp::Adaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    if (!castOp.arg().getType().isa<CBitType>())
+    if (!op.arg().getType().isa<CBitType>())
       return failure();
-    if (!castOp.out().getType().isIntOrIndex())
+    if (!op.out().getType().isIntOrIndex())
       return failure();
 
-    auto cbitType = castOp.arg().getType().dyn_cast<CBitType>();
-    auto outWidth = castOp.out().getType().getIntOrFloatBitWidth();
+    auto cbitType = op.arg().getType().dyn_cast<CBitType>();
+    auto outWidth = op.out().getType().getIntOrFloatBitWidth();
 
     if (cbitType.getWidth() > outWidth)
       // cannot reinterpret without losing bits!
@@ -259,15 +259,15 @@ struct CastCBitToIntConversionPat : public OQ3ToStandardConversion<CastOp> {
 
     if (cbitType.getWidth() < outWidth) {
       // need to zero-extend to match output type width
-      rewriter.replaceOpWithNewOp<mlir::arith::ExtUIOp>(
-          castOp, castOp.out().getType(), adaptor.arg());
+      rewriter.replaceOpWithNewOp<mlir::arith::ExtUIOp>(op, op.out().getType(),
+                                                        adaptor.arg());
       return success();
     }
 
     // 1:1 conversion of cbit (which is lowered to int) to int
-    assert(castOp.out().getType() == adaptor.arg().getType() &&
+    assert(op.out().getType() == adaptor.arg().getType() &&
            "cbit lowers to int");
-    rewriter.replaceOp(castOp, adaptor.arg());
+    rewriter.replaceOp(op, adaptor.arg());
     return success();
   } // matchAndRewrite
 };  // struct CastCBitToIntConversionPat
@@ -277,29 +277,29 @@ struct CastIntToCBitConversionPat : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
-  matchAndRewrite(CastOp castOp, OpAdaptor adaptor,
+  matchAndRewrite(CastOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    if (!castOp.arg().getType().isIntOrIndexOrFloat())
+    if (!op.arg().getType().isIntOrIndexOrFloat())
       return failure();
-    if (!castOp.out().getType().isa<CBitType>())
+    if (!op.out().getType().isa<CBitType>())
       return failure();
 
-    auto cbitType = castOp.out().getType().dyn_cast<CBitType>();
+    auto cbitType = op.out().getType().dyn_cast<CBitType>();
 
     // assign single bit from an integer
     if (cbitType.getWidth() == 1) {
       auto truncateOp = rewriter.create<mlir::LLVM::TruncOp>(
-          castOp.getLoc(), rewriter.getI1Type(), adaptor.arg());
+          op.getLoc(), rewriter.getI1Type(), adaptor.arg());
 
-      rewriter.replaceOp(castOp, mlir::ValueRange{truncateOp});
+      rewriter.replaceOp(op, mlir::ValueRange{truncateOp});
       return success();
     }
-    if (castOp.arg().getType().getIntOrFloatBitWidth() == cbitType.getWidth()) {
+    if (op.arg().getType().getIntOrFloatBitWidth() == cbitType.getWidth()) {
       // 1:1 conversion of int to cbit
       if (cbitType.getWidth() > 64)
         return failure();
 
-      rewriter.replaceOp(castOp, adaptor.arg());
+      rewriter.replaceOp(op, adaptor.arg());
       return success();
     }
 
@@ -313,14 +313,14 @@ struct CastIndexToIntegerPat : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
-  matchAndRewrite(CastOp castOp, CastOp::Adaptor adaptor,
+  matchAndRewrite(CastOp op, CastOp::Adaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     // check if the input is index type
-    if (!castOp.arg().getType().isIndex())
+    if (!op.arg().getType().isIndex())
       return failure();
 
     rewriter.replaceOpWithNewOp<mlir::arith::IndexCastOp>(
-        castOp, castOp.out().getType(), adaptor.arg());
+        op, op.out().getType(), adaptor.arg());
     return success();
   } // matchAndRewrite
 };  // struct CastIndexToIntegerPat
@@ -331,12 +331,12 @@ struct RemoveConvertedNilCastsPat : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
-  matchAndRewrite(CastOp castOp, OpAdaptor adaptor,
+  matchAndRewrite(CastOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    if (castOp.getType() != adaptor.arg().getType())
+    if (op.getType() != adaptor.arg().getType())
       return failure();
 
-    rewriter.replaceOp(castOp, {adaptor.arg()});
+    rewriter.replaceOp(op, {adaptor.arg()});
     return success();
   } // matchAndRewrite
 
@@ -346,15 +346,15 @@ struct RemoveI1ToCBitCastsPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
-  matchAndRewrite(CastOp castOp, OpAdaptor adaptor,
+  matchAndRewrite(CastOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     if (adaptor.arg().getType() != rewriter.getI1Type())
       return failure();
-    auto cbitType = castOp.getType().dyn_cast<CBitType>();
+    auto cbitType = op.getType().dyn_cast<CBitType>();
     if (!cbitType || cbitType.getWidth() != 1)
       return failure();
 
-    rewriter.replaceOp(castOp, {adaptor.arg()});
+    rewriter.replaceOp(op, {adaptor.arg()});
     return success();
   } // matchAndRewrite
 
@@ -364,21 +364,21 @@ struct WideningIntegerCastsPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
-  matchAndRewrite(CastOp castOp, OpAdaptor adaptor,
+  matchAndRewrite(CastOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    if (!castOp.getOperand().getType().isSignlessInteger())
+    if (!op.getOperand().getType().isSignlessInteger())
       return failure();
-    if (!castOp.getType().isSignlessInteger())
+    if (!op.getType().isSignlessInteger())
       return failure();
 
-    assert(castOp.getOperand().getType() == adaptor.arg().getType() &&
+    assert(op.getOperand().getType() == adaptor.arg().getType() &&
            "unexpected type conversion for built-in integer types");
 
-    if (castOp.getOperand().getType().getIntOrFloatBitWidth() >=
-        castOp.getType().getIntOrFloatBitWidth())
+    if (op.getOperand().getType().getIntOrFloatBitWidth() >=
+        op.getType().getIntOrFloatBitWidth())
       return failure();
 
-    rewriter.replaceOpWithNewOp<mlir::arith::ExtUIOp>(castOp, castOp.getType(),
+    rewriter.replaceOpWithNewOp<mlir::arith::ExtUIOp>(op, op.getType(),
                                                       adaptor.arg());
     return success();
   } // matchAndRewrite
