@@ -47,8 +47,8 @@ jobs:
           restore-keys: conan-${{ runner.os }}
       - name: Remove cache download
         run: |
-          du -hs / | sort -h
-          find /home/runner/work/_temp -name cache.tzst | xargs -r rm
+          sudo du -hs / | sort -h
+          sudo find /home/runner/work/_temp -name cache.tzst | xargs -r rm
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
         run: ./conan_deps.sh
       - name: Build QSS compiler Conan package
