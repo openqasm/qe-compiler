@@ -209,20 +209,22 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, Sequenc
 def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllowed]> {
     let summary = "Creates a frame with a frequency and a phase.";
     let description = [{
-        The `pulse.frame` operation creates a port subset (which we call a Frame)
-        from a frequency and phase.
+        The `pulse.frame` operation creates a frame with amplitude, frequency, and phase.
+        The uid is a unique identifier and can be utilized to lookup the corresponding port
+        for a target hardware.
+
         Example:
 
         ```mlir
-        %frame = pulse.frame(%amp, %freq, %phase) : (complex<f64>, f64, !quir.angle<10>) -> !pulse.frame
+        %frame = pulse.frame(%amp, %freq, %phase) {uid = "a unique identifier"} : (complex<f64>, f64, !quir.angle<10>) -> !pulse.frame
         ```
     }];
 
-    let arguments = (ins AnyComplex:$amp, F64:$freq, AnyAngle:$phase);
+    let arguments = (ins AnyComplex:$amp, F64:$freq, AnyAngle:$phase, StrAttr:$uid);
     let results = (outs Pulse_FrameType:$out);
 
     let assemblyFormat = [{
-        attr-dict `(` $amp `,` $freq `,` $phase `)` `:` `(` type($amp) `,` type($freq) `,` type($phase) `)` `->` type($out)
+        attr-dict `(` $amp `,` $freq `,` $phase `)` `{` $uid `}` `:` `(` type($amp) `,` type($freq) `,` type($phase) `)` `->` type($out)
     }];
 }
 
@@ -281,16 +283,21 @@ def Pulse_Port_SelectOp : Pulse_Op<"select_port", [SequenceAllowed]> {
 def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed]> {
     let summary = "Mixes a frame with a port.";
     let description = [{
-        The `pulse.mix_frame` operation mixes a frame with a port.
+        The `pulse.mix_frame` operation creates a frame which is mixed with a port.
+        The difference between `pulse.frame` and `pulse.mix_frame` is that `pulse.frame` is defined
+        at the logical level, but the `pulse.mix_frame` is defined at the physical level and is
+        specific to a target hardware. One can define the pulse program at the logical level using
+        `pulse.frame` operations and then replace the `pulse.frame` operations with `pulse.mix_frame`
+        operations in a compiler pass according to the target hardware configuration.
 
         Example:
 
         ```mlir
-        pulse.mix_frame(%port, %frame) {signalType = "type of the channel"} : (!pulse.port, !pulse.frame) -> (!port.mixed_frame)
+        pulse.mix_frame(%port) {uid = "a unique identifier"} : (!pulse.port) -> (!port.mixed_frame)
         ```
     }];
 
-    let arguments = (ins StrAttr:$signalType, Pulse_PortType:$port, Pulse_FrameType:$frame);
+    let arguments = (ins Pulse_PortType:$port, StrAttr:$uid, StrAttr:$signalType);
     let results = (outs Pulse_MixedFrameType:$out);
 }
 
