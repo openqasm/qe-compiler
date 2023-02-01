@@ -19,6 +19,9 @@ jobs:
           echo "$RUNNER_TEMP"
           echo "${{ runner.temp }}"
           sudo du -h ${{ runner.temp }}
+          sudo df "${{ runner.temp }}"
+          sudo df /usr/share/dotnet
+          sudo df "${{ github.workspace }}"
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
