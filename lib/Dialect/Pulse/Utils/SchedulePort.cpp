@@ -84,13 +84,6 @@ mixedFrameMap_t buildMixedFrameMap(SequenceOp &sequenceOp,
       mixedFrameSequences[index] = {};
     }
   }
-  if (numMixedFrames < 2) {
-    // if there is only one mixed frame on a port, we don't have to interleave
-    // the operations from multiple mixed frames that are being mapped to that
-    // port. Basically, there will be no possible timing conflict, and therefor
-    // we can return early
-    return mixedFrameSequences;
-  }
 
   // build vectors of operations on each mixed frame and push onto the
   // corresponding vector in the map
