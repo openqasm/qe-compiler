@@ -35,11 +35,19 @@ jobs:
           version=`python -c "from setuptools_scm import get_version; print(get_version())"`
           echo "QSSC_VERSION=$version" >> $GITHUB_ENV
       - name: Try load Conan cache
+        id: cache
         uses: actions/cache/restore@v3
         with:
           path: .conan
           key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
           restore-keys: conan-${{ runner.os }}
+      # If we have a cache miss on 'main', clear the cache.
+      # A dependency was updated, so we need to drop the old one
+      # to prevent unbounded cache growth over time.
+      - name : Clear Conan cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
+        run: |
+          rm -rf ./.conan
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
         run: ./conan_deps.sh
       - name: Build QSS compiler Conan package
@@ -50,7 +58,7 @@ jobs:
           conan build ..
           ninja check-tests
       # On 'main' branch, always save the cache if Conan build succeeded.
-      # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in 'main'
+      # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
       #       cache getting LRU-evicted for every PR, since a single run uses most of the 10GB repo limit.
       - uses: actions/cache/save@v3
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.build.outcome == 'success'
