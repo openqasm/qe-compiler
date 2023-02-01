@@ -5,6 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CONAN_USER_HOME: ${{ github.workspace }}
+      CONAN_LLVM_GIT_CACHE: ${{ runner.temp }}/llvm-project
     steps:
       - uses: actions/checkout@v3
         with:
@@ -14,17 +15,6 @@ jobs:
       - uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: Free-up disk space
-        run: |
-          echo "$RUNNER_TEMP"
-          echo "${{ runner.temp }}"
-          sudo du -h ${{ runner.temp }}
-          sudo df "${{ runner.temp }}"
-          sudo df /usr/share/dotnet
-          sudo df "${{ github.workspace }}"
-          cd ~/
-          pwd
-          sudo df .
       - name: Set up Python
         uses: actions/setup-python@v4
         with:

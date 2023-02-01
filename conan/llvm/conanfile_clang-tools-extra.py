@@ -38,6 +38,15 @@ class ClangToolsExtraConan(ConanFile):
     exports_sources = "llvm-project/*"
 
     def source(self):
+        git_cache = os.environ.get("CONAN_LLVM_GIT_CACHE")
+        cache_arg = f" --reference-if-able {git_cache} " if git_cache else ""
+        self.run(f"git clone {cache_arg} -b {LLVM_TAG} --single-branch https://github.com/llvm/llvm-project.git")
+
+        if git_cache and not os.path.exists(f"{git_cache}/.git"):
+            # Update cache.
+            self.run(f"cp -r llvm-project {git_cache}")
+
+    def source(self):
         if not os.path.exists("llvm-project/.git"):
             # Sources not yet downloaded.
             shutil.rmtree("llvm-project")
