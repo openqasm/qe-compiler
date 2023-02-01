@@ -379,6 +379,7 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTarge
         double getFreq() {
             // get op that defines frequency and return its value
             auto freqConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequency().getDefiningOp());
+            assert (freqConstOp && "assume frequency to be defined by ConstantFloatOp");
             return freqConstOp.value().convertToDouble();
         }
     }];
@@ -410,6 +411,7 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasT
         double getFreqOffset() {
             // get op that defines frequency offset and return its value
             auto freqOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequencyOffset().getDefiningOp());
+            assert (freqOffsetConstOp && "assume frequency offset to be defined by ConstantFloatOp");
             return freqOffsetConstOp.value().convertToDouble();
         }
     }];
@@ -441,6 +443,7 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]>
         double getPhase() {
             // get op that defines phase and return its value
             auto phaseConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phase().getDefiningOp());
+            assert (phaseConstOp && "assume phase to be defined by ConstantFloatOp");
             return phaseConstOp.value().convertToDouble();
         }
     }];
@@ -501,6 +504,7 @@ let summary = "Set a scaling factor for pulses of a frame.";
         double getAmp() {
             // get op that defines amp and return its value
             auto ampConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).amp().getDefiningOp());
+            assert (ampConstOp && "assume amplitude to be defined by ConstantFloatOp");
             return ampConstOp.value().convertToDouble();
         }
     }];
