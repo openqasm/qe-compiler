@@ -472,6 +472,7 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFra
         double getPhaseOffset() {
             // get op that defines phase offset and return its value
             auto phaseOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phaseOffset().getDefiningOp());
+            assert (phaseOffsetConstOp && "assume phase offset to be defined by ConstantFloatOp");
             return phaseOffsetConstOp.value().convertToDouble();
         }
     }];
