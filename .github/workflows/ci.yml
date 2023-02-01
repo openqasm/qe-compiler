@@ -5,7 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CONAN_USER_HOME: ${{ github.workspace }}
-      CONAN_LLVM_GIT_CACHE: ${{ runner.temp }}/llvm-project
     steps:
       - uses: actions/checkout@v3
         with:
@@ -50,6 +49,7 @@ jobs:
       - name: Build QSS compiler Conan package
         id: build
         run: |
+          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
           mkdir build && cd build
           conan install --build=missing ..
           conan build ..
