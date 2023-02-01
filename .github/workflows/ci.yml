@@ -16,8 +16,9 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Free-up disk space
         run: |
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /usr/share/dotnet
+          echo "$RUNNER_TEMP"
+          echo "${{ runner.temp }}"
+          sudo du -h ${{ runner.temp }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
