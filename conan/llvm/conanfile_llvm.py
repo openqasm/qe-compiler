@@ -81,12 +81,18 @@ class LLVMConan(ConanFile):
 
     def source(self):
         git_cache = os.environ.get("CONAN_LLVM_GIT_CACHE")
-        cache_arg = f" --reference-if-able {git_cache} " if git_cache else ""
+        cache_hit = lambda: os.path.exists(f"{git_cache}/.git")
+        cache_arg = f" --reference-if-able '{git_cache}' " if git_cache else ""
+
+        if git_cache and cache_hit():
+            self.output.info(f"Cache hit! Some Git objects will be loaded from '{git_cache}'.")
+
         self.run(f"git clone {cache_arg} -b {LLVM_TAG} --single-branch https://github.com/llvm/llvm-project.git")
 
-        if git_cache and not os.path.exists(f"{git_cache}/.git"):
+        if git_cache and not cache_hit():
             # Update cache.
-            self.run(f"cp -r llvm-project {git_cache}")
+            self.output.info(f"Updating cache at '{git_cache}'.")
+            self.run(f"cp -r llvm-project '{git_cache}'")
 
     @property
     def _source_subfolder(self):
