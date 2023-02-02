@@ -9,7 +9,7 @@ import subprocess
 
 class QasmConan(ConanFile):
     name = 'qasm'
-    version = "0.2.10"
+    version = "0.2.11"
     url = 'https://github.com/Qiskit/qss-qasm.git'
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "examples": [True, False]}
@@ -21,19 +21,10 @@ class QasmConan(ConanFile):
     generators = "cmake"
 
     def source(self):
-        token = os.environ.get('GITHUB_TOKEN')
-        if token is not None:
-            self.run(f"git clone https://{token}@github.com/Qiskit/qss-qasm.git")
-        else:
-            self.run(f"git clone git@github.com:Qiskit/qss-qasm.git")
+        self.run(f"git clone git@github.com:Qiskit/qss-qasm.git")
 
-        # TODO: remove 'ignore_errors=True' once the first public version of QASM is published.
-        version_info = self.conan_data["sources"].get(self.version)
-        if version_info:
-            commit_hash = version_info["hash"]
-            self.run(f"cd qss-qasm && git checkout {commit_hash} && cd ..", ignore_errors=True)
-        else:
-            self.output.error(f"qss-qasm version {self.version} not found in conandata.yml.")
+        commit_hash = self.conan_data["sources"]["hash"]
+        self.run(f"cd qss-qasm && git checkout {commit_hash} && cd ..")
 
         # When building on Apple, we need to pass the KEEP_RPATHS option to the
         # basic setup command for Conan.
