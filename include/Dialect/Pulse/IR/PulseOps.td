@@ -203,23 +203,19 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, Sequenc
 def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllowed]> {
     let summary = "Creates a frame with a frequency and a phase.";
     let description = [{
-        The `pulse.frame` operation creates a frame with amplitude, frequency, and phase.
-        The uid is a unique identifier and can be utilized to lookup the corresponding port
-        for a target hardware.
+        The `pulse.frame` operation creates a frame. One can change the frequency, phase, and
+        amplitude of a frame, play a waveform on a frame, or capture a frame using pulse Dialect
+        operations.
 
         Example:
 
         ```mlir
-        %frame = pulse.frame(%amp, %freq, %phase) {uid = "a unique identifier"} : (complex<f64>, f64, !quir.angle<10>) -> !pulse.frame
+        %frame = pulse.frame() {uid = "a unique identifier"} : () -> !pulse.frame
         ```
     }];
 
-    let arguments = (ins AnyComplex:$amp, F64:$freq, AnyAngle:$phase, StrAttr:$uid);
+    let arguments = (ins StrAttr:$uid);
     let results = (outs Pulse_FrameType:$out);
-
-    let assemblyFormat = [{
-        attr-dict `(` $amp `,` $freq `,` $phase `)` `{` $uid `}` `:` `(` type($amp) `,` type($freq) `,` type($phase) `)` `->` type($out)
-    }];
 }
 
 def Pulse_Port_CreateOp : Pulse_Op<"create_port", [NoSideEffect]> {
@@ -291,7 +287,7 @@ def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed]> {
         ```
     }];
 
-    let arguments = (ins Pulse_PortType:$port, StrAttr:$uid, StrAttr:$signalType);
+    let arguments = (ins Pulse_PortType:$port, StrAttr:$uid);
     let results = (outs Pulse_MixedFrameType:$out);
 }
 

@@ -340,44 +340,6 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
       "Failed to hash waveform name from play operation");
 }
 
-llvm::Expected<std::string> PlayOp::getChannelName(CallSequenceOp callOp,
-                                                   uint qubitId) {
-  // TODO: This is a temporary method that will be removed when
-  // the the Pulse Layer adds UIDs to the mixed_frames:
-  // see issue 971
-
-  // attempt to get target directly from PlayOp if that
-  // fails get to the defining op via the call sequence
-  Operation *targetOp;
-  targetOp = dyn_cast_or_null<MixFrameOp>(target().getDefiningOp());
-
-  if (!targetOp) {
-    auto mixFrameArgIndex = target().dyn_cast<BlockArgument>().getArgNumber();
-    targetOp = callOp.getOperand(mixFrameArgIndex)
-                   .getDefiningOp<mlir::pulse::MixFrameOp>();
-  }
-
-  if (targetOp) {
-    assert(dyn_cast<MixFrameOp>(targetOp));
-    auto signalType = dyn_cast<MixFrameOp>(targetOp).signalType();
-    std::string channelName;
-    if (signalType == "measure")
-      channelName = std::string("m") + std::to_string(qubitId);
-    else if (signalType == "drive")
-      channelName = std::string("d") + std::to_string(qubitId);
-    else
-      return llvm::createStringError(
-          llvm::inconvertibleErrorCode(),
-          llvm::Twine("signal type ") + signalType +
-              " is not supported. Must be 'measure' or 'drive'.");
-    return channelName;
-  }
-
-  return llvm::createStringError(
-      llvm::inconvertibleErrorCode(),
-      "Failed to get channel name for play operation");
-}
-
 //===----------------------------------------------------------------------===//
 //
 // end PlayOp
