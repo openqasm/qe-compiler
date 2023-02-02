@@ -56,20 +56,15 @@ module @acquire_0 attributes {quir.nodeId = 7 : i32, quir.nodeType = "acquire", 
     %cst = arith.constant 0.000000e+00 : f64
     %0 = complex.create %cst, %cst : complex<f64>
     %1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-    %2 = "pulse.create_port"() {uid = "Q0"} : () -> !pulse.port
-    %3 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %4 = "pulse.mix_frame"(%2, %3) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    %5 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %6 = "pulse.mix_frame"(%2, %5) {signalType = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    %7 = "pulse.create_port"() {uid = "Q1"} : () -> !pulse.port
-    %8 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %9 = "pulse.mix_frame"(%7, %8) {signalType = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    %10 = "pulse.create_port"() {uid = "Q2"} : () -> !pulse.port
-    %11 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %12 = "pulse.mix_frame"(%10, %11) {signalType = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    %13 = "pulse.create_port"() {uid = "Q3"} : () -> !pulse.port
-    %14 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %15 = "pulse.mix_frame"(%13, %14) {signalType = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %2 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
+    %4 = "pulse.mix_frame"(%2) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame
+    %6 = "pulse.mix_frame"(%2) {uid = "mf1-p0"} : (!pulse.port) -> !pulse.mixed_frame
+    %7 = "pulse.create_port"() {uid = "p1"} : () -> !pulse.port
+    %9 = "pulse.mix_frame"(%7) {uid = "mf0-p1"} : (!pulse.port) -> !pulse.mixed_frame
+    %10 = "pulse.create_port"() {uid = "p2"} : () -> !pulse.port
+    %12 = "pulse.mix_frame"(%10) {uid = "mf0-p2"} : (!pulse.port) -> !pulse.mixed_frame
+    %13 = "pulse.create_port"() {uid = "p3"} : () -> !pulse.port
+    %15 = "pulse.mix_frame"(%13) {uid = "mf0-p3"} : (!pulse.port) -> !pulse.mixed_frame
     %16 = pulse.call_sequence @seq_0(%4, %6, %9, %12, %15) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> i1
     return %c0_i32 : i32
   }

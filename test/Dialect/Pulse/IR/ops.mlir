@@ -16,34 +16,29 @@
 // that they have been altered from the originals.
 
 func @main () {
-    %d0 = "pulse.create_port"() {uid = "d0"} : () -> !pulse.port
-    // CHECK: %[[D0:.*]] = "pulse.create_port"() {uid = "d0"} : () -> !pulse.port
-    %m0 = "pulse.create_port"() {uid = "m0"} : () -> !pulse.port
-    // CHECK: %[[M0:.*]] = "pulse.create_port"() {uid = "m0"} : () -> !pulse.port
+    %p0 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
+    // CHECK: %[[P0:.*]] = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
+    %p1 = "pulse.create_port"() {uid = "p1"} : () -> !pulse.port
+    // CHECK: %[[P1:.*]] = "pulse.create_port"() {uid = "p1"} : () -> !pulse.port
 
-    %amp_i = arith.constant 0.0012978777572167797 : f64
-    %amp_q = arith.constant 0.0012978777572167797 : f64
-    %amp = complex.create %amp_i, %amp_q : complex<f64>
-    %freq = arith.constant 100.e6 : f64
-    %phase = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-    %f0 = "pulse.create_frame"(%amp, %freq, %phase) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    // CHECK: %[[F0:.*]] = pulse.create_frame(%{{.*}}, %{{.*}}, %{{.*}}) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
+    %f0 = "pulse.create_frame"() {uid = "f0"} : () -> !pulse.frame
+    // CHECK: %[[F0:.*]] = "pulse.create_frame"() {uid = "f0"} : () -> !pulse.frame
 
-    %mf0 = "pulse.mix_frame"(%d0, %f0) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    // CHECK: %[[MF0:.*]] = "pulse.mix_frame"(%[[D0]], %[[F0]]) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %mf0 = "pulse.mix_frame"(%p0) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame
+    // CHECK: %[[MF0:.*]] = "pulse.mix_frame"(%[[P0]]) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame
 
     %param_amp_i = arith.constant 0.10086211860780928 : f64
     %param_amp_j = arith.constant 0.0012978777572167797 : f64
     %param_amp = complex.create %param_amp_i, %param_amp_j : complex<f64>
     // CHECK: %[[AMP:.*]] = complex.create %{{.*}}, %{{.*}} : complex<f64>
 
-    %res0, %res1 = pulse.call_sequence @test_pulse_ops (%d0, %m0, %f0, %mf0, %param_amp) : (!pulse.port, !pulse.port, !pulse.frame, !pulse.mixed_frame, complex<f64>) -> (i1, i1)
-    // CHECK: %{{.*}}:2 = pulse.call_sequence @test_pulse_ops(%[[D0]], %[[M0]], %[[F0]], %[[MF0]], %[[AMP]]) : (!pulse.port, !pulse.port, !pulse.frame, !pulse.mixed_frame, complex<f64>) -> (i1, i1)
+    %res0, %res1 = pulse.call_sequence @test_pulse_ops (%p0, %p1, %f0, %mf0, %param_amp) : (!pulse.port, !pulse.port, !pulse.frame, !pulse.mixed_frame, complex<f64>) -> (i1, i1)
+    // CHECK: %{{.*}}:2 = pulse.call_sequence @test_pulse_ops(%[[P0]], %[[P1]], %[[F0]], %[[MF0]], %[[AMP]]) : (!pulse.port, !pulse.port, !pulse.frame, !pulse.mixed_frame, complex<f64>) -> (i1, i1)
 
     return
 }
 
-pulse.sequence @test_pulse_ops (%d0: !pulse.port, %m0: !pulse.port, %f0: !pulse.frame, %mf0: !pulse.mixed_frame,%amp: complex<f64>) -> (i1, i1) {
+pulse.sequence @test_pulse_ops (%p0: !pulse.port, %p1: !pulse.port, %f0: !pulse.frame, %mf0: !pulse.mixed_frame,%amp: complex<f64>) -> (i1, i1) {
 // CHECK: pulse.sequence @test_pulse_ops(
     // CHECK-SAME: %[[ARG0:[A-Za-z0-9]+]]: !pulse.port,
     // CHECK-SAME: %[[ARG1:[A-Za-z0-9]+]]: !pulse.port,
@@ -66,8 +61,8 @@ pulse.sequence @test_pulse_ops (%d0: !pulse.port, %m0: !pulse.port, %f0: !pulse.
     %kernel_waveform = pulse.create_waveform dense<[[0.0, 0.5], [0.5, 0.5], [0.5, 0.0]]> : tensor<3x2xf64> -> !pulse.waveform
     // CHECK %[[KERNELWAVEFORM:.*]] = pulse.create_waveform dense<[[0.000000e+00, 5.000000e-01], [5.000000e-01, 5.000000e-01], [5.000000e-01, 0.000000e+00]]> : tensor<3x2xf64> -> !pulse.waveform
 
-    %mf1 = "pulse.mix_frame"(%d0, %f0) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    // CHECK: %{{.*}}   = "pulse.mix_frame"(%[[ARG0]], %[[ARG2]]) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %mf1 = "pulse.mix_frame"(%p0) {uid = "mf1-p0"} : (!pulse.port) -> !pulse.mixed_frame
+    // CHECK: %{{.*}}   = "pulse.mix_frame"(%[[ARG0]]) {uid = "mf1-p0"} : (!pulse.port) -> !pulse.mixed_frame
 
     %param_amp_i = arith.constant 0.10086211860780928 : f64
     %param_amp_j = arith.constant 0.0012978777572167797 : f64
