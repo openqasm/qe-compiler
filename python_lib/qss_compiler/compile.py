@@ -271,8 +271,9 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                     childproc.kill()
                     childproc.join()
                     raise QSSCompilerError(
-                        "compile process delivered unexpected object instead of status or "
-                        "diagnostics."
+                        "The compile process delivered an unexpected object instead of status or "
+                        "diagnostic information. This points to inconsistencies in the Python "
+                        "interface code between the calling process and the compile process."
                     )
 
             if options.output_file is None:
