@@ -45,9 +45,6 @@ module @drive_0 attributes {quir.nodeId = 0 : i32, quir.nodeType = "drive", quir
   }
   func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
-    %cst = arith.constant 0.000000e+00 : f64
-    %0 = complex.create %cst, %cst : complex<f64>
-    %1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
     %2 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
     %4 = "pulse.mix_frame"(%2) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame
     %6 = "pulse.mix_frame"(%2) {uid = "mf0-p1"} : (!pulse.port) -> !pulse.mixed_frame
