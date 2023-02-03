@@ -39,9 +39,9 @@ public:
   ErrorCategory category;
   std::string message; /// a detailed and actionable error message
 
-  Diagnostic(Severity severity_, ErrorCategory category_, std::string message_)
-      : severity(severity_), category(category_), message(std::move(message_)) {
-  }
+  Diagnostic(Severity severity_, ErrorCategory category_,
+             std::string const &message_)
+      : severity(severity_), category(category_), message(message_) {}
 
   std::string toString() const;
 };
