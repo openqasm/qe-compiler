@@ -1,8 +1,5 @@
 // RUN: qss-compiler -X=mlir --pulse-remove-unused-arguments %s | FileCheck %s
 func @main() -> i32 {
-    %cst = arith.constant 0.000000e+00 : f64
-    %0 = complex.create %cst, %cst : complex<f64>
-    %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<20>>
     %1 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
     %3 = "pulse.mix_frame"(%1) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame
     %5 = "pulse.mix_frame"(%1) {uid = "mf1-p0"} : (!pulse.port) -> !pulse.mixed_frame
