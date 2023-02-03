@@ -38,8 +38,6 @@ class QSSCompilerConan(ConanFile):
     def _configure_cmake(self):
         cmake = CMake(self, parallel=False, generator="Ninja")
         cmake.definitions["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
-        cmake.definitions["INSTALL_CONAN_DEPS"] = "OFF"
-        cmake.definitions["CONAN_DEBUG_DEPS"] = self.settings.build_type == "Debug"
         if self.settings.build_type == "Debug":
             cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = "2"
         return cmake
