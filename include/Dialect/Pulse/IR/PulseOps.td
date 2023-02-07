@@ -206,12 +206,11 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, Sequenc
     let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
-def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllowed]> {
+def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllowed, SameVariadicOperandSize]> {
     let summary = "Creates a frame with a frequency and a phase.";
     let description = [{
-        The `pulse.frame` operation creates a frame. One can change the frequency, phase, and
-        amplitude of a frame, play a waveform on a frame, or capture a frame using pulse Dialect
-        operations.
+        The `pulse.frame` operation creates a frame with optional arguments to initialize amplitude, frequency, and phase. One can also
+        set/shift the amplitude, frequency, and phase of a frame using pulse Dialect operations.
 
         Example:
 
@@ -220,7 +219,7 @@ def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllow
         ```
     }];
 
-    let arguments = (ins StrAttr:$uid);
+    let arguments = (ins StrAttr:$uid, Optional<AnyComplex>:$initial_amp, Optional<F64>:$initial_freq, Optional<AnyAngle>:$initial_phase);
     let results = (outs Pulse_FrameType:$out);
 }
 
@@ -276,15 +275,15 @@ def Pulse_Port_SelectOp : Pulse_Op<"select_port", [SequenceAllowed]> {
 }
 
 
-def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed]> {
+def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed, SameVariadicOperandSize]> {
     let summary = "Mixes a frame with a port.";
     let description = [{
-        The `pulse.mix_frame` operation creates a frame which is mixed with a port.
-        The difference between `pulse.frame` and `pulse.mix_frame` is that `pulse.frame` is defined
-        at the logical level, but the `pulse.mix_frame` is defined at the physical level and is
-        specific to a target hardware. One can define the pulse program at the logical level using
-        `pulse.frame` operations and then replace the `pulse.frame` operations with `pulse.mix_frame`
-        operations in a compiler pass according to the target hardware configuration.
+        The `pulse.mix_frame` operation creates a frame mixed with a port, with optional arguments to initialize amplitude, frequency, and phase. One can also
+        set/shift the amplitude, frequency, and phase of a mixed frame using pulse Dialect operations.
+
+        The difference between `pulse.frame` and `pulse.mix_frame` is that `pulse.frame` is defined at the logical level, but the `pulse.mix_frame` is defined
+        at the physical level and is specific to a target hardware. One can define the pulse program at the logical level using `pulse.frame` operations and
+        then replace the `pulse.frame` operations with `pulse.mix_frame` operations in a compiler pass according to the target hardware configuration.
 
         Example:
 
@@ -293,7 +292,7 @@ def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed]> {
         ```
     }];
 
-    let arguments = (ins Pulse_PortType:$port, StrAttr:$uid);
+    let arguments = (ins Pulse_PortType:$port, StrAttr:$uid, Optional<AnyComplex>:$initial_amp, Optional<F64>:$initial_freq, Optional<AnyAngle>:$initial_phase);
     let results = (outs Pulse_MixedFrameType:$out);
 }
 
