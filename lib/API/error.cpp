@@ -20,7 +20,7 @@
 #include <string>
 
 namespace qssc {
-static std::string_view getErrorForCategory(ErrorCategory category) {
+static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   using namespace qssc;
   switch (category) {
   case ErrorCategory::OpenQASM3ParseFailure:
@@ -53,7 +53,7 @@ std::string Diagnostic::toString() const {
   llvm::raw_string_ostream ostream(str);
 
   ostream << getSeverityAsString(severity) << ": "
-          << getErrorForCategory(category) << "\n";
+          << getErrorCategoryAsString(category) << "\n";
   ostream << message;
 
   return str;
