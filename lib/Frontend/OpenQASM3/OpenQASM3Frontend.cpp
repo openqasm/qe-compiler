@@ -31,6 +31,8 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
 
+#include <mutex>
+
 static llvm::cl::OptionCategory openqasm3Cat(
     " OpenQASM 3 Frontend Options",
     "Options that control the OpenQASM 3 frontend of QSS Compiler");
@@ -50,12 +52,18 @@ static llvm::cl::list<std::string>
     includeDirs("I", llvm::cl::desc("Add <dir> to the include path"),
                 llvm::cl::value_desc("dir"), llvm::cl::cat(openqasm3Cat));
 
-static thread_local qssc::DiagnosticCallback *diagnosticCallbackPerThread;
+static qssc::DiagnosticCallback *diagnosticCallback_;
+
+static std::mutex qasmParserLock;
 
 llvm::Error qssc::frontend::openqasm3::parse(
     std::string const &source, bool sourceIsFilename, bool emitRawAST,
     bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp &newModule,
     llvm::Optional<qssc::DiagnosticCallback> diagnosticCallback) {
+
+  // The QASM parser can only be called from a single thread.
+  std::lock_guard<std::mutex> qasmParserLockGuard(qasmParserLock);
+
   for (const auto &dirStr : includeDirs)
     QASM::QasmPreprocessor::Instance().AddIncludePath(dirStr);
 
@@ -64,8 +72,8 @@ llvm::Error qssc::frontend::openqasm3::parse(
 
   // Add a callback for diagnostics to the parser. Since the callback needs
   // access to diagnosticCallback to forward diagnostics, make it available in a
-  // thread-local variable.
-  diagnosticCallbackPerThread =
+  // global variable.
+  diagnosticCallback_ =
       diagnosticCallback.hasValue() ? diagnosticCallback.getPointer() : nullptr;
 
   QASM::QasmDiagnosticEmitter::SetHandler(
@@ -104,11 +112,11 @@ llvm::Error qssc::frontend::openqasm3::parse(
         llvm::errs() << level << " while parsing OpenQASM 3 input\n"
                      << Exp << " " << Msg << "\n";
 
-        if (diagnosticCallbackPerThread) {
+        if (diagnosticCallback_) {
           qssc::Diagnostic diag{diagLevel,
                                 qssc::ErrorCategory::OpenQASM3ParseFailure,
                                 Exp + "\n" + Msg};
-          (*diagnosticCallbackPerThread)(diag);
+          (*diagnosticCallback_)(diag);
         }
 
         if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
