@@ -61,8 +61,20 @@ from .py_qssc import _compile_with_args, Diagnostic
 mp_ctx = mp.get_context("spawn")
 
 
+def _diagnostics_to_str(diagnostics):
+    return "\n".join([str(diag) for diag in diagnostics])
+
+
 class QSSCompilerError(Exception):
-    pass
+    """Raised on errors invoking the compiler or when the interaction between
+    Python interface and native backend code fails."""
+
+    def __init__(self, message: str, diagnostics: Optional[List[Diagnostic]] = None):
+        self.message = message
+        self.diagnostics = [] if diagnostics is None else diagnostics
+
+    def __str__(self):
+        return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
 
 
 class QSSCompilationFailure(Exception):
@@ -73,8 +85,7 @@ class QSSCompilationFailure(Exception):
         self.diagnostics = [] if diagnostics is None else diagnostics
 
     def __str__(self):
-
-        return "\n".join([self.message, "\n".join([str(diag) for diag in self.diagnostics])])
+        return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
 
 
 class InputType(Enum):
@@ -285,7 +296,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             # make sure that child process terminates
             childproc.kill()
             childproc.join()
-            raise QSSCompilerError("compile process exited before delivering output.")
+            raise QSSCompilerError("compile process exited before delivering output.", diagnostics)
 
         childproc.join()
         if childproc.exitcode != 0:
@@ -294,7 +305,8 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                     "compile process exited with non-zero status "
                     + str(childproc.exitcode)
                     + (" yet appears  still alive" if childproc.is_alive() else "")
-                )
+                ),
+                diagnostics,
             )
 
         if not success:
