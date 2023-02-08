@@ -27,8 +27,11 @@
 #include "mlir/IR/Verifier.h"
 
 #include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
+
+#include <mutex>
 
 static llvm::cl::OptionCategory openqasm3Cat(
     " OpenQASM 3 Frontend Options",
@@ -49,53 +52,78 @@ static llvm::cl::list<std::string>
     includeDirs("I", llvm::cl::desc("Add <dir> to the include path"),
                 llvm::cl::value_desc("dir"), llvm::cl::cat(openqasm3Cat));
 
-llvm::Error qssc::frontend::openqasm3::parse(std::string const &source,
-                                             bool sourceIsFilename,
-                                             bool emitRawAST,
-                                             bool emitPrettyAST, bool emitMLIR,
-                                             mlir::ModuleOp &newModule) {
+static qssc::DiagnosticCallback *diagnosticCallback_;
+
+static std::mutex qasmParserLock;
+
+llvm::Error qssc::frontend::openqasm3::parse(
+    std::string const &source, bool sourceIsFilename, bool emitRawAST,
+    bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp &newModule,
+    llvm::Optional<qssc::DiagnosticCallback> diagnosticCallback) {
+
+  // The QASM parser can only be called from a single thread.
+  std::lock_guard<std::mutex> qasmParserLockGuard(qasmParserLock);
+
   for (const auto &dirStr : includeDirs)
     QASM::QasmPreprocessor::Instance().AddIncludePath(dirStr);
 
   QASM::ASTParser parser;
   QASM::ASTRoot *root = nullptr;
 
+  // Add a callback for diagnostics to the parser. Since the callback needs
+  // access to diagnosticCallback to forward diagnostics, make it available in a
+  // global variable.
+  diagnosticCallback_ =
+      diagnosticCallback.hasValue() ? diagnosticCallback.getPointer() : nullptr;
+
   QASM::QasmDiagnosticEmitter::SetHandler(
       [](const std::string &Exp, const std::string &Msg,
          QASM::QasmDiagnosticEmitter::DiagLevel DL) {
         std::string level = "unknown";
+        qssc::Severity diagLevel = qssc::Severity::Error;
 
         switch (DL) {
         case QASM::QasmDiagnosticEmitter::DiagLevel::Error:
           level = "Error";
+          diagLevel = qssc::Severity::Error;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::ICE:
           level = "ICE";
+          diagLevel = qssc::Severity::Fatal;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Warning:
           level = "Warning";
+          diagLevel = qssc::Severity::Warning;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Info:
           level = "Info";
+          diagLevel = qssc::Severity::Info;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Status:
           level = "Status";
+          diagLevel = qssc::Severity::Info;
           break;
         }
 
         llvm::errs() << level << " while parsing OpenQASM 3 input\n"
                      << Exp << " " << Msg << "\n";
 
+        if (diagnosticCallback_) {
+          qssc::Diagnostic diag{diagLevel,
+                                qssc::ErrorCategory::OpenQASM3ParseFailure,
+                                Exp + "\n" + Msg};
+          (*diagnosticCallback_)(diag);
+        }
+
         if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
-            DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
+            DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE)
           // give up parsing after errors right away
           // TODO: update to recent qss-qasm to support continuing
           throw std::runtime_error("Failure parsing");
-        }
       });
 
   try {
