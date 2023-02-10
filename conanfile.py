@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2021.
+# (C) Copyright IBM 2021, 2023.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -38,6 +38,8 @@ class QSSCompilerConan(ConanFile):
     def _configure_cmake(self):
         cmake = CMake(self, parallel=False, generator="Ninja")
         cmake.definitions["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
+        # linking in parallel on all CPUs may take up more memory than
+        # available in a typical CI worker for debug builds.
         if self.settings.build_type == "Debug":
             cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = "2"
         return cmake
