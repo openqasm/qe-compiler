@@ -38,6 +38,10 @@ endif()
 
 enable_language(C CXX ASM)
 
+# Add build directory to CMake module search path.
+# Some package managers like Conan generate CMake modules here.
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}")
+
 # Find external packages
 find_package(Python COMPONENTS Interpreter Development)
 find_package(qasm REQUIRED)
@@ -47,6 +51,8 @@ find_package(gmp REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(libzip REQUIRED)
 find_package(GTest REQUIRED)
+find_package(llvm REQUIRED)
+find_package(clang-tools-extra REQUIRED)
 
 if(DEFINED ENV{VERSION_STRING})
     set(VERSION_STRING $ENV{VERSION_STRING})
@@ -322,8 +328,8 @@ find_package(pybind11 REQUIRED)
 include_directories(SYSTEM ${nlohmann_json_INCLUDE_DIRS})
 
 # Boost -------------------------------------------------------------------
-find_package(boost 1.77.0 REQUIRED)
-include_directories(SYSTEM ${boost_INCLUDE_DIRS})
+find_package(Boost 1.77.0 REQUIRED)
+include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 # ------------------------------------------------------------------------------
 # QSS-COMPILER
