@@ -22,10 +22,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-      - name: Create Conan default profile
-        run: |
-          conan profile new default --detect
-          conan profile update settings.compiler.libcxx=libstdc++11 default
       - name: Export QSSC_VERSION from Git version tag
         run: |
           version=`python -c "from setuptools_scm import get_version; print(get_version())"`
@@ -47,6 +43,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
         run: |
           rm -rf ./.conan
+      - name: Create Conan default profile
+        run: |
+          conan profile new default --detect
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          conan profile list
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
         run: ./conan_deps.sh
       - name: Build QSS compiler Conan package
