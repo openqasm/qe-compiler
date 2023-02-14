@@ -16,7 +16,7 @@ LLVM_TAG = "llvmorg-14.0.6"
 
 class LLVMConan(ConanFile):
     name = 'llvm'
-    version = "14.0.6-1"
+    version = "14.0.6-2"
     description = (
         'A toolkit for the construction of highly optimized compilers,'
         'optimizers, and runtime environments.'
