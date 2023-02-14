@@ -36,7 +36,7 @@ class QSSCompilerConan(ConanFile):
             self.requires(req)
 
     def _configure_cmake(self):
-        cmake = CMake(self, parallel=False, generator="Ninja")
+        cmake = CMake(self, generator="Ninja")
         cmake.definitions["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
         # linking in parallel on all CPUs may take up more memory than
         # available in a typical CI worker for debug builds.

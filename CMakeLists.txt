@@ -51,7 +51,7 @@ find_package(gmp REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(libzip REQUIRED)
 find_package(GTest REQUIRED)
-find_package(llvm REQUIRED)
+find_package(LLVM REQUIRED)
 find_package(clang-tools-extra REQUIRED)
 
 if(DEFINED ENV{VERSION_STRING})

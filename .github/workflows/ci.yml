@@ -49,19 +49,28 @@ jobs:
           conan profile update settings.compiler.libcxx=libstdc++11 default
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
         run: ./conan_deps.sh
-      - name: Build QSS compiler Conan package
-        id: build
+      - name: Create build dir
+        run: mkdir build
+      - name: Conan install
+        id: conan_install
+        working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          mkdir build && cd build
           conan install --build=outdated ..
-          conan build ..
-          ninja check-tests
-      # On 'main' branch, always save the cache if Conan build succeeded.
+      - name: Build
+        id: build
+        working-directory: build
+        run: conan build ..
+      - name: Test
+        id: test
+        working-directory: build
+        run: ninja check-tests
+
+      # On 'main' branch, always save the cache if Conan install succeeded.
       # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
       #       cache getting LRU-evicted for every PR, since a single run uses most of the 10GB repo limit.
       - uses: actions/cache/save@v3
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.build.outcome == 'success'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success'
         with:
           path: .conan
           key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
