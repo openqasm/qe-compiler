@@ -10,6 +10,7 @@ import os
 import shutil
 
 from conan.tools.apple import is_apple_os
+from conan.tools.files import patch
 
 LLVM_TAG = "llvmorg-14.0.6"
 
@@ -77,7 +78,7 @@ class LLVMConan(ConanFile):
 
     generators = ['cmake']
     no_copy_source = True
-    exports_sources = "llvm-project/*"
+    exports_sources = "llvm-project/*", "fix-printing-larger-integer-attributes.patch"
 
     def source(self):
         git_cache = os.environ.get("CONAN_LLVM_GIT_CACHE")
@@ -93,6 +94,10 @@ class LLVMConan(ConanFile):
             # Update cache.
             self.output.info(f"Updating cache at '{git_cache}'.")
             self.run(f"cp -r llvm-project '{git_cache}'")
+
+        # Apply bugfix (can be removed when updating to LLVM 15)
+        patch_file = os.path.join(self.export_sources_folder, 'fix-printing-larger-integer-attributes.patch')
+        patch(self, patch_file=patch_file)
 
     @property
     def _source_subfolder(self):
