@@ -3,28 +3,28 @@ Author: Marius Hillenbrand <mhillen@linux.ibm.com>
 Date:   Mon Jul 25 08:37:31 2022 +0530
 
     [mlir][Arithmetic] Fix printing larger integer attributes in arith.const
-    
+
     For arith.constant operations of integer type, the operation generates
     result names that include the value of the constant (i.e., the
     IntegerAttr that defines the constant's value). That code currently
     assumes integer widths of 64 bits or less and hits an assert with wider
     constants or would create truncated and potentially ambiguous names when
     built with assertions disabled.
-    
+
     To enable printing arith.constant ops for arbitrarily wide integer
     types, change to use the IntegerAttr's function getValue() when
     generating result names.
-    
+
     Also, add a regression test.
-    
+
     Reviewed By: bondhugula
-    
+
     Differential Revision: https://reviews.llvm.org/D129930
 
-diff --git a/mlir/lib/Dialect/Arithmetic/IR/ArithmeticOps.cpp b/mlir/lib/Dialect/Arithmetic/IR/ArithmeticOps.cpp
+diff --git a/llvm-project/mlir/lib/Dialect/Arithmetic/IR/ArithmeticOps.cpp b/mlir/lib/Dialect/Arithmetic/IR/ArithmeticOps.cpp
 index d3e7258c568e..f2a88e2e2416 100644
---- a/mlir/lib/Dialect/Arithmetic/IR/ArithmeticOps.cpp
-+++ b/mlir/lib/Dialect/Arithmetic/IR/ArithmeticOps.cpp
+--- a/llvm-project/mlir/lib/Dialect/Arithmetic/IR/ArithmeticOps.cpp
++++ b/llvm-project/mlir/lib/Dialect/Arithmetic/IR/ArithmeticOps.cpp
 @@ -95,10 +95,10 @@ void arith::ConstantOp::getAsmResultNames(
      if (intType && intType.getWidth() == 1)
        return setNameFn(getResult(), (intCst.getInt() ? "true" : "false"));
@@ -38,10 +38,10 @@ index d3e7258c568e..f2a88e2e2416 100644
      if (intType)
        specialName << '_' << type;
      setNameFn(getResult(), specialName.str());
-diff --git a/mlir/test/Dialect/Arithmetic/ops.mlir b/mlir/test/Dialect/Arithmetic/ops.mlir
+diff --git a/llvm-project/mlir/test/Dialect/Arithmetic/ops.mlir b/mlir/test/Dialect/Arithmetic/ops.mlir
 index 2a8df8612233..fe241ba1d173 100644
---- a/mlir/test/Dialect/Arithmetic/ops.mlir
-+++ b/mlir/test/Dialect/Arithmetic/ops.mlir
+--- a/llvm-project/mlir/test/Dialect/Arithmetic/ops.mlir
++++ b/llvm-project/mlir/test/Dialect/Arithmetic/ops.mlir
 @@ -924,6 +924,12 @@ func.func @test_constant() -> () {
    // CHECK: %false = arith.constant false
    %8 = arith.constant false
