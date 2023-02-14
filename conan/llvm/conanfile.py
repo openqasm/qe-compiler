@@ -245,6 +245,9 @@ class LLVMConan(ConanFile):
         self.copy("llvm-lit", dst="bin", src="bin")
 
     def package_info(self):
+        self.cpp_info.names["cmake_find_package"] = "LLVM"
+        self.cpp_info.names["cmake_find_package_multi"] = "LLVM"
+
         lib_path = os.path.join(self.package_folder, 'lib')
         suffixes = ['.dylib', '.so', 'cmake', 'objects-Debug']
         for name in os.listdir(lib_path):
