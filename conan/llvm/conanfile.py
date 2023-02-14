@@ -246,7 +246,7 @@ class LLVMConan(ConanFile):
 
     def package_info(self):
         lib_path = os.path.join(self.package_folder, 'lib')
-        suffixes = ['.dylib', '.so']
+        suffixes = ['.dylib', '.so', 'cmake', 'objects-Debug']
         for name in os.listdir(lib_path):
             if not any(suffix in name for suffix in suffixes):
                 self.cpp_info.libs.append(name)
