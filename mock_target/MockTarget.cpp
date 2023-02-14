@@ -285,12 +285,10 @@ void MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
     return;
   }
 
-  // Initialize all LLVM targets
-  // TODO: Determine architecture based on target-triple and initialize only
-  // specific targets?
-  llvm::InitializeAllTargets();
-  llvm::InitializeAllAsmPrinters();
-  llvm::InitializeAllTargetMCs();
+  // Initialize X86 LLVM targets
+  LLVMInitializeX86Target();
+  LLVMInitializeX86AsmPrinter();
+  LLVMInitializeX86TargetMC();
 
   // Setup the machine properties for the target architecture.
   std::string targetTriple = llvm::sys::getDefaultTargetTriple();
