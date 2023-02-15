@@ -249,9 +249,9 @@ class LLVMConan(ConanFile):
         self.cpp_info.names["cmake_find_package_multi"] = "LLVM"
 
         lib_path = os.path.join(self.package_folder, 'lib')
-        suffixes = ['.dylib', '.so', 'cmake', 'objects-Debug']
+        skip_words = ['.dylib', '.so', 'cmake', 'objects-']
         for name in os.listdir(lib_path):
-            if not any(suffix in name for suffix in suffixes):
+            if not any(skip_word in name for skip_word in skip_words):
                 self.cpp_info.libs.append(name)
             else:
                 self.output.info(f"Skipping library: {name}")
