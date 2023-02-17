@@ -30,6 +30,7 @@
 #include "llvm/Support/ToolOutputFile.h"
 
 #include "Payload/Payload.h"
+#include "PayloadV2/PayloadV2.h"
 #include "QSSC.h"
 
 #include "HAL/PassRegistration.h"
@@ -131,6 +132,10 @@ static llvm::cl::opt<bool>
     plaintextPayload("plaintext-payload",
                      llvm::cl::desc("Write the payload in plaintext"),
                      llvm::cl::init(false), llvm::cl::cat(qsscCat));
+
+static llvm::cl::opt<bool>
+    quosPayload("quos-payload", llvm::cl::desc("Output QEM as per QuOS schema"),
+                llvm::cl::init(false), llvm::cl::cat(qsscCat));
 
 namespace {
 enum InputType { NONE, QASM, MLIR, QOBJ };
@@ -341,7 +346,6 @@ compile_(int argc, char const **argv, std::string *outputString,
     return err;
 
   DialectRegistry registry = qssc::dialect::registerDialects();
-  mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
   registerPassManagerCLOpts();
 
   llvm::cl::SetVersionPrinter(&printVersion);
@@ -415,12 +419,19 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::GenQEM) {
     if (outputFilename == "-") {
-      payload = std::make_unique<qssc::payload::ZipPayload>();
+      if (quosPayload) {
+        payload = std::make_unique<qssc::payload::PayloadV2>(&target);
+      } else
+        payload = std::make_unique<qssc::payload::ZipPayload>();
     } else {
       std::filesystem::path payloadPath(outputFilename.c_str());
       std::string fNamePrefix = payloadPath.stem();
-      payload =
-          std::make_unique<qssc::payload::ZipPayload>(fNamePrefix, fNamePrefix);
+      if (quosPayload) {
+        payload = std::make_unique<qssc::payload::PayloadV2>(
+            &target, fNamePrefix, outputFilename);
+      } else
+        payload = std::make_unique<qssc::payload::ZipPayload>(fNamePrefix,
+                                                              outputFilename);
     }
   }
   if (outputString) {
@@ -500,6 +511,7 @@ compile_(int argc, char const **argv, std::string *outputString,
   };
 
   // Build the provided pipeline.
+  mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
   if (failed(passPipeline.addToPipeline(pm, errorHandler)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problem adding passes to passPipeline!");
@@ -528,9 +540,9 @@ compile_(int argc, char const **argv, std::string *outputString,
     if (auto err = target.addToPayload(moduleOp, *payload))
       return err;
 
-    if (plaintextPayload)
+    if (plaintextPayload) {
       payload->writePlain(*ostream);
-    else
+    } else
       payload->write(*ostream);
   }
 

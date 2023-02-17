@@ -130,6 +130,12 @@ class CompileOptions:
     """Number of shots to run each circuit for."""
     shot_delay: Optional[float] = None
     """Repetition delay between shots in seconds."""
+    quos_payload: Optional[bool] = False
+    """Output QEM using new QuOS schema.
+    As per request to activate new output format via Python bindings:
+    https://github.com/Qiskit/qss-compiler/issues/31
+    Note this can instead just be passed as an `extra_args` argument.
+    """
     extra_args: List[str] = field(default_factory=list)
     """Optional list of extra arguments to pass to the compiler.
 
@@ -168,6 +174,9 @@ class CompileOptions:
             # Convert to us due to bug described in issue 364
             # https://github.ibm.com/IBM-Q-Software/qss-compiler/issues/364
             args.append(f"--shot-delay={self.shot_delay*1e6}us")
+
+        if self.output_type is OutputType.QEM and self.quos_payload:
+            args.append("--quos-payload")
 
         args.extend(self.extra_args)
         return args

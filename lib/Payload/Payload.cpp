@@ -235,6 +235,7 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   stream.write(outbuffer, sz);
   stream.flush();
   free(outbuffer);
+  std::cout << "******writeZip(std::ostream &stream)\n";
 }
 
 void ZipPayload::writeZip(std::ostream &stream) {

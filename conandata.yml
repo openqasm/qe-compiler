@@ -1,7 +1,9 @@
 requirements:
   - boost/1.80.0
+  - capnproto/0.9.1@qss/stable
   - gtest/1.11.0
   - libzip/1.8.0
+  - openssl/1.1.1s
   - zlib/1.2.13
   - nlohmann_json/3.9.1
   - pybind11/2.10.1
