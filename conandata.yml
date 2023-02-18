@@ -1,6 +1,6 @@
 requirements:
   - boost/1.80.0
-  - capnproto/0.9.1@qss/stable
+  - capnproto/0.9.1@
   - gtest/1.11.0
   - libzip/1.8.0
   - openssl/1.1.1s
