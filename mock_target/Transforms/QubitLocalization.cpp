@@ -780,6 +780,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
       newBuilders->emplace(config->driveNode(qubitId),
                            new OpBuilder(mockMainOp.getBody()));
     }
+
     if (!mockModules.count(config->acquireNode(qubitId))) {
       llvm::outs() << "Creating module for acquire Mocks " << qubitId << "\n";
       auto acquireMod = b.create<ModuleOp>(

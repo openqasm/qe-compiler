@@ -14,8 +14,8 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast %s
 
-include "openpulse.inc";
-defcalgrammar "openpulse";
+// include "openpulse.inc";
+// defcalgrammar "openpulse";
 
 qubit $0;
 qubit $1;

@@ -19,6 +19,7 @@
 #include "mlir/Parser.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/FileUtilities.h"
+#include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/MC/TargetRegistry.h"
@@ -50,6 +51,7 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <utility>
 
 using namespace mlir;
 
@@ -282,6 +284,7 @@ auto registerPassManagerCLOpts() {
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
+  mlir::registerDefaultTimingManagerCLOptions();
 }
 
 llvm::Error determineInputType() {
@@ -331,8 +334,9 @@ static void printVersion(llvm::raw_ostream &out) {
       << qssc::getQSSCVersion() << "\n";
 }
 
-static llvm::Error compile_(int argc, char const **argv,
-                            std::string *outputString) {
+static llvm::Error
+compile_(int argc, char const **argv, std::string *outputString,
+         llvm::Optional<qssc::DiagnosticCallback> diagnosticCb) {
   llvm::InitLLVM y(argc, argv);
 
   if (auto err = registerPasses())
@@ -447,7 +451,7 @@ static llvm::Error compile_(int argc, char const **argv,
     if (auto frontendError = qssc::frontend::openqasm3::parse(
             inputSource, !directInput, emitAction == Action::DumpAST,
             emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
-            moduleOp))
+            moduleOp, std::move(diagnosticCb)))
       return frontendError;
 
     if (emitAction < Action::DumpMLIR)
@@ -490,6 +494,7 @@ static llvm::Error compile_(int argc, char const **argv,
   // Apply any pass manager command line options.
   mlir::PassManager pm(&context);
   mlir::applyPassManagerCLOptions(pm);
+  mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
   auto errorHandler = [&](const Twine &msg) {
     emitError(UnknownLoc::get(&context)) << msg;
@@ -545,8 +550,9 @@ static llvm::Error compile_(int argc, char const **argv,
   return llvm::Error::success();
 }
 
-int compile(int argc, char const **argv, std::string *outputString) {
-  if (auto err = compile_(argc, argv, outputString)) {
+int qssc::compile(int argc, char const **argv, std::string *outputString,
+                  llvm::Optional<DiagnosticCallback> diagnosticCb) {
+  if (auto err = compile_(argc, argv, outputString, std::move(diagnosticCb))) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;
   }
@@ -554,10 +560,10 @@ int compile(int argc, char const **argv, std::string *outputString) {
   return 0;
 }
 
-llvm::Error
-bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
-               llvm::StringRef payloadOutputPath,
-               std::unordered_map<std::string, double> const &parameters) {
+llvm::Error qssc::bindParameters(
+    llvm::StringRef target, llvm::StringRef moduleInputPath,
+    llvm::StringRef payloadOutputPath,
+    std::unordered_map<std::string, double> const &parameters) {
 
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload

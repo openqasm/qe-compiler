@@ -48,10 +48,7 @@ Optional<Type> convertCBitType(quir::CBitType t) {
   return llvm::None;
 }
 
-template <typename T>
-Optional<Type> legalizeType(T t) {
-  return t;
-}
+template <typename T> Optional<Type> legalizeType(T t) { return t; }
 
 class CBitTypeConverter : public TypeConverter {
   using TypeConverter::TypeConverter;
@@ -136,9 +133,9 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   CBitTypeConverter typeConverter;
 
   // Only convert QUIR variable operations
-  target.addLegalDialect<
-      arith::ArithmeticDialect, LLVM::LLVMDialect, memref::MemRefDialect,
-      scf::SCFDialect, StandardOpsDialect, quir::QUIRDialect, AffineDialect>();
+  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
+                         memref::MemRefDialect, scf::SCFDialect,
+                         StandardOpsDialect, AffineDialect>();
   target.addIllegalOp<oq3::DeclareVariableOp, oq3::VariableAssignOp,
                       oq3::UseVariableOp>();
   // TODO add additional QUIR variable operations here

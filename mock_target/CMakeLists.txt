@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2021, 2022.
+# (C) Copyright IBM 2021, 2023.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -20,14 +20,7 @@ ${QSSC_INCLUDE_DIR}/HAL
 LINK_LIBS
 ${qssc_api_libs}
 QSSCHAL
-MLIRExecutionEngine
-MLIROptLib
-MLIRLLVMIR
-MLIRLLVMToLLVMIRTranslation
-MLIRStandardOpsTransforms
-LLVMPowerPCCodeGen
-LLVMX86CodeGen
-
+LLVM::LLVM
 TARGET_REGISTRATION_HEADERS
 ${CMAKE_CURRENT_SOURCE_DIR}/Target.inc
 )

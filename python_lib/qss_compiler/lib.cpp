@@ -1,6 +1,6 @@
 //===- lib.cpp --------------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -47,10 +47,12 @@
 
 #include "API/api.h"
 
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 
+#include "llvm/ADT/Optional.h"
 #include <llvm/Support/Error.h>
 
 #include <iostream>
@@ -61,7 +63,8 @@
 /// Call into the qss-compiler via an interface to qss-compile's command line
 /// argument.
 pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
-                                   bool outputAsStr) {
+                                   bool outputAsStr,
+                                   qssc::DiagnosticCallback onDiagnostic) {
   std::string outputStr("");
 
 #ifndef NDEBUG
@@ -78,8 +81,9 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
     argv.push_back(str.c_str());
   argv.push_back(nullptr);
 
-  int status =
-      compile(args.size(), argv.data(), outputAsStr ? &outputStr : nullptr);
+  int status = qssc::compile(args.size(), argv.data(),
+                             outputAsStr ? &outputStr : nullptr,
+                             std::move(onDiagnostic));
   bool success = status == 0;
 
 #ifndef NDEBUG
@@ -104,7 +108,8 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
     std::cout << item.first << " = " << item.second << "\n";
 #endif
 
-  auto successOrErr = bindParameters(target, inputPath, outputPath, parameters);
+  auto successOrErr =
+      qssc::bindParameters(target, inputPath, outputPath, parameters);
 
   if (successOrErr) {
     std::string errorMsg;
@@ -123,4 +128,40 @@ PYBIND11_MODULE(py_qssc, m) {
   m.def("_compile_with_args", &py_compile_by_args,
         "Call compiler via cli qss-compile");
   m.def("_link_file", &py_link_file, "Call the linker tool");
+
+  pybind11::enum_<qssc::ErrorCategory>(m, "ErrorCategory",
+                                       pybind11::arithmetic())
+      .value("OpenQASM3ParseFailure",
+             qssc::ErrorCategory::OpenQASM3ParseFailure)
+      .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
+      .export_values();
+
+  pybind11::enum_<qssc::Severity>(m, "Severity")
+      .value("Info", qssc::Severity::Info)
+      .value("Warning", qssc::Severity::Warning)
+      .value("Error", qssc::Severity::Error)
+      .value("Fatal", qssc::Severity::Fatal)
+      .export_values();
+
+  pybind11::class_<qssc::Diagnostic>(m, "Diagnostic")
+      .def_readonly("severity", &qssc::Diagnostic::severity)
+      .def_readonly("category", &qssc::Diagnostic::category)
+      .def_readonly("message", &qssc::Diagnostic::message)
+      .def("__str__", &qssc::Diagnostic::toString)
+      .def(pybind11::pickle(
+          [](const qssc::Diagnostic &d) {
+            // __getstate__ serializes the C++ object into a tuple
+            return pybind11::make_tuple(d.severity, d.category, d.message);
+          },
+          [](pybind11::tuple const &t) {
+            // __setstate__ restores the C++ object from a tuple
+            if (t.size() != 3)
+              throw std::runtime_error("invalid state for unpickling");
+
+            auto severity = t[0].cast<qssc::Severity>();
+            auto category = t[1].cast<qssc::ErrorCategory>();
+            auto message = t[2].cast<std::string>();
+
+            return qssc::Diagnostic(severity, category, std::move(message));
+          }));
 }
