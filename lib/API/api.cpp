@@ -133,10 +133,6 @@ static llvm::cl::opt<bool>
                      llvm::cl::desc("Write the payload in plaintext"),
                      llvm::cl::init(false), llvm::cl::cat(qsscCat));
 
-static llvm::cl::opt<bool>
-    quosPayload("quos-payload", llvm::cl::desc("Output QEM as per QuOS schema"),
-                llvm::cl::init(false), llvm::cl::cat(qsscCat));
-
 namespace {
 enum InputType { NONE, QASM, MLIR, QOBJ };
 } // anonymous namespace
@@ -145,27 +141,37 @@ static llvm::cl::opt<enum InputType> inputType(
     llvm::cl::desc("Specify the kind of input desired"),
     llvm::cl::values(
         clEnumValN(InputType::QASM, "qasm",
-                   "load the input file as an OpenQASM 3.0 source")),
+                   "Load the input file as an OpenQASM 3.0 source")),
     llvm::cl::values(clEnumValN(MLIR, "mlir",
-                                "load the input file as an MLIR file")),
+                                "Load the input file as an MLIR file")),
     llvm::cl::values(clEnumValN(QOBJ, "qobj",
-                                "load the input file as a QOBJ file")));
+                                "Load the input file as a QOBJ file")));
 
 namespace {
-enum Action { None, DumpAST, DumpASTPretty, DumpMLIR, DumpWaveMem, GenQEM };
+enum Action {
+  None,
+  DumpAST,
+  DumpASTPretty,
+  DumpMLIR,
+  DumpWaveMem,
+  GenQEM,
+  GenQEM_V2
+};
 } // anonymous namespace
-static llvm::cl::opt<enum Action> emitAction(
-    "emit", llvm::cl::init(Action::None),
-    llvm::cl::desc("Select the kind of output desired"),
-    llvm::cl::values(clEnumValN(DumpAST, "ast", "output the AST dump")),
-    llvm::cl::values(clEnumValN(DumpASTPretty, "ast-pretty",
-                                "pretty print the AST")),
-    llvm::cl::values(clEnumValN(DumpMLIR, "mlir", "output the MLIR dump")),
-    llvm::cl::values(clEnumValN(DumpWaveMem, "wavemem",
-                                "output the waveform memory")),
-    llvm::cl::values(clEnumValN(GenQEM, "qem",
-                                "generate a quantum executable module (qem) "
-                                "for execution on hardware")));
+static llvm::cl::opt<Action> emitAction(
+    "emit", llvm::cl::init(Action::None), llvm::cl::desc("Emit output as:"),
+    llvm::cl::values(
+        clEnumValN(DumpAST, "ast", "AST dump"),
+        clEnumValN(DumpASTPretty, "ast-pretty", "Pretty-print of the AST"),
+        clEnumValN(DumpMLIR, "mlir", "MLIR dump"),
+        clEnumValN(DumpWaveMem, "wavemem", "Waveform memory"),
+        // TODO: Use a single enum val for all (both) support QEM output formats
+        // by introducing an additional flag?
+        clEnumValN(
+            GenQEM, "qem",
+            "Quantum Execution Module (QEM) archive for execution on hardware"),
+        clEnumValN(GenQEM_V2, "qem_v2",
+                   "Cap'n Proto-based QEM for execution on hardware")));
 
 namespace qss {
 enum FileExtension { None, AST, ASTPRETTY, QASM, QOBJ, MLIR, WMEM, QEM };
@@ -233,6 +239,10 @@ auto fileExtensionToAction(const qss::FileExtension &inExt) -> Action {
     return Action::DumpWaveMem;
     break;
   case qss::FileExtension::QEM:
+    // TODO: Both presently supported QEM types--zip archive (GenQEM) and capnp
+    // (GenQEM_V2)--have the same extension. For now, it doesn't matter which
+    // one we select here, but in general assigment based on file extension is
+    // not ideal.
     return Action::GenQEM;
     break;
   default:
@@ -322,7 +332,10 @@ void determineOutputType() {
       emitAction = Action::DumpMLIR;
     } else if (emitAction == Action::None) {
       emitAction = extensionAction;
-    } else if (extensionAction != emitAction) {
+      // TODO: The following is an ugly way to handle GenQEM_V2, without
+      // outputting a false-positive warning.
+    } else if (extensionAction != emitAction &&
+               emitAction != Action::GenQEM_V2) {
       llvm::errs() << "Warning! The output type in the file extension doesn't "
                       "match the output type specified by --emit!\n";
     }
@@ -417,16 +430,16 @@ compile_(int argc, char const **argv, std::string *outputString,
   auto outputFile = mlir::openOutputFile(outputFilename, &errorMessage);
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
-  if (emitAction == Action::GenQEM) {
+  if (emitAction == Action::GenQEM || emitAction == Action::GenQEM_V2) {
     if (outputFilename == "-") {
-      if (quosPayload) {
+      if (emitAction == Action::GenQEM_V2) {
         payload = std::make_unique<qssc::payload::PayloadV2>(&target);
       } else
         payload = std::make_unique<qssc::payload::ZipPayload>();
     } else {
       std::filesystem::path payloadPath(outputFilename.c_str());
       std::string fNamePrefix = payloadPath.stem();
-      if (quosPayload) {
+      if (emitAction == Action::GenQEM_V2) {
         payload = std::make_unique<qssc::payload::PayloadV2>(
             &target, fNamePrefix, outputFilename);
       } else
@@ -536,7 +549,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     *ostream << '\n';
   }
 
-  if (emitAction == Action::GenQEM) {
+  if (emitAction == Action::GenQEM || emitAction == Action::GenQEM_V2) {
     if (auto err = target.addToPayload(moduleOp, *payload))
       return err;
 
@@ -574,7 +587,6 @@ llvm::Error qssc::bindParameters(
     llvm::StringRef target, llvm::StringRef moduleInputPath,
     llvm::StringRef payloadOutputPath,
     std::unordered_map<std::string, double> const &parameters) {
-
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload
   // (instead of read module, update, write payload)
