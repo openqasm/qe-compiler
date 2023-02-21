@@ -3,7 +3,7 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-find_package(CapnProto CONFIG REQUIRED)
+find_package(CapnProto REQUIRED)
 include_directories(
         ${CapnProto_INCLUDE_DIRS}        
         ${PROJECT_SOURCE_DIR}/include

@@ -359,6 +359,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     return err;
 
   DialectRegistry registry = qssc::dialect::registerDialects();
+  mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
   registerPassManagerCLOpts();
 
   llvm::cl::SetVersionPrinter(&printVersion);
@@ -524,7 +525,6 @@ compile_(int argc, char const **argv, std::string *outputString,
   };
 
   // Build the provided pipeline.
-  mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
   if (failed(passPipeline.addToPipeline(pm, errorHandler)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problem adding passes to passPipeline!");
