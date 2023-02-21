@@ -1,0 +1,8 @@
+sources:
+  hash: "1a48cbd41705713b90820c9a989a368e96820f05"
+requirements:
+  - "bison/3.7.6"
+  - "flex/2.6.4"
+  - "gmp/6.2.1"
+  - "mpfr/4.1.0"
+  - "mpc/1.2.0"

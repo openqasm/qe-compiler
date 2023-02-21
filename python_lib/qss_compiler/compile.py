@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2021, 2022.
+# (C) Copyright IBM 2021, 2023.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -48,9 +48,9 @@ import multiprocessing as mp
 from multiprocessing import connection
 from os import environ as os_environ
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
-from .py_qssc import _compile_with_args
+from .py_qssc import _compile_with_args, Diagnostic
 
 
 # Note that we require a complete process spawn for the compiler to avoid
@@ -61,12 +61,31 @@ from .py_qssc import _compile_with_args
 mp_ctx = mp.get_context("spawn")
 
 
+def _diagnostics_to_str(diagnostics):
+    return "\n".join([str(diag) for diag in diagnostics])
+
+
 class QSSCompilerError(Exception):
-    pass
+    """Raised on errors invoking the compiler or when the interaction between
+    Python interface and native backend code fails."""
+
+    def __init__(self, message: str, diagnostics: Optional[List[Diagnostic]] = None):
+        self.message = message
+        self.diagnostics = [] if diagnostics is None else diagnostics
+
+    def __str__(self):
+        return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
 
 
 class QSSCompilationFailure(Exception):
     """Raised on compilation failure."""
+
+    def __init__(self, message: str, diagnostics: Optional[List[Diagnostic]] = None):
+        self.message = message
+        self.diagnostics = [] if diagnostics is None else diagnostics
+
+    def __str__(self):
+        return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
 
 
 class InputType(Enum):
@@ -122,6 +141,8 @@ class CompileOptions:
     resulting in args being set twice, eg., `num_shots` and `--num-shots`.
     This will result in an error.
     """
+    on_diagnostic: Optional[Callable[[Diagnostic], Any]] = None
+    """Optional callback for processing diagnostic messages from the compiler."""
 
     def prepare_compiler_option_args(self) -> List[str]:
         """Prepare the compiler option arguments from this dataclass."""
@@ -183,13 +204,12 @@ class _CompilerStatus:
 
 def _compile_child_backend(
     execution: _CompilerExecution,
+    on_diagnostic: Callable[[Diagnostic], Any],
 ) -> Tuple[_CompilerStatus, Union[bytes, None]]:
     # TODO: want a corresponding C++ interface to avoid overhead
 
     options = execution.options
-
     args = execution.prepare_compiler_args()
-
     output_as_return = False if options.output_file else True
 
     # The qss-compiler expects the path to static resources in the environment
@@ -200,7 +220,7 @@ def _compile_child_backend(
     with importlib_resources.path("qss_compiler", "_version.py") as version_py_path:
         resources_path = version_py_path.parent / "resources"
         os_environ["QSSC_RESOURCES"] = str(resources_path)
-        success, output = _compile_with_args(args, output_as_return)
+        success, output = _compile_with_args(args, output_as_return, on_diagnostic)
 
     status = _CompilerStatus(success)
     if output_as_return:
@@ -211,7 +231,11 @@ def _compile_child_backend(
 
 def _compile_child_runner(conn: connection.Connection) -> None:
     execution = conn.recv()
-    status, output = _compile_child_backend(execution)
+
+    def on_diagnostic(diag):
+        conn.send(diag)
+
+    status, output = _compile_child_backend(execution, on_diagnostic)
     conn.send(status)
     if output is not None:
         conn.send_bytes(output)
@@ -239,8 +263,29 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         # exits and closes its end of the pipe.
         child_side.close()
 
+        success = False
+        # when no callback was provided, collect diagnostics and return in case of error
+        diagnostics = []
         try:
-            status = parent_side.recv()
+            while True:
+                received = parent_side.recv()
+
+                if isinstance(received, Diagnostic):
+                    if execution.options.on_diagnostic:
+                        execution.options.on_diagnostic(received)
+                    else:
+                        diagnostics.append(received)
+                elif isinstance(received, _CompilerStatus):
+                    success = received.success
+                    break
+                else:
+                    childproc.kill()
+                    childproc.join()
+                    raise QSSCompilerError(
+                        "The compile process delivered an unexpected object instead of status or "
+                        "diagnostic information. This points to inconsistencies in the Python "
+                        "interface code between the calling process and the compile process."
+                    )
 
             if options.output_file is None:
                 # return compilation result via IPC instead of in a file.
@@ -251,7 +296,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             # make sure that child process terminates
             childproc.kill()
             childproc.join()
-            raise QSSCompilerError("compile process exited before delivering output.")
+            raise QSSCompilerError("compile process exited before delivering output.", diagnostics)
 
         childproc.join()
         if childproc.exitcode != 0:
@@ -260,11 +305,12 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                     "compile process exited with non-zero status "
                     + str(childproc.exitcode)
                     + (" yet appears  still alive" if childproc.is_alive() else "")
-                )
+                ),
+                diagnostics,
             )
 
-        if not status.success:
-            raise QSSCompilationFailure("Failure during compilation.")
+        if not success:
+            raise QSSCompilationFailure("Failure during compilation", diagnostics)
 
     except mp.ProcessError as e:
         raise QSSCompilerError(

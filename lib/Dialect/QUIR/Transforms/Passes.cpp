@@ -143,7 +143,7 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
 
   moduleOperation->walk([&](Operation *op) {
     if (dyn_cast<scf::IfOp>(op) || dyn_cast<scf::ForOp>(op) ||
-        dyn_cast<quir::SwitchOp>(op))
+        dyn_cast<scf::WhileOp>(op) || dyn_cast<quir::SwitchOp>(op))
       op->setAttr(llvm::StringRef("quir.classicalOnly"),
                   b.getBoolAttr(hasQuantumSubOps(op)));
     if (auto funcOp = dyn_cast<FuncOp>(op)) {

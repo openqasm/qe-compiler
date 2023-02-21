@@ -2,6 +2,12 @@ OPENQASM 3.0;
 // RUN: qss-compiler %s --target mock --config %TEST_CFG --emit=qem --plaintext-payload | FileCheck %s
 
 // CHECK: Manifest
+// CHECK: MockAcquire_0.mlir
+// CHECK: MockController.mlir
+// CHECK: MockDrive_0.mlir
+// CHECK: MockDrive_1.mlir
+// CHECK: controller.bin
+// CHECK: llvmModule.ll
 qubit $0;
 qubit $1;
 
