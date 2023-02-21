@@ -152,9 +152,8 @@ QuantumExecutionModule PayloadV2::generate_qem() {
 
   // In general, a `TargetSystem` can have `TargetSystem` children. However,
   // the current minimalistic Cap'n Proto schema does not support this. For
-  // now, and until we begin using multiple systems (Les Paul, Yggrasil, etc.)
-  // together, assume no `TargetSystem` children, and consider only
-  // instruments.
+  // now, and until we begin using multiple systems together, assume no
+  // `TargetSystem` children, and consider only instruments.
   for (auto &instrument : target->getInstruments()) {
     auto component = this->generate_component(*instrument);
     qem.components.push_back(component);
