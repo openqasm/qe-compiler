@@ -58,7 +58,7 @@ from .py_qssc import _compile_with_args
 # "fork" therefore we force the usage of a spawn context for the compiler
 # through the usage of mp_ctx below. This allows the compiler user to select
 # their desired multiprocessing behaviour for all other usages.
-mp_ctx = mp.get_context("spawn")
+mp_ctx = mp.get_context("forkserver")
 
 
 class QSSCompilerError(Exception):
