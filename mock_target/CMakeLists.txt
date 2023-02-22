@@ -7,14 +7,29 @@
 get_property(qssc_api_libs GLOBAL PROPERTY QSSC_API_LIBS)
 
 set(llvm_code_gen_libraries
-LLVMAArch64CodeGen
-LLVMPowerPCCodeGen
-LLVMX86CodeGen
+    LLVMAArch64CodeGen
+    LLVMAArch64Info
+    LLVMAArch64AsmParser
+    LLVMAArch64Desc
+    LLVMPowerPCCodeGen
+    LLVMPowerPCInfo
+    LLVMPowerPCAsmParser
+    LLVMPowerPCDesc
+    LLVMX86CodeGen
+    LLVMX86Info
+    LLVMX86AsmParser
+    LLVMX86Desc
+    LLVMX86TargetMCA
 )
 
 # Remove AArch64CodeGen if not present.
 if (NOT LLVM_LIBRARIES MATCHES "LLVMAArch64CodeGen")
-    list(REMOVE_ITEM llvm_code_gen_libraries "LLVMAArch64CodeGen")
+    list(REMOVE_ITEM llvm_code_gen_libraries
+        LLVMAArch64CodeGen
+        LLVMAArch64Info
+        LLVMAArch64AsmParser
+        LLVMAArch64Desc
+    )
 endif ()
 
 qssc_add_system_target(QSSCTargetMock
