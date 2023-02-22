@@ -67,6 +67,7 @@ jobs:
           ls -la $llvm_bin
           chmod +x "$llvm_bin/llvm-lit"
           readelf -l "$llvm_bin/llvm-lit"|grep "program interpreter"
+          ldd -r "$llvm_bin/llvm-lit"
       - name: Test
         id: test
         working-directory: build
