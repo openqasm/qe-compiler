@@ -67,8 +67,9 @@ jobs:
           ls -la $llvm_bin
           chmod +x "$llvm_bin/llvm-lit"
           file "$llvm_bin/llvm-lit"
-          #readelf -l "$llvm_bin/llvm-lit"|grep "program interpreter"
-          ldd -r "$llvm_bin/llvm-lit"
+          cat "$llvm_bin/llvm-lit"
+          interp=$(head -1 "$llvm_bin/llvm-lit" | cut -c 3-)
+          ls -la "$interp"
       - name: Test
         id: test
         working-directory: build
