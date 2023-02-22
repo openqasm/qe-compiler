@@ -61,15 +61,6 @@ jobs:
         id: build
         working-directory: build
         run: conan build ..
-      - name: Debug permissions
-        run: |
-          llvm_bin="/home/runner/work/qss-compiler/qss-compiler/.conan/data/llvm/14.0.6-2/_/_/package/c2b73323b84b7a2f65474436a80bc0182adf072c/bin/"
-          ls -la $llvm_bin
-          chmod +x "$llvm_bin/llvm-lit"
-          file "$llvm_bin/llvm-lit"
-          cat "$llvm_bin/llvm-lit"
-          interp=$(head -1 "$llvm_bin/llvm-lit" | cut -c 3-)
-          ls -la "$interp"
       - name: Test
         id: test
         working-directory: build
