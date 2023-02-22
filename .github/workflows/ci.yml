@@ -45,7 +45,7 @@ jobs:
           rm -rf ./.conan
       - name: Create Conan default profile
         run: |
-          conan profile new default --detect
+          conan profile new default --detect || true
           conan profile update settings.compiler.libcxx=libstdc++11 default
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
         run: ./conan_deps.sh
