@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.10.9'
       - name: Install pip packages
         run: |
           python -m pip install --upgrade pip
@@ -45,7 +45,7 @@ jobs:
           rm -rf ./.conan
       - name: Create Conan default profile
         run: |
-          conan profile new default --detect
+          conan profile new default --detect || true
           conan profile update settings.compiler.libcxx=libstdc++11 default
       - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
         run: ./conan_deps.sh
@@ -70,7 +70,7 @@ jobs:
       # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
       #       cache getting LRU-evicted for every PR, since a single run uses most of the 10GB repo limit.
       - uses: actions/cache/save@v3
-        if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success')
+        if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success' && steps.cache.outputs.cache-hit != 'true')
         with:
           path: .conan
           key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
