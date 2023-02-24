@@ -16,7 +16,7 @@ interface, and update the C++ function `py_compile` bound to
 `_compile` in `lib.cpp`.
 
 
-Why spawn a child process for compilation?
+Why fork a child process for compilation?
 ------------------------------------------
 
 LLVM is designed to compile one program per execution. However, we
@@ -31,7 +31,7 @@ library `py_qssc` as described by `python_lib/lib.cpp`) within a
 child process. This guarantees the calling process won't be killed,
 even if the call to `_compile` results in a segmentation fault.
 
-For spawning child processes and communicating with them, we use the
+For forking child processes and communicating with them, we use the
 Python standard library's multiprocessing package. In particular, we use
 the Process class to start a child process with a python interpreter and
 pass control to our backend function. We use multiprocessing's Pipe to
@@ -52,13 +52,9 @@ from typing import Any, Callable, List, Optional, Tuple, Union
 
 from .py_qssc import _compile_with_args, Diagnostic
 
-
-# Note that we require a complete process spawn for the compiler to avoid
-# contaminating compilation requests. The default context on Linux is
-# "fork" therefore we force the usage of a spawn context for the compiler
-# through the usage of mp_ctx below. This allows the compiler user to select
-# their desired multiprocessing behaviour for all other usages.
-mp_ctx = mp.get_context("spawn")
+# use the forkserver context to create a server process
+# for forking new compiler processes
+mp_ctx = mp.get_context("forkserver")
 
 
 def _diagnostics_to_str(diagnostics):
@@ -296,7 +292,9 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             # make sure that child process terminates
             childproc.kill()
             childproc.join()
-            raise QSSCompilerError("compile process exited before delivering output.", diagnostics)
+            raise QSSCompilerError(
+                "compile process exited before delivering output.", diagnostics
+            )
 
         childproc.join()
         if childproc.exitcode != 0:
