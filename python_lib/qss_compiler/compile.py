@@ -292,7 +292,9 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             # make sure that child process terminates
             childproc.kill()
             childproc.join()
-            raise QSSCompilerError("compile process exited before delivering output.", diagnostics)
+            raise QSSCompilerError(
+                "compile process exited before delivering output.", diagnostics
+            )
 
         childproc.join()
         if childproc.exitcode != 0:
