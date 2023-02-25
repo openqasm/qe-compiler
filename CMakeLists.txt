@@ -150,6 +150,29 @@ if(QSSC_WITH_MOCK_TARGET)
     )
 endif()
 
+option(QSSC_WITH_MOCK_PAYLOAD "Available payloads include the built-in mock payload" ON)
+set(QSSC_PAYLOAD_DIRS
+        ""
+        CACHE STRING
+        "List of directories containing QSS compiler payloads."
+        )
+#set(QSSC_PAYLOAD_TEST_DIRS
+#        ""
+#        CACHE STRING
+#        "List of directories containing QSS compiler payload test suites."
+#        )
+
+if(QSSC_WITH_MOCK_PAYLOAD)
+    set(QSSC_PAYLOAD_DIRS
+            ${QSSC_PAYLOAD_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/mock_payload
+            )
+    #set(QSSC_PAYLOAD_TEST_DIRS
+    #        ${QSSC_PAYLOAD_TEST_DIRS}
+    #        ${CMAKE_CURRENT_SOURCE_DIR}/mock_payload/test
+    #        )
+endif()
+
 set(QSSC_RESOURCES_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/lib/qssc)
 configure_file(include/Config.h.in ${QSSC_BINARY_DIR}/include/Config.h)
 
@@ -195,6 +218,24 @@ foreach(dir ${QSSC_TARGET_TEST_DIRS})
     unset(dir_files)
 endforeach()
 
+foreach(dir ${QSSC_PAYLOAD_DIRS})
+    file(GLOB_RECURSE
+            dir_files
+            "${dir}/*cpp" "${dir}/*h"
+            )
+    list(APPEND ALL_CXX_PAYLOAD_FILES "${dir_files}")
+    unset(dir_files)
+endforeach()
+
+#foreach(dir ${QSSC_PAYLOAD_TEST_DIRS})
+#    file(GLOB_RECURSE
+#            dir_files
+#            "${dir}/*cpp" "${dir}/*h"
+#            )
+#    list(APPEND ALL_CXX_PAYLOAD_TEST_FILES "${dir_files}")
+#    unset(dir_files)
+#endforeach()
+
 # All CXX source files
 set(QSSC_ALL_CXX_SOURCE_FILES
     ${ALL_CXX_INCLUDE_FILES}
@@ -203,6 +244,8 @@ set(QSSC_ALL_CXX_SOURCE_FILES
     ${ALL_CXX_TEST_FILES}
     ${ALL_CXX_TARGET_FILES}
     ${ALL_CXX_TARGET_TEST_FILES}
+    ${ALL_CXX_PAYLOAD_FILES}
+    ${ALL_CXX_PAYLOAD_TEST_FILES}
     CACHE INTERNAL "QSSC_ALL_CXX_SOURCE_FILES"
 )
 

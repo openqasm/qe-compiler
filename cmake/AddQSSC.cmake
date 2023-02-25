@@ -275,6 +275,87 @@ function(qssc_add_system_target target_name)
   endif()
 endfunction(qssc_add_system_target)
 
+define_property(GLOBAL PROPERTY QSSC_PAYLOADS
+        BRIEF_DOCS "QSSC system payloads to be built"
+        FULL_DOCS "QSSC system payloads to be built")
+# Initialize property
+set_property(GLOBAL PROPERTY QSSC_PAYLOADS "")
+
+define_property(GLOBAL PROPERTY QSSC_PAYLOAD_REGISTRATION_HEADERS
+        BRIEF_DOCS "QSSC system payload registration headers"
+        FULL_DOCS "QSSC system payload registration headers")
+# Initialize property
+set_property(GLOBAL PROPERTY QSSC_PAYLOAD_REGISTRATION_HEADERS "")
+
+function(qssc_add_system_payload)
+    include_directories(BEFORE
+            ${CMAKE_CURRENT_SOURCE_DIR})
+
+    # peel off arguments specific to payload
+    cmake_parse_arguments(ARG
+            ""
+            "PAYLOAD_SHORT_NAME;"
+            "PAYLOAD_REGISTRATION_HEADERS;CUSTOM_RESOURCES"
+            ${ARGN}
+            )
+
+    qssc_add_library(${payload_name} ${ARG_UNPARSED_ARGUMENTS})
+
+    message(STATUS "Adding payload ${payload_name}")
+
+    # enforce dependency on tblgen generated headers
+    # add_dependencies(${payload_name} MLIRQUIRDialect)
+
+    # add registration header(s) to global var
+    foreach(REG_HEADER ${ARG_PAYLOAD_REGISTRATION_HEADERS})
+        message(STATUS "Checking for registration header: ${REG_HEADER}")
+        if(NOT EXISTS "${REG_HEADER}")
+            message(FATAL_ERROR "Missing registration header for payload ${payload_name}: ${REG_HEADER}")
+        else()
+            set_property(GLOBAL APPEND PROPERTY QSSC_PAYLOAD_REGISTRATION_HEADERS "${REG_HEADER}")
+        endif()
+    endforeach()
+
+    set_property(GLOBAL APPEND PROPERTY QSSC_PAYLOADS "${payload_name}")
+
+    if(ARG_PAYLOAD_SHORT_NAME)
+        message(STATUS "Using short name ${ARG_PAYLOAD_SHORT_NAME} for ${payload_name} in resource paths")
+        set(payload_name_resources ${ARG_PAYLOAD_SHORT_NAME})
+    else()
+        set(payload_name_resources ${payload_name})
+    endif()
+
+    if(ARG_CUSTOM_RESOURCES)
+        add_dependencies(${payload_name} ${ARG_CUSTOM_RESOURCES})
+
+        # define build directory for the payload's resources
+        # - attach as  property RESOURCE_OUTPUT_DIRECTORY to each resource payload
+        set(QSSC_PAYLOAD_${payload_name}_RESOURCE_DIR ${QSSC_RESOURCES_OUTPUT_INTDIR}/payloads/${payload_name_resources})
+        file(MAKE_DIRECTORY ${QSSC_PAYLOAD_${payload_name}_RESOURCE_DIR})
+        set_target_properties(${ARG_CUSTOM_RESOURCES} PROPERTIES RESOURCE_OUTPUT_DIRECTORY ${QSSC_PAYLOAD_${payload_name}_RESOURCE_DIR})
+
+        foreach(resource ${ARG_CUSTOM_RESOURCES})
+            get_target_property(RESOURCE_OUTPUT_NAME ${resource} RESOURCE_OUTPUT_NAME)
+            if (NOT RESOURCE_OUTPUT_NAME)
+                set(RESOURCE_OUTPUT_NAME ${resource})
+            endif()
+            get_target_property(RESOURCE_IS_PROGRAM ${resource} RESOURCE_IS_PROGRAM)
+            set(resource_file ${QSSC_PAYLOAD_${payload_name}_RESOURCE_DIR}/${RESOURCE_OUTPUT_NAME})
+            set(resource_destination ${QSSC_RESOURCES_INSTALL_PREFIX}/payloads/${payload_name_resources})
+
+            if(RESOURCE_IS_PROGRAM)
+                install(PROGRAMS ${resource_file}
+                        DESTINATION ${resource_destination}
+                        )
+            else()
+                install(FILES ${resource_file}
+                        DESTINATION ${resource_destination}
+                        )
+            endif()
+        endforeach()
+    endif()
+endfunction(qssc_add_system_payload)
+
 include(GoogleTest)
 # From: https://cliutils.gitlab.io/modern-cmake/chapters/testing/googletest.html
 macro(package_add_test TESTNAME)
