@@ -37,6 +37,7 @@
 #include <regex>
 
 #include <mutex>
+#include <sstream>
 
 static llvm::cl::OptionCategory openqasm3Cat(
     " OpenQASM 3 Frontend Options",
@@ -62,26 +63,6 @@ static llvm::SourceMgr *sourceMgr_;
 
 static std::mutex qasmParserLock;
 
-static llvm::SMLoc getLocationFromParserMessage(std::string const &msg,
-                                                llvm::SourceMgr &sourceMgr) {
-  // TODO to be replaced when the parser provides raw location information
-  std::regex locationRegex("Line: (\\d+), Col: (\\d+)");
-  std::smatch m;
-
-  std::regex_search(msg, m, locationRegex);
-
-  if (m.empty())
-    llvm::errs() << "No match\n";
-
-  std::string lineStr(m[1].first, m[1].second);
-  std::string colStr(m[2].first, m[2].second);
-
-  auto line = std::stoi(lineStr);
-  auto col = std::stoi(colStr);
-
-  return sourceMgr.FindLocForLineAndColumn(1, line, col);
-}
-
 llvm::Error qssc::frontend::openqasm3::parse(
     std::string const &source, bool sourceIsFilename, bool emitRawAST,
     bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp &newModule,
@@ -105,7 +86,9 @@ llvm::Error qssc::frontend::openqasm3::parse(
   sourceMgr_ = &sourceMgr;
 
   QASM::QasmDiagnosticEmitter::SetHandler(
-      [](const std::string &Exp, const std::string &Msg,
+      [](const std::string &File,
+         const QASM::ASTLocation &Loc,
+         const std::string &Msg,
          QASM::QasmDiagnosticEmitter::DiagLevel DL) {
         std::string level = "unknown";
         qssc::Severity diagLevel = qssc::Severity::Error;
@@ -146,21 +129,25 @@ llvm::Error qssc::frontend::openqasm3::parse(
         // Capture source context for including it in error messages
         assert(sourceMgr_);
         auto &sourceMgr = *sourceMgr_;
-        auto loc = getLocationFromParserMessage(Exp, sourceMgr);
+        auto loc =  sourceMgr.FindLocForLineAndColumn(1, Loc.LineNo, Loc.ColNo);
         std::string sourceString;
         llvm::raw_string_ostream stringStream(sourceString);
 
-        sourceMgr.PrintMessage(stringStream, loc,
-                                 sourceMgrDiagKind, "");
+        sourceMgr.PrintMessage(stringStream, loc, sourceMgrDiagKind, "");
 
+        std::stringstream fileLoc;
+        fileLoc << "File: " << File << ", Line: " << Loc.LineNo 
+                << ", Col: " << Loc.ColNo;
+ 
         llvm::errs() << level << " while parsing OpenQASM 3 input\n"
-                     << Exp << " " << Msg << "\n"
+                     << fileLoc.str()
+                     << " " << Msg << "\n"
                      << sourceString << "\n";
 
         if (diagnosticCallback_) {
           qssc::Diagnostic diag{diagLevel,
                                 qssc::ErrorCategory::OpenQASM3ParseFailure,
-                                Exp + "\n" + Msg + "\n" + sourceString};
+                                fileLoc.str() + "\n" + Msg + "\n" + sourceString};
           (*diagnosticCallback_)(diag);
         }
 
@@ -169,7 +156,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
           if (diagnosticCallback_) {
             qssc::Diagnostic diag{diagLevel,
                                   qssc::ErrorCategory::OpenQASM3ParseFailure,
-                                  Exp + "\n" + Msg + "\n" + sourceString};
+                                  fileLoc.str() + "\n" + Msg + "\n" + sourceString};
             (*diagnosticCallback_)(diag);
           }
 
