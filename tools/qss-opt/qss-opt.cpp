@@ -34,6 +34,7 @@
 
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetRegistry.h"
+#include "Payload/PayloadRegistry.h"
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
@@ -132,11 +133,17 @@ auto main(int argc, char **argv) -> int {
 
     interleaveComma(registry.getDialectNames(), os,
                     [&](auto name) { os << name; });
-    os << "\nAvailable Targets:\n";
-    for (const auto &target : registry::registeredTargets()) {
-      os << target.second.getTargetName() << " - "
-         << target.second.getTargetDescription() << "\n";
-    }
+      os << "\nAvailable Targets:\n";
+      for (const auto &target : registry::registeredTargets()) {
+          os << target.second.getTargetName() << " - "
+             << target.second.getTargetDescription() << "\n";
+      }
+
+      os << "\nAvailable payloads:\n";
+      for (const auto &payload : qssc::payload::registry::registeredPayloads()) {
+          os << payload.second.getPayloadName() << " - "
+             << payload.second.getPayloadDescription() << "\n";
+      }
   }
 
   // Parse pass names in main to ensure static initialization completed.
