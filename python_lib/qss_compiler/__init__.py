@@ -15,6 +15,7 @@ from .compile import (  # noqa: F401
     OutputType,
     CompileOptions,
     QSSCompilationFailure,
+    QSSCompilerError,
 )
 
 from .py_qssc import (  # noqa: F401
