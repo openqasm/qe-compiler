@@ -47,10 +47,7 @@ find_package(gmp REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(libzip REQUIRED)
 find_package(GTest REQUIRED)
-
-set(CMAKE_FIND_DEBUG_MODE TRUE)
 find_package(LLVM REQUIRED CONFIG)
-set(CMAKE_FIND_DEBUG_MODE FALSE)
 
 find_package(clang-tools-extra REQUIRED CONFIG)
 
