@@ -34,8 +34,6 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
 
-#include <regex>
-
 #include <mutex>
 #include <sstream>
 
