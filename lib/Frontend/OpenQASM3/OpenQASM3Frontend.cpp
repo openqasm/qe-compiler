@@ -87,7 +87,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
 
   QASM::QasmDiagnosticEmitter::SetHandler(
       [](const std::string &File,
-         const QASM::ASTLocation &Loc,
+         QASM::ASTLocation Loc,
          const std::string &Msg,
          QASM::QasmDiagnosticEmitter::DiagLevel DL) {
         std::string level = "unknown";
