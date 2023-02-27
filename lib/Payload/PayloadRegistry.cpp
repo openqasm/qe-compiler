@@ -35,7 +35,7 @@ void PayloadInfo::printHelpStr(size_t indent, size_t descIndent) const {
 }
 
 
-void registerPayload(
+void qssc::payload::registry::registerPayload(
     const std::string& name, const std::string& description,
     const PayloadFactoryFunction &targetFactory) {
 
@@ -43,7 +43,7 @@ void registerPayload(
 }
 
 /// Look up the target info for a target. Returns None if not registered.
-llvm::Optional<PayloadInfo *> lookupPayloadInfo(llvm::StringRef payloadName) {
+llvm::Optional<PayloadInfo *> qssc::payload::registry::lookupPayloadInfo(llvm::StringRef payloadName) {
   auto it = payloadRegistry->find(payloadName);
   if (it == payloadRegistry->end())
     return llvm::None;
@@ -51,12 +51,12 @@ llvm::Optional<PayloadInfo *> lookupPayloadInfo(llvm::StringRef payloadName) {
 }
 
 /// Verify the target exists
-bool payloadExists(llvm::StringRef payloadName) {
+bool qssc::payload::registry::payloadExists(llvm::StringRef payloadName) {
   auto it = payloadRegistry->find(payloadName);
   return it != payloadRegistry->end();
 }
 
 /// Available targets
-const llvm::StringMap<PayloadInfo> &registeredPayloads() {
+const llvm::StringMap<PayloadInfo> &qssc::payload::registry::registeredPayloads() {
   return *payloadRegistry;
 }
