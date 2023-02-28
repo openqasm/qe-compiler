@@ -287,7 +287,7 @@ define_property(GLOBAL PROPERTY QSSC_PAYLOAD_REGISTRATION_HEADERS
 # Initialize property
 set_property(GLOBAL PROPERTY QSSC_PAYLOAD_REGISTRATION_HEADERS "")
 
-function(qssc_add_system_payload)
+function(qssc_add_system_payload payload_name)
     include_directories(BEFORE
             ${CMAKE_CURRENT_SOURCE_DIR})
 

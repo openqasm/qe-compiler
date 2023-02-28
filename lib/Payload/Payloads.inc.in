@@ -1,4 +1,4 @@
-//===- Targets.inc - System Target Registry ---------------------*- C++ -*-===//
+//===- Payloads.inc - Payload Registry --------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2022.
 //

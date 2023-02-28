@@ -4,6 +4,9 @@
 #include <llvm/ADT/DenseMap.h>
 #include "llvm/Support/ManagedStatic.h"
 
+// Inject static initialization headers from targets.
+#include "Payloads.inc"
+
 using namespace qssc::payload::registry;
 
 static llvm::ManagedStatic<llvm::StringMap<PayloadInfo>> payloadRegistry;
@@ -36,7 +39,7 @@ void PayloadInfo::printHelpStr(size_t indent, size_t descIndent) const {
 
 
 void qssc::payload::registry::registerPayload(
-    const std::string& name, const std::string& description,
+    llvm::StringRef name, llvm::StringRef description,
     const PayloadFactoryFunction &targetFactory) {
 
   payloadRegistry->try_emplace(name, name, description, targetFactory);

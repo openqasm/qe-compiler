@@ -45,7 +45,7 @@ private:
 
 
 void registerPayload(
-    const std::string& name, const std::string& description,
+    llvm::StringRef name, llvm::StringRef description,
     const PayloadFactoryFunction &targetFactory);
 
 /// Look up the target info for a target. Returns None if not registered.
@@ -60,8 +60,8 @@ const llvm::StringMap<PayloadInfo> &registeredPayloads();
 
 template <typename ConcretePayload>
 struct PayloadRegistration {
-  PayloadRegistration(const std::string& name,
-                      const std::string& description,
+  PayloadRegistration(llvm::StringRef name,
+                      llvm::StringRef description,
                       const PayloadFactoryFunction &payloadFactory) {
     registerPayload(name, description, payloadFactory);
   }

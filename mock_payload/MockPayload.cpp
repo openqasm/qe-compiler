@@ -5,7 +5,7 @@
 
 using namespace qssc::payload::mock;
 
-int init() {
+int qssc::payload::mock::init() {
   qssc::payload::registry::PayloadRegistration<MockPayload> registrar(
       "mock", "Mock payload for testing the payload infrastructure.",
       [](llvm::Optional<llvm::StringRef> configurationPath)-> llvm::Expected<std::unique_ptr<qssc::payload::Payload>> {
