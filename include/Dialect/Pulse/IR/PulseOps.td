@@ -351,6 +351,12 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame]> {
         // get channel name
         llvm::Expected<std::string> getChannelName(CallSequenceOp callOp, uint qubitId);
     }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
 }
 
 def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTargetFrame]> {
@@ -382,6 +388,12 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTarge
             assert (freqConstOp && "assume frequency to be defined by ConstantFloatOp");
             return freqConstOp.value().convertToDouble();
         }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
@@ -415,6 +427,12 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasT
             return freqOffsetConstOp.value().convertToDouble();
         }
     }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
 }
 
 def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]> {
@@ -446,6 +464,12 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]>
             assert (phaseConstOp && "assume phase to be defined by ConstantFloatOp");
             return phaseConstOp.value().convertToDouble();
         }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
@@ -479,6 +503,12 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFra
             return phaseOffsetConstOp.value().convertToDouble();
         }
     }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
 }
 
 def Pulse_SetAmplitudeOp : Pulse_Op<"set_amplitude", [SequenceRequired, HasTargetFrame]> {
@@ -508,6 +538,12 @@ let summary = "Set a scaling factor for pulses of a frame.";
             return ampConstOp.value().convertToDouble();
         }
     }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
 }
 
 def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
@@ -532,6 +568,12 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
 
     let assemblyFormat = [{
         attr-dict `(` $target `)` `:` `(` type($target) `)` `->` type($out)
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
@@ -562,6 +604,10 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
         auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
         if (durDeclOp && durDeclOp.value() < 0)
            return emitOpError("duration must be >= 0.");
+        
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        
         return success();
     }];
 

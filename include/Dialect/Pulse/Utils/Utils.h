@@ -34,7 +34,7 @@ template <typename PulseOpTy>
 MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
 
   auto frameArgIndex =
-      pulseOp.target().template dyn_cast<BlockArgument>().getArgNumber();
+      pulseOp.target().template cast<BlockArgument>().getArgNumber();
   auto frameOp = callSequenceOp.getOperand(frameArgIndex).getDefiningOp();
 
   auto mixFrameOp = dyn_cast<mlir::pulse::MixFrameOp>(frameOp);
