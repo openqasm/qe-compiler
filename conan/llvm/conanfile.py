@@ -245,6 +245,12 @@ class LLVMConan(ConanFile):
         self.copy("llvm-lit", dst="bin", src="bin")
 
     def package_info(self):
+        # Don't generate any find modules. LLVM provides its own
+        # in lib/cmake, which will get picked up via builddirs.
+        self.cpp_info.set_property("cmake_find_mode", "none")
+        self.cpp_info.builddirs = ["lib/cmake"]
+
+        # TODO: remove once we've switched to Conan 2.0
         self.cpp_info.names["cmake_find_package"] = "LLVM"
         self.cpp_info.names["cmake_find_package_multi"] = "LLVM"
 
