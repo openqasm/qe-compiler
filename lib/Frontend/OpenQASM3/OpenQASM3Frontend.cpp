@@ -114,13 +114,13 @@ llvm::Error qssc::frontend::openqasm3::parse(
         case QASM::QasmDiagnosticEmitter::DiagLevel::Info:
           level = "Info";
           diagLevel = qssc::Severity::Info;
-          sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Remark; // TODO this mapping is up for debate
+          sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Remark;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Status:
           level = "Status";
           diagLevel = qssc::Severity::Info;
-          sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Note;  // TODO this mapping is up for debate
+          sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Note;
           break;
         }
 
@@ -151,13 +151,6 @@ llvm::Error qssc::frontend::openqasm3::parse(
 
         if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
             DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
-          if (diagnosticCallback_) {
-            qssc::Diagnostic diag{diagLevel,
-                                  qssc::ErrorCategory::OpenQASM3ParseFailure,
-                                  fileLoc.str() + "\n" + Msg + "\n" + sourceString};
-            (*diagnosticCallback_)(diag);
-          }
-
           // give up parsing after errors right away
           // TODO: update to recent qss-qasm to support continuing
           throw std::runtime_error("Failure parsing");
@@ -195,8 +188,6 @@ llvm::Error qssc::frontend::openqasm3::parse(
   if (root == nullptr)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Failed to parse OpenQASM 3 input");
-
-  // TODO how do we get a location from actual source line / column?
 
   if (emitRawAST)
     root->print();
