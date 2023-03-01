@@ -13,7 +13,7 @@ package_add_test_with_libs(unittest-quir-dialect
 
 if (QSSC_WITH_MOCK_TARGET)
     package_add_test_with_libs(unittest-qss-compiler
-            HAL/TargetRegistryTest.cpp
+            HAL/TargetSystemRegistryTest.cpp
             # add other source files with test cases here
 
             LIBRARIES
