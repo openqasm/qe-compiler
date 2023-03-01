@@ -32,7 +32,7 @@ if (NOT LLVM_LIBRARIES MATCHES "LLVMAArch64CodeGen")
     )
 endif ()
 
-qssc_add_system_target(QSSCTargetMock
+qssc_add_plugin(QSSCTargetMock QSSC_TARGET_PLUGIN
 Conversion/QUIRToStandard/QUIRToStandard.cpp
 MockTarget.cpp
 MockUtils.cpp
@@ -52,6 +52,6 @@ MLIRLLVMIR
 MLIRLLVMToLLVMIRTranslation
 MLIRStandardOpsTransforms
 ${llvm_code_gen_libraries}
-TARGET_REGISTRATION_HEADERS
+PLUGIN_REGISTRATION_HEADERS
 ${CMAKE_CURRENT_SOURCE_DIR}/Target.inc
 )

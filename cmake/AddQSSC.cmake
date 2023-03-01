@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2021.
+# (C) Copyright IBM 2021, 2023.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -128,6 +128,10 @@ function(find_all_header_files headers_out header_dirs)
     set(${headers_out} ${all_headers} PARENT_SCOPE)
 endfunction()
 
+# NOTE: It is not ideal to have a separate property defined for
+# each plugin (the number could grow large). However, it is in
+# our better interest--at least, for now--to keep distinct plugin
+# types separate to prevent unecessary linking.
 define_property(GLOBAL PROPERTY QSSC_TARGETS
     BRIEF_DOCS "QSSC system targets to be built"
     FULL_DOCS "QSSC system targets to be built")
@@ -139,6 +143,18 @@ define_property(GLOBAL PROPERTY QSSC_TARGET_REGISTRATION_HEADERS
         FULL_DOCS "QSSC system target registration headers")
 # Initialize property
 set_property(GLOBAL PROPERTY QSSC_TARGET_REGISTRATION_HEADERS "")
+
+define_property(GLOBAL PROPERTY QSSC_PAYLOADS
+    BRIEF_DOCS "QSSC payload plugins to be built"
+    FULL_DOCS "QSSC payload plugins to be built")
+# Initialize property
+set_property(GLOBAL PROPERTY QSSC_PAYLOADS "")
+
+define_property(GLOBAL PROPERTY QSSC_PAYLOAD_REGISTRATION_HEADERS
+        BRIEF_DOCS "QSSC payload plugin registration headers"
+        FULL_DOCS "QSSC payload plugin registration headers")
+# Initialize property
+set_property(GLOBAL PROPERTY QSSC_PAYLOAD_REGISTRATION_HEADERS "")
 
 # Add a LIT test suite using the QSS LIT config.
 function(qssc_add_lit_test_suite target_name suite_name tests_directory extra_args)
@@ -169,9 +185,9 @@ function(qssc_add_lit_test_suite target_name suite_name tests_directory extra_ar
 
 endfunction(qssc_add_lit_test_suite)
 
-# Add a target system
+# Add a QSS Compiler plugin
 #
-# qssc_add_system_target(target_name
+# qssc_add_plugin(plugin_name plugin_type
 #    <List of sources>
 #
 #    [ADDITIONAL_HEADERS
@@ -196,62 +212,83 @@ endfunction(qssc_add_lit_test_suite)
 #     If the resource is an executable, the target property RESOURCE_IS_PROGRAM
 #     must be set to true.
 #
-#    [TARGET_REGISTRATION_HEADERS
-#     <List of headers to be included by the QSS compiler target registry
+#    [PLUGIN_REGISTRATION_HEADERS
+#     <List of headers to be included by the QSS compiler plugin registry
 #     ...>
 #
-#     Used to register system targets via static initialization.
+#     Used to register plugins via static initialization.
 #
-#    [TARGET_SHORT_NAME
+#    [PLUGIN_SHORT_NAME
 #     <optional short name for the target system that will be used
-#      in path names for resources -- must match Target::getName() so that
-#      resources can be found at runtime ]
-function(qssc_add_system_target target_name)
+#      in path names for resources -- must match <Plugin>::getName()
+#      so that resources can be found at runtime ]
+# )
+function(qssc_add_plugin plugin_name plugin_type)
+  # Ensure a supported plugin type was specified
+  set(SUPPORTED_PLUGIN_TYPES QSSC_PAYLOAD_PLUGIN QSSC_TARGET_PLUGIN)
+  string(TOUPPER ${plugin_type} PLUGIN_TYPE_TOUPPER)
+  if(NOT ${PLUGIN_TYPE_TOUPPER} IN_LIST SUPPORTED_PLUGIN_TYPES)
+    string(REPLACE ";" ", " supported "${SUPPORTED_PLUGIN_TYPES}")
+    message(FATAL_ERROR
+      "${plugin_type} is an unsupported plugin type.\n"
+      "Supported plugin types are: ${supported}"
+    )
+  else()
+    # Parse `PLUGIN_TYPE_TOUPPER` to get just type name (e.g., 'payload',
+    # 'target') to use for setting variable names (TOUPPER) and paths (TOLOWER)
+    string(REPLACE "_" ";"
+      PLUGIN_TYPE_TOUPPER_AS_LIST "${PLUGIN_TYPE_TOUPPER}"
+    )
+    list(GET PLUGIN_TYPE_TOUPPER_AS_LIST 1 PLUGIN_TYPE_TOUPPER)
+    string(TOLOWER ${PLUGIN_TYPE_TOUPPER} PLUGIN_TYPE_TOLOWER)
+  endif()
   include_directories(BEFORE
     ${CMAKE_CURRENT_SOURCE_DIR})
 
   # peel off arguments specific to target
   cmake_parse_arguments(ARG
     ""
-    "TARGET_SHORT_NAME;"
-    "TARGET_REGISTRATION_HEADERS;CUSTOM_RESOURCES"
+    "PLUGIN_SHORT_NAME;"
+    "PLUGIN_REGISTRATION_HEADERS;CUSTOM_RESOURCES"
     ${ARGN}
   )
 
-  qssc_add_library(${target_name} ${ARG_UNPARSED_ARGUMENTS})
+  qssc_add_library(${plugin_name} ${ARG_UNPARSED_ARGUMENTS})
 
-  message(STATUS "Adding target ${target_name}")
+  message(STATUS "Adding plugin ${plugin_name}")
 
-  # enforce dependency on tblgen generated headers
-  add_dependencies(${target_name} MLIRQUIRDialect)
+  if(PLUGIN_TYPE_TOLOWER STREQUAL "target")
+    # enforce dependency on tblgen generated headers
+    add_dependencies(${plugin_name} MLIRQUIRDialect)
+  endif()
 
   # add registration header(s) to global var
-  foreach(REG_HEADER ${ARG_TARGET_REGISTRATION_HEADERS})
+  foreach(REG_HEADER ${ARG_PLUGIN_REGISTRATION_HEADERS})
       message(STATUS "Checking for registration header: ${REG_HEADER}")
       if(NOT EXISTS "${REG_HEADER}")
-          message(FATAL_ERROR "Missing registration header for target ${target_name}: ${REG_HEADER}")
+          message(FATAL_ERROR "Missing registration header for plugin ${plugin_name}: ${REG_HEADER}")
       else()
-          set_property(GLOBAL APPEND PROPERTY QSSC_TARGET_REGISTRATION_HEADERS "${REG_HEADER}")
+          set_property(GLOBAL APPEND PROPERTY QSSC_${PLUGIN_TYPE_TOUPPER}_REGISTRATION_HEADERS "${REG_HEADER}")
       endif()
   endforeach()
 
-  set_property(GLOBAL APPEND PROPERTY QSSC_TARGETS "${target_name}")
+  set_property(GLOBAL APPEND PROPERTY QSSC_${PLUGIN_TYPE_TOUPPER}S "${plugin_name}")
 
-  if(ARG_TARGET_SHORT_NAME)
-      message(STATUS "Using short name ${ARG_TARGET_SHORT_NAME} for ${target_name} in resource paths")
-      set(target_name_resources ${ARG_TARGET_SHORT_NAME})
+  if(ARG_PLUGIN_SHORT_NAME)
+      message(STATUS "Using short name ${ARG_PLUGIN_SHORT_NAME} for ${plugin_name} in resource paths")
+      set(plugin_name_resources ${ARG_PLUGIN_SHORT_NAME})
   else()
-      set(target_name_resources ${target_name})
+      set(plugin_name_resources ${plugin_name})
   endif()
 
   if(ARG_CUSTOM_RESOURCES)
-      add_dependencies(${target_name} ${ARG_CUSTOM_RESOURCES})
+      add_dependencies(${plugin_name} ${ARG_CUSTOM_RESOURCES})
 
-      # define build directory for the target's resources
+      # define build directory for the plugin's resources
       # - attach as  property RESOURCE_OUTPUT_DIRECTORY to each resource target
-      set(QSSC_TARGET_${target_name}_RESOURCE_DIR ${QSSC_RESOURCES_OUTPUT_INTDIR}/targets/${target_name_resources})
-      file(MAKE_DIRECTORY ${QSSC_TARGET_${target_name}_RESOURCE_DIR})
-      set_target_properties(${ARG_CUSTOM_RESOURCES} PROPERTIES RESOURCE_OUTPUT_DIRECTORY ${QSSC_TARGET_${target_name}_RESOURCE_DIR})
+      set(QSSC_${PLUGIN_TYPE_TOUPPER}_${plugin_name}_RESOURCE_DIR ${QSSC_RESOURCES_OUTPUT_INTDIR}/${PLUGIN_TYPE_TOLOWER}s/${plugin_name_resources})
+      file(MAKE_DIRECTORY ${QSSC_${PLUGIN_TYPE_TOUPPER}_${plugin_name}_RESOURCE_DIR})
+      set_target_properties(${ARG_CUSTOM_RESOURCES} PROPERTIES RESOURCE_OUTPUT_DIRECTORY ${QSSC_${PLUGIN_TYPE_TOUPPER}_${plugin_name}_RESOURCE_DIR})
 
       foreach(resource ${ARG_CUSTOM_RESOURCES})
           get_target_property(RESOURCE_OUTPUT_NAME ${resource} RESOURCE_OUTPUT_NAME)
@@ -259,8 +296,8 @@ function(qssc_add_system_target target_name)
               set(RESOURCE_OUTPUT_NAME ${resource})
           endif()
           get_target_property(RESOURCE_IS_PROGRAM ${resource} RESOURCE_IS_PROGRAM)
-          set(resource_file ${QSSC_TARGET_${target_name}_RESOURCE_DIR}/${RESOURCE_OUTPUT_NAME})
-          set(resource_destination ${QSSC_RESOURCES_INSTALL_PREFIX}/targets/${target_name_resources})
+          set(resource_file ${QSSC_PLUGIN_${plugin_name}_RESOURCE_DIR}/${RESOURCE_OUTPUT_NAME})
+          set(resource_destination ${QSSC_RESOURCES_INSTALL_PREFIX}/${PLUGIN_TYPE_TOLOWER}s/${plugin_name_resources})
 
           if(RESOURCE_IS_PROGRAM)
               install(PROGRAMS ${resource_file}
