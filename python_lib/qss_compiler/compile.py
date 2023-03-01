@@ -40,7 +40,12 @@ and Pipe take care of serializing python objects and passing them across
 process boundaries with pipes.
 """
 import asyncio
+import logging
+import logging.handlers
+import multiprocessing as mp
+import queue
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from enum import Enum
 from importlib import resources as importlib_resources
@@ -50,7 +55,12 @@ from os import environ as os_environ
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
+from .logs import StreamLogger
 from .py_qssc import _compile_with_args, Diagnostic
+
+
+log = logging.getLogger(__name__)
+
 
 # use the forkserver context to create a server process
 # for forking new compiler processes
@@ -177,6 +187,13 @@ class _CompilerExecution:
     input_file: Optional[Union[str, Path]] = None
     options: CompileOptions = field(default_factory=CompileOptions)
 
+    def __str__(self) -> str:
+        args = self.prepare_compiler_args()
+        if self.input_str:
+            # Add a new line for the input source
+            args.insert(len(args) - 1, "\n")
+        return ' '.join(args)
+
     def prepare_compiler_args(self) -> List[str]:
         args = self.options.prepare_compiler_option_args()
 
@@ -189,6 +206,7 @@ class _CompilerExecution:
             raise QSSCompilerError("Neither input file nor input string provided.")
 
         return args
+
 
 
 @dataclass
@@ -225,16 +243,29 @@ def _compile_child_backend(
         return status, None
 
 
-def _compile_child_runner(conn: connection.Connection) -> None:
-    execution = conn.recv()
+def _compile_child_runner(conn: connection.Connection, logging_queue: mp.Queue) -> None:
 
-    def on_diagnostic(diag):
-        conn.send(diag)
+    process_logger = _setup_process_logger(logging_queue)
+    with StreamLogger(process_logger, level=logging.ERROR) as info_stream_logger, StreamLogger(process_logger, level=logging.ERROR) as warning_stream_logger:
+        with redirect_stdout(info_stream_logger), redirect_stderr(warning_stream_logger):
+            execution = conn.recv()
 
-    status, output = _compile_child_backend(execution, on_diagnostic)
-    conn.send(status)
-    if output is not None:
-        conn.send_bytes(output)
+            def on_diagnostic(diag):
+                conn.send(diag)
+
+            status, output = _compile_child_backend(execution, on_diagnostic)
+
+            conn.send(status)
+            if output is not None:
+                conn.send_bytes(output)
+
+
+
+def _setup_process_logger(logging_queue: mp.Queue) -> logging.Logger:
+    queue_handler = logging.handlers.QueueHandler(logging_queue)  # Just the one handler needed
+    process_logger = logging.getLogger()
+    process_logger.addHandler(queue_handler)
+    return process_logger
 
 
 def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
@@ -244,12 +275,15 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
 
     options = execution.options
 
+    logging_queue = mp.Queue(-1)
+
     parent_side, child_side = mp_ctx.Pipe(duplex=True)
 
     try:
-        childproc = mp_ctx.Process(target=_compile_child_runner, args=(child_side,))
+        childproc = mp_ctx.Process(target=_compile_child_runner, args=(child_side, logging_queue))
         childproc.start()
 
+        log.debug(execution)
         parent_side.send(execution)
 
         # we must handle the case when the child process exits without
@@ -264,8 +298,10 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         diagnostics = []
         try:
             while True:
-                received = parent_side.recv()
+                # Make sure logs are handled before breaking
+                _receive_process_log(logging_queue)
 
+                received = parent_side.recv()
                 if isinstance(received, Diagnostic):
                     if execution.options.on_diagnostic:
                         execution.options.on_diagnostic(received)
@@ -273,15 +309,20 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                         diagnostics.append(received)
                 elif isinstance(received, _CompilerStatus):
                     success = received.success
+                    log.info("Compilation successful.")
                     break
                 else:
                     childproc.kill()
                     childproc.join()
+                    log.error("Compilation failed.")
                     raise QSSCompilerError(
                         "The compile process delivered an unexpected object instead of status or "
                         "diagnostic information. This points to inconsistencies in the Python "
                         "interface code between the calling process and the compile process."
                     )
+
+            # Read final logs after breaking
+            _receive_process_log(logging_queue)
 
             if options.output_file is None:
                 # return compilation result via IPC instead of in a file.
@@ -323,6 +364,14 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         if options.output_type == OutputType.MLIR:
             return output.decode("utf8")
         return output
+
+def _receive_process_log(logging_queue: mp.Queue) -> None:
+    """Query the logging queue and log available messages if available."""
+    while not logging_queue.empty():
+        record = logging_queue.get(block=False)
+        queue_logger = logging.getLogger(record.name)
+        queue_logger.handle(record)
+
 
 
 def _prepare_compile_options(
