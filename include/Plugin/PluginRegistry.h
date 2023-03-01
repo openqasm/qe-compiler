@@ -23,6 +23,17 @@ namespace qssc::plugin::registry {
     struct PluginRegistry {
 
     public:
+        struct InitRegistry {
+            template<typename... Args>
+            InitRegistry(llvm::StringRef name, Args &&... args) {
+                registered = PluginRegistry::registerPlugin(name, std::forward<Args>(args)...);
+            }
+
+            bool registered = false;
+        };
+
+        PluginRegistry(const PluginRegistry&) = delete;
+
         template<typename... Args>
         static bool registerPlugin(llvm::StringRef name, Args &&... args) {
             auto &pluginRegistry = instance();

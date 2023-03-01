@@ -14,6 +14,9 @@
 
 #include "HAL/TargetSystemRegistry.h"
 
+// Inject static initialization headers from targets.
+#include "Targets.inc"
+
 namespace qssc::hal::registry {
 
     namespace {

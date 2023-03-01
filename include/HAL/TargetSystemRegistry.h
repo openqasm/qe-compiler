@@ -25,6 +25,16 @@ namespace qssc::hal::registry {
         using PluginRegistry = qssc::plugin::registry::PluginRegistry<TargetSystemInfo>;
     public:
         template<typename ConcreteTargetSystem>
+        struct InitRegistry {
+            template<typename... Args>
+            InitRegistry(llvm::StringRef name, Args &&... args) {
+                registered = TargetSystemRegistry::registerPlugin<ConcreteTargetSystem>(name, std::forward<Args>(args)...);
+            }
+
+            bool registered = false;
+        };
+
+        template<typename ConcreteTargetSystem>
         static bool registerPlugin(llvm::StringRef name, llvm::StringRef description,
                                    const TargetSystemInfo::PluginFactoryFunction &pluginFactory) {
             return PluginRegistry::registerPlugin(name, name, description, pluginFactory,
