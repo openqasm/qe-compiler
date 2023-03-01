@@ -255,7 +255,7 @@ function(qssc_add_plugin plugin_name plugin_type)
 
   qssc_add_library(${plugin_name} ${ARG_UNPARSED_ARGUMENTS})
 
-  message(STATUS "Adding plugin ${plugin_name}")
+  message(STATUS "Adding ${PLUGIN_TYPE_TOLOWER} plugin: ${plugin_name}")
 
   if(PLUGIN_TYPE_TOLOWER STREQUAL "target")
     # enforce dependency on tblgen generated headers
@@ -310,7 +310,7 @@ function(qssc_add_plugin plugin_name plugin_type)
           endif()
       endforeach()
   endif()
-endfunction(qssc_add_system_target)
+endfunction(qssc_add_system_target plugin_name plugin_type)
 
 include(GoogleTest)
 # From: https://cliutils.gitlab.io/modern-cmake/chapters/testing/googletest.html
