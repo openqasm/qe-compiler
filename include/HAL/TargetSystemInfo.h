@@ -45,7 +45,7 @@ namespace qssc::hal::registry {
                          PassesFunction passRegistrar,
                          PassPipelinesFunction passPipelineRegistrar);
 
-        ~TargetSystemInfo() = default;
+        ~TargetSystemInfo();
 
         llvm::Expected<qssc::hal::TargetSystem *>
         createTarget(mlir::MLIRContext *context,

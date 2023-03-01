@@ -26,10 +26,12 @@ namespace qssc::hal::registry {
                                        PluginInfo::PluginFactoryFunction targetFactory,
                                        PassesFunction passRegistrar,
                                        PassPipelinesFunction passPipelineRegistrar)
-            : TargetSystemInfo::PluginInfo(name, description, targetFactory),
+            : TargetSystemInfo::PluginInfo(name, description, std::move(targetFactory)),
               impl(std::make_unique<Impl>()),
               passRegistrar(std::move(passRegistrar)),
               passPipelineRegistrar(std::move(passPipelineRegistrar)) {}
+
+    TargetSystemInfo::~TargetSystemInfo() = default;
 
     llvm::Expected<qssc::hal::TargetSystem *>
     TargetSystemInfo::createTarget(mlir::MLIRContext *context,

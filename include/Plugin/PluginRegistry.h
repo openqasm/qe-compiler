@@ -39,10 +39,10 @@ namespace qssc::plugin::registry {
     struct PluginRegistry {
 
     public:
-        static bool registerPlugin(llvm::StringRef name, llvm::StringRef description,
-                                   const typename PluginInfo::PluginFactoryFunction &pluginFactory) {
+        template<typename... Args>
+        static bool registerPlugin(llvm::StringRef name, Args &&... args) {
             auto &pluginRegistry = instance();
-            auto [_, inserted] = pluginRegistry.registry.try_emplace(name, name, description, pluginFactory);
+            auto [_, inserted] = pluginRegistry.registry.try_emplace(name, std::forward<Args>(args)...);
             return inserted;
         }
 

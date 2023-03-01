@@ -31,11 +31,9 @@
 //#include "Support/Pimpl.h"
 
 #include "Plugin/PluginRegistry.h"
-#include "Plugin/PluginInfo.hpp"
+#include "TargetSystemInfo.h"
 
 namespace qssc::hal::registry {
-
-    using TargetSystemInfo = qssc::plugin::registry::PluginInfo<qssc::hal::TargetSystem>;
 
     class TargetSystemRegistry : public qssc::plugin::registry::PluginRegistry<TargetSystemInfo> {
         using PluginRegistry = qssc::plugin::registry::PluginRegistry<TargetSystemInfo>;
@@ -43,12 +41,9 @@ namespace qssc::hal::registry {
         template<typename ConcreteTargetSystem>
         static bool registerPlugin(llvm::StringRef name, llvm::StringRef description,
                                    const TargetSystemInfo::PluginFactoryFunction &pluginFactory) {
-            bool inserted = PluginRegistry::registerPlugin(name, description, pluginFactory);
-            if (inserted) {
-                ConcreteTargetSystem::registerTargetPasses();
-                ConcreteTargetSystem::registerTargetPipelines();
-            }
-            return inserted;
+            return PluginRegistry::registerPlugin(name, name, description, pluginFactory,
+                                                  ConcreteTargetSystem::registerTargetPasses,
+                                                  ConcreteTargetSystem::registerTargetPipelines);
         }
     };
 
