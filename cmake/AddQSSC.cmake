@@ -205,11 +205,11 @@ endfunction(qssc_add_lit_test_suite)
 #
 #     Each static resource must be defined as cmake target.
 #
-#     By default, the target's name is used as the resource's file name. To
-#     override that, define a target property RESOURCE_OUTPUT_NAME that defines
+#     By default, the plugin's name is used as the resource's file name. To
+#     override that, define a plugin property RESOURCE_OUTPUT_NAME that defines
 #     the file name of the resource in the build directory and when installed.
 #
-#     If the resource is an executable, the target property RESOURCE_IS_PROGRAM
+#     If the resource is an executable, the plugin property RESOURCE_IS_PROGRAM
 #     must be set to true.
 #
 #    [PLUGIN_REGISTRATION_HEADERS
@@ -219,7 +219,7 @@ endfunction(qssc_add_lit_test_suite)
 #     Used to register plugins via static initialization.
 #
 #    [PLUGIN_SHORT_NAME
-#     <optional short name for the target system that will be used
+#     <optional short name for the plugin that will be used
 #      in path names for resources -- must match <Plugin>::getName()
 #      so that resources can be found at runtime ]
 # )
@@ -245,7 +245,7 @@ function(qssc_add_plugin plugin_name plugin_type)
   include_directories(BEFORE
     ${CMAKE_CURRENT_SOURCE_DIR})
 
-  # peel off arguments specific to target
+  # peel off arguments specific to the plugin
   cmake_parse_arguments(ARG
     ""
     "PLUGIN_SHORT_NAME;"
@@ -310,7 +310,7 @@ function(qssc_add_plugin plugin_name plugin_type)
           endif()
       endforeach()
   endif()
-endfunction(qssc_add_system_target plugin_name plugin_type)
+endfunction(qssc_add_plugin plugin_name plugin_type)
 
 include(GoogleTest)
 # From: https://cliutils.gitlab.io/modern-cmake/chapters/testing/googletest.html
