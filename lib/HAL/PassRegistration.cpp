@@ -9,14 +9,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "HAL/PassRegistration.h"
-#include "HAL/TargetRegistry.h"
+#include "HAL/TargetSystemRegistry.h"
 
 using namespace qssc;
 using namespace qssc::hal;
 
 llvm::Error hal::registerTargetPasses() {
   llvm::Error err = llvm::Error::success();
-  for (const auto &target : registry::registeredTargets()) {
+  for (const auto &target : registry::TargetSystemRegistry::registeredPlugins()) {
     err =
         llvm::joinErrors(std::move(err), target.second.registerTargetPasses());
   }
@@ -25,7 +25,7 @@ llvm::Error hal::registerTargetPasses() {
 
 llvm::Error hal::registerTargetPipelines() {
   llvm::Error err = llvm::Error::success();
-  for (const auto &target : registry::registeredTargets()) {
+  for (const auto &target : registry::TargetSystemRegistry::registeredPlugins()) {
     err = llvm::joinErrors(std::move(err),
                            target.second.registerTargetPassPipelines());
   }

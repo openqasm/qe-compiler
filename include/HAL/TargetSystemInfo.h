@@ -68,7 +68,6 @@ namespace qssc::hal::registry {
         PassPipelinesFunction passPipelineRegistrar;
     };
 
-
-}
+} // namespace qssc::hal::registry
 
 #endif

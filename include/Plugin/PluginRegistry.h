@@ -46,7 +46,7 @@ namespace qssc::plugin::registry {
             return inserted;
         }
 
-        llvm::Optional<PluginInfo *> lookupPluginInfo(llvm::StringRef pluginName) {
+        static llvm::Optional<PluginInfo *> lookupPluginInfo(llvm::StringRef pluginName) {
             auto &pluginRegistry = instance();
             auto it = pluginRegistry.registry.find(pluginName);
             if (it == pluginRegistry.registry.end())
@@ -57,15 +57,15 @@ namespace qssc::plugin::registry {
         // TODO: To be implemented
         // PluginInfo *nullPluginInfo();
 
-        bool pluginExists(llvm::StringRef targetName) {
+        static bool pluginExists(llvm::StringRef targetName) {
             auto &pluginRegistry = instance();
             auto it = pluginRegistry.registry.find(targetName);
             return it != pluginRegistry.registry.end();
         }
 
-        const llvm::StringMap<PluginInfo> &registeredPlugins() {
+        static const llvm::StringMap<PluginInfo> &registeredPlugins() {
             auto &pluginRegistry = instance();
-            return *pluginRegistry.registry;
+            return pluginRegistry.registry;
         }
 
     private:

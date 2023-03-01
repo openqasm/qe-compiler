@@ -45,8 +45,10 @@ namespace qssc::hal::registry {
                                                   ConcreteTargetSystem::registerTargetPasses,
                                                   ConcreteTargetSystem::registerTargetPipelines);
         }
+
+        static TargetSystemInfo *nullTargetSystemInfo();
     };
 
-}
+} // namespace qssc::hal::registry
 
 #endif

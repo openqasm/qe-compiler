@@ -61,11 +61,10 @@ namespace qssc::hal::registry {
     }
 
     llvm::Error TargetSystemInfo::registerTargetPasses() const {
-        return registerTargetPasses();
+        return passRegistrar();
     }
 
     llvm::Error TargetSystemInfo::registerTargetPassPipelines() const {
-        return registerTargetPassPipelines();
+        return passPipelineRegistrar();
     }
-
-}
+} // namespace qssc::hal::registry

@@ -71,6 +71,6 @@ namespace qssc::plugin::registry {
                 << pluginInfo.getDescription() << '\n';
     }
 
-}
+} // namespace qssc::plugin::registry
 
 #endif

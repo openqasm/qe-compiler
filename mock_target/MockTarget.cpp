@@ -16,11 +16,9 @@
 #include "Transforms/QubitLocalization.h"
 
 #include "Dialect/QUIR/Transforms/Passes.h"
-#include "HAL/TargetRegistry.h"
 #include "HAL/TargetSystemRegistry.h"
 #include "Payload/Payload.h"
 
-#include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -31,12 +29,10 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
-#include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Target/TargetMachine.h"
-#include "llvm/Target/TargetOptions.h"
 
 #include "mlir/Conversion/Passes.h"
 #include "mlir/Dialect/LLVMIR/Transforms/Passes.h"
@@ -47,9 +43,7 @@
 #include "mlir/Target/LLVMIR/Export.h"
 
 #include <fstream>
-#include <iostream>
 #include <sstream>
-#include <thread>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -77,19 +71,6 @@ int qssc::targets::mock::init() {
             auto config = std::make_unique<MockConfig>(*configurationPath);
             return std::make_unique<MockSystem>(std::move(config));
        });
-
-  registry::TargetRegistration<MockSystem> registrar(
-      "mock", "Mock system for testing the targetting infrastructure.",
-      [](llvm::Optional<llvm::StringRef> configurationPath)
-          -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
-        if (!configurationPath)
-          return llvm::createStringError(
-              llvm::inconvertibleErrorCode(),
-              "Configuration file must be specified.\n");
-
-        auto config = std::make_unique<MockConfig>(*configurationPath);
-        return std::make_unique<MockSystem>(std::move(config));
-      });
   return 0;
 }
 

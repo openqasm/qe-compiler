@@ -24,7 +24,6 @@ get_property(qssc_targets GLOBAL PROPERTY QSSC_TARGETS)
 qssc_add_library(QSSCHAL
     PassRegistration.cpp
     SystemConfiguration.cpp
-    TargetRegistry.cpp
     TargetSystem.cpp
     TargetSystemInfo.cpp
     TargetSystemRegistry.cpp
