@@ -60,7 +60,9 @@ jobs:
       - name: Build
         id: build
         working-directory: build
-        run: conan build ..
+        run: |
+          ls -la
+          conan build ..
       - name: Test
         id: test
         working-directory: build
