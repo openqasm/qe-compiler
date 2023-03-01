@@ -59,6 +59,10 @@ class QasmConan(ConanFile):
         for req in self.conan_data["requirements"]:
             self.requires(req)
 
+    def build_requirements(self):
+        for req in self.conan_data["build_requirements"]:
+            self.tool_requires(req)
+
     def _configure_cmake(self):
         cmake = CMake(self, parallel=False)
         cmake.verbose = True
