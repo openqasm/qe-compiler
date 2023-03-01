@@ -9,6 +9,7 @@
 import io
 import logging
 
+
 class StreamLogger(io.StringIO):
     """Implement StringIO and writes to a provided logger."""
 
@@ -25,13 +26,13 @@ class StreamLogger(io.StringIO):
 
     def write(self, msg: str):
         if msg.endswith("\n"):
-           self.buffer_.append(msg.rstrip("\n"))
-           self.flush()
+            self.buffer_.append(msg.rstrip("\n"))
+            self.flush()
         else:
-           self.buffer_.append(msg)
+            self.buffer_.append(msg)
 
     def flush(self):
-       msg = "".join(self.buffer_)
-       if msg:
-           self.logger.log(self.level, msg)
-       self.buffer_ = []
+        msg = "".join(self.buffer_)
+        if msg:
+            self.logger.log(self.level, msg)
+        self.buffer_ = []

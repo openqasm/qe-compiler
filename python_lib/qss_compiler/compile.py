@@ -192,7 +192,7 @@ class _CompilerExecution:
         if self.input_str:
             # Add a new line for the input source
             args.insert(len(args) - 1, "\n")
-        return ' '.join(args)
+        return " ".join(args)
 
     def prepare_compiler_args(self) -> List[str]:
         args = self.options.prepare_compiler_option_args()
@@ -206,7 +206,6 @@ class _CompilerExecution:
             raise QSSCompilerError("Neither input file nor input string provided.")
 
         return args
-
 
 
 @dataclass
@@ -246,8 +245,14 @@ def _compile_child_backend(
 def _compile_child_runner(conn: connection.Connection, logging_queue: mp.Queue) -> None:
 
     process_logger = _setup_process_logger(logging_queue)
-    with StreamLogger(process_logger, level=logging.DEBUG) as debug_stream_logger, StreamLogger(process_logger, level=logging.WARNING) as warning_stream_logger:
-        with redirect_stdout(debug_stream_logger), redirect_stderr(warning_stream_logger):
+    with StreamLogger(
+        process_logger, level=logging.DEBUG
+    ) as debug_stream_logger, StreamLogger(
+        process_logger, level=logging.WARNING
+    ) as warning_stream_logger:
+        with redirect_stdout(debug_stream_logger), redirect_stderr(
+            warning_stream_logger
+        ):
             execution = conn.recv()
 
             def on_diagnostic(diag):
@@ -260,9 +265,10 @@ def _compile_child_runner(conn: connection.Connection, logging_queue: mp.Queue) 
                 conn.send_bytes(output)
 
 
-
 def _setup_process_logger(logging_queue: mp.Queue) -> logging.Logger:
-    queue_handler = logging.handlers.QueueHandler(logging_queue)  # Just the one handler needed
+    queue_handler = logging.handlers.QueueHandler(
+        logging_queue
+    )  # Just the one handler needed
     process_logger = logging.getLogger()
     process_logger.addHandler(queue_handler)
     # This is the minimum log-level to communicate to the listener log-handler and
@@ -283,7 +289,9 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
     parent_side, child_side = mp_ctx.Pipe(duplex=True)
 
     try:
-        childproc = mp_ctx.Process(target=_compile_child_runner, args=(child_side, logging_queue))
+        childproc = mp_ctx.Process(
+            target=_compile_child_runner, args=(child_side, logging_queue)
+        )
         childproc.start()
 
         log.debug(execution)
@@ -368,13 +376,13 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             return output.decode("utf8")
         return output
 
+
 def _receive_process_log(logging_queue: mp.Queue) -> None:
     """Query the logging queue and log available messages if available."""
     while not logging_queue.empty():
         record = logging_queue.get(block=False)
         queue_logger = logging.getLogger(record.name)
         queue_logger.handle(record)
-
 
 
 def _prepare_compile_options(
