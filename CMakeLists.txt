@@ -40,6 +40,7 @@ enable_language(C CXX ASM)
 
 # Find external packages
 find_package(Python COMPONENTS Interpreter Development)
+set(CMAKE_FIND_DEBUG_MODE TRUE)
 find_package(qasm REQUIRED)
 find_package(mpc REQUIRED)
 find_package(mpfr REQUIRED)
@@ -49,6 +50,7 @@ find_package(libzip REQUIRED)
 find_package(GTest REQUIRED)
 find_package(LLVM REQUIRED CONFIG)
 find_package(clang-tools-extra REQUIRED CONFIG)
+set(CMAKE_FIND_DEBUG_MODE FALSE)
 
 if(DEFINED ENV{VERSION_STRING})
     set(VERSION_STRING $ENV{VERSION_STRING})
