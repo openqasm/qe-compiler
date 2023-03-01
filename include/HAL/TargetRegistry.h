@@ -30,12 +30,16 @@
 
 #include "Support/Pimpl.h"
 
+#include "Plugin/PluginRegistry.h"
+
 namespace mlir {
 class MLIRContext;
 class ModuleOp;
 } // namespace mlir
 
 namespace qssc::hal::registry {
+
+using TargetRegistry2 = qssc::plugin::registry::PluginRegistry<qssc::hal::TargetSystem>;
 
 using TargetSystemFactoryFunction =
     std::function<llvm::Expected<std::unique_ptr<qssc::hal::TargetSystem>>(

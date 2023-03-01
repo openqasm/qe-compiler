@@ -26,6 +26,8 @@ qssc_add_library(QSSCHAL
     SystemConfiguration.cpp
     TargetRegistry.cpp
     TargetSystem.cpp
+    TargetSystemInfo.cpp
+    TargetSystemRegistry.cpp
 
     ADDITIONAL_HEADER_DIRS
     ${QSSC_INCLUDE_DIR}/HAL
