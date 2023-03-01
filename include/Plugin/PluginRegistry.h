@@ -14,22 +14,6 @@
 #ifndef PLUGINREGISTRY_H
 #define PLUGINREGISTRY_H
 
-//#include "PluginInfo.hpp"
-//#include <memory>
-//#include <string>
-//#include <vector>
-//
-//#include "llvm/ADT/APFloat.h"
-//#include "llvm/ADT/APInt.h"
-//#include "llvm/ADT/None.h"
-//#include "llvm/ADT/Optional.h"
-//#include "llvm/ADT/StringRef.h"
-//#include "llvm/Support/Error.h"
-//
-//#include "HAL/SystemConfiguration.h"
-//#include "HAL/TargetSystem.h"
-//
-//#include "Support/Pimpl.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/ADT/StringMap.h"
 
@@ -53,9 +37,6 @@ namespace qssc::plugin::registry {
                 return llvm::None;
             return &it->second;
         }
-
-        // TODO: To be implemented
-        // PluginInfo *nullPluginInfo();
 
         static bool pluginExists(llvm::StringRef targetName) {
             auto &pluginRegistry = instance();

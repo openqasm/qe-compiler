@@ -14,21 +14,8 @@
 #ifndef PLUGININFO_H
 #define PLUGININFO_H
 
-//#include <memory>
-//#include <string>
-//#include <vector>
-//
-//#include "llvm/ADT/APFloat.h"
-//#include "llvm/ADT/APInt.h"
-//#include "llvm/ADT/None.h"
-//#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
-//
-//#include "HAL/SystemConfiguration.h"
-//#include "HAL/TargetSystem.h"
-//
-//#include "Support/Pimpl.h"
 
 namespace qssc::plugin::registry {
 
