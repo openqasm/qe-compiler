@@ -69,7 +69,6 @@
 pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
                                    bool outputAsStr,
                                    qssc::DiagnosticCallback onDiagnostic) {
-
   std::string outputStr("");
 
   LLVM_DEBUG(
@@ -102,7 +101,6 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
   LLVM_DEBUG(
     std::cout << "input " << inputPath << "\n";
     std::cout << "output " << outputPath << "\n";
-
     std::cout << "parameters (as seen from C++): \n";
 
     for (auto &item : parameters)
@@ -124,6 +122,7 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
 }
 
 PYBIND11_MODULE(py_qssc, m) {
+
   m.doc() = "Python bindings for the QSS Compiler.";
 
   m.def("_compile_with_args", &py_compile_by_args, pybind11::call_guard<pybind11::scoped_ostream_redirect, pybind11::scoped_estream_redirect>(), "Call compiler via cli qss-compile");

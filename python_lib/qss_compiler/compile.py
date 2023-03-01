@@ -246,8 +246,8 @@ def _compile_child_backend(
 def _compile_child_runner(conn: connection.Connection, logging_queue: mp.Queue) -> None:
 
     process_logger = _setup_process_logger(logging_queue)
-    with StreamLogger(process_logger, level=logging.ERROR) as info_stream_logger, StreamLogger(process_logger, level=logging.ERROR) as warning_stream_logger:
-        with redirect_stdout(info_stream_logger), redirect_stderr(warning_stream_logger):
+    with StreamLogger(process_logger, level=logging.DEBUG) as debug_stream_logger, StreamLogger(process_logger, level=logging.WARNING) as warning_stream_logger:
+        with redirect_stdout(debug_stream_logger), redirect_stderr(warning_stream_logger):
             execution = conn.recv()
 
             def on_diagnostic(diag):
@@ -265,6 +265,9 @@ def _setup_process_logger(logging_queue: mp.Queue) -> logging.Logger:
     queue_handler = logging.handlers.QueueHandler(logging_queue)  # Just the one handler needed
     process_logger = logging.getLogger()
     process_logger.addHandler(queue_handler)
+    # This is the minimum log-level to communicate to the listener log-handler and
+    # not the minimum level that will be displayed to the end user.
+    process_logger.setLevel(logging.DEBUG)
     return process_logger
 
 
