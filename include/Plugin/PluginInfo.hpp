@@ -38,6 +38,7 @@ namespace qssc::plugin::registry {
 
         [[nodiscard]] llvm::StringRef getDescription() const { return description; }
 
+        /// Returns a new instance of the registered PluginType
         llvm::Expected<std::unique_ptr<PluginType>>
         createPluginInstance(llvm::Optional<PluginConfiguration> configuration = llvm::None) {
             return factoryFunction(configuration);
@@ -49,10 +50,10 @@ namespace qssc::plugin::registry {
         PluginFactoryFunction factoryFunction;
     };
 
-    // TODO: Maybe move somewhere else, closer to CLI. This doesn't belong to the plugin registry framework
+    /// Print the help string for the given PluginInfo<TPluginType>.
     template<typename TPluginType>
     void printHelpStr(const PluginInfo<TPluginType> &pluginInfo, size_t indent, size_t descIndent) {
-        size_t numSpaces = descIndent - indent - 4;
+        const size_t numSpaces = descIndent - indent - 4;
         llvm::outs().indent(indent)
                 << "--" << llvm::left_justify(pluginInfo.getName(), numSpaces) << "- "
                 << pluginInfo.getDescription() << '\n';

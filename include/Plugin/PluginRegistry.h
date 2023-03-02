@@ -23,15 +23,6 @@ namespace qssc::plugin::registry {
     struct PluginRegistry {
 
     public:
-        struct InitRegistry {
-            template<typename... Args>
-            InitRegistry(llvm::StringRef name, Args &&... args) {
-                registered = PluginRegistry::registerPlugin(name, std::forward<Args>(args)...);
-            }
-
-            bool registered = false;
-        };
-
         PluginRegistry(const PluginRegistry&) = delete;
         void operator=(const PluginRegistry&) = delete;
 
@@ -73,6 +64,6 @@ namespace qssc::plugin::registry {
         llvm::StringMap<PluginInfo> registry;
     };
 
-}
+} // namespace qssc::plugin::registry
 
 #endif

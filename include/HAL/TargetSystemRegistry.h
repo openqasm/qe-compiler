@@ -27,6 +27,7 @@ namespace qssc::hal::registry {
         TargetSystemRegistry(const TargetSystemRegistry&) = delete;
         void operator=(const TargetSystemRegistry&) = delete;
 
+        /// Register a specific target allocator with the QSSC system.
         template<typename ConcreteTargetSystem>
         static bool registerPlugin(llvm::StringRef name, llvm::StringRef description,
                                    const TargetSystemInfo::PluginFactoryFunction &pluginFactory) {
