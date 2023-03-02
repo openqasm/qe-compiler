@@ -8,9 +8,9 @@ import subprocess
 
 
 class QasmConan(ConanFile):
-    name = 'qasm'
+    name = "qasm"
     version = "0.2.13"
-    url = 'https://github.com/Qiskit/qss-qasm.git'
+    url = "https://github.com/Qiskit/qss-qasm.git"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "examples": [True, False]}
     default_options = {"shared": False, "examples": False}
@@ -20,7 +20,7 @@ class QasmConan(ConanFile):
     description = "Compiler for OpenQASM3 language."
 
     def source(self):
-        token = os.environ.get('GITHUB_PAT')
+        token = os.environ.get("GITHUB_PAT")
         if token is not None:
             self.run(f"git clone https://{token}@github.com/Qiskit/qss-qasm.git .")
         else:
