@@ -59,18 +59,18 @@ static llvm::cl::OptionCategory
             "Compiler target");
 
 int qssc::targets::mock::init() {
-    bool registered = registry::TargetSystemRegistry::registerPlugin<MockSystem>(
-        "mock", "Mock system for testing the targetting infrastructure.",
-        [](llvm::Optional<llvm::StringRef> configurationPath)
-            -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
-            if (!configurationPath)
-                return llvm::createStringError(
-                    llvm::inconvertibleErrorCode(),
-                    "Configuration file must be specified.\n");
+  bool registered = registry::TargetSystemRegistry::registerPlugin<MockSystem>(
+    "mock", "Mock system for testing the targetting infrastructure.",
+    [](llvm::Optional<llvm::StringRef> configurationPath)
+      -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
+      if (!configurationPath)
+        return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "Configuration file must be specified.\n");
 
-        auto config = std::make_unique<MockConfig>(*configurationPath);
-        return std::make_unique<MockSystem>(std::move(config));
-   });
+    auto config = std::make_unique<MockConfig>(*configurationPath);
+    return std::make_unique<MockSystem>(std::move(config));
+  });
   return registered ? 0 : -1;
 }
 

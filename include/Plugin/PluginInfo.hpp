@@ -19,45 +19,45 @@
 
 namespace qssc::plugin::registry {
 
-    template<typename TPluginType>
-    class PluginInfo {
-    public:
-        using PluginType = TPluginType;
-        using PluginConfiguration = typename PluginType::PluginConfiguration;
-        using PluginFactoryFunction = std::function<llvm::Expected<std::unique_ptr<PluginType>>(
-                llvm::Optional<PluginConfiguration> configuration)>;
+  template<typename TPluginType>
+  class PluginInfo {
+  public:
+    using PluginType = TPluginType;
+    using PluginConfiguration = typename PluginType::PluginConfiguration;
+    using PluginFactoryFunction = std::function<llvm::Expected<std::unique_ptr<PluginType>>(
+        llvm::Optional<PluginConfiguration> configuration)>;
 
-    public:
-        PluginInfo(llvm::StringRef name, llvm::StringRef description,
-                   PluginFactoryFunction factoryFunction) : name(name), description(description),
-                                                            factoryFunction(std::move(factoryFunction)) {}
+  public:
+    PluginInfo(llvm::StringRef name, llvm::StringRef description,
+               PluginFactoryFunction factoryFunction) : name(name), description(description),
+                                                        factoryFunction(std::move(factoryFunction)) {}
 
-        ~PluginInfo() = default;
+    ~PluginInfo() = default;
 
-        [[nodiscard]] llvm::StringRef getName() const { return name; }
+    [[nodiscard]] llvm::StringRef getName() const { return name; }
 
-        [[nodiscard]] llvm::StringRef getDescription() const { return description; }
+    [[nodiscard]] llvm::StringRef getDescription() const { return description; }
 
-        /// Returns a new instance of the registered PluginType
-        llvm::Expected<std::unique_ptr<PluginType>>
-        createPluginInstance(llvm::Optional<PluginConfiguration> configuration = llvm::None) {
-            return factoryFunction(configuration);
-        }
-
-    private:
-        llvm::StringRef name;
-        llvm::StringRef description;
-        PluginFactoryFunction factoryFunction;
-    };
-
-    /// Print the help string for the given PluginInfo<TPluginType>.
-    template<typename TPluginType>
-    void printHelpStr(const PluginInfo<TPluginType> &pluginInfo, size_t indent, size_t descIndent) {
-        const size_t numSpaces = descIndent - indent - 4;
-        llvm::outs().indent(indent)
-                << "--" << llvm::left_justify(pluginInfo.getName(), numSpaces) << "- "
-                << pluginInfo.getDescription() << '\n';
+    /// Returns a new instance of the registered PluginType
+    llvm::Expected<std::unique_ptr<PluginType>>
+    createPluginInstance(llvm::Optional<PluginConfiguration> configuration = llvm::None) {
+      return factoryFunction(configuration);
     }
+
+  private:
+    llvm::StringRef name;
+    llvm::StringRef description;
+    PluginFactoryFunction factoryFunction;
+  };
+
+  /// Print the help string for the given PluginInfo<TPluginType>.
+  template<typename TPluginType>
+  void printHelpStr(const PluginInfo<TPluginType> &pluginInfo, size_t indent, size_t descIndent) {
+    const size_t numSpaces = descIndent - indent - 4;
+    llvm::outs().indent(indent)
+      << "--" << llvm::left_justify(pluginInfo.getName(), numSpaces) << "- "
+      << pluginInfo.getDescription() << '\n';
+  }
 
 } // namespace qssc::plugin::registry
 

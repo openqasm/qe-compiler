@@ -21,23 +21,23 @@
 
 namespace qssc::hal::registry {
 
-    class TargetSystemRegistry : public qssc::plugin::registry::PluginRegistry<TargetSystemInfo> {
-        using PluginRegistry = qssc::plugin::registry::PluginRegistry<TargetSystemInfo>;
-    public:
-        TargetSystemRegistry(const TargetSystemRegistry&) = delete;
-        void operator=(const TargetSystemRegistry&) = delete;
+  class TargetSystemRegistry : public qssc::plugin::registry::PluginRegistry<TargetSystemInfo> {
+    using PluginRegistry = qssc::plugin::registry::PluginRegistry<TargetSystemInfo>;
+  public:
+    TargetSystemRegistry(const TargetSystemRegistry&) = delete;
+    void operator=(const TargetSystemRegistry&) = delete;
 
-        /// Register a specific target allocator with the QSSC system.
-        template<typename ConcreteTargetSystem>
-        static bool registerPlugin(llvm::StringRef name, llvm::StringRef description,
-                                   const TargetSystemInfo::PluginFactoryFunction &pluginFactory) {
-            return PluginRegistry::registerPlugin(name, name, description, pluginFactory,
-                                                  ConcreteTargetSystem::registerTargetPasses,
-                                                  ConcreteTargetSystem::registerTargetPipelines);
-        }
+    /// Register a specific target allocator with the QSSC system.
+    template<typename ConcreteTargetSystem>
+    static bool registerPlugin(llvm::StringRef name, llvm::StringRef description,
+                               const TargetSystemInfo::PluginFactoryFunction &pluginFactory) {
+        return PluginRegistry::registerPlugin(name, name, description, pluginFactory,
+                                              ConcreteTargetSystem::registerTargetPasses,
+                                              ConcreteTargetSystem::registerTargetPipelines);
+    }
 
-        static TargetSystemInfo *nullTargetSystemInfo();
-    };
+    static TargetSystemInfo *nullTargetSystemInfo();
+  };
 
 } // namespace qssc::hal::registry
 
