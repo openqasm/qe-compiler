@@ -150,6 +150,13 @@ if(QSSC_WITH_MOCK_TARGET)
     )
 endif()
 
+set(QSSC_PAYLOAD_DIRS
+        ""
+        CACHE STRING
+        "List of directories containing QSS compiler payloads."
+        )
+
+
 set(QSSC_RESOURCES_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX}/lib/qssc)
 configure_file(include/Config.h.in ${QSSC_BINARY_DIR}/include/Config.h)
 

@@ -36,6 +36,8 @@
 #include "HAL/TargetSystemRegistry.h"
 #include "HAL/TargetSystem.h"
 
+#include "Payload/PayloadRegistry.h"
+
 #include "Dialect/RegisterDialects.h"
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
@@ -415,12 +417,14 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::GenQEM) {
     if (outputFilename == "-") {
-      payload = std::make_unique<qssc::payload::ZipPayload>();
+      auto payloadInfo = qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
+      payload = std::move(payloadInfo.getValue()->createPluginInstance().get());
     } else {
-      std::filesystem::path payloadPath(outputFilename.c_str());
-      std::string fNamePrefix = payloadPath.stem();
-      payload =
-          std::make_unique<qssc::payload::ZipPayload>(fNamePrefix, fNamePrefix);
+      const std::filesystem::path payloadPath(outputFilename.c_str());
+      const std::string fNamePrefix = payloadPath.stem();
+      const qssc::payload::PayloadConfig config{fNamePrefix, fNamePrefix};
+      auto payloadInfo = qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
+      payload = std::move(payloadInfo.getValue()->createPluginInstance(config).get());
     }
   }
   if (outputString) {

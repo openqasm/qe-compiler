@@ -26,12 +26,20 @@
 #include "llvm/Support/raw_ostream.h"
 
 namespace qssc::payload {
+
+struct PayloadConfig {
+  std::string prefix;
+  std::string name;
+};
+
 // Payload class will wrap the QSS Payload and interface with the qss-compiler
 class Payload {
 public:
+  using PluginConfiguration = PayloadConfig;
+public:
   Payload() : prefix(""), name("exp") {}
-  Payload(std::string prefix, std::string name)
-      : prefix(std::move(prefix) + "/"), name(std::move(name)) {
+  Payload(PayloadConfig config)
+      : prefix(std::move(config.prefix) + "/"), name(std::move(config.name)) {
     files.clear();
   }
   virtual ~Payload() = default;
@@ -69,35 +77,6 @@ protected:
   std::string name;
   std::unordered_map<std::filesystem::path, std::string, PathHash> files;
 }; // class Payload
-
-class ZipPayload : public Payload {
-public:
-  ZipPayload() = default;
-  ZipPayload(std::string prefix, std::string name)
-      : Payload(std::move(prefix), std::move(name)) {}
-  virtual ~ZipPayload() = default;
-
-  // write all files to the stream
-  virtual void write(llvm::raw_ostream &stream) override;
-  // write all files to the stream
-  virtual void write(std::ostream &stream) override;
-  // write all files in plaintext to the stream
-  virtual void writePlain(std::ostream &stream) override;
-  virtual void writePlain(llvm::raw_ostream &stream) override;
-
-  // write all files to a zip archive named fName
-  void writeZip(std::string fName);
-  // write all files to a zip archive and output it to the stream
-  void writeZip(std::ostream &stream);
-  void writeZip(llvm::raw_ostream &stream);
-  // write all files in plaintext to the dir named dirName
-  void writePlain(const std::string &dirName = ".");
-
-private:
-  // creates a manifest json file
-  void addManifest();
-
-}; // class ZipPayload
 
 } // namespace qssc::payload
 

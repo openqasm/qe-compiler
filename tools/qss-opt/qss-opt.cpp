@@ -35,6 +35,8 @@
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystemRegistry.h"
 
+#include "Payload/PayloadRegistry.h"
+
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
 #include "Dialect/QCS/IR/QCSDialect.h"
@@ -134,6 +136,12 @@ auto main(int argc, char **argv) -> int {
                     [&](auto name) { os << name; });
     os << "\nAvailable Targets:\n";
     for (const auto &target : registry::TargetSystemRegistry::registeredPlugins()) {
+      os << target.second.getName() << " - "
+         << target.second.getDescription() << "\n";
+    }
+
+    os << "\nAvailable Payloads:\n";
+    for (const auto &target : qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
       os << target.second.getName() << " - "
          << target.second.getDescription() << "\n";
     }
