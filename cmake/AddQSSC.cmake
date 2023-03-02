@@ -296,7 +296,7 @@ function(qssc_add_plugin plugin_name plugin_type)
               set(RESOURCE_OUTPUT_NAME ${resource})
           endif()
           get_target_property(RESOURCE_IS_PROGRAM ${resource} RESOURCE_IS_PROGRAM)
-          set(resource_file ${QSSC_PLUGIN_${plugin_name}_RESOURCE_DIR}/${RESOURCE_OUTPUT_NAME})
+          set(resource_file ${QSSC_${PLUGIN_TYPE_TOUPPER}_${plugin_name}_RESOURCE_DIR}/${RESOURCE_OUTPUT_NAME})
           set(resource_destination ${QSSC_RESOURCES_INSTALL_PREFIX}/${PLUGIN_TYPE_TOLOWER}s/${plugin_name_resources})
 
           if(RESOURCE_IS_PROGRAM)
