@@ -59,7 +59,7 @@ static llvm::cl::OptionCategory
             "Compiler target");
 
 int qssc::targets::mock::init() {
-    const registry::TargetSystemRegistry::InitRegistry<MockSystem> reg(
+    bool registered = registry::TargetSystemRegistry::registerPlugin<MockSystem>(
         "mock", "Mock system for testing the targetting infrastructure.",
         [](llvm::Optional<llvm::StringRef> configurationPath)
             -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
@@ -71,7 +71,7 @@ int qssc::targets::mock::init() {
         auto config = std::make_unique<MockConfig>(*configurationPath);
         return std::make_unique<MockSystem>(std::move(config));
    });
-  return reg.registered ? 0 : -1;
+  return registered ? 0 : -1;
 }
 
 MockConfig::MockConfig(llvm::StringRef configurationPath)
