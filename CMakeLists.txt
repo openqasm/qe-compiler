@@ -309,8 +309,8 @@ include(AddLLVM)
 include(AddMLIR)
 include(HandleLLVMOptions)
 
-include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-include_directories(SYSTEM ${MLIR_INCLUDE_DIRS})
+include_directories(BEFORE SYSTEM ${LLVM_INCLUDE_DIRS})
+include_directories(BEFORE SYSTEM ${MLIR_INCLUDE_DIRS})
 link_directories(${LLVM_BUILD_LIBRARY_DIR})
 add_definitions(${LLVM_DEFINITIONS})
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -325,11 +325,11 @@ set(LLVM_ENABLE_EH ON)
 find_package(pybind11 REQUIRED)
 
 # nlohmann_json -------------------------------------------------------------------
-include_directories(SYSTEM ${nlohmann_json_INCLUDE_DIRS})
+include_directories(BEFORE SYSTEM ${nlohmann_json_INCLUDE_DIRS})
 
 # Boost -------------------------------------------------------------------
-find_package(Boost 1.77.0 REQUIRED)
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
+find_package(Boost REQUIRED)
+include_directories(BEFORE SYSTEM ${Boost_INCLUDE_DIRS})
 
 # ------------------------------------------------------------------------------
 # QSS-COMPILER

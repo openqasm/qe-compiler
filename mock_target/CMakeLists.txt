@@ -6,7 +6,33 @@
 
 get_property(qssc_api_libs GLOBAL PROPERTY QSSC_API_LIBS)
 
-qssc_add_system_target(QSSCTargetMock
+set(llvm_code_gen_libraries
+    LLVMAArch64CodeGen
+    LLVMAArch64Info
+    LLVMAArch64AsmParser
+    LLVMAArch64Desc
+    LLVMPowerPCCodeGen
+    LLVMPowerPCInfo
+    LLVMPowerPCAsmParser
+    LLVMPowerPCDesc
+    LLVMX86CodeGen
+    LLVMX86Info
+    LLVMX86AsmParser
+    LLVMX86Desc
+    LLVMX86TargetMCA
+)
+
+# Remove AArch64CodeGen if not present.
+if (NOT LLVM_LIBRARIES MATCHES "LLVMAArch64CodeGen")
+    list(REMOVE_ITEM llvm_code_gen_libraries
+        LLVMAArch64CodeGen
+        LLVMAArch64Info
+        LLVMAArch64AsmParser
+        LLVMAArch64Desc
+    )
+endif ()
+
+qssc_add_plugin(QSSCTargetMock QSSC_TARGET_PLUGIN
 Conversion/QUIRToStandard/QUIRToStandard.cpp
 MockTarget.cpp
 MockUtils.cpp
@@ -20,7 +46,12 @@ ${QSSC_INCLUDE_DIR}/HAL
 LINK_LIBS
 ${qssc_api_libs}
 QSSCHAL
-LLVM::LLVM
-TARGET_REGISTRATION_HEADERS
+MLIRExecutionEngine
+MLIROptLib
+MLIRLLVMIR
+MLIRLLVMToLLVMIRTranslation
+MLIRStandardOpsTransforms
+${llvm_code_gen_libraries}
+PLUGIN_REGISTRATION_HEADERS
 ${CMAKE_CURRENT_SOURCE_DIR}/Target.inc
 )

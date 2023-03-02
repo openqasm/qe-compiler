@@ -16,7 +16,7 @@ interface, and update the C++ function `py_compile` bound to
 `_compile` in `lib.cpp`.
 
 
-Why spawn a child process for compilation?
+Why fork a child process for compilation?
 ------------------------------------------
 
 LLVM is designed to compile one program per execution. However, we
@@ -31,7 +31,7 @@ library `py_qssc` as described by `python_lib/lib.cpp`) within a
 child process. This guarantees the calling process won't be killed,
 even if the call to `_compile` results in a segmentation fault.
 
-For spawning child processes and communicating with them, we use the
+For forking child processes and communicating with them, we use the
 Python standard library's multiprocessing package. In particular, we use
 the Process class to start a child process with a python interpreter and
 pass control to our backend function. We use multiprocessing's Pipe to
@@ -40,7 +40,12 @@ and Pipe take care of serializing python objects and passing them across
 process boundaries with pipes.
 """
 import asyncio
+import logging
+import logging.handlers
+import multiprocessing as mp
+import queue
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from enum import Enum
 from importlib import resources as importlib_resources
@@ -50,15 +55,16 @@ from os import environ as os_environ
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
+from .logs import StreamLogger
 from .py_qssc import _compile_with_args, Diagnostic
 
 
-# Note that we require a complete process spawn for the compiler to avoid
-# contaminating compilation requests. The default context on Linux is
-# "fork" therefore we force the usage of a spawn context for the compiler
-# through the usage of mp_ctx below. This allows the compiler user to select
-# their desired multiprocessing behaviour for all other usages.
-mp_ctx = mp.get_context("spawn")
+log = logging.getLogger(__name__)
+
+
+# use the forkserver context to create a server process
+# for forking new compiler processes
+mp_ctx = mp.get_context("forkserver")
 
 
 def _diagnostics_to_str(diagnostics):
@@ -181,6 +187,13 @@ class _CompilerExecution:
     input_file: Optional[Union[str, Path]] = None
     options: CompileOptions = field(default_factory=CompileOptions)
 
+    def __str__(self) -> str:
+        args = self.prepare_compiler_args()
+        if self.input_str:
+            # Add a new line for the input source
+            args.insert(len(args) - 1, "\n")
+        return " ".join(args)
+
     def prepare_compiler_args(self) -> List[str]:
         args = self.options.prepare_compiler_option_args()
 
@@ -229,16 +242,39 @@ def _compile_child_backend(
         return status, None
 
 
-def _compile_child_runner(conn: connection.Connection) -> None:
-    execution = conn.recv()
+def _compile_child_runner(conn: connection.Connection, logging_queue: mp.Queue) -> None:
 
-    def on_diagnostic(diag):
-        conn.send(diag)
+    process_logger = _setup_process_logger(logging_queue)
+    with StreamLogger(
+        process_logger, level=logging.DEBUG
+    ) as debug_stream_logger, StreamLogger(
+        process_logger, level=logging.WARNING
+    ) as warning_stream_logger:
+        with redirect_stdout(debug_stream_logger), redirect_stderr(
+            warning_stream_logger
+        ):
+            execution = conn.recv()
 
-    status, output = _compile_child_backend(execution, on_diagnostic)
-    conn.send(status)
-    if output is not None:
-        conn.send_bytes(output)
+            def on_diagnostic(diag):
+                conn.send(diag)
+
+            status, output = _compile_child_backend(execution, on_diagnostic)
+
+            conn.send(status)
+            if output is not None:
+                conn.send_bytes(output)
+
+
+def _setup_process_logger(logging_queue: mp.Queue) -> logging.Logger:
+    queue_handler = logging.handlers.QueueHandler(
+        logging_queue
+    )  # Just the one handler needed
+    process_logger = logging.getLogger()
+    process_logger.addHandler(queue_handler)
+    # This is the minimum log-level to communicate to the listener log-handler and
+    # not the minimum level that will be displayed to the end user.
+    process_logger.setLevel(logging.DEBUG)
+    return process_logger
 
 
 def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
@@ -248,12 +284,17 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
 
     options = execution.options
 
+    logging_queue = mp.Queue(-1)
+
     parent_side, child_side = mp_ctx.Pipe(duplex=True)
 
     try:
-        childproc = mp_ctx.Process(target=_compile_child_runner, args=(child_side,))
+        childproc = mp_ctx.Process(
+            target=_compile_child_runner, args=(child_side, logging_queue)
+        )
         childproc.start()
 
+        log.debug(execution)
         parent_side.send(execution)
 
         # we must handle the case when the child process exits without
@@ -268,8 +309,10 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         diagnostics = []
         try:
             while True:
-                received = parent_side.recv()
+                # Make sure logs are handled before breaking
+                _receive_process_log(logging_queue)
 
+                received = parent_side.recv()
                 if isinstance(received, Diagnostic):
                     if execution.options.on_diagnostic:
                         execution.options.on_diagnostic(received)
@@ -277,15 +320,20 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                         diagnostics.append(received)
                 elif isinstance(received, _CompilerStatus):
                     success = received.success
+                    log.info("Compilation successful.")
                     break
                 else:
                     childproc.kill()
                     childproc.join()
+                    log.error("Compilation failed.")
                     raise QSSCompilerError(
                         "The compile process delivered an unexpected object instead of status or "
                         "diagnostic information. This points to inconsistencies in the Python "
                         "interface code between the calling process and the compile process."
                     )
+
+            # Read final logs after breaking
+            _receive_process_log(logging_queue)
 
             if options.output_file is None:
                 # return compilation result via IPC instead of in a file.
@@ -296,7 +344,9 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             # make sure that child process terminates
             childproc.kill()
             childproc.join()
-            raise QSSCompilerError("compile process exited before delivering output.", diagnostics)
+            raise QSSCompilerError(
+                "compile process exited before delivering output.", diagnostics
+            )
 
         childproc.join()
         if childproc.exitcode != 0:
@@ -325,6 +375,14 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         if options.output_type == OutputType.MLIR:
             return output.decode("utf8")
         return output
+
+
+def _receive_process_log(logging_queue: mp.Queue) -> None:
+    """Query the logging queue and log available messages if available."""
+    while not logging_queue.empty():
+        record = logging_queue.get(block=False)
+        queue_logger = logging.getLogger(record.name)
+        queue_logger.handle(record)
 
 
 def _prepare_compile_options(
