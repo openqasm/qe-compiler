@@ -33,6 +33,7 @@ namespace qssc::plugin::registry {
         };
 
         PluginRegistry(const PluginRegistry&) = delete;
+        void operator=(const PluginRegistry&) = delete;
 
         template<typename... Args>
         static bool registerPlugin(llvm::StringRef name, Args &&... args) {
