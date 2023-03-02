@@ -36,7 +36,9 @@ llvm_config.use_default_substitutions()
 config.excludes = ["Inputs", "Examples", "CMakeLists.txt", "README.txt", "LICENSE.txt"]
 
 # TODO pull from "virtual env" *activate.py?" "buildenv.py?"
-config.environment["QSSC_RESOURCES"] = os.path.join(config.qss_compiler_obj_root, "resources")
+config.environment["QSSC_RESOURCES"] = os.path.join(
+    config.qss_compiler_obj_root, "resources"
+)
 
 config.qss_compiler_tools_dir = os.path.join(config.qss_compiler_obj_root, "bin")
 

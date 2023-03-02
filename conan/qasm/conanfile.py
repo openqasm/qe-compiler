@@ -8,9 +8,9 @@ import subprocess
 
 
 class QasmConan(ConanFile):
-    name = 'qasm'
+    name = "qasm"
     version = "0.2.12"
-    url = 'https://github.com/Qiskit/qss-qasm.git'
+    url = "https://github.com/Qiskit/qss-qasm.git"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "examples": [True, False]}
     default_options = {"shared": False, "examples": False}
@@ -30,9 +30,10 @@ class QasmConan(ConanFile):
         # basic setup command for Conan.
         keep_rpaths = "KEEP_RPATHS" if tools.is_apple_os(self.settings.os) else ""
 
-        tools.replace_in_file("qss-qasm/CMakeLists.txt",
-        '''project(OPENQASM VERSION "${OPENQASM_VERSION_TRIPLE}")''',
-        '''project(OPENQASM VERSION "${OPENQASM_VERSION_TRIPLE}")
+        tools.replace_in_file(
+            "qss-qasm/CMakeLists.txt",
+            """project(OPENQASM VERSION "${OPENQASM_VERSION_TRIPLE}")""",
+            """project(OPENQASM VERSION "${OPENQASM_VERSION_TRIPLE}")
         if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
             message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
             file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
@@ -40,20 +41,27 @@ class QasmConan(ConanFile):
         endif()
         include(${CMAKE_BINARY_DIR}/conan.cmake)
         conan_cmake_run(CONANFILE ${CMAKE_SOURCE_DIR}/conanfile.py
-            BASIC_SETUP ''' + keep_rpaths + '''
+            BASIC_SETUP """
+            + keep_rpaths
+            + """
             BUILD missing)
-            ''')
+            """,
+        )
 
-        tools.replace_in_file("qss-qasm/lib/Parser/CMakeLists.txt",
-        '''set(BISON_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/QasmParser.tab.cpp")''',
-        '''set(SETUP_M4 ${CMAKE_COMMAND} -E env M4=${CONAN_BIN_DIRS_M4}/m4)
+        tools.replace_in_file(
+            "qss-qasm/lib/Parser/CMakeLists.txt",
+            """set(BISON_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/QasmParser.tab.cpp")""",
+            """set(SETUP_M4 ${CMAKE_COMMAND} -E env M4=${CONAN_BIN_DIRS_M4}/m4)
         set(BISON_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/QasmParser.tab.cpp")
-        ''')
+        """,
+        )
 
-        tools.replace_in_file("qss-qasm/lib/Parser/CMakeLists.txt",
-        '''COMMAND ${BISON_EXECUTABLE}''',
-        '''COMMAND ${SETUP_M4} ${BISON_EXECUTABLE}
-        ''')
+        tools.replace_in_file(
+            "qss-qasm/lib/Parser/CMakeLists.txt",
+            """COMMAND ${BISON_EXECUTABLE}""",
+            """COMMAND ${SETUP_M4} ${BISON_EXECUTABLE}
+        """,
+        )
 
     def requirements(self):
         for req in self.conan_data["requirements"]:
