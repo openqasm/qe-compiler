@@ -40,7 +40,6 @@ enable_language(C CXX ASM)
 
 # Find external packages
 find_package(Python COMPONENTS Interpreter Development)
-set(CMAKE_FIND_DEBUG_MODE TRUE)
 find_package(qasm REQUIRED)
 find_package(mpc REQUIRED)
 find_package(mpfr REQUIRED)
@@ -50,7 +49,6 @@ find_package(libzip REQUIRED)
 find_package(GTest REQUIRED)
 find_package(LLVM REQUIRED CONFIG)
 find_package(clang-tools-extra REQUIRED CONFIG)
-set(CMAKE_FIND_DEBUG_MODE FALSE)
 
 if(DEFINED ENV{VERSION_STRING})
     set(VERSION_STRING $ENV{VERSION_STRING})
@@ -294,8 +292,8 @@ find_path(MLIR_MODULES NAMES AddMLIR.cmake PATH_SUFFIXES mlir REQUIRED)
 list(PREPEND CMAKE_MODULE_PATH "${MLIR_MODULES}")
 message(STATUS "Using MLIR modules from: ${MLIR_MODULES}")
 
-find_package(MLIR REQUIRED)
-find_package(LLD REQUIRED)
+find_package(MLIR REQUIRED CONFIG)
+find_package(LLD REQUIRED CONFIG)
 
 message(STATUS "Using MLIRConfig.cmake in: ${MLIR_DIR}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
