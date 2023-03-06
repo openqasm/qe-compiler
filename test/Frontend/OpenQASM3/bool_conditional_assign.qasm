@@ -5,6 +5,9 @@ OPENQASM 3.0;
 //
 // Test that bool variables are handled correctly across control flow.
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

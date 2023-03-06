@@ -1,6 +1,9 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast %s | FileCheck %s --check-prefix AST
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

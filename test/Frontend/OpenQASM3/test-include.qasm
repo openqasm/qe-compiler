@@ -1,6 +1,9 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -I=%S %s --emit=mlir | FileCheck %s
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

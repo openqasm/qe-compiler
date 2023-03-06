@@ -4,6 +4,9 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 // RUN: qss-compiler -X=qasm --emit=mlir %s | grep -v OK | qss-compiler -X=mlir - | FileCheck %s --match-full-lines --check-prefix MLIR
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

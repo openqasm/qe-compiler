@@ -1,5 +1,8 @@
 // Read calibrations and enforce full schedule
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
