@@ -1,5 +1,19 @@
 // RUN: qss-compiler -X=mlir --quir-arg-specialization %s | FileCheck %s
 
+// (C) Copyright IBM 2023.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // CHECK: func @"defcalPhase_q0_!quir.angle<20>_!quir.qubit<1>"(%arg0: !quir.angle<20>, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"}
 // CHECK: func @"defcalPhase_q0_!quir.angle<10>_!quir.qubit<1>"(%arg0: !quir.angle<10>, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"}
 func @defcalPhase_q0(%arg0: !quir.angle, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"} {
