@@ -19,13 +19,18 @@ include "mlir/IR/OpBase.td"
 
 // Pulse Traits
 
-/// Operation is a allowed within a real-time scheduled pulse.sequence
+/// Operation is allowed within a real-time scheduled pulse.sequence
 def SequenceAllowed : NativeOpTrait<"SequenceAllowed">{
     let cppNamespace= "::mlir::pulse";
 }
 
 /// Operation must be within a real-time scheduled pulse.sequence
 def SequenceRequired : NativeOpTrait<"SequenceRequired">{
+    let cppNamespace= "::mlir::pulse";
+}
+
+/// Operation receives a target argument
+def HasTargetFrame : NativeOpTrait<"HasTargetFrame">{
     let cppNamespace= "::mlir::pulse";
 }
 

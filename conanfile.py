@@ -28,15 +28,24 @@ class QSSCompilerConan(ConanFile):
     author = "IBM Quantum development team"
     topics = ("Compiler", "Scheduler", "OpenQASM3")
     description = "An LLVM- and MLIR-based Quantum compiler that consumes OpenQASM 3.0"
-    generators = ["cmake", "cmake_find_package"]
+    generators = ["CMakeToolchain", "CMakeDeps"]
     exports_sources = "*"
 
     def requirements(self):
+        tool_pkgs = ["llvm", "clang-tools-extra"]
         for req in self.conan_data["requirements"]:
             self.requires(req)
 
+    def build_requirements(self):
+        tool_pkgs = ["llvm", "clang-tools-extra"]
+        # Add packages necessary for build.
+        for req in self.conan_data["requirements"]:
+            if any(req.startswith(tool + "/") for tool in tool_pkgs):
+                self.tool_requires(req)
+
     def _configure_cmake(self):
         cmake = CMake(self, generator="Ninja")
+        cmake.definitions["CMAKE_TOOLCHAIN_FILE"] = "conan_toolchain.cmake"
         cmake.definitions["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
         # linking in parallel on all CPUs may take up more memory than
         # available in a typical CI worker for debug builds.

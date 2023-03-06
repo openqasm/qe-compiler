@@ -10,7 +10,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 set(LIBS
-        libzip::libzip
+        libzip::zip
         )
 
 target_link_libraries(QSSCPayload PRIVATE ${LIBS})

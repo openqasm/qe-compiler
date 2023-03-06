@@ -56,11 +56,13 @@ jobs:
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan install --build=outdated ..
+          conan install .. --build=outdated -pr:h default -pr:b default
       - name: Build
         id: build
         working-directory: build
-        run: conan build ..
+        run: |
+          ls -la
+          conan build ..
       - name: Test
         id: test
         working-directory: build
