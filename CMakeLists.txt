@@ -38,10 +38,6 @@ endif()
 
 enable_language(C CXX ASM)
 
-# Add build directory to CMake module search path.
-# Some package managers like Conan generate CMake modules here.
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}")
-
 # Find external packages
 find_package(Python COMPONENTS Interpreter Development)
 find_package(qasm REQUIRED)
@@ -51,8 +47,8 @@ find_package(gmp REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(libzip REQUIRED)
 find_package(GTest REQUIRED)
-find_package(LLVM REQUIRED)
-find_package(clang-tools-extra REQUIRED)
+find_package(LLVM REQUIRED CONFIG)
+find_package(clang-tools-extra REQUIRED CONFIG)
 
 if(DEFINED ENV{VERSION_STRING})
     set(VERSION_STRING $ENV{VERSION_STRING})
@@ -295,8 +291,13 @@ set(BUILD_STATIC_LIBS ON CACHE BOOL "Turn on building static libs.")
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Turn off building shared libs.")
 
 # MLIR/LLVM -------------------------------------------------------------------
-# Can be included either from an installed library by setting -DMLIR_DEP_MODE=INSTALLED
-# Or built from the source (default) -DMLIR_DEP_MODE=BUNDLED. (Not yet supported)
+find_path(LLVM_MODULES NAMES TableGen.cmake AddLLVM.cmake HandleLLVMOptions.cmake PATH_SUFFIXES llvm REQUIRED)
+list(PREPEND CMAKE_MODULE_PATH "${LLVM_MODULES}")
+message(STATUS "Using LLVM modules from: ${LLVM_MODULES}")
+
+find_path(MLIR_MODULES NAMES AddMLIR.cmake PATH_SUFFIXES mlir REQUIRED)
+list(PREPEND CMAKE_MODULE_PATH "${MLIR_MODULES}")
+message(STATUS "Using MLIR modules from: ${MLIR_MODULES}")
 
 find_package(MLIR REQUIRED CONFIG)
 find_package(LLD REQUIRED CONFIG)
@@ -308,13 +309,12 @@ set(LLVM_RUNTIME_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/bin)
 set(LLVM_LIBRARY_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/lib)
 set(MLIR_BINARY_DIR ${CMAKE_BINARY_DIR})
 
-list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
-list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 
 include(TableGen)
 include(AddLLVM)
 include(AddMLIR)
 include(HandleLLVMOptions)
+include(LLVMExports)
 
 include_directories(BEFORE SYSTEM ${LLVM_INCLUDE_DIRS})
 include_directories(BEFORE SYSTEM ${MLIR_INCLUDE_DIRS})

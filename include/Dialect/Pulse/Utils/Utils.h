@@ -29,10 +29,22 @@ namespace mlir::pulse {
 
 Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
                                 CallSequenceOp callSequenceOp);
-MixFrameOp getMixFrameOp(PlayOp pulsePlayOp, CallSequenceOp callSequenceOp);
-uint getQubitId(PlayOp pulsePlayOp, CallSequenceOp callSequenceOp);
-uint getQubitId(CaptureOp captureOp, CallSequenceOp callSequenceOp);
 
+template <typename PulseOpTy>
+MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
+
+  auto frameArgIndex =
+      pulseOp.target().template cast<BlockArgument>().getArgNumber();
+  auto frameOp = callSequenceOp.getOperand(frameArgIndex).getDefiningOp();
+
+  auto mixFrameOp = dyn_cast<mlir::pulse::MixFrameOp>(frameOp);
+
+  if (!mixFrameOp)
+    pulseOp->emitError() << "The target argument is not a MixFrameOp.";
+  return mixFrameOp;
+}
+
+uint getQubitId(MixFrameOp mixFrameOp);
 uint getQubitId(Port_CreateOp pulsePortOp);
 
 bool isPlayOpForDrive(Operation *op,

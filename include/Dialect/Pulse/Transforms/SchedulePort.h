@@ -53,10 +53,10 @@ private:
                                      SequenceOp &sequenceOp,
                                      uint &numMixedFrames);
 
-  opVec_t buildOpsList(CallSequenceOp &callSequenceOp, mlir::OpBuilder &builder,
-                       mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
+  void addTimepoints(CallSequenceOp &callSequenceOp, mlir::OpBuilder &builder,
+                     mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
 
-  void sortOpsByType(SequenceOp &sequenceOp);
+  void sortOpsByTimepoint(SequenceOp &sequenceOp);
   void removePendingOps();
 };
 } // namespace mlir::pulse

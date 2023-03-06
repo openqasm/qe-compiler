@@ -250,7 +250,6 @@ def Pulse_PortGroup_CreateOp : Pulse_Op<"create_port_group", [NoSideEffect, Sequ
 
         ```mlir
         %port_group = pulse.port_group(%s1, %s2, ...) : (!pulse.port, !pulse.port, ...) -> !pulse.port_group
-
         ```
     }];
     let arguments = (ins  Variadic<Pulse_PortType>:$ports);
@@ -266,7 +265,6 @@ def Pulse_Port_SelectOp : Pulse_Op<"select_port", [SequenceAllowed]> {
 
         ```mlir
         %port = pulse.select_port(%i) : (!i32) -> !pulse.port
-
         ```
     }];
     let arguments = (ins Pulse_PortGroupType:$portGroup, StrAttr:$id);
@@ -283,7 +281,6 @@ def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed]> {
 
         ```mlir
         pulse.mix_frame(%port, %frame) {signalType = "type of the channel"} : (!pulse.port, !pulse.frame) -> (!port.mixed_frame)
-
         ```
     }];
 
@@ -311,22 +308,22 @@ def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAll
     }];
 }
 
-def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired]> {
+def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame]> {
     let summary = "Play a waveform on a given frame.";
     let description = [{
-        The `pulse.play` operation plays a waveform on a mixed frame,
-        optional attributes include:angle (in radians), ssb (frequency in Hz),
-        amp (float 64).
+        The `pulse.play` operation plays a waveform on a frame,
+        optional attributes include: angle (in radians), ssb (frequency in Hz),
+        amplitude (float 64).
 
         Examples:
 
         ```mlir
+        pulse.play(%frame, %wfr) : (!pulse.frame, !pulse.waveform)
         pulse.play(%mixed_frame, %wfr) : (!pulse.mixed_frame, !pulse.waveform)
-        pulse.play {amplitude = 1.000000e+00 : f64, angle = -0.37850401795412569 : f64, ssb = 181339679.17541504 : f64}(%mixed_frame, %wfr) : (!pulse.mixed_frame, !pulse.waveform)
         ```
     }];
 
-    let arguments = (ins Pulse_MixedFrameType:$target, Pulse_WaveformType:$wfr,
+    let arguments = (ins AnyFrame:$target, Pulse_WaveformType:$wfr,
                      OptionalAttr<F64Attr>:$angle,
                      OptionalAttr<F64Attr>:$ssb,
                      OptionalAttr<F64Attr>:$amplitude);
@@ -354,12 +351,18 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired]> {
         // get channel name
         llvm::Expected<std::string> getChannelName(CallSequenceOp callOp, uint qubitId);
     }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
 }
 
-def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired]> {
+def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTargetFrame]> {
     let summary = "Set a frequency of a frame.";
     let description = [{
-        The `pulse.set_frequency` operation sets a new frequency on a frame that comes to effect with the next relevant operation such as play or capture.
+        The `pulse.set_frequency` operation sets the frequency of a frame.
 
         TODO: Better specify the timing semantics of when the frequency modifications occurrs as this has
         a strong impact on phase accumulation in frames.
@@ -367,8 +370,8 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired]> {
         Example:
 
         ```mlir
-        pulse.set_frequency(%frame, %frequency) : (!pulse.frame, !f64)
-        pulse.set_frequency(%mixed, %frequency) : (!pulse.mixed_frame, !f64)
+        pulse.set_frequency(%frame, %frequency) : (!pulse.frame, f64)
+        pulse.set_frequency(%mixed_frame, %frequency) : (!pulse.mixed_frame, f64)
         ```
     }];
 
@@ -377,12 +380,27 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired]> {
     let assemblyFormat = [{
         attr-dict `(` $target  `,` $frequency `)` `:` `(` type($target) `,` type($frequency) `)`
     }];
+
+    let extraClassDeclaration = [{
+        double getFreq() {
+            // get op that defines frequency and return its value
+            auto freqConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequency().getDefiningOp());
+            assert (freqConstOp && "assume frequency to be defined by ConstantFloatOp");
+            return freqConstOp.value().convertToDouble();
+        }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
 }
 
-def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired]> {
+def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasTargetFrame]> {
     let summary = "Shift the frequency of a frame.";
     let description = [{
-        The `pulse.shift_frequency` operation shifts the frequency of a frame that comes to effect with the next relevant operation such as play or capture.
+        The `pulse.shift_frequency` operation shifts the frequency of a frame.
 
         TODO: Better specify the timing semantics of when the frequency modifications occurs as this has
         a strong impact on phase accumulation in frames.
@@ -390,22 +408,37 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired]> {
         Example:
 
         ```mlir
-        pulse.shift_frequency(%frame, %frequency) : (!pulse.frame, !f64)
-        pulse.shift_frequency(%mixed, %frequency) : (!pulse.mixed_frame, !f64)
+        pulse.shift_frequency(%frame, %frequencyOffset) : (!pulse.frame, f64)
+        pulse.shift_frequency(%mixed_frame, %frequencyOffset) : (!pulse.mixed_frame, f64)
         ```
     }];
 
-    let arguments = (ins AnyFrame:$target, F64:$frequency);
+    let arguments = (ins AnyFrame:$target, F64:$frequencyOffset);
 
     let assemblyFormat = [{
-        attr-dict `(` $target  `,` $frequency `)` `:` `(` type($target) `,` type($frequency) `)`
+        attr-dict `(` $target  `,` $frequencyOffset `)` `:` `(` type($target) `,` type($frequencyOffset) `)`
+    }];
+
+    let extraClassDeclaration = [{
+        double getFreqOffset() {
+            // get op that defines frequency offset and return its value
+            auto freqOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequencyOffset().getDefiningOp());
+            assert (freqOffsetConstOp && "assume frequency offset to be defined by ConstantFloatOp");
+            return freqOffsetConstOp.value().convertToDouble();
+        }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
-def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired]> {
+def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]> {
     let summary = "Set the phase of a frame.";
     let description = [{
-        The `pulse.set_phase` operation sets the phase of a frame. this operation comes to effect with the next relevant operation such as play or capture.
+        The `pulse.set_phase` operation sets the phase of a frame.
 
         TODO: Reconsider whether we should use quir angles or floats.
         TODO: Better specify the timing semantics of when the phase modifications occurrs.
@@ -414,7 +447,7 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired]> {
 
         ```mlir
         pulse.set_phase(%frame, %phase) : (!pulse.frame, f64)
-        pulse.set_phase(%mixed, %phase) : (!pulse.mixed_frame, f64)
+        pulse.set_phase(%mixed_frame, %phase) : (!pulse.mixed_frame, f64)
         ```
     }];
 
@@ -423,12 +456,27 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired]> {
     let assemblyFormat = [{
         attr-dict `(` $target  `,` $phase `)` `:` `(` type($target) `,` type($phase) `)`
     }];
+
+    let extraClassDeclaration = [{
+        double getPhase() {
+            // get op that defines phase and return its value
+            auto phaseConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phase().getDefiningOp());
+            assert (phaseConstOp && "assume phase to be defined by ConstantFloatOp");
+            return phaseConstOp.value().convertToDouble();
+        }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
 }
 
-def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired]> {
+def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFrame]> {
     let summary = "Shift a phase of a frame.";
     let description = [{
-        The `pulse.shift_phase` operation shifts the phase of a frame. this operation comes to effect with the next relevant operation such as play or capture.
+        The `pulse.shift_phase` operation shifts the phase of a frame.
 
         TODO: Better specify the timing semantics of when the phase modifications occurrs.
         TODO: Reconsider whether we should use quir angles or floats.
@@ -436,19 +484,69 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired]> {
         Example:
 
         ```mlir
-        pulse.shift_phase(%frame, %phase) : (!pulse.frame, f64)
-        pulse.shift_phase(%mixed, %phase) : (!pulse.mixed_frame, f64)
+        pulse.shift_phase(%frame, %phaseOffset) : (!pulse.frame, f64)
+        pulse.shift_phase(%mixed_frame, %phaseOffset) : (!pulse.mixed_frame, f64)
         ```
     }];
 
-    let arguments = (ins AnyFrame:$target, F64:$phase);
+    let arguments = (ins AnyFrame:$target, F64:$phaseOffset);
 
     let assemblyFormat = [{
-        attr-dict `(` $target  `,` $phase `)` `:` `(` type($target) `,` type($phase) `)`
+        attr-dict `(` $target  `,` $phaseOffset `)` `:` `(` type($target) `,` type($phaseOffset) `)`
+    }];
+
+    let extraClassDeclaration = [{
+        double getPhaseOffset() {
+            // get op that defines phase offset and return its value
+            auto phaseOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phaseOffset().getDefiningOp());
+            assert (phaseOffsetConstOp && "assume phase offset to be defined by ConstantFloatOp");
+            return phaseOffsetConstOp.value().convertToDouble();
+        }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
-def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired]> {
+def Pulse_SetAmplitudeOp : Pulse_Op<"set_amplitude", [SequenceRequired, HasTargetFrame]> {
+let summary = "Set a scaling factor for pulses of a frame.";
+    let description = [{
+        The `pulse.set_amplitude` operation sets a scaling factor for pulses of a frame.
+
+        Example:
+
+        ```mlir
+        pulse.set_amplitude(%frame, %amp) : (!pulse.frame, f64)
+        pulse.set_amplitude(%mixed_frame, %amp) : (!pulse.mixed_frame, f64)
+        ```
+    }];
+
+    let arguments = (ins AnyFrame:$target, F64:$amp);
+
+    let assemblyFormat = [{
+        attr-dict `(` $target  `,` $amp `)` `:` `(` type($target) `,` type($amp) `)`
+    }];
+
+    let extraClassDeclaration = [{
+        double getAmp() {
+            // get op that defines amp and return its value
+            auto ampConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).amp().getDefiningOp());
+            assert (ampConstOp && "assume amplitude to be defined by ConstantFloatOp");
+            return ampConstOp.value().convertToDouble();
+        }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
+}
+
+def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
     let summary = "Capture the incoming port and use a kernel for integration.";
     let description = [{
         The `pulse.capture` operation captures the incoming data on a frame using a kernel.
@@ -460,19 +558,26 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired]> {
         Example:
 
         ```mlir
+        pulse.capture(%frame) : (!pulse.frame) -> i1
         pulse.capture(%mixed_frame) : (!pulse.mixed_frame) -> i1
         ```
     }];
 
-    let arguments = (ins Pulse_MixedFrameType:$target);
+    let arguments = (ins AnyFrame:$target);
     let results = (outs I1:$out);
 
     let assemblyFormat = [{
         attr-dict `(` $target `)` `:` `(` type($target) `)` `->` type($out)
     }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
 }
 
-def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed]> {
+def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
     let summary = "Delay by an integer duration of samples on a set of pulse frames.";
     let description = [{
         The `pulse.delay` operation represents a delay operation of integer length on a set of pulse
@@ -484,12 +589,12 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed]> {
 
         Example:
         ```mlir
-        %dur = constant 10 : i32
-        pulse.delay(%mixed, %dur) : (!pulse.mixed_frame, i32) // delay on single frame
+        pulse.delay(%frame, %dur) : (!pulse.frame, i32)
+        pulse.delay(%mixed_frame, %dur) : (!pulse.mixed_frame, i32)
         ```
     }];
 
-    let arguments = (ins Pulse_MixedFrameType:$target,  AnyInteger:$dur);
+    let arguments = (ins AnyFrame:$target,  AnyInteger:$dur);
 
     let assemblyFormat = [{
         attr-dict `(` $target `,` $dur `)` `:` `(` type($target) `,` type($dur) `)`
@@ -499,6 +604,10 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed]> {
         auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
         if (durDeclOp && durDeclOp.value() < 0)
            return emitOpError("duration must be >= 0.");
+        
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        
         return success();
     }];
 

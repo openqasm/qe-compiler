@@ -36,7 +36,9 @@ class LinkOptions:
     """Circuit parameters as mapping of name to value."""
 
 
-def _prepare_link_options(link_options: Optional[LinkOptions] = None, **kwargs) -> LinkOptions:
+def _prepare_link_options(
+    link_options: Optional[LinkOptions] = None, **kwargs
+) -> LinkOptions:
     if link_options is None:
         link_options = LinkOptions(**kwargs)
     return link_options
@@ -67,7 +69,9 @@ def link_file(
 
     for _, value in link_options.parameters.items():
         if not isinstance(value, float):
-            raise QSSLinkingFailure(f"Only double parameters are supported, not {type(value)}")
+            raise QSSLinkingFailure(
+                f"Only double parameters are supported, not {type(value)}"
+            )
 
     # keep in mind that most of the infrastructure in the compile paths is for
     # taking care of the execution in a separate process. For the linker tool,

@@ -85,7 +85,9 @@ def check_payload():
 
         # check checksums in zip file (i.e., no corruption)
         first_bad_file = zf.testzip()
-        assert first_bad_file is None, "found corrupted file in payload: " + str(first_bad_file)
+        assert first_bad_file is None, "found corrupted file in payload: " + str(
+            first_bad_file
+        )
 
         # check that payload contains manifest
         assert "manifest/manifest.json" in zf.namelist()

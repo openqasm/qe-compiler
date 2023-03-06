@@ -111,6 +111,7 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
         diag.severity == Severity.Error
         and diag.category == ErrorCategory.OpenQASM3ParseFailure
         and "unknown version number" in diag.message
+        and "^" in diag.message
         for diag in diags
     )
     assert any("OpenQASM 3 parse error" in str(diag) for diag in diags)

@@ -26,7 +26,7 @@ module @drive_0 attributes {quir.nodeId = 0 : i32, quir.nodeType = "drive", quir
     // CHECK: pulse.play {pulse.timepoint = 2 : i64}(%[[ARG2]], %[[ARG0]]) : (!pulse.mixed_frame, !pulse.waveform)
     // CHECK-NOT: pulse.delay {pulse.timepoint = 5 : i64}(%[[ARG3]], %{{.*}}) : (!pulse.mixed_frame, i32)
     // CHECK: pulse.play {pulse.timepoint = 7 : i64}(%[[ARG3]], %[[ARG1]]) : (!pulse.mixed_frame, !pulse.waveform)
-    // CHECK: pulse.return {pulse.timepoint = 12 : i64} %false : i1
+    // CHECK: pulse.return {pulse.timepoint = 15 : i64} %false : i1
     pulse.return %false : i1
   }
   func @main() -> i32 attributes {quir.classicalOnly = false} {
