@@ -1,6 +1,9 @@
 // RUN: qss-compiler -X=mlir --subroutine-cloning %s | FileCheck %s
 // RUN: qss-compiler -X=mlir --subroutine-cloning %s --remove-qubit-args | FileCheck %s --check-prefix=NOQARG
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

@@ -1,5 +1,8 @@
 // RUN: qss-compiler -X=mlir --add-shot-loop %s | FileCheck %s
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

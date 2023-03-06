@@ -2,6 +2,9 @@
 // Verify the printed output can be parsed.
 // RUN: qss-opt %s --mlir-print-op-generic | qss-opt | FileCheck %s
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

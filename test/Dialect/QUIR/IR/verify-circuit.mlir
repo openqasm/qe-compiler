@@ -1,6 +1,9 @@
 // RUN: qss-compiler %s | FileCheck %s
 // Verify that a test with no classical ops inside a circuit passes.
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

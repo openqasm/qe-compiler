@@ -1,5 +1,8 @@
 // RUN: qss-compiler -X=mlir --canonicalize --quir-eliminate-variables %s | FileCheck %s --implicit-check-not load --implicit-check-not alloc --implicit-check-not store
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

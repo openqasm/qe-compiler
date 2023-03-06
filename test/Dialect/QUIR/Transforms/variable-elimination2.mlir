@@ -3,6 +3,9 @@
 // This test verifies that there is no store-forwarding where control-flow makes
 // it impossible.
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

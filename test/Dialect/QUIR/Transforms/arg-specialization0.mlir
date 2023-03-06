@@ -3,6 +3,9 @@
 //
 // This test case validates MLIR with and without argument specialization.
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

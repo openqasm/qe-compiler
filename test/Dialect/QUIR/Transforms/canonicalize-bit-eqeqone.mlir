@@ -3,6 +3,9 @@
 // This test case validates that comparisons between zero-extended i1 and
 // constant 1 for equality are simplified.
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

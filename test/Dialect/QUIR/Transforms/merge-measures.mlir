@@ -1,6 +1,9 @@
 // RUN: qss-compiler -X=mlir --canonicalize --merge-measures-lexographical %s | FileCheck %s --check-prefix LEX
 // RUN: qss-compiler -X=mlir --canonicalize --merge-measures-topological %s | FileCheck %s --check-prefix TOP
 
+//
+// This code is part of Qiskit.
+//
 // (C) Copyright IBM 2023.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
