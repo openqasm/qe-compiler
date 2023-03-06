@@ -1,5 +1,19 @@
 // Read calibrations and enforce full schedule
 
+// (C) Copyright IBM 2023.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // Compiler pass inserts defcals and resolves timing:
 // For the scheduling, let's say that y90p is 20 ns on 0, 30 ns on 1, and cr90p on (0,1) is 300 ns.
 // Let's say phase is 0 ns and the entire measurement is 400 ns.
