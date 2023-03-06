@@ -1,4 +1,19 @@
 // RUN: qss-compiler -X=mlir --pulse-schedule-port %s | FileCheck %s
+
+// (C) Copyright IBM 2023.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 module @acquire_0 attributes {quir.nodeId = 7 : i32, quir.nodeType = "acquire", quir.physicalIds = [0 : i32, 1 : i32, 2 : i32, 3 : i32]} {
   pulse.sequence @seq_0(%arg0: !pulse.mixed_frame, %arg1: !pulse.mixed_frame, %arg2: !pulse.mixed_frame, %arg3: !pulse.mixed_frame, %arg4: !pulse.mixed_frame) -> i1 {
     // CHECK: pulse.sequence @seq_0(
