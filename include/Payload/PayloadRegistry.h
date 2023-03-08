@@ -17,7 +17,7 @@
 #include "Payload.h"
 
 #include "Plugin/PluginRegistry.h"
-#include "Plugin/PluginInfo.hpp"
+#include "Plugin/PluginInfo.h"
 
 namespace qssc::payload::registry {
 

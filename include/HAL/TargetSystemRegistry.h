@@ -1,6 +1,6 @@
 //===- TargetSystemRegistry.h - System Target Registry ----------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 20223.
+// (C) Copyright IBM 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
