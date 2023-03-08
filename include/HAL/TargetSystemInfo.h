@@ -1,6 +1,6 @@
 //===- TargetSystemInfo.h - System Target Registry --------------*- C++ -*-===//
 //
-// (C) Copyright IBM 20223.
+// (C) Copyright IBM 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -18,7 +18,7 @@
 
 #include "Support/Pimpl.h"
 
-#include "Plugin/PluginInfo.hpp"
+#include "Plugin/PluginInfo.h"
 
 namespace qssc::hal::registry {
 
