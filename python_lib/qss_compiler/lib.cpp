@@ -48,21 +48,17 @@
 #include "API/api.h"
 
 #include <pybind11/functional.h>
-#include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 
 #include "llvm/ADT/Optional.h"
-#include "llvm/Support/Debug.h"
-#include "llvm/Support/Error.h"
+#include <llvm/Support/Error.h>
 
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#define DEBUG_TYPE "PyQSSC"
 
 /// Call into the qss-compiler via an interface to qss-compile's command line
 /// argument.
@@ -71,11 +67,11 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
                                    qssc::DiagnosticCallback onDiagnostic) {
   std::string outputStr("");
 
-  LLVM_DEBUG(
-    std::cout << "params passed from python to C++:\n";
-    for (auto &str : args)
-      std::cout << str << std::endl;
-  );
+#ifndef NDEBUG
+  std::cout << "params passed from python to C++:\n";
+  for (auto &str : args)
+    std::cout << str << std::endl;
+#endif
 
   // TODO: need a C++ interface into the compiler with fewer detours. the python
   // api (inspired by IREE's python bindings) can be a start.
@@ -90,6 +86,10 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
                              std::move(onDiagnostic));
   bool success = status == 0;
 
+#ifndef NDEBUG
+  std::cerr << "Compile " << (success ? "successful" : "failed") << std::endl;
+#endif
+
   return pybind11::make_tuple(success, pybind11::bytes(outputStr));
 }
 
@@ -98,14 +98,15 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
              const std::string &target,
              const std::unordered_map<std::string, double> &parameters) {
 
-  LLVM_DEBUG(
-    std::cout << "input " << inputPath << "\n";
-    std::cout << "output " << outputPath << "\n";
-    std::cout << "parameters (as seen from C++): \n";
+#ifndef NDEBUG
+  std::cout << "input " << inputPath << "\n";
+  std::cout << "output " << outputPath << "\n";
 
-    for (auto &item : parameters)
-      std::cout << item.first << " = " << item.second << "\n";
-  );
+  std::cout << "parameters (as seen from C++): \n";
+
+  for (auto &item : parameters)
+    std::cout << item.first << " = " << item.second << "\n";
+#endif
 
   auto successOrErr =
       qssc::bindParameters(target, inputPath, outputPath, parameters);
@@ -122,11 +123,11 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
 }
 
 PYBIND11_MODULE(py_qssc, m) {
-
   m.doc() = "Python bindings for the QSS Compiler.";
 
-  m.def("_compile_with_args", &py_compile_by_args, pybind11::call_guard<pybind11::scoped_ostream_redirect, pybind11::scoped_estream_redirect>(), "Call compiler via cli qss-compile");
-  m.def("_link_file", &py_link_file, pybind11::call_guard<pybind11::scoped_ostream_redirect, pybind11::scoped_estream_redirect>(), "Call the linker tool");
+  m.def("_compile_with_args", &py_compile_by_args,
+        "Call compiler via cli qss-compile");
+  m.def("_link_file", &py_link_file, "Call the linker tool");
 
   pybind11::enum_<qssc::ErrorCategory>(m, "ErrorCategory",
                                        pybind11::arithmetic())
