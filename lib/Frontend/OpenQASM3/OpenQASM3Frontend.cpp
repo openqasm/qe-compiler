@@ -84,13 +84,12 @@ llvm::Error qssc::frontend::openqasm3::parse(
   sourceMgr_ = &sourceMgr;
 
   QASM::QasmDiagnosticEmitter::SetHandler(
-      [](const std::string &File,
-         QASM::ASTLocation Loc,
-         const std::string &Msg,
-         QASM::QasmDiagnosticEmitter::DiagLevel DL) {
+      [](const std::string &File, QASM::ASTLocation Loc, // NOLINT
+         const std::string &Msg, QASM::QasmDiagnosticEmitter::DiagLevel DL) {
         std::string level = "unknown";
         qssc::Severity diagLevel = qssc::Severity::Error;
-        llvm::SourceMgr::DiagKind sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Error;
+        llvm::SourceMgr::DiagKind sourceMgrDiagKind =
+            llvm::SourceMgr::DiagKind::DK_Error;
 
         switch (DL) {
         case QASM::QasmDiagnosticEmitter::DiagLevel::Error:
@@ -127,25 +126,24 @@ llvm::Error qssc::frontend::openqasm3::parse(
         // Capture source context for including it in error messages
         assert(sourceMgr_);
         auto &sourceMgr = *sourceMgr_;
-        auto loc =  sourceMgr.FindLocForLineAndColumn(1, Loc.LineNo, Loc.ColNo);
+        auto loc = sourceMgr.FindLocForLineAndColumn(1, Loc.LineNo, Loc.ColNo);
         std::string sourceString;
         llvm::raw_string_ostream stringStream(sourceString);
 
         sourceMgr.PrintMessage(stringStream, loc, sourceMgrDiagKind, "");
 
         std::stringstream fileLoc;
-        fileLoc << "File: " << File << ", Line: " << Loc.LineNo 
+        fileLoc << "File: " << File << ", Line: " << Loc.LineNo
                 << ", Col: " << Loc.ColNo;
- 
+
         llvm::errs() << level << " while parsing OpenQASM 3 input\n"
-                     << fileLoc.str()
-                     << " " << Msg << "\n"
+                     << fileLoc.str() << " " << Msg << "\n"
                      << sourceString << "\n";
 
         if (diagnosticCallback_) {
-          qssc::Diagnostic diag{diagLevel,
-                                qssc::ErrorCategory::OpenQASM3ParseFailure,
-                                fileLoc.str() + "\n" + Msg + "\n" + sourceString};
+          qssc::Diagnostic diag{
+              diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure,
+              fileLoc.str() + "\n" + Msg + "\n" + sourceString};
           (*diagnosticCallback_)(diag);
         }
 
