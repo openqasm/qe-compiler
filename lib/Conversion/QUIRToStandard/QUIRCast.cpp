@@ -1,6 +1,6 @@
 //===- QUIRCast.cpp - Convert cast op to Std --------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022, 2023.
+// (C) Copyright IBM 2023.
 //
 // This code is part of Qiskit.
 //

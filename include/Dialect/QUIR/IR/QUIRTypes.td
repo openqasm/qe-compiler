@@ -1,6 +1,6 @@
 //===- QUIRTypes.td - QUIR dialect types -------------------*- tablegen -*-===//
 //
-// (C) Copyright IBM 2020, 2022, 2023.
+// (C) Copyright IBM 2023.
 //
 // This code is part of Qiskit.
 //

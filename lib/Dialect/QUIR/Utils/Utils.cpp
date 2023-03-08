@@ -1,6 +1,6 @@
 //===- Utils.cpp - QUIR Utilities -------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021 - 2023.
+// (C) Copyright IBM 2023.
 //
 // This code is part of Qiskit.
 //

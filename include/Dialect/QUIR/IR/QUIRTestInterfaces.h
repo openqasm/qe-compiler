@@ -1,6 +1,6 @@
 //===- QUIRTestInterfaces.h - QUIR Dialect interface tests -*- C++ -*-========//
 //
-// (C) Copyright IBM 2022, 2023.
+// (C) Copyright IBM 2023.
 //
 // This code is part of Qiskit.
 //

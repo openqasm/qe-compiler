@@ -1,6 +1,6 @@
 //===- QUIROps.cpp - QUIR dialect ops ---------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2020, 2023.
+// (C) Copyright IBM 2023.
 //
 // This code is part of Qiskit.
 //

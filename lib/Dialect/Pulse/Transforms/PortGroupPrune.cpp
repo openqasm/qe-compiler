@@ -1,6 +1,6 @@
 //===- PortGroupPrune.cpp - Remove extra pulse ops. *--C++-*---------------===//
 //
-// (C) Copyright IBM 2022, 2023.
+// (C) Copyright IBM 2023.
 //
 // This code is part of Qiskit.
 //
