@@ -187,8 +187,12 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
                          mlir::AffineDialect, memref::MemRefDialect,
                          scf::SCFDialect, StandardOpsDialect,
-                         mlir::pulse::PulseDialect, mlir::qcs::QCSDialect>();
-  target.addIllegalDialect<quir::QUIRDialect>();
+                         mlir::pulse::PulseDialect>();
+  // Since we are converting QUIR -> STD/LLVM, make QUIR illegal.
+  // Further, because OQ3 and QCS ops are migrated from QUIR, make them also
+  // illegal.
+  target
+      .addIllegalDialect<quir::QUIRDialect, qcs::QCSDialect, oq3::OQ3Dialect>();
   target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
   target.addDynamicallyLegalOp<FuncOp>(
       [&](FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
@@ -198,6 +202,18 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   target.addDynamicallyLegalOp<mlir::ReturnOp>([&](mlir::ReturnOp op) {
     return typeConverter.isLegal(op.getOperandTypes());
   });
+  // We mark `ConstantOp` legal so we don't err when attempting to convert a
+  // constant `DurationType`. (Only `AngleType` is currently handled by the
+  // conversion pattern, `ConstantOpConversionPat`.)
+  // Note that marking 'legal' does not preclude conversion if a pattern is
+  // matched. However, because other ops also do not have implemented
+  // conversions, we will still observe errors of the type:
+  // ```
+  // loc("-":0:0): error: failed to legalize operation 'namespace.op' that was
+  // explicitly marked illegal
+  // ```
+  // which for the `mock_target` are harmless.
+  target.addLegalOp<quir::ConstantOp>();
   target.addLegalOp<quir::SwitchOp>();
   target.addLegalOp<quir::YieldOp>();
 
@@ -227,7 +243,8 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
                                     std::move(patterns)))) {
     // If we fail conversion remove remaining ops for the Mock target.
     controllerModuleOp.walk([&](Operation *op) {
-      if (llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
+      if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||
+          llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
           llvm::isa<qcs::QCSDialect>(op->getDialect())) {
         llvm::outs() << "Removing unsupported " << op->getName() << " \n";
         op->dropAllReferences();

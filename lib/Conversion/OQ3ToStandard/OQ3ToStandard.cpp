@@ -207,8 +207,7 @@ struct CBitExtractBitOpConversionPattern
 namespace {
 /// @brief Pattern for converting cast ops that produce bools from
 /// integers
-struct CastIntegerToBoolConversionPattern
-    : public OQ3ToStandardConversion<CastOp> {
+struct CastIntToBoolConversionPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult match(CastOp op) const override {
@@ -239,7 +238,7 @@ struct CastIntegerToBoolConversionPattern
 };
 
 /// @brief Struct for converting cast ops that produce integers from cbits
-struct CastCBitToIntConversionPat : public OQ3ToStandardConversion<CastOp> {
+struct CastCBitToIntConversionPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
@@ -270,10 +269,10 @@ struct CastCBitToIntConversionPat : public OQ3ToStandardConversion<CastOp> {
     rewriter.replaceOp(op, adaptor.arg());
     return success();
   } // matchAndRewrite
-};  // struct CastCBitToIntConversionPat
+};  // struct CastCBitToIntConversionPattern
 
 /// @brief Conversion pattern for cast ops that produce cbits from integers
-struct CastIntToCBitConversionPat : public OQ3ToStandardConversion<CastOp> {
+struct CastIntToCBitConversionPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
@@ -305,11 +304,11 @@ struct CastIntToCBitConversionPat : public OQ3ToStandardConversion<CastOp> {
 
     return failure();
   } // matchAndRewrite
-};  // struct CastIntToCBitConversionPat
+};  // struct CastIntToCBitConversionPattern
 
 /// @brief Conversion pattern for cast ops that produce integers from index
 /// values
-struct CastIndexToIntegerPat : public OQ3ToStandardConversion<CastOp> {
+struct CastIndexToIntPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
@@ -323,11 +322,11 @@ struct CastIndexToIntegerPat : public OQ3ToStandardConversion<CastOp> {
         op, op.out().getType(), adaptor.arg());
     return success();
   } // matchAndRewrite
-};  // struct CastIndexToIntegerPat
+};  // struct CastIndexToIntPattern
 
 /// @brief Conversion pattern that drops CastOps that have been made redundant
 /// by type conversion (e.g., cbit<1> -> i1)
-struct RemoveConvertedNilCastsPat : public OQ3ToStandardConversion<CastOp> {
+struct RemoveConvertedNilCastsPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
@@ -340,7 +339,7 @@ struct RemoveConvertedNilCastsPat : public OQ3ToStandardConversion<CastOp> {
     return success();
   } // matchAndRewrite
 
-}; // struct RemoveConvertedNilCastsPat
+}; // struct RemoveConvertedNilCastsPattern
 
 struct RemoveI1ToCBitCastsPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
@@ -360,7 +359,7 @@ struct RemoveI1ToCBitCastsPattern : public OQ3ToStandardConversion<CastOp> {
 
 }; // struct RemoveI1ToCBitCastsPattern
 
-struct WideningIntegerCastsPattern : public OQ3ToStandardConversion<CastOp> {
+struct WideningIntCastsPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
@@ -382,7 +381,7 @@ struct WideningIntegerCastsPattern : public OQ3ToStandardConversion<CastOp> {
                                                       adaptor.arg());
     return success();
   } // matchAndRewrite
-};  // struct WideningIntegerCastsPattern
+};  // struct WideningIntCastsPattern
 } // namespace
 
 //===----------------------------------------------------------------------===//
@@ -410,12 +409,12 @@ void oq3::populateOQ3ToStandardConversionPatterns(
 
   // Cast ops
   patterns.add<
-      CastCBitToIntConversionPat,
-      CastIntToCBitConversionPat,
-      CastIntegerToBoolConversionPattern,
-      CastIndexToIntegerPat,
-      RemoveConvertedNilCastsPat,
+      CastCBitToIntConversionPattern,
+      CastIntToCBitConversionPattern,
+      CastIntToBoolConversionPattern,
+      CastIndexToIntPattern,
+      RemoveConvertedNilCastsPattern,
       RemoveI1ToCBitCastsPattern,
-      WideningIntegerCastsPattern>(patterns.getContext(), typeConverter);
+      WideningIntCastsPattern>(patterns.getContext(), typeConverter);
   // clang-format on
 }
