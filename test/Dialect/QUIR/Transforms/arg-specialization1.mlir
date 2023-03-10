@@ -75,8 +75,6 @@ module {
         "quir.call_gate"(%qb1) {callee = @proto} : (!quir.qubit<1>) -> ()
         quir.call_gate @proto(%qb1) : (!quir.qubit<1>) -> ()
         %cb2 = oq3.use_variable @cb2 : !quir.cbit<1>
-        // CHECK: %{{.*}} = oq3.kernel_call @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
-        %cc1 = oq3.kernel_call @kernel1(%cb2, %cb2, %cb2) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
         // CHECK: quir.call_defcal_gate @defcalGate1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         quir.call_defcal_gate @defcalGate1(%qa1, %theta) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         // CHECK %{{.*}} = quir.call_defcal_measure @defcalMeas1(%{{.*}}) : (!quir.qubit<1>) -> i1

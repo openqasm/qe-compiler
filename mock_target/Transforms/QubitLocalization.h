@@ -49,18 +49,11 @@ struct MockQubitLocalizationPass
                 mlir::Block *, mlir::OpBuilder *,
                 std::unique_ptr<std::unordered_map<uint, mlir::OpBuilder *>>>>
                 &blockAndBuilderWorkList);
-  void
-  processOp(mlir::oq3::KernelCallOp &callOp,
-            std::deque<std::tuple<
-                mlir::Block *, mlir::OpBuilder *,
-                std::unique_ptr<std::unordered_map<uint, mlir::OpBuilder *>>>>
-                &blockAndBuilderWorkList);
   void processOp(mlir::quir::CallGateOp &callOp);
   void processOp(mlir::quir::BarrierOp &callOp);
   void processOp(mlir::quir::CallDefCalGateOp &callOp);
   void processOp(mlir::quir::CallDefcalMeasureOp &callOp);
-  template <class DelayOpType>
-  void processOp(DelayOpType &delayOp);
+  template <class DelayOpType> void processOp(DelayOpType &delayOp);
   void processOp(mlir::ReturnOp &returnOp);
   void processOp(mlir::scf::YieldOp &yieldOp);
   void

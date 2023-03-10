@@ -1,7 +1,6 @@
 // RUN: qss-compiler -X=mlir %s | FileCheck %s
 
 module {
-    func private @kernel1 (%ca1 : i1, %ca2 : i1, %ca3 : i1) -> i1
     func private @proto (%qa1 : !quir.qubit<1>) -> ()
     // CHECK-LABEL: func @gateCall1
     func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
@@ -79,8 +78,6 @@ module {
         "quir.barrier"(%qb1) : (!quir.qubit<1>) -> ()
         // CHECK: quir.barrier %{{.*}}, %{{.*}} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
         quir.barrier %qb1, %qc1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
-        // CHECK: %{{.*}} = oq3.kernel_call @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (i1, i1, i1) -> i1
-        %cc1 = oq3.kernel_call @kernel1(%val, %val, %val) : (i1, i1, i1) -> i1
         // CHECK: quir.call_defcal_gate @defcalGate1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         quir.call_defcal_gate @defcalGate1(%qa1, %theta) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         // CHECK: %{{.*}} = quir.call_defcal_measure @defcalMeas1(%{{.*}}) : (!quir.qubit<1>) -> i1

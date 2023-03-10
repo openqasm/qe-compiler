@@ -336,29 +336,6 @@ void mock::MockQubitLocalizationPass::processOp(
                                        std::move(newBuilders));
 } // processOp CallSubroutineOp
 
-void mock::MockQubitLocalizationPass::processOp(
-    KernelCallOp &callOp,
-    std::deque<
-        std::tuple<Block *, OpBuilder *,
-                   std::unique_ptr<std::unordered_map<uint, OpBuilder *>>>>
-        &blockAndBuilderWorkList) {
-  Operation *op = callOp.getOperation();
-  llvm::outs() << "Localizing a " << op->getName() << "\n";
-
-  controllerBuilder->clone(*op, controllerMapping);
-  auto *findOp = SymbolTable::lookupSymbolIn(controllerModule->getParentOp(),
-                                             callOp.callee());
-  auto *alreadyThereOp =
-      SymbolTable::lookupSymbolIn(controllerModule, callOp.callee());
-  if (findOp && !alreadyThereOp) {
-    OpBuilder::InsertPoint savedPoint = controllerBuilder->saveInsertionPoint();
-    controllerBuilder->setInsertionPoint(controllerModule.getBody(),
-                                         controllerModule.getBody()->begin());
-    controllerBuilder->clone(*findOp, controllerMapping);
-    controllerBuilder->restoreInsertionPoint(savedPoint);
-  }
-} // processOp KernelCallOp
-
 void mock::MockQubitLocalizationPass::processOp(CallGateOp &callOp) {
   Operation *op = callOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
@@ -840,8 +817,6 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
       } else if (auto measureOp = dyn_cast<MeasureOp>(op)) {
         processOp(measureOp);
       } else if (auto callOp = dyn_cast<CallSubroutineOp>(op)) {
-        processOp(callOp, blockAndBuilderWorkList);
-      } else if (auto callOp = dyn_cast<KernelCallOp>(op)) {
         processOp(callOp, blockAndBuilderWorkList);
       } else if (auto callOp = dyn_cast<CallGateOp>(op)) {
         processOp(callOp);
