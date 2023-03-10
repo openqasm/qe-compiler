@@ -2,7 +2,7 @@
 
 // CHECK: module
 module {
-  oq3.variable_decl @results : !quir.cbit<1>
+  oq3.declare_variable @results : !quir.cbit<1>
   func @cx(%arg0: !quir.qubit<1>, %arg1: !quir.qubit<1>) {
     return
   }

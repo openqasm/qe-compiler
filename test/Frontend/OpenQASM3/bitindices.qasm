@@ -7,8 +7,8 @@ OPENQASM 3.0;
 
 // AST-PRETTY DeclarationNode(type=ASTTypeBitset, CBitNode(name=a, bits=1))
 // DeclarationNode(type=ASTTypeBitset, CBitNode(name=b, bits=2, value=10))
-// MLIR-DAG: oq3.variable_decl @a : !quir.cbit<1>
-// MLIR-DAG: oq3.variable_decl @b : !quir.cbit<2>
+// MLIR-DAG: oq3.declare_variable @a : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @b : !quir.cbit<2>
 bit a;
 bit[2] b = "10";
 int c = 5;

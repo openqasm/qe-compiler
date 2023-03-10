@@ -1,10 +1,10 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --check-prefix MLIR
 
-// MLIR-DAG: oq3.variable_decl @noninitialized : !quir.cbit<4>
-// MLIR-DAG: oq3.variable_decl @bitstring : !quir.cbit<4>
-// MLIR-DAG: oq3.variable_decl @b : !quir.cbit<8>
-// MLIR-DAG: oq3.variable_decl @c : !quir.cbit<4>
+// MLIR-DAG: oq3.declare_variable @noninitialized : !quir.cbit<4>
+// MLIR-DAG: oq3.declare_variable @bitstring : !quir.cbit<4>
+// MLIR-DAG: oq3.declare_variable @b : !quir.cbit<8>
+// MLIR-DAG: oq3.declare_variable @c : !quir.cbit<4>
 
 
 // MLIR: [[CONST0:%.*]] = arith.constant 0 : i4

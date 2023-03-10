@@ -20,8 +20,8 @@ module {
         %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
         // CHECK %{{.*}} = oq3.declare_stretch : !quir.stretch
         %s2 = oq3.declare_stretch : !quir.stretch
-        oq3.variable_decl { input } @flags : !quir.cbit<32>
-        oq3.variable_decl { output } @result : !quir.cbit<1>
+        oq3.declare_variable { input } @flags : !quir.cbit<32>
+        oq3.declare_variable { output } @result : !quir.cbit<1>
         return
     }
 }

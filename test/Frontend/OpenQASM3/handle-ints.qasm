@@ -1,10 +1,10 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
-// MLIR: oq3.variable_decl @x : i32
-// MLIR: oq3.variable_decl @y : i32
-// MLIR: oq3.variable_decl @a : i3
-// MLIR: oq3.variable_decl @b : i32
+// MLIR: oq3.declare_variable @x : i32
+// MLIR: oq3.declare_variable @y : i32
+// MLIR: oq3.declare_variable @a : i3
+// MLIR: oq3.declare_variable @b : i32
 
 // MLIR: %c100_i32 = arith.constant 100 : i32
 // MLIR: oq3.variable_assign @x : i32 = %c100_i32

@@ -1,13 +1,13 @@
 // RUN: qss-compiler -X=mlir --remove-unused-variables %s | FileCheck %s --check-prefix=UNUSED
 
-// UNUSED: oq3.variable_decl @isUsed : !quir.cbit<1>
-// UNUSED: oq3.variable_decl {output} @isOutput : !quir.cbit<1>
-// UNUSED-NOT: oq3.variable_decl @storeOnly : !quir.cbit<1>
-// UNUSED-NOT: oq3.variable_decl @notUsed : !quir.cbit<1>
-oq3.variable_decl @isUsed : !quir.cbit<1>
-oq3.variable_decl {output} @isOutput : !quir.cbit<1>
-oq3.variable_decl @storeOnly : !quir.cbit<1>
-oq3.variable_decl @notUsed : !quir.cbit<1>
+// UNUSED: oq3.declare_variable @isUsed : !quir.cbit<1>
+// UNUSED: oq3.declare_variable {output} @isOutput : !quir.cbit<1>
+// UNUSED-NOT: oq3.declare_variable @storeOnly : !quir.cbit<1>
+// UNUSED-NOT: oq3.declare_variable @notUsed : !quir.cbit<1>
+oq3.declare_variable @isUsed : !quir.cbit<1>
+oq3.declare_variable {output} @isOutput : !quir.cbit<1>
+oq3.declare_variable @storeOnly : !quir.cbit<1>
+oq3.declare_variable @notUsed : !quir.cbit<1>
 // UNUSED: func @variableTests
 func @variableTests(%ref : memref<1xi1>, %ind : index) {
     %false = arith.constant false

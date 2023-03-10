@@ -8,9 +8,9 @@
 // bit c0;
 // bit c1;
 // bit c2;
-oq3.variable_decl @c0 : !quir.cbit<1>
-oq3.variable_decl @c1 : !quir.cbit<1>
-oq3.variable_decl @c2 : !quir.cbit<1>
+oq3.declare_variable @c0 : !quir.cbit<1>
+oq3.declare_variable @c1 : !quir.cbit<1>
+oq3.declare_variable @c2 : !quir.cbit<1>
 // reset q;
 // CHECK: quir.reset %{{.*}} : !quir.qubit<1>
 quir.reset %qa1 : !quir.qubit<1>

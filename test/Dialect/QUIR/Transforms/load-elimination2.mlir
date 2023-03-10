@@ -5,12 +5,12 @@
 
 module {
 
-  // CHECK: oq3.variable_decl {input} @a : !quir.angle<64>
-  // CHECK: oq3.variable_decl @b : !quir.angle<64>
-  oq3.variable_decl {input} @a : !quir.angle<64>
-  oq3.variable_decl @b : !quir.angle<64>
+  // CHECK: oq3.declare_variable {input} @a : !quir.angle<64>
+  // CHECK: oq3.declare_variable @b : !quir.angle<64>
+  oq3.declare_variable {input} @a : !quir.angle<64>
+  oq3.declare_variable @b : !quir.angle<64>
 
-  // REMOVE-UNUSED-NOT: oq3.variable_decl {input} @a
+  // REMOVE-UNUSED-NOT: oq3.declare_variable {input} @a
 
   func @main() -> !quir.angle<64> {
 

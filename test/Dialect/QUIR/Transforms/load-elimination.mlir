@@ -5,12 +5,12 @@
 
 module {
 
-  // CHECK: oq3.variable_decl @a : i32
-  // CHECK: oq3.variable_decl @b : i32
-  oq3.variable_decl @a : i32
-  oq3.variable_decl @b : i32
+  // CHECK: oq3.declare_variable @a : i32
+  // CHECK: oq3.declare_variable @b : i32
+  oq3.declare_variable @a : i32
+  oq3.declare_variable @b : i32
 
-  // REMOVE-UNUSED-NOT: oq3.variable_decl @a
+  // REMOVE-UNUSED-NOT: oq3.declare_variable @a
 
   func @main() -> i32 {
     %c1 = arith.constant 1 : index

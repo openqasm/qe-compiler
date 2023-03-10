@@ -21,7 +21,7 @@ OPENQASM 3.0;
 // MLIR-DAG: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 qubit $0;
 
-// MLIR-DAG: oq3.variable_decl @result : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @result : !quir.cbit<1>
 bit result;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=result, bits=1))

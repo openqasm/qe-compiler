@@ -2,9 +2,9 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-// MLIR: oq3.variable_decl @a : complex<f32>
-// MLIR: oq3.variable_decl @my_complex : complex<f80>
-// MLIR: oq3.variable_decl @b : complex<f64>
+// MLIR: oq3.declare_variable @a : complex<f32>
+// MLIR: oq3.declare_variable @my_complex : complex<f80>
+// MLIR: oq3.declare_variable @b : complex<f64>
 
 // MLIR: %cst = arith.constant 3.000000e+00 : f32
 // MLIR: %cst_0 = arith.constant 7.350000e+00 : f32

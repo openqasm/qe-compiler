@@ -92,7 +92,7 @@ scf.if %cond2 {
 %zero_ind = arith.constant 0 : index
 %mres1 = "quir.measure"(%q2) : (!quir.qubit<1>) -> i1
 %cb1 = "oq3.cast"(%mres1) : (i1) -> !quir.cbit<1>
-oq3.variable_decl @c1 : !quir.cbit<1>
+oq3.declare_variable @c1 : !quir.cbit<1>
 oq3.variable_assign @c1 : !quir.cbit<1> = %cb1
 //%res2 = call @subroutine1(%ang1, %ang2, %q1, %q2) : (!quir.angle<20>, !quir.angle<20>, !quir.qubit<1>, !quir.qubit<1>) -> memref<1xi1>
 

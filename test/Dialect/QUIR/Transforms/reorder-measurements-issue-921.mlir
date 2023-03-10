@@ -15,8 +15,8 @@
 
 // CHECK: module
 module {
-  oq3.variable_decl @a : !quir.cbit<1>
-  oq3.variable_decl @b : !quir.cbit<1>
+  oq3.declare_variable @a : !quir.cbit<1>
+  oq3.declare_variable @b : !quir.cbit<1>
   func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
     %c1_i32 = arith.constant 1 : i32

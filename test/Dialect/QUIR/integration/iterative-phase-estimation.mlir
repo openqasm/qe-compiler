@@ -145,7 +145,7 @@ module {
     "quir.call_gate"(%q0_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     // measure %0 -> c[0]; // this should not be allowed
     %zeroind = arith.constant 0 : index
-    oq3.variable_decl @cbitarray : !quir.cbit<3>
+    oq3.declare_variable @cbitarray : !quir.cbit<3>
     %bitM_1 = quir.call_defcal_measure @defcalMeasure(%q0_0) : (!quir.qubit<1>) -> (i1)
     oq3.cbit_assign_bit @cbitarray<3> [0] : i1 = %bitM_1
     // c <<= 1;

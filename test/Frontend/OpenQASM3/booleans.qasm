@@ -6,8 +6,8 @@ qubit $0;
 
 // MLIR-DAG: %true = arith.constant true
 // MLIR-DAG: %false = arith.constant false
-// MLIR-DAG: oq3.variable_decl @condition_true : i1
-// MLIR-DAG: oq3.variable_decl @condition_false : i1
+// MLIR-DAG: oq3.declare_variable @condition_true : i1
+// MLIR-DAG: oq3.declare_variable @condition_false : i1
 // MLIR-DAG: oq3.variable_assign @condition_true : i1 = %true
 // MLIR-DAG: oq3.variable_assign @condition_false : i1 = %false
 // AST-PRETTY: DeclarationNode(type=ASTTypeBool, BoolNode(name=condition_true, true))

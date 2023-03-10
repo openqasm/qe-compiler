@@ -2,20 +2,20 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-// MLIR:   oq3.variable_decl @x : i32
-// MLIR:   oq3.variable_decl @y : i32
-// MLIR:   oq3.variable_decl @my_new_int : i64
-// MLIR:   oq3.variable_decl @a : i3
-// MLIR:   oq3.variable_decl @b : i9
-// MLIR:   oq3.variable_decl @c : i80
-// MLIR:   oq3.variable_decl @d : i81
-// MLIR:   oq3.variable_decl @ux : i32
-// MLIR:   oq3.variable_decl @uy : i32
-// MLIR:   oq3.variable_decl @my_uint : i64
-// MLIR:   oq3.variable_decl @ua : i3
-// MLIR:   oq3.variable_decl @ub : i9
-// MLIR:   oq3.variable_decl @uc : i80
-// MLIR:   oq3.variable_decl @ud : i81
+// MLIR:   oq3.declare_variable @x : i32
+// MLIR:   oq3.declare_variable @y : i32
+// MLIR:   oq3.declare_variable @my_new_int : i64
+// MLIR:   oq3.declare_variable @a : i3
+// MLIR:   oq3.declare_variable @b : i9
+// MLIR:   oq3.declare_variable @c : i80
+// MLIR:   oq3.declare_variable @d : i81
+// MLIR:   oq3.declare_variable @ux : i32
+// MLIR:   oq3.declare_variable @uy : i32
+// MLIR:   oq3.declare_variable @my_uint : i64
+// MLIR:   oq3.declare_variable @ua : i3
+// MLIR:   oq3.declare_variable @ub : i9
+// MLIR:   oq3.declare_variable @uc : i80
+// MLIR:   oq3.declare_variable @ud : i81
 
 // MLIR: %c55_i32 = arith.constant 55 : i32
 // MLIR: oq3.variable_assign @x : i32 = %c55_i32

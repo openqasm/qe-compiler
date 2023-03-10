@@ -2,15 +2,15 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-// MLIR: oq3.variable_decl @x : f32
-// MLIR: oq3.variable_decl @y : f32
-// MLIR: oq3.variable_decl @my_new_float : f64
-// MLIR: oq3.variable_decl @a : f32
-// MLIR: oq3.variable_decl @b : f32
-// MLIR: oq3.variable_decl @c : f80
-// MLIR: oq3.variable_decl @d : f128
-// MLIR: oq3.variable_decl @e : f32
-// MLIR: oq3.variable_decl @f : f32
+// MLIR: oq3.declare_variable @x : f32
+// MLIR: oq3.declare_variable @y : f32
+// MLIR: oq3.declare_variable @my_new_float : f64
+// MLIR: oq3.declare_variable @a : f32
+// MLIR: oq3.declare_variable @b : f32
+// MLIR: oq3.declare_variable @c : f80
+// MLIR: oq3.declare_variable @d : f128
+// MLIR: oq3.declare_variable @e : f32
+// MLIR: oq3.declare_variable @f : f32
 
 // MLIR: %cst = arith.constant 5.500000e+00 : f32
 // MLIR: oq3.variable_assign @x : f32 = %cst

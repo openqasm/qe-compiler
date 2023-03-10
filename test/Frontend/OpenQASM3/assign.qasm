@@ -2,8 +2,8 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-// MLIR-DAG: oq3.variable_decl @a : i1
-// MLIR-DAG: oq3.variable_decl @j : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @a : i1
+// MLIR-DAG: oq3.declare_variable @j : !quir.cbit<1>
 
 // Angle
 // MLIR: %{{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<3>>

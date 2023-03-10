@@ -4,8 +4,8 @@
 // This test case validates MLIR with and without argument specialization.
 
 module {
-    oq3.variable_decl @cb1 : !quir.cbit<1>
-    oq3.variable_decl @cb2 : !quir.cbit<1>
+    oq3.declare_variable @cb1 : !quir.cbit<1>
+    oq3.declare_variable @cb2 : !quir.cbit<1>
 
     func private @proto (%qa1 : !quir.qubit<1>) -> ()
     func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {

@@ -2,27 +2,27 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
-// MLIR-DAG: oq3.variable_decl @c0 : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @c0 : !quir.cbit<1>
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=c0, bits=1))
 bit c0;
 
-// MLIR-DAG: oq3.variable_decl @my_bit : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @my_bit : !quir.cbit<1>
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=my_bit, bits=1, value=1))
 bit my_bit = 1;
 
-// MLIR-DAG: oq3.variable_decl @c : !quir.cbit<3>
+// MLIR-DAG: oq3.declare_variable @c : !quir.cbit<3>
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=c, bits=3))
 bit[3] c;
 
-// MLIR-DAG: oq3.variable_decl @my_one_bits : !quir.cbit<2>
+// MLIR-DAG: oq3.declare_variable @my_one_bits : !quir.cbit<2>
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=my_one_bits, bits=2, value=11))
 bit[2] my_one_bits = "11";
 
-// MLIR-DAG: oq3.variable_decl @my_bitstring : !quir.cbit<10>
+// MLIR-DAG: oq3.declare_variable @my_bitstring : !quir.cbit<10>
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=my_bitstring, bits=10, value=1101001010))
 bit[10] my_bitstring = "1101001010";
 
-// MLIR-DAG: oq3.variable_decl @result : !quir.cbit<20>
+// MLIR-DAG: oq3.declare_variable @result : !quir.cbit<20>
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=result, bits=20))
 bit[20] result;
 

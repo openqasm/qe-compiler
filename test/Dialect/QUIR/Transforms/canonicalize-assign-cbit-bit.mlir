@@ -6,8 +6,8 @@
 
 // CHECK: module
 module {
-  oq3.variable_decl @a : !quir.cbit<1>
-  oq3.variable_decl @b : !quir.cbit<1>
+  oq3.declare_variable @a : !quir.cbit<1>
+  oq3.declare_variable @b : !quir.cbit<1>
 
   func @main() -> i32 {
     %1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>

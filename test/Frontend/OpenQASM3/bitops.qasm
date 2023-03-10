@@ -11,9 +11,9 @@ bit b;
 bit c;
 
 // AST-PRETTY-COUNT-2: DeclarationNode(type=ASTTypeBitset
-// MLIR-DAG: oq3.variable_decl @a : !quir.cbit<1>
-// MLIR-DAG: oq3.variable_decl @b : !quir.cbit<1>
-// MLIR-DAG: oq3.variable_decl @c : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @a : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @b : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @c : !quir.cbit<1>
 
 qubit $0;
 qubit $1;
@@ -34,7 +34,7 @@ b = measure $1; // expected "0"
 c = measure $2; // expected "1"
 
 bit meas_and;
-// MLIR-DAG: oq3.variable_decl @meas_and : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @meas_and : !quir.cbit<1>
 
 // MLIR-DAG: [[A:%.*]] = oq3.use_variable @a
 // MLIR-DAG: [[B:%.*]] = oq3.use_variable @b
