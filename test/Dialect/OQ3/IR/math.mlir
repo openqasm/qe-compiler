@@ -34,14 +34,4 @@ module {
     %mul_res = oq3.angle_mul %theta, %phi : !quir.angle<20>
     // CHECK: %{{.*}} = oq3.angle_div %{{.*}}, %{{.*}} : !quir.angle<20>
     %div_res = oq3.angle_div %theta, %phi : !quir.angle<20>
-
-    // CHECK: %{{.*}} = oq3.declare_duration {value = "10ns"} : !quir.duration
-    %l1 = oq3.declare_duration {value = "10ns"} : !quir.duration
-    %l2 = oq3.declare_duration {value = "100ns"} : !quir.duration
-    // CHECK: %{{.*}} = oq3.duration_add %{{.*}}, %{{.*}} : !quir.duration
-    %ladd_res = oq3.duration_add %l1, %l2 : !quir.duration
-    // CHECK: %{{.*}} = oq3.duration_sub %{{.*}}, %{{.*}} : !quir.duration
-    %lsub_res = oq3.duration_sub %l1, %l2 : !quir.duration
-    // CHECK: %{{.*}} = oq3.duration_mul %{{.*}}, %{{.*}} : !quir.duration
-    %lmul_res = oq3.duration_mul %l1, %l2 : !quir.duration
 }

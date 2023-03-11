@@ -29,7 +29,7 @@ func @main() {
 // CHECK: }
 
 
-// DELAYITER: [[DURATION:%.*]] = oq3.declare_duration {value = "500dt"} : !quir.duration
+// DELAYITER: [[DURATION:%.*]] = quir.declare_duration {value = "500dt"} : !quir.duration
 // DELAYITER: quir.measure
 // DELAYITER-COUNT-3: scf.if
 // DELAYITER: quir.delay [[DURATION]], ([[QUBIT0]]) : !quir.duration, (!quir.qubit<1>) -> ()

@@ -32,4 +32,4 @@ def OQ3_CastOp : OQ3_Op<"cast", [NoSideEffect]> {
     let hasCanonicalizer = 1;
 }
 
-#endif // OQ3_DURATION_OPS
+#endif // OQ3_CAST_OPS

@@ -84,8 +84,8 @@ module {
         %ca3 = quir.call_defcal_measure @defcalMeas1(%qa1) : (!quir.qubit<1>) -> i1
         // CHECK: %{{.*}} = "oq3.cast"(%{{.*}}) : (i1) -> !quir.angle<20>
         %ang = "oq3.cast"(%ca3) : (i1) -> !quir.angle<20>
-        // CHECK: %{{.*}} = oq3.declare_duration {value = "10ns"} : !quir.duration
-        %len1 = "oq3.declare_duration"() {value = "10ns"} : () -> !quir.duration
+        // CHECK: %{{.*}} = quir.declare_duration {value = "10ns"} : !quir.duration
+        %len1 = "quir.declare_duration"() {value = "10ns"} : () -> !quir.duration
         // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
         %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
         // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
