@@ -46,9 +46,9 @@ EXPORT_VERSION_STRING(getQSSCVersion, QSSC_VERSION)
 namespace {
 llvm::StringRef _getResourcesDir() {
   if (char *env = getenv("QSSC_RESOURCES")) {
-      /* strings returned by getenv may be invalidated, so keep a copy */
-      static std::string resourcesDir{env};
-      return resourcesDir;
+    /* strings returned by getenv may be invalidated, so keep a copy */
+    static std::string resourcesDir{env};
+    return resourcesDir;
   }
 
   /* fallback to compiled-in installation path */
