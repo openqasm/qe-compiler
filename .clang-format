@@ -1,3 +1,7 @@
+---
 BasedOnStyle: LLVM
+---
+Language: Cpp
 AlwaysBreakTemplateDeclarations: Yes
 RemoveBracesLLVM: Yes
+---
