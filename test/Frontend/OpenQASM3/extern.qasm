@@ -2,13 +2,6 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --check-prefix MLIR
 
-// NOTE: Only partial support for extern has been added while
-// work is awaited on updating the parser version in
-// https://github.ibm.com/IBM-Q-Software/vt-dynamic-circuits/issues/962
-// we have merged this code as is so that it will be updated in the
-// parser update. After the update we will come back and complete extern
-// support.
-
 // AST-PRETTY: DeclarationNode(type=Unknown, ExternNode(name=test0, parameters=[], returns=ResultNode(void))
 // MLIR: func private @test0()
 extern test0();
