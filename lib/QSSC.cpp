@@ -32,8 +32,8 @@ using namespace llvm;
 
 #define EXPORT_VERSION_STRING(FN, STR)                                         \
   llvm::StringRef qssc::FN() {                                                 \
-      static const char *versionString = STR;                                    \
-      return versionString;                                                      \
+    static const char *versionString = STR;                                    \
+    return versionString;                                                      \
   }
 
 EXPORT_VERSION_STRING(getQSSCMajorVersion, QSSC_VERSION_MAJOR)
@@ -47,8 +47,8 @@ namespace {
 llvm::StringRef _getResourcesDir() {
   if (char *env = getenv("QSSC_RESOURCES")) {
     /* strings returned by getenv may be invalidated, so keep a copy */
-      static std::string resourcesDir{env};
-      return resourcesDir;
+    static std::string resourcesDir{env};
+    return resourcesDir;
   }
 
   /* fallback to compiled-in installation path */
