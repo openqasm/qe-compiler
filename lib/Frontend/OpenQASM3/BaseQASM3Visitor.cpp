@@ -403,8 +403,6 @@ void BaseQASM3Visitor::visit(const ASTExpressionList *list) {
 void BaseQASM3Visitor::visit(const ASTResultNode *node) {
   // If no result is present visitation is over
 
-  // Currently always null due to
-  // https://github.ibm.com/IBM-Q-Software/qss-qasm/issues/35
   if (!node->HasResult())
     return;
 

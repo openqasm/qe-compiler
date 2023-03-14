@@ -161,8 +161,6 @@ class CompileOptions:
             args.append(f"--num-shots={self.num_shots}")
 
         if self.shot_delay:
-            # Convert to us due to bug described in issue 364
-            # https://github.ibm.com/IBM-Q-Software/qss-compiler/issues/364
             args.append(f"--shot-delay={self.shot_delay*1e6}us")
 
         args.extend(self.extra_args)
@@ -314,7 +312,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         raise QSSCompilerError(
             "It's likely that you've hit a bug in the QSS Compiler. Please "
             "submit an issue to the team with relevant information "
-            "(https://github.ibm.com/IBM-Q-Software/qss-compiler/issues):\n"
+            "(https://github.com/Qiskit/qss-compiler/issues):\n"
             f"{e}"
         )
 
