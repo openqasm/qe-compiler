@@ -1,6 +1,6 @@
 name: Continuous Integration
 on:
-  # push:
+  push:
   pull_request:
 jobs:
   Build:

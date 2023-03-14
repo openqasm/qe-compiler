@@ -25,8 +25,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 
-namespace qssc {
-  namespace payload {
+namespace qssc::payload {
 // Payload class will wrap the QSS Payload and interface with the qss-compiler
 class Payload {
 public:
@@ -100,7 +99,6 @@ private:
 
 }; // class ZipPayload
 
-}
 } // namespace qssc::payload
 
 #endif // PAYLOAD_PAYLOAD_H
