@@ -32,8 +32,8 @@ using namespace llvm;
 
 #define EXPORT_VERSION_STRING(FN, STR)                                         \
   llvm::StringRef qssc::FN() {                                                 \
-    static const char *versionString = STR;                                    \
-    return versionString;                                                      \
+      static const char *versionString = STR;                                    \
+      return versionString;                                                      \
   }
 
 EXPORT_VERSION_STRING(getQSSCMajorVersion, QSSC_VERSION_MAJOR)

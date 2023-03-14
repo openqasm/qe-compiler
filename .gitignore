@@ -206,3 +206,6 @@ CMakeLists.txt.user
 
 # JetBrains IDEs
 /.idea
+
+# Conan cache (mounted in the CI)
+.conan/
