@@ -47,8 +47,8 @@ namespace {
 llvm::StringRef _getResourcesDir() {
   if (char *env = getenv("QSSC_RESOURCES")) {
     /* strings returned by getenv may be invalidated, so keep a copy */
-    static std::string resourcesDir{env};
-    return resourcesDir;
+      static std::string resourcesDir{env};
+      return resourcesDir;
   }
 
   /* fallback to compiled-in installation path */
