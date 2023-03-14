@@ -71,9 +71,6 @@ jobs:
         run: ninja check-tests
 
       # On 'pull_request' run Clang tidy
-      - name: debugging...
-        id: debug
-        run: cat build/compile_commands.json
       - name: Clang tidy
         uses: ZedThree/clang-tidy-review@v0.10.0
         id: clang_tidy
