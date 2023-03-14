@@ -1,8 +1,6 @@
 name: Continuous Integration
 on:
   push:
-    branches:
-    - master
   pull_request:
 jobs:
   Build:
@@ -72,14 +70,12 @@ jobs:
         working-directory: build
         run: ninja check-tests
 
-      - uses: ZedThree/clang-tidy-review@v0.10.1
+      # On 'pull_request' run Clang tidy
+      - name: Clang tidy
         id: clang_tidy
         if: github.event_name == 'pull_request'
-        with:
-          # CMake command to run in order to generate compile_commands.json
-          build_dir: build
-          cmake_command: cmake . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=on
-          split_workflow: true
+        working-directory: build
+        run: ninja check-tidy
 
       # On 'main' branch, always save the cache if Conan install succeeded.
       # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
