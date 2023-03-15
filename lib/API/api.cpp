@@ -33,8 +33,8 @@
 #include "QSSC.h"
 
 #include "HAL/PassRegistration.h"
-#include "HAL/TargetSystemRegistry.h"
 #include "HAL/TargetSystem.h"
+#include "HAL/TargetSystemRegistry.h"
 
 #include "Dialect/RegisterDialects.h"
 

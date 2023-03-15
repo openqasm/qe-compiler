@@ -15,6 +15,7 @@
 #define PLUGINREGISTRY_H
 
 #include "llvm/Support/ManagedStatic.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringMap.h"
 
 namespace qssc::plugin::registry {
