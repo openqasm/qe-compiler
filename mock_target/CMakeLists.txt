@@ -26,7 +26,7 @@ if ("LLVMAArch64CodeGen" IN_LIST LLVM_AVAILABLE_LIBS)
         LLVMAArch64AsmParser
         LLVMAArch64Desc
     )
-    message(STATUS, "Adding AArch64 libraries to llvm_code_gen_libraries")
+    message(STATUS "Adding AArch64 libraries to llvm_code_gen_libraries")
 endif ()
 
 qssc_add_plugin(QSSCTargetMock QSSC_TARGET_PLUGIN
