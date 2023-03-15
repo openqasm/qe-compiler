@@ -70,21 +70,21 @@ jobs:
         working-directory: build
         run: ninja check-tests
 
+      # On 'pull_request' run Clang tidy
+      - name: Clang tidy
+        uses: ZedThree/clang-tidy-review@v0.10.0
+        id: clang_tidy
+        if: github.event_name == 'pull_request'
+        with:
+          config_file: '.clang-tidy'
+          build_dir: build
+
       # On 'pull_request' run Clang format and commit the changes
       - name: Clang format
         id: clang_format
         if: github.event_name == 'pull_request'
         working-directory: build
         run: ninja check-format
-        continue-on-error: true
-
-      - uses: EndBug/add-and-commit@v9
-        if: github.event_name == 'pull_request'
-        with:
-          default_author: github_actions
-          message: ':art: Committing clang-format changes'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # On 'main' branch, always save the cache if Conan install succeeded.
       # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
