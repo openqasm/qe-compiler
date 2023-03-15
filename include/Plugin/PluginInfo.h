@@ -40,7 +40,7 @@ namespace qssc::plugin::registry {
 
     /// Returns a new instance of the registered PluginType
     llvm::Expected<std::unique_ptr<PluginType>>
-    createPluginInstance(llvm::Optional<PluginConfiguration> configuration = llvm::None) {
+    createPluginInstance(llvm::Optional<PluginConfiguration> configuration) {
       return factoryFunction(configuration);
     }
 
