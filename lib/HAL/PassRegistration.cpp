@@ -16,7 +16,8 @@ using namespace qssc::hal;
 
 llvm::Error hal::registerTargetPasses() {
   llvm::Error err = llvm::Error::success();
-  for (const auto &target : registry::TargetSystemRegistry::registeredPlugins()) {
+  for (const auto &target :
+       registry::TargetSystemRegistry::registeredPlugins()) {
     err =
         llvm::joinErrors(std::move(err), target.second.registerTargetPasses());
   }
@@ -25,7 +26,8 @@ llvm::Error hal::registerTargetPasses() {
 
 llvm::Error hal::registerTargetPipelines() {
   llvm::Error err = llvm::Error::success();
-  for (const auto &target : registry::TargetSystemRegistry::registeredPlugins()) {
+  for (const auto &target :
+       registry::TargetSystemRegistry::registeredPlugins()) {
     err = llvm::joinErrors(std::move(err),
                            target.second.registerTargetPassPipelines());
   }

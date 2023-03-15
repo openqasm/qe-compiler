@@ -16,8 +16,8 @@
 
 #include <memory>
 
-// Inject static initialization headers from targets. We need to include them in a translation unit that
-// is not being optimized (removed) by the compiler.
+// Inject static initialization headers from targets. We need to include them in
+// a translation unit that is not being optimized (removed) by the compiler.
 #include "Targets.inc"
 
 using namespace qssc::hal::registry;
@@ -27,27 +27,26 @@ using namespace qssc::hal::registry;
 /// members.
 /// Details: https://en.cppreference.com/w/cpp/language/pimpl
 struct TargetSystemInfo::Impl {
-  llvm::DenseMap<mlir::MLIRContext *, std::unique_ptr<TargetSystem>> managedTargets{};
+  llvm::DenseMap<mlir::MLIRContext *, std::unique_ptr<TargetSystem>>
+      managedTargets{};
 };
 
-TargetSystemInfo::TargetSystemInfo(llvm::StringRef name, llvm::StringRef description,
-                                   PluginInfo::PluginFactoryFunction targetFactory,
-                                   PassesFunction passRegistrar,
-                                   PassPipelinesFunction passPipelineRegistrar)
+TargetSystemInfo::TargetSystemInfo(
+    llvm::StringRef name, llvm::StringRef description,
+    PluginInfo::PluginFactoryFunction targetFactory,
+    PassesFunction passRegistrar, PassPipelinesFunction passPipelineRegistrar)
     : TargetSystemInfo::PluginInfo(name, description, std::move(targetFactory)),
-      impl(std::make_unique<Impl>()),
-      passRegistrar(std::move(passRegistrar)),
+      impl(std::make_unique<Impl>()), passRegistrar(std::move(passRegistrar)),
       passPipelineRegistrar(std::move(passPipelineRegistrar)) {}
 
 TargetSystemInfo::~TargetSystemInfo() = default;
 
-llvm::Expected<qssc::hal::TargetSystem *>
-TargetSystemInfo::createTarget(mlir::MLIRContext *context,
-                               llvm::Optional<PluginInfo::PluginConfiguration> configuration) {
+llvm::Expected<qssc::hal::TargetSystem *> TargetSystemInfo::createTarget(
+    mlir::MLIRContext *context,
+    llvm::Optional<PluginInfo::PluginConfiguration> configuration) {
   auto target = PluginInfo::createPluginInstance(configuration);
-  if (!target) {
+  if (!target)
     return target.takeError();
-  }
   impl->managedTargets[context] = std::move(target.get());
   return impl->managedTargets[context].get();
 }
@@ -65,7 +64,7 @@ TargetSystemInfo::getTarget(mlir::MLIRContext *context) const {
 
   return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                  "Error: no target of type '" + getName() +
-                                 "' registered for the given context.\n");
+                                     "' registered for the given context.\n");
 }
 
 llvm::Error TargetSystemInfo::registerTargetPasses() const {

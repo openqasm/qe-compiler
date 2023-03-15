@@ -357,7 +357,8 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (showTargets) {
     llvm::outs() << "Registered Targets:\n";
-    for (const auto &target : qssc::hal::registry::TargetSystemRegistry::registeredPlugins()) {
+    for (const auto &target :
+         qssc::hal::registry::TargetSystemRegistry::registeredPlugins()) {
       // Constants chosen empirically to align with --help.
       // TODO: Select constants more intelligently.
       qssc::plugin::registry::printHelpStr(target.second, 2, 57);
@@ -371,14 +372,16 @@ compile_(int argc, char const **argv, std::string *outputString,
   determineOutputType();
 
   // Make sure target exists if specified
-  if (!targetStr.empty() && !qssc::hal::registry::TargetSystemRegistry::pluginExists(targetStr))
+  if (!targetStr.empty() &&
+      !qssc::hal::registry::TargetSystemRegistry::pluginExists(targetStr))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Error: Target " + targetStr +
                                        " is not registered.");
 
   qssc::hal::registry::TargetSystemInfo &targetInfo =
-      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(targetStr).getValueOr(
-          qssc::hal::registry::TargetSystemRegistry::nullTargetSystemInfo());
+      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(targetStr)
+           .getValueOr(qssc::hal::registry::TargetSystemRegistry::
+                           nullTargetSystemInfo());
 
   MLIRContext context{};
   llvm::Optional<llvm::StringRef> conf{};
