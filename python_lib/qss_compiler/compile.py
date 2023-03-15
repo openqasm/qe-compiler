@@ -40,12 +40,7 @@ and Pipe take care of serializing python objects and passing them across
 process boundaries with pipes.
 """
 import asyncio
-import logging
-import logging.handlers
-import multiprocessing as mp
-import queue
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from enum import Enum
 from importlib import resources as importlib_resources
@@ -55,12 +50,7 @@ from os import environ as os_environ
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
-from .logs import StreamLogger
 from .py_qssc import _compile_with_args, Diagnostic
-
-
-log = logging.getLogger(__name__)
-
 
 # use the forkserver context to create a server process
 # for forking new compiler processes
@@ -171,8 +161,6 @@ class CompileOptions:
             args.append(f"--num-shots={self.num_shots}")
 
         if self.shot_delay:
-            # Convert to us due to bug described in issue 364
-            # https://github.ibm.com/IBM-Q-Software/qss-compiler/issues/364
             args.append(f"--shot-delay={self.shot_delay*1e6}us")
 
         args.extend(self.extra_args)
@@ -186,13 +174,6 @@ class _CompilerExecution:
     input_str: Optional[str] = None
     input_file: Optional[Union[str, Path]] = None
     options: CompileOptions = field(default_factory=CompileOptions)
-
-    def __str__(self) -> str:
-        args = self.prepare_compiler_args()
-        if self.input_str:
-            # Add a new line for the input source
-            args.insert(len(args) - 1, "\n")
-        return " ".join(args)
 
     def prepare_compiler_args(self) -> List[str]:
         args = self.options.prepare_compiler_option_args()
@@ -242,39 +223,16 @@ def _compile_child_backend(
         return status, None
 
 
-def _compile_child_runner(conn: connection.Connection, logging_queue: mp.Queue) -> None:
+def _compile_child_runner(conn: connection.Connection) -> None:
+    execution = conn.recv()
 
-    process_logger = _setup_process_logger(logging_queue)
-    with StreamLogger(
-        process_logger, level=logging.DEBUG
-    ) as debug_stream_logger, StreamLogger(
-        process_logger, level=logging.WARNING
-    ) as warning_stream_logger:
-        with redirect_stdout(debug_stream_logger), redirect_stderr(
-            warning_stream_logger
-        ):
-            execution = conn.recv()
+    def on_diagnostic(diag):
+        conn.send(diag)
 
-            def on_diagnostic(diag):
-                conn.send(diag)
-
-            status, output = _compile_child_backend(execution, on_diagnostic)
-
-            conn.send(status)
-            if output is not None:
-                conn.send_bytes(output)
-
-
-def _setup_process_logger(logging_queue: mp.Queue) -> logging.Logger:
-    queue_handler = logging.handlers.QueueHandler(
-        logging_queue
-    )  # Just the one handler needed
-    process_logger = logging.getLogger()
-    process_logger.addHandler(queue_handler)
-    # This is the minimum log-level to communicate to the listener log-handler and
-    # not the minimum level that will be displayed to the end user.
-    process_logger.setLevel(logging.DEBUG)
-    return process_logger
+    status, output = _compile_child_backend(execution, on_diagnostic)
+    conn.send(status)
+    if output is not None:
+        conn.send_bytes(output)
 
 
 def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
@@ -284,17 +242,12 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
 
     options = execution.options
 
-    logging_queue = mp.Queue(-1)
-
     parent_side, child_side = mp_ctx.Pipe(duplex=True)
 
     try:
-        childproc = mp_ctx.Process(
-            target=_compile_child_runner, args=(child_side, logging_queue)
-        )
+        childproc = mp_ctx.Process(target=_compile_child_runner, args=(child_side,))
         childproc.start()
 
-        log.debug(execution)
         parent_side.send(execution)
 
         # we must handle the case when the child process exits without
@@ -309,10 +262,8 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         diagnostics = []
         try:
             while True:
-                # Make sure logs are handled before breaking
-                _receive_process_log(logging_queue)
-
                 received = parent_side.recv()
+
                 if isinstance(received, Diagnostic):
                     if execution.options.on_diagnostic:
                         execution.options.on_diagnostic(received)
@@ -320,20 +271,15 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                         diagnostics.append(received)
                 elif isinstance(received, _CompilerStatus):
                     success = received.success
-                    log.info("Compilation successful.")
                     break
                 else:
                     childproc.kill()
                     childproc.join()
-                    log.error("Compilation failed.")
                     raise QSSCompilerError(
                         "The compile process delivered an unexpected object instead of status or "
                         "diagnostic information. This points to inconsistencies in the Python "
                         "interface code between the calling process and the compile process."
                     )
-
-            # Read final logs after breaking
-            _receive_process_log(logging_queue)
 
             if options.output_file is None:
                 # return compilation result via IPC instead of in a file.
@@ -366,7 +312,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         raise QSSCompilerError(
             "It's likely that you've hit a bug in the QSS Compiler. Please "
             "submit an issue to the team with relevant information "
-            "(https://github.ibm.com/IBM-Q-Software/qss-compiler/issues):\n"
+            "(https://github.com/Qiskit/qss-compiler/issues):\n"
             f"{e}"
         )
 
@@ -375,14 +321,6 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
         if options.output_type == OutputType.MLIR:
             return output.decode("utf8")
         return output
-
-
-def _receive_process_log(logging_queue: mp.Queue) -> None:
-    """Query the logging queue and log available messages if available."""
-    while not logging_queue.empty():
-        record = logging_queue.get(block=False)
-        queue_logger = logging.getLogger(record.name)
-        queue_logger.handle(record)
 
 
 def _prepare_compile_options(
