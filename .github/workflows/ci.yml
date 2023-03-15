@@ -77,6 +77,13 @@ jobs:
           config_file: '.clang-tidy'
           build_dir: build
 
+      # On 'pull_request' run Clang format and commit the changes
+      - name: Clang format
+        id: clang_format
+        if: github.event_name == 'pull_request'
+        working-directory: build
+        run: ninja check-format
+
       # On 'main' branch, always save the cache if Conan install succeeded.
       # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
       #       cache getting LRU-evicted for every PR, since a single run uses most of the 10GB repo limit.
