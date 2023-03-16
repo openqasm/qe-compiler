@@ -71,8 +71,8 @@ namespace qssc::frontend::openqasm3 {
 using ExpressionValueType = mlir::Value;
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
-  return FileLineColLoc::get(builder.getContext(), filename, node->GetLineNo(),
-                             node->GetColNo());
+  return mlir::FileLineColLoc::get(builder.getContext(), filename,
+                                   node->GetLineNo(), node->GetColNo());
 }
 
 auto QUIRGenQASM3Visitor::assign(Value &val, const std::string &valName)
@@ -153,7 +153,7 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
 void QUIRGenQASM3Visitor::initialize(uint numShots,
                                      const std::string &shotDelay) {
   Location initialLocation =
-      FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
+      mlir::FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
 
   // create the "main" function
   auto func = topLevelBuilder.create<FuncOp>(
