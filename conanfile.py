@@ -23,7 +23,7 @@ class QSSCompilerConan(ConanFile):
     url = "https://github.com/qiskit/qss-compiler"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False]}
-    default_options = {"shared": False}
+    default_options = {"shared": False, "qasm:shared": True}
     license = "Proprietary"
     author = "IBM Quantum development team"
     topics = ("Compiler", "Scheduler", "OpenQASM3")
