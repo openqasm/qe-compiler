@@ -33,7 +33,7 @@
 #include "QSSC.h"
 
 #include "HAL/PassRegistration.h"
-#include "HAL/TargetRegistry.h"
+#include "HAL/TargetSystemRegistry.h"
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
@@ -133,9 +133,10 @@ auto main(int argc, char **argv) -> int {
     interleaveComma(registry.getDialectNames(), os,
                     [&](auto name) { os << name; });
     os << "\nAvailable Targets:\n";
-    for (const auto &target : registry::registeredTargets()) {
-      os << target.second.getTargetName() << " - "
-         << target.second.getTargetDescription() << "\n";
+    for (const auto &target :
+         registry::TargetSystemRegistry::registeredPlugins()) {
+      os << target.second.getName() << " - " << target.second.getDescription()
+         << "\n";
     }
   }
 
@@ -144,7 +145,8 @@ auto main(int argc, char **argv) -> int {
 
   // Create target if one was specified.
   if (!targetStr.empty()) {
-    auto targetInfo = registry::lookupTargetInfo(targetStr);
+    auto targetInfo =
+        registry::TargetSystemRegistry::lookupPluginInfo(targetStr);
     if (!targetInfo) {
       llvm::errs() << "Error: Target " + targetStr + " is not registered.\n";
       return 1;

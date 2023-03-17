@@ -1,6 +1,6 @@
 //===- TargetSystem.h - Top-level target info -------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -56,6 +56,9 @@ protected:
 };
 
 class TargetSystem : public Target {
+public:
+  using PluginConfiguration = llvm::StringRef;
+
 protected: // Can only create subclasses.
   TargetSystem(std::string name, Target *parent);
 
