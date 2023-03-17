@@ -52,11 +52,11 @@ variables reads or writes that location.
    ``oq3.declare_variable`` and identified as `MLIR
    symbols <https://mlir.llvm.org/docs/SymbolsAndSymbolTables/>`__.
 -  Each reference to a variable is modeled as an operation
-   ``oq3.use_variable`` that returns the variables value at that point.
+   ``oq3.variable_load`` that returns the variables value at that point.
 -  The operation ``oq3.assign_variable`` updates the variable’s value
    (visible from that operation forward until a subsequent
    ``oq3.assign_variable`` that operates on the same variable).
--  Both ``oq3.use_variable`` and ``oq3.assign_variable`` refer the
+-  Both ``oq3.variable_load`` and ``oq3.assign_variable`` refer the
    MLIR symbol defined by the operations ``oq3.declare_variable`` (the
    symbol’s name is a string).
 
@@ -66,9 +66,9 @@ for clarity):
 
 ::
 
-      %0 = oq3.use_variable @a
-      %1 = oq3.use_variable @b
-      %2 = quir.cbit_xor %s02, %s13
+      %0 = oq3.variable_load @a
+      %1 = oq3.variable_load @b
+      %2 = oq3.cbit_xor %s02, %s13
       oq3.assign_variable @a = %2
 
 Variable scoping is not supported yet (there is only the global scope). Adding
@@ -99,7 +99,7 @@ Best-Effort SSA Transformation
 The
 `VariableEliminationPass <https://github.com/Qiskit/qss-compiler/blob/main/lib/Dialect/QUIR/Transforms/VariableElimination.cpp>`__
 reuses the scalar-replacement pass from MLIR’s affine dialect to
-replace instances of `oq3.use_variable` with the MLIR Value previously
+replace instances of `oq3.variable_load` with the MLIR Value previously
 assigned to the respective variable, in many cases. Noteably, that code
 does not perform a complete SSA transformation and variable assignment
 and use around control flow will be left as memory operations. The
@@ -108,7 +108,7 @@ and use around control flow will be left as memory operations. The
 Lowering to Memory Operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The operations ``oq3.declare_variable``, ``oq3.use_variable``, and
+The operations ``oq3.declare_variable``, ``oq3.variable_load``, and
 ``oq3.assign_variable`` are converted to MLIR’s ``memref`` and
 ``affine`` dialects. Each variable declaration is turned into a global
 variable (``memref.global``) and variable reads/writes are converted

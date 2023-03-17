@@ -116,7 +116,7 @@ VariableAssignOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 }
 
 LogicalResult
-UseVariableOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+VariableLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
 }

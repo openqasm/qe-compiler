@@ -195,13 +195,13 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
 }
 
 struct VariableUseConversionPattern
-    : public OpConversionPattern<UseVariableOp> {
+    : public OpConversionPattern<VariableLoadOp> {
   explicit VariableUseConversionPattern(MLIRContext *ctx,
                                         TypeConverter &typeConverter)
-      : OpConversionPattern<UseVariableOp>(typeConverter, ctx, /*benefit=*/1) {}
+      : OpConversionPattern<VariableLoadOp>(typeConverter, ctx, /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(UseVariableOp useOp, OpAdaptor adaptor,
+  matchAndRewrite(VariableLoadOp useOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto varRefOrNone = findOrCreateGetGlobalMemref(useOp, rewriter);
     if (!varRefOrNone)

@@ -34,14 +34,14 @@ qubit $0;
 result[6] = measure $0;
 
 // AST-PRETTY: condition=IdentifierNode(name=my_one_bits, bits=2),
-// MLIR: %[[MY_ONE_BITS:.*]] = oq3.use_variable @my_one_bits : !quir.cbit<2>
+// MLIR: %[[MY_ONE_BITS:.*]] = oq3.variable_load @my_one_bits : !quir.cbit<2>
 // MLIR: %{{.*}} = "oq3.cast"(%[[MY_ONE_BITS]]) : (!quir.cbit<2>) -> i1
 if (my_one_bits) {
     U(3.1415926, 0, 3.1415926) $0;
 }
 
 // AST-PRETTY: condition=IdentifierRefNode(name=result[6], IdentifierNode(name=result, bits=20), index=6),
-// MLIR: %[[RESULT:.*]] = oq3.use_variable @result : !quir.cbit<20>
+// MLIR: %[[RESULT:.*]] = oq3.variable_load @result : !quir.cbit<20>
 // MLIR: %[[LVAL:.*]] = oq3.cbit_extractbit(%[[RESULT]] : !quir.cbit<20>) [6] : i1
 // MLIR: scf.if %[[LVAL]] {
 if (result[6]) {

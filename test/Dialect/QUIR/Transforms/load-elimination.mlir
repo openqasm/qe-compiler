@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --quir-eliminate-loads %s | FileCheck %s --implicit-check-not 'oq3.use_variable @a'
+// RUN: qss-compiler -X=mlir --quir-eliminate-loads %s | FileCheck %s --implicit-check-not 'oq3.variable_load @a'
 // RUN: qss-compiler -X=mlir --quir-eliminate-loads --remove-unused-variables %s | FileCheck %s --check-prefix REMOVE-UNUSED
 //
 // This test case serves to validate the behavior of the load elimination pass.
@@ -28,11 +28,11 @@ module {
     // assignment of b.
     // CHECK: oq3.variable_assign @b : i32 = [[CONST17_I32]]
     // The variable a should never be read.
-    // REMOVE-UNUSED-NOT: oq3.use_variable @a
-    %1 = oq3.use_variable @a : i32
+    // REMOVE-UNUSED-NOT: oq3.variable_load @a
+    %1 = oq3.variable_load @a : i32
     oq3.variable_assign @b : i32 = %1
 
-    %2 = oq3.use_variable @b : i32
+    %2 = oq3.variable_load @b : i32
     return %2 : i32
   }
 }

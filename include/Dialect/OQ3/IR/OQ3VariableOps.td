@@ -97,18 +97,18 @@ def OQ3_VariableAssignOp : OQ3_Op<"variable_assign",
 
 // -----
 
-def OQ3_UseVariableOp : OQ3_Op<"use_variable",
+def OQ3_VariableLoadOp : OQ3_Op<"variable_load",
                         [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
     let summary = "Use the current value of a variable";
     let description = [{
-        The operation `oq3.use_variable` returns the current value (wrt to
+        The operation `oq3.variable_load` returns the current value (wrt to
         `oq3.variable_assign` operations) of the classical variable with the
         given name.
 
         Example:
 
         ```mlir
-        %2 = oq3.use_variable "a" : !quir.cbit<1>
+        %2 = oq3.variable_load "a" : !quir.cbit<1>
         ```
     }];
 

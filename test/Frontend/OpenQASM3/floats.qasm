@@ -21,7 +21,7 @@ OPENQASM 3.0;
 float[32] x = 5.5;
 float[32] y = 5.5;
 
-// MLIR: [[VAR_X_0:%.*]] = oq3.use_variable @x : f32
+// MLIR: [[VAR_X_0:%.*]] = oq3.variable_load @x : f32
 // MLIR: oq3.variable_assign @y : f32 = [[VAR_X_0]]
 y = x;
 

@@ -20,7 +20,7 @@ complex[32] a = 3 + 7.35 im;
 // AST-PRETTY: DeclarationNode(type=ASTTypeMPComplex, MPComplexNode(name=my_complex, value=3.00000000000000000000e+3 + 7.35232200000000002404 im, bits=65))
 complex[65] my_complex = 3000 + 7.352322 im;
 
-// MLIR: %{{.*}} = oq3.use_variable @a : complex<f32>
+// MLIR: %{{.*}} = oq3.variable_load @a : complex<f32>
 // MLIR: [[CAST_1:%.*]] = "oq3.cast"(%{{.*}}) : (complex<f32>) -> complex<f80>
 // MLIR: oq3.variable_assign @my_complex : complex<f80> = [[CAST_1]]
 my_complex = a;

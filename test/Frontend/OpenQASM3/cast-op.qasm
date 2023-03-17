@@ -9,7 +9,7 @@ bit result;
 // MLIR oq3.cbit_assign_bit @result<1> [0] : i1 =  %[[MEASURE_RESULT]]
 result = measure $0;
 
-// MLIR: %[[RESULT:.*]] = oq3.use_variable @result : !quir.cbit<1>
+// MLIR: %[[RESULT:.*]] = oq3.variable_load @result : !quir.cbit<1>
 // MLIR: %[[COND:.*]] = "oq3.cast"(%[[RESULT]]) : (!quir.cbit<1>) -> i1
 // MLIR: scf.if %[[COND]] {
 if (result) {
@@ -24,8 +24,8 @@ bool b;
 // COM: AST-PRETTY: CastNode(from=ASTTypeIdentifier, to=ASTTypeBool, expression=IdentifierNode(name=foo, bits=1))
 // b = bool(foo);
 
-// MLIR-DAG: %[[FOO:.*]] = oq3.use_variable @foo : !quir.cbit<1>
-// MLIR-DAG: %[[RESULT:.*]] = oq3.use_variable @result : !quir.cbit<1>
+// MLIR-DAG: %[[FOO:.*]] = oq3.variable_load @foo : !quir.cbit<1>
+// MLIR-DAG: %[[RESULT:.*]] = oq3.variable_load @result : !quir.cbit<1>
 // MLIR: %[[OR:.*]] = oq3.cbit_or %[[FOO]], %[[RESULT]] : !quir.cbit<1>
 // MLIR: %[[RES2:.*]] = "oq3.cast"(%[[OR]]) : (!quir.cbit<1>) -> i1
 // MLIR: scf.if %[[RES2]] {
@@ -34,7 +34,7 @@ if (bool(foo | result)) {
     foo = result;
 }
 
-// MLIR: %[[FOO:.*]] = oq3.use_variable @foo : !quir.cbit<1>
+// MLIR: %[[FOO:.*]] = oq3.variable_load @foo : !quir.cbit<1>
 // MLIR: %[[RES:.*]] = "oq3.cast"(%[[FOO]]) : (!quir.cbit<1>) -> i1
 // MLIR: scf.if %[[RES]] {
 // AST-PRETTY: condition=CastNode(from=ASTTypeIdentifier, to=ASTTypeBool, expression=IdentifierNode(name=foo, bits=1)

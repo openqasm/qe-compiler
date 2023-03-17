@@ -27,7 +27,7 @@ is_excited = measure $2;
 
 // Apply reset operation
 
-// MLIR: [[EXCITED:%.*]] = oq3.use_variable @is_excited : !quir.cbit<1>
+// MLIR: [[EXCITED:%.*]] = oq3.variable_load @is_excited : !quir.cbit<1>
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
 // MLIR: [[EXCITEDCAST:%[0-9]+]] = "oq3.cast"([[EXCITED]]) : (!quir.cbit<1>) -> i32
 // MLIR: [[COND0:%.*]] = arith.cmpi eq, [[EXCITEDCAST]], [[CONST]] : i32
@@ -36,7 +36,7 @@ if (is_excited == 1) {
 // MLIR: [[MEASURE3:%.*]] = quir.measure([[QUBIT3]]) : (!quir.qubit<1>) -> i1
 // MLIR: oq3.cbit_assign_bit @other<1> [0] : i1 = [[MEASURE3]]
   other = measure $3;
-// MLIR: [[OTHER:%.*]] = oq3.use_variable @other : !quir.cbit<1>
+// MLIR: [[OTHER:%.*]] = oq3.variable_load @other : !quir.cbit<1>
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
 // MLIR: [[OTHERCAST:%[0-9]+]] = "oq3.cast"([[OTHER]]) : (!quir.cbit<1>) -> i32
 // MLIR: [[COND1:%.*]] = arith.cmpi eq, [[OTHERCAST]], [[CONST]] : i32

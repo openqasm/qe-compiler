@@ -15,7 +15,7 @@ bit is_excited;
 // AST-PRETTY: ,
 // AST-PRETTY: statements=
 // MLIR: scf.while : () -> () {
-// MLIR:     %2 = oq3.use_variable @i : i32
+// MLIR:     %2 = oq3.variable_load @i : i32
 // MLIR:     %c0_i32_1 = arith.constant 0 : i32
 // MLIR:     %3 = arith.cmpi ne, %2, %c0_i32_1 : i32
 // MLIR:     scf.condition(%3)
@@ -24,7 +24,7 @@ while (i != 0) {
     // AST-PRETTY: WhileStatement(condition=BinaryOpNode(type=ASTOpTypeCompNeq, left=IdentifierNode(name=j, bits=32), right=IntNode(signed=true, value=0, bits=32))
     // AST-PRETTY: ,
     // MLIR:     scf.while : () -> () {
-    // MLIR:         %3 = oq3.use_variable @j : i32
+    // MLIR:         %3 = oq3.variable_load @j : i32
     // MLIR:         %c0_i32_4 = arith.constant 0 : i32
     // MLIR:         %4 = arith.cmpi ne, %3, %c0_i32_4 : i32
     // MLIR:         scf.condition(%4)

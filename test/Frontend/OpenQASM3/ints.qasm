@@ -45,8 +45,8 @@ int[9] b;
 int[80] c;
 int[81] d;
 
-// MLIR: [[USE_X:%.*]] = oq3.use_variable @x : i32
-// MLIR: [[USE_Y:%.*]] = oq3.use_variable @y : i32
+// MLIR: [[USE_X:%.*]] = oq3.variable_load @x : i32
+// MLIR: [[USE_Y:%.*]] = oq3.variable_load @y : i32
 // MLIR: %{{.*}} = arith.cmpi eq, [[USE_X]], [[USE_Y]] : i32
 // AST-PRETTY: condition=BinaryOpNode(type=ASTOpTypeCompEq, left=IdentifierNode(name=x, bits=32), right=IdentifierNode(name=y, bits=32))
 qubit $0;

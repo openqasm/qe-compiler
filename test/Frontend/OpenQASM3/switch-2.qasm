@@ -18,10 +18,10 @@ qubit[8] $0;
 // MLIR:     %angle_1 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
 // MLIR:     quir.builtin_U %{{.*}}, %angle, %angle_0, %angle_1 : !quir.qubit<8>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR: }[1 : {
-// MLIR:     %{{.*}} = oq3.use_variable @k : i32
+// MLIR:     %{{.*}} = oq3.variable_load @k : i32
 // MLIR:     oq3.variable_assign @j : i32 = %{{.*}}
 // MLIR: }2 : {
-// MLIR:     %{{.*}} = oq3.use_variable @k : i32
+// MLIR:     %{{.*}} = oq3.variable_load @k : i32
 // MLIR:     %{{.*}} = "oq3.cast"(%{{.*}}) : (i32) -> f64
 // MLIR:     oq3.variable_assign @d : f64 = %{{.*}}
 // MLIR: }3 : {

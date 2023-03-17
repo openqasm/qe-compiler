@@ -40,13 +40,13 @@ oq3.cbit_assign_bit @c0<1> [0] : i1 = %mres1
 %mres2 = "quir.measure"(%qb1) : (!quir.qubit<1>) -> i1
 oq3.cbit_assign_bit @c1<1> [0] : i1 = %mres2
 // if(c0==1) z q[2];
-%ca2 = oq3.use_variable @c0 : !quir.cbit<1>
+%ca2 = oq3.variable_load @c0 : !quir.cbit<1>
 %cond1 = "oq3.cast"(%ca2) : (!quir.cbit<1>) -> i1
 scf.if %cond1 {
     "quir.call_gate"(%qc1) {callee = @Z} : (!quir.qubit<1>) -> ()
 } //{quir.classicalOnly = false}
 // if(c1==1) { x q[2]; } // braces optional in this case
-%cb2 = oq3.use_variable @c1 : !quir.cbit<1>
+%cb2 = oq3.variable_load @c1 : !quir.cbit<1>
 %cond2 = "oq3.cast"(%cb2) : (!quir.cbit<1>) -> i1
 scf.if %cond2 {
     "quir.call_gate"(%qc1) {callee = @X} : (!quir.qubit<1>) -> ()

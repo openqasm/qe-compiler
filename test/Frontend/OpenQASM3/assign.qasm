@@ -15,7 +15,7 @@ qubit $0;
 c = 1;
 // MLIR: %[[CAST_RESULT:.*]] = "oq3.cast"(%{{.*}}) : (i32) -> !quir.angle<3>
 // MLIR:       oq3.variable_assign @c : !quir.angle<3> = %[[CAST_RESULT]]
-// MLIR:       %[[USE_RESULT:.*]] = oq3.use_variable @c : !quir.angle<3>
+// MLIR:       %[[USE_RESULT:.*]] = oq3.variable_load @c : !quir.angle<3>
 // MLIR: %[[CAST_RESULT1:.*]] = "oq3.cast"(%[[USE_RESULT]]) : (!quir.angle<3>) -> i1
 // MLIR: scf.if %[[CAST_RESULT1]] {
 if (c) {
@@ -30,7 +30,7 @@ bool a = true;
 // MLIR: oq3.variable_assign @a : i1 = %[[FALSE]]
 // ASR-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=a, bits=8), right=BoolNode(name=bool, false))
 a = false;
-// MLIR: [[A:%.*]] = oq3.use_variable @a : i1
+// MLIR: [[A:%.*]] = oq3.variable_load @a : i1
 // MLIR: scf.if [[A]] {
 if (a) {
     U(0, 0, 0) $0;

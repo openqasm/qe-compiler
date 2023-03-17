@@ -11,7 +11,7 @@ for i in [0 : 4] {
     // AST-PRETTY: statements=
     // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=bs, bits=32), right=BinaryOpNode(type=ASTOpTypeBitOr, left=IdentifierNode(name=bs, bits=32), right=IdentifierNode(name=i, bits=32))
     // AST-PRETTY: )
-    // MLIR: %1 = oq3.use_variable @bs : !quir.cbit<32>
+    // MLIR: %1 = oq3.variable_load @bs : !quir.cbit<32>
     // MLIR: %2 = "oq3.cast"(%arg1) : (index) -> !quir.cbit<32>
     // MLIR: %3 = oq3.cbit_or %1, %2 : !quir.cbit<32>
     // MLIR: oq3.variable_assign @bs : !quir.cbit<32> = %3
@@ -24,7 +24,7 @@ for i in [0 : 3] {
     // AST-PRETTY: statements=
     // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=bs, bits=32), right=BinaryOpNode(type=ASTOpTypeBitAnd, left=IdentifierNode(name=bs, bits=32), right=IdentifierNode(name=i, bits=32))
     // AST-PRETTY: )
-    // MLIR: %1 = oq3.use_variable @bs : !quir.cbit<32>
+    // MLIR: %1 = oq3.variable_load @bs : !quir.cbit<32>
     // MLIR: %2 = "oq3.cast"(%arg1) : (index) -> !quir.cbit<32>
     // MLIR: %3 = oq3.cbit_and %1, %2 : !quir.cbit<32>
     // MLIR: oq3.variable_assign @bs : !quir.cbit<32> = %3
@@ -37,7 +37,7 @@ for i in [0 : 5] {
     // AST-PRETTY: statements=
     // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=bs, bits=32), right=BinaryOpNode(type=ASTOpTypeXor, left=IdentifierNode(name=bs, bits=32), right=IdentifierNode(name=i, bits=32))
     // AST-PRETTY: )
-    // MLIR: %1 = oq3.use_variable @bs : !quir.cbit<32>
+    // MLIR: %1 = oq3.variable_load @bs : !quir.cbit<32>
     // MLIR: %2 = "oq3.cast"(%arg1) : (index) -> !quir.cbit<32>
     // MLIR: %3 = oq3.cbit_xor %1, %2 : !quir.cbit<32>
     // MLIR: oq3.variable_assign @bs : !quir.cbit<32> = %3
