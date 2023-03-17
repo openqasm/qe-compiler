@@ -121,7 +121,7 @@ mlir::Value
 QUIRVariableBuilder::generateVariableUse(mlir::Location location,
                                          llvm::StringRef variableName,
                                          mlir::Type variableType) {
-  return builder.create<mlir::oq3::VariableLoadOp>(location, variableType,
+  return builder.create<mlir::oq3::UseVariableOp>(location, variableType,
                                                   variableName);
 }
 
