@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2022.
+# (C) Copyright IBM 2022, 2023.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -13,7 +13,7 @@ package_add_test_with_libs(unittest-quir-dialect
 
 if (QSSC_WITH_MOCK_TARGET)
     package_add_test_with_libs(unittest-qss-compiler
-            HAL/TargetRegistryTest.cpp
+            HAL/TargetSystemRegistryTest.cpp
             # add other source files with test cases here
 
             LIBRARIES

@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2021.
+# (C) Copyright IBM 2021, 2023.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -24,8 +24,9 @@ get_property(qssc_targets GLOBAL PROPERTY QSSC_TARGETS)
 qssc_add_library(QSSCHAL
     PassRegistration.cpp
     SystemConfiguration.cpp
-    TargetRegistry.cpp
     TargetSystem.cpp
+    TargetSystemInfo.cpp
+    TargetSystemRegistry.cpp
 
     ADDITIONAL_HEADER_DIRS
     ${QSSC_INCLUDE_DIR}/HAL
