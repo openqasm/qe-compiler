@@ -39,7 +39,7 @@ public:
 
 public:
   Payload() : prefix(""), name("exp") {}
-  Payload(PayloadConfig config)
+  explicit Payload(PayloadConfig config)
       : prefix(std::move(config.prefix) + "/"), name(std::move(config.name)) {
     files.clear();
   }
