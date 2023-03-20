@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 module {
     // OpenQASM 3.0 Iterative Phase Estimation from Ali
     // defcal y90p %0 {

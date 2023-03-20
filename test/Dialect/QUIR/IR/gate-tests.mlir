@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 module {
     func private @kernel1 (%ca1 : memref<1xi1>, %ca2 : memref<1xi1>, %ca3 : memref<1xi1>) -> memref<1xi1>
     func private @proto (%qa1 : !quir.qubit<1>) -> !quir.qubit<1>

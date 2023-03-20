@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 module {
     func @bar() {
         %0 = arith.constant 1 : i32

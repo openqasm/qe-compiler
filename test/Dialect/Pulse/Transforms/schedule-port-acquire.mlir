@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 module @acquire_0 attributes {quir.nodeId = 7 : i32, quir.nodeType = "acquire", quir.physicalIds = [0 : i32, 1 : i32, 2 : i32, 3 : i32]} {
   pulse.sequence @seq_0(%arg0: !pulse.mixed_frame, %arg1: !pulse.mixed_frame, %arg2: !pulse.mixed_frame, %arg3: !pulse.mixed_frame, %arg4: !pulse.mixed_frame) -> i1 {
     // CHECK: pulse.sequence @seq_0(

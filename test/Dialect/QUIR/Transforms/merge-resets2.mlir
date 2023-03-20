@@ -17,7 +17,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 module  {
   func @main() -> i32 {
     %c0 = arith.constant 0 : index

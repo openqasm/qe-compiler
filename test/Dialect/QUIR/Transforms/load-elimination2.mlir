@@ -16,7 +16,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 module {
 
   // CHECK: oq3.declare_variable {input} @a : !quir.angle<64>

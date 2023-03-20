@@ -17,7 +17,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 module  {
   func @x(%arg0: !quir.qubit<1>) {
     return

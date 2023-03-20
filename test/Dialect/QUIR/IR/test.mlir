@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 module {
     func private @proto (%qa1 : !quir.qubit<1>) -> ()
     // CHECK-LABEL: func @gateCall1
