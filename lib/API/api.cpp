@@ -422,7 +422,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     if (outputFilename == "-") {
       auto payloadInfo =
           qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
-      payload = std::move(payloadInfo.getValue()->createPluginInstance().get());
+      payload = std::move(payloadInfo.getValue()->createPluginInstance(llvm::None).get());
     } else {
       const std::filesystem::path payloadPath(outputFilename.c_str());
       const std::string fNamePrefix = payloadPath.stem();
