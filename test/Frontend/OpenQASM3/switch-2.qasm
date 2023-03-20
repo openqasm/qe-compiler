@@ -15,7 +15,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 int i = 15;
 int j = 1;
 int k = 2;

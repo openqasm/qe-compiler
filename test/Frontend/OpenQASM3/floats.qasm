@@ -25,7 +25,6 @@ OPENQASM 3.0;
 // MLIR: oq3.declare_variable @e : f32
 // MLIR: oq3.declare_variable @f : f32
 
-
 // MLIR: %cst = arith.constant 5.500000e+00 : f32
 // MLIR: oq3.variable_assign @x : f32 = %cst
 // MLIR: %cst_0 = arith.constant 5.500000e+00 : f32
