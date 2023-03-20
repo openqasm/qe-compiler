@@ -35,6 +35,7 @@
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystemRegistry.h"
 
+#include "Dialect/OQ3/IR/OQ3Dialect.h"
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
 #include "Dialect/QCS/IR/QCSDialect.h"
@@ -113,8 +114,8 @@ auto main(int argc, char **argv) -> int {
   // include what you need like above. You only need to register dialects that
   // will be *parsed* by the tool, not the one generated
   registerAllDialects(registry);
-  registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect,
-                  mlir::qcs::QCSDialect>();
+  registry.insert<mlir::oq3::OQ3Dialect, mlir::quir::QUIRDialect,
+                  mlir::pulse::PulseDialect, mlir::qcs::QCSDialect>();
 
   llvm::InitLLVM y(argc, argv);
 

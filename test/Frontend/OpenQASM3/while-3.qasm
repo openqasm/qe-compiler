@@ -15,7 +15,7 @@ bit is_excited;
 // AST-PRETTY: ,
 // AST-PRETTY: statements=
 // MLIR: scf.while : () -> () {
-// MLIR:     %2 = quir.use_variable @i : i32
+// MLIR:     %2 = oq3.variable_load @i : i32
 // MLIR:     %c0_i32_1 = arith.constant 0 : i32
 // MLIR:     %3 = arith.cmpi ne, %2, %c0_i32_1 : i32
 // MLIR:     scf.condition(%3)
@@ -24,7 +24,7 @@ while (i != 0) {
     // AST-PRETTY: WhileStatement(condition=BinaryOpNode(type=ASTOpTypeCompNeq, left=IdentifierNode(name=j, bits=32), right=IntNode(signed=true, value=0, bits=32))
     // AST-PRETTY: ,
     // MLIR:     scf.while : () -> () {
-    // MLIR:         %3 = quir.use_variable @j : i32
+    // MLIR:         %3 = oq3.variable_load @j : i32
     // MLIR:         %c0_i32_4 = arith.constant 0 : i32
     // MLIR:         %4 = arith.cmpi ne, %3, %c0_i32_4 : i32
     // MLIR:         scf.condition(%4)
@@ -40,7 +40,7 @@ while (i != 0) {
         // MLIR:         quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
         // MLIR:         %cst = constant unit
         // MLIR:         %c0_i32_4 = arith.constant 0 : i32
-        // MLIR:         quir.assign_variable @j : i32 = %c0_i32_4
+        // MLIR:         oq3.variable_assign @j : i32 = %c0_i32_4
         // MLIR:         scf.yield
         // MLIR:     }
         h $0;
@@ -53,10 +53,10 @@ while (i != 0) {
     // MLIR:     quir.builtin_U %0, %angle, %angle_1, %angle_2 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
     U (0, 0, 0) $0;
     // MLIR:     %2 = quir.measure(%0) : (!quir.qubit<1>) -> i1
-    // MLIR:     quir.assign_cbit_bit @is_excited<1> [0] : i1 = %2
+    // MLIR:     oq3.cbit_assign_bit @is_excited<1> [0] : i1 = %2
     is_excited = measure $0;
     // MLIR:     %c0_i32_3 = arith.constant 0 : i32
-    // MLIR:     quir.assign_variable @i : i32 = %c0_i32_3
+    // MLIR:     oq3.variable_assign @i : i32 = %c0_i32_3
     // MLIR:     scf.yield
     // MLIR: }
     i = 0;

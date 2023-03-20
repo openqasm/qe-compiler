@@ -14,6 +14,7 @@
 
 #include "QubitLocalization.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -31,6 +32,7 @@
 using namespace mlir;
 using namespace mlir::quir;
 using namespace mlir::qcs;
+using namespace mlir::oq3;
 namespace mock = qssc::targets::mock;
 using namespace mock;
 
@@ -333,29 +335,6 @@ void mock::MockQubitLocalizationPass::processOp(
                                        new OpBuilder(&clonedFuncOp.getBody()),
                                        std::move(newBuilders));
 } // processOp CallSubroutineOp
-
-void mock::MockQubitLocalizationPass::processOp(
-    CallKernelOp &callOp,
-    std::deque<
-        std::tuple<Block *, OpBuilder *,
-                   std::unique_ptr<std::unordered_map<uint, OpBuilder *>>>>
-        &blockAndBuilderWorkList) {
-  Operation *op = callOp.getOperation();
-  llvm::outs() << "Localizing a " << op->getName() << "\n";
-
-  controllerBuilder->clone(*op, controllerMapping);
-  auto *findOp = SymbolTable::lookupSymbolIn(controllerModule->getParentOp(),
-                                             callOp.callee());
-  auto *alreadyThereOp =
-      SymbolTable::lookupSymbolIn(controllerModule, callOp.callee());
-  if (findOp && !alreadyThereOp) {
-    OpBuilder::InsertPoint savedPoint = controllerBuilder->saveInsertionPoint();
-    controllerBuilder->setInsertionPoint(controllerModule.getBody(),
-                                         controllerModule.getBody()->begin());
-    controllerBuilder->clone(*findOp, controllerMapping);
-    controllerBuilder->restoreInsertionPoint(savedPoint);
-  }
-} // processOp CallKernelOp
 
 void mock::MockQubitLocalizationPass::processOp(CallGateOp &callOp) {
   Operation *op = callOp.getOperation();
@@ -839,8 +818,6 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         processOp(measureOp);
       } else if (auto callOp = dyn_cast<CallSubroutineOp>(op)) {
         processOp(callOp, blockAndBuilderWorkList);
-      } else if (auto callOp = dyn_cast<CallKernelOp>(op)) {
-        processOp(callOp, blockAndBuilderWorkList);
       } else if (auto callOp = dyn_cast<CallGateOp>(op)) {
         processOp(callOp);
       } else if (auto callOp = dyn_cast<BarrierOp>(op)) {
@@ -890,7 +867,7 @@ void mock::MockQubitLocalizationPass::cloneVariableDeclarations(
   mlir::OpBuilder controllerModuleBuilder(controllerModule.getBodyRegion());
 
   // clone variable declarations into all target modules
-  for (auto variableDeclaration : topModuleOp.getOps<quir::DeclareVariableOp>())
+  for (auto variableDeclaration : topModuleOp.getOps<DeclareVariableOp>())
     controllerModuleBuilder.clone(*variableDeclaration.getOperation());
 }
 

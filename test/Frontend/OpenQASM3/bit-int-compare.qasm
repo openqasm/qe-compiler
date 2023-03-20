@@ -15,7 +15,7 @@ x $0;
 
 // Test implicit cast of bit[n] to int
 // CHECK:       %{{.*}} = arith.constant 21 : i32
-// CHECK-NEXT:  %{{.*}} = "quir.cast"(%{{.*}}) : (!quir.cbit<5>) -> i32
+// CHECK-NEXT:  %{{.*}} = "oq3.cast"(%{{.*}}) : (!quir.cbit<5>) -> i32
 // CHECK-NEXT:  %{{.*}} = arith.cmpi eq, %{{.*}}, %{{.*}} : i32
 if(a == 21){
 	x $0;

@@ -16,12 +16,12 @@ module {
         %mu = quir.constant #quir.angle<0.2 : !quir.angle>
         // CHECK %{{.*}} = quir.declare_duration {value = "10ns"} : !quir.duration
         %len1 = "quir.declare_duration"() {value = "10ns"} : () -> !quir.duration
-        // CHECK %{{.*}} = quir.declare_stretch : !quir.stretch
-        %s1 = "quir.declare_stretch"() : () -> !quir.stretch
-        // CHECK %{{.*}} = quir.declare_stretch : !quir.stretch
-        %s2 = quir.declare_stretch : !quir.stretch
-        quir.declare_variable { input } @flags : !quir.cbit<32>
-        quir.declare_variable { output } @result : !quir.cbit<1>
+        // CHECK %{{.*}} = oq3.declare_stretch : !quir.stretch
+        %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
+        // CHECK %{{.*}} = oq3.declare_stretch : !quir.stretch
+        %s2 = oq3.declare_stretch : !quir.stretch
+        oq3.declare_variable { input } @flags : !quir.cbit<32>
+        oq3.declare_variable { output } @result : !quir.cbit<1>
         return
     }
 }

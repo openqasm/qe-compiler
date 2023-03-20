@@ -6,10 +6,10 @@
 // CHECK: module
 module {
   func @extract(%in : !quir.cbit<2>) -> i1 {
-    // CHECK: [[BIT:%.]] = quir.cbit_extractbit
-    %1 = quir.cbit_extractbit(%in : !quir.cbit<2>) [0] : i1
+    // CHECK: [[BIT:%.]] = oq3.cbit_extractbit
+    %1 = oq3.cbit_extractbit(%in : !quir.cbit<2>) [0] : i1
     %c1_i32 = arith.constant 1 : i32
-    %2 = "quir.cast"(%1): (i1) -> i32
+    %2 = "oq3.cast"(%1): (i1) -> i32
     %3 = arith.cmpi eq, %2, %c1_i32 : i32
     // CHECK: return [[BIT]] : i1
     return %3 : i1

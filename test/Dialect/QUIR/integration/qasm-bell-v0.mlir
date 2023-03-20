@@ -2,8 +2,8 @@
 
 // bit c0;
 // bit c1;
-quir.declare_variable @c0 : !quir.cbit<1>
-quir.declare_variable @c1 : !quir.cbit<1>
+oq3.declare_variable @c0 : !quir.cbit<1>
+oq3.declare_variable @c1 : !quir.cbit<1>
 
 func @main () -> i32 {
 
@@ -22,9 +22,9 @@ func @main () -> i32 {
   // measure %0 -> c0;
   // measure %1 -> c1;
   %mres1 = "quir.measure"(%q0) : (!quir.qubit<1>) -> i1
-  quir.assign_cbit_bit @c0<1> [0] : i1 = %mres1
+  oq3.cbit_assign_bit @c0<1> [0] : i1 = %mres1
   %mres2 = "quir.measure"(%q1) : (!quir.qubit<1>) -> i1
-  quir.assign_cbit_bit @c1<1> [0] : i1 = %mres2
+  oq3.cbit_assign_bit @c1<1> [0] : i1 = %mres2
   %zero = arith.constant 0 : i32
   return %zero : i32
 }

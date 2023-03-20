@@ -13,11 +13,11 @@ OPENQASM 3.0;
 input int basis;
 
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=flags, bits=32), inputVariable)
-// MLIR-DAG: quir.declare_variable {input} @flags : !quir.cbit<32>
+// MLIR-DAG: oq3.declare_variable {input} @flags : !quir.cbit<32>
 input bit[32] flags;
 
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=result, bits=1), outputVariable)
-// MLIR-DAG: quir.declare_variable {output} @result : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable {output} @result : !quir.cbit<1>
 output bit result;
 
 // TODO

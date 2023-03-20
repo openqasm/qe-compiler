@@ -4,6 +4,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+add_subdirectory(OQ3)
 add_subdirectory(QUIR)
 add_subdirectory(Pulse)
 add_subdirectory(QCS)

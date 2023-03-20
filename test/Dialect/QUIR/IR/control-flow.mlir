@@ -43,12 +43,12 @@ quir.reset %qr1 : !quir.qubit<1>
 //   h q;
     "quir.call_gate"(%qq1) {callee = @H} : (!quir.qubit<1>) -> ()
 //   cphase(power*3*pi/8) q, r;
-    %power1_angle = "quir.cast"(%power1_iter) : (i3) -> !quir.angle<3>
+    %power1_angle = "oq3.cast"(%power1_iter) : (i3) -> !quir.angle<3>
     %angle_multiplicand = quir.constant #quir.angle<0.375 : !quir.angle<3>>
-    %angleP = quir.angle_mul %power1_angle, %angle_multiplicand : !quir.angle<3>
+    %angleP = oq3.angle_mul %power1_angle, %angle_multiplicand : !quir.angle<3>
     "quir.call_gate"(%qq1, %qr1, %angleP) {callee = @cphase} : (!quir.qubit<1>, !quir.qubit<1>, !quir.angle<3>) -> ()
     %angle_zero = quir.constant #quir.angle<0.0 : !quir.angle<3>>
-    %negC = quir.angle_sub %angle_zero, %angleC_iter : !quir.angle<3>
+    %negC = oq3.angle_sub %angle_zero, %angleC_iter : !quir.angle<3>
 //   phase(-c) q;
 //   h q;
 //   measure q -> c[0];

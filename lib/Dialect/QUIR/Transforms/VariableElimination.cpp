@@ -1,6 +1,6 @@
 //===- VariableElimination.cpp - Lower and eliminate variables --*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -14,11 +14,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/VariableElimination.h"
+
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
-#include "Conversion/QUIRToStandard/CBitOperations.h"
-#include "Conversion/QUIRToStandard/QUIRCast.h"
+#include "Conversion/OQ3ToStandard/OQ3ToStandard.h"
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
@@ -39,7 +40,7 @@ void affineScalarReplaceCopy(FuncOp f, DominanceInfo &domInfo,
 namespace mlir::quir {
 
 namespace {
-Optional<Type> convertCbitType(quir::CBitType t) {
+Optional<Type> convertCBitType(quir::CBitType t) {
 
   if (t.getWidth() <= 64)
     return IntegerType::get(t.getContext(), t.getWidth());
@@ -57,7 +58,7 @@ class CBitTypeConverter : public TypeConverter {
 
 public:
   CBitTypeConverter() {
-    addConversion(convertCbitType);
+    addConversion(convertCBitType);
     addConversion(legalizeType<mlir::quir::AngleType>);
     addConversion(legalizeType<mlir::IntegerType>);
   }
@@ -75,23 +76,24 @@ struct MemrefGlobalToAllocaPattern
   mlir::Operation *toplevel;
 };
 
-/// Materialize quir casts to !quir.angle into a new cast when the argument can
+/// Materialize OQ3 casts to !quir.angle into a new cast when the argument can
 /// be type-converted to integer.
-struct MaterializeIntToAngleCastPattern : public OpConversionPattern<CastOp> {
+struct MaterializeIntToAngleCastPattern
+    : public OpConversionPattern<oq3::CastOp> {
   explicit MaterializeIntToAngleCastPattern(MLIRContext *ctx,
                                             mlir::TypeConverter &typeConverter)
       : OpConversionPattern(typeConverter, ctx, /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(CastOp castOp, CastOpAdaptor adaptor,
+  matchAndRewrite(oq3::CastOp castOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
     if (!adaptor.arg().getType().isIntOrIndexOrFloat() ||
         !castOp.out().getType().isa<mlir::quir::AngleType>())
       return failure();
 
-    rewriter.replaceOpWithNewOp<mlir::quir::CastOp>(
-        castOp, castOp.out().getType(), adaptor.arg());
+    rewriter.replaceOpWithNewOp<oq3::CastOp>(castOp, castOp.out().getType(),
+                                             adaptor.arg());
 
     return success();
   } // matchAndRewrite
@@ -134,58 +136,54 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   CBitTypeConverter typeConverter;
 
   // Only convert QUIR variable operations
-  target.addLegalDialect<
-      arith::ArithmeticDialect, LLVM::LLVMDialect, memref::MemRefDialect,
-      scf::SCFDialect, StandardOpsDialect, quir::QUIRDialect, AffineDialect>();
-  target.addIllegalOp<quir::DeclareVariableOp>();
-  target.addIllegalOp<quir::VariableAssignOp>();
-  target.addIllegalOp<quir::UseVariableOp>();
+  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
+                         memref::MemRefDialect, scf::SCFDialect,
+                         StandardOpsDialect, AffineDialect>();
+  target.addIllegalOp<oq3::DeclareVariableOp, oq3::VariableAssignOp,
+                      oq3::VariableLoadOp>();
   // TODO add additional QUIR variable operations here
   RewritePatternSet patterns(&context);
 
   quir::populateVariableToGlobalMemRefConversionPatterns(
       patterns, typeConverter, externalizeOutputVariables);
 
-  // Convert CBit type and operations
-  quir::populateCBitOperationsPatterns(patterns, typeConverter, false);
-  // TODO transform to making the OpenQASM dialect invalid
-  target.addIllegalOp<quir::AssignCbitBitOp>();
-  target.addIllegalOp<quir::Cbit_NotOp>();
-  target.addIllegalOp<quir::Cbit_RotLOp>();
-  target.addIllegalOp<quir::Cbit_RotROp>();
-  target.addIllegalOp<quir::Cbit_PopcountOp>();
-  target.addIllegalOp<quir::Cbit_AndOp>();
-  target.addIllegalOp<quir::Cbit_OrOp>();
-  target.addIllegalOp<quir::Cbit_XorOp>();
-  target.addIllegalOp<quir::Cbit_RshiftOp>();
-  target.addIllegalOp<quir::Cbit_LshiftOp>();
-
-  // TODO move quir.cast and patterns for CBit types into OpenQASM 3 dialect.
-  quir::populateQUIRCastPatterns(patterns, typeConverter);
-  // QUIR Casts from / to cbit must be converted
-  target.addDynamicallyLegalOp<mlir::quir::CastOp>([](mlir::quir::CastOp op) {
+  // Convert `CBit` type and operations
+  oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns, false);
+  // clang-format off
+  target.addIllegalOp<
+              oq3::CBitAssignBitOp,
+              oq3::CBitNotOp,
+              oq3::CBitRotLOp,
+              oq3::CBitRotROp,
+              oq3::CBitPopcountOp,
+              oq3::CBitAndOp,
+              oq3::CBitOrOp,
+              oq3::CBitXorOp,
+              oq3::CBitRShiftOp,
+              oq3::CBitLShiftOp>();
+  // clang-format on
+  target.addDynamicallyLegalOp<oq3::CastOp>([](oq3::CastOp op) {
     if (op.getType().isa<mlir::quir::CBitType>() ||
         op.arg().getType().isa<mlir::quir::CBitType>())
       return false;
     return true;
   });
 
-  // Materialize Cbit_ExtractBitOp and Cbit_InsertBitOp with integer operands.
-  patterns.insert<MaterializeBitOpForInt<quir::Cbit_ExtractBitOp>>(
-      &context, typeConverter);
-  patterns.insert<MaterializeBitOpForInt<quir::Cbit_InsertBitOp>>(
-      &context, typeConverter);
+  // Materialize CBitExtractBitOp and CBitInsertBitOp with integer operands.
+  patterns.add<MaterializeBitOpForInt<oq3::CBitExtractBitOp>,
+               MaterializeBitOpForInt<oq3::CBitInsertBitOp>>(&context,
+                                                             typeConverter);
 
-  target.addDynamicallyLegalOp<mlir::quir::Cbit_ExtractBitOp>(
-      [](mlir::quir::Cbit_ExtractBitOp op) {
+  target.addDynamicallyLegalOp<mlir::oq3::CBitExtractBitOp>(
+      [](mlir::oq3::CBitExtractBitOp op) {
         if (op.getType().isa<mlir::quir::CBitType>() ||
             op.operand().getType().isa<mlir::quir::CBitType>())
           return false;
 
         return true;
       });
-  target.addDynamicallyLegalOp<mlir::quir::Cbit_InsertBitOp>(
-      [](mlir::quir::Cbit_InsertBitOp op) {
+  target.addDynamicallyLegalOp<mlir::oq3::CBitInsertBitOp>(
+      [](mlir::oq3::CBitInsertBitOp op) {
         if (op.getType().isa<mlir::quir::CBitType>() ||
             op.operand().getType().isa<mlir::quir::CBitType>())
           return false;
@@ -193,9 +191,9 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
         return true;
       });
 
-  // Support cbit to angle casts by materializing them into a new quir.cast with
+  // Support cbit to angle casts by materializing them into a new oq3.cast with
   // the argument type-converted to integer.
-  patterns.insert<MaterializeIntToAngleCastPattern>(&context, typeConverter);
+  patterns.add<MaterializeIntToAngleCastPattern>(&context, typeConverter);
 
   return applyPartialConversion(top, target, std::move(patterns));
 }
@@ -244,7 +242,7 @@ convertIsolatedMemrefGlobalToAlloca(mlir::MLIRContext &context,
 
   RewritePatternSet patterns(&context);
 
-  patterns.insert<MemrefGlobalToAllocaPattern>(&context, top);
+  patterns.add<MemrefGlobalToAllocaPattern>(&context, top);
   mlir::GreedyRewriteConfig config;
 
   config.useTopDownTraversal = true;
@@ -289,7 +287,7 @@ dropAllocaWithIsolatedStores(mlir::MLIRContext &context, mlir::Operation *top) {
 
   RewritePatternSet patterns(&context);
 
-  patterns.insert<RemoveAllocaWithIsolatedStoresPattern>(&context, top);
+  patterns.add<RemoveAllocaWithIsolatedStoresPattern>(&context, top);
   mlir::GreedyRewriteConfig config;
 
   config.useTopDownTraversal = true;

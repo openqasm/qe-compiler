@@ -1,6 +1,6 @@
 //===- QUIRToPulse.cpp - Pulse dialect -------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -308,10 +308,10 @@ void QUIRToPulsePass::runOnOperation() {
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
 
-  patterns.insert<DeclareQubitConversionPat>(&getContext(), typeConverter,
-                                             setup_.getValue());
-  patterns.insert<DefCalConversionPat>(&getContext(), typeConverter,
-                                       setup_.getValue(), symbolTableRef);
+  patterns.add<DeclareQubitConversionPat>(&getContext(), typeConverter,
+                                          setup_.getValue());
+  patterns.add<DefCalConversionPat>(&getContext(), typeConverter,
+                                    setup_.getValue(), symbolTableRef);
 
   if (failed(applyPartialConversion(moduleOp, target, std::move(patterns))))
     signalPassFailure();

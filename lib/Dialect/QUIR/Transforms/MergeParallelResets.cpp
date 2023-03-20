@@ -1,6 +1,6 @@
 //===- MergeParallelResets.cpp - Merge reset ops ----------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -90,7 +90,7 @@ void MergeResetsLexicographicPass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
 
-  patterns.insert<MergeResetsLexicographicPattern>(&getContext());
+  patterns.add<MergeResetsLexicographicPattern>(&getContext());
 
   if (mlir::failed(applyPatternsAndFoldGreedily(getOperation(),
                                                 std::move(patterns), config)))
@@ -164,7 +164,7 @@ void MergeResetsTopologicalPass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
 
-  patterns.insert<MergeResetsTopologicalPattern>(&getContext());
+  patterns.add<MergeResetsTopologicalPattern>(&getContext());
 
   if (mlir::failed(applyPatternsAndFoldGreedily(getOperation(),
                                                 std::move(patterns), config)))
