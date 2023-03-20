@@ -14,7 +14,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 qubit $0;
 
 // AST-PRETTY: DeclarationNode(type=ASTTypeFunctionDeclaration, FunctionDeclarationNode(FunctionDefinitionNode(name=test_measure, mangled name=_QF12test_measureFrB1EFp0_B1_9to_removeEE_,
