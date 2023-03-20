@@ -16,13 +16,13 @@
 
 #include "Payload.h"
 
-#include "Plugin/PluginRegistry.h"
 #include "Plugin/PluginInfo.h"
+#include "Plugin/PluginRegistry.h"
 
 namespace qssc::payload::registry {
 
-    using PayloadInfo = plugin::registry::PluginInfo<Payload>;
-    using PayloadRegistry = plugin::registry::PluginRegistry<PayloadInfo>;
+using PayloadInfo = plugin::registry::PluginInfo<Payload>;
+using PayloadRegistry = plugin::registry::PluginRegistry<PayloadInfo>;
 
 } // namespace qssc::payload::registry
 

@@ -46,7 +46,7 @@ qssc_add_plugin(QSSCPayloadZip QSSC_PAYLOAD_PLUGIN
 
         LINK_LIBS
         QSSCPayload
-        libzip::libzip
+        libzip::zip
 
         PLUGIN_REGISTRATION_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/Payload.inc

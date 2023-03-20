@@ -36,6 +36,7 @@ struct PayloadConfig {
 class Payload {
 public:
   using PluginConfiguration = PayloadConfig;
+
 public:
   Payload() : prefix(""), name("exp") {}
   Payload(PayloadConfig config)

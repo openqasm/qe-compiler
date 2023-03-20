@@ -19,20 +19,21 @@
 
 namespace {
 
-    TEST(PayloadRegistry, LookupZipPayload) {
-    // As a compiler developer, I want to register and lookup payloads by name.
+TEST(PayloadRegistry, LookupZipPayload) {
+  // As a compiler developer, I want to register and lookup payloads by name.
 
-    const char *zipName = "ZIP";
+  const char *zipName = "ZIP";
 
-    EXPECT_TRUE(qssc::payload::registry::PayloadRegistry::pluginExists(zipName));
+  EXPECT_TRUE(qssc::payload::registry::PayloadRegistry::pluginExists(zipName));
 
-    auto payloadInfoOpt = qssc::payload::registry::PayloadRegistry::lookupPluginInfo(zipName);
-    EXPECT_TRUE(payloadInfoOpt.hasValue());
+  auto payloadInfoOpt =
+      qssc::payload::registry::PayloadRegistry::lookupPluginInfo(zipName);
+  EXPECT_TRUE(payloadInfoOpt.hasValue());
 
-    auto *payloadInfo = payloadInfoOpt.getValue();
+  auto *payloadInfo = payloadInfoOpt.getValue();
 
-    ASSERT_NE(payloadInfo, nullptr);
-    EXPECT_EQ(payloadInfo->getName(), zipName);
+  ASSERT_NE(payloadInfo, nullptr);
+  EXPECT_EQ(payloadInfo->getName(), zipName);
 }
 
 } // anonymous namespace

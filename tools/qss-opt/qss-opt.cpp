@@ -135,15 +135,17 @@ auto main(int argc, char **argv) -> int {
     interleaveComma(registry.getDialectNames(), os,
                     [&](auto name) { os << name; });
     os << "\nAvailable Targets:\n";
-    for (const auto &target : registry::TargetSystemRegistry::registeredPlugins()) {
-      os << target.second.getName() << " - "
-         << target.second.getDescription() << "\n";
+    for (const auto &target :
+         registry::TargetSystemRegistry::registeredPlugins()) {
+      os << target.second.getName() << " - " << target.second.getDescription()
+         << "\n";
     }
 
     os << "\nAvailable Payloads:\n";
-    for (const auto &target : qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
-      os << target.second.getName() << " - "
-         << target.second.getDescription() << "\n";
+    for (const auto &target :
+         qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
+      os << target.second.getName() << " - " << target.second.getDescription()
+         << "\n";
     }
   }
 
@@ -152,7 +154,8 @@ auto main(int argc, char **argv) -> int {
 
   // Create target if one was specified.
   if (!targetStr.empty()) {
-    auto targetInfo = registry::TargetSystemRegistry::lookupPluginInfo(targetStr);
+    auto targetInfo =
+        registry::TargetSystemRegistry::lookupPluginInfo(targetStr);
     if (!targetInfo) {
       llvm::errs() << "Error: Target " + targetStr + " is not registered.\n";
       return 1;

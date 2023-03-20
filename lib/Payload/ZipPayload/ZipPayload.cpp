@@ -32,14 +32,13 @@ namespace fs = std::filesystem;
 
 int qssc::payload::init() {
   bool registered = registry::PayloadRegistry::registerPlugin(
-    "ZIP", "ZIP", "Payload that generates zip file.",
-    [](llvm::Optional<PayloadConfig> config)
-        -> llvm::Expected<std::unique_ptr<payload::Payload>> {
-      if (config.hasValue()) {
-        return std::make_unique<ZipPayload>(config.getValue());
-      }
-      return std::make_unique<ZipPayload>();
-    });
+      "ZIP", "ZIP", "Payload that generates zip file.",
+      [](llvm::Optional<PayloadConfig> config)
+          -> llvm::Expected<std::unique_ptr<payload::Payload>> {
+        if (config.hasValue())
+          return std::make_unique<ZipPayload>(config.getValue());
+        return std::make_unique<ZipPayload>();
+      });
   return registered ? 0 : -1;
 }
 
@@ -94,29 +93,29 @@ void ZipPayload::writePlain(std::ostream &stream) {
 }
 
 namespace {
-    void setFilePermissions(zip_int64_t fileIndex, fs::path &fName,
-                            zip_t *new_archive) {
-      zip_uint8_t opsys;
-      zip_uint32_t attributes;
-      zip_file_get_external_attributes(new_archive, fileIndex, 0, &opsys,
-                                       &attributes);
-      if (opsys == ZIP_OPSYS_UNIX) {
-        zip_uint32_t mask = UINT32_MAX; // all 1s for negative mask
-        mask ^= (S_IWGRP << 16);        // turn off write for the group
-        mask ^= (S_IWOTH << 16);        // turn off write for others
+void setFilePermissions(zip_int64_t fileIndex, fs::path &fName,
+                        zip_t *new_archive) {
+  zip_uint8_t opsys;
+  zip_uint32_t attributes;
+  zip_file_get_external_attributes(new_archive, fileIndex, 0, &opsys,
+                                   &attributes);
+  if (opsys == ZIP_OPSYS_UNIX) {
+    zip_uint32_t mask = UINT32_MAX; // all 1s for negative mask
+    mask ^= (S_IWGRP << 16);        // turn off write for the group
+    mask ^= (S_IWOTH << 16);        // turn off write for others
 
-        // apply negative write mask
-        attributes &= mask;
+    // apply negative write mask
+    attributes &= mask;
 
-        // if executable turn on S_IXUSR
-        if (fName.has_extension() && fName.extension() == ".sh")
-          attributes |= (S_IXUSR << 16); // turn on execute for user
+    // if executable turn on S_IXUSR
+    if (fName.has_extension() && fName.extension() == ".sh")
+      attributes |= (S_IXUSR << 16); // turn on execute for user
 
-        // set new attributes
-        zip_file_set_external_attributes(new_archive, fileIndex, 0, opsys,
-                                         attributes);
-      }
-    }
+    // set new attributes
+    zip_file_set_external_attributes(new_archive, fileIndex, 0, opsys,
+                                     attributes);
+  }
+}
 } // end anonymous namespace
 
 void ZipPayload::writeZip(llvm::raw_ostream &stream) {
@@ -211,7 +210,7 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   char *outbuffer = (char *)malloc(sz);
   if (!outbuffer) {
     llvm::errs()
-            << "Unable to allocate output buffer for writing zip to stream\n";
+        << "Unable to allocate output buffer for writing zip to stream\n";
     zip_source_close(new_archive_src);
     return;
   }

@@ -420,14 +420,17 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::GenQEM) {
     if (outputFilename == "-") {
-      auto payloadInfo = qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
+      auto payloadInfo =
+          qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
       payload = std::move(payloadInfo.getValue()->createPluginInstance().get());
     } else {
       const std::filesystem::path payloadPath(outputFilename.c_str());
       const std::string fNamePrefix = payloadPath.stem();
       const qssc::payload::PayloadConfig config{fNamePrefix, fNamePrefix};
-      auto payloadInfo = qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
-      payload = std::move(payloadInfo.getValue()->createPluginInstance(config).get());
+      auto payloadInfo =
+          qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
+      payload =
+          std::move(payloadInfo.getValue()->createPluginInstance(config).get());
     }
   }
   if (outputString) {
