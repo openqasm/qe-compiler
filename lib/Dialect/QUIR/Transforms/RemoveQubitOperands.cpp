@@ -1,5 +1,4 @@
-//===- RemoveQubitOperands.cpp - Remove qubit args ------------------*- C++
-//-*-===//
+//===- RemoveQubitOperands.cpp - Remove qubit args ---------------*- C++-*-===//
 //
 // (C) Copyright IBM 2023.
 //
