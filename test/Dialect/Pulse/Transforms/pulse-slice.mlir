@@ -14,7 +14,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // CHECK:  func @d0
 // CHECK:  func @d1
 // CHECK:  func @u0

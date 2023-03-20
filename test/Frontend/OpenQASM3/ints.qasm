@@ -15,7 +15,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // MLIR:   oq3.declare_variable @x : i32
 // MLIR:   oq3.declare_variable @y : i32
 // MLIR:   oq3.declare_variable @my_new_int : i64

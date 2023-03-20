@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // CHECK: func @t1
 func @t1 (%arg1 : !quir.cbit<1>) -> (!quir.cbit<1>) {
 // CHECK: oq3.cbit_not %{{.*}} : !quir.cbit<1>

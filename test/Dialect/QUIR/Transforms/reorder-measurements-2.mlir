@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // This regression test case validates that reorder-measures does not move
 // operations across control flow with other quantum operations.
 

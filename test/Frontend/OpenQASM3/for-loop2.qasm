@@ -15,7 +15,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // This test serves to validate parsing and walking of the AST for for-loop
 // features that are currently unsupported.
 // NOTE: This test also validates diagnostic messages emitted by QUIRGen. When

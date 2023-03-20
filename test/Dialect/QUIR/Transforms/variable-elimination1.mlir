@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // This test verifies store-forwarding and the removal of invisible stores. All
 // variable loads must be replaced by forwarded stored values. Then, any
 // remaining stores are invisible as the variables have no lifetime beyond this

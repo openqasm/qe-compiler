@@ -15,7 +15,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // Regression test for an issue where successive rz gate calls used incorrect
 // angle parameters.
 

@@ -15,7 +15,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // MLIR: oq3.declare_variable @a : complex<f32>
 // MLIR: oq3.declare_variable @my_complex : complex<f80>
 // MLIR: oq3.declare_variable @b : complex<f64>

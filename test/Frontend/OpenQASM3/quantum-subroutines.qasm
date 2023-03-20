@@ -14,7 +14,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // AST-PRETTY: DeclarationNode(type=ASTTypeFunctionDeclaration, FunctionDeclarationNode(FunctionDefinitionNode(name=quantum_params, mangled name=_QF14quantum_paramsFrB1EFp0_QC1_2q0EE_,
 // AST-PRETTY: parameters=[DeclarationNode(type=ASTTypeQubitContainer, IdentifierNode(name=q0, bits=1))
 // AST-PRETTY: ],

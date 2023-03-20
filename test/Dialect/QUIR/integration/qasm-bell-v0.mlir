@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // bit c0;
 // bit c1;
 oq3.declare_variable @c0 : !quir.cbit<1>

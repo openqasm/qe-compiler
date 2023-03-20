@@ -13,8 +13,6 @@
 // that they have been altered from the originals.
 
 
-func private @kernel1 (%c0 : i1, %c1 : i1, %c2 : i1) -> i1
-
 func @gateH_qq(%qArg : !quir.qubit<1>) attributes {quir.orig_func_name = "gateH"} {
   %ang = quir.constant #quir.angle<0.1 : !quir.angle<20>>
   quir.builtin_U %qArg, %ang, %ang, %ang : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>

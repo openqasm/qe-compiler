@@ -12,7 +12,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // CHECK: define i32 @main() !dbg !3 {
 // CHECK:  ret i32 0, !dbg !7
 // CHECK: }

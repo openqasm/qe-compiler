@@ -14,7 +14,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // CHECK-NOT:  "pulse.create_port_group"
 // CHECK-NOT:  "pulse.select_port"
 

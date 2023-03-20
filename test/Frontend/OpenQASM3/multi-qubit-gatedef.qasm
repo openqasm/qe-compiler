@@ -14,7 +14,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // MLIR: func @g(%arg0: !quir.qubit<1>, %arg1: !quir.qubit<1>) {
 gate g qa, qb {
     // MLIR: quir.builtin_U %arg0{{.*}}

@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // This test case checks that QUIR declarations can be parsed from
 // textual/assembly input.
 module {

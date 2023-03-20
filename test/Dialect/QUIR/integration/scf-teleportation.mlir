@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // OpenQASM 3.0 Quantum Teleportation example from the spec.
 // qubit q[3];
 %qa1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>

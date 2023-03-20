@@ -15,7 +15,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // NOTE: Only partial support for extern has been added while
 // work is awaited on updating the parser version in
 // https://github.ibm.com/IBM-Q-Software/vt-dynamic-circuits/issues/962

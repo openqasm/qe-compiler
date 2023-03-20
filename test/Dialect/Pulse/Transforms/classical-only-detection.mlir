@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // based on quir version of the classical-only-detection test
 
 // first validate that the pulse classical-only-detection does not harm the quir pass

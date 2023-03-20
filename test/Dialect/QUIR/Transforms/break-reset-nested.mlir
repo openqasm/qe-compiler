@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // CHECK: scf.if %arg1 {
 // CHECK-NEXT: scf.if %arg2 {
 // CHECK-NEXT:   %{{.*}} = quir.measure(%arg0) {quir.noReportRuntime} : (!quir.qubit<1>) -> i1

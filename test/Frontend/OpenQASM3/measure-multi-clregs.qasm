@@ -15,7 +15,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // Test that measurement results reach the correct destination, be that single
 // classical bits or individual bits in classical bit registers.
 

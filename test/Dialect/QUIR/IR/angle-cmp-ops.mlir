@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // CHECK: [[a0:%angle[_0-9]*]] = quir.constant #quir.angle<0.000000e+00 : !quir.angle<20>>
 %a0 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
 // CHECK: [[a1:%angle[_0-9]*]] = quir.constant #quir.angle<0.000000e+00 : !quir.angle<20>>

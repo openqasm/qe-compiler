@@ -12,7 +12,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // OpenQASM 3.0 Iterative Phase Estimation from Ali/Andrew Cross
 // defcal y90p %0 {
 //    play drive(%0), drag(...);

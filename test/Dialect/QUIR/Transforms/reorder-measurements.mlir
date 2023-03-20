@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // CHECK: func @three
 func @three(%c : memref<1xi1>, %ind : index, %angle_0 : !quir.angle<64>) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>

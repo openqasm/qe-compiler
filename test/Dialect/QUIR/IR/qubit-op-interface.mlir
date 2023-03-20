@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // TODO: A separate attribute ID should not be required to identify qubit IDs
 // This should be computable from the quir.call_circuit invocation. This would
 // also mean that we would only have to declare a qubit once.

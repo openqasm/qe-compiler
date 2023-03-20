@@ -10,7 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
 set(SOURCES LegacyInputConversion.cpp SystemDefinition.cpp DebugIndent.cpp)
 
 include_directories(${Boost_INCLUDE_DIRS})

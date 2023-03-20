@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // CHECK: module
 module {
   oq3.declare_variable @results : !quir.cbit<1>

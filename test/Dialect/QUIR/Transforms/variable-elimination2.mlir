@@ -16,7 +16,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // CHECK: module
 module {
   oq3.declare_variable @b : !quir.cbit<1>

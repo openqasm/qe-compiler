@@ -16,7 +16,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // AST: <StatementList>
 // AST: <Declaration>
 // AST: <Identifier>result</Identifier>

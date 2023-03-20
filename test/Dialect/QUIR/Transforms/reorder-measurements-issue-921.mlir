@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // This regression test case validates that reorder-measures can move
 // operations across control flow when there are no conflicts, and also that
 // conflicts prevent movement

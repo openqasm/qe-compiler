@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 // Compiler pass inserts defcals and resolves timing:
 // For the scheduling, let's say that y90p is 20 ns on 0, 30 ns on 1, and cr90p on (0,1) is 300 ns.
 // Let's say phase is 0 ns and the entire measurement is 400 ns.
