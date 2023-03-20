@@ -13,9 +13,9 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file declares the pass for adding absolute timing to defcal calls.
-//
+///
+///  This file declares the pass for adding absolute timing to defcal calls.
+///
 //===----------------------------------------------------------------------===//
 
 //#ifndef PULSE_SCHEDULING_H

@@ -13,9 +13,9 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file declares the pass for slicing mlir by port as a strategy.
-//
+///
+///  This file declares the pass for slicing mlir by port as a strategy.
+///
 //===----------------------------------------------------------------------===//
 
 #ifndef PULSE_SLICE_PORT_H

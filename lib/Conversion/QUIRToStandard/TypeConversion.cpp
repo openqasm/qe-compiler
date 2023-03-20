@@ -11,12 +11,11 @@
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
-
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file implements common utilities for converting QUIR to std
-//
+///
+///  This file implements common utilities for converting QUIR to std
+///
 //===----------------------------------------------------------------------===//
 
 #include "Conversion/QUIRToStandard/TypeConversion.h"
