@@ -15,8 +15,6 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
-
 // MLIR: %{{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
 // AST-PRETTY: DeclarationNode(type=ASTTypeAngle, AngleNode(value=0.0, bits=64))
 angle[64] angle_a;
