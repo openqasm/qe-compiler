@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 %c1 = arith.constant 0 : i1
 %c2 = arith.constant 1 : i1
 %o1 = arith.constant 10 : i32
