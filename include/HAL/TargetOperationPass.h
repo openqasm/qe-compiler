@@ -46,7 +46,8 @@ protected:
    * @return A non-owning pointer to the target system.
    */
   TargetT *getTargetSystemOrFail() {
-    auto targetInfo = registry::TargetSystemRegistry::lookupPluginInfo(TargetT::name);
+    auto targetInfo =
+        registry::TargetSystemRegistry::lookupPluginInfo(TargetT::name);
     if (!targetInfo) {
       llvm::errs() << "Error: target '" << TargetT::name
                    << "' is not registered.\n";

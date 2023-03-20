@@ -22,50 +22,53 @@
 
 namespace qssc::hal::registry {
 
-  /// Class to group info about a registered target. Such as how to invoke
-  /// and a description.
-  class TargetSystemInfo : public qssc::plugin::registry::PluginInfo<qssc::hal::TargetSystem> {
-    using PluginInfo = qssc::plugin::registry::PluginInfo<qssc::hal::TargetSystem>;
-    using PassesFunction = std::function<llvm::Error()>;
-    using PassPipelinesFunction = std::function<llvm::Error()>;
-  public:
-    /// Construct this entry
-    TargetSystemInfo(llvm::StringRef name, llvm::StringRef description,
-                     PluginInfo::PluginFactoryFunction targetFactory,
-                     PassesFunction passRegistrar,
-                     PassPipelinesFunction passPipelineRegistrar);
+/// Class to group info about a registered target. Such as how to invoke
+/// and a description.
+class TargetSystemInfo
+    : public qssc::plugin::registry::PluginInfo<qssc::hal::TargetSystem> {
+  using PluginInfo =
+      qssc::plugin::registry::PluginInfo<qssc::hal::TargetSystem>;
+  using PassesFunction = std::function<llvm::Error()>;
+  using PassPipelinesFunction = std::function<llvm::Error()>;
 
-    ~TargetSystemInfo();
+public:
+  /// Construct this entry
+  TargetSystemInfo(llvm::StringRef name, llvm::StringRef description,
+                   PluginInfo::PluginFactoryFunction targetFactory,
+                   PassesFunction passRegistrar,
+                   PassPipelinesFunction passPipelineRegistrar);
 
-    /// Create the target system and register it under the given context.
-    llvm::Expected<qssc::hal::TargetSystem *>
-    createTarget(mlir::MLIRContext *context,
-                 llvm::Optional<PluginInfo::PluginConfiguration> configuration);
+  ~TargetSystemInfo();
 
-    /// Get the target system registered for the given context. First checks for
-    /// a target registered exactly for the given context. If no such context is
-    /// found, checks if a target is registered under nullptr, and returns
-    /// that. If no target is found, an error is returned.
-    llvm::Expected<qssc::hal::TargetSystem *>
-    getTarget(mlir::MLIRContext *context) const;
+  /// Create the target system and register it under the given context.
+  llvm::Expected<qssc::hal::TargetSystem *>
+  createTarget(mlir::MLIRContext *context,
+               llvm::Optional<PluginInfo::PluginConfiguration> configuration);
 
-    /// Register this target's MLIR passes with the QSSC system.
-    /// Should only be called once on initialization.
-    llvm::Error registerTargetPasses() const;
+  /// Get the target system registered for the given context. First checks for
+  /// a target registered exactly for the given context. If no such context is
+  /// found, checks if a target is registered under nullptr, and returns
+  /// that. If no target is found, an error is returned.
+  llvm::Expected<qssc::hal::TargetSystem *>
+  getTarget(mlir::MLIRContext *context) const;
 
-    /// Register this target's MLIR passe pipelines with the QSSC system.
-    /// Should only be called once on initialization.
-    llvm::Error registerTargetPassPipelines() const;
+  /// Register this target's MLIR passes with the QSSC system.
+  /// Should only be called once on initialization.
+  llvm::Error registerTargetPasses() const;
 
-  private:
-    struct Impl;
+  /// Register this target's MLIR passe pipelines with the QSSC system.
+  /// Should only be called once on initialization.
+  llvm::Error registerTargetPassPipelines() const;
 
-    qssc::support::Pimpl<Impl> impl;
+private:
+  struct Impl;
 
-    PassesFunction passRegistrar;
+  qssc::support::Pimpl<Impl> impl;
 
-    PassPipelinesFunction passPipelineRegistrar;
-  };
+  PassesFunction passRegistrar;
+
+  PassPipelinesFunction passPipelineRegistrar;
+};
 
 } // namespace qssc::hal::registry
 

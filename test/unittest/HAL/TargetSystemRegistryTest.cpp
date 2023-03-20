@@ -24,9 +24,11 @@ TEST(TargetSystemRegistry, LookupMockTarget) {
 
   const char *mockName = "mock";
 
-  EXPECT_TRUE(qssc::hal::registry::TargetSystemRegistry::pluginExists(mockName));
+  EXPECT_TRUE(
+      qssc::hal::registry::TargetSystemRegistry::pluginExists(mockName));
 
-  auto targetInfoOpt = qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(mockName);
+  auto targetInfoOpt =
+      qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(mockName);
   EXPECT_TRUE(targetInfoOpt.hasValue());
 
   auto *targetInfo = targetInfoOpt.getValue();

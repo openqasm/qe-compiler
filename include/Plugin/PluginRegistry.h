@@ -14,55 +14,58 @@
 #ifndef PLUGINREGISTRY_H
 #define PLUGINREGISTRY_H
 
-#include "llvm/Support/ManagedStatic.h"
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringMap.h"
+#include "llvm/Support/ManagedStatic.h"
 
 namespace qssc::plugin::registry {
 
-  template<typename PluginInfo>
-  struct PluginRegistry {
+template <typename PluginInfo>
+struct PluginRegistry {
 
-  public:
-    PluginRegistry(const PluginRegistry&) = delete;
-    void operator=(const PluginRegistry&) = delete;
+public:
+  PluginRegistry(const PluginRegistry &) = delete;
+  void operator=(const PluginRegistry &) = delete;
 
-    template<typename... Args>
-    static bool registerPlugin(llvm::StringRef name, Args &&... args) {
-      PluginRegistry &pluginRegistry = instance();
-      auto [_, inserted] = pluginRegistry.registry.try_emplace(name, std::forward<Args>(args)...);
-      return inserted;
-    }
+  template <typename... Args>
+  static bool registerPlugin(llvm::StringRef name, Args &&...args) {
+    PluginRegistry &pluginRegistry = instance();
+    auto [_, inserted] =
+        pluginRegistry.registry.try_emplace(name, std::forward<Args>(args)...);
+    return inserted;
+  }
 
-    static llvm::Optional<PluginInfo *> lookupPluginInfo(llvm::StringRef pluginName) {
-      PluginRegistry &pluginRegistry = instance();
-      auto it = pluginRegistry.registry.find(pluginName);
-      if (it == pluginRegistry.registry.end())
-        return llvm::None;
-      return &it->second;
-    }
+  static llvm::Optional<PluginInfo *>
+  lookupPluginInfo(llvm::StringRef pluginName) {
+    PluginRegistry &pluginRegistry = instance();
+    auto it = pluginRegistry.registry.find(pluginName);
+    if (it == pluginRegistry.registry.end())
+      return llvm::None;
+    return &it->second;
+  }
 
-    static bool pluginExists(llvm::StringRef targetName) {
-      PluginRegistry &pluginRegistry = instance();
-      auto it = pluginRegistry.registry.find(targetName);
-      return it != pluginRegistry.registry.end();
-    }
+  static bool pluginExists(llvm::StringRef targetName) {
+    PluginRegistry &pluginRegistry = instance();
+    auto it = pluginRegistry.registry.find(targetName);
+    return it != pluginRegistry.registry.end();
+  }
 
-    static const llvm::StringMap<PluginInfo> &registeredPlugins() {
-      PluginRegistry &pluginRegistry = instance();
-      return pluginRegistry.registry;
-    }
+  static const llvm::StringMap<PluginInfo> &registeredPlugins() {
+    PluginRegistry &pluginRegistry = instance();
+    return pluginRegistry.registry;
+  }
 
-  private:
-    PluginRegistry() = default;
+private:
+  PluginRegistry() = default;
 
-    static PluginRegistry &instance() {
-      static PluginRegistry pluginRegistry;
-      return pluginRegistry;
-    }
+  static PluginRegistry &instance() {
+    static PluginRegistry pluginRegistry;
+    return pluginRegistry;
+  }
 
-  private:
-    llvm::StringMap<PluginInfo> registry;
-  };
+private:
+  llvm::StringMap<PluginInfo> registry;
+};
 
 } // namespace qssc::plugin::registry
 

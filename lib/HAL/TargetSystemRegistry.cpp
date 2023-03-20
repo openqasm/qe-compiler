@@ -14,25 +14,24 @@
 
 #include "HAL/TargetSystemRegistry.h"
 
-
 using namespace qssc::hal::registry;
 
 namespace {
-  class NullTarget : public qssc::hal::TargetSystem {
-  public:
-    NullTarget() : TargetSystem("NullTarget", nullptr) {}
+class NullTarget : public qssc::hal::TargetSystem {
+public:
+  NullTarget() : TargetSystem("NullTarget", nullptr) {}
 
-    // Do nothing.
-    llvm::Error addPayloadPasses(mlir::PassManager &pm) override {
-      return llvm::Error::success();
-    }
+  // Do nothing.
+  llvm::Error addPayloadPasses(mlir::PassManager &pm) override {
+    return llvm::Error::success();
+  }
 
-    // Do nothing.
-    llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
-                             qssc::payload::Payload &payload) override {
-      return llvm::Error::success();
-    }
-  };
+  // Do nothing.
+  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
+                           qssc::payload::Payload &payload) override {
+    return llvm::Error::success();
+  }
+};
 } // namespace
 
 TargetSystemInfo *TargetSystemRegistry::nullTargetSystemInfo() {
@@ -40,10 +39,9 @@ TargetSystemInfo *TargetSystemRegistry::nullTargetSystemInfo() {
       "NullTarget",
       "A no-op target used by default unless a real target is specified.",
       [](llvm::Optional<llvm::StringRef> config) {
-          return std::make_unique<NullTarget>();
+        return std::make_unique<NullTarget>();
       },
       []() { return llvm::Error::success(); },
       []() { return llvm::Error::success(); });
   return nullTarget.get();
 }
-
