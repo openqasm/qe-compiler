@@ -62,6 +62,9 @@ protected:
 };
 
 class TargetSystem : public Target {
+public:
+  using PluginConfiguration = llvm::StringRef;
+
 protected: // Can only create subclasses.
   TargetSystem(std::string name, Target *parent);
 

@@ -7,11 +7,6 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-//
-// Any modifications or derivative works of this code must retain this
-// copyright notice, and modified files need to carry a notice indicating
-// that they have been altered from the originals.
-
 
 # Register targets with build system
 foreach(target_dir ${QSSC_TARGET_DIRS})
@@ -33,8 +28,9 @@ get_property(qssc_targets GLOBAL PROPERTY QSSC_TARGETS)
 qssc_add_library(QSSCHAL
     PassRegistration.cpp
     SystemConfiguration.cpp
-    TargetRegistry.cpp
     TargetSystem.cpp
+    TargetSystemInfo.cpp
+    TargetSystemRegistry.cpp
 
     ADDITIONAL_HEADER_DIRS
     ${QSSC_INCLUDE_DIR}/HAL

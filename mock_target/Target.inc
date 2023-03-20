@@ -11,7 +11,6 @@
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
-
 //
 //===----------------------------------------------------------------------===//
 //
@@ -23,9 +22,10 @@
 #ifndef HAL_TARGETS_MOCK_TARGET_H
 #define HAL_TARGETS_MOCK_TARGET_H
 
+#include "MockTarget.h"
+
 namespace qssc::targets::mock {
 
-int init();
 [[maybe_unused]] int registrar = init();
 
 } // namespace qssc::targets::mock

@@ -21,7 +21,7 @@
 #ifndef TARGET_OPERATION_PASS_H
 #define TARGET_OPERATION_PASS_H
 
-#include "HAL/TargetRegistry.h"
+#include "HAL/TargetSystemRegistry.h"
 #include "QSSC.h"
 
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -52,7 +52,8 @@ protected:
    * @return A non-owning pointer to the target system.
    */
   TargetT *getTargetSystemOrFail() {
-    auto targetInfo = registry::lookupTargetInfo(TargetT::name);
+    auto targetInfo =
+        registry::TargetSystemRegistry::lookupPluginInfo(TargetT::name);
     if (!targetInfo) {
       llvm::errs() << "Error: target '" << TargetT::name
                    << "' is not registered.\n";
