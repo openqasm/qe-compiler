@@ -9,10 +9,6 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-//
-// Any modifications or derivative works of this code must retain this
-// copyright notice, and modified files need to carry a notice indicating
-// that they have been altered from the originals.
 
 
 ADD_LIBRARY(QSSCOpenQASM3Frontend OpenQASM3Frontend.cpp BaseQASM3Visitor.cpp PrintQASM3Visitor.cpp QUIRGenQASM3Visitor.cpp QUIRVariableBuilder.cpp)
