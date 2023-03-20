@@ -12,7 +12,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 func @gateH_qq(%qArg : !quir.qubit<1>) attributes {quir.orig_func_name = "gateH"} {
   %ang = quir.constant #quir.angle<0.1 : !quir.angle<20>>
   quir.builtin_U %qArg, %ang, %ang, %ang : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>

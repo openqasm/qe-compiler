@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 func private @kernel1 (%ca1 : memref<1xi1>, %ca2 : memref<1xi1>, %ca3 : memref<1xi1>) -> memref<1xi1>
 func private @kernel2 (memref<?xi1>) -> memref<1xi1>
 func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) {

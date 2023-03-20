@@ -14,7 +14,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 func @one() {
   %q = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   // LEX:  %{{.*}} = quir.measure(%{{.*}}) : (!quir.qubit<1>) -> i1

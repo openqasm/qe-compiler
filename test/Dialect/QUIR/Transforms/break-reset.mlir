@@ -16,7 +16,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 func @t1 (%inq : !quir.qubit<1>) {
 // CHECK:     %0 = quir.measure(%arg0) {quir.noReportRuntime} : (!quir.qubit<1>) -> i1
 // CHECK:     scf.if %0 {

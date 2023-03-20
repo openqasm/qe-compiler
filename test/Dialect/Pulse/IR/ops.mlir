@@ -15,7 +15,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 func @main () {
     %d0 = "pulse.create_port"() {uid = "d0"} : () -> !pulse.port
     // CHECK: %[[D0:.*]] = "pulse.create_port"() {uid = "d0"} : () -> !pulse.port

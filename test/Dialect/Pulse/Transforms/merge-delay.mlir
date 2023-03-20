@@ -13,7 +13,6 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-
 func @main() -> i32 {
     %cst = arith.constant 0.000000e+00 : f64
     %0 = complex.create %cst, %cst : complex<f64>
