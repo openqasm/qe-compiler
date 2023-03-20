@@ -139,9 +139,9 @@ auto main(int argc, char **argv) -> int {
     }
 
     os << "\nAvailable Payloads:\n";
-    for (const auto &target :
+    for (const auto &payload :
          qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
-      os << target.second.getName() << " - " << target.second.getDescription()
+      os << payload.second.getName() << " - " << payload.second.getDescription()
          << "\n";
     }
   }
