@@ -1,6 +1,6 @@
 //===- Payload.cpp ----------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -29,21 +29,21 @@ using namespace qssc::payload;
 namespace fs = std::filesystem;
 
 auto Payload::getFile(const std::string &fName) -> std::string * {
-  std::lock_guard<std::mutex> lock(_mtx);
-  std::string key = prefix + fName;
+  const std::lock_guard<std::mutex> lock(_mtx);
+  const std::string key = prefix + fName;
   files.try_emplace(key);
   return &files[key];
 }
 
 auto Payload::getFile(const char *fName) -> std::string * {
-  std::lock_guard<std::mutex> lock(_mtx);
-  std::string key = prefix + fName;
+  const std::lock_guard<std::mutex> lock(_mtx);
+  const std::string key = prefix + fName;
   files.try_emplace(key);
   return &files[key];
 }
 
 auto Payload::orderedFileNames() -> std::vector<fs::path> {
-  std::lock_guard<std::mutex> lock(_mtx);
+  const std::lock_guard<std::mutex> lock(_mtx);
   std::vector<fs::path> ret;
   for (auto &filePair : files)
     ret.emplace_back(filePair.first);
