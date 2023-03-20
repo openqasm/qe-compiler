@@ -10,7 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
 set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/lib.cpp
 )

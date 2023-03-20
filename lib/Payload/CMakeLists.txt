@@ -10,7 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
 ADD_LIBRARY(QSSCPayload Payload.cpp)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 

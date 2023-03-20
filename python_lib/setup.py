@@ -12,7 +12,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
 """Setup module for Quantum System Software Compiler package."""
 
 from setuptools import setup, Extension

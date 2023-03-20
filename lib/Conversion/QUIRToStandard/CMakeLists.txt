@@ -10,7 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
 add_mlir_conversion_library(QUIRToStandard
 SwitchOpLowering.cpp
 TypeConversion.cpp

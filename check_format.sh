@@ -12,7 +12,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
 # Expects first argument as path to clang-format binary
 # following arguments as paths to files to format
 

@@ -10,7 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-
 get_property(qssc_api_libs GLOBAL PROPERTY QSSC_API_LIBS)
 
 set(llvm_code_gen_libraries
