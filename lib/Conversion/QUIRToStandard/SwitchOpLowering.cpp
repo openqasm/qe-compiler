@@ -117,7 +117,7 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
 void populateSwitchOpLoweringPatterns(RewritePatternSet &patterns) {
   auto *context = patterns.getContext();
   assert(context);
-  patterns.insert<SwitchOpLowering>(context);
+  patterns.add<SwitchOpLowering>(context);
 }
 
 }; // namespace mlir::quir

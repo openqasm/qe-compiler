@@ -124,7 +124,7 @@ func @defcalMeasure_q0(%q0_1 : !quir.qubit<1> {quir.physicalId = 0 : i32}) -> i1
 }
 
 // angle[3] c = 0;
-quir.declare_variable @c : !quir.cbit<3>
+oq3.declare_variable @c : !quir.cbit<3>
 
 func @main() -> i32 {
 // qubit q;
@@ -155,26 +155,26 @@ quir.call_gate @gateH(%q1) : (!quir.qubit<1>) -> ()
   // h q;
   quir.call_gate @gateH (%q0) : (!quir.qubit<1>) -> ()
   // cphase(power*3*pi/8) q, r;
-  %pow_extended = "quir.cast"(%pow_iter) : (i3) -> !quir.angle<20>
+  %pow_extended = "oq3.cast"(%pow_iter) : (i3) -> !quir.angle<20>
   %ang_tpo8 = quir.constant #quir.angle<0.1875 : !quir.angle<20>>
-  %phase_ang = quir.angle_mul %pow_extended, %ang_tpo8 : !quir.angle<20>
+  %phase_ang = oq3.angle_mul %pow_extended, %ang_tpo8 : !quir.angle<20>
   quir.call_gate @cphase(%q0, %q1, %phase_ang) : (!quir.qubit<1>, !quir.qubit<1>, !quir.angle<20>) -> ()
   // phase(-c) q;
   %neg_ang = quir.constant #quir.angle<-1.0 : !quir.angle<20>>
-  %ang_c = quir.use_variable @c : !quir.cbit<3>
-  %ang_iter_extended = "quir.cast"(%ang_c) : (!quir.cbit<3>) -> !quir.angle<20>
-  %neg_ang_mul = quir.angle_mul %neg_ang, %ang_iter_extended : !quir.angle<20>
+  %ang_c = oq3.variable_load @c : !quir.cbit<3>
+  %ang_iter_extended = "oq3.cast"(%ang_c) : (!quir.cbit<3>) -> !quir.angle<20>
+  %neg_ang_mul = oq3.angle_mul %neg_ang, %ang_iter_extended : !quir.angle<20>
   quir.call_gate @defcalPhase(%neg_ang_mul, %q0) : (!quir.angle<20>, !quir.qubit<1>) -> ()
   // h q;
   quir.call_gate @gateH (%q0) : (!quir.qubit<1>) -> ()
   // measure q -> c[0];
   %zeroind = arith.constant 0 : index
   %bitM_1 = quir.call_defcal_measure @defcalMeasure(%q0) : (!quir.qubit<1>) -> (i1)
-  quir.assign_cbit_bit @c<3> [0] : i1 = %bitM_1
+  oq3.cbit_assign_bit @c<3> [0] : i1 = %bitM_1
   // c <<= 1;
   %c1_i32 = arith.constant 1 : i32
-  %ang_prev = quir.use_variable @c : !quir.cbit<3>
-  %ang_shifted = quir.cbit_lshift %ang_prev, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
+  %ang_prev = oq3.variable_load @c : !quir.cbit<3>
+  %ang_shifted = oq3.cbit_lshift %ang_prev, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
   // power <<= 1;
   %c1_i3 = arith.constant 1 : i3
   %pow_shifted = arith.shli %pow_iter, %c1_i3 : i3

@@ -24,6 +24,6 @@
 %ang_final = scf.for %iv = %lb to %ub step %step
     iter_args(%ang_iter = %ang) -> (!quir.angle<20>) {
     quir.call_gate @RX(%q1, %ang_iter) : (!quir.qubit<1>, !quir.angle<20>) -> ()
-    %ang_sum = quir.angle_add %ang_iter, %ang_incr : !quir.angle<20>
+    %ang_sum = oq3.angle_add %ang_iter, %ang_incr : !quir.angle<20>
     scf.yield %ang_sum : !quir.angle<20>
 }

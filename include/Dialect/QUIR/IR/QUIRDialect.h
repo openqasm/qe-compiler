@@ -21,6 +21,7 @@
 #ifndef QUIR_QUIRDIALECT_H
 #define QUIR_QUIRDIALECT_H
 
+#include "Dialect/OQ3/IR/OQ3Dialect.h"
 #include "Dialect/QCS/IR/QCSDialect.h"
 
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"

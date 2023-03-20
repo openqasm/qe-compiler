@@ -314,10 +314,10 @@ void QUIRToPulsePass::runOnOperation() {
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
 
-  patterns.insert<DeclareQubitConversionPat>(&getContext(), typeConverter,
-                                             setup_.getValue());
-  patterns.insert<DefCalConversionPat>(&getContext(), typeConverter,
-                                       setup_.getValue(), symbolTableRef);
+  patterns.add<DeclareQubitConversionPat>(&getContext(), typeConverter,
+                                          setup_.getValue());
+  patterns.add<DefCalConversionPat>(&getContext(), typeConverter,
+                                    setup_.getValue(), symbolTableRef);
 
   if (failed(applyPartialConversion(moduleOp, target, std::move(patterns))))
     signalPassFailure();

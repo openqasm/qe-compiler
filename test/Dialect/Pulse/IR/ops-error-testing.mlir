@@ -17,8 +17,8 @@
 // -----
 
 pulse.sequence @sequence0 (%omega1: !quir.angle<32>, %omega2: !quir.angle<32>) {
-	// expected-error@+1 {{'quir.angle_add' op is not valid within a real-time pulse sequence.}}
-	%omega3 = quir.angle_add %omega1, %omega2 : !quir.angle<32>
+	// expected-error@+1 {{'oq3.angle_add' op is not valid within a real-time pulse sequence.}}
+	%omega3 = oq3.angle_add %omega1, %omega2 : !quir.angle<32>
 	pulse.return
 }
 
@@ -26,8 +26,8 @@ pulse.sequence @sequence0 (%omega1: !quir.angle<32>, %omega2: !quir.angle<32>) {
 
 pulse.sequence @sequence1 (%omega1: !quir.angle<32>) {
 	pulse.call_sequence @x() : () -> ()
-	// expected-error@+1 {{'quir.cast' op is not valid within a real-time pulse sequence.}}
-	%f1 = "quir.cast"(%omega1) : (!quir.angle<32>) -> f64
+	// expected-error@+1 {{'oq3.cast' op is not valid within a real-time pulse sequence.}}
+	%f1 = "oq3.cast"(%omega1) : (!quir.angle<32>) -> f64
 	pulse.return
 }
 
@@ -46,8 +46,8 @@ pulse.sequence @sequence2 (%cond: i1, %mixed : !pulse.mixed_frame, %waveform: !p
 // -----
 
 pulse.sequence @sequence3 () {
-	// expected-error@+1 {{'quir.declare_variable' op is not valid within a real-time pulse sequence.}}
-	quir.declare_variable @c1 : !quir.cbit<1>
+	// expected-error@+1 {{'oq3.declare_variable' op is not valid within a real-time pulse sequence.}}
+	oq3.declare_variable @c1 : !quir.cbit<1>
 	pulse.return
 }
 
@@ -66,7 +66,7 @@ pulse.sequence @sequence4 () -> i1 {
 pulse.sequence @sequence5 (%omega1: !quir.angle<32>) {
     // expected-error@+1 {{'quir.call_gate' op is not valid within a real-time pulse sequence.}}
 	quir.call_gate @x() : () -> ()
-	%f1 = "quir.cast"(%omega1) : (!quir.angle<32>) -> f64
+	%f1 = "oq3.cast"(%omega1) : (!quir.angle<32>) -> f64
 	pulse.return
 }
 

@@ -15,7 +15,6 @@
 
 
 module {
-    func private @kernel1 (%ca1 : i1, %ca2 : i1, %ca3 : i1) -> i1
     func private @proto (%qa1 : !quir.qubit<1>) -> ()
     // CHECK-LABEL: func @gateCall1
     func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
@@ -93,20 +92,18 @@ module {
         "quir.barrier"(%qb1) : (!quir.qubit<1>) -> ()
         // CHECK: quir.barrier %{{.*}}, %{{.*}} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
         quir.barrier %qb1, %qc1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
-        // CHECK: %{{.*}} = quir.call_kernel @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (i1, i1, i1) -> i1
-        %cc1 = quir.call_kernel @kernel1(%val, %val, %val) : (i1, i1, i1) -> i1
         // CHECK: quir.call_defcal_gate @defcalGate1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         quir.call_defcal_gate @defcalGate1(%qa1, %theta) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         // CHECK: %{{.*}} = quir.call_defcal_measure @defcalMeas1(%{{.*}}) : (!quir.qubit<1>) -> i1
         %ca3 = quir.call_defcal_measure @defcalMeas1(%qa1) : (!quir.qubit<1>) -> i1
-        // CHECK: %{{.*}} = "quir.cast"(%{{.*}}) : (i1) -> !quir.angle<20>
-        %ang = "quir.cast"(%ca3) : (i1) -> !quir.angle<20>
+        // CHECK: %{{.*}} = "oq3.cast"(%{{.*}}) : (i1) -> !quir.angle<20>
+        %ang = "oq3.cast"(%ca3) : (i1) -> !quir.angle<20>
         // CHECK: %{{.*}} = quir.declare_duration {value = "10ns"} : !quir.duration
         %len1 = "quir.declare_duration"() {value = "10ns"} : () -> !quir.duration
-        // CHECK: %{{.*}} = quir.declare_stretch : !quir.stretch
-        %s1 = "quir.declare_stretch"() : () -> !quir.stretch
-        // CHECK: %{{.*}} = quir.declare_stretch : !quir.stretch
-        %s2 = quir.declare_stretch : !quir.stretch
+        // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
+        %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
+        // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
+        %s2 = oq3.declare_stretch : !quir.stretch
         // CHECK: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
         "quir.delay"(%len1, %qb1) : (!quir.duration, !quir.qubit<1>) -> ()
         // CHECK: quir.delay %{{.*}}, () : !quir.duration, () -> ()

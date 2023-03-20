@@ -34,7 +34,7 @@ x $0;
 // AST: <Declaration>
 // AST: <Identifier>a</Identifier>
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=a, bits=1))
-// MLIR: quir.declare_variable @a : !quir.cbit<1>
+// MLIR: oq3.declare_variable @a : !quir.cbit<1>
 bit a;
 
 // AST: <Declaration>

@@ -53,7 +53,7 @@ delay[40dt] $1;
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=10Nanoseconds, qubit=IdentifierNode(name=$0, bits=1), IdentifierNode(name=$1, bits=1), ))
 delay [10ns] $0, $1;
 
-// MLIR: {{.*}} = quir.declare_stretch : !quir.stretch
+// MLIR: {{.*}} = oq3.declare_stretch : !quir.stretch
 // MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.stretch, (!quir.qubit<1>) -> ()
 // AST-PRETTY: StretchStatementNode(StretchNode(name=a))
 // AST-PRETTY: DelayStatementNode(DelayNode(stretch=StretchNode(name=a), qubit=IdentifierNode(name=$0, bits=1), ))

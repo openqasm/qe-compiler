@@ -26,7 +26,7 @@ include "mlir/IR/OpBase.td"
 // QUIR Traits
 
 // Operation applies a quantum channel to the quantum system.
-// Ie., it is a completely positive trace perserving (CPTP) map
+// i.e., it is a completely positive trace perserving (CPTP) map
 def CPTPOp : NativeOpTrait<"CPTPOp">{
     let cppNamespace= "::mlir::quir";
 }

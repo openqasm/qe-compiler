@@ -32,6 +32,7 @@ def QUIRDialect : Dialect {
     }];
     let cppNamespace = "::mlir::quir";
     let dependentDialects = [
+        "mlir::oq3::OQ3Dialect",
         "mlir::qcs::QCSDialect",
         "mlir::arith::ArithmeticDialect",
         "mlir::scf::SCFDialect",
@@ -61,6 +62,5 @@ include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
 include "Dialect/QUIR/IR/QUIRAttributes.td"
 include "Dialect/QUIR/IR/QUIRTraits.td"
 include "Dialect/QUIR/IR/QUIROps.td"
-include "Dialect/QUIR/IR/QUIRMathOps.td"
 
 #endif // QUIR_DIALECT

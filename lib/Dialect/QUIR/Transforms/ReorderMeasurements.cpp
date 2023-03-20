@@ -123,7 +123,7 @@ void ReorderMeasurementsPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<ReorderMeasureAndNonMeasurePat>(&getContext());
+  patterns.add<ReorderMeasureAndNonMeasurePat>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))

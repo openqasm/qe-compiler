@@ -21,6 +21,7 @@
 
 #include "Dialect/QUIR/Transforms/UnusedVariable.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
@@ -33,6 +34,7 @@
 
 using namespace mlir;
 using namespace quir;
+using namespace oq3;
 
 namespace {
 /// This pattern matches on variable declarations that are not marked 'output'
@@ -50,7 +52,7 @@ struct UnusedVariablePat : public OpRewritePattern<DeclareVariableOp> {
 
     // iterate through uses
     for (auto *useOp : symbolUses.getUsers(declOp)) {
-      if (auto useVariable = dyn_cast<UseVariableOp>(useOp)) {
+      if (auto useVariable = dyn_cast<VariableLoadOp>(useOp)) {
         if (!useVariable || !useVariable.use_empty())
           return failure();
       }
@@ -79,7 +81,7 @@ void UnusedVariablePass::runOnOperation() {
   // use cheaper top-down traversal (in this case, bottom-up would not behave
   // any differently)
   config.useTopDownTraversal = true;
-  patterns.insert<UnusedVariablePat>(&getContext(), symbolUsers);
+  patterns.add<UnusedVariablePat>(&getContext(), symbolUsers);
 
   if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
                                           config)))

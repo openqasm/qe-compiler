@@ -18,7 +18,7 @@ OPENQASM 3.0;
 
 // AST-PRETTY: StretchStatementNode(StretchNode(name=a))
 // AST-PRETTY: StretchStatementNode(StretchNode(name=b))
-// MLIR: {{.*}} = quir.declare_stretch : !quir.stretch
-// MLIR: {{.*}} = quir.declare_stretch : !quir.stretch
+// MLIR: {{.*}} = oq3.declare_stretch : !quir.stretch
+// MLIR: {{.*}} = oq3.declare_stretch : !quir.stretch
 stretch a;
 stretch b;

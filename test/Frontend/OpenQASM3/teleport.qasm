@@ -136,10 +136,10 @@ cx $0, $1;
 h $0;
 c0 = measure $0;
 // MLIR: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @c0<1> [0] : i1 = %[[MVAL]]
+// MLIR: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]
 c1 = measure $1;
 // MLIR: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @c1<1> [0] : i1 = %[[MVAL]]
+// MLIR: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]
 
 // AST: <GenericGateOpNode>
 // AST: <GateOpNode>

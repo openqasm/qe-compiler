@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTestInterfaces.h"
@@ -36,6 +37,7 @@
 
 using namespace mlir;
 using namespace mlir::quir;
+using namespace mlir::oq3;
 
 namespace mlir {
 struct InlinerPass;
@@ -188,7 +190,7 @@ struct DumpVariableDominanceInfoPass
     Operation *op = getOperation();
     auto &domInfo = getAnalysis<mlir::DominanceInfo>();
 
-    op->walk([&](mlir::quir::DeclareVariableOp decl) {
+    op->walk([&](mlir::oq3::DeclareVariableOp decl) {
       auto *symbolTable = mlir::SymbolTable::getNearestSymbolTable(decl);
       auto symbolUses = mlir::SymbolTable::getSymbolUses(decl, symbolTable);
       SmallVector<Operation *, 4> varAssignments;
@@ -200,11 +202,11 @@ struct DumpVariableDominanceInfoPass
       for (auto use : *symbolUses) {
         Operation *userOp = use.getUser();
 
-        if (mlir::isa<mlir::quir::VariableAssignOp>(userOp) ||
-            mlir::isa<mlir::quir::AssignCbitBitOp>(userOp))
+        if (mlir::isa<mlir::oq3::VariableAssignOp>(userOp) ||
+            mlir::isa<mlir::oq3::CBitAssignBitOp>(userOp))
           varAssignments.push_back(use.getUser());
-        else if (mlir::isa<mlir::quir::UseVariableOp>(userOp) ||
-                 mlir::isa<mlir::quir::Cbit_ExtractBitOp>(userOp))
+        else if (mlir::isa<mlir::oq3::VariableLoadOp>(userOp) ||
+                 mlir::isa<mlir::oq3::CBitExtractBitOp>(userOp))
           varUses.push_back(userOp);
       }
 

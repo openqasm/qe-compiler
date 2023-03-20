@@ -90,13 +90,3 @@ func @quir_switch (%flag: i32) -> (i32) {
     // CHECK: return %[[y]] : i32
     return %y : i32
 }
-
-func @extract(%in: !quir.cbit<2>) -> i1 {
-  %1 = quir.cbit_extractbit(%in : !quir.cbit<2>) [1] : i1
-  return %1 : i1
-}
-
-func @insert(%cbit: !quir.cbit<2>, %bit :i1) -> !quir.cbit<2> {
-  %1 = quir.cbit_insertbit(%cbit : !quir.cbit<2>)[0] = %bit : !quir.cbit<2>
-  return %1 : !quir.cbit<2>
-}

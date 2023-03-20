@@ -13,7 +13,6 @@ add_mlir_dialect_library(MLIRQUIRDialect
         QUIRDialect.cpp
         QUIRInterfaces.cpp
         QUIROps.cpp
-        QUIRPatterns.cpp
         QUIRTestInterfaces.cpp
 
         ADDITIONAL_HEADER_DIRS
@@ -21,9 +20,9 @@ add_mlir_dialect_library(MLIRQUIRDialect
 
         DEPENDS
         MLIRQUIRIncGen
-        MLIRQUIRPatternsIncGen
 
 	LINK_LIBS PUBLIC
 	MLIRIR
+        MLIROQ3Dialect
         MLIRQCSDialect
 	)

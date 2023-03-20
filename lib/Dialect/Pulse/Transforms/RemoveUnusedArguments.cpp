@@ -90,7 +90,7 @@ struct RemoveUnusedArgumentsPattern
 void RemoveUnusedArgumentsPass::runOnOperation() {
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<RemoveUnusedArgumentsPattern>(&getContext());
+  patterns.add<RemoveUnusedArgumentsPattern>(&getContext());
 
   if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns))))
     signalPassFailure();

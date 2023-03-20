@@ -12,8 +12,6 @@
 
 
 add_mlir_conversion_library(QUIRToStandard
-CBitOperations.cpp
-QUIRCast.cpp
 SwitchOpLowering.cpp
 TypeConversion.cpp
 VariablesToGlobalMemRefConversion.cpp

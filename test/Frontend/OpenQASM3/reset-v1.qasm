@@ -35,12 +35,12 @@ OPENQASM 3.0;
 // MLIR-DAG: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 qubit $0;
 
-// MLIR-DAG: quir.declare_variable @result : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @result : !quir.cbit<1>
 bit result;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=result, bits=1))
 // MLIR: %[[MVAL:.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @result<1> [0] : i1 = %[[MVAL]]
+// MLIR: oq3.cbit_assign_bit @result<1> [0] : i1 = %[[MVAL]]
 result = measure $0;
 
 // AST: <IfStatement>

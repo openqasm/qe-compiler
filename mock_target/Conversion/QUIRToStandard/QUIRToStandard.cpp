@@ -17,19 +17,17 @@
 //  This file implements passes for converting QUIR to std dialect
 //
 //===----------------------------------------------------------------------===//
-
 #include "Conversion/QUIRToStandard/QUIRToStandard.h"
-
-#include "MockUtils.h"
-
-#include "Conversion/QUIRToStandard/CBitOperations.h"
-#include "Conversion/QUIRToStandard/QUIRCast.h"
 #include "Conversion/QUIRToStandard/TypeConversion.h"
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
+
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+
+#include "MockUtils.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
@@ -195,8 +193,12 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
                          mlir::AffineDialect, memref::MemRefDialect,
                          scf::SCFDialect, StandardOpsDialect,
-                         mlir::pulse::PulseDialect, mlir::qcs::QCSDialect>();
-  target.addIllegalDialect<quir::QUIRDialect>();
+                         mlir::pulse::PulseDialect>();
+  // Since we are converting QUIR -> STD/LLVM, make QUIR illegal.
+  // Further, because OQ3 and QCS ops are migrated from QUIR, make them also
+  // illegal.
+  target
+      .addIllegalDialect<quir::QUIRDialect, qcs::QCSDialect, oq3::OQ3Dialect>();
   target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
   target.addDynamicallyLegalOp<FuncOp>(
       [&](FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
@@ -206,6 +208,18 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   target.addDynamicallyLegalOp<mlir::ReturnOp>([&](mlir::ReturnOp op) {
     return typeConverter.isLegal(op.getOperandTypes());
   });
+  // We mark `ConstantOp` legal so we don't err when attempting to convert a
+  // constant `DurationType`. (Only `AngleType` is currently handled by the
+  // conversion pattern, `ConstantOpConversionPat`.)
+  // Note that marking 'legal' does not preclude conversion if a pattern is
+  // matched. However, because other ops also do not have implemented
+  // conversions, we will still observe errors of the type:
+  // ```
+  // loc("-":0:0): error: failed to legalize operation 'namespace.op' that was
+  // explicitly marked illegal
+  // ```
+  // which for the `mock_target` are harmless.
+  target.addLegalOp<quir::ConstantOp>();
   target.addLegalOp<quir::SwitchOp>();
   target.addLegalOp<quir::YieldOp>();
 
@@ -213,28 +227,18 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
-  patterns.insert<ConstantOpConversionPat>(context, typeConverter);
+  // clang-format off
+  patterns.add<ConstantOpConversionPat,
+               ReturnConversionPat,
+               CommOpConversionPat<qcs::RecvOp>,
+               CommOpConversionPat<qcs::BroadcastOp>,
+               AngleBinOpConversionPat<oq3::AngleAddOp, mlir::arith::AddIOp>,
+               AngleBinOpConversionPat<oq3::AngleSubOp, mlir::arith::SubIOp>,
+               AngleBinOpConversionPat<oq3::AngleMulOp, mlir::arith::MulIOp>,
+               AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>>(
+      context, typeConverter);
+  // clang-format on
 
-  // Replace Receive ops with constants to be optimized away.
-  patterns.insert<CommOpConversionPat<qcs::RecvOp>>(context, typeConverter);
-  patterns.insert<CommOpConversionPat<qcs::BroadcastOp>>(context,
-                                                         typeConverter);
-  patterns.insert<ReturnConversionPat>(context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_AddOp, mlir::arith::AddIOp>>(
-          context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_SubOp, mlir::arith::SubIOp>>(
-          context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_MulOp, mlir::arith::MulIOp>>(
-          context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_DivOp, mlir::arith::DivSIOp>>(
-          context, typeConverter);
-
-  quir::populateQUIRCastPatterns(patterns, typeConverter);
-  quir::populateCBitOperationsPatterns(patterns, typeConverter);
   quir::populateVariableToGlobalMemRefConversionPatterns(
       patterns, typeConverter, externalizeOutputVariables);
 
@@ -245,7 +249,8 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
                                     std::move(patterns)))) {
     // If we fail conversion remove remaining ops for the Mock target.
     controllerModuleOp.walk([&](Operation *op) {
-      if (llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
+      if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||
+          llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
           llvm::isa<qcs::QCSDialect>(op->getDialect())) {
         llvm::outs() << "Removing unsupported " << op->getName() << " \n";
         op->dropAllReferences();
