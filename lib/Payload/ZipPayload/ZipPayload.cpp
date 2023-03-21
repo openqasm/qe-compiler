@@ -38,7 +38,7 @@ namespace fs = std::filesystem;
 
 int qssc::payload::init() {
   bool registered = registry::PayloadRegistry::registerPlugin(
-      "ZIP", "ZIP", "Payload that generates zip file.",
+      "ZIP", "ZIP", "Payload that generates zip file with .qem extension.",
       [](llvm::Optional<PayloadConfig> config)
           -> llvm::Expected<std::unique_ptr<payload::Payload>> {
         if (config.hasValue())
