@@ -19,7 +19,6 @@ package_add_test_with_libs(unittest-quir-dialect
 
 set(TEST_FILES
         Payload/PayloadRegistryTest.cpp
-        # add other source files with test cases here
         )
 
 if (QSSC_WITH_MOCK_TARGET)
