@@ -129,8 +129,8 @@ static llvm::cl::opt<bool>
 
 static llvm::cl::opt<bool>
     showPayloads("show-payloads",
-                llvm::cl::desc("Print the list of registered payloads"),
-                llvm::cl::init(false), llvm::cl::cat(qsscCat));
+                 llvm::cl::desc("Print the list of registered payloads"),
+                 llvm::cl::init(false), llvm::cl::cat(qsscCat));
 
 static llvm::cl::opt<bool>
     plaintextPayload("plaintext-payload",
