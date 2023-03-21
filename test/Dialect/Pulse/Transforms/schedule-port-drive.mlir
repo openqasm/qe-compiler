@@ -1,4 +1,18 @@
 // RUN: qss-compiler -X=mlir --pulse-schedule-port %s | FileCheck %s
+
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 module @drive_0 attributes {quir.nodeId = 0 : i32, quir.nodeType = "drive", quir.physicalId = 0 } {
   pulse.sequence @seq_0(%arg0: !pulse.waveform, %arg1: !pulse.waveform, %arg2: !pulse.mixed_frame, %arg3: !pulse.mixed_frame) -> i1 {
     // CHECK: pulse.sequence @seq_0(
