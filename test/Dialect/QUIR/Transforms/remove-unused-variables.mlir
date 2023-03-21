@@ -1,5 +1,18 @@
 // RUN: qss-compiler -X=mlir --remove-unused-variables %s | FileCheck %s --check-prefix=UNUSED
 
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 // UNUSED: oq3.declare_variable @isUsed : !quir.cbit<1>
 // UNUSED: oq3.declare_variable {output} @isOutput : !quir.cbit<1>
 // UNUSED-NOT: oq3.declare_variable @storeOnly : !quir.cbit<1>
