@@ -4,8 +4,8 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-set(QSSC_PAYLOAD_DIRS
-        ${QSSC_PAYLOAD_DIRS}
+set(QSSC_PAYLOAD_PATHS
+        ${QSSC_PAYLOAD_PATHS}
         ${CMAKE_CURRENT_SOURCE_DIR}
         )
 

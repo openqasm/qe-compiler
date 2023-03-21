@@ -13,9 +13,9 @@
 add_subdirectory(ZipPayload)
 
 # Register payloads with build system
-foreach(payload_dir ${QSSC_PAYLOAD_DIRS})
-    message(STATUS "Adding QSS Payload directory: ${payload_dir}")
-    add_subdirectory(${payload_dir} ${CMAKE_CURRENT_BINARY_DIR}/Payloads/${payload_dir})
+foreach(payload_path ${QSSC_PAYLOAD_PATHS})
+    message(STATUS "Adding QSS Payload directory: ${payload_path}")
+    add_subdirectory(${payload_path} ${CMAKE_CURRENT_BINARY_DIR}/Payloads/${payload_path})
 endforeach()
 
 # Write Payloads.inc file for registration

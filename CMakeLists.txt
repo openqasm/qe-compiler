@@ -152,7 +152,7 @@ if(QSSC_WITH_MOCK_TARGET)
     )
 endif()
 
-set(QSSC_PAYLOAD_DIRS
+set(QSSC_PAYLOAD_PATHS
         ""
         CACHE STRING
         "List of directories containing QSS compiler payloads."
