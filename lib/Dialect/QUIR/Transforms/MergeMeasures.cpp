@@ -1,6 +1,6 @@
 //===- MergeMeasures.cpp - Merge measurement ops ----------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -101,7 +101,7 @@ void MergeMeasuresLexographicalPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<MeasureAndMeasureLexographicalPattern>(&getContext());
+  patterns.add<MeasureAndMeasureLexographicalPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
@@ -167,7 +167,7 @@ void MergeMeasuresTopologicalPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<MeasureAndMeasureTopologicalPattern>(&getContext());
+  patterns.add<MeasureAndMeasureTopologicalPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))

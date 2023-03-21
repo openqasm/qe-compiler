@@ -1,6 +1,6 @@
 //===- MergeDelays.cpp - merges delays on the same target -------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -91,7 +91,7 @@ void MergeDelayPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
   RewritePatternSet patterns(&getContext());
-  patterns.insert<DelayAndDelayPattern>(&getContext());
+  patterns.add<DelayAndDelayPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))

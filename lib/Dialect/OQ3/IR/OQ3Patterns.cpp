@@ -1,6 +1,6 @@
-//===- Patterns.cpp - QUIR Declarative Rewrite Patterns ----------*-C++ -*-===//
+//===- OQ3Patterns.cpp - OpenQASM 3 DRR Patterns ----------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2023.
+// (C) Copyright IBM 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -8,13 +8,15 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file defines the QUIR dialect patterns in MLIR.
+/// This file defines the OpenQASM 3 declarative rewrite rules (DRR), or
+/// patterns.
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/QUIR/IR/QUIRDialect.h"
+#include "Dialect/OQ3/IR/OQ3Dialect.h"
+#include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/OQ3/IR/OQ3Types.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/IR/QUIRTypes.h"
 
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/SCF/SCF.h"
@@ -24,19 +26,18 @@
 #include "mlir/IR/SymbolTable.h"
 
 using namespace mlir;
-using namespace quir;
+using namespace oq3;
 
 namespace {
 /// Include the patterns defined in the Declarative Rewrite framework.
-#include "Dialect/QUIR/IR/QUIRPatterns.inc"
+#include "Dialect/OQ3/IR/OQ3Patterns.inc"
 
 static llvm::Optional<mlir::Value>
 getI1InputFromExtensionOp(mlir::Operation *op) {
   if (!op)
     return llvm::None;
 
-  if (!mlir::isa<mlir::arith::ExtUIOp>(op) &&
-      !mlir::isa<mlir::quir::CastOp>(op))
+  if (!mlir::isa<mlir::arith::ExtUIOp>(op) && !mlir::isa<CastOp>(op))
     return llvm::None;
 
   assert(op->getNumOperands() == 1 &&
@@ -109,16 +110,16 @@ struct CastToSameType : public OpRewritePattern<CastOp> {
   } // matchAndRewrite
 };  // struct CastToSameType
 
-/// This pattern simplifies quir.assign_cbit_bit operations for single-cbit
-/// registers to assign_variable operations. The assigned bit is first cast to a
+/// This pattern simplifies oq3.cbit_assign_bit operations for single-cbit
+/// registers to variable_assign operations. The assigned bit is first cast to a
 /// !quir.cbit<1> (which is transparent) and then directly assigned.
-struct AssignSingleCbitToAssignVariablePattern
-    : public OpRewritePattern<AssignCbitBitOp> {
-  AssignSingleCbitToAssignVariablePattern(MLIRContext *context)
-      : OpRewritePattern<AssignCbitBitOp>(context, /*benefit=*/1) {}
+struct AssignSingleCBitToAssignVariablePattern
+    : public OpRewritePattern<oq3::CBitAssignBitOp> {
+  AssignSingleCBitToAssignVariablePattern(MLIRContext *context)
+      : OpRewritePattern<oq3::CBitAssignBitOp>(context, /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(AssignCbitBitOp op,
+  matchAndRewrite(oq3::CBitAssignBitOp op,
                   mlir::PatternRewriter &rewriter) const override {
 
     if (op.cbit_width() != 1)
@@ -128,24 +129,23 @@ struct AssignSingleCbitToAssignVariablePattern
     auto castOp = rewriter.create<CastOp>(
         op.getLoc(), quir::CBitType::get(context, 1), op.assigned_bit());
 
-    rewriter.replaceOpWithNewOp<VariableAssignOp>(op, op.variable_nameAttr(),
-                                                  castOp.getResult());
+    rewriter.replaceOpWithNewOp<oq3::VariableAssignOp>(
+        op, op.variable_nameAttr(), castOp.getResult());
 
     return success();
   }
 };
-
 } // anonymous namespace
 
-// this pattern is defined by the TableGen DRR in QUIRPatterns.td
-void Cbit_NotOp::getCanonicalizationPatterns(RewritePatternSet &results,
-                                             MLIRContext *context) {
-  results.insert<CbitNotNotPat>(context);
+// This pattern is defined by the TableGen DRR in `OQ3Patterns.td`
+void CBitNotOp::getCanonicalizationPatterns(RewritePatternSet &results,
+                                            MLIRContext *context) {
+  results.insert<CBitNotNotPat>(context);
 }
 
 void CastOp::getCanonicalizationPatterns(RewritePatternSet &results,
                                          MLIRContext *context) {
   results.insert<CastToSameType>(context);
   results.insert<EqEqOnePat>(context);
-  results.insert<AssignSingleCbitToAssignVariablePattern>(context);
+  results.insert<AssignSingleCBitToAssignVariablePattern>(context);
 }

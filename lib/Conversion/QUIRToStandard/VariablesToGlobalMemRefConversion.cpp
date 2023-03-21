@@ -1,6 +1,6 @@
 //===- VariablesToGobalMemRefConversion.cpp ---------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -18,6 +18,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 
@@ -30,6 +31,7 @@
 #include "mlir/Transforms/DialectConversion.h"
 
 using namespace mlir;
+using namespace mlir::oq3;
 using namespace mlir::quir;
 
 namespace {
@@ -193,17 +195,20 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
 }
 
 struct VariableUseConversionPattern
-    : public OpConversionPattern<UseVariableOp> {
+    : public OpConversionPattern<VariableLoadOp> {
   explicit VariableUseConversionPattern(MLIRContext *ctx,
                                         TypeConverter &typeConverter)
-      : OpConversionPattern<UseVariableOp>(typeConverter, ctx, /*benefit=*/1) {}
+      : OpConversionPattern<VariableLoadOp>(typeConverter, ctx, /*benefit=*/1) {
+
+  }
 
   LogicalResult
-  matchAndRewrite(UseVariableOp useOp, OpAdaptor adaptor,
+  matchAndRewrite(VariableLoadOp useOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto varRefOrNone = findOrCreateGetGlobalMemref(useOp, rewriter);
     if (!varRefOrNone)
       return failure();
+
     auto varRef = varRefOrNone.getValue();
     auto loadOp =
         rewriter.create<mlir::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
@@ -298,12 +303,14 @@ void mlir::quir::populateVariableToGlobalMemRefConversionPatterns(
   auto *ctx = patterns.getContext();
   assert(ctx);
 
-  patterns.insert<VariableDeclarationConversionPattern>(
+  patterns.add<VariableDeclarationConversionPattern>(
       ctx, typeConverter, externalizeOutputVariables);
-  patterns.insert<VariableUseConversionPattern>(ctx, typeConverter);
-  patterns.insert<VariableAssignConversionPattern>(ctx, typeConverter);
-
-  patterns.insert<ArrayDeclarationConversionPattern>(ctx, typeConverter);
-  patterns.insert<ArrayElementUseConversionPattern>(ctx, typeConverter);
-  patterns.insert<ArrayElementAssignConversionPattern>(ctx, typeConverter);
+  // clang-format off
+  patterns.add<
+      VariableAssignConversionPattern,
+      VariableUseConversionPattern,
+      ArrayDeclarationConversionPattern,
+      ArrayElementUseConversionPattern,
+      ArrayElementAssignConversionPattern>(ctx, typeConverter);
+  // clang-format on
 }

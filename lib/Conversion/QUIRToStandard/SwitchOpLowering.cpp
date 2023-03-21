@@ -1,6 +1,6 @@
 //===- SwitchOpLowering.cpp -------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -111,7 +111,7 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
 void populateSwitchOpLoweringPatterns(RewritePatternSet &patterns) {
   auto *context = patterns.getContext();
   assert(context);
-  patterns.insert<SwitchOpLowering>(context);
+  patterns.add<SwitchOpLowering>(context);
 }
 
 }; // namespace mlir::quir

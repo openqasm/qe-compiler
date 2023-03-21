@@ -6,9 +6,9 @@ OPENQASM 3.0;
 qubit $2;
 qubit $3;
 
-// MLIR-DAG: quir.declare_variable @is_excited : !quir.cbit<1>
-// MLIR-DAG: quir.declare_variable @other : !quir.cbit<1>
-// MLIR-DAG: quir.declare_variable @result : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @is_excited : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @other : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @result : !quir.cbit<1>
 bit is_excited;
 bit other;
 bit result;
@@ -22,23 +22,23 @@ x $2;
 x $3;
 
 // MLIR: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @is_excited<1> [0] : i1 = [[MEASURE2]]
+// MLIR: oq3.cbit_assign_bit @is_excited<1> [0] : i1 = [[MEASURE2]]
 is_excited = measure $2;
 
 // Apply reset operation
 
-// MLIR: [[EXCITED:%.*]] = quir.use_variable @is_excited : !quir.cbit<1>
+// MLIR: [[EXCITED:%.*]] = oq3.variable_load @is_excited : !quir.cbit<1>
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
-// MLIR: [[EXCITEDCAST:%[0-9]+]] = "quir.cast"([[EXCITED]]) : (!quir.cbit<1>) -> i32
+// MLIR: [[EXCITEDCAST:%[0-9]+]] = "oq3.cast"([[EXCITED]]) : (!quir.cbit<1>) -> i32
 // MLIR: [[COND0:%.*]] = arith.cmpi eq, [[EXCITEDCAST]], [[CONST]] : i32
 // MLIR: scf.if [[COND0]] {
 if (is_excited == 1) {
 // MLIR: [[MEASURE3:%.*]] = quir.measure([[QUBIT3]]) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @other<1> [0] : i1 = [[MEASURE3]]
+// MLIR: oq3.cbit_assign_bit @other<1> [0] : i1 = [[MEASURE3]]
   other = measure $3;
-// MLIR: [[OTHER:%.*]] = quir.use_variable @other : !quir.cbit<1>
+// MLIR: [[OTHER:%.*]] = oq3.variable_load @other : !quir.cbit<1>
 // MLIR: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32
-// MLIR: [[OTHERCAST:%[0-9]+]] = "quir.cast"([[OTHER]]) : (!quir.cbit<1>) -> i32
+// MLIR: [[OTHERCAST:%[0-9]+]] = "oq3.cast"([[OTHER]]) : (!quir.cbit<1>) -> i32
 // MLIR: [[COND1:%.*]] = arith.cmpi eq, [[OTHERCAST]], [[CONST]] : i32
 // MLIR: scf.if [[COND1]] {
   if (other == 1){
@@ -47,5 +47,5 @@ if (is_excited == 1) {
   }
 }
 // MLIR: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @result<1> [0] : i1 = [[MEASURE2]]
+// MLIR: oq3.cbit_assign_bit @result<1> [0] : i1 = [[MEASURE2]]
 result = measure $2;

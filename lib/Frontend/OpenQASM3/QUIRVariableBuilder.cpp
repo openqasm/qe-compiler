@@ -1,6 +1,6 @@
 //===- QUIRVariableBuilder.cpp ----------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2022, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -15,6 +15,7 @@
 
 #include "Frontend/OpenQASM3/QUIRVariableBuilder.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
@@ -48,7 +49,7 @@ void QUIRVariableBuilder::generateVariableDeclaration(
   assert(surroundingModuleOp && "assume symbol table residing in module");
   builder.setInsertionPoint(&surroundingModuleOp.front());
 
-  auto declareOp = builder.create<mlir::quir::DeclareVariableOp>(
+  auto declareOp = builder.create<mlir::oq3::DeclareVariableOp>(
       location, variableName, mlir::TypeAttr::get(type));
 
   if (lastDeclaration.count(surroundingModuleOp))
@@ -67,7 +68,7 @@ void QUIRVariableBuilder::generateArrayVariableDeclaration(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Type elementType, int64_t width) {
 
-  builder.create<mlir::quir::DeclareArrayOp>(
+  builder.create<mlir::oq3::DeclareArrayOp>(
       location, builder.getStringAttr(variableName),
       mlir::TypeAttr::get(elementType), builder.getIndexAttr(width));
   variables.emplace(
@@ -79,15 +80,15 @@ void QUIRVariableBuilder::generateVariableAssignment(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Value assignedValue) {
 
-  builder.create<mlir::quir::VariableAssignOp>(location, variableName,
-                                               assignedValue);
+  builder.create<mlir::oq3::VariableAssignOp>(location, variableName,
+                                              assignedValue);
 }
 
 void QUIRVariableBuilder::generateArrayVariableElementAssignment(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Value assignedValue, size_t elementIndex) {
 
-  builder.create<mlir::quir::AssignArrayElementOp>(
+  builder.create<mlir::oq3::AssignArrayElementOp>(
       location,
       mlir::FlatSymbolRefAttr::get(builder.getStringAttr(variableName)),
       builder.getIndexAttr(elementIndex), assignedValue);
@@ -98,18 +99,18 @@ void QUIRVariableBuilder::generateCBitSingleBitAssignment(
     mlir::Value assignedValue, size_t bitPosition, size_t registerWidth) {
 
   // TODO at some point, implement any follow-up changes required and move away
-  // from AssignCbitBitOp.
+  // from CBitAssignBitOp.
 #if 0
-  auto oldCbitValue = generateVariableUse(location, variableName, builder.getType<mlir::quir::CBitType>(registerWidth));
-  auto cbitWithInsertedBit = builder.create<mlir::quir::CBit_InsertBitOp>(
-            location, oldCbitValue.getType(), oldCbitValue,
+  auto oldCBitValue = generateVariableUse(location, variableName, builder.getType<mlir::quir::CBitType>(registerWidth));
+  auto cbitWithInsertedBit = builder.create<mlir::oq3::CBitInsertBitOp>(
+            location, oldCBitValue.getType(), oldCBitValue,
             assignedValue, builder.getIndexAttr(bitPosition));
 
-  builder.create<mlir::quir::VariableAssignOp>(
+  builder.create<mlir::oq3::VariableAssignOp>(
         location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)), cbitWithInsertedBit);
 
 #else
-  builder.create<mlir::quir::AssignCbitBitOp>(
+  builder.create<mlir::oq3::CBitAssignBitOp>(
       location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)),
       builder.getIndexAttr(bitPosition), builder.getIndexAttr(registerWidth),
       assignedValue);
@@ -120,7 +121,7 @@ mlir::Value
 QUIRVariableBuilder::generateVariableUse(mlir::Location location,
                                          llvm::StringRef variableName,
                                          mlir::Type variableType) {
-  return builder.create<mlir::quir::UseVariableOp>(location, variableType,
+  return builder.create<mlir::oq3::VariableLoadOp>(location, variableType,
                                                    variableName);
 }
 
@@ -128,7 +129,7 @@ mlir::Value QUIRVariableBuilder::generateArrayVariableElementUse(
     mlir::Location location, llvm::StringRef variableName, size_t elementIndex,
     mlir::Type elementType) {
 
-  return builder.create<mlir::quir::UseArrayElementOp>(
+  return builder.create<mlir::oq3::UseArrayElementOp>(
       location, elementType,
       mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)),
       builder.getIndexAttr(elementIndex));

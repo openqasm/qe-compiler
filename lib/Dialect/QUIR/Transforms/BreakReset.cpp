@@ -1,6 +1,6 @@
 //===- BreakReset.cpp - Break apart reset ops -------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2021, 2023.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -15,6 +15,7 @@
 
 #include "Dialect/QUIR/Transforms/BreakReset.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
@@ -26,6 +27,7 @@
 #include <unordered_set>
 
 using namespace mlir;
+using namespace mlir::oq3;
 using namespace mlir::quir;
 
 namespace {
@@ -95,8 +97,7 @@ void BreakResetPass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
 
-  patterns.insert<BreakResetsPattern>(&getContext(), numIterations,
-                                      delayCycles);
+  patterns.add<BreakResetsPattern>(&getContext(), numIterations, delayCycles);
 
   if (mlir::failed(applyPatternsAndFoldGreedily(getOperation(),
                                                 std::move(patterns), config)))
