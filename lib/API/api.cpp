@@ -128,6 +128,11 @@ static llvm::cl::opt<bool>
                 llvm::cl::init(false), llvm::cl::cat(qsscCat));
 
 static llvm::cl::opt<bool>
+    showPayloads("show-payloads",
+                llvm::cl::desc("Print the list of registered payloads"),
+                llvm::cl::init(false), llvm::cl::cat(qsscCat));
+
+static llvm::cl::opt<bool>
     plaintextPayload("plaintext-payload",
                      llvm::cl::desc("Write the payload in plaintext"),
                      llvm::cl::init(false), llvm::cl::cat(qsscCat));
@@ -362,6 +367,17 @@ compile_(int argc, char const **argv, std::string *outputString,
       // Constants chosen empirically to align with --help.
       // TODO: Select constants more intelligently.
       qssc::plugin::registry::printHelpStr(target.second, 2, 57);
+    }
+    return llvm::Error::success();
+  }
+
+  if (showPayloads) {
+    llvm::outs() << "Registered Payloads:\n";
+    for (const auto &payload :
+         qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
+      // Constants chosen empirically to align with --help.
+      // TODO: Select constants more intelligently.
+      qssc::plugin::registry::printHelpStr(payload.second, 2, 57);
     }
     return llvm::Error::success();
   }
