@@ -20,7 +20,6 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/MLIRContext.h"
-#include "mlir/InitAllDialects.h"
 #include "mlir/InitAllPasses.h"
 #include "mlir/Parser.h"
 #include "mlir/Pass/PassManager.h"
@@ -28,7 +27,6 @@
 #include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/Optional.h"
-#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
@@ -36,25 +34,17 @@
 #include "llvm/Support/ToolOutputFile.h"
 
 #include "Payload/Payload.h"
+#include "Payload/PayloadRegistry.h"
 #include "QSSC.h"
 
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystem.h"
 #include "HAL/TargetSystemRegistry.h"
 
-#include "Payload/PayloadRegistry.h"
-
-#include "Dialect/RegisterDialects.h"
-
-#include "Dialect/OQ3/IR/OQ3Dialect.h"
-
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
-
-#include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
-
-#include "Dialect/QCS/IR/QCSDialect.h"
+#include "Dialect/RegisterDialects.h"
 
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
