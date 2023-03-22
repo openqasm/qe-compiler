@@ -1,6 +1,12 @@
 //===- UnusedVariable.cpp - Remove unused variables -------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -15,6 +21,7 @@
 
 #include "Dialect/QUIR/Transforms/UnusedVariable.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
@@ -27,6 +34,7 @@
 
 using namespace mlir;
 using namespace quir;
+using namespace oq3;
 
 namespace {
 /// This pattern matches on variable declarations that are not marked 'output'
@@ -44,7 +52,7 @@ struct UnusedVariablePat : public OpRewritePattern<DeclareVariableOp> {
 
     // iterate through uses
     for (auto *useOp : symbolUses.getUsers(declOp)) {
-      if (auto useVariable = dyn_cast<UseVariableOp>(useOp)) {
+      if (auto useVariable = dyn_cast<VariableLoadOp>(useOp)) {
         if (!useVariable || !useVariable.use_empty())
           return failure();
       }
@@ -73,7 +81,7 @@ void UnusedVariablePass::runOnOperation() {
   // use cheaper top-down traversal (in this case, bottom-up would not behave
   // any differently)
   config.useTopDownTraversal = true;
-  patterns.insert<UnusedVariablePat>(&getContext(), symbolUsers);
+  patterns.add<UnusedVariablePat>(&getContext(), symbolUsers);
 
   if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
                                           config)))

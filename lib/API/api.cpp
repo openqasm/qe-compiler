@@ -1,6 +1,12 @@
 //===- api.cpp --------------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2023.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -33,10 +39,12 @@
 #include "QSSC.h"
 
 #include "HAL/PassRegistration.h"
-#include "HAL/TargetRegistry.h"
 #include "HAL/TargetSystem.h"
+#include "HAL/TargetSystemRegistry.h"
 
 #include "Dialect/RegisterDialects.h"
+
+#include "Dialect/OQ3/IR/OQ3Dialect.h"
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
@@ -357,10 +365,11 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (showTargets) {
     llvm::outs() << "Registered Targets:\n";
-    for (const auto &target : qssc::hal::registry::registeredTargets()) {
+    for (const auto &target :
+         qssc::hal::registry::TargetSystemRegistry::registeredPlugins()) {
       // Constants chosen empirically to align with --help.
       // TODO: Select constants more intelligently.
-      target.second.printHelpStr(2, 57);
+      qssc::plugin::registry::printHelpStr(target.second, 2, 57);
     }
     return llvm::Error::success();
   }
@@ -371,14 +380,16 @@ compile_(int argc, char const **argv, std::string *outputString,
   determineOutputType();
 
   // Make sure target exists if specified
-  if (!targetStr.empty() && !qssc::hal::registry::targetExists(targetStr))
+  if (!targetStr.empty() &&
+      !qssc::hal::registry::TargetSystemRegistry::pluginExists(targetStr))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Error: Target " + targetStr +
                                        " is not registered.");
 
-  qssc::hal::registry::TargetInfo &targetInfo =
-      *qssc::hal::registry::lookupTargetInfo(targetStr).getValueOr(
-          qssc::hal::registry::nullTargetInfo());
+  qssc::hal::registry::TargetSystemInfo &targetInfo =
+      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(targetStr)
+           .getValueOr(qssc::hal::registry::TargetSystemRegistry::
+                           nullTargetSystemInfo());
 
   MLIRContext context{};
   llvm::Optional<llvm::StringRef> conf{};

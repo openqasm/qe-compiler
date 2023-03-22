@@ -1,12 +1,25 @@
 // RUN: qss-compiler --canonicalize --quantum-decorate --reorder-measures %s | FileCheck %s
 
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 // This regression test case validates that reorder-measures does not move
 // operations across control flow with other quantum operations.
 
 // CHECK: module
 module {
-  quir.declare_variable @b : !quir.cbit<1>
-  quir.declare_variable @results : !quir.cbit<1>
+  oq3.declare_variable @b : !quir.cbit<1>
+  oq3.declare_variable @results : !quir.cbit<1>
   func @x(%arg0: !quir.qubit<1>) {
     return
   }
@@ -28,8 +41,8 @@ module {
     // CHECK: quir.measure([[QUBIT0]])
     %4 = quir.measure(%0) : (!quir.qubit<1>) -> i1
 
-    %6 = quir.use_variable @b : !quir.cbit<1>
-    %7 = "quir.cast"(%6) : (!quir.cbit<1>) -> i1
+    %6 = oq3.variable_load @b : !quir.cbit<1>
+    %7 = "oq3.cast"(%6) : (!quir.cbit<1>) -> i1
     // CHECK: scf.if
     scf.if %7 {
       // CHECK: quir.call_gate @x([[QUBIT0]])
@@ -43,8 +56,8 @@ module {
 
     // CHECK: quir.measure([[QUBIT0]])
     %8 = quir.measure(%0) : (!quir.qubit<1>) -> i1
-    %9 = "quir.cast"(%8) : (i1) -> !quir.cbit<1>
-    quir.assign_variable @results : !quir.cbit<1> = %9
+    %9 = "oq3.cast"(%8) : (i1) -> !quir.cbit<1>
+    oq3.variable_assign @results : !quir.cbit<1> = %9
     return %c0_i32 : i32
   }
 }

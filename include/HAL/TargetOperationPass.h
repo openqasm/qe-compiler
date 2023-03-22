@@ -1,6 +1,12 @@
 //===- TargetOperationPass.h - Common target pass class  --------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -15,7 +21,7 @@
 #ifndef TARGET_OPERATION_PASS_H
 #define TARGET_OPERATION_PASS_H
 
-#include "HAL/TargetRegistry.h"
+#include "HAL/TargetSystemRegistry.h"
 #include "QSSC.h"
 
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -46,7 +52,8 @@ protected:
    * @return A non-owning pointer to the target system.
    */
   TargetT *getTargetSystemOrFail() {
-    auto targetInfo = registry::lookupTargetInfo(TargetT::name);
+    auto targetInfo =
+        registry::TargetSystemRegistry::lookupPluginInfo(TargetT::name);
     if (!targetInfo) {
       llvm::errs() << "Error: target '" << TargetT::name
                    << "' is not registered.\n";

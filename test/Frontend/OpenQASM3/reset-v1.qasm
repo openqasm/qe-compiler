@@ -3,6 +3,19 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
 
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 // AST: <StatementList>
 // AST: <Declaration>
 // AST: <Identifier>result</Identifier>
@@ -21,12 +34,12 @@ OPENQASM 3.0;
 // MLIR-DAG: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 qubit $0;
 
-// MLIR-DAG: quir.declare_variable @result : !quir.cbit<1>
+// MLIR-DAG: oq3.declare_variable @result : !quir.cbit<1>
 bit result;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=result, bits=1))
 // MLIR: %[[MVAL:.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
-// MLIR: quir.assign_cbit_bit @result<1> [0] : i1 = %[[MVAL]]
+// MLIR: oq3.cbit_assign_bit @result<1> [0] : i1 = %[[MVAL]]
 result = measure $0;
 
 // AST: <IfStatement>

@@ -3,12 +3,23 @@
 //
 // This test case validates MLIR with and without argument specialization.
 
-module {
-    quir.declare_variable @cb1 : !quir.cbit<1>
-    quir.declare_variable @cb2 : !quir.cbit<1>
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
 
-    func private @kernel1 (%ca1 : !quir.cbit<1>, %ca2 : !quir.cbit<1>, %ca3 : !quir.cbit<1>) -> !quir.cbit<1>
-    func private @kernel2 (memref<?xi1>) -> memref<1xi1>
+module {
+    oq3.declare_variable @cb1 : !quir.cbit<1>
+    oq3.declare_variable @cb2 : !quir.cbit<1>
+
     func private @proto (%qa1 : !quir.qubit<1>) -> ()
     func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
         %zero = quir.constant #quir.angle<0.0 : !quir.angle<1>>
@@ -52,7 +63,7 @@ module {
         %qb1 = quir.declare_qubit { id = 2 : i32 } : !quir.qubit<1>
         %qc1 = quir.declare_qubit { id = 3 : i32 } : !quir.qubit<1>
         quir.reset %qc1 : !quir.qubit<1>
-        %cb1 = quir.use_variable @cb1 : !quir.cbit<1>
+        %cb1 = oq3.variable_load @cb1 : !quir.cbit<1>
         %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
 
         // CHECK: quir.call_gate @gateCall1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
@@ -65,11 +76,7 @@ module {
         "quir.call_gate"(%qb1, %theta) {callee = @gateCall2} : (!quir.qubit<1>, !quir.angle<1>) -> ()
         "quir.call_gate"(%qb1) {callee = @proto} : (!quir.qubit<1>) -> ()
         quir.call_gate @proto(%qb1) : (!quir.qubit<1>) -> ()
-        %cb2 = quir.use_variable @cb2 : !quir.cbit<1>
-
-        // CHECK: %{{.*}} = quir.call_kernel @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
-        // MLIR: %{{.*}} = quir.call_kernel @kernel1(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
-        %cc1 = quir.call_kernel @kernel1(%cb2, %cb2, %cb2) : (!quir.cbit<1>, !quir.cbit<1>, !quir.cbit<1>) -> !quir.cbit<1>
+        %cb2 = oq3.variable_load @cb2 : !quir.cbit<1>
 
         // CHECK: quir.call_defcal_gate @defcalGate1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         // MLIR: quir.call_defcal_gate @defcalGate1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()

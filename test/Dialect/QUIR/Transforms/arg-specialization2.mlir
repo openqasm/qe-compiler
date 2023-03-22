@@ -1,5 +1,18 @@
 // RUN: qss-compiler -X=mlir --quir-arg-specialization %s | FileCheck %s
 
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 // CHECK: func @"defcalPhase_q0_!quir.angle<20>_!quir.qubit<1>"(%arg0: !quir.angle<20>, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"}
 // CHECK: func @"defcalPhase_q0_!quir.angle<10>_!quir.qubit<1>"(%arg0: !quir.angle<10>, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"}
 func @defcalPhase_q0(%arg0: !quir.angle, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"} {

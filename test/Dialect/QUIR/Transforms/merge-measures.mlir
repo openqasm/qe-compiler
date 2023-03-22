@@ -1,6 +1,19 @@
 // RUN: qss-compiler -X=mlir --canonicalize --merge-measures-lexographical %s | FileCheck %s --check-prefix LEX
 // RUN: qss-compiler -X=mlir --canonicalize --merge-measures-topological %s | FileCheck %s --check-prefix TOP
 
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 func @one() {
   %q = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   // LEX:  %{{.*}} = quir.measure(%{{.*}}) : (!quir.qubit<1>) -> i1
