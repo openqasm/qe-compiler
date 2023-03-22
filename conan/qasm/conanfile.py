@@ -24,7 +24,13 @@ class QasmConan(ConanFile):
     url = "https://github.com/Qiskit/qss-qasm.git"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "examples": [True, False]}
-    default_options = {"shared": False, "examples": False}
+    default_options = {
+        "shared": False,
+        "examples": False,
+        "gmp:shared": True,
+        "mpc:shared": True,
+        "mpfr:shared": True
+    }
     license = "Proprietary"
     author = "IBM Quantum development team"
     topics = ("Compiler", "Parser", "OpenQASM3")
