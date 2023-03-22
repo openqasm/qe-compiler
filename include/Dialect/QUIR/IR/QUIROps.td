@@ -1,6 +1,12 @@
 //===- QUIROps.td - QUIR dialect ops -----------------------*- tablegen -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -34,62 +40,6 @@ include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 // see lib/Interfaces/SideEffectInterfaces.cpp:isTriviallyDeadImpl()
 // see lib/Dialect/Affine/Utils/Utils.cpp:hasNoInterveningEffect()
 def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SystemInitOp : QUIR_Op<"system_init", [IsolatedFromAbove]> {
-    let summary = "Initializes the system";
-    let description = [{
-        The `quir.system_init` operation causes the system to be initialized,
-        preparing for execution and synchronizing the system.
-    }];
-    let assemblyFormat = [{
-        attr-dict
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SystemFinalizeOp : QUIR_Op<"system_finalize", [IsolatedFromAbove]> {
-    let summary = "Finalizes the system";
-    let description = [{
-        The `quir.system_finalize` operation causes the system to be finalized,
-        cleaning up results and shutting down execution.
-    }];
-    let assemblyFormat = [{
-        attr-dict
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_ShotInitOp : QUIR_Op<"shot_init", [IsolatedFromAbove]> {
-    let summary = "Initialization for shot loops";
-    let description = [{
-        The `quir.shot_init` operation causes the system to initialize the shot
-        loop to maintain consistent initial conditions for each shot
-    }];
-    let assemblyFormat = [{
-        attr-dict
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SynchronizeOp : QUIR_Op<"synchronize", [
-            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
-            NonInterferingNonDeadSideEffect]> {
-    let summary = "Synchronize the system";
-    let description = [{
-        The `quir.synchronize` operation causes the system to perform a
-        synchronization so that each of the independent controllers is locked
-        into the same time step again. The synchronize op accepts qubit
-        arguments, this is to simplify the tracking of synchronization timing
-        relative to other qubit-based operations, like measurement and reset.
-    }];
-    let arguments = (ins Variadic<AnyQubit>:$qubits);
-    let results = (outs);
-
-    let assemblyFormat = [{
-        $qubits attr-dict `:` functional-type($qubits, results)
-    }];
-}
 
 def QUIR_ConstantOp : QUIR_Op<"constant",
     [ConstantLike, NoSideEffect,
@@ -134,227 +84,6 @@ def QUIR_ConstantOp : QUIR_Op<"constant",
   let assemblyFormat = "attr-dict $value";
 }
 
-def QUIR_DeclareVariableOp : QUIR_Op<"declare_variable", [Symbol]> {
-    let summary = "Declares a classical variable";
-    let description = [{
-        The `quir.declare_variable` operation declares a classical variable
-        with the given name (sym_name), type, and an optional constant
-        initializer.
-        If present, the attributes `input` and `output` indicate that this
-        variable is an input or output variable, respectively.
-
-        Example:
-
-        ```mlir
-        quir.declare_variable "myVar" : i1 = true
-        ```
-    }];
-
-    let arguments = (ins
-        SymbolNameAttr:$sym_name,
-        TypeAttr:$type,
-        UnitAttr:$input,
-        UnitAttr:$output,
-        OptionalAttr<AnyAttr>:$initial_value
-    );
-
-    let results = (outs);
-
-    let assemblyFormat = [{
-        attr-dict $sym_name `:` $type (`=` $initial_value^)?
-    }];
-
-    let builders = [
-        OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::TypeAttr":$type), [{
-            $_state.addAttribute("sym_name", $_builder.getStringAttr(sym_name));
-            $_state.addAttribute("type", type);
-        }]>
-    ];
-
-    let verifier = [{
-        auto t = (*this).type();
-
-        if( t.isa<AngleType>() || t.isa<CBitType>() || t.isa<DurationType>() || t.isa<StretchType>() || t.isIntOrIndexOrFloat() || t.isa<ComplexType>())
-            return success();
-        std::string str;
-        llvm::raw_string_ostream os(str);
-        t.print(os);
-
-        return emitOpError("MLIR type " + str + " not supported for declarations.");
-    }];
-
-    let extraClassDeclaration = [{
-        bool isInputVariable() { return input(); }
-        bool isOutputVariable() { return output(); }
-    }];
-}
-
-def QUIR_DeclareArrayOp : QUIR_Op<"declare_array", [Symbol]> {
-    let summary = "Declares a classical array";
-    let description = [{
-        The `quir.declare_array` operation declares a classical array
-        with the given name (sym_name), element type, and number of elements.
-
-        Example:
-        ```mlir
-        quir.declare_array "myVar" : i1[2]
-        ```
-    }];
-
-    let arguments = (ins
-        SymbolNameAttr:$sym_name,
-        TypeAttr:$type,
-        IndexAttr:$num_elements
-    );
-
-    let results = (outs);
-
-    let assemblyFormat = [{
-        attr-dict $sym_name `:` $type `[` $num_elements `]`
-    }];
-
-    let verifier = [{
-        auto t = (*this).type();
-
-        if( t.isa<AngleType>() || t.isa<CBitType>() || t.isa<DurationType>() || t.isa<StretchType>() || t.isIntOrIndexOrFloat())
-            return success();
-        return failure();
-    }];
-}
-
-def QUIR_UseVariableOp : QUIR_Op<"use_variable",
-                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-    let summary = "Use the current value of a variable";
-    let description = [{
-        The operation `quir.use_variable` returns the current value (wrt to
-        `quir.assign_variable` operations) of the classical variable with the
-        given name.
-
-        Example:
-
-        ```mlir
-        %2 = quir.use_variable "a" : !quir.cbit<1>
-        ```
-    }];
-
-    let arguments = (ins
-        FlatSymbolRefAttr:$variable_name
-    );
-
-    let results = (outs AnyClassical:$res);
-
-    let assemblyFormat = [{
-        $variable_name `:` type($res) attr-dict
-    }];
-    // op is verified by its traits
-    let verifier = ?;
-}
-
-def QUIR_UseArrayElementOp : QUIR_Op<"use_array_element",
-                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-    let summary = "Use the current value of an array element";
-    let description = [{
-        The operation `quir.use_array_element` returns the current value (wrt
-        to `quir.assign_array_element` operations) of an element in a classical
-        array, where the array is specified by name and the element by index.
-
-        Example:
-
-        ```mlir
-        %2 = quir.use_array_element "result"[6] : i1
-        ```
-    }];
-
-    let arguments = (ins
-        FlatSymbolRefAttr:$variable_name,
-        IndexAttr:$index
-    );
-
-    let results = (outs AnyClassical:$res);
-
-    let assemblyFormat = [{
-        $variable_name `[` $index `]` `:` type($res) attr-dict
-    }];
-    // op is verified by its traits
-    let verifier = ?;
-}
-
-def QUIR_VariableAssignOp : QUIR_Op<"assign_variable",
-                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-    let summary = "Assign a new value to a classical variable";
-    let description = [{
-        The operation `quir.assign_variable` assigns a new value to a classical
-        variable given by name.
-    }];
-
-    let arguments = (ins
-        FlatSymbolRefAttr:$variable_name,
-        AnyClassical:$assigned_value
-    );
-
-    let results = (outs);
-
-    let assemblyFormat = [{
-        attr-dict $variable_name `:` type($assigned_value) `=` $assigned_value
-    }];
-    // op is verified by its traits
-    let verifier = ?;
-}
-
-def QUIR_AssignArrayElementOp : QUIR_Op<"assign_array_element",
-                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-    let summary = "Assigns a new value to an element of a classical array";
-    let description = [{
-        The operation `quir.assign_array_element` assigns a new value to an
-        element of a classical array, where the array is specified by name and
-        the element by index.
-    }];
-
-    let arguments = (ins
-        FlatSymbolRefAttr:$variable_name,
-        IndexAttr:$index,
-        AnyClassical:$assigned_value
-    );
-
-    let results = (outs);
-
-    let assemblyFormat = [{
-        attr-dict $variable_name `[` $index `]` `:` type($assigned_value) `=` $assigned_value
-    }];
-    // op is verified by its traits
-    let verifier = ?;
-}
-
-def QUIR_AssignCbitBitOp : QUIR_Op<"assign_cbit_bit",
-                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
-    let summary = "Assign a single bit in a classical bit register";
-    let description = [{
-        The operation `quir.assign_cbit_bit` assigns a new value to an
-        individual bit of a classical bit register in a variable.
-
-        Example:
-
-        ```mlir
-        quir.assign_cbit_bit "b"<2> [0] : i1 = %9
-        ```
-    }];
-
-    let arguments = (ins
-        FlatSymbolRefAttr:$variable_name,
-        IndexAttr:$index,
-        IndexAttr:$cbit_width,
-        I1:$assigned_bit
-    );
-
-    let results = (outs);
-
-    let assemblyFormat = [{
-        attr-dict $variable_name `<` $cbit_width `>` `[` $index `]` `:` type($assigned_bit) `=` $assigned_bit
-    }];
-    // op is verified by its traits
-    let verifier = ?;
-}
-
 def QUIR_DeclareQubitOp : QUIR_Op<"declare_qubit", [NonInterferingNonDeadSideEffect]> {
     let summary = "Declare a new physical qubit.";
     let description = [{
@@ -387,24 +116,6 @@ def QUIR_DeclareDurationOp : QUIR_Op<"declare_duration", [NoSideEffect]> {
 
     let arguments = (ins StrAttr:$value);
     let results = (outs QUIR_DurationType:$out);
-
-    let assemblyFormat = [{
-        attr-dict `:` type($out)
-    }];
-}
-
-def QUIR_DeclareStretchOp : QUIR_Op<"declare_stretch", [NoSideEffect]> {
-    let summary = "Declare a new stretch.";
-    let description = [{
-        The `quir.declare_stretch` operation creates a new OpenQASM3.0 stretch, representing an unknown duration of time.
-
-        Example:
-        ```mlir
-        %dur = "quir.declare_stretch"() : () -> !quir.stretch
-        ```
-    }];
-
-    let results = (outs QUIR_StretchType:$out);
 
     let assemblyFormat = [{
         attr-dict `:` type($out)
@@ -693,48 +404,6 @@ def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [DeclareOpInterfaceMethod
     }];
 }
 
-def QUIR_CallKernelOp : QUIR_Op<"call_kernel", [DeclareOpInterfaceMethods<CallOpInterface>]> {
-    let summary = "A call to a user-defined kernel function that needs to be specialized for input operands";
-    let description = [{
-        The `quir.call_kernel` operation represents calls to user-defined kernel function
-        that needs to be specialized for its arguments. The callee function is attached to a symbol reference via
-        an attribute. The arguments list must match the arguments provided by the callee. Kernels may only receive
-        and return classical types.
-
-        Example:
-        ```mlir
-        %majority = quir.call_kernel @majority_vote(%cbitarray) : (memref<3xi1>) -> i1
-        ```
-        This is valid only if the named kernel @majority_vote exists and takes a cbit array as arguments and
-        returns an i1 as a result.
-    }];
-
-    let arguments = (ins FlatSymbolRefAttr:$callee, Variadic<AnyClassical>:$operands);
-    let results = (outs Optional<AnyClassical>:$res);
-
-    let assemblyFormat = [{
-        $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
-    }];
-
-    let builders = [
-        OpBuilder<(ins "FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
-            $_state.addOperands(operands);
-            $_state.addAttribute("callee", SymbolRefAttr::get(callee));
-            $_state.addTypes(callee.getType().getResults());
-        }]>,
-        OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$operands), [{
-            $_state.addOperands(operands);
-            $_state.addAttribute("callee", callee);
-            $_state.addTypes(res);
-        }]>,
-        OpBuilder<(ins "StringRef":$callee, "TypeRange":$res,
-        CArg<"ValueRange", "{}">:$operands), [{
-            build($_builder, $_state, SymbolRefAttr::get($_builder.getContext(), callee), res,
-                    operands);
-        }]>];
-}
-
 def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormalizable, DeclareOpInterfaceMethods<SymbolUserOpInterface>, DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>]> {
     let summary = "Call a circuit operation";
     let description = [{
@@ -823,23 +492,6 @@ def QUIR_MeasureOp : QUIR_Op<"measure", [
     }];
 }
 
-def QUIR_CastOp : QUIR_Op<"cast", [NoSideEffect]> {
-    let summary = "Cast between classical types";
-    let description = [{
-        The `quir.cast` operation represents a cast between different classical types, including non-QUIR types.
-
-        Example:
-        ```mlir
-        %ang1 = "quir.cast"(%creg) : (memref<10xi1>) -> !quir.angle<20>
-        ```
-    }];
-
-    let arguments = (ins AnyClassical:$arg);
-    let results = (outs AnyClassical:$out);
-
-    let hasCanonicalizer = 1;
-}
-
 def QUIR_DelayOp : QUIR_Op<"delay", [
             UnitaryOp,
             DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
@@ -862,30 +514,6 @@ def QUIR_DelayOp : QUIR_Op<"delay", [
 
     let assemblyFormat = [{
         attr-dict $time `,` `(` $qubits `)` `:` type($time) `,` functional-type($qubits, results)
-    }];
-}
-
-def QUIR_DelayCyclesOp : QUIR_Op<"delay_cycles", [
-            UnitaryOp,
-            DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
-            NonInterferingNonDeadSideEffect]> {
-    let summary = "Add a delay operation of a given number of cycles to a qubit";
-    let description = [{
-        The `quir.delay_cycles` operation represents a delay operation of the given
-        number of cycles to a qubit, group of qubits, or all qubits (when no
-        target qubit is given).
-
-        Example:
-        ```mlir
-        "quir.delay_cycles"(%q1_1) { time = 1000 : i64}: (!quir.qubit) -> ()
-        ```
-    }];
-
-    let arguments = (ins I64Attr:$time, Variadic<AnyQubit>:$qubits);
-    let results = (outs );
-
-    let assemblyFormat = [{
-        `(` $qubits `)` attr-dict `:` functional-type($qubits, results)
     }];
 }
 
@@ -912,119 +540,6 @@ def QUIR_BarrierOp : QUIR_Op<"barrier", [
     let assemblyFormat = [{
         $qubits attr-dict `:` functional-type($qubits, results)
     }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_BroadcastOp : QUIR_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
-    let summary = "Broadcast a value from this controller to all others";
-    let description = [{
-        The `quir.broadcast` operation represents a broadcast command that sends a value
-        from this controller to all others. All other controllers should have a
-        corresponding `quir.recv` operation. If only one controller should receive the
-        message then the `quir.send` operation should be used instead.
-
-        Example:
-        ```mlir
-        %angle1 = quir.constant #quir.angle<0.2 : !quir.angle<20>>
-        quir.broadcast %angle1 : !quir.angle<20>
-        ```
-    }];
-
-    let arguments = (ins AnyClassical:$val);
-
-    let assemblyFormat = [{
-        attr-dict $val `:` type($val)
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_SendOp : QUIR_Op<"send", [NonInterferingNonDeadSideEffect]> {
-    let summary = "Send a classical value from this controller to another";
-    let description = [{
-        The `quir.send` operation represents a send command from one controller to another.
-        A corresponding `quir.recv` operation should receive the information sent.
-
-        Example:
-        ```mlir
-        %cbit = "quir.measure"(%target) : (!quir.qubit<1>) -> i1
-        quir.send %cbit : i1
-        ```
-    }];
-
-    let arguments = (ins AnyClassical:$val, IndexAttr:$id);
-
-    let assemblyFormat = [{
-        attr-dict $val `to` $id `:` type($val)
-    }];
-}
-
-// This should be in OpBase.td but for some reason isn't, maybe in LLVM 15?
-def IndexArrayAttr : TypedArrayAttrBase<IndexAttr,
-                                        "index array attribute"> {
-  let constBuilderCall = "$_builder.getIndexArrayAttr($0)";
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_RecvOp : QUIR_Op<"recv", [NonInterferingNonDeadSideEffect]> {
-    let summary = "Receive classical values from other controllers";
-    let description = [{
-        The `quir.recv` operation represents a receive command for potentially
-        multiple values. The fromIds array attribute indicates the Id of the
-        sending control node for each independent value.
-
-        Example:
-        ```mlir
-        %meas:2 = quir.recv {fromId = [0 : index, 1 : index]} : i1, i1
-        ```
-    }];
-
-    let arguments = (ins OptionalAttr<IndexArrayAttr>:$fromIds);
-    let results = (outs Variadic<AnyClassical>:$vals);
-
-    let assemblyFormat = [{
-        attr-dict `:` type($vals)
-    }];
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_ParallelControlFlowOp : QUIR_Op<"parallel_control_flow", [
-                        SingleBlockImplicitTerminator<"ParallelEndOp">,
-                        RecursiveSideEffects]> {
-    let summary = "Contain a group of control flow ops that can run in parallel";
-    let description = [{
-        The `quir.parallel_control_flow` operation has a single region and block
-        that holds a collection of scf control flow ops that can be executed in
-        parallel.
-
-        Example:
-        ```mlir
-        quir.parallel_control_flow {
-            scf.if (%c0) {
-                quir.gate_call @x(%q0) : (!quir.qubit<1>) -> ()
-            } {quir.physicalIds = [0 : i32]}
-            scf.if (%c1) {
-                quir.gate_call @x(%q1) : (!quir.qubit<1>) -> ()
-            } {quir.physicalIds = [1 : i32]}
-        }
-        ```
-    }];
-
-    let regions = (region SizedRegion<1>:$region);
-
-    let assemblyFormat = "$region attr-dict";
-}
-
-// TODO: This op should be extracted to a system-level dialect
-def QUIR_ParallelEndOp : QUIR_Op<"parallel_end", [
-    Terminator, HasParent<"ParallelControlFlowOp">, NoSideEffect]> {
-  let summary = "A pseudo op that marks the end of a `quir.parallel_control_flow` op.";
-  let description = [{
-    This op terminates the only block inside the only region of a
-    `quir.parallel_control_flow` op.
-  }];
-
-  let parser = "return success();";
-  let printer = "p << getOperationName();";
 }
 
 //===----------------------------------------------------------------------===//

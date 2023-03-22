@@ -1,6 +1,12 @@
 //===- api.cpp --------------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -33,10 +39,12 @@
 #include "QSSC.h"
 
 #include "HAL/PassRegistration.h"
-#include "HAL/TargetRegistry.h"
 #include "HAL/TargetSystem.h"
+#include "HAL/TargetSystemRegistry.h"
 
 #include "Dialect/RegisterDialects.h"
+
+#include "Dialect/OQ3/IR/OQ3Dialect.h"
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
@@ -44,9 +52,12 @@
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 
+#include "Dialect/QCS/IR/QCSDialect.h"
+
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <utility>
 
 using namespace mlir;
 
@@ -329,8 +340,9 @@ static void printVersion(llvm::raw_ostream &out) {
       << qssc::getQSSCVersion() << "\n";
 }
 
-static llvm::Error compile_(int argc, char const **argv,
-                            std::string *outputString) {
+static llvm::Error
+compile_(int argc, char const **argv, std::string *outputString,
+         llvm::Optional<qssc::DiagnosticCallback> diagnosticCb) {
   llvm::InitLLVM y(argc, argv);
 
   if (auto err = registerPasses())
@@ -353,10 +365,11 @@ static llvm::Error compile_(int argc, char const **argv,
 
   if (showTargets) {
     llvm::outs() << "Registered Targets:\n";
-    for (const auto &target : qssc::hal::registry::registeredTargets()) {
+    for (const auto &target :
+         qssc::hal::registry::TargetSystemRegistry::registeredPlugins()) {
       // Constants chosen empirically to align with --help.
       // TODO: Select constants more intelligently.
-      target.second.printHelpStr(2, 57);
+      qssc::plugin::registry::printHelpStr(target.second, 2, 57);
     }
     return llvm::Error::success();
   }
@@ -367,14 +380,16 @@ static llvm::Error compile_(int argc, char const **argv,
   determineOutputType();
 
   // Make sure target exists if specified
-  if (!targetStr.empty() && !qssc::hal::registry::targetExists(targetStr))
+  if (!targetStr.empty() &&
+      !qssc::hal::registry::TargetSystemRegistry::pluginExists(targetStr))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Error: Target " + targetStr +
                                        " is not registered.");
 
-  qssc::hal::registry::TargetInfo &targetInfo =
-      *qssc::hal::registry::lookupTargetInfo(targetStr).getValueOr(
-          qssc::hal::registry::nullTargetInfo());
+  qssc::hal::registry::TargetSystemInfo &targetInfo =
+      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(targetStr)
+           .getValueOr(qssc::hal::registry::TargetSystemRegistry::
+                           nullTargetSystemInfo());
 
   MLIRContext context{};
   llvm::Optional<llvm::StringRef> conf{};
@@ -445,7 +460,7 @@ static llvm::Error compile_(int argc, char const **argv,
     if (auto frontendError = qssc::frontend::openqasm3::parse(
             inputSource, !directInput, emitAction == Action::DumpAST,
             emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
-            moduleOp))
+            moduleOp, std::move(diagnosticCb)))
       return frontendError;
 
     if (emitAction < Action::DumpMLIR)
@@ -544,8 +559,9 @@ static llvm::Error compile_(int argc, char const **argv,
   return llvm::Error::success();
 }
 
-int compile(int argc, char const **argv, std::string *outputString) {
-  if (auto err = compile_(argc, argv, outputString)) {
+int qssc::compile(int argc, char const **argv, std::string *outputString,
+                  llvm::Optional<DiagnosticCallback> diagnosticCb) {
+  if (auto err = compile_(argc, argv, outputString, std::move(diagnosticCb))) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;
   }
@@ -553,10 +569,10 @@ int compile(int argc, char const **argv, std::string *outputString) {
   return 0;
 }
 
-llvm::Error
-bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
-               llvm::StringRef payloadOutputPath,
-               std::unordered_map<std::string, double> const &parameters) {
+llvm::Error qssc::bindParameters(
+    llvm::StringRef target, llvm::StringRef moduleInputPath,
+    llvm::StringRef payloadOutputPath,
+    std::unordered_map<std::string, double> const &parameters) {
 
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload

@@ -1,6 +1,12 @@
 //===- qss-opt.cpp ----------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -33,10 +39,12 @@
 #include "QSSC.h"
 
 #include "HAL/PassRegistration.h"
-#include "HAL/TargetRegistry.h"
+#include "HAL/TargetSystemRegistry.h"
 
+#include "Dialect/OQ3/IR/OQ3Dialect.h"
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
+#include "Dialect/QCS/IR/QCSDialect.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 
@@ -112,7 +120,8 @@ auto main(int argc, char **argv) -> int {
   // include what you need like above. You only need to register dialects that
   // will be *parsed* by the tool, not the one generated
   registerAllDialects(registry);
-  registry.insert<mlir::quir::QUIRDialect, mlir::pulse::PulseDialect>();
+  registry.insert<mlir::oq3::OQ3Dialect, mlir::quir::QUIRDialect,
+                  mlir::pulse::PulseDialect, mlir::qcs::QCSDialect>();
 
   llvm::InitLLVM y(argc, argv);
 
@@ -131,9 +140,10 @@ auto main(int argc, char **argv) -> int {
     interleaveComma(registry.getDialectNames(), os,
                     [&](auto name) { os << name; });
     os << "\nAvailable Targets:\n";
-    for (const auto &target : registry::registeredTargets()) {
-      os << target.second.getTargetName() << " - "
-         << target.second.getTargetDescription() << "\n";
+    for (const auto &target :
+         registry::TargetSystemRegistry::registeredPlugins()) {
+      os << target.second.getName() << " - " << target.second.getDescription()
+         << "\n";
     }
   }
 
@@ -142,7 +152,8 @@ auto main(int argc, char **argv) -> int {
 
   // Create target if one was specified.
   if (!targetStr.empty()) {
-    auto targetInfo = registry::lookupTargetInfo(targetStr);
+    auto targetInfo =
+        registry::TargetSystemRegistry::lookupPluginInfo(targetStr);
     if (!targetInfo) {
       llvm::errs() << "Error: Target " + targetStr + " is not registered.\n";
       return 1;

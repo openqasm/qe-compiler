@@ -1,6 +1,12 @@
 //===- QUIRToStd.cpp - Convert QUIR to Std Dialect --------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -11,17 +17,22 @@
 //  This file implements passes for converting QUIR to std dialect
 //
 //===----------------------------------------------------------------------===//
-
 #include "Conversion/QUIRToStandard/QUIRToStandard.h"
-
-#include "MockUtils.h"
-
 #include "Conversion/QUIRToStandard/TypeConversion.h"
+#include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
+
+#include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/Pulse/IR/PulseDialect.h"
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
+#include "MockUtils.h"
+
+#include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
+#include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/SCF.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/Dialect/StandardOps/Transforms/FuncConversions.h"
@@ -40,8 +51,7 @@ struct ReturnConversionPat : public OpConversionPattern<mlir::ReturnOp> {
   LogicalResult
   matchAndRewrite(mlir::ReturnOp retOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    auto operands = adaptor.getOperands();
-    rewriter.create<mlir::ReturnOp>(retOp->getLoc(), operands);
+    rewriter.create<mlir::ReturnOp>(retOp->getLoc(), adaptor.getOperands());
     rewriter.replaceOp(retOp, {});
     return success();
   } // matchAndRewrite
@@ -59,8 +69,7 @@ struct ConstantOpConversionPat : public OpConversionPattern<quir::ConstantOp> {
   matchAndRewrite(quir::ConstantOp constOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     if (auto angleAttr = constOp.value().dyn_cast<quir::AngleAttr>()) {
-      auto angleWidth =
-          constOp.getType().dyn_cast<quir::AngleType>().getWidth();
+      auto angleWidth = constOp.getType().cast<quir::AngleType>().getWidth();
 
       // cannot handle non-parameterized angle types
       if (!angleWidth.hasValue())
@@ -158,20 +167,39 @@ struct CommOpConversionPat : public OpConversionPattern<CommOp> {
   } // matchAndRewrite
 };  // struct CommOpConversionPat
 
-void MockQUIRToStdPass::runOnOperation() {
+void conversion::MockQUIRToStdPass::getDependentDialects(
+    DialectRegistry &registry) const {
+  registry.insert<LLVM::LLVMDialect, mlir::memref::MemRefDialect,
+                  mlir::AffineDialect, arith::ArithmeticDialect>();
+}
+
+void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   ModuleOp moduleOp = getOperation();
-  // attempt to apply the conversion only to the controller module
+
+  // Attempt to apply the conversion only to the controller module
   ModuleOp controllerModuleOp = getControllerModule(moduleOp);
   if (!controllerModuleOp)
     controllerModuleOp = moduleOp;
 
-  QuirTypeConverter typeConverter;
-  ConversionTarget target(getContext());
+  // First remove all arguments from synchronization ops
+  controllerModuleOp->walk([](qcs::SynchronizeOp synchOp) {
+    synchOp.qubitsMutable().assign(ValueRange({}));
+  });
 
-  target.addLegalDialect<StandardOpsDialect, scf::SCFDialect,
-                         arith::ArithmeticDialect, LLVM::LLVMDialect,
-                         quir::QUIRDialect>();
-  target.addIllegalOp<quir::RecvOp, quir::BroadcastOp>();
+  QuirTypeConverter typeConverter;
+  auto *context = &getContext();
+  ConversionTarget target(*context);
+
+  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
+                         mlir::AffineDialect, memref::MemRefDialect,
+                         scf::SCFDialect, StandardOpsDialect,
+                         mlir::pulse::PulseDialect>();
+  // Since we are converting QUIR -> STD/LLVM, make QUIR illegal.
+  // Further, because OQ3 and QCS ops are migrated from QUIR, make them also
+  // illegal.
+  target
+      .addIllegalDialect<quir::QUIRDialect, qcs::QCSDialect, oq3::OQ3Dialect>();
+  target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
   target.addDynamicallyLegalOp<FuncOp>(
       [&](FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
   target.addDynamicallyLegalOp<CallOp>([&](CallOp op) {
@@ -180,48 +208,57 @@ void MockQUIRToStdPass::runOnOperation() {
   target.addDynamicallyLegalOp<mlir::ReturnOp>([&](mlir::ReturnOp op) {
     return typeConverter.isLegal(op.getOperandTypes());
   });
+  // We mark `ConstantOp` legal so we don't err when attempting to convert a
+  // constant `DurationType`. (Only `AngleType` is currently handled by the
+  // conversion pattern, `ConstantOpConversionPat`.)
+  // Note that marking 'legal' does not preclude conversion if a pattern is
+  // matched. However, because other ops also do not have implemented
+  // conversions, we will still observe errors of the type:
+  // ```
+  // loc("-":0:0): error: failed to legalize operation 'namespace.op' that was
+  // explicitly marked illegal
+  // ```
+  // which for the `mock_target` are harmless.
+  target.addLegalOp<quir::ConstantOp>();
+  target.addLegalOp<quir::SwitchOp>();
+  target.addLegalOp<quir::YieldOp>();
 
-  auto *context = &getContext();
   RewritePatternSet patterns(context);
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
-  patterns.insert<ConstantOpConversionPat>(context, typeConverter);
+  // clang-format off
+  patterns.add<ConstantOpConversionPat,
+               ReturnConversionPat,
+               CommOpConversionPat<qcs::RecvOp>,
+               CommOpConversionPat<qcs::BroadcastOp>,
+               AngleBinOpConversionPat<oq3::AngleAddOp, mlir::arith::AddIOp>,
+               AngleBinOpConversionPat<oq3::AngleSubOp, mlir::arith::SubIOp>,
+               AngleBinOpConversionPat<oq3::AngleMulOp, mlir::arith::MulIOp>,
+               AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>>(
+      context, typeConverter);
+  // clang-format on
 
-  // Replace Receive ops with constants to be optimized away.
-  patterns.insert<CommOpConversionPat<quir::RecvOp>>(context, typeConverter);
-  patterns.insert<CommOpConversionPat<quir::BroadcastOp>>(context,
-                                                          typeConverter);
-  patterns.insert<ReturnConversionPat>(context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_AddOp, mlir::arith::AddIOp>>(
-          context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_SubOp, mlir::arith::SubIOp>>(
-          context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_MulOp, mlir::arith::MulIOp>>(
-          context, typeConverter);
-  patterns
-      .insert<AngleBinOpConversionPat<quir::Angle_DivOp, mlir::arith::DivSIOp>>(
-          context, typeConverter);
+  quir::populateVariableToGlobalMemRefConversionPatterns(
+      patterns, typeConverter, externalizeOutputVariables);
 
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`
   // operations were not converted successfully.
   if (failed(applyPartialConversion(controllerModuleOp, target,
                                     std::move(patterns)))) {
+    // If we fail conversion remove remaining ops for the Mock target.
+    controllerModuleOp.walk([&](Operation *op) {
+      if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||
+          llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
+          llvm::isa<qcs::QCSDialect>(op->getDialect())) {
+        llvm::outs() << "Removing unsupported " << op->getName() << " \n";
+        op->dropAllReferences();
+        op->dropAllDefinedValueUses();
+        op->erase();
+      }
+    });
   }
-  // If we fail conversion remove remaining ops for the Mock target.
-  controllerModuleOp.walk([&](Operation *op) {
-    if (llvm::isa<quir::QUIRDialect>(op->getDialect())) {
-      llvm::outs() << "Removing unsupported " << op->getName() << " \n";
-      op->dropAllReferences();
-      op->dropAllDefinedValueUses();
-      op->erase();
-    }
-  });
-
 } // QUIRToStdPass::runOnOperation()
 
 llvm::StringRef MockQUIRToStdPass::getArgument() const {

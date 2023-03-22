@@ -2,6 +2,12 @@
 //
 // (C) Copyright IBM 2023.
 //
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
@@ -16,8 +22,11 @@
 #ifndef OPENQASM3_FRONTEND_H
 #define OPENQASM3_FRONTEND_H
 
+#include "API/error.h"
+
 #include "mlir/IR/BuiltinOps.h"
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/Support/Error.h"
 
 namespace qssc::frontend::openqasm3 {
@@ -31,11 +40,13 @@ namespace qssc::frontend::openqasm3 {
 /// @param emitPrettyAST whether a pretty-printed AST should be dumped
 /// @param emitMLIR whether high-level IR should be emitted
 /// @param newModule ModuleOp container for emitting MLIR into
+/// @param diagnosticCb a callback that will receive emitted diagnostics
 /// @return an llvm::Error in case of failure, or llvm::Error::success()
 /// otherwise
 llvm::Error parse(std::string const &source, bool sourceIsFilename,
                   bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
-                  mlir::ModuleOp &newModule);
+                  mlir::ModuleOp &newModule,
+                  llvm::Optional<DiagnosticCallback> diagnosticCb);
 
 }; // namespace qssc::frontend::openqasm3
 

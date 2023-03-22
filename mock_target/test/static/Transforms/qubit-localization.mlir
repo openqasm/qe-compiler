@@ -1,6 +1,16 @@
 // RUN: qss-compiler -X=mlir --target mock --config %TEST_CFG --mock-conversion %s | FileCheck %s
 
-func private @kernel1 (%c0 : i1, %c1 : i1, %c2 : i1) -> i1
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
 
 func @gateH_qq(%qArg : !quir.qubit<1>) attributes {quir.orig_func_name = "gateH"} {
   %ang = quir.constant #quir.angle<0.1 : !quir.angle<20>>
@@ -46,13 +56,11 @@ func @main () -> i32 {
   quir.call_subroutine @subroutine2(%q1, %q0) : (!quir.qubit<1>, !quir.qubit<1>) -> ()
   %c0 = quir.call_defcal_measure @defcalMeasure_q0(%q0) : (!quir.qubit<1>) -> i1
   %c1 = quir.call_defcal_measure @defcalMeasure_q1(%q0) : (!quir.qubit<1>) -> i1
-  %res = quir.call_kernel @kernel1(%c0, %c1, %c0) : (i1, i1, i1) -> i1
   %zero = arith.constant 0 : i32
   return %zero : i32
 }
 
 // CHECK:   module @controller attributes {quir.nodeId = 1000 : i32, quir.nodeType = "controller"} {
-// CHECK:     func private @kernel1(i1, i1, i1) -> i1 attributes {quir.classicalOnly = true}
 // CHECK:     func @subroutine2_q1_q0() attributes {quir.classicalOnly = false} {
 // CHECK:       quir.call_subroutine @"subroutine1_q1_!quir.angle<20>_index"(%angle, %c5) : (!quir.angle<20>, index) -> ()
 // CHECK:     func @subroutine2_q0_q1() attributes {quir.classicalOnly = false} {
@@ -66,7 +74,6 @@ func @main () -> i32 {
 // CHECK:       quir.call_subroutine @"subroutine1_q0_!quir.angle<20>_index"(%angle, %c10) : (!quir.angle<20>, index) -> ()
 // CHECK:       quir.call_subroutine @subroutine2_q0_q1() : () -> ()
 // CHECK:       quir.call_subroutine @subroutine2_q1_q0() : () -> ()
-// CHECK:       %2 = quir.call_kernel @kernel1(%0, %1, %0) : (i1, i1, i1) -> i1
 // CHECK:   module @mock_drive_0 attributes {quir.nodeId = 1 : i32, quir.nodeType = "drive", quir.physicalId = 0 : i32} {
 // CHECK:     func @gateH_q0(%arg0: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.classicalOnly = false, quir.orig_func_name = "gateH"} {
 // CHECK:     func @subroutine2_q1_q0() attributes {quir.classicalOnly = false} {

@@ -1,6 +1,12 @@
 //===- PulseOps.td - Pulse dialect ops ---------------------*- tablegen -*-===//
 //
-// (C) Copyright IBM 2021.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -351,6 +357,12 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame]> {
         // get channel name
         llvm::Expected<std::string> getChannelName(CallSequenceOp callOp, uint qubitId);
     }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
+    }];
 }
 
 def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTargetFrame]> {
@@ -379,8 +391,15 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTarge
         double getFreq() {
             // get op that defines frequency and return its value
             auto freqConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequency().getDefiningOp());
+            assert (freqConstOp && "assume frequency to be defined by ConstantFloatOp");
             return freqConstOp.value().convertToDouble();
         }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
@@ -410,8 +429,15 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasT
         double getFreqOffset() {
             // get op that defines frequency offset and return its value
             auto freqOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequencyOffset().getDefiningOp());
+            assert (freqOffsetConstOp && "assume frequency offset to be defined by ConstantFloatOp");
             return freqOffsetConstOp.value().convertToDouble();
         }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
@@ -441,8 +467,15 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]>
         double getPhase() {
             // get op that defines phase and return its value
             auto phaseConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phase().getDefiningOp());
+            assert (phaseConstOp && "assume phase to be defined by ConstantFloatOp");
             return phaseConstOp.value().convertToDouble();
         }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
@@ -472,8 +505,15 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFra
         double getPhaseOffset() {
             // get op that defines phase offset and return its value
             auto phaseOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phaseOffset().getDefiningOp());
+            assert (phaseOffsetConstOp && "assume phase offset to be defined by ConstantFloatOp");
             return phaseOffsetConstOp.value().convertToDouble();
         }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
@@ -500,8 +540,15 @@ let summary = "Set a scaling factor for pulses of a frame.";
         double getAmp() {
             // get op that defines amp and return its value
             auto ampConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).amp().getDefiningOp());
+            assert (ampConstOp && "assume amplitude to be defined by ConstantFloatOp");
             return ampConstOp.value().convertToDouble();
         }
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
@@ -527,6 +574,12 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
 
     let assemblyFormat = [{
         attr-dict `(` $target `)` `:` `(` type($target) `)` `->` type($out)
+    }];
+
+    let verifier = [{
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        return success();
     }];
 }
 
@@ -557,6 +610,10 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
         auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
         if (durDeclOp && durDeclOp.value() < 0)
            return emitOpError("duration must be >= 0.");
+        
+        if (!(*this).target().isa<BlockArgument>())
+            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+        
         return success();
     }];
 

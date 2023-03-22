@@ -1,6 +1,12 @@
 //===- LoadElimination.cpp - Remove unnecessary loads -----------*- C++ -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -14,6 +20,7 @@
 
 #include "Dialect/QUIR/Transforms/LoadElimination.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 #include "mlir/IR/Dominance.h"
@@ -40,7 +47,7 @@ void LoadEliminationPass::runOnOperation() {
   auto &domInfo = getAnalysis<mlir::DominanceInfo>();
   SmallVector<Operation *, 4> varUsesToErase;
 
-  op->walk([&](mlir::quir::DeclareVariableOp decl) {
+  op->walk([&](mlir::oq3::DeclareVariableOp decl) {
     // Each variable must only have a single assigment statement
 
     auto symbolUses = symbolUsers.getUsers(decl);
@@ -49,8 +56,8 @@ void LoadEliminationPass::runOnOperation() {
 
     auto numAssignments = std::count_if(
         symbolUses.begin(), symbolUses.end(), [&](Operation *userOp) {
-          if (mlir::isa<mlir::quir::VariableAssignOp>(userOp) ||
-              mlir::isa<mlir::quir::AssignCbitBitOp>(userOp)) {
+          if (mlir::isa<mlir::oq3::VariableAssignOp>(userOp) ||
+              mlir::isa<mlir::oq3::CBitAssignBitOp>(userOp)) {
             // TODO have a common interface that identifies any
             // assignment to a variable
             assignment = userOp;
@@ -63,10 +70,10 @@ void LoadEliminationPass::runOnOperation() {
       return WalkResult::advance();
 
     // only support assignment by VariableAssignOp, for now
-    if (!mlir::isa<mlir::quir::VariableAssignOp>(assignment))
+    if (!mlir::isa<mlir::oq3::VariableAssignOp>(assignment))
       return WalkResult::advance();
 
-    auto varAssignmentOp = mlir::cast<mlir::quir::VariableAssignOp>(assignment);
+    auto varAssignmentOp = mlir::cast<mlir::oq3::VariableAssignOp>(assignment);
 
     // Transfer marker for input parameters
     // Note: for arith.constant operations, canonicalization will drop these
@@ -81,10 +88,10 @@ void LoadEliminationPass::runOnOperation() {
 
     for (auto *userOp : symbolUses) {
 
-      if (!mlir::isa<mlir::quir::UseVariableOp>(userOp))
+      if (!mlir::isa<mlir::oq3::VariableLoadOp>(userOp))
         continue;
 
-      auto variableUse = mlir::cast<mlir::quir::UseVariableOp>(userOp);
+      auto variableUse = mlir::cast<mlir::oq3::VariableLoadOp>(userOp);
 
       // If this use of the variable is always executed after the assignment,
       // then the variable will have the assigned value at the time of this

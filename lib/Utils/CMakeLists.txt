@@ -1,4 +1,10 @@
-# (C) Copyright IBM 2021.
+# (C) Copyright IBM 2023.
+#
+# This code is part of Qiskit.
+#
+# This code is licensed under the Apache License, Version 2.0 with LLVM
+# Exceptions. You may obtain a copy of this license in the LICENSE.txt
+# file in the root directory of this source tree.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -6,7 +12,6 @@
 
 set(SOURCES LegacyInputConversion.cpp SystemDefinition.cpp DebugIndent.cpp)
 
-find_package(Boost 1.77.0 REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 add_library(Utils ${SOURCES})

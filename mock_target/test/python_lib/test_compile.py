@@ -1,4 +1,10 @@
-# (C) Copyright IBM 2022.
+# (C) Copyright IBM 2023.
+#
+# This code is part of Qiskit.
+#
+# This code is licensed under the Apache License, Version 2.0 with LLVM
+# Exceptions. You may obtain a copy of this license in the LICENSE.txt
+# file in the root directory of this source tree.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -29,7 +35,7 @@ from qss_compiler import (
 def check_mlir_string(mlir):
     assert isinstance(mlir, str)
     assert "module" in mlir
-    assert "quir.system_init" in mlir
+    assert "qcs.init" in mlir
 
 
 def test_compile_file_to_qem(example_qasm3_tmpfile, mock_config_file, check_payload):

@@ -1,6 +1,12 @@
 //===- MockTarget.cpp ----------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -10,15 +16,15 @@
 
 #include "MockTarget.h"
 
+#include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
 #include "Conversion/QUIRToStandard/QUIRToStandard.h"
 #include "Transforms/FunctionLocalization.h"
 #include "Transforms/QubitLocalization.h"
 
 #include "Dialect/QUIR/Transforms/Passes.h"
-#include "HAL/TargetRegistry.h"
+#include "HAL/TargetSystemRegistry.h"
 #include "Payload/Payload.h"
 
-#include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
@@ -29,12 +35,10 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
-#include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Target/TargetMachine.h"
-#include "llvm/Target/TargetOptions.h"
 
 #include "mlir/Conversion/Passes.h"
 #include "mlir/Dialect/LLVMIR/Transforms/Passes.h"
@@ -45,9 +49,7 @@
 #include "mlir/Target/LLVMIR/Export.h"
 
 #include <fstream>
-#include <iostream>
 #include <sstream>
-#include <thread>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -63,7 +65,7 @@ static llvm::cl::OptionCategory
             "Compiler target");
 
 int qssc::targets::mock::init() {
-  registry::TargetRegistration<MockSystem> registrar(
+  bool registered = registry::TargetSystemRegistry::registerPlugin<MockSystem>(
       "mock", "Mock system for testing the targetting infrastructure.",
       [](llvm::Optional<llvm::StringRef> configurationPath)
           -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
@@ -75,7 +77,7 @@ int qssc::targets::mock::init() {
         auto config = std::make_unique<MockConfig>(*configurationPath);
         return std::make_unique<MockSystem>(std::move(config));
       });
-  return 0;
+  return registered ? 0 : -1;
 }
 
 MockConfig::MockConfig(llvm::StringRef configurationPath)
@@ -149,9 +151,12 @@ MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
 } // MockSystem
 
 llvm::Error MockSystem::registerTargetPasses() {
-  mlir::PassRegistration<qssc::targets::mock::MockQubitLocalizationPass>();
   mlir::PassRegistration<qssc::targets::mock::MockFunctionLocalizationPass>();
-  mlir::PassRegistration<conversion::MockQUIRToStdPass>();
+  mlir::PassRegistration<qssc::targets::mock::MockQubitLocalizationPass>();
+  mlir::PassRegistration<conversion::MockQUIRToStdPass>(
+      []() -> std::unique_ptr<conversion::MockQUIRToStdPass> {
+        return std::make_unique<conversion::MockQUIRToStdPass>(false);
+      });
   MockController::registerTargetPasses();
   MockAcquire::registerTargetPasses();
   MockDrive::registerTargetPasses();
@@ -256,6 +261,7 @@ llvm::Error MockController::addToPayload(mlir::ModuleOp &moduleOp,
   mlirOStream << controllerModule;
 
   buildLLVMPayload(controllerModule, payload);
+
   return llvm::Error::success();
 } // MockController::addToPayload
 
@@ -270,30 +276,22 @@ void MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
   mlir::registerLLVMDialectTranslation(*context);
 
   mlir::PassManager pm(context);
-
-  pm.addPass(std::make_unique<conversion::MockQUIRToStdPass>());
+  pm.addPass(std::make_unique<conversion::MockQUIRToStdPass>(false));
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createLowerToLLVMPass());
   pm.addPass(mlir::LLVM::createLegalizeForExportPass());
   if (failed(pm.run(controllerModule))) {
-    llvm::errs() << "Problems converting controller module to std dialect!\n";
+    llvm::errs()
+        << "Problems converting `MockController` module to std dialect!\n";
     return;
   }
 
-  // Build LLVM payload
-  llvm::LLVMContext llvmContext;
-  std::unique_ptr<llvm::Module> llvmModule =
-      mlir::translateModuleToLLVMIR(controllerModule, llvmContext);
-  if (!llvmModule) {
-    llvm::errs() << "Error converting llvm dialect to llvm module!\n";
-    llvm::errs() << controllerModule << "\n";
-    return;
-  }
-
-  // Initialize LLVM targets.
-  llvm::InitializeAllTargets();
-  llvm::InitializeAllAsmPrinters();
+  // Initialize native LLVM target
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetAsmPrinter();
   llvm::InitializeAllTargetMCs();
+
   // Setup the machine properties for the target architecture.
   std::string targetTriple = llvm::sys::getDefaultTargetTriple();
   std::string errorMessage;
@@ -306,9 +304,26 @@ void MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
 
   std::string cpu("generic");
   llvm::SubtargetFeatures features;
-
   std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(
       targetTriple, cpu, features.getString(), {}, {}));
+  auto dataLayout = machine->createDataLayout();
+
+  if (auto err =
+          quir::translateModuleToLLVMDialect(controllerModule, dataLayout)) {
+    llvm::errs() << err;
+    return;
+  }
+
+  // Build LLVM payload
+  llvm::LLVMContext llvmContext;
+  std::unique_ptr<llvm::Module> llvmModule =
+      mlir::translateModuleToLLVMIR(controllerModule, llvmContext);
+  if (!llvmModule) {
+    llvm::errs() << "Error converting LLVM module to LLVM IR!\n";
+    llvm::errs() << controllerModule << "\n";
+    return;
+  }
+
   llvmModule->setDataLayout(machine->createDataLayout());
   llvmModule->setTargetTriple(targetTriple);
 

@@ -1,4 +1,10 @@
-# (C) Copyright IBM 2021.
+# (C) Copyright IBM 2023.
+#
+# This code is part of Qiskit.
+#
+# This code is licensed under the Apache License, Version 2.0 with LLVM
+# Exceptions. You may obtain a copy of this license in the LICENSE.txt
+# file in the root directory of this source tree.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -10,7 +16,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 set(LIBS
-        libzip::libzip
+        libzip::zip
         )
 
 target_link_libraries(QSSCPayload PRIVATE ${LIBS})

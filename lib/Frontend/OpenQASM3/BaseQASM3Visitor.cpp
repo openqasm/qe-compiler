@@ -1,6 +1,12 @@
 //===- BaseQASM3Visitor.cpp -------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -403,8 +409,6 @@ void BaseQASM3Visitor::visit(const ASTExpressionList *list) {
 void BaseQASM3Visitor::visit(const ASTResultNode *node) {
   // If no result is present visitation is over
 
-  // Currently always null due to
-  // https://github.ibm.com/IBM-Q-Software/qss-qasm/issues/35
   if (!node->HasResult())
     return;
 

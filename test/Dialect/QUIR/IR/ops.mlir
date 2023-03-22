@@ -2,6 +2,19 @@
 // Verify the printed output can be parsed.
 // RUN: qss-opt %s --mlir-print-op-generic | qss-opt | FileCheck %s
 
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 // TODO: Qubit operands should be separated from classical operands
 // CHECK-LABEL: quir.circuit @circuit1(%{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.angle<32>) -> i1 {
 quir.circuit @circuit1 (%q0 : !quir.qubit<1>, %q1 : !quir.qubit<1>, %theta: !quir.angle<32>) -> i1 {
@@ -75,14 +88,4 @@ func @quir_switch (%flag: i32) -> (i32) {
 
     // CHECK: return %[[y]] : i32
     return %y : i32
-}
-
-func @extract(%in: !quir.cbit<2>) -> i1 {
-  %1 = quir.cbit_extractbit(%in : !quir.cbit<2>) [1] : i1
-  return %1 : i1
-}
-
-func @insert(%cbit: !quir.cbit<2>, %bit :i1) -> !quir.cbit<2> {
-  %1 = quir.cbit_insertbit(%cbit : !quir.cbit<2>)[0] = %bit : !quir.cbit<2>
-  return %1 : !quir.cbit<2>
 }

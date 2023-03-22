@@ -1,4 +1,10 @@
-# (C) Copyright IBM 2021.
+# (C) Copyright IBM 2023.
+#
+# This code is part of Qiskit.
+#
+# This code is licensed under the Apache License, Version 2.0 with LLVM
+# Exceptions. You may obtain a copy of this license in the LICENSE.txt
+# file in the root directory of this source tree.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
@@ -47,6 +53,8 @@ find_package(gmp REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(libzip REQUIRED)
 find_package(GTest REQUIRED)
+find_package(LLVM REQUIRED CONFIG)
+find_package(clang-tools-extra REQUIRED CONFIG)
 
 if(DEFINED ENV{VERSION_STRING})
     set(VERSION_STRING $ENV{VERSION_STRING})
@@ -282,8 +290,13 @@ set(BUILD_STATIC_LIBS ON CACHE BOOL "Turn on building static libs.")
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Turn off building shared libs.")
 
 # MLIR/LLVM -------------------------------------------------------------------
-# Can be included either from an installed library by setting -DMLIR_DEP_MODE=INSTALLED
-# Or built from the source (default) -DMLIR_DEP_MODE=BUNDLED. (Not yet supported)
+find_path(LLVM_MODULES NAMES TableGen.cmake AddLLVM.cmake HandleLLVMOptions.cmake PATH_SUFFIXES llvm REQUIRED)
+list(PREPEND CMAKE_MODULE_PATH "${LLVM_MODULES}")
+message(STATUS "Using LLVM modules from: ${LLVM_MODULES}")
+
+find_path(MLIR_MODULES NAMES AddMLIR.cmake PATH_SUFFIXES mlir REQUIRED)
+list(PREPEND CMAKE_MODULE_PATH "${MLIR_MODULES}")
+message(STATUS "Using MLIR modules from: ${MLIR_MODULES}")
 
 find_package(MLIR REQUIRED CONFIG)
 find_package(LLD REQUIRED CONFIG)
@@ -295,16 +308,15 @@ set(LLVM_RUNTIME_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/bin)
 set(LLVM_LIBRARY_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/lib)
 set(MLIR_BINARY_DIR ${CMAKE_BINARY_DIR})
 
-list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
-list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_DIR}")
 
 include(TableGen)
 include(AddLLVM)
 include(AddMLIR)
 include(HandleLLVMOptions)
+include(LLVMExports)
 
-include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
-include_directories(SYSTEM ${MLIR_INCLUDE_DIRS})
+include_directories(BEFORE SYSTEM ${LLVM_INCLUDE_DIRS})
+include_directories(BEFORE SYSTEM ${MLIR_INCLUDE_DIRS})
 link_directories(${LLVM_BUILD_LIBRARY_DIR})
 add_definitions(${LLVM_DEFINITIONS})
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -319,11 +331,11 @@ set(LLVM_ENABLE_EH ON)
 find_package(pybind11 REQUIRED)
 
 # nlohmann_json -------------------------------------------------------------------
-include_directories(SYSTEM ${nlohmann_json_INCLUDE_DIRS})
+include_directories(BEFORE SYSTEM ${nlohmann_json_INCLUDE_DIRS})
 
 # Boost -------------------------------------------------------------------
-find_package(boost 1.77.0 REQUIRED)
-include_directories(SYSTEM ${boost_INCLUDE_DIRS})
+find_package(Boost REQUIRED)
+include_directories(BEFORE SYSTEM ${Boost_INCLUDE_DIRS})
 
 # ------------------------------------------------------------------------------
 # QSS-COMPILER

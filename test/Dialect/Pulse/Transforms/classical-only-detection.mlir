@@ -1,5 +1,18 @@
 // RUN: qss-compiler -X=mlir --pulse-classical-only-detection %s | FileCheck %s
 
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 // based on quir version of the classical-only-detection test
 
 // first validate that the pulse classical-only-detection does not harm the quir pass
@@ -12,10 +25,10 @@ func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir
     // CHECK: func @subroutine1
     // CHECK: attributes {quir.classicalOnly = false} {
     %zero = arith.constant 0 : index
-    %ang3 = quir.angle_add %ang1, %ang2 : !quir.angle<20>
+    %ang3 = oq3.angle_add %ang1, %ang2 : !quir.angle<20>
     %ang4 = quir.constant #quir.angle<0.9 : !quir.angle<20>>
-    %f1 = "quir.cast"(%ang3) : (!quir.angle<20>) -> f64
-    %f2 = "quir.cast"(%ang4) : (!quir.angle<20>) -> f64
+    %f1 = "oq3.cast"(%ang3) : (!quir.angle<20>) -> f64
+    %f2 = "oq3.cast"(%ang4) : (!quir.angle<20>) -> f64
     %cond1 = arith.cmpf "ogt", %f1, %f2 : f64
     // CHECK: {quir.classicalOnly = false}
     scf.if %cond1 {
@@ -33,7 +46,7 @@ func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir
         "quir.call_gate"(%q1) {callee = @X} : (!quir.qubit<1>) -> ()
     } {quir.classicalOnly = false}
     %mres1 = "quir.measure"(%q2) : (!quir.qubit<1>) -> i1
-    %c1 = "quir.cast"(%mres1) : (i1) -> !quir.cbit<1>
+    %c1 = "oq3.cast"(%mres1) : (i1) -> !quir.cbit<1>
     return %c1 : !quir.cbit<1>
 }
 

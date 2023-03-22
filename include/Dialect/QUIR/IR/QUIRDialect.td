@@ -1,6 +1,12 @@
 //===- QuirDialect.td - Quir dialect -----------------------*- tablegen -*-===//
 //
-// (C) Copyright IBM 2021.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -26,6 +32,8 @@ def QUIRDialect : Dialect {
     }];
     let cppNamespace = "::mlir::quir";
     let dependentDialects = [
+        "mlir::oq3::OQ3Dialect",
+        "mlir::qcs::QCSDialect",
         "mlir::arith::ArithmeticDialect",
         "mlir::scf::SCFDialect",
         "mlir::LLVM::LLVMDialect"
@@ -54,6 +62,5 @@ include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
 include "Dialect/QUIR/IR/QUIRAttributes.td"
 include "Dialect/QUIR/IR/QUIRTraits.td"
 include "Dialect/QUIR/IR/QUIROps.td"
-include "Dialect/QUIR/IR/QUIRMathOps.td"
 
 #endif // QUIR_DIALECT

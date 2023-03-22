@@ -1,6 +1,12 @@
 //===- QUIRGenQASM3Visitor.cpp ----------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2021, 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -31,6 +37,10 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/QCS/IR/QCSAttributes.h"
+#include "Dialect/QCS/IR/QCSOps.h"
+
 #include <Frontend/OpenQASM3/QUIRGenQASM3Visitor.h>
 
 #include <Frontend/OpenQASM3/BaseQASM3Visitor.h>
@@ -57,6 +67,8 @@
 #define DEBUG_TYPE "QUIRGen"
 
 using namespace mlir;
+using namespace oq3;
+using namespace qcs;
 using namespace mlir::quir;
 using namespace QASM;
 
@@ -65,8 +77,8 @@ namespace qssc::frontend::openqasm3 {
 using ExpressionValueType = mlir::Value;
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
-  return FileLineColLoc::get(builder.getContext(), filename, node->GetLineNo(),
-                             node->GetColNo());
+  return mlir::FileLineColLoc::get(builder.getContext(), filename,
+                                   node->GetLineNo(), node->GetColNo());
 }
 
 auto QUIRGenQASM3Visitor::assign(Value &val, const std::string &valName)
@@ -147,7 +159,7 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
 void QUIRGenQASM3Visitor::initialize(uint numShots,
                                      const std::string &shotDelay) {
   Location initialLocation =
-      FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
+      mlir::FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
 
   // create the "main" function
   auto func = topLevelBuilder.create<FuncOp>(
@@ -960,7 +972,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
           getLocation(node), builder.getBoolAttr(false));
     }
     auto measurement = createMeasurement(nodeGateOp, false);
-    return builder.create<mlir::quir::CastOp>(
+    return builder.create<mlir::oq3::CastOp>(
         getLocation(node), builder.getType<mlir::quir::CBitType>(1),
         measurement);
   }
@@ -971,14 +983,14 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
   auto stringRepr = llvm::StringRef(node->AsString()).take_back(node->Size());
   llvm::APInt initializer(node->Size(), stringRepr, /* radix */ 2);
 
-  // build an arbitrary-precision integer and let QUIR_CastOp take care of
+  // build an arbitrary-precision integer and let OQ3_CastOp take care of
   // initializing a classical register value from it.
   auto location = getLocation(node);
   auto initializerVal = builder.create<mlir::arith::ConstantOp>(
       location, builder.getIntegerAttr(builder.getIntegerType(node->Size()),
                                        initializer));
 
-  return builder.create<mlir::quir::CastOp>(
+  return builder.create<mlir::oq3::CastOp>(
       location, builder.getType<mlir::quir::CBitType>(node->Size()),
       initializerVal);
 }
@@ -1027,7 +1039,7 @@ QUIRGenQASM3Visitor::visit_(const ASTIdentifierRefNode *node) {
       // single cbit out of a cbit register
       auto cbit = varHandler.generateVariableUse(getLocation(node),
                                                  variableName, symTableEntry);
-      return builder.create<quir::Cbit_ExtractBitOp>(
+      return builder.create<oq3::CBitExtractBitOp>(
           getLocation(node), builder.getI1Type(), cbit,
           builder.getIndexAttr(node->GetIndex()));
     }
@@ -1292,17 +1304,17 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
 
   case ASTOpTypeBitAnd:
     createCastIfTypeMismatch();
-    opRef = builder.create<mlir::quir::Cbit_AndOp>(loc, leftRef, rightRef);
+    opRef = builder.create<mlir::oq3::CBitAndOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeBitOr:
     createCastIfTypeMismatch();
-    opRef = builder.create<mlir::quir::Cbit_OrOp>(loc, leftRef, rightRef);
+    opRef = builder.create<mlir::oq3::CBitOrOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeXor:
     createCastIfTypeMismatch();
-    opRef = builder.create<mlir::quir::Cbit_XorOp>(loc, leftRef, rightRef);
+    opRef = builder.create<mlir::oq3::CBitXorOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeCompEq:

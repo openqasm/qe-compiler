@@ -2,12 +2,18 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --check-prefix MLIR
 
-// NOTE: Only partial support for extern has been added while
-// work is awaited on updating the parser version in
-// https://github.ibm.com/IBM-Q-Software/vt-dynamic-circuits/issues/962
-// we have merged this code as is so that it will be updated in the
-// parser update. After the update we will come back and complete extern
-// support.
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
 
 // AST-PRETTY: DeclarationNode(type=Unknown, ExternNode(name=test0, parameters=[], returns=ResultNode(void))
 // MLIR: func private @test0()
@@ -52,18 +58,18 @@ int[64] f;
 
 // AST-PRETTY: FunctionCallNode(type=ASTTypeFunctionCallExpression, expressions=IdentifierNode(name=a, bits=32), kernelDefinition=DeclarationNode(type=ASTTypeInt, IntNode(signed=true, value=10, bits=32)
 // MLIR: [[RES3:%[0-9]*]] = call @test3(%{{[0-9]+}}) : (i32) -> !quir.cbit<1>
-// MLIR-NEXT: quir.assign_variable @b : !quir.cbit<1> = [[RES3]]
+// MLIR-NEXT: oq3.variable_assign @b : !quir.cbit<1> = [[RES3]]
 b = test3(a);
 
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=d, bits=32), right=FunctionCallNode(type=ASTTypeFunctionCallExpression, expressions=IdentifierNode(name=a, bits=32)IdentifierNode(name=c, bits=32), kernelDefinition=DeclarationNode(type=ASTTypeInt, IntNode(signed=true, value=10, bits=32))
 // AST-PRETTY: DeclarationNode(type=ASTTypeFloat, IdentifierNode(name=b, bits=32))
 // AST-PRETTY: ResultNode(MPDecimalNode(name=ast-mpdecimal-type-param-{{.*}}, bits=32)))
 // MLIR: [[RES4:%[0-9]*]] = call @test4(%{{[0-9]+}}, %{{[0-9]+}}) : (i32, f32) -> f32
-// MLIR-NEXT: quir.assign_variable @d : f32 = [[RES4]]
+// MLIR-NEXT: oq3.variable_assign @d : f32 = [[RES4]]
 d = test4(a, c);
 
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f, bits=64), right=FunctionCallNode(type=ASTTypeFunctionCallExpression, expressions=IdentifierNode(name=e, bits=32), kernelDefinition=DeclarationNode(type=ASTTypeMPInteger, IdentifierNode(name=a, bits=32))
 // AST-PRETTY: ResultNode(MPIntegerNode(name=ast-mpinteger-type-param-{{.*}}, value=0, bits=64, signed=1)))
 // MLIR: [[RES5:%[0-9]*]] = call @test5(%{{[0-9]+}}) : (i32) -> i64
-// MLIR-NEXT: quir.assign_variable @f : i64 = [[RES5]]
+// MLIR-NEXT: oq3.variable_assign @f : i64 = [[RES5]]
 f = test5(e);

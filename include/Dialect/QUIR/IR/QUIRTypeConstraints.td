@@ -1,6 +1,12 @@
 //===- QUIRTypeConstraints.td - QUIR dialect type groups ---*- tablegen -*-===//
 //
-// (C) Copyright IBM 2022.
+// (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -21,12 +27,12 @@ class Qubit<int width> : Type<CPred<[{$_self.isa<::mlir::quir::QubitType>() &&
                     int bitwidth = width;
                 }
 
-def AnyCbit : Type<Or<[
+def AnyCBit : Type<Or<[
                         CPred<"$_self.isa<::mlir::quir::CBitType>()">,
                         CPred<"$_self.isInteger(1)">
                       ]>, "CBit">;
 
-def AnyCbitOrSignlessInteger : Type<Or<[
+def AnyCBitOrSignlessInteger : Type<Or<[
                         CPred<"$_self.isa<::mlir::quir::CBitType>()">,
                         CPred<"$_self.isSignlessInteger()">
                       ]>, "CBitOrInteger">;
@@ -36,13 +42,13 @@ def AnyAngle : Type<CPred<"$_self.isa<::mlir::quir::AngleType>()">, "Angle">;
 
 def AnyAngleOrQubit : AnyTypeOf<[AnyAngle, AnyQubit]>;
 
-def AnyAngleOrCbit : AnyTypeOf<[AnyAngle, AnyCbit]>;
+def AnyAngleOrCBit : AnyTypeOf<[AnyAngle, AnyCBit]>;
 
 // Duration or stretch
 def AnyDuration : Type<CPred<"$_self.isa<::mlir::quir::DurationType>()">, "Duration">;
 def AnyStretch : Type<CPred<"$_self.isa<::mlir::quir::StretchType>()">, "Stretch">;
 def DurationOrStretch : AnyTypeOf<[AnyDuration, AnyStretch]>;
 
-def AnyClassical : AnyTypeOf<[AnyAngle, AnyCbit, DurationOrStretch, AnyInteger, AnyFloat, AnyComplex, Index]>;
+def AnyClassical : AnyTypeOf<[AnyAngle, AnyCBit, DurationOrStretch, AnyInteger, AnyFloat, AnyComplex, Index]>;
 
 #endif // QUIR_TYPECONSTRAINTS

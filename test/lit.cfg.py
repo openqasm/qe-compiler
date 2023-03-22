@@ -1,8 +1,15 @@
-# (C) Copyright IBM 2022.
+# (C) Copyright IBM 2023.
+#
+# This code is part of Qiskit.
+#
+# This code is licensed under the Apache License, Version 2.0 with LLVM
+# Exceptions. You may obtain a copy of this license in the LICENSE.txt
+# file in the root directory of this source tree.
 #
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
+
 #
 # QSS Compiler
 # ============
@@ -36,7 +43,9 @@ llvm_config.use_default_substitutions()
 config.excludes = ["Inputs", "Examples", "CMakeLists.txt", "README.txt", "LICENSE.txt"]
 
 # TODO pull from "virtual env" *activate.py?" "buildenv.py?"
-config.environment["QSSC_RESOURCES"] = os.path.join(config.qss_compiler_obj_root, "resources")
+config.environment["QSSC_RESOURCES"] = os.path.join(
+    config.qss_compiler_obj_root, "resources"
+)
 
 config.qss_compiler_tools_dir = os.path.join(config.qss_compiler_obj_root, "bin")
 

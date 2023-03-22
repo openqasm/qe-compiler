@@ -1,5 +1,18 @@
 // RUN: qss-compiler -X=mlir %s | FileCheck %s
 
+//
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 module {
     // OpenQASM 3.0 Iterative Phase Estimation from Ali
     // defcal y90p %0 {
@@ -145,13 +158,13 @@ module {
     "quir.call_gate"(%q0_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     // measure %0 -> c[0]; // this should not be allowed
     %zeroind = arith.constant 0 : index
-    quir.declare_variable @cbitarray : !quir.cbit<3>
+    oq3.declare_variable @cbitarray : !quir.cbit<3>
     %bitM_1 = quir.call_defcal_measure @defcalMeasure(%q0_0) : (!quir.qubit<1>) -> (i1)
-    quir.assign_cbit_bit @cbitarray<3> [0] : i1 = %bitM_1
+    oq3.cbit_assign_bit @cbitarray<3> [0] : i1 = %bitM_1
     // c <<= 1;
     %c1_i32 = arith.constant 1 : i32
-    %creg_X = quir.use_variable @cbitarray : !quir.cbit<3>
-    %creg_1 = quir.cbit_lshift %creg_X, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
+    %creg_X = oq3.variable_load @cbitarray : !quir.cbit<3>
+    %creg_1 = oq3.cbit_lshift %creg_X, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
     // reset %0;
     quir.reset %q0_0 : !quir.qubit<1>
     // h %0;
@@ -173,10 +186,10 @@ module {
     // angle[32] temp_1 = 0.375*pi;
     // temp_1 -= c;  // cast and do arithmetic mod 2 pi
     %tmp_angle_1 = quir.constant #quir.angle<0.375  : !quir.angle<32>>
-    %cast_c = "quir.cast"(%creg_1) : (!quir.cbit<3>) -> !quir.angle<32>
+    %cast_c = "oq3.cast"(%creg_1) : (!quir.cbit<3>) -> !quir.angle<32>
     // Math Ops resulting in !quir.angle<32>
     %tmp_angle_2 = quir.constant #quir.angle<0.0  : !quir.angle<32>>
-    %tmp_angle_2_cast = "quir.cast"(%tmp_angle_2) : (!quir.angle<32>) -> !quir.angle<20>
+    %tmp_angle_2_cast = "oq3.cast"(%tmp_angle_2) : (!quir.angle<32>) -> !quir.angle<20>
     // phase(temp_1) %0;
     "quir.call_gate"(%tmp_angle_2_cast, %q1_0) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     // h %0;
@@ -184,11 +197,11 @@ module {
     // measure %0 -> c[0];
     %bitM_2 = quir.call_defcal_measure @defcalMeasure(%q0_0) : (!quir.qubit<1>) -> (i1)
     // recent MLIR releases can express "tensor insert element", which we code around here:
-    quir.assign_variable @cbitarray : !quir.cbit<3> = %creg_1
-    quir.assign_cbit_bit @cbitarray<3> [0] : i1 = %bitM_2
-    %creg_2 = quir.use_variable @cbitarray : !quir.cbit<3>
+    oq3.variable_assign @cbitarray : !quir.cbit<3> = %creg_1
+    oq3.cbit_assign_bit @cbitarray<3> [0] : i1 = %bitM_2
+    %creg_2 = oq3.variable_load @cbitarray : !quir.cbit<3>
     // c <<= 1;
-    %creg_3 = quir.cbit_lshift %creg_2, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
+    %creg_3 = oq3.cbit_lshift %creg_2, %c1_i32 : (!quir.cbit<3>, i32) -> !quir.cbit<3>
     // reset %0;
     // h %0;
     // duration d;

@@ -1,5 +1,18 @@
 // RUN: qss-compiler -X=mlir %s | FileCheck %s
+
 //
+// This code is part of Qiskit.
+//
+// (C) Copyright IBM 2023.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+
 // This test case checks that QUIR declarations can be parsed from
 // textual/assembly input.
 module {
@@ -16,12 +29,12 @@ module {
         %mu = quir.constant #quir.angle<0.2 : !quir.angle>
         // CHECK %{{.*}} = quir.declare_duration {value = "10ns"} : !quir.duration
         %len1 = "quir.declare_duration"() {value = "10ns"} : () -> !quir.duration
-        // CHECK %{{.*}} = quir.declare_stretch : !quir.stretch
-        %s1 = "quir.declare_stretch"() : () -> !quir.stretch
-        // CHECK %{{.*}} = quir.declare_stretch : !quir.stretch
-        %s2 = quir.declare_stretch : !quir.stretch
-        quir.declare_variable { input } @flags : !quir.cbit<32>
-        quir.declare_variable { output } @result : !quir.cbit<1>
+        // CHECK %{{.*}} = oq3.declare_stretch : !quir.stretch
+        %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
+        // CHECK %{{.*}} = oq3.declare_stretch : !quir.stretch
+        %s2 = oq3.declare_stretch : !quir.stretch
+        oq3.declare_variable { input } @flags : !quir.cbit<32>
+        oq3.declare_variable { output } @result : !quir.cbit<1>
         return
     }
 }
