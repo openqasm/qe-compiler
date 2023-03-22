@@ -1,6 +1,12 @@
-//===- SchedulePortSequence.h  - Schedule Pulse on single port ---- C++ -*-===//
+//===- SchedulePort.h  - Schedule Pulse on single port ----------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
+//
+// This code is part of Qiskit.
+//
+// This code is licensed under the Apache License, Version 2.0 with LLVM
+// Exceptions. You may obtain a copy of this license in the LICENSE.txt
+// file in the root directory of this source tree.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -9,8 +15,8 @@
 //===----------------------------------------------------------------------===//
 ///
 ///  This file implements the pass for scheduling on a single port. The
-///  pass operates at the sequence level. For an alternate pass which operates
-///  at the module level see: SchedulePortModule.{h,cpp}. Functionality
+///  pass operates at the module level. For an alternate pass which operates
+///  at the sequence level see: SchedulePortSequence.{h,cpp}. Functionality
 ///  common to both passes is implemented in Utils/SchedulePort.{h,cpp}
 ///
 ///  A single port may have multiple frames mixed with it (measurement vs drive,
@@ -21,26 +27,29 @@
 ///  See SchedulePort.cpp for more detailed background.
 //===----------------------------------------------------------------------===//
 
-#ifndef PULSE_SCHEDULE_PORT_SEQUENCE_H
-#define PULSE_SCHEDULE_PORT_SEQUENCE_H
+#ifndef PULSE_SCHEDULE_PORT_MODULE_H
+#define PULSE_SCHEDULE_PORT_MODULE_H
 
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Utils/DebugIndent.h"
 #include "mlir/Pass/Pass.h"
 
-#include <map>
-#include <vector>
+#include <deque>
+#include <set>
 
 namespace mlir::pulse {
 
-class SchedulePortSequencePass
-    : public PassWrapper<SchedulePortSequencePass, OperationPass<SequenceOp>>,
+class SchedulePortPass
+    : public PassWrapper<SchedulePortPass, OperationPass<ModuleOp>>,
       protected qssc::utils::DebugIndent {
 public:
   void runOnOperation() override;
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+
+private:
+  uint processCall(Operation *module, CallSequenceOp &callSequenceOp);
 };
 } // namespace mlir::pulse
 

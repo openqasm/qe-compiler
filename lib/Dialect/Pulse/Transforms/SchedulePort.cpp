@@ -1,4 +1,4 @@
-//===- SchedulePortModule.cpp - Schedule Ops on single port -----*- C++ -*-===//
+//===- SchedulePort.cpp - Schedule Ops on single port -----------*- C++ -*-===//
 //
 // (C) Copyright IBM 2022, 2023.
 //
@@ -20,19 +20,19 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/Pulse/Transforms/SchedulePortModule.h"
+#include "Dialect/Pulse/Transforms/SchedulePort.h"
 #include "Dialect/Pulse/Utils/SchedulePort.h"
 #include "Dialect/Pulse/Utils/Utils.h"
 
 #include "llvm/Support/Debug.h"
 
-#define DEBUG_TYPE "SchedulePortModulePass"
+#define DEBUG_TYPE "SchedulePortPass"
 
 using namespace mlir;
 using namespace mlir::pulse;
 
-uint SchedulePortModulePass::processCall(Operation *module,
-                                         CallSequenceOp &callSequenceOp) {
+uint SchedulePortPass::processCall(Operation *module,
+                                   CallSequenceOp &callSequenceOp) {
 
   INDENT_DEBUG("==== processCall - start  ===================\n");
   INDENT_DUMP(callSequenceOp.dump());
@@ -58,22 +58,22 @@ uint SchedulePortModulePass::processCall(Operation *module,
   return calleeDuration;
 }
 
-void SchedulePortModulePass::runOnOperation() {
+void SchedulePortPass::runOnOperation() {
 
   Operation *module = getOperation();
 
-  INDENT_DEBUG("===== SchedulePortModulePass - start ==========\n");
+  INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
 
   module->walk([&](CallSequenceOp op) { processCall(module, op); });
 
-  INDENT_DEBUG("=====  SchedulePortModulePass - end ===========\n");
+  INDENT_DEBUG("=====  SchedulePortPass - end ===========\n");
 
 } // runOnOperation
 
-llvm::StringRef SchedulePortModulePass::getArgument() const {
+llvm::StringRef SchedulePortPass::getArgument() const {
   return "pulse-schedule-port-module";
 }
 
-llvm::StringRef SchedulePortModulePass::getDescription() const {
+llvm::StringRef SchedulePortPass::getDescription() const {
   return "Schedule operations on the same port in a sequence";
 }
