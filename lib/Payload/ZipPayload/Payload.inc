@@ -13,10 +13,10 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file defines static objects that register payloads
-//  with the QSS compiler core.
-//
+///
+/// This file defines static objects that register payloads
+/// with the QSS compiler core.
+///
 //===----------------------------------------------------------------------===//
 
 #ifndef PAYLOAD_PAYLOAD_ZIPPAYLOAD_H

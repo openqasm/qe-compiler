@@ -13,9 +13,9 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-// Declares the ZipPayload class
-//
+///
+/// Declares the ZipPayload class
+///
 //===----------------------------------------------------------------------===//
 
 #ifndef PAYLOAD_ZIPPAYLOAD_H
