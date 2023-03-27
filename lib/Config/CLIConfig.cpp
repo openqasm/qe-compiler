@@ -43,7 +43,10 @@ static llvm::cl::opt<bool> allowUnregisteredDialects(
     llvm::cl::desc("Allow operation with no registered dialects"),
     llvm::cl::init(false), llvm::cl::cat(getQSSCCategory()));
 
-
+static llvm::cl::opt<bool>
+    addTargetPasses("add-target-passes",
+                    llvm::cl::desc("Add target-specific passes"),
+                    llvm::cl::init(true), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
     if (auto err = populateConfigurationPath_(config))
@@ -53,6 +56,9 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
         return err;
 
     if (auto err = populateAllowUnregisteredDialects_(config))
+        return err;
+
+    if (auto err = addTargetPasses_(config))
         return err;
 
     return llvm::Error::success();
@@ -65,6 +71,7 @@ llvm::Error CLIConfigBuilder::populateConfigurationPath_(QSSConfig &config) {
     return llvm::Error::success();
 
 }
+
 llvm::Error CLIConfigBuilder::populateTarget_(QSSConfig &config) {
     if (targetStr != "")
         config.targetConfigPath = targetStr;
@@ -73,5 +80,10 @@ llvm::Error CLIConfigBuilder::populateTarget_(QSSConfig &config) {
 }
 llvm::Error CLIConfigBuilder::populateAllowUnregisteredDialects_(QSSConfig &config) {
     config.allowUnregisteredDialects = allowUnregisteredDialects;
+    return llvm::Error::success();
+}
+
+llvm::Error CLIConfigBuilder::addTargetPasses_(QSSConfig &config) {
+    config.addTargetPasses = addTargetPasses;
     return llvm::Error::success();
 }

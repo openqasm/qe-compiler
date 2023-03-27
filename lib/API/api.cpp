@@ -65,37 +65,10 @@ static llvm::cl::opt<std::string>
                    llvm::cl::value_desc("filename"), llvm::cl::init("-"),
                    llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-static llvm::cl::opt<std::string> configurationPath(
-    "config",
-    llvm::cl::desc("Path to configuration file or directory (depends on the "
-                   "target), - means use the config service"),
-    llvm::cl::value_desc("path"), llvm::cl::cat(qssc::config::getQSSCCategory()));
-
-static llvm::cl::opt<std::string>
-    targetStr("target",
-              llvm::cl::desc(
-                  "Target architecture. Required for machine code generation."),
-              llvm::cl::value_desc("targetName"), llvm::cl::cat(qssc::config::getQSSCCategory()));
-
 static llvm::cl::opt<bool>
     directInput("direct",
                 llvm::cl::desc("Accept the input program directly as a string"),
                 llvm::cl::cat(qssc::config::getQSSCCategory()));
-
-static llvm::cl::opt<bool>
-    addTargetPasses("add-target-passes",
-                    llvm::cl::desc("Add target-specific passes"),
-                    llvm::cl::init(true), llvm::cl::cat(qssc::config::getQSSCCategory()));
-
-/*
-// This is mainly used for increasing test speed
-// not used currently, may enable in future
-static llvm::cl::opt<bool> splitInputFile(
-    "split-input-file",
-    llvm::cl::desc("Split the input file into pieces and process each "
-                   "chunk independently"),
-    llvm::cl::init(false));
-*/
 
 static llvm::cl::opt<bool> verifyDiagnostics(
     "verify-diagnostics",
@@ -107,11 +80,6 @@ static llvm::cl::opt<bool> verifyPasses(
     "verify-each",
     llvm::cl::desc("Run the verifier after each transformation pass"),
     llvm::cl::init(true), llvm::cl::cat(qssc::config::getQSSCCategory()));
-
-static llvm::cl::opt<bool> allowUnregisteredDialects(
-    "allow-unregistered-dialect",
-    llvm::cl::desc("Allow operation with no registered dialects"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool>
     showDialects("show-dialects",
@@ -333,10 +301,22 @@ static void printVersion(llvm::raw_ostream &out) {
       << qssc::getQSSCVersion() << "\n";
 }
 
+/// Build the QSSConfig using the standard sources.
+static llvm::Expected<qssc::config::QSSConfig> buildConfig() {
+  // Build configuration only from the CLI for now.
+  return qssc::config::CLIConfigBuilder().buildConfig();
+}
+
 static llvm::Error
 compile_(int argc, char const **argv, std::string *outputString,
          llvm::Optional<qssc::DiagnosticCallback> diagnosticCb) {
   llvm::InitLLVM y(argc, argv);
+
+  auto configResult = buildConfig();
+  if (auto err = configResult.takeError())
+    return err;
+
+  qssc::config::QSSConfig config = configResult.get();
 
   if (auto err = registerPasses())
     return err;
@@ -384,21 +364,31 @@ compile_(int argc, char const **argv, std::string *outputString,
   determineOutputType();
 
   // Make sure target exists if specified
-  if (!targetStr.empty() &&
-      !qssc::hal::registry::TargetSystemRegistry::pluginExists(targetStr))
+  auto targetName = config.targetName;
+  if (!targetName.has_value())
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Error: Target " + targetStr +
+                                "Error: A target was not specified.");
+
+
+  if(!qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Error: Target " + *targetName +
                                        " is not registered.");
 
   qssc::hal::registry::TargetSystemInfo &targetInfo =
-      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(targetStr)
+      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(*targetName)
            .getValueOr(qssc::hal::registry::TargetSystemRegistry::
                            nullTargetSystemInfo());
 
   MLIRContext context{};
   llvm::Optional<llvm::StringRef> conf{};
-  if (!configurationPath.empty())
-    conf.emplace(configurationPath);
+
+  auto targetConfigPath = config.targetConfigPath;
+  if (!targetConfigPath.has_value())
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                            "Error: A target configuration path was not specified.");
+  conf.emplace(*targetConfigPath);
+
   auto created = targetInfo.createTarget(&context, conf);
   if (auto err = created.takeError()) {
     return llvm::joinErrors(
@@ -458,7 +448,7 @@ compile_(int argc, char const **argv, std::string *outputString,
   mlir::ModuleOp moduleOp;
 
   context.appendDialectRegistry(registry);
-  context.allowUnregisteredDialects(allowUnregisteredDialects);
+  context.allowUnregisteredDialects(config.allowUnregisteredDialects);
   context.printOpOnDiagnostic(!verifyDiagnostics);
 
   if (inputType == InputType::QASM) {
@@ -527,7 +517,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction > Action::DumpMLIR)
     // check if the target quir to std pass has been specified in the CL
-    if (addTargetPasses)
+    if (config.addTargetPasses)
       if (auto err = target.addPayloadPasses(pm))
         return llvm::joinErrors(
             llvm::createStringError(llvm::inconvertibleErrorCode(),

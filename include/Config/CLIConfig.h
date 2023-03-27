@@ -25,13 +25,14 @@ namespace qssc::config {
 llvm::cl::OptionCategory& getQSSCCategory();
 
 /// @brief Build a QSSConfig from input CLI arguments.
-class CLIConfigBuilder : QSSConfigBuilder {
+class CLIConfigBuilder : public QSSConfigBuilder {
     public:
         llvm::Error populateConfig(QSSConfig &config) override;
     private:
         llvm::Error populateConfigurationPath_(QSSConfig &config);
         llvm::Error populateTarget_(QSSConfig &config);
         llvm::Error populateAllowUnregisteredDialects_(QSSConfig &config);
+        llvm::Error addTargetPasses_(QSSConfig &config);
 };
 
 

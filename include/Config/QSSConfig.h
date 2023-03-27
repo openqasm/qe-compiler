@@ -37,6 +37,8 @@ struct QSSConfig {
     std::optional<std::string> targetConfigPath = std::nullopt;
     /// @brief Allow unregistered dialects to be used during compilation.
     bool allowUnregisteredDialects = false;
+    /// @brief Register target passes with the compiler.
+    bool addTargetPasses = true;
 };
 
 /// @brief A builder class for the QSSConfig. All standard configuration
