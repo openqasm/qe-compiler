@@ -226,7 +226,7 @@ void SchedulePortPass::runOnOperation() {
 } // runOnOperation
 
 llvm::StringRef SchedulePortPass::getArgument() const {
-  return "pulse-schedule-port-module";
+  return "pulse-schedule-port";
 }
 
 llvm::StringRef SchedulePortPass::getDescription() const {
