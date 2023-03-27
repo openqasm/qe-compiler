@@ -45,6 +45,11 @@ uint64_t SchedulePortPass::processCall(Operation *module,
   auto callee = callSequenceOp.getCallee();
   auto sequenceOp =
       dyn_cast<SequenceOp>(SymbolTable::lookupSymbolIn(module, callee));
+  if (!sequenceOp) {
+    callSequenceOp->emitError()
+      << "Unable to find callee symbol " << callee << ".";
+      signalPassFailure();
+  }
   uint64_t calleeDuration = processSequence(sequenceOp);
  
 
@@ -88,18 +93,6 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
   return maxTime;
 }
 
-void SchedulePortPass::runOnOperation() {
-
-  Operation *module = getOperation();
-
-  INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
-
-  module->walk([&](CallSequenceOp op) { processCall(module, op); });
-
-  INDENT_DEBUG("=====  SchedulePortPass - end ===========\n");
-
-} // runOnOperation
-
 SchedulePortPass::mixedFrameMap_t 
 SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
                                    uint &numMixedFrames) {
@@ -130,21 +123,21 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
           Value target;
           // get mixed_frames
           if (isa<DelayOp>(op))
-            target = dyn_cast<DelayOp>(op).target();
+            target = cast<DelayOp>(op).target();
           else if (isa<PlayOp>(op))
-            target = dyn_cast<PlayOp>(op).target();
+            target = cast<PlayOp>(op).target();
           else if (isa<CaptureOp>(op))
-            target = dyn_cast<CaptureOp>(op).target();
+            target = cast<CaptureOp>(op).target();
           else if (isa<SetFrequencyOp>(op))
-            target = dyn_cast<SetFrequencyOp>(op).target();
+            target = cast<SetFrequencyOp>(op).target();
           else if (isa<SetPhaseOp>(op))
-            target = dyn_cast<SetPhaseOp>(op).target();
+            target = cast<SetPhaseOp>(op).target();
           else if (isa<ShiftFrequencyOp>(op))
-            target = dyn_cast<ShiftFrequencyOp>(op).target();
+            target = cast<ShiftFrequencyOp>(op).target();
           else if (isa<ShiftPhaseOp>(op))
-            target = dyn_cast<ShiftPhaseOp>(op).target();
+            target = cast<ShiftPhaseOp>(op).target();
           else if (isa<SetAmplitudeOp>(op))
-            target = dyn_cast<SetAmplitudeOp>(op).target();
+            target = cast<SetAmplitudeOp>(op).target();
 
           auto blockArg = target.cast<BlockArgument>();
           auto index = blockArg.getArgNumber();
@@ -219,6 +212,18 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
     }
   }
 } // sortOpsByType
+
+void SchedulePortPass::runOnOperation() {
+
+  Operation *module = getOperation();
+
+  INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
+
+  module->walk([&](CallSequenceOp op) { processCall(module, op); });
+
+  INDENT_DEBUG("=====  SchedulePortPass - end ===========\n");
+
+} // runOnOperation
 
 llvm::StringRef SchedulePortPass::getArgument() const {
   return "pulse-schedule-port-module";
