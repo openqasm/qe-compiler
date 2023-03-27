@@ -31,15 +31,15 @@ module @drive_0 attributes {quir.nodeId = 0 : i32, quir.nodeType = "drive", quir
     // CHECK-NOT: %c7_i32 = arith.constant 7 : i32
     // CHECK-NOT: %c10_i32 = arith.constant 10 : i32
     pulse.delay(%arg2, %c2_i32) : (!pulse.mixed_frame, i32)
-    pulse.play(%arg2, %arg0) : (!pulse.mixed_frame, !pulse.waveform)
+    pulse.play { pulse.duration = 3 : i64}(%arg2, %arg0) : (!pulse.mixed_frame, !pulse.waveform)
     pulse.delay(%arg2, %c10_i32) : (!pulse.mixed_frame, i32)
     pulse.delay(%arg3, %c7_i32) : (!pulse.mixed_frame, i32)
-    pulse.play(%arg3, %arg1) : (!pulse.mixed_frame, !pulse.waveform)
+    pulse.play { pulse.duration = 5 : i64}(%arg3, %arg1) : (!pulse.mixed_frame, !pulse.waveform)
     pulse.delay(%arg3, %c3_i32) : (!pulse.mixed_frame, i32)
-    // CHECK-NOT: pulse.delay {pulse.timepoint = 0 : i64}(%[[ARG2]], %{{.*}}) : (!pulse.mixed_frame, i32)
-    // CHECK: pulse.play {pulse.timepoint = 2 : i64}(%[[ARG2]], %[[ARG0]]) : (!pulse.mixed_frame, !pulse.waveform)
-    // CHECK-NOT: pulse.delay {pulse.timepoint = 5 : i64}(%[[ARG3]], %{{.*}}) : (!pulse.mixed_frame, i32)
-    // CHECK: pulse.play {pulse.timepoint = 7 : i64}(%[[ARG3]], %[[ARG1]]) : (!pulse.mixed_frame, !pulse.waveform)
+    // CHECK-NOT: pulse.delay {pulse.timepoint = 0 : u64}(%[[ARG2]], %{{.*}}) : (!pulse.mixed_frame, i32)
+    // CHECK: pulse.play {pulse.duration = 3 : i64, pulse.timepoint = 2 : i64}(%[[ARG2]], %[[ARG0]]) : (!pulse.mixed_frame, !pulse.waveform)
+    // CHECK-NOT: pulse.delay {pulse.timepoint = 5 : u64}(%[[ARG3]], %{{.*}}) : (!pulse.mixed_frame, i32)
+    // CHECK: pulse.play {pulse.duration = 5 : i64, pulse.timepoint = 7 : i64}(%[[ARG3]], %[[ARG1]]) : (!pulse.mixed_frame, !pulse.waveform)
     // CHECK: pulse.return {pulse.timepoint = 15 : i64} %false : i1
     pulse.return %false : i1
   }

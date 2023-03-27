@@ -176,8 +176,10 @@ void  SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
                   "labeled with a pulse.duration attribute";
            signalPassFailure();
          }
-        uint64_t duration = 
-          playOp->getAttrOfType<IntegerAttr>("pulse.duration").getUInt();
+        // MLIR does does not have a setUI64IntegerAttr so duration is stored
+        // in a I64IntegerAttr but should be treated as a uint64_t
+        uint64_t duration = static_cast<uint64_t>(
+          playOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
         currentTimepoint += duration;
       }
     }
