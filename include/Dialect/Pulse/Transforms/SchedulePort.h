@@ -27,8 +27,8 @@
 ///  See SchedulePort.cpp for more detailed background.
 //===----------------------------------------------------------------------===//
 
-#ifndef PULSE_SCHEDULE_PORT_MODULE_H
-#define PULSE_SCHEDULE_PORT_MODULE_H
+#ifndef PULSE_SCHEDULE_PORT_H
+#define PULSE_SCHEDULE_PORT_H
 
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Utils/DebugIndent.h"
@@ -49,8 +49,15 @@ public:
   llvm::StringRef getDescription() const override;
 
 private:
-  uint processCall(Operation *module, CallSequenceOp &callSequenceOp);
+  using mixedFrameMap_t = std::map<uint, std::vector<Operation *>>;
+  uint64_t processCall(Operation *module, CallSequenceOp &callSequenceOp);
+  mixedFrameMap_t buildMixedFrameMap(SequenceOp &sequenceOp,
+                                   uint &numMixedFrames);
+  void sortOpsByTimepoint(SequenceOp &sequenceOp);
+  uint64_t processSequence(SequenceOp sequenceOp); 
+  void addTimepoints(mlir::OpBuilder &builder,
+                   mixedFrameMap_t &mixedFrameSequences, uint64_t &maxTime);                                 
 };
 } // namespace mlir::pulse
 
-#endif // PULSE_SCHEDULE_CHANNEL_H
+#endif // PULSE_SCHEDULE_PORT_H
