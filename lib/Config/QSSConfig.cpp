@@ -16,7 +16,10 @@
 
 using namespace qssc::config;
 
+
 llvm::Expected<QSSConfig> QSSConfigBuilder::buildConfig() {
     QSSConfig config;
-    return populateConfig(config);
+    if (auto e = populateConfig(config))
+        return e;
+    return config;
 }

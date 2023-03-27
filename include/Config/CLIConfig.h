@@ -16,10 +16,22 @@
 
 #include "Config/QSSConfig.h"
 
+#include "llvm/Support/CommandLine.h"
+
 namespace qssc::config {
 
+/// @brief Get the CLI category for the QSS compiler.
+/// @return The reference to the CLI category for the compiler.
+llvm::cl::OptionCategory& getQSSCCategory();
+
+/// @brief Build a QSSConfig from input CLI arguments.
 class CLIConfigBuilder : QSSConfigBuilder {
-    llvm::Error populateConfig(QSSConfig &config) override;
+    public:
+        llvm::Error populateConfig(QSSConfig &config) override;
+    private:
+        llvm::Error populateConfigurationPath_(QSSConfig &config);
+        llvm::Error populateTarget_(QSSConfig &config);
+        llvm::Error populateAllowUnregisteredDialects_(QSSConfig &config);
 };
 
 

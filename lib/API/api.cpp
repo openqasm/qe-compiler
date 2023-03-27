@@ -15,6 +15,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
+#include "Config/CLIConfig.h"
 
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -53,43 +54,38 @@
 
 using namespace mlir;
 
-// The space below at the front of the string causes this category to be printed
-// first
-llvm::cl::OptionCategory
-    qsscCat(" QSS Compiler Options",
-            "Options that control high-level behavior of QSS Compiler");
 
 static llvm::cl::opt<std::string>
     inputSource(llvm::cl::Positional,
                 llvm::cl::desc("Input filename or program source"),
-                llvm::cl::init("-"), llvm::cl::cat(qsscCat));
+                llvm::cl::init("-"), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<std::string>
     outputFilename("o", llvm::cl::desc("Output filename"),
                    llvm::cl::value_desc("filename"), llvm::cl::init("-"),
-                   llvm::cl::cat(qsscCat));
+                   llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<std::string> configurationPath(
     "config",
     llvm::cl::desc("Path to configuration file or directory (depends on the "
                    "target), - means use the config service"),
-    llvm::cl::value_desc("path"), llvm::cl::cat(qsscCat));
+    llvm::cl::value_desc("path"), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<std::string>
     targetStr("target",
               llvm::cl::desc(
                   "Target architecture. Required for machine code generation."),
-              llvm::cl::value_desc("targetName"), llvm::cl::cat(qsscCat));
+              llvm::cl::value_desc("targetName"), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool>
     directInput("direct",
                 llvm::cl::desc("Accept the input program directly as a string"),
-                llvm::cl::cat(qsscCat));
+                llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool>
     addTargetPasses("add-target-passes",
                     llvm::cl::desc("Add target-specific passes"),
-                    llvm::cl::init(true), llvm::cl::cat(qsscCat));
+                    llvm::cl::init(true), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 /*
 // This is mainly used for increasing test speed
@@ -105,27 +101,27 @@ static llvm::cl::opt<bool> verifyDiagnostics(
     "verify-diagnostics",
     llvm::cl::desc("Check that emitted diagnostics match "
                    "expected-* lines on the corresponding line"),
-    llvm::cl::init(false), llvm::cl::cat(qsscCat));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool> verifyPasses(
     "verify-each",
     llvm::cl::desc("Run the verifier after each transformation pass"),
-    llvm::cl::init(true), llvm::cl::cat(qsscCat));
+    llvm::cl::init(true), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool> allowUnregisteredDialects(
     "allow-unregistered-dialect",
     llvm::cl::desc("Allow operation with no registered dialects"),
-    llvm::cl::init(false), llvm::cl::cat(qsscCat));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool>
     showDialects("show-dialects",
                  llvm::cl::desc("Print the list of registered dialects"),
-                 llvm::cl::init(false), llvm::cl::cat(qsscCat));
+                 llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool>
     showTargets("show-targets",
                 llvm::cl::desc("Print the list of registered targets"),
-                llvm::cl::init(false), llvm::cl::cat(qsscCat));
+                llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool>
     showPayloads("show-payloads",
@@ -135,7 +131,7 @@ static llvm::cl::opt<bool>
 static llvm::cl::opt<bool>
     plaintextPayload("plaintext-payload",
                      llvm::cl::desc("Write the payload in plaintext"),
-                     llvm::cl::init(false), llvm::cl::cat(qsscCat));
+                     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 namespace {
 enum InputType { NONE, QASM, MLIR, QOBJ };
