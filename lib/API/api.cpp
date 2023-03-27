@@ -363,14 +363,9 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   determineOutputType();
 
-  // Make sure target exists if specified
   auto targetName = config.targetName;
-  if (!targetName.has_value())
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                "Error: A target was not specified.");
-
-
-  if(!qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
+  if(!targetName.has_value() && !qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
+    // Make sure target exists if specified
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Error: Target " + *targetName +
                                        " is not registered.");
