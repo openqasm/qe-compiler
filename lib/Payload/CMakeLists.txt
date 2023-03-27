@@ -10,13 +10,34 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-ADD_LIBRARY(QSSCPayload Payload.cpp)
-include_directories(${PROJECT_SOURCE_DIR}/include)
+add_subdirectory(ZipPayload)
 
-get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
-get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
-set(LIBS
-        libzip::zip
-        )
+# Register payloads with build system
+foreach(payload_path ${QSSC_PAYLOAD_PATHS})
+    message(STATUS "Adding QSS Payload directory: ${payload_path}")
+    add_subdirectory(${payload_path} ${CMAKE_CURRENT_BINARY_DIR}/Payloads/${payload_path})
+endforeach()
 
-target_link_libraries(QSSCPayload PRIVATE ${LIBS})
+# Write Payloads.inc file for registration
+get_property(reg_headers GLOBAL PROPERTY QSSC_PAYLOAD_REGISTRATION_HEADERS)
+foreach(REG_HEADER ${reg_headers})
+    set(PAYLOAD_REGISTRATION_INCLUDE_SECTION "${PAYLOAD_REGISTRATION_INCLUDE_SECTION}#include \"${REG_HEADER}\"\n")
+endforeach()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Payloads.inc.in ${CMAKE_CURRENT_BINARY_DIR}/Payloads.inc)
+unset(PAYLOAD_REGISTRATION_INCLUDE_SECTION)
+
+# Add QSSCHAL lib
+get_property(qssc_payloads GLOBAL PROPERTY QSSC_PAYLOADS)
+qssc_add_library(QSSCPayload
+        Payload.cpp
+
+        ADDITIONAL_HEADER_DIRS
+        ${QSSC_INCLUDE_DIR}/Payload
+
+        LINK_LIBS
+        ${qssc_payloads}
+)
+
+# Add include directory to pick up generated Payloads.inc
+target_include_directories(QSSCPayload PRIVATE ${QSSC_BINARY_DIR}/lib/Payload/)

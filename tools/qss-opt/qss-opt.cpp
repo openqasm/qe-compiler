@@ -25,7 +25,6 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/InitAllDialects.h"
 #include "mlir/InitAllPasses.h"
-#include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Support/MlirOptMain.h"
@@ -36,10 +35,10 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
-#include "QSSC.h"
-
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystemRegistry.h"
+
+#include "Payload/PayloadRegistry.h"
 
 #include "Dialect/OQ3/IR/OQ3Dialect.h"
 #include "Dialect/Pulse/IR/PulseDialect.h"
@@ -143,6 +142,13 @@ auto main(int argc, char **argv) -> int {
     for (const auto &target :
          registry::TargetSystemRegistry::registeredPlugins()) {
       os << target.second.getName() << " - " << target.second.getDescription()
+         << "\n";
+    }
+
+    os << "\nAvailable Payloads:\n";
+    for (const auto &payload :
+         qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
+      os << payload.second.getName() << " - " << payload.second.getDescription()
          << "\n";
     }
   }
