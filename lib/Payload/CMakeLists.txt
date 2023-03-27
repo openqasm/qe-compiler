@@ -39,5 +39,5 @@ qssc_add_library(QSSCPayload
         ${qssc_payloads}
 )
 
-# Add include directory to pick up generated Targets.inc
+# Add include directory to pick up generated Payloads.inc
 target_include_directories(QSSCPayload PRIVATE ${QSSC_BINARY_DIR}/lib/Payload/)
