@@ -1,4 +1,4 @@
-//===- Payload.cpp ----------------------------------------------*- C++ -*-===//
+//===- ZipPayload.cpp -------------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,7 +14,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// Implements the Payload wrapper class
+/// Implements the ZipPayload class
 ///
 //===----------------------------------------------------------------------===//
 
@@ -204,7 +204,7 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
     return;
   }
 
-  //===---- Repen for copying ----===//
+  //===---- Reopen for copying ----===//
   // reopen the archive stored in the new_archive_src
   zip_source_open(new_archive_src);
   // seek to the end of the archive
