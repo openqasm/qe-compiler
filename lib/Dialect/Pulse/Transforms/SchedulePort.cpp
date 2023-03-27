@@ -94,8 +94,8 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
 }
 
 SchedulePortPass::mixedFrameMap_t 
-SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
-                                   uint &numMixedFrames) {
+SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp, 
+                                     uint32_t &numMixedFrames) {
 
   // build a map between mixed frame (as represented by the arg index)
   // and a vector of operations on that mixed frame
@@ -160,7 +160,7 @@ void  SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
   // independently for each mixed frame.
 
   for (const auto &index : mixedFrameSequences) {
-    uint currentTimepoint = 0;
+    uint64_t currentTimepoint = 0;
     for (auto *op : index.second) {
       // set attribute on op with current timepoint
       IntegerAttr timepointAttr = builder.getI64IntegerAttr(currentTimepoint);
