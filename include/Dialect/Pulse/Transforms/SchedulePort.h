@@ -52,15 +52,14 @@ private:
   using mixedFrameMap_t = std::map<uint32_t, std::vector<Operation *>>;
 
   uint64_t processCall(Operation *module, CallSequenceOp &callSequenceOp);
-  uint64_t processSequence(SequenceOp sequenceOp); 
+  uint64_t processSequence(SequenceOp sequenceOp);
 
   mixedFrameMap_t buildMixedFrameMap(SequenceOp &sequenceOp,
-                                   uint32_t &numMixedFrames);
+                                     uint32_t &numMixedFrames);
 
-  
   void addTimepoints(mlir::OpBuilder &builder,
-                   mixedFrameMap_t &mixedFrameSequences, uint64_t &maxTime);     
-  void sortOpsByTimepoint(SequenceOp &sequenceOp);                                               
+                     mixedFrameMap_t &mixedFrameSequences, uint64_t &maxTime);
+  void sortOpsByTimepoint(SequenceOp &sequenceOp);
 };
 } // namespace mlir::pulse
 

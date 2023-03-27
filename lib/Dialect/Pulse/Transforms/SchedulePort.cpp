@@ -34,7 +34,7 @@ using namespace mlir;
 using namespace mlir::pulse;
 
 uint64_t SchedulePortPass::processCall(Operation *module,
-                                   CallSequenceOp &callSequenceOp) {
+                                       CallSequenceOp &callSequenceOp) {
 
   INDENT_DEBUG("==== processCall - start  ===================\n");
   INDENT_DUMP(callSequenceOp.dump());
@@ -47,11 +47,10 @@ uint64_t SchedulePortPass::processCall(Operation *module,
       dyn_cast<SequenceOp>(SymbolTable::lookupSymbolIn(module, callee));
   if (!sequenceOp) {
     callSequenceOp->emitError()
-      << "Unable to find callee symbol " << callee << ".";
-      signalPassFailure();
+        << "Unable to find callee symbol " << callee << ".";
+    signalPassFailure();
   }
   uint64_t calleeDuration = processSequence(sequenceOp);
- 
 
   INDENT_DEBUG("====  processCall - end  ====================\n");
   INDENT_DUMP(callSequenceOp.dump());
@@ -93,8 +92,8 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
   return maxTime;
 }
 
-SchedulePortPass::mixedFrameMap_t 
-SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp, 
+SchedulePortPass::mixedFrameMap_t
+SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
                                      uint32_t &numMixedFrames) {
 
   // build a map between mixed frame (as represented by the arg index)
@@ -150,8 +149,9 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
   return mixedFrameSequences;
 } // buildMixedFrameMap
 
-void  SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
-                   mixedFrameMap_t &mixedFrameSequences, uint64_t &maxTime) {
+void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
+                                     mixedFrameMap_t &mixedFrameSequences,
+                                     uint64_t &maxTime) {
 
   // add timepoint to operations in mixedFrameSequences where timepoints
   // are calculated based on the duration of delayOps
@@ -171,15 +171,14 @@ void  SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
         currentTimepoint += delayOp.getDuration();
       else if (auto playOp = dyn_cast<PlayOp>(op)) {
         if (!playOp->hasAttrOfType<IntegerAttr>("pulse.duration")) {
-           playOp.emitError()
-               << "SchedulingPortPass requires that PlayOps be "
-                  "labeled with a pulse.duration attribute";
-           signalPassFailure();
-         }
+          playOp.emitError() << "SchedulingPortPass requires that PlayOps be "
+                                "labeled with a pulse.duration attribute";
+          signalPassFailure();
+        }
         // MLIR does does not have a setUI64IntegerAttr so duration is stored
         // in a I64IntegerAttr but should be treated as a uint64_t
         uint64_t duration = static_cast<uint64_t>(
-          playOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
+            playOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
         currentTimepoint += duration;
       }
     }
