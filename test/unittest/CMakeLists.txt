@@ -17,17 +17,23 @@ package_add_test_with_libs(unittest-quir-dialect
         QSSCLib
 )
 
-if (QSSC_WITH_MOCK_TARGET)
-    package_add_test_with_libs(unittest-qss-compiler
-            HAL/TargetSystemRegistryTest.cpp
-            # add other source files with test cases here
+set(TEST_FILES
+        Payload/PayloadRegistryTest.cpp
+        )
 
-            LIBRARIES
-            QSSCLib
+if (QSSC_WITH_MOCK_TARGET)
+    set(TEST_FILES
+            HAL/TargetSystemRegistryTest.cpp
+            ${CMAKE_CURRENT_SOURCE_DIR}
             )
-else()
-    message(WARNING "Unit testing is enabled, but QSSC_WITH_MOCK_TARGET is false. QSS compiler unit tests will be skipped.")
 endif ()
+
+package_add_test_with_libs(unittest-qss-compiler
+        ${TEST_FILES}
+
+        LIBRARIES
+        QSSCLib
+        )
 
 add_custom_target(run-qss-compiler-unittests
         COMMAND ${CMAKE_CTEST_COMMAND}

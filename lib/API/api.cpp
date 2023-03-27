@@ -20,7 +20,6 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/MLIRContext.h"
-#include "mlir/InitAllDialects.h"
 #include "mlir/InitAllPasses.h"
 #include "mlir/Parser.h"
 #include "mlir/Pass/PassManager.h"
@@ -28,7 +27,6 @@
 #include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/Optional.h"
-#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
@@ -36,23 +34,17 @@
 #include "llvm/Support/ToolOutputFile.h"
 
 #include "Payload/Payload.h"
+#include "Payload/PayloadRegistry.h"
 #include "QSSC.h"
 
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystem.h"
 #include "HAL/TargetSystemRegistry.h"
 
-#include "Dialect/RegisterDialects.h"
-
-#include "Dialect/OQ3/IR/OQ3Dialect.h"
-
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
-
-#include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
-
-#include "Dialect/QCS/IR/QCSDialect.h"
+#include "Dialect/RegisterDialects.h"
 
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
@@ -134,6 +126,11 @@ static llvm::cl::opt<bool>
     showTargets("show-targets",
                 llvm::cl::desc("Print the list of registered targets"),
                 llvm::cl::init(false), llvm::cl::cat(qsscCat));
+
+static llvm::cl::opt<bool>
+    showPayloads("show-payloads",
+                 llvm::cl::desc("Print the list of registered payloads"),
+                 llvm::cl::init(false), llvm::cl::cat(qsscCat));
 
 static llvm::cl::opt<bool>
     plaintextPayload("plaintext-payload",
@@ -374,6 +371,17 @@ compile_(int argc, char const **argv, std::string *outputString,
     return llvm::Error::success();
   }
 
+  if (showPayloads) {
+    llvm::outs() << "Registered Payloads:\n";
+    for (const auto &payload :
+         qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
+      // Constants chosen empirically to align with --help.
+      // TODO: Select constants more intelligently.
+      qssc::plugin::registry::printHelpStr(payload.second, 2, 57);
+    }
+    return llvm::Error::success();
+  }
+
   if (auto err = determineInputType())
     return err;
 
@@ -426,12 +434,18 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::GenQEM) {
     if (outputFilename == "-") {
-      payload = std::make_unique<qssc::payload::ZipPayload>();
+      auto payloadInfo =
+          qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
+      payload = std::move(
+          payloadInfo.getValue()->createPluginInstance(llvm::None).get());
     } else {
-      std::filesystem::path payloadPath(outputFilename.c_str());
-      std::string fNamePrefix = payloadPath.stem();
+      const std::filesystem::path payloadPath(outputFilename.c_str());
+      const std::string fNamePrefix = payloadPath.stem();
+      const qssc::payload::PayloadConfig config{fNamePrefix, fNamePrefix};
+      auto payloadInfo =
+          qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
       payload =
-          std::make_unique<qssc::payload::ZipPayload>(fNamePrefix, fNamePrefix);
+          std::move(payloadInfo.getValue()->createPluginInstance(config).get());
     }
   }
   if (outputString) {
