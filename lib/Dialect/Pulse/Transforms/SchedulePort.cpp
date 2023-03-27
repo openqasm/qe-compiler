@@ -16,7 +16,7 @@
 ///  A single port may have multiple frames mixed with it (measurement vs drive,
 ///  etc). Each mixed frame will have delay and play operations on the mixed
 ///  frame which need to be processed down to a set of delays and plays
-///  on the underlying port. For more detail see SchedulePort.cpp
+///  on the underlying port. 
 ///
 //===----------------------------------------------------------------------===//
 
@@ -49,6 +49,40 @@ uint64_t SchedulePortPass::processCall(Operation *module,
   INDENT_DUMP(callSequenceOp.dump());
   INDENT_DEBUG("=============================================\n");
   return calleeDuration;
+}
+
+uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
+
+  // TODO: Consider returning overall length of sequence to help schedule
+  // across sequences
+  mlir::OpBuilder builder(sequenceOp);
+
+  uint32_t numMixedFrames = 0;
+  auto mixedFrameSequences = buildMixedFrameMap(sequenceOp, numMixedFrames);
+
+  uint64_t maxTime = 0;
+
+  addTimepoints(builder, mixedFrameSequences, maxTime);
+
+  // remove all DelayOps - they are no longer required now that we have
+  // timepoints
+  sequenceOp->walk([&](DelayOp op) { op->erase(); });
+
+  sortOpsByTimepoint(sequenceOp);
+
+  // clean up
+  sequenceOp->walk([&](arith::ConstantOp op) {
+    if (op->getUsers().empty())
+      op->erase();
+  });
+
+  // assign timepoint to return
+  // TODO: check for a better way to do this with getTerminator or back()
+  sequenceOp->walk([&](ReturnOp op) {
+    IntegerAttr timepointAttr = builder.getI64IntegerAttr(maxTime);
+    op->setAttr("pulse.timepoint", timepointAttr);
+  });
+  return maxTime;
 }
 
 void SchedulePortPass::runOnOperation() {
@@ -120,33 +154,6 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
   return mixedFrameSequences;
 } // buildMixedFrameMap
 
-void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
-  // sort updated ops so that ops across mixed frame are in the correct
-  // sequence with respect to timepoint on a single port.
-
-  // sort ops by timepoint
-  for (Region &region : sequenceOp->getRegions()) {
-    for (Block &block : region.getBlocks()) {
-      auto &blockOps = block.getOperations();
-      blockOps.sort([](Operation &op1, Operation &op2) {
-        // put constants ahead of everything else
-        if (isa<arith::ConstantIntOp>(op1) && !isa<arith::ConstantIntOp>(op2))
-          return true;
-
-        if (!op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
-            !op2.hasTrait<mlir::pulse::HasTargetFrame>())
-          return false;
-
-        auto currentTime = getTimepoint(&op1);
-        auto nextTime = getTimepoint(&op2);
-
-        // order by timepoint
-        return currentTime < nextTime;
-      }); // blockOps.sort
-    }
-  }
-} // sortOpsByType
-
 void  SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
                    mixedFrameMap_t &mixedFrameSequences, uint64_t &maxTime) {
 
@@ -183,39 +190,32 @@ void  SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
   }
 } // addTimepoints
 
-uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
+void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
+  // sort updated ops so that ops across mixed frame are in the correct
+  // sequence with respect to timepoint on a single port.
 
-  // TODO: Consider returning overall length of sequence to help schedule
-  // across sequences
-  mlir::OpBuilder builder(sequenceOp);
+  // sort ops by timepoint
+  for (Region &region : sequenceOp->getRegions()) {
+    for (Block &block : region.getBlocks()) {
+      auto &blockOps = block.getOperations();
+      blockOps.sort([](Operation &op1, Operation &op2) {
+        // put constants ahead of everything else
+        if (isa<arith::ConstantIntOp>(op1) && !isa<arith::ConstantIntOp>(op2))
+          return true;
 
-  uint32_t numMixedFrames = 0;
-  auto mixedFrameSequences = buildMixedFrameMap(sequenceOp, numMixedFrames);
+        if (!op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
+            !op2.hasTrait<mlir::pulse::HasTargetFrame>())
+          return false;
 
-  uint64_t maxTime = 0;
+        auto currentTime = getTimepoint(&op1);
+        auto nextTime = getTimepoint(&op2);
 
-  addTimepoints(builder, mixedFrameSequences, maxTime);
-
-  // remove all DelayOps - they are no longer required now that we have
-  // timepoints
-  sequenceOp->walk([&](DelayOp op) { op->erase(); });
-
-  sortOpsByTimepoint(sequenceOp);
-
-  // clean up
-  sequenceOp->walk([&](arith::ConstantOp op) {
-    if (op->getUsers().empty())
-      op->erase();
-  });
-
-  // assign timepoint to return
-  // TODO: check for a better way to do this with getTerminator or back()
-  sequenceOp->walk([&](ReturnOp op) {
-    IntegerAttr timepointAttr = builder.getI64IntegerAttr(maxTime);
-    op->setAttr("pulse.timepoint", timepointAttr);
-  });
-  return maxTime;
-}
+        // order by timepoint
+        return currentTime < nextTime;
+      }); // blockOps.sort
+    }
+  }
+} // sortOpsByType
 
 llvm::StringRef SchedulePortPass::getArgument() const {
   return "pulse-schedule-port-module";

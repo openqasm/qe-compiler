@@ -34,8 +34,8 @@
 #include "Utils/DebugIndent.h"
 #include "mlir/Pass/Pass.h"
 
-#include <deque>
-#include <set>
+#include <map>
+#include <vector>
 
 namespace mlir::pulse {
 
@@ -49,14 +49,18 @@ public:
   llvm::StringRef getDescription() const override;
 
 private:
-  using mixedFrameMap_t = std::map<uint, std::vector<Operation *>>;
+  using mixedFrameMap_t = std::map<uint32_t, std::vector<Operation *>>;
+
   uint64_t processCall(Operation *module, CallSequenceOp &callSequenceOp);
-  mixedFrameMap_t buildMixedFrameMap(SequenceOp &sequenceOp,
-                                   uint &numMixedFrames);
-  void sortOpsByTimepoint(SequenceOp &sequenceOp);
   uint64_t processSequence(SequenceOp sequenceOp); 
+
+  mixedFrameMap_t buildMixedFrameMap(SequenceOp &sequenceOp,
+                                   uint32_t &numMixedFrames);
+
+  
   void addTimepoints(mlir::OpBuilder &builder,
-                   mixedFrameMap_t &mixedFrameSequences, uint64_t &maxTime);                                 
+                   mixedFrameMap_t &mixedFrameSequences, uint64_t &maxTime);     
+  void sortOpsByTimepoint(SequenceOp &sequenceOp);                                               
 };
 } // namespace mlir::pulse
 
