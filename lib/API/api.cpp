@@ -303,7 +303,7 @@ static void printVersion(llvm::raw_ostream &out) {
 
 /// @brief Build the QSSConfig using the standard sources and assign to the supplied context.
 /// @param context The context to build and register the configuration for.
-static llvm::Expected<const qssc::config::QSSConfig&> buildConfig(mlir::MLIRContext *context) {
+static llvm::Expected<const qssc::config::QSSConfig&> buildConfig_(mlir::MLIRContext *context) {
   // Build configuration only from the CLI for now.
   auto config = qssc::config::CLIConfigBuilder().buildConfig();
   if (auto err = config.takeError())
@@ -316,11 +316,29 @@ static llvm::Expected<const qssc::config::QSSConfig&> buildConfig(mlir::MLIRCont
   return qssc::config::getContextConfig(context);
 }
 
+/// @brief Emit the registered dialects to llvm::outs
+static void showDialects_(const DialectRegistry &registry) {
+    llvm::outs() << "Registered Dialects:\n";
+    for (const auto &registeredDialect : registry.getDialectNames())
+      llvm::outs() << registeredDialect << "\n";
+}
+
+/// @brief Emit the registered targets to llvm::outs
+static void showTargets_() {
+    llvm::outs() << "Registered Targets:\n";
+    for (const auto &target :
+         qssc::hal::registry::TargetSystemRegistry::registeredPlugins()) {
+      // Constants chosen empirically to align with --help.
+      // TODO: Select constants more intelligently.
+      qssc::plugin::registry::printHelpStr(target.second, 2, 57);
+    }
+}
+
 /// @brief Build the target for this MLIRContext based on the supplied config.
 /// @param context The supplied context to build the target for.
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
-static llvm::Expected<qssc::hal::TargetSystem &> buildTarget(MLIRContext *context, const qssc::config::QSSConfig &config) {
+static llvm::Expected<qssc::hal::TargetSystem &> buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
   auto targetName = config.targetName;
   auto targetConfigPath = config.targetConfigPath;
   if(targetName.has_value()) {
@@ -364,7 +382,7 @@ static llvm::Expected<qssc::hal::TargetSystem &> buildTarget(MLIRContext *contex
 /// @param moduleOp The module to build for
 /// @param ostream The output ostream to populate
 /// @return The output error if one occurred.
-static llvm::Error generateQEM(qssc::hal::TargetSystem &target, std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
+static llvm::Error generateQEM_(qssc::hal::TargetSystem &target, std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
     if (auto err = target.addToPayload(moduleOp, *payload))
       return err;
 
@@ -379,7 +397,7 @@ static llvm::Error generateQEM(qssc::hal::TargetSystem &target, std::unique_ptr<
 /// @brief Print the output to an ostream.
 /// @param ostream The ostream to populate.
 /// @param moduleOp The ModuleOp to dump.
-static void dumpMLIR(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
+static void dumpMLIR_(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
     moduleOp.print(*ostream);
     *ostream << '\n';
 }
@@ -389,42 +407,41 @@ compile_(int argc, char const **argv, std::string *outputString,
          llvm::Optional<qssc::DiagnosticCallback> diagnosticCb) {
   llvm::InitLLVM y(argc, argv);
 
-  // The MLIR context for this compilation event.
-  MLIRContext context{};
-
-
-  // Build the configuration for this compilation event.
-  auto configResult = buildConfig(&context);
-  if (auto err = configResult.takeError())
-    return err;
-  const qssc::config::QSSConfig &config = configResult.get();
-
-  if (auto err = registerPasses())
-    return err;
-
-  DialectRegistry registry = qssc::dialect::registerDialects();
-  mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
+  // Parse the command line options
   registerPassManagerCLOpts();
-
   llvm::cl::SetVersionPrinter(&printVersion);
   llvm::cl::ParseCommandLineOptions(
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
 
+  // Register the standard passes with MLIR
+  if (auto err = registerPasses())
+    return err;
+
+  // Register the standard dialects with MLIR and prepare a registry and pass pipeline
+  DialectRegistry registry = qssc::dialect::registerDialects();
+
+
+  // The MLIR context for this compilation event.
+  MLIRContext context{};
+
+  // Build the configuration for this compilation event.
+  auto configResult = buildConfig_(&context);
+  if (auto err = configResult.takeError())
+    return err;
+  const qssc::config::QSSConfig &config = configResult.get();
+
+  // Populate the context
+  context.appendDialectRegistry(registry);
+  context.allowUnregisteredDialects(config.allowUnregisteredDialects);
+  context.printOpOnDiagnostic(!verifyDiagnostics);
+
   if (showDialects) {
-    llvm::outs() << "Registered Dialects:\n";
-    for (const auto &registeredDialect : registry.getDialectNames())
-      llvm::outs() << registeredDialect << "\n";
+    showDialects_(registry);
     return llvm::Error::success();
   }
 
   if (showTargets) {
-    llvm::outs() << "Registered Targets:\n";
-    for (const auto &target :
-         qssc::hal::registry::TargetSystemRegistry::registeredPlugins()) {
-      // Constants chosen empirically to align with --help.
-      // TODO: Select constants more intelligently.
-      qssc::plugin::registry::printHelpStr(target.second, 2, 57);
-    }
+    showTargets_();
     return llvm::Error::success();
   }
 
@@ -443,6 +460,17 @@ compile_(int argc, char const **argv, std::string *outputString,
     return err;
 
   determineOutputType();
+
+  // Build the target for compilation
+  auto targetResult = buildTarget_(&context, config);
+  if (auto err = targetResult.takeError())
+    return err;
+  auto &target = targetResult.get();
+
+  // Apply any pass manager command line options.
+  mlir::PassManager pm(&context);
+  mlir::applyPassManagerCLOptions(pm);
+  mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
   // Set up the input, which is loaded from a file by name by default. With the
   // "--direct" option, the input program can be provided as a string to stdin.
@@ -491,13 +519,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     ostream = &outputFile->os();
   }
 
-
-
   mlir::ModuleOp moduleOp;
-
-  context.appendDialectRegistry(registry);
-  context.allowUnregisteredDialects(config.allowUnregisteredDialects);
-  context.printOpOnDiagnostic(!verifyDiagnostics);
 
   if (inputType == InputType::QASM) {
     if (emitAction >= Action::DumpMLIR) {
@@ -545,28 +567,16 @@ compile_(int argc, char const **argv, std::string *outputString,
     moduleOp = module.release();
   } // if input == MLIR
 
-
-  // Build the target for compilation
-  auto targetResult = buildTarget(&context, config);
-  if (auto err = targetResult.takeError())
-    return err;
-  auto &target = targetResult.get();
-
-
-  // at this point we have QUIR+Pulse in the moduleOp from either the
-  // QASM/AST or MLIR file
-
-  // Apply any pass manager command line options.
-  mlir::PassManager pm(&context);
-  mlir::applyPassManagerCLOptions(pm);
-  mlir::applyDefaultTimingPassManagerCLOptions(pm);
-
   auto errorHandler = [&](const Twine &msg) {
     emitError(UnknownLoc::get(&context)) << msg;
     return failure();
   };
 
+  // at this point we have QUIR+Pulse in the moduleOp from either the
+  // QASM/AST or MLIR file
+
   // Build the provided pipeline.
+  mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
   if (failed(passPipeline.addToPipeline(pm, errorHandler)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problem adding passes to passPipeline!");
@@ -587,11 +597,11 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::DumpMLIR) {
     // Print the output.
-    dumpMLIR(ostream, moduleOp);
+    dumpMLIR_(ostream, moduleOp);
   }
 
   if (emitAction == Action::GenQEM) {
-    if (auto err = generateQEM(target, std::move(payload), moduleOp, ostream))
+    if (auto err = generateQEM_(target, std::move(payload), moduleOp, ostream))
       return err;
   }
 
