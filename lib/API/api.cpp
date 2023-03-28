@@ -319,6 +319,7 @@ static llvm::Expected<const qssc::config::QSSConfig&> buildConfig(mlir::MLIRCont
 /// @brief Build the target for this MLIRContext based on the supplied config.
 /// @param context The supplied context to build the target for.
 /// @param config The configuration defining the context to build.
+/// @return The constructed TargetSystem.
 static llvm::Expected<qssc::hal::TargetSystem &> buildTarget(MLIRContext *context, const qssc::config::QSSConfig &config) {
   auto targetName = config.targetName;
   auto targetConfigPath = config.targetConfigPath;
@@ -357,6 +358,31 @@ static llvm::Expected<qssc::hal::TargetSystem &> buildTarget(MLIRContext *contex
   return *created.get();
 }
 
+/// @brief Generate the final QEM.
+/// @param target Target to build the QEM for.
+/// @param payload The payload to populate
+/// @param moduleOp The module to build for
+/// @param ostream The output ostream to populate
+/// @return The output error if one occurred.
+static llvm::Error generateQEM(qssc::hal::TargetSystem &target, std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
+    if (auto err = target.addToPayload(moduleOp, *payload))
+      return err;
+
+    if (plaintextPayload)
+      payload->writePlain(*ostream);
+    else
+      payload->write(*ostream);
+
+    return llvm::Error::success();
+}
+
+/// @brief Print the output to an ostream.
+/// @param ostream The ostream to populate.
+/// @param moduleOp The ModuleOp to dump.
+static void dumpMLIR(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
+    moduleOp.print(*ostream);
+    *ostream << '\n';
+}
 
 static llvm::Error
 compile_(int argc, char const **argv, std::string *outputString,
@@ -561,18 +587,12 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::DumpMLIR) {
     // Print the output.
-    moduleOp.print(*ostream);
-    *ostream << '\n';
+    dumpMLIR(ostream, moduleOp);
   }
 
   if (emitAction == Action::GenQEM) {
-    if (auto err = target.addToPayload(moduleOp, *payload))
+    if (auto err = generateQEM(target, std::move(payload), moduleOp, ostream))
       return err;
-
-    if (plaintextPayload)
-      payload->writePlain(*ostream);
-    else
-      payload->write(*ostream);
   }
 
   // ------------------------------------------------------------
