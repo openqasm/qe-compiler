@@ -15,9 +15,11 @@
 #define QSSC_QSSCONFIG_H
 
 #include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "mlir/IR/MLIRContext.h"
 
+#include <iostream>
 #include <optional>
 #include <string>
 
@@ -41,7 +43,13 @@ struct QSSConfig {
     bool allowUnregisteredDialects = false;
     /// @brief Register target passes with the compiler.
     bool addTargetPasses = true;
+
+    /// @brief Emit the configuration to stdout.
+    void emit(llvm::raw_ostream &out) const;
 };
+
+llvm::raw_ostream& operator<<(llvm::raw_ostream& os, const QSSConfig &config);
+std::ostream& operator<<(std::ostream& os, const QSSConfig &config);
 
 /// @brief Assign the input configuration to be managed by the context.
 /// @param context The context to assign the configuration to.

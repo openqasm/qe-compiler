@@ -28,7 +28,7 @@ from lit.llvm import llvm_config
 config.test_format = lit.formats.ShTest(not llvm_config.use_lit_shell)
 
 # suffixes: A list of file extensions to treat as test files.
-config.suffixes = [".mlir", ".qasm"]
+config.suffixes = [".mlir", ".qasm", ".tst"]
 
 config.substitutions.append(("%PATH%", config.environment["PATH"]))
 config.substitutions.append(("%shlibext", config.llvm_shlib_ext))

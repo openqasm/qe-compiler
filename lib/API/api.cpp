@@ -97,6 +97,11 @@ static llvm::cl::opt<bool>
                  llvm::cl::init(false), llvm::cl::cat(qsscCat));
 
 static llvm::cl::opt<bool>
+    printConfig("print-config",
+                llvm::cl::desc("Print the loaded compiler configuration."),
+                llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+
+static llvm::cl::opt<bool>
     plaintextPayload("plaintext-payload",
                      llvm::cl::desc("Write the payload in plaintext"),
                      llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
@@ -463,6 +468,11 @@ compile_(int argc, char const **argv, std::string *outputString,
       // TODO: Select constants more intelligently.
       qssc::plugin::registry::printHelpStr(payload.second, 2, 57);
     }
+    return llvm::Error::success();
+  }
+
+  if (printConfig) {
+    config.emit(llvm::outs());
     return llvm::Error::success();
   }
 
