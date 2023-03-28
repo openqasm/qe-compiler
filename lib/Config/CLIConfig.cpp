@@ -74,7 +74,7 @@ llvm::Error CLIConfigBuilder::populateConfigurationPath_(QSSConfig &config) {
 
 llvm::Error CLIConfigBuilder::populateTarget_(QSSConfig &config) {
     if (targetStr != "")
-        config.targetConfigPath = targetStr;
+        config.targetName = targetStr;
     return llvm::Error::success();
 
 }

@@ -338,9 +338,10 @@ static void showTargets_() {
 /// @param context The supplied context to build the target for.
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
-static llvm::Expected<qssc::hal::TargetSystem*> buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
-  auto targetName = config.targetName;
-  auto targetConfigPath = config.targetConfigPath;
+static llvm::Expected<qssc::hal::TargetSystem &> buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
+  const auto &targetName = config.targetName;
+  const auto &targetConfigPath = config.targetConfigPath;
+
   if(targetName.has_value()) {
 
     if (!qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
@@ -373,7 +374,7 @@ static llvm::Expected<qssc::hal::TargetSystem*> buildTarget_(MLIRContext *contex
         std::move(err));
   }
 
-  return created;
+  return *created.get();
 }
 
 /// @brief Generate the final QEM.
@@ -382,8 +383,8 @@ static llvm::Expected<qssc::hal::TargetSystem*> buildTarget_(MLIRContext *contex
 /// @param moduleOp The module to build for
 /// @param ostream The output ostream to populate
 /// @return The output error if one occurred.
-static llvm::Error generateQEM_(qssc::hal::TargetSystem *target, std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
-    if (auto err = target->addToPayload(moduleOp, *payload))
+static llvm::Error generateQEM_(qssc::hal::TargetSystem &target, std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
+    if (auto err = target.addToPayload(moduleOp, *payload))
       return err;
 
     if (plaintextPayload)
@@ -414,18 +415,24 @@ compile_(int argc, char const **argv, std::string *outputString,
   if (auto err = registerPasses())
     return err;
 
+  // The MLIR context for this compilation event.
+  MLIRContext context{};
+
+  // Pass manager for the compilation
+  mlir::PassManager pm(&context);
 
   // Register the standard dialects with MLIR and prepare a registry and pass pipeline
   DialectRegistry registry = qssc::dialect::registerDialects();
+
+
   // Parse the command line options.
+  mlir::applyPassManagerCLOptions(pm);
+  mlir::applyDefaultTimingPassManagerCLOptions(pm);
   mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
   registerPassManagerCLOpts();
   llvm::cl::SetVersionPrinter(&printVersion);
   llvm::cl::ParseCommandLineOptions(
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
-
-  // The MLIR context for this compilation event.
-  MLIRContext context{};
 
   // Build the configuration for this compilation event.
   auto configResult = buildConfig_(&context);
@@ -459,21 +466,14 @@ compile_(int argc, char const **argv, std::string *outputString,
     return llvm::Error::success();
   }
 
-  if (auto err = determineInputType())
-    return err;
-
-  determineOutputType();
-
   // Build the target for compilation
   auto targetResult = buildTarget_(&context, config);
   if (auto err = targetResult.takeError())
     return err;
-  auto *target = targetResult.get();
+  auto &target = targetResult.get();
 
-  // Apply any pass manager command line options.
-  mlir::PassManager pm(&context);
-  mlir::applyPassManagerCLOptions(pm);
-  mlir::applyDefaultTimingPassManagerCLOptions(pm);
+  if (auto err = determineInputType())
+    return err;
 
   // Set up the input, which is loaded from a file by name by default. With the
   // "--direct" option, the input program can be provided as a string to stdin.
@@ -487,6 +487,8 @@ compile_(int argc, char const **argv, std::string *outputString,
                                          errorMessage);
     }
   }
+
+  determineOutputType();
 
   // Set up the output.
   llvm::raw_ostream *ostream;
@@ -585,7 +587,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction > Action::DumpMLIR && config.addTargetPasses)
     // check if the target quir to std pass has been specified in the CL
-    if (auto err = target->addPayloadPasses(pm))
+    if (auto err = target.addPayloadPasses(pm))
       return llvm::joinErrors(
           llvm::createStringError(llvm::inconvertibleErrorCode(),
                                   "Failure while preparing target passes"),
