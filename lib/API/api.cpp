@@ -418,11 +418,6 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   determineOutputType();
 
-  auto targetResult = buildTarget(&context, config);
-  if (auto err = targetResult.takeError())
-    return err;
-  auto &target = targetResult.get();
-
   // Set up the input, which is loaded from a file by name by default. With the
   // "--direct" option, the input program can be provided as a string to stdin.
   std::string errorMessage;
@@ -458,6 +453,7 @@ compile_(int argc, char const **argv, std::string *outputString,
           std::move(payloadInfo.getValue()->createPluginInstance(config).get());
     }
   }
+
   if (outputString) {
     outStringStream.emplace(*outputString);
     ostream = outStringStream.getPointer();
@@ -468,6 +464,8 @@ compile_(int argc, char const **argv, std::string *outputString,
                                          errorMessage);
     ostream = &outputFile->os();
   }
+
+
 
   mlir::ModuleOp moduleOp;
 
@@ -520,6 +518,14 @@ compile_(int argc, char const **argv, std::string *outputString,
                                          inputSource);
     moduleOp = module.release();
   } // if input == MLIR
+
+
+  // Build the target for compilation
+  auto targetResult = buildTarget(&context, config);
+  if (auto err = targetResult.takeError())
+    return err;
+  auto &target = targetResult.get();
+
 
   // at this point we have QUIR+Pulse in the moduleOp from either the
   // QASM/AST or MLIR file
