@@ -302,9 +302,15 @@ static void printVersion(llvm::raw_ostream &out) {
 }
 
 /// Build the QSSConfig using the standard sources.
-static llvm::Expected<qssc::config::QSSConfig> buildConfig() {
+static llvm::Expected<const qssc::config::QSSConfig&> buildConfig(mlir::MLIRContext *context) {
   // Build configuration only from the CLI for now.
-  return qssc::config::CLIConfigBuilder().buildConfig();
+  auto config = qssc::config::CLIConfigBuilder().buildConfig();
+  if (auto err = config.takeError())
+    return err;
+
+  qssc::config::setContextConfig(context, std::move(*config));
+
+  return qssc::config::getContextConfig(context);
 }
 
 static llvm::Error
@@ -312,11 +318,14 @@ compile_(int argc, char const **argv, std::string *outputString,
          llvm::Optional<qssc::DiagnosticCallback> diagnosticCb) {
   llvm::InitLLVM y(argc, argv);
 
-  auto configResult = buildConfig();
+  // The MLIR context for this compilation event.
+  MLIRContext context{};
+
+  auto configResult = buildConfig(&context);
   if (auto err = configResult.takeError())
     return err;
 
-  qssc::config::QSSConfig config = configResult.get();
+  const qssc::config::QSSConfig &config = configResult.get();
 
   if (auto err = registerPasses())
     return err;
@@ -364,24 +373,29 @@ compile_(int argc, char const **argv, std::string *outputString,
   determineOutputType();
 
   auto targetName = config.targetName;
-  if(!targetName.has_value() && !qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
-    // Make sure target exists if specified
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Error: Target " + *targetName +
-                                       " is not registered.");
+  auto targetConfigPath = config.targetConfigPath;
+  if(targetName.has_value()) {
+
+    if (!qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
+      // Make sure target exists if specified
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                    "Error: Target " + *targetName +
+                                        " is not registered.");
+
+    if (!targetConfigPath.has_value())
+      // If the target exists we must have a configuration path.
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                              "Error: A target configuration path was not specified.");
+
+  }
 
   qssc::hal::registry::TargetSystemInfo &targetInfo =
       *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(*targetName)
            .getValueOr(qssc::hal::registry::TargetSystemRegistry::
                            nullTargetSystemInfo());
 
-  MLIRContext context{};
   llvm::Optional<llvm::StringRef> conf{};
 
-  auto targetConfigPath = config.targetConfigPath;
-  if (!targetConfigPath.has_value())
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                            "Error: A target configuration path was not specified.");
   conf.emplace(*targetConfigPath);
 
   auto created = targetInfo.createTarget(&context, conf);

@@ -16,6 +16,8 @@
 
 #include "llvm/Support/Error.h"
 
+#include "mlir/IR/MLIRContext.h"
+
 #include <optional>
 #include <string>
 
@@ -40,6 +42,17 @@ struct QSSConfig {
     /// @brief Register target passes with the compiler.
     bool addTargetPasses = true;
 };
+
+/// @brief Assign the input configuration to be managed by the context.
+/// @param context The context to assign the configuration to.
+/// This must outlive all usages of the context registry.
+/// @param config The configuration to move for the context.
+void setContextConfig(mlir::MLIRContext *context, QSSConfig config);
+
+/// @brief Get a constant reference to the configuration registered for this context.
+/// @param context The context to lookup the configuration for.
+llvm::Expected<const QSSConfig&> getContextConfig(mlir::MLIRContext *context);
+
 
 /// @brief A builder class for the QSSConfig. All standard configuration
 /// population should be completed through builders.
