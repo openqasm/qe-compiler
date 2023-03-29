@@ -351,34 +351,29 @@ static void showPayloads_() {
 /// @param context The supplied context to build the target for.
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
-static llvm::Expected<qssc::hal::TargetSystem &>
-buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
+static llvm::Expected<qssc::hal::TargetSystem &> buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
   const auto &targetName = config.targetName;
   const auto &targetConfigPath = config.targetConfigPath;
 
-  if (targetName.has_value()) {
-
+  if(targetName.has_value()) {
     if (!qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
       // Make sure target exists if specified
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Error: Target " + *targetName +
-                                         " is not registered.");
-
+                                    "Error: Target " + *targetName +
+                                        " is not registered.");
     if (!targetConfigPath.has_value())
       // If the target exists we must have a configuration path.
-      return llvm::createStringError(
-          llvm::inconvertibleErrorCode(),
-          "Error: A target configuration path was not specified.");
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                              "Error: A target configuration path was not specified.");
   }
-
   qssc::hal::registry::TargetSystemInfo &targetInfo =
-      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(*targetName)
+      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(targetName.value_or(""))
            .getValueOr(qssc::hal::registry::TargetSystemRegistry::
                            nullTargetSystemInfo());
 
   llvm::Optional<llvm::StringRef> conf{};
-
-  conf.emplace(*targetConfigPath);
+  if(targetConfigPath.has_value())
+    conf.emplace(*targetConfigPath);
 
   auto created = targetInfo.createTarget(context, conf);
   if (auto err = created.takeError()) {
