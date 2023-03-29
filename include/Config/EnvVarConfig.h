@@ -1,4 +1,5 @@
-//===- EnvVarConfig.h - EnvVar Configuration builder -------------*- C++ -*-===//
+//===- EnvVarConfig.h - EnvVar Configuration builder -------------*- C++
+//-*-===//
 //
 // (C) Copyright IBM 2023.
 //

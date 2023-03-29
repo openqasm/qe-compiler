@@ -309,8 +309,8 @@ static void printVersion(llvm::raw_ostream &out) {
 /// 3. CLI arguments.
 ///
 /// @param context The context to build and register the configuration for.
-/// @return The constructed configuration that has been registered for the supplied
-/// context.
+/// @return The constructed configuration that has been registered for the
+/// supplied context.
 static llvm::Expected<const qssc::config::QSSConfig &>
 buildConfig_(mlir::MLIRContext *context) {
   // First populate the configuration from default values than

@@ -18,7 +18,6 @@
 
 using namespace qssc::config;
 
-
 llvm::Error EnvVarConfigBuilder::populateConfig(QSSConfig &config) {
   if (auto err = populateConfigurationPath_(config))
     return err;
@@ -30,13 +29,13 @@ llvm::Error EnvVarConfigBuilder::populateConfig(QSSConfig &config) {
 }
 
 llvm::Error EnvVarConfigBuilder::populateConfigurationPath_(QSSConfig &config) {
-  if (const char* configurationPath = std::getenv("QSSC_TARGET_CONFIG_PATH"))
+  if (const char *configurationPath = std::getenv("QSSC_TARGET_CONFIG_PATH"))
     config.targetConfigPath = configurationPath;
   return llvm::Error::success();
 }
 
 llvm::Error EnvVarConfigBuilder::populateTarget_(QSSConfig &config) {
-  if (const char* targetStr = std::getenv("QSSC_TARGET_NAME"))
+  if (const char *targetStr = std::getenv("QSSC_TARGET_NAME"))
     config.targetName = targetStr;
   return llvm::Error::success();
 }
