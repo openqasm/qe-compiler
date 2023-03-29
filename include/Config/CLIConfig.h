@@ -47,7 +47,7 @@ private:
   llvm::Error populateConfigurationPath_(QSSConfig &config);
   llvm::Error populateTarget_(QSSConfig &config);
   llvm::Error populateAllowUnregisteredDialects_(QSSConfig &config);
-  llvm::Error addTargetPasses_(QSSConfig &config);
+  llvm::Error populateAddTargetPasses_(QSSConfig &config);
 };
 
 } // namespace qssc::config

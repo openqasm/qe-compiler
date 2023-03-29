@@ -57,7 +57,7 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   if (auto err = populateAllowUnregisteredDialects_(config))
     return err;
 
-  if (auto err = addTargetPasses_(config))
+  if (auto err = populateAddTargetPasses_(config))
     return err;
 
   return llvm::Error::success();
@@ -80,7 +80,7 @@ CLIConfigBuilder::populateAllowUnregisteredDialects_(QSSConfig &config) {
   return llvm::Error::success();
 }
 
-llvm::Error CLIConfigBuilder::addTargetPasses_(QSSConfig &config) {
+llvm::Error CLIConfigBuilder::populateAddTargetPasses_(QSSConfig &config) {
   config.addTargetPasses = addTargetPasses;
   return llvm::Error::success();
 }
