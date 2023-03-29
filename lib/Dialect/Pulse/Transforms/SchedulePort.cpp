@@ -121,22 +121,22 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
         if (op.hasTrait<mlir::pulse::HasTargetFrame>()) {
           Value target;
           // get mixed_frames
-          if (isa<DelayOp>(op))
-            target = cast<DelayOp>(op).target();
-          else if (isa<PlayOp>(op))
-            target = cast<PlayOp>(op).target();
-          else if (isa<CaptureOp>(op))
-            target = cast<CaptureOp>(op).target();
-          else if (isa<SetFrequencyOp>(op))
-            target = cast<SetFrequencyOp>(op).target();
-          else if (isa<SetPhaseOp>(op))
-            target = cast<SetPhaseOp>(op).target();
-          else if (isa<ShiftFrequencyOp>(op))
-            target = cast<ShiftFrequencyOp>(op).target();
-          else if (isa<ShiftPhaseOp>(op))
-            target = cast<ShiftPhaseOp>(op).target();
-          else if (isa<SetAmplitudeOp>(op))
-            target = cast<SetAmplitudeOp>(op).target();
+          if (auto castOp = dyn_cast<DelayOp>(op))
+            target = castOp.target();
+          else if (auto castOp = dyn_cast<PlayOp>(op))
+            target = castOp.target();
+          else if (auto castOp = dyn_cast<CaptureOp>(op))
+            target = castOp.target();
+          else if (auto castOp = dyn_cast<SetFrequencyOp>(op))
+            target = castOp.target();
+          else if (auto castOp = dyn_cast<SetPhaseOp>(op))
+            target = castOp.target();
+          else if (auto castOp = dyn_cast<ShiftFrequencyOp>(op))
+            target = castOp.target();
+          else if (auto castOp = dyn_cast<ShiftPhaseOp>(op))
+            target = castOp.target();
+          else if (auto castOp = dyn_cast<SetAmplitudeOp>(op))
+            target = castOp.target();
 
           auto blockArg = target.cast<BlockArgument>();
           auto index = blockArg.getArgNumber();
