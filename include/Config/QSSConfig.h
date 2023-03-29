@@ -7,9 +7,9 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  A centralized API for configuration handling within the QSS infrastructure.
-//
+///
+///  A centralized API for configuration handling within the QSS infrastructure.
+///
 //===----------------------------------------------------------------------===//
 #ifndef QSSC_QSSCONFIG_H
 #define QSSC_QSSCONFIG_H

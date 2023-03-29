@@ -7,9 +7,9 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file implements building the configuration from the CLI.
-//
+///
+///  This file implements building the configuration from the CLI.
+///
 //===----------------------------------------------------------------------===//
 
 #include "Config/CLIConfig.h"

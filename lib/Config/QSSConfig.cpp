@@ -7,9 +7,9 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file implements standard handling of QSSConfiguration options.
-//
+///
+///  This file implements standard handling of QSSConfiguration options.
+///
 //===----------------------------------------------------------------------===//
 
 #include "Config/QSSConfig.h"

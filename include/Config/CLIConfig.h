@@ -7,9 +7,9 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  Populate the configuration from the CLI.
-//
+///
+///  Populate the configuration from the CLI.
+///
 //===----------------------------------------------------------------------===//
 #ifndef QSSC_CLICONFIG_H
 #define QSSC_CLICONFIG_H
