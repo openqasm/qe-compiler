@@ -32,6 +32,7 @@ llvm::cl::OptionCategory &getQSSCCategory();
 ///
 /// The qss-compiler adds several cli arguments to
 /// configure the QSSConfig through the CLIConfigBuilder.
+///
 /// These currently are:
 /// - `--target=<str>`: Sets QSSConfig::targetName.
 /// - `--config=<str>`: Sets QSSConfig::targetConfigPath.

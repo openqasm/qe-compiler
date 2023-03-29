@@ -16,6 +16,7 @@
 
 #include "API/api.h"
 #include "Config/CLIConfig.h"
+#include "Config/EnvVarConfig.h"
 
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -301,12 +302,27 @@ static void printVersion(llvm::raw_ostream &out) {
 
 /// @brief Build the QSSConfig using the standard sources and assign to the
 /// supplied context.
+///
+/// The configuration precedence order is
+/// 1. Default values
+/// 2. Environment variables
+/// 3. CLI arguments.
+///
 /// @param context The context to build and register the configuration for.
+/// @return The constructed configuration that has been registered for the
+/// supplied context.
 static llvm::Expected<const qssc::config::QSSConfig &>
 buildConfig_(mlir::MLIRContext *context) {
-  // Build configuration only from the CLI for now.
-  auto config = qssc::config::CLIConfigBuilder().buildConfig();
+  // First populate the configuration from default values then
+  // environment variables.
+  auto config = qssc::config::EnvVarConfigBuilder().buildConfig();
   if (auto err = config.takeError())
+    // Explicit move required for some systems as automatic move
+    // is not recognized.
+    return std::move(err);
+
+  // Apply CLI options of top of the configuration constructed above.
+  if (auto err = qssc::config::CLIConfigBuilder().populateConfig(*config))
     // Explicit move required for some systems as automatic move
     // is not recognized.
     return std::move(err);
