@@ -24,7 +24,6 @@ namespace qssc::config {
 /// @return The reference to the CLI category for the compiler.
 llvm::cl::OptionCategory &getQSSCCategory();
 
-
 /// @brief Build a QSSConfig from input CLI arguments.
 ///
 /// When the compiler is invoked it loads the CLI
@@ -36,7 +35,8 @@ llvm::cl::OptionCategory &getQSSCCategory();
 /// These currently are:
 /// - `--target=<str>`: Sets QSSConfig::targetName.
 /// - `--config=<str>`: Sets QSSConfig::targetConfigPath.
-/// - `--allow-unregistered-dialect=<bool>`: Sets QSSConfig::allowUnregisteredDialects.
+/// - `--allow-unregistered-dialect=<bool>`: Sets
+/// QSSConfig::allowUnregisteredDialects.
 /// - `--add-target-passes=<bool>`: Sets QSSConfig::addTargetPasses.
 ///
 class CLIConfigBuilder : public QSSConfigBuilder {
