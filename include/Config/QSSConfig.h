@@ -1,4 +1,4 @@
-//===- QSSConfig.h - Global QSS config ----------------*- C++ -*-===//
+//===- QSSConfig.h - Global QSS config ----------------*- C++ -*-----------===//
 //
 // (C) Copyright IBM 2023.
 //

@@ -1,4 +1,4 @@
-//===- QSSConfig.cpp - Config info --------------------*- C++ -*-===//
+//===- QSSConfig.cpp - Config info --------------------*- C++ -*-----------===//
 //
 // (C) Copyright IBM 2023.
 //

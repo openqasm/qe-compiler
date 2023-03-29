@@ -1,5 +1,4 @@
-//===- CLIConfigBuilder.cpp - QSSConfig from the CLI ------*- C++
-//-*--------===//
+//===- CLIConfigBuilder.cpp - QSSConfig from the CLI ------*- C++ -*-------===//
 //
 // (C) Copyright IBM 2023.
 //
