@@ -313,7 +313,7 @@ static void printVersion(llvm::raw_ostream &out) {
 /// supplied context.
 static llvm::Expected<const qssc::config::QSSConfig &>
 buildConfig_(mlir::MLIRContext *context) {
-  // First populate the configuration from default values than
+  // First populate the configuration from default values then
   // environment variables.
   auto config = qssc::config::EnvVarConfigBuilder().buildConfig();
   if (auto err = config.takeError())

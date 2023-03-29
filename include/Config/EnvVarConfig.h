@@ -1,5 +1,4 @@
-//===- EnvVarConfig.h - EnvVar Configuration builder -------------*- C++
-//-*-===//
+//===- EnvVarConfig.h - EnvVar Configuration builder ----------*- C++-*----===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -8,9 +7,9 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  Populate the configuration from environment variables.
-//
+///
+///  Populate the configuration from environment variables.
+///
 //===----------------------------------------------------------------------===//
 #ifndef QSSC_ENVVARCONFIG_H
 #define QSSC_ENVVARCONFIG_H
