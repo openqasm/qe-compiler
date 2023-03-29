@@ -24,7 +24,21 @@ namespace qssc::config {
 /// @return The reference to the CLI category for the compiler.
 llvm::cl::OptionCategory &getQSSCCategory();
 
+
 /// @brief Build a QSSConfig from input CLI arguments.
+///
+/// When the compiler is invoked it loads the CLI
+/// using the MLIR/LLVM CLI library. This enables the
+/// inheritance of all of MLIR's powerful CLI functionality.
+///
+/// The qss-compiler adds several cli arguments to
+/// configure the QSSConfig through the CLIConfigBuilder.
+/// These currently are:
+/// - `--target=<str>`: Sets QSSConfig::targetName.
+/// - `--config=<str>`: Sets QSSConfig::targetConfigPath.
+/// - `--allow-unregistered-dialect=<bool>`: Sets QSSConfig::allowUnregisteredDialects.
+/// - `--add-target-passes=<bool>`: Sets QSSConfig::addTargetPasses.
+///
 class CLIConfigBuilder : public QSSConfigBuilder {
 public:
   llvm::Error populateConfig(QSSConfig &config) override;
