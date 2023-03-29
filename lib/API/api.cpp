@@ -97,7 +97,7 @@ static llvm::cl::opt<bool>
                  llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool>
-    printConfig("print-config",
+    showConfig("show-config",
                 llvm::cl::desc("Print the loaded compiler configuration."),
                 llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
@@ -471,7 +471,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     return llvm::Error::success();
   }
 
-  if (printConfig) {
+  if (showConfig) {
     config.emit(llvm::outs());
     return llvm::Error::success();
   }
