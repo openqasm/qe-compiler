@@ -11,6 +11,7 @@
 # that they have been altered from the originals.
 
 add_subdirectory(API)
+add_subdirectory(Config)
 add_subdirectory(Conversion)
 add_subdirectory(Dialect)
 add_subdirectory(Frontend)
@@ -33,6 +34,7 @@ set(qssc_api_libs
         QSSCAPI
         QSSCHAL
         QSSCOpenQASM3Frontend
+        QSSConfig
         QSSCPayload
         QSSCCore
         ${mlir_dialect_libs}
