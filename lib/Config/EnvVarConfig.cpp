@@ -14,6 +14,8 @@
 
 #include "Config/EnvVarConfig.h"
 
+#include <cstdlib>
+
 using namespace qssc::config;
 
 
@@ -28,13 +30,13 @@ llvm::Error EnvVarConfigBuilder::populateConfig(QSSConfig &config) {
 }
 
 llvm::Error EnvVarConfigBuilder::populateConfigurationPath_(QSSConfig &config) {
-  if (configurationPath != "")
+  if (const char* configurationPath = std::getenv("QSSC_TARGET_CONFIG_PATH"))
     config.targetConfigPath = configurationPath;
   return llvm::Error::success();
 }
 
 llvm::Error EnvVarConfigBuilder::populateTarget_(QSSConfig &config) {
-  if (targetStr != "")
+  if (const char* targetStr = std::getenv("QSSC_TARGET_NAME"))
     config.targetName = targetStr;
   return llvm::Error::success();
 }

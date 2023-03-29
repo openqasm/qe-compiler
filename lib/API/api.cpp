@@ -16,6 +16,7 @@
 
 #include "API/api.h"
 #include "Config/CLIConfig.h"
+#include "Config/EnvVarConfig.h"
 
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -315,10 +316,13 @@ buildConfig_(mlir::MLIRContext *context) {
   // First populate the configuration from default values than
   // environment variables.
   auto config = qssc::config::EnvVarConfigBuilder().buildConfig();
-  // Apply CLI options of top of the configuration constructed above.
-  qssc::config::CLIConfig().populateConfig(config);
-
   if (auto err = config.takeError())
+    // Explicit move required for some systems as automatic move
+    // is not recognized.
+    return std::move(err);
+
+  // Apply CLI options of top of the configuration constructed above.
+  if (auto err = qssc::config::CLIConfigBuilder().populateConfig(*config))
     // Explicit move required for some systems as automatic move
     // is not recognized.
     return std::move(err);
