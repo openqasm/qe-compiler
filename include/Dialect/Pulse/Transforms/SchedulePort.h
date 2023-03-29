@@ -15,9 +15,7 @@
 //===----------------------------------------------------------------------===//
 ///
 ///  This file implements the pass for scheduling on a single port. The
-///  pass operates at the module level. For an alternate pass which operates
-///  at the sequence level see: SchedulePortSequence.{h,cpp}. Functionality
-///  common to both passes is implemented in Utils/SchedulePort.{h,cpp}
+///  pass operates at the module level.
 ///
 ///  A single port may have multiple frames mixed with it (measurement vs drive,
 ///  etc). Each mixed frame will have delay and play operations on the mixed
