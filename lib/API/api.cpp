@@ -54,11 +54,9 @@
 
 using namespace mlir;
 
-
-static llvm::cl::opt<std::string>
-    inputSource(llvm::cl::Positional,
-                llvm::cl::desc("Input filename or program source"),
-                llvm::cl::init("-"), llvm::cl::cat(qssc::config::getQSSCCategory()));
+static llvm::cl::opt<std::string> inputSource(
+    llvm::cl::Positional, llvm::cl::desc("Input filename or program source"),
+    llvm::cl::init("-"), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<std::string>
     outputFilename("o", llvm::cl::desc("Output filename"),
@@ -81,30 +79,25 @@ static llvm::cl::opt<bool> verifyPasses(
     llvm::cl::desc("Run the verifier after each transformation pass"),
     llvm::cl::init(true), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-static llvm::cl::opt<bool>
-    showDialects("show-dialects",
-                 llvm::cl::desc("Print the list of registered dialects"),
-                 llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+static llvm::cl::opt<bool> showDialects(
+    "show-dialects", llvm::cl::desc("Print the list of registered dialects"),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-static llvm::cl::opt<bool>
-    showTargets("show-targets",
-                llvm::cl::desc("Print the list of registered targets"),
-                llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+static llvm::cl::opt<bool> showTargets(
+    "show-targets", llvm::cl::desc("Print the list of registered targets"),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-static llvm::cl::opt<bool>
-    showPayloads("show-payloads",
-                 llvm::cl::desc("Print the list of registered payloads"),
-                 llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+static llvm::cl::opt<bool> showPayloads(
+    "show-payloads", llvm::cl::desc("Print the list of registered payloads"),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-static llvm::cl::opt<bool>
-    showConfig("show-config",
-                llvm::cl::desc("Print the loaded compiler configuration."),
-                llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+static llvm::cl::opt<bool> showConfig(
+    "show-config", llvm::cl::desc("Print the loaded compiler configuration."),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-static llvm::cl::opt<bool>
-    plaintextPayload("plaintext-payload",
-                     llvm::cl::desc("Write the payload in plaintext"),
-                     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+static llvm::cl::opt<bool> plaintextPayload(
+    "plaintext-payload", llvm::cl::desc("Write the payload in plaintext"),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 namespace {
 enum InputType { NONE, QASM, MLIR, QOBJ };
@@ -306,9 +299,11 @@ static void printVersion(llvm::raw_ostream &out) {
       << qssc::getQSSCVersion() << "\n";
 }
 
-/// @brief Build the QSSConfig using the standard sources and assign to the supplied context.
+/// @brief Build the QSSConfig using the standard sources and assign to the
+/// supplied context.
 /// @param context The context to build and register the configuration for.
-static llvm::Expected<const qssc::config::QSSConfig&> buildConfig_(mlir::MLIRContext *context) {
+static llvm::Expected<const qssc::config::QSSConfig &>
+buildConfig_(mlir::MLIRContext *context) {
   // Build configuration only from the CLI for now.
   auto config = qssc::config::CLIConfigBuilder().buildConfig();
   if (auto err = config.takeError())
@@ -325,54 +320,55 @@ static llvm::Expected<const qssc::config::QSSConfig&> buildConfig_(mlir::MLIRCon
 
 /// @brief Emit the registered dialects to llvm::outs
 static void showDialects_(const DialectRegistry &registry) {
-    llvm::outs() << "Registered Dialects:\n";
-    for (const auto &registeredDialect : registry.getDialectNames())
-      llvm::outs() << registeredDialect << "\n";
+  llvm::outs() << "Registered Dialects:\n";
+  for (const auto &registeredDialect : registry.getDialectNames())
+    llvm::outs() << registeredDialect << "\n";
 }
 
 /// @brief Emit the registered targets to llvm::outs
 static void showTargets_() {
-    llvm::outs() << "Registered Targets:\n";
-    for (const auto &target :
-         qssc::hal::registry::TargetSystemRegistry::registeredPlugins()) {
-      // Constants chosen empirically to align with --help.
-      // TODO: Select constants more intelligently.
-      qssc::plugin::registry::printHelpStr(target.second, 2, 57);
-    }
+  llvm::outs() << "Registered Targets:\n";
+  for (const auto &target :
+       qssc::hal::registry::TargetSystemRegistry::registeredPlugins()) {
+    // Constants chosen empirically to align with --help.
+    // TODO: Select constants more intelligently.
+    qssc::plugin::registry::printHelpStr(target.second, 2, 57);
+  }
 }
 
 /// @brief Emit the registered payload to llvm::outs
 static void showPayloads_() {
-    llvm::outs() << "Registered Payloads:\n";
-    for (const auto &payload :
-         qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
-      // Constants chosen empirically to align with --help.
-      // TODO: Select constants more intelligently.
-      qssc::plugin::registry::printHelpStr(payload.second, 2, 57);
-    }
+  llvm::outs() << "Registered Payloads:\n";
+  for (const auto &payload :
+       qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
+    // Constants chosen empirically to align with --help.
+    // TODO: Select constants more intelligently.
+    qssc::plugin::registry::printHelpStr(payload.second, 2, 57);
+  }
 }
 
 /// @brief Build the target for this MLIRContext based on the supplied config.
 /// @param context The supplied context to build the target for.
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
-static llvm::Expected<qssc::hal::TargetSystem &> buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
+static llvm::Expected<qssc::hal::TargetSystem &>
+buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
   const auto &targetName = config.targetName;
   const auto &targetConfigPath = config.targetConfigPath;
 
-  if(targetName.has_value()) {
+  if (targetName.has_value()) {
 
     if (!qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
       // Make sure target exists if specified
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                    "Error: Target " + *targetName +
-                                        " is not registered.");
+                                     "Error: Target " + *targetName +
+                                         " is not registered.");
 
     if (!targetConfigPath.has_value())
       // If the target exists we must have a configuration path.
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                              "Error: A target configuration path was not specified.");
-
+      return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "Error: A target configuration path was not specified.");
   }
 
   qssc::hal::registry::TargetSystemInfo &targetInfo =
@@ -401,24 +397,27 @@ static llvm::Expected<qssc::hal::TargetSystem &> buildTarget_(MLIRContext *conte
 /// @param moduleOp The module to build for
 /// @param ostream The output ostream to populate
 /// @return The output error if one occurred.
-static llvm::Error generateQEM_(qssc::hal::TargetSystem &target, std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
-    if (auto err = target.addToPayload(moduleOp, *payload))
-      return err;
+static llvm::Error generateQEM_(qssc::hal::TargetSystem &target,
+                                std::unique_ptr<qssc::payload::Payload> payload,
+                                mlir::ModuleOp moduleOp,
+                                llvm::raw_ostream *ostream) {
+  if (auto err = target.addToPayload(moduleOp, *payload))
+    return err;
 
-    if (plaintextPayload)
-      payload->writePlain(*ostream);
-    else
-      payload->write(*ostream);
+  if (plaintextPayload)
+    payload->writePlain(*ostream);
+  else
+    payload->write(*ostream);
 
-    return llvm::Error::success();
+  return llvm::Error::success();
 }
 
 /// @brief Print the output to an ostream.
 /// @param ostream The ostream to populate.
 /// @param moduleOp The ModuleOp to dump.
 static void dumpMLIR_(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
-    moduleOp.print(*ostream);
-    *ostream << '\n';
+  moduleOp.print(*ostream);
+  *ostream << '\n';
 }
 
 static llvm::Error
@@ -426,7 +425,6 @@ compile_(int argc, char const **argv, std::string *outputString,
          llvm::Optional<qssc::DiagnosticCallback> diagnosticCb) {
   // Initialize LLVM to start.
   llvm::InitLLVM y(argc, argv);
-
 
   // Register the standard passes with MLIR.
   // Must precede the command line parsing.
@@ -439,9 +437,9 @@ compile_(int argc, char const **argv, std::string *outputString,
   // Pass manager for the compilation
   mlir::PassManager pm(&context);
 
-  // Register the standard dialects with MLIR and prepare a registry and pass pipeline
+  // Register the standard dialects with MLIR and prepare a registry and pass
+  // pipeline
   DialectRegistry registry = qssc::dialect::registerDialects();
-
 
   // Parse the command line options.
   mlir::applyPassManagerCLOptions(pm);
