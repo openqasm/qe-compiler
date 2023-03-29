@@ -339,6 +339,17 @@ static void showTargets_() {
     }
 }
 
+/// @brief Emit the registered payload to llvm::outs
+static void showPayloads_() {
+    llvm::outs() << "Registered Payloads:\n";
+    for (const auto &payload :
+         qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
+      // Constants chosen empirically to align with --help.
+      // TODO: Select constants more intelligently.
+      qssc::plugin::registry::printHelpStr(payload.second, 2, 57);
+    }
+}
+
 /// @brief Build the target for this MLIRContext based on the supplied config.
 /// @param context The supplied context to build the target for.
 /// @param config The configuration defining the context to build.
@@ -461,13 +472,7 @@ compile_(int argc, char const **argv, std::string *outputString,
   }
 
   if (showPayloads) {
-    llvm::outs() << "Registered Payloads:\n";
-    for (const auto &payload :
-         qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
-      // Constants chosen empirically to align with --help.
-      // TODO: Select constants more intelligently.
-      qssc::plugin::registry::printHelpStr(payload.second, 2, 57);
-    }
+    showPayloads_();
     return llvm::Error::success();
   }
 
