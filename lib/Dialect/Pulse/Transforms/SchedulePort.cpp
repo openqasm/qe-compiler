@@ -14,51 +14,13 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file implements the pass for scheduling on a single port
+///  This file implements the pass for scheduling on a single port.
 ///
 ///  A single port may have multiple frames mixed with it (measurement vs drive,
 ///  etc). Each mixed frame will have delay and play operations on the mixed
 ///  frame which need to be processed down to a set of delays and plays
 ///  on the underlying port.
 ///
-//===----------------------------------------------------------------------===//
-//  For example:
-//                    _____
-//  Frame A:     _____|    |__________   , delay(2,a), play(w1,a), delay(13,a)
-//               0    2    5          15
-//
-//                      _______
-//  Frame B:     _______|      |______   , delay(7,b), play(w2,b), delay(8,b)
-//              0       7      12     15
-//
-//  are processed to:
-//                    _____
-//  Frame A:     _____|    |             , delay(2,a), play(w1,a)
-//               0    2    5
-//
-//                      _______
-//  Frame B:          __|      |______   , delay(5,b), play(w2,b), delay(8,b)
-//                    2 7      12     15
-//
-//  where the first delay on Frame B has been shortened to account for the
-//  first delay on Frame A, and the second delay on Frame A has been removed
-//  to account for the play and delay on Frame B.
-//
-//  This is accomplished by assigning timepoints to the delay and play
-//  operations. Timepoints are assigned to each frame independently
-//  as though they are playing concurrently.
-//
-//  The ops are then sorted by timepoint and delay ops are erased.
-//
-//  Pass assumptions:
-//     Pass processes individual drive and acquire modules where those modules
-//     only contain operations on the ports that the module is responsible
-//     for. For example if the module is responsible for port 0 only operations
-//     on port 0 are present in the module.
-//
-//     The pass assumes that the Pulse Ops to be processed are contained
-//     within pulse.sequences.
-//
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/SchedulePort.h"
@@ -71,8 +33,8 @@
 using namespace mlir;
 using namespace mlir::pulse;
 
-uint SchedulePortPass::processCall(Operation *module,
-                                   CallSequenceOp &callSequenceOp) {
+uint64_t SchedulePortPass::processCall(Operation *module,
+                                       CallSequenceOp &callSequenceOp) {
 
   INDENT_DEBUG("==== processCall - start  ===================\n");
   INDENT_DUMP(callSequenceOp.dump());
@@ -81,8 +43,14 @@ uint SchedulePortPass::processCall(Operation *module,
   // walk into region and check arguments
   // look for sequence def match
   auto callee = callSequenceOp.getCallee();
-  Operation *findOp = SymbolTable::lookupSymbolIn(module, callee);
-  uint calleeDuration = processCallee(module, callSequenceOp, findOp);
+  auto sequenceOp =
+      dyn_cast<SequenceOp>(SymbolTable::lookupSymbolIn(module, callee));
+  if (!sequenceOp) {
+    callSequenceOp->emitError()
+        << "Unable to find callee symbol " << callee << ".";
+    signalPassFailure();
+  }
+  uint64_t calleeDuration = processSequence(sequenceOp);
 
   INDENT_DEBUG("====  processCall - end  ====================\n");
   INDENT_DUMP(callSequenceOp.dump());
@@ -90,32 +58,18 @@ uint SchedulePortPass::processCall(Operation *module,
   return calleeDuration;
 }
 
-uint SchedulePortPass::processCallee(Operation *module,
-                                     CallSequenceOp &callSequenceOp,
-                                     Operation *findOp) {
+uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
 
   // TODO: Consider returning overall length of sequence to help schedule
   // across sequences
-
-  auto sequenceOp = dyn_cast<SequenceOp>(findOp);
-  if (!sequenceOp)
-    return 0;
-
   mlir::OpBuilder builder(sequenceOp);
 
-  uint numMixedFrames = 0;
-  auto mixedFrameSequences =
-      buildMixedFrameMap(callSequenceOp, sequenceOp, numMixedFrames);
+  uint32_t numMixedFrames = 0;
+  auto mixedFrameSequences = buildMixedFrameMap(sequenceOp, numMixedFrames);
 
-  if (numMixedFrames < 2) {
-    // if there is less than 2 mixed frames in this sequence then there is
-    // no reason to change the schedule of the sequence
-    return 0;
-  }
+  uint64_t maxTime = 0;
 
-  uint maxTime = 0;
-
-  addTimepoints(callSequenceOp, builder, mixedFrameSequences, maxTime);
+  addTimepoints(builder, mixedFrameSequences, maxTime);
 
   // remove all DelayOps - they are no longer required now that we have
   // timepoints
@@ -126,10 +80,8 @@ uint SchedulePortPass::processCallee(Operation *module,
   // clean up
   sequenceOp->walk([&](arith::ConstantOp op) {
     if (op->getUsers().empty())
-      removeList.push_back(op);
+      op->erase();
   });
-
-  removePendingOps();
 
   // assign timepoint to return
   // TODO: check for a better way to do this with getTerminator or back()
@@ -137,17 +89,12 @@ uint SchedulePortPass::processCallee(Operation *module,
     IntegerAttr timepointAttr = builder.getI64IntegerAttr(maxTime);
     op->setAttr("pulse.timepoint", timepointAttr);
   });
-
-  INDENT_DEBUG("==== processCallee - end ===============\n");
-  INDENT_DUMP(sequenceOp.dump());
-  INDENT_DEBUG("===========================================\n");
   return maxTime;
 }
 
 SchedulePortPass::mixedFrameMap_t
-SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
-                                     SequenceOp &sequenceOp,
-                                     uint &numMixedFrames) {
+SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
+                                     uint32_t &numMixedFrames) {
 
   // build a map between mixed frame (as represented by the arg index)
   // and a vector of operations on that mixed frame
@@ -157,18 +104,11 @@ SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
   for (auto const &argumentResult :
        llvm::enumerate(sequenceOp.getArguments())) {
     auto index = argumentResult.index();
-    auto *definingOp = callSequenceOp.getOperand(index).getDefiningOp();
-    if (isa<MixFrameOp>(definingOp)) {
+    auto argumentType = argumentResult.value().getType();
+    if (argumentType.isa<MixedFrameType>()) {
       numMixedFrames++;
       mixedFrameSequences[index] = {};
     }
-  }
-  if (numMixedFrames < 2) {
-    // if there is only one mixed frame on a port, we don't have to interleave
-    // the operations from multiple mixed frames that are being mapped to that
-    // port. Basically, there will be no possible timing conflict, and therefor
-    // we can return early
-    return mixedFrameSequences;
   }
 
   // build vectors of operations on each mixed frame and push onto the
@@ -209,10 +149,9 @@ SchedulePortPass::buildMixedFrameMap(CallSequenceOp &callSequenceOp,
   return mixedFrameSequences;
 } // buildMixedFrameMap
 
-void SchedulePortPass::addTimepoints(CallSequenceOp &callSequenceOp,
-                                     mlir::OpBuilder &builder,
+void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
                                      mixedFrameMap_t &mixedFrameSequences,
-                                     uint &maxTime) {
+                                     uint64_t &maxTime) {
 
   // add timepoint to operations in mixedFrameSequences where timepoints
   // are calculated based on the duration of delayOps
@@ -221,37 +160,32 @@ void SchedulePortPass::addTimepoints(CallSequenceOp &callSequenceOp,
   // independently for each mixed frame.
 
   for (const auto &index : mixedFrameSequences) {
-    INDENT_DEBUG("processing fixed frame: " << index.first << "\n");
-    increaseDebugIndent();
-
-    uint currentTimepoint = 0;
+    uint64_t currentTimepoint = 0;
     for (auto *op : index.second) {
-      INDENT_DEBUG("current timepoint " << currentTimepoint);
-      LLVM_DEBUG(llvm::errs() << " max_timepoint " << maxTime);
-      LLVM_DEBUG(llvm::errs() << " op = ");
-      LLVM_DEBUG(op->dump());
-
       // set attribute on op with current timepoint
       IntegerAttr timepointAttr = builder.getI64IntegerAttr(currentTimepoint);
       op->setAttr("pulse.timepoint", timepointAttr);
 
       // update currentTimepoint if DelayOp or playOp
-      if (auto castOp = dyn_cast<DelayOp>(op)) {
-        currentTimepoint += castOp.getDuration();
-      } else if (auto castOp = dyn_cast<PlayOp>(op)) {
-        auto duration = castOp.getDuration(callSequenceOp);
-        if (auto err = duration.takeError()) {
-          op->emitOpError() << toString(std::move(err));
+      if (auto delayOp = dyn_cast<DelayOp>(op))
+        currentTimepoint += delayOp.getDuration();
+      else if (auto playOp = dyn_cast<PlayOp>(op)) {
+        if (!playOp->hasAttrOfType<IntegerAttr>("pulse.duration")) {
+          playOp.emitError() << "SchedulingPortPass requires that PlayOps be "
+                                "labeled with a pulse.duration attribute";
           signalPassFailure();
         }
-        currentTimepoint += duration.get();
+        // MLIR does does not have a setUI64IntegerAttr so duration is stored
+        // in a I64IntegerAttr but should be treated as a uint64_t
+        uint64_t duration = static_cast<uint64_t>(
+            playOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
+        currentTimepoint += duration;
       }
     }
     if (currentTimepoint > maxTime)
       maxTime = currentTimepoint;
-    decreaseDebugIndent();
   }
-} // buildOpsList
+} // addTimepoints
 
 void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
   // sort updated ops so that ops across mixed frame are in the correct
@@ -286,24 +220,11 @@ void SchedulePortPass::runOnOperation() {
 
   INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
 
-  removeList.clear();
-
   module->walk([&](CallSequenceOp op) { processCall(module, op); });
 
   INDENT_DEBUG("=====  SchedulePortPass - end ===========\n");
 
 } // runOnOperation
-
-void SchedulePortPass::removePendingOps() {
-  // remove any ops that were scheduled to be removed above.
-  while (!removeList.empty()) {
-    auto *op = removeList.front();
-    INDENT_DEBUG("Removing ");
-    LLVM_DEBUG(op->dump());
-    removeList.pop_front();
-    op->erase();
-  }
-}
 
 llvm::StringRef SchedulePortPass::getArgument() const {
   return "pulse-schedule-port";

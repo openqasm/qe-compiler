@@ -14,7 +14,8 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file implements the pass for scheduling on a single port
+///  This file implements the pass for scheduling on a single port. The
+///  pass operates at the module level.
 ///
 ///  A single port may have multiple frames mixed with it (measurement vs drive,
 ///  etc). Each mixed frame will have delay and play operations on the mixed
@@ -31,8 +32,8 @@
 #include "Utils/DebugIndent.h"
 #include "mlir/Pass/Pass.h"
 
-#include <deque>
-#include <set>
+#include <map>
+#include <vector>
 
 namespace mlir::pulse {
 
@@ -46,25 +47,18 @@ public:
   llvm::StringRef getDescription() const override;
 
 private:
-  using opVec_t = std::vector<Operation *>;
-  using mixedFrameMap_t = std::map<uint, std::vector<Operation *>>;
-  using opQueue_t = std::deque<Operation *>;
+  using mixedFrameMap_t = std::map<uint32_t, std::vector<Operation *>>;
 
-  std::deque<Operation *> removeList;
-  uint processCall(Operation *module, CallSequenceOp &callSequenceOp);
-  uint processCallee(Operation *module, CallSequenceOp &callSequenceOp,
-                     Operation *findOp);
+  uint64_t processCall(Operation *module, CallSequenceOp &callSequenceOp);
+  uint64_t processSequence(SequenceOp sequenceOp);
 
-  mixedFrameMap_t buildMixedFrameMap(CallSequenceOp &callSequenceOp,
-                                     SequenceOp &sequenceOp,
-                                     uint &numMixedFrames);
+  mixedFrameMap_t buildMixedFrameMap(SequenceOp &sequenceOp,
+                                     uint32_t &numMixedFrames);
 
-  void addTimepoints(CallSequenceOp &callSequenceOp, mlir::OpBuilder &builder,
-                     mixedFrameMap_t &mixedFrameSequences, uint &maxTime);
-
+  void addTimepoints(mlir::OpBuilder &builder,
+                     mixedFrameMap_t &mixedFrameSequences, uint64_t &maxTime);
   void sortOpsByTimepoint(SequenceOp &sequenceOp);
-  void removePendingOps();
 };
 } // namespace mlir::pulse
 
-#endif // PULSE_SCHEDULE_CHANNEL_H
+#endif // PULSE_SCHEDULE_PORT_H

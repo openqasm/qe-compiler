@@ -45,7 +45,7 @@ struct DelayAndDelayPattern : public OpRewritePattern<DelayOp> {
                                 PatternRewriter &rewriter) const override {
 
     // TODO: determine how to pass ignoreTarget to the pass as an option
-    bool ignoreTarget = true;
+    bool ignoreTarget = false;
 
     // get next operation and test for Delay
     Operation *nextOp = delayOp->getNextNode();
@@ -94,13 +94,12 @@ struct DelayAndDelayPattern : public OpRewritePattern<DelayOp> {
 
 void MergeDelayPass::runOnOperation() {
 
-  Operation *moduleOperation = getOperation();
+  Operation *operation = getOperation();
 
   RewritePatternSet patterns(&getContext());
   patterns.add<DelayAndDelayPattern>(&getContext());
 
-  if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
+  if (failed(applyPatternsAndFoldGreedily(operation, std::move(patterns))))
     signalPassFailure();
 
 } // runOnOperation
