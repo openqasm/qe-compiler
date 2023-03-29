@@ -62,6 +62,8 @@ auto it = contextConfigs.find(context);
 llvm::Expected<QSSConfig> QSSConfigBuilder::buildConfig() {
     QSSConfig config;
     if (auto e = populateConfig(config))
-        return e;
+        // Explicit move required for some systems as automatic move
+        // is not recognized.
+        return std::move(e);
     return config;
 }

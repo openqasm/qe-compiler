@@ -312,7 +312,9 @@ static llvm::Expected<const qssc::config::QSSConfig&> buildConfig_(mlir::MLIRCon
   // Build configuration only from the CLI for now.
   auto config = qssc::config::CLIConfigBuilder().buildConfig();
   if (auto err = config.takeError())
-    return err;
+    // Explicit move required for some systems as automatic move
+    // is not recognized.
+    return std::move(err);
 
   // Set this as the configuration for the current context
   qssc::config::setContextConfig(context, std::move(*config));
