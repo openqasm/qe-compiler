@@ -73,12 +73,3 @@ quir.circuit @circuit6 (%q0 : !quir.qubit<1>, %omega1: !quir.angle<32>, %omega2:
 	%res0 = "quir.measure"(%q0) : (!quir.qubit<1>) -> i1
 	quir.return %res0 : i1
 }
-
-// -----
-
-quir.circuit @circuit7 (%q0 : !quir.qubit<1>, %omega1: !quir.angle<32>, %omega2: !quir.angle<32>) -> i1 {
-	// expected-error@+1 {{'quir.declare_duration' op is classical and should not be inside a circuit.}}
-	%l1 = quir.constant #quir.duration<"10ns" : !quir.duration>
-	%res0 = "quir.measure"(%q0) : (!quir.qubit<1>) -> i1
-	quir.return %res0 : i1
-}

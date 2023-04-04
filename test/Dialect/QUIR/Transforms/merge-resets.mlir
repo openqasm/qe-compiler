@@ -141,10 +141,10 @@ module  {
       quir.reset %2 : !quir.qubit<1>
       quir.call_gate @x(%2) : (!quir.qubit<1>) -> ()
 
-      // TOPO: quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
-      // TOPO: quir.reset %1, %2 : !quir.qubit<1>, !quir.qubit<1>
-      // TOPO: quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
-      // TOPO: quir.call_gate @x(%2) : (!quir.qubit<1>) -> ()
+      // TOPO: quir.call_gate @x([[QUBIT0]]) : (!quir.qubit<1>) -> ()
+      // TOPO: quir.reset [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>
+      // TOPO: quir.call_gate @x([[QUBIT0]]) : (!quir.qubit<1>) -> ()
+      // TOPO: quir.call_gate @x([[QUBIT1]]) : (!quir.qubit<1>) -> ()
     }
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32

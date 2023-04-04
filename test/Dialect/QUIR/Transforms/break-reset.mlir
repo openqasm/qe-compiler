@@ -29,7 +29,7 @@ func @t1 (%inq : !quir.qubit<1>) {
 // ITER:       quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // ITER-NOT:   quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 
-// DELAYITER:     %0 = quir.constant #quir.duration<"500dt" : !quir.duration>
+// DELAYITER:     %dur = quir.constant #quir.duration<"500dt" : !quir.duration>
 // DELAYITER:       quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // DELAYITER:       quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // DELAYITER-NOT:   quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
