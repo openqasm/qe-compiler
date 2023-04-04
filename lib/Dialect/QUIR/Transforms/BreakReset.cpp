@@ -48,13 +48,14 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
 
   LogicalResult matchAndRewrite(ResetQubitOp resetOp,
                                 PatternRewriter &rewriter) const override {
-    DeclareDurationOp durationOp;
+    quir::ConstantOp constantDurationOp;
 
     if (numIterations_ > 1 && delayCycles_ > 0) {
       std::string durationString = std::to_string(delayCycles_) + "dt";
-      durationOp = rewriter.create<DeclareDurationOp>(
-          resetOp.getLoc(), rewriter.getType<DurationType>(),
-          StringRef(durationString));
+      constantDurationOp = rewriter.create<quir::ConstantOp>(
+          resetOp.getLoc(), DurationAttr::get(rewriter.getContext(),
+                                              rewriter.getType<DurationType>(),
+                                              StringRef(durationString)));
     }
 
     // result of measurement in each iteration is number of qubits * i1
@@ -64,7 +65,8 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
     for (uint iteration = 0; iteration < numIterations_; iteration++) {
       if (delayCycles_ > 0 && iteration > 0)
         for (auto qubit : resetOp.qubits())
-          rewriter.create<DelayOp>(resetOp.getLoc(), durationOp.out(), qubit);
+          rewriter.create<DelayOp>(resetOp.getLoc(),
+                                   constantDurationOp.result(), qubit);
 
       auto measureOp = rewriter.create<MeasureOp>(
           resetOp.getLoc(), TypeRange(typeVec), resetOp.qubits());

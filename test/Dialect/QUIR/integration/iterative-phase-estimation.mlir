@@ -136,8 +136,8 @@ module {
     "quir.call_gate"(%q1_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     "quir.call_gate"(%q0_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     // duration a, b; // should be resolved to duration by this point
-    %duration_a = quir.declare_duration {value = "10ns"} : !quir.duration
-    %duration_b = quir.declare_duration {value = "20ns"} : !quir.duration
+    %duration_a = quir.constant #quir.duration<"10ns" : !quir.duration>
+    %duration_b = quir.constant #quir.duration<"20ns" : !quir.duration>
     // delay(a) %0;
     // delay(b) %1;
     "quir.delay"(%duration_a, %q0_0) : (!quir.duration, !quir.qubit<1>) -> ()
@@ -171,7 +171,7 @@ module {
     "quir.call_gate"(%q0_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     // duration cs;
     // delay(cs) %1;
-    %duration_c = quir.declare_duration {value = "5ns"} : !quir.duration
+    %duration_c = quir.constant #quir.duration<"5ns" : !quir.duration>
     "quir.delay"(%duration_c, %q1_0) : (!quir.duration, !quir.qubit<1>) -> ()
     // cx %0, %1;
     "quir.call_gate"(%q0_0, %q1_0) {callee = @gateCX} : (!quir.qubit<1>, !quir.qubit<1>) -> ()

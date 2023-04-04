@@ -103,25 +103,6 @@ def QUIR_DeclareQubitOp : QUIR_Op<"declare_qubit", [NonInterferingNonDeadSideEff
     }];
 }
 
-def QUIR_DeclareDurationOp : QUIR_Op<"declare_duration", [NoSideEffect]> {
-    let summary = "Declare a new duration.";
-    let description = [{
-        The `quir.declare_duration` operation creates a new OpenQASM3.0 duration, representing a duration of time.
-
-        Example:
-        ```mlir
-        %dur = quir.declare_duration {value = "10ns"} : !quir.duration
-        ```
-    }];
-
-    let arguments = (ins StrAttr:$value);
-    let results = (outs QUIR_DurationType:$out);
-
-    let assemblyFormat = [{
-        attr-dict `:` type($out)
-    }];
-}
-
 def QUIR_ResetQubitOp : QUIR_Op<"reset", [
             IsolatedFromAbove, CPTPOp,
             DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
