@@ -26,7 +26,7 @@ module  {
     %c1000 = arith.constant 1000 : index
     %c1 = arith.constant 1 : index
     scf.for %arg0 = %c0 to %c1000 step %c1 {
-      %0 = quir.declare_duration {value = "1ms"} : !quir.duration
+      %0 = quir.constant #quir.duration<"1ms" : !quir.duration>
       quir.delay %0, () : !quir.duration, () -> ()
 
       // qubit $0;
