@@ -54,7 +54,8 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
       std::string durationString = std::to_string(delayCycles_) + "dt";
       constantDurationOp = rewriter.create<quir::ConstantOp>(
         resetOp.getLoc(),
-        DurationAttr::get(rewriter.getContext(), rewriter.getType<DurationType>(),
+        DurationAttr::get(rewriter.getContext(),
+                          rewriter.getType<DurationType>(),
                           StringRef(durationString)));
     }
 
