@@ -19,7 +19,6 @@ add_mlir_dialect_library(MLIRPulseTransforms
         RemoveUnusedArguments.cpp
         SchedulePort.cpp
         Scheduling.cpp
-        SlicePorts.cpp
         SystemCreation.cpp
         ADDITIONAL_HEADER_DIRS
         ${PROJECT_SOURCE_DIR}/include/Pulse
