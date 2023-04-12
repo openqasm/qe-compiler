@@ -92,10 +92,12 @@ public:
     if (participants.size() < 1)
       llvm::errs() << "Failed to find relative ports for one of the qubits.";
 
-    auto portGroupOp = rewriter.create<PortGroup_CreateOp>(
-        loc, PortGroupType::get(ctx), ValueRange{participants});
+    // PortGroup has been removed. This should be placed with the correct ports
+    // when this pass is updated. 
+    // auto portGroupOp = rewriter.create<PortGroup_CreateOp>(
+    //     loc, PortGroupType::get(ctx), ValueRange{participants});
 
-    rewriter.replaceOp(originalOp, {portGroupOp.out()});
+    // rewriter.replaceOp(originalOp, {portGroupOp.out()});
     return success();
   }
 };
@@ -197,7 +199,7 @@ public:
 
     const std::string callee = originalOp.callee().str();
     const auto loc = originalOp->getLoc();
-    auto *const ctx = originalOp->getContext();
+    //auto *const ctx = originalOp->getContext();
     auto *const existingOp = symbolTable_.get().lookup(callee);
     auto operands = adaptor.getOperands();
 
@@ -236,34 +238,35 @@ public:
         if (!port)
           llvm::errs() << "Failed to find target port/frame for operation";
 
-        auto target = builder.create<Port_SelectOp>(
-            loc, PortType::get(ctx),
-            functionOp.getArgument(OpOperandMap.at(op->uid())), port->id());
+        // Port_SelectOp has been removed
+        // auto target = builder.create<Port_SelectOp>(
+        //     loc, PortType::get(ctx),
+        //     functionOp.getArgument(OpOperandMap.at(op->uid())), port->id());
 
-        if (const auto play = std::dynamic_pointer_cast<qu::PlayOp>(op)) {
-          processPlayOps(play, loc, ctx, target, builder);
-        } else if (const auto delay =
-                       std::dynamic_pointer_cast<qu::DelayOp>(op)) {
+        // if (const auto play = std::dynamic_pointer_cast<qu::PlayOp>(op)) {
+        //   processPlayOps(play, loc, ctx, target, builder);
+        // } else if (const auto delay =
+        //                std::dynamic_pointer_cast<qu::DelayOp>(op)) {
 
-          const IntegerType intType = builder.getI32Type();
+        //   const IntegerType intType = builder.getI32Type();
 
-          const Value duration = builder.create<mlir::arith::ConstantOp>(
-              loc, intType, builder.getIntegerAttr(intType, delay->duration));
+        //   const Value duration = builder.create<mlir::arith::ConstantOp>(
+        //       loc, intType, builder.getIntegerAttr(intType, delay->duration));
 
-          builder.create<DelayOp>(loc, duration, target);
-        } else if (const auto fc =
-                       std::dynamic_pointer_cast<qu::FrameChangeOp>(op)) {
-          const FloatType floatType = builder.getF64Type();
+        //   builder.create<DelayOp>(loc, duration, target);
+        // } else if (const auto fc =
+        //                std::dynamic_pointer_cast<qu::FrameChangeOp>(op)) {
+        //   const FloatType floatType = builder.getF64Type();
 
-          const Value phase = builder.create<mlir::arith::ConstantOp>(
-              loc, floatType, builder.getFloatAttr(floatType, fc->phase));
+        //   const Value phase = builder.create<mlir::arith::ConstantOp>(
+        //       loc, floatType, builder.getFloatAttr(floatType, fc->phase));
 
-          builder.create<ShiftPhaseOp>(loc, target, phase);
-        } else if (const auto acquire =
-                       std::dynamic_pointer_cast<qu::AcquisitionOp>(op)) {
-        } else {
-          llvm::errs() << "Encountered unsupported operation.";
-        }
+        //   builder.create<ShiftPhaseOp>(loc, target, phase);
+        // } else if (const auto acquire =
+        //                std::dynamic_pointer_cast<qu::AcquisitionOp>(op)) {
+        // } else {
+        //   llvm::errs() << "Encountered unsupported operation.";
+        // }
       }
 
       builder.create<mlir::ReturnOp>(loc);
