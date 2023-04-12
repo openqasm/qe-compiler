@@ -45,14 +45,9 @@ module @drive_0 attributes {quir.nodeId = 0 : i32, quir.nodeType = "drive", quir
   }
   func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
-    %cst = arith.constant 0.000000e+00 : f64
-    %0 = complex.create %cst, %cst : complex<f64>
-    %1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-    %2 = "pulse.create_port"() {uid = "Q0"} : () -> !pulse.port
-    %3 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %4 = "pulse.mix_frame"(%2, %3) {signalType = "measure"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
-    %5 = pulse.create_frame(%0, %cst, %1) : (complex<f64>, f64, !quir.angle<20>) -> !pulse.frame
-    %6 = "pulse.mix_frame"(%2, %5) {signalType = "drive"} : (!pulse.port, !pulse.frame) -> !pulse.mixed_frame
+    %2 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
+    %4 = "pulse.mix_frame"(%2) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame
+    %6 = "pulse.mix_frame"(%2) {uid = "mf1-p0"} : (!pulse.port) -> !pulse.mixed_frame
     %7 = pulse.create_waveform dense<[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0] ]> : tensor<3x2xf64> -> !pulse.waveform
     %8 = pulse.create_waveform dense<[[0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0] ]> : tensor<5x2xf64> -> !pulse.waveform
     %9 = pulse.call_sequence @seq_0(%7, %8, %4, %6) : (!pulse.waveform, !pulse.waveform, !pulse.mixed_frame, !pulse.mixed_frame) -> i1
