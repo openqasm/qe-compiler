@@ -93,7 +93,7 @@ public:
       llvm::errs() << "Failed to find relative ports for one of the qubits.";
 
     // PortGroup has been removed. This should be placed with the correct ports
-    // when this pass is updated. 
+    // when this pass is updated.
     // auto portGroupOp = rewriter.create<PortGroup_CreateOp>(
     //     loc, PortGroupType::get(ctx), ValueRange{participants});
 
@@ -199,7 +199,7 @@ public:
 
     const std::string callee = originalOp.callee().str();
     const auto loc = originalOp->getLoc();
-    //auto *const ctx = originalOp->getContext();
+    // auto *const ctx = originalOp->getContext();
     auto *const existingOp = symbolTable_.get().lookup(callee);
     auto operands = adaptor.getOperands();
 
@@ -251,7 +251,8 @@ public:
         //   const IntegerType intType = builder.getI32Type();
 
         //   const Value duration = builder.create<mlir::arith::ConstantOp>(
-        //       loc, intType, builder.getIntegerAttr(intType, delay->duration));
+        //       loc, intType, builder.getIntegerAttr(intType,
+        //       delay->duration));
 
         //   builder.create<DelayOp>(loc, duration, target);
         // } else if (const auto fc =
