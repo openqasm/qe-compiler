@@ -83,8 +83,7 @@ void mock::MockQubitLocalizationPass::broadcastAndReceiveValue(
     Operation *parentOp = val.getDefiningOp();
     if (parentOp) {
       if (dyn_cast<mlir::arith::ConstantOp>(parentOp) ||
-          dyn_cast<quir::ConstantOp>(parentOp) ||
-          dyn_cast<DeclareDurationOp>(parentOp)) {
+          dyn_cast<quir::ConstantOp>(parentOp)) {
         // Just clone this op to the mocks
         for (uint id : toNodeIds)
           (*mockBuilders)[id]->clone(*parentOp, mockMapping[id]);

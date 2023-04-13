@@ -8,6 +8,7 @@
 qssc_add_library(QSSConfig
     QSSConfig.cpp
     CLIConfig.cpp
+    EnvVarConfig.cpp
 
     ADDITIONAL_HEADER_DIRS
     ${QSSC_INCLUDE_DIR}/Config
