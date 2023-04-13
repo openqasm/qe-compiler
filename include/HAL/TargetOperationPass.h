@@ -64,11 +64,20 @@ protected:
     auto target = targetInfo.getValue()->getTarget(
         &mlir::OperationPass<OpT>::getContext());
     if (!target) {
-      llvm::errs() << "Error: failed to get target '" << TargetT::name
-                   << "':\n";
-      llvm::errs() << target.takeError();
-      mlir::OperationPass<OpT>::signalPassFailure();
-      return nullptr;
+      // look for a child target that matches
+      for (auto childName : TargetT::childNames)
+        if ((targetInfo =
+                 registry::TargetSystemRegistry::lookupPluginInfo(childName)) &&
+            (target = targetInfo.getValue()->getTarget(
+                 &mlir::OperationPass<OpT>::getContext())))
+          break;
+      if (!target) {
+        llvm::errs() << "Error: failed to get target '" << TargetT::name
+                     << "':\n";
+        llvm::errs() << target.takeError();
+        mlir::OperationPass<OpT>::signalPassFailure();
+        return nullptr;
+      }
     }
 
     auto *castedTarget = dynamic_cast<TargetT *>(target.get());

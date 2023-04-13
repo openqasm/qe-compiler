@@ -80,6 +80,9 @@ int qssc::targets::mock::init() {
   return registered ? 0 : -1;
 }
 
+const std::vector<std::string> MockSystem::childNames = {"MockChild1",
+                                                         "MockChild2"};
+
 MockConfig::MockConfig(llvm::StringRef configurationPath)
     : SystemConfiguration() {
   std::ifstream configStream(configurationPath.str());

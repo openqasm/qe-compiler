@@ -64,6 +64,7 @@ private:
 class MockSystem : public qssc::hal::TargetSystem {
 public:
   static constexpr auto name = "mock";
+  static const std::vector<std::string> childNames;
   explicit MockSystem(std::unique_ptr<MockConfig> config);
   static llvm::Error registerTargetPasses();
   static llvm::Error registerTargetPipelines();
