@@ -1410,7 +1410,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
             << "mismatch of ASTType and class";
     }
     // assert(operatorNode->GetOpType() == ASTOpTypeLogicalNot);
-    if (operatorNode->GetOpType() == ASTOpTypeLogicalNot) {
+    if (operatorNode->GetOpType() != ASTOpTypeLogicalNot) {
       reportError(node, mlir::DiagnosticSeverity::Error)
             << "Operation type is not of type logical not";
     }
