@@ -101,6 +101,16 @@ mlir::Value QUIRGenQASM3Visitor::getCurrentValue(const std::string &valueName) {
   return pos->second;
 }
 
+mlir::InFlightDiagnostic
+QUIRGenQASM3Visitor::reportError(ASTBase const *location,
+                                 mlir::DiagnosticSeverity severity) {
+  DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
+
+  if (severity == mlir::DiagnosticSeverity::Error)
+    hasFailed = true;
+  return engine.emit(getLocation(location), severity);
+}
+
 std::string
 QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
 
@@ -117,7 +127,14 @@ QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
   if (const auto *idNode =
           dynamic_cast<const ASTIdentifierNode *>(node->GetExpression()))
     return idNode->GetName();
-  assert(node->GetIdentifier());
+  // couldn't update this assert because reportError is defined after this function
+  // Moved reportError
+  // Will remove this comment before merge
+  // assert(node->GetIdentifier());
+  if (!node->GetIdentifier()) {
+    reportError(node, mlir::DiagnosticSeverity::Error)
+          << "Identifier not found.";
+  }
   return node->GetIdentifier()->GetName();
 }
 
@@ -225,16 +242,6 @@ void QUIRGenQASM3Visitor::setInputFile(std::string fName) {
 mlir::LogicalResult QUIRGenQASM3Visitor::walkAST() {
   BaseQASM3Visitor::walkAST();
   return hasFailed ? mlir::failure() : mlir::success();
-}
-
-mlir::InFlightDiagnostic
-QUIRGenQASM3Visitor::reportError(ASTBase const *location,
-                                 mlir::DiagnosticSeverity severity) {
-  DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
-
-  if (severity == mlir::DiagnosticSeverity::Error)
-    hasFailed = true;
-  return engine.emit(getLocation(location), severity);
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
@@ -588,6 +595,7 @@ static const std::string &resolveQCParam(const ASTGateNode *gateNode,
   auto *qcParam = gateNode->GetQCParams()[index];
   auto *qId = qcParam->GetIdentifier();
 
+  // same issue here. Not able to run reportError here
   assert(qId && "qcParam symbolTableEntry is invalid");
   // if (!qId) {
   //   reportError(gateNode, mlir::DiagnosticSeverity::Error)
