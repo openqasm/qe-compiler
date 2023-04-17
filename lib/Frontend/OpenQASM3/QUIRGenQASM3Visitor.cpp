@@ -101,16 +101,6 @@ mlir::Value QUIRGenQASM3Visitor::getCurrentValue(const std::string &valueName) {
   return pos->second;
 }
 
-mlir::InFlightDiagnostic
-QUIRGenQASM3Visitor::reportError(ASTBase const *location,
-                                 mlir::DiagnosticSeverity severity) {
-  DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
-
-  if (severity == mlir::DiagnosticSeverity::Error)
-    hasFailed = true;
-  return engine.emit(getLocation(location), severity);
-}
-
 std::string
 QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
 
@@ -241,6 +231,16 @@ void QUIRGenQASM3Visitor::setInputFile(std::string fName) {
 mlir::LogicalResult QUIRGenQASM3Visitor::walkAST() {
   BaseQASM3Visitor::walkAST();
   return hasFailed ? mlir::failure() : mlir::success();
+}
+
+mlir::InFlightDiagnostic
+QUIRGenQASM3Visitor::reportError(ASTBase const *location,
+                                 mlir::DiagnosticSeverity severity) {
+  DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
+
+  if (severity == mlir::DiagnosticSeverity::Error)
+    hasFailed = true;
+  return engine.emit(getLocation(location), severity);
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
