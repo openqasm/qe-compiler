@@ -65,7 +65,7 @@ protected:
         &mlir::OperationPass<OpT>::getContext());
     if (!target) {
       // look for a child target that matches
-      for (auto childName : TargetT::childNames)
+      for (const auto &childName : TargetT::childNames)
         if ((targetInfo =
                  registry::TargetSystemRegistry::lookupPluginInfo(childName)) &&
             (target = targetInfo.getValue()->getTarget(
