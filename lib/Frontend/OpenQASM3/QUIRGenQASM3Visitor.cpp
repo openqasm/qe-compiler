@@ -117,9 +117,7 @@ QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
   if (const auto *idNode =
           dynamic_cast<const ASTIdentifierNode *>(node->GetExpression()))
     return idNode->GetName();
-  // couldn't update this assert because reportError is defined after this
-  // function Moved reportError Will remove this comment before merge
-  // assert(node->GetIdentifier());
+    
   if (!node->GetIdentifier()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Identifier not found.";
@@ -595,11 +593,11 @@ static const std::string &resolveQCParam(const ASTGateNode *gateNode,
   auto *qId = qcParam->GetIdentifier();
 
   // same issue here. Not able to run reportError here
-  assert(qId && "qcParam symbolTableEntry is invalid");
-  // if (!qId) {
-  //   reportError(gateNode, mlir::DiagnosticSeverity::Error)
-  //         << "qcParam symbolTableEntry is invalid";
-  // }
+  // assert(qId && "qcParam symbolTableEntry is invalid");
+  if (!qId) {
+    reportError(gateNode, mlir::DiagnosticSeverity::Error)
+          << "qcParam symbolTableEntry is invalid";
+  }
   return qId->GetName();
 }
 
