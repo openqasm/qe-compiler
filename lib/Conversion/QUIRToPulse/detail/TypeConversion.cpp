@@ -29,8 +29,6 @@ static ::llvm::Optional<Type> convertLegalTypes(Type type) {
   return llvm::None;
 }
 
-QUIRTypeConverter::QUIRTypeConverter() {
-  addConversion(convertLegalTypes);
-}
+QUIRTypeConverter::QUIRTypeConverter() { addConversion(convertLegalTypes); }
 
 } // namespace mlir::pulse
