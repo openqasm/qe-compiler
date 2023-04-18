@@ -31,6 +31,7 @@ include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
 include "Dialect/QCS/IR/QCSBase.td"
 
 include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
+include "mlir/IR/SymbolInterfaces.td"
 
 // Define a side effect that identifies an operation as not dead while not
 // interfering with memory operations (e.g., allows store-forwarding across
@@ -224,5 +225,80 @@ def QCS_ShotInitOp : QCS_Op<"shot_init", [IsolatedFromAbove]> {
         attr-dict
     }];
 }
+
+def QCS_InputParameterOp : QCS_Op<"input_parameter", [Symbol]> {
+    let summary = "system input parameter subject to post compilation binary rewrite";
+    let description = [{
+        The `qcs.input_parameter` operation adds a symbol defining an input parameter
+        which may be modified after compilation. The value of the input parameter
+        may be obtained using the qcs.use_input_parameter operation.
+
+        Example:
+
+        ```
+        // quir.angle input parameter
+        qcs.input_parameter  "theta" : !quir.angle<64> = 3.14159
+        ```
+    }];
+
+    let arguments = (ins
+        SymbolNameAttr:$sym_name,
+        TypeAttr:$type,
+        OptionalAttr<AnyAttr>:$initial_value
+    );
+
+    let results = (outs);
+
+    let assemblyFormat = [{
+        attr-dict $sym_name `:` $type (`=` $initial_value^)?
+    }];
+
+    let builders = [
+        OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::TypeAttr":$type), [{
+            $_state.addAttribute("sym_name", $_builder.getStringAttr(sym_name));
+            $_state.addAttribute("type", type);
+        }]>
+    ];
+
+    let verifier = [{
+        auto t = (*this).type();
+
+        if( t.isa<::mlir::quir::AngleType>() )
+            return success();
+        std::string str;
+        llvm::raw_string_ostream os(str);
+        t.print(os);
+
+        return emitOpError("MLIR type " + str + " not supported for declarations.");
+    }];
+}
+
+def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
+                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+    let summary = "Use the current value of a parameter";
+    let description = [{
+        The operation `qcs.parameter_load` returns the current value of the
+        classical parameter with the given name.
+
+        Example:
+
+        ```mlir
+        %2 = qcs.parameter_load "a" : !quir.angle<64>
+        ```
+    }];
+
+    let arguments = (ins
+        FlatSymbolRefAttr:$parameter_name
+    );
+
+    let results = (outs AnyClassical:$res);
+
+    let assemblyFormat = [{
+        $parameter_name `:` type($res) attr-dict
+    }];
+    // op is verified by its traits
+    let verifier = ?;
+}
+
 
 #endif // QCS_OPS
