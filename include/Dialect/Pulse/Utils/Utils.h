@@ -50,12 +50,6 @@ MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
   return mixFrameOp;
 }
 
-uint getQubitId(MixFrameOp mixFrameOp);
-uint getQubitId(Port_CreateOp pulsePortOp);
-
-bool isPlayOpForDrive(Operation *op,
-                      mlir::pulse::CallSequenceOp callSequenceOp);
-
 int getTimepoint(Operation *op);
 
 template <typename Func>
