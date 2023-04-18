@@ -22,12 +22,6 @@
 
 namespace mlir::pulse {
 
-static ::llvm::Optional<Type> convertQubitTypes(Type type) {
-  if (auto qubitType = type.dyn_cast<quir::QubitType>())
-    return PortGroupType::get(type.getContext());
-  return llvm::None;
-}
-
 static ::llvm::Optional<Type> convertLegalTypes(Type type) {
   if (type.dyn_cast<quir::AngleType>() || type.dyn_cast<IndexType>() ||
       type.dyn_cast<MemRefType>())
@@ -35,9 +29,6 @@ static ::llvm::Optional<Type> convertLegalTypes(Type type) {
   return llvm::None;
 }
 
-QUIRTypeConverter::QUIRTypeConverter() {
-  addConversion(convertQubitTypes);
-  addConversion(convertLegalTypes);
-}
+QUIRTypeConverter::QUIRTypeConverter() { addConversion(convertLegalTypes); }
 
 } // namespace mlir::pulse
