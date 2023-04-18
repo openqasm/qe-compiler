@@ -244,37 +244,6 @@ def Pulse_Port_CreateOp : Pulse_Op<"create_port", [NoSideEffect]> {
     let results = (outs Pulse_PortType:$out);
 }
 
-def Pulse_PortGroup_CreateOp : Pulse_Op<"create_port_group", [NoSideEffect, SequenceAllowed]> {
-    let summary = "Creates a port group representing a qubit.";
-    let description = [{
-        The `pulse.create_port_group` operation creates a port group which
-        represents a qubit or any other form of I/O within the port domain.
-        Example:
-
-        ```mlir
-        %port_group = pulse.port_group(%s1, %s2, ...) : (!pulse.port, !pulse.port, ...) -> !pulse.port_group
-        ```
-    }];
-    let arguments = (ins  Variadic<Pulse_PortType>:$ports);
-    let results = (outs Pulse_PortGroupType:$out);
-}
-
-
-def Pulse_Port_SelectOp : Pulse_Op<"select_port", [SequenceAllowed]> {
-    let summary = "Selects a port from a port group with an id.";
-    let description = [{
-        The `pulse.select_port` operation selects a port with an id.
-        Example:
-
-        ```mlir
-        %port = pulse.select_port(%i) : (!i32) -> !pulse.port
-        ```
-    }];
-    let arguments = (ins Pulse_PortGroupType:$portGroup, StrAttr:$id);
-    let results = (outs Pulse_PortType:$out);
-}
-
-
 def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed, SameVariadicOperandSize]> {
     let summary = "Mixes a frame with a port.";
     let description = [{
