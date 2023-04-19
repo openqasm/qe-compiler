@@ -87,13 +87,13 @@ void QUIRVariableBuilder::generateParameterDeclaration(
 
   // add qcs input parameter
   auto constantOp = mlir::dyn_cast<mlir::quir::ConstantOp>(assignedValue.getDefiningOp());
-  auto inputParameterOp = builder.create<mlir::qcs::InputParameterOp>(
+  auto declareParameterOp = builder.create<mlir::qcs::DeclareParameterOp>(
     location, variableName.str() + "_parameter", mlir::TypeAttr::get(type),
     constantOp.value()
     );
 
-  inputParameterOp->moveBefore(lastDeclaration[surroundingModuleOp]);
-  lastDeclaration[surroundingModuleOp] = inputParameterOp;
+  declareParameterOp->moveBefore(lastDeclaration[surroundingModuleOp]);
+  lastDeclaration[surroundingModuleOp] = declareParameterOp;
 }
 
 mlir::Value QUIRVariableBuilder::generateParameterLoad(

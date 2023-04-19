@@ -226,10 +226,10 @@ def QCS_ShotInitOp : QCS_Op<"shot_init", [IsolatedFromAbove]> {
     }];
 }
 
-def QCS_InputParameterOp : QCS_Op<"input_parameter", [Symbol]> {
+def QCS_DeclareParameterOp : QCS_Op<"declare_parameter", [Symbol]> {
     let summary = "system input parameter subject to post compilation binary rewrite";
     let description = [{
-        The `qcs.input_parameter` operation adds a symbol defining an input parameter
+        The `qcs.declare_parameter` operation adds a symbol defining an input parameter
         which may be modified after compilation. The value of the input parameter
         may be obtained using the qcs.use_input_parameter operation.
 
@@ -237,7 +237,7 @@ def QCS_InputParameterOp : QCS_Op<"input_parameter", [Symbol]> {
 
         ```
         // quir.angle input parameter
-        qcs.input_parameter  "theta" : !quir.angle<64> = 3.14159
+        qcs.declare_parameter  "theta" : !quir.angle<64> = 3.14159
         ```
     }];
 

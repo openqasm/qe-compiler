@@ -46,7 +46,7 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
 
   // Check that symbol reference resolves to a parameter declaration
   auto declOp =
-      symbolTable.lookupNearestSymbolFrom<InputParameterOp>(op, paramRefAttr);
+      symbolTable.lookupNearestSymbolFrom<DeclareParameterOp>(op, paramRefAttr);
   if (!declOp)
     return op->emitOpError() << "no valid reference to a parameter '"
                              << paramRefAttr.getValue() << "'";
