@@ -40,6 +40,7 @@
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
+#include "Dialect/QUIR/IR/QUIROps.h"
 
 #include <Frontend/OpenQASM3/QUIRGenQASM3Visitor.h>
 
@@ -75,6 +76,17 @@ using namespace QASM;
 namespace qssc::frontend::openqasm3 {
 
 using ExpressionValueType = mlir::Value;
+
+// temporary feature flags to be used due development of parameters support
+static llvm::cl::opt<bool> enableParameters(
+  "enable-parameters",
+  llvm::cl::desc("enabled qasm3 input parameters"),
+  llvm::cl::init(false));
+
+static llvm::cl::opt<bool> enableQUIRCircuit(
+  "enable-circuit",
+  llvm::cl::desc("enabled quir.circuit"),
+  llvm::cl::init(false));
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
@@ -216,6 +228,20 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
 
   // Set the builder to add circuit operations inside the for loop
   builder.setInsertionPointAfter(shotInit);
+
+  if (enableQUIRCircuit) {
+    auto circuit = topLevelBuilder.create<CircuitOp>(
+      initialLocation, "circuit_0",
+      topLevelBuilder.getFunctionType(
+                           /*inputs=*/ArrayRef<Type>(),
+                           /*results=*/ArrayRef<Type>()));
+    auto block = circuit.addEntryBlock();
+    builder.create<mlir::quir::CallCircuitOp>(initialLocation,circuit, ValueRange({}));
+    OpBuilder b(circuit.getBody());
+    builder = b;
+    builder.create<mlir::quir::ReturnOp>(initialLocation, ValueRange({}));
+    builder.setInsertionPointToStart(block);
+  }
 }
 
 void QUIRGenQASM3Visitor::setInputFile(std::string fName) {
@@ -854,7 +880,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
     // generate variable assignment so that they are reinitialized on every
     // shot.
 
-    if (node->GetModifierType() == QASM::ASTTypeInputModifier) {
+    if (enableParameters && node->GetModifierType() == QASM::ASTTypeInputModifier) {
       varHandler.generateParameterDeclaration(loc, idNode->GetName(),
                                               variableType, val);
       auto load = varHandler.generateParameterLoad(loc, idNode->GetName());
