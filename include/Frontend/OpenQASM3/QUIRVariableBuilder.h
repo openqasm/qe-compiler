@@ -57,6 +57,20 @@ public:
                                    bool isInputVariable = false,
                                    bool isOutputVariable = false);
 
+  /// Generate code for declaring a input parameter (at the builder's current 
+  /// insertion point).
+  ///
+  /// @param location source location related to the generated code.
+  /// @param variableName name of the variable. (_parameter will be added)
+  /// @param type type of the variable.
+  void generateParameterDeclaration(mlir::Location location,
+                                   llvm::StringRef variableName,
+                                   mlir::Type type,
+                                   mlir::Value assignedValue);
+
+  mlir::Value generateParameterLoad(
+    mlir::Location location, llvm::StringRef variableName);
+
   /// Generate code for declaring an array (at the builder's current insertion
   /// point).
   ///

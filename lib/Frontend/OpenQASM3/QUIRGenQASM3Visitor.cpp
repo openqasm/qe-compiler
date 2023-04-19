@@ -853,7 +853,15 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
 
     // generate variable assignment so that they are reinitialized on every
     // shot.
-    varHandler.generateVariableAssignment(loc, idNode->GetName(), val);
+
+    if (node->GetModifierType() == QASM::ASTTypeInputModifier) {
+      varHandler.generateParameterDeclaration(loc, idNode->GetName(),
+                                              variableType, val);
+      auto load = varHandler.generateParameterLoad(loc, idNode->GetName());
+      varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
+    } else
+      varHandler.generateVariableAssignment(loc, idNode->GetName(), val);
+
     return;
   }
 

@@ -257,7 +257,12 @@ def QCS_InputParameterOp : QCS_Op<"input_parameter", [Symbol]> {
         OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::TypeAttr":$type), [{
             $_state.addAttribute("sym_name", $_builder.getStringAttr(sym_name));
             $_state.addAttribute("type", type);
-        }]>
+        }]>,
+        OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::TypeAttr":$type, "Attribute":$value), [{
+            $_state.addAttribute("sym_name", $_builder.getStringAttr(sym_name));
+            $_state.addAttribute("type", type);
+            $_state.addAttribute("initial_value", value);
+        }]>,
     ];
 
     let verifier = [{

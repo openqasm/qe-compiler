@@ -23,7 +23,9 @@
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QCS/IR/QCSOps.h"
 
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -68,6 +70,39 @@ void QUIRVariableBuilder::generateVariableDeclaration(
   if (isOutputVariable)
     declareOp.outputAttr(builder.getUnitAttr());
   variables.emplace(variableName.str(), type);
+}
+
+void QUIRVariableBuilder::generateParameterDeclaration(
+    mlir::Location location, llvm::StringRef variableName, mlir::Type type,
+    mlir::Value assignedValue) {
+
+  mlir::OpBuilder::InsertionGuard g(builder);
+  auto *symbolTableOp = mlir::SymbolTable::getNearestSymbolTable(
+      builder.getInsertionBlock()->getParentOp());
+  assert(symbolTableOp &&
+         "require surrounding op with a symbol table (should be the Module)");
+  auto surroundingModuleOp = mlir::dyn_cast<mlir::ModuleOp>(*symbolTableOp);
+  assert(surroundingModuleOp && "assume symbol table residing in module");
+  builder.setInsertionPoint(&surroundingModuleOp.front());
+
+  // add qcs input parameter
+  auto constantOp = mlir::dyn_cast<mlir::quir::ConstantOp>(assignedValue.getDefiningOp());
+  auto inputParameterOp = builder.create<mlir::qcs::InputParameterOp>(
+    location, variableName.str() + "_parameter", mlir::TypeAttr::get(type),
+    constantOp.value()
+    );
+
+  inputParameterOp->moveBefore(lastDeclaration[surroundingModuleOp]);
+  lastDeclaration[surroundingModuleOp] = inputParameterOp;
+}
+
+mlir::Value QUIRVariableBuilder::generateParameterLoad(
+    mlir::Location location, llvm::StringRef variableName) {
+
+  auto op = builder.create<mlir::qcs::ParameterLoadOp>(location,
+  builder.getType<mlir::quir::AngleType>(64),
+  variableName.str() + "_parameter");
+  return op;
 }
 
 void QUIRVariableBuilder::generateArrayVariableDeclaration(

@@ -23,6 +23,8 @@
 #include "Dialect/QCS/IR/QCSTypes.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include <mlir/IR/BuiltinOps.h>
+#include <mlir/IR/SymbolTable.h>
 
 using namespace mlir;
 using namespace mlir::qcs;
@@ -42,7 +44,7 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
     return op->emitOpError(
         "requires a symbol reference attribute 'parameter_name'");
 
-  // Check that symbol reference resolves to a variable declaration
+  // Check that symbol reference resolves to a parameter declaration
   auto declOp =
       symbolTable.lookupNearestSymbolFrom<InputParameterOp>(op, paramRefAttr);
   if (!declOp)
@@ -70,6 +72,5 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
 
 LogicalResult
 ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-
-  return verifyQCSParameterOpSymbolUses(symbolTable, getOperation());
+  return verifyQCSParameterOpSymbolUses(symbolTable, getOperation(), true);
 }
