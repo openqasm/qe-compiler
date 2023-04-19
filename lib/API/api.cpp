@@ -456,13 +456,14 @@ compile_(int argc, char const **argv, std::string *outputString,
   DialectRegistry registry = qssc::dialect::registerDialects();
 
   // Parse the command line options.
-  mlir::applyPassManagerCLOptions(pm);
-  mlir::applyDefaultTimingPassManagerCLOptions(pm);
   mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
   registerPassManagerCLOpts();
   llvm::cl::SetVersionPrinter(&printVersion);
   llvm::cl::ParseCommandLineOptions(
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
+
+  mlir::applyPassManagerCLOptions(pm);
+  mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
   // Build the configuration for this compilation event.
   auto configResult = buildConfig_(&context);
