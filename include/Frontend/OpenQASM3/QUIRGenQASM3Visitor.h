@@ -35,8 +35,11 @@ private:
   // References to MLIR single static assignment Values
   // (TODO needs to be refactored)
   std::unordered_map<std::string, mlir::Value> ssaValues;
+  std::vector<mlir::Value> ssaOtherValues;
   mlir::OpBuilder builder;
+  mlir::OpBuilder shotLoopBuilder;
   mlir::OpBuilder topLevelBuilder;
+  mlir::OpBuilder classicalBuilder;
   mlir::ModuleOp &newModule;
   std::string filename;
   bool hasFailed = false;
@@ -84,15 +87,19 @@ private:
 public:
   QUIRGenQASM3Visitor(QASM::ASTStatementList *sList, mlir::OpBuilder b,
                       mlir::ModuleOp &newModule, std::string f)
-      : BaseQASM3Visitor(sList), builder(b), topLevelBuilder(b),
+      : BaseQASM3Visitor(sList), builder(b), shotLoopBuilder(b), topLevelBuilder(b),
+        classicalBuilder(b),
         newModule(newModule), filename(std::move(f)), varHandler(builder) {}
 
   QUIRGenQASM3Visitor(mlir::OpBuilder b, mlir::ModuleOp &newModule,
                       std::string filename)
-      : builder(b), topLevelBuilder(b), newModule(newModule),
+      : builder(b), shotLoopBuilder(b), topLevelBuilder(b),  classicalBuilder(b),
+        newModule(newModule),
         filename(std::move(filename)), varHandler(builder) {}
 
   void initialize(uint numShots, const std::string &shotDelay);
+
+  void finalizeCircuit();
 
   void setInputFile(std::string);
 

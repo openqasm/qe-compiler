@@ -47,9 +47,11 @@
 #include <Frontend/OpenQASM3/BaseQASM3Visitor.h>
 #include <Frontend/OpenQASM3/QUIRVariableBuilder.h>
 
+#include <llvm/ADT/SmallVector.h>
 #include <qasm/AST/ASTDelay.h>
 #include <qasm/AST/ASTTypeEnums.h>
 
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include <mlir/Dialect/StandardOps/IR/Ops.h>
@@ -80,13 +82,19 @@ using ExpressionValueType = mlir::Value;
 // temporary feature flags to be used due development of parameters support
 static llvm::cl::opt<bool> enableParameters(
   "enable-parameters",
-  llvm::cl::desc("enabled qasm3 input parameters"),
+  llvm::cl::desc("enable qasm3 input parameters"),
   llvm::cl::init(false));
 
 static llvm::cl::opt<bool> enableQUIRCircuit(
   "enable-circuit",
-  llvm::cl::desc("enabled quir.circuit"),
+  llvm::cl::desc("enable quir.circuit"),
   llvm::cl::init(false));
+  
+static llvm::cl::opt<bool> enableEnforceQuantum(
+  "enforce-quantum",
+  llvm::cl::desc("enforce quantum only in quir.circuit"),
+  llvm::cl::init(false));
+
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
@@ -230,6 +238,7 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
   builder.setInsertionPointAfter(shotInit);
 
   if (enableQUIRCircuit) {
+    shotLoopBuilder = builder;
     auto circuit = topLevelBuilder.create<CircuitOp>(
       initialLocation, "circuit_0",
       topLevelBuilder.getFunctionType(
@@ -237,10 +246,19 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
                            /*results=*/ArrayRef<Type>()));
     auto block = circuit.addEntryBlock();
     builder.create<mlir::quir::CallCircuitOp>(initialLocation,circuit, ValueRange({}));
+    shotLoopBuilder.setInsertionPointAfter(shotInit);
     OpBuilder b(circuit.getBody());
     builder = b;
     builder.create<mlir::quir::ReturnOp>(initialLocation, ValueRange({}));
     builder.setInsertionPointToStart(block);
+  }
+
+  if (enableQUIRCircuit && enableEnforceQuantum) {
+    varHandler.setClassicalBuilder(shotLoopBuilder);
+    classicalBuilder = shotLoopBuilder;
+  } else {
+    varHandler.setClassicalBuilder(builder);
+    classicalBuilder = builder;
   }
 }
 
@@ -640,8 +658,10 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
       // parameter and thus exists in the ssaValues map. If it fails then this
       // must be a normal angle variable use
       if (!assign(pos, param->GetGateParamName())) {
-        if (const auto *const ident = param->GetValueIdentifier())
+        if (const auto *const ident = param->GetValueIdentifier()) {
           pos = varHandler.generateVariableUse(getLocation(node), ident);
+          ssaOtherValues.push_back(pos);
+        }
         else
           reportError(node, mlir::DiagnosticSeverity::Error)
               << "Unnamed expressions not supported by QUIRGen yet, assign to "
@@ -963,10 +983,10 @@ QUIRGenQASM3Visitor::visit_(const ASTQubitContainerNode *node) {
   int id = stoi(node->GetIdentifier()->GetQubitMnemonic());
 
   const unsigned size = node->Size();
-  Value qubitRef = builder
+  Value qubitRef = classicalBuilder
                        .create<DeclareQubitOp>(
-                           getLocation(node), builder.getType<QubitType>(size),
-                           builder.getIntegerAttr(builder.getI32Type(), id))
+                           getLocation(node), classicalBuilder.getType<QubitType>(size),
+                           classicalBuilder.getIntegerAttr(classicalBuilder.getI32Type(), id))
                        .res();
   ssaValues[qId] = qubitRef;
   return qubitRef;
@@ -1020,11 +1040,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
   // build an arbitrary-precision integer and let OQ3_CastOp take care of
   // initializing a classical register value from it.
   auto location = getLocation(node);
-  auto initializerVal = builder.create<mlir::arith::ConstantOp>(
-      location, builder.getIntegerAttr(builder.getIntegerType(node->Size()),
+  auto initializerVal = classicalBuilder.create<mlir::arith::ConstantOp>(
+      location, classicalBuilder.getIntegerAttr(classicalBuilder.getIntegerType(node->Size()),
                                        initializer));
 
-  return builder.create<mlir::oq3::CastOp>(
+  return classicalBuilder.create<mlir::oq3::CastOp>(
       location, builder.getType<mlir::quir::CBitType>(node->Size()),
       initializerVal);
 }
@@ -1222,7 +1242,7 @@ QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTExpressionNode *node) {
     llvm::errs() << getLocation(node) << "\n";
     llvm_unreachable("no expression returned by visitor!");
   }
-
+  ssaOtherValues.push_back((expression.getValue()));
   return expression.getValue();
 }
 
@@ -1659,6 +1679,58 @@ mlir::Value QUIRGenQASM3Visitor::createVoidValue(mlir::Location location) {
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
   return createVoidValue(getLocation(node));
+}
+
+void QUIRGenQASM3Visitor::finalizeCircuit() {
+  if (!enableQUIRCircuit)
+    return;
+
+  //std::vector<Type> inputTypes;
+  llvm::SmallVector<Type> inputTypes;
+  llvm::SmallVector<Value> inputValues;
+
+  topLevelBuilder.getBlock()->walk([&](CircuitOp op){
+    for (auto const &qubitSSA : llvm::enumerate(ssaValues)) { 
+        Value value = qubitSSA.value().second;
+        for (auto *user : value.getUsers()) {
+          if (op->isAncestor(user)) {
+            auto arg = op.body().front().addArgument(value.getType(), value.getLoc());
+            value.replaceAllUsesWith(arg);
+            inputTypes.push_back(value.getType());
+            inputValues.push_back(value);
+            break;
+          }
+        }
+    }
+
+    for (auto const &qubitSSA : llvm::enumerate(ssaOtherValues)) { 
+        Value value = qubitSSA.value();
+        for (auto *user : value.getUsers()) {
+          if (op->isAncestor(user)) {
+            auto arg = op.body().front().addArgument(value.getType(), value.getLoc());
+            value.replaceAllUsesWith(arg);
+            inputTypes.push_back(value.getType());
+            inputValues.push_back(value);
+            break;
+          }
+        }
+    }
+
+
+    op.setType(topLevelBuilder.getFunctionType(
+                           /*inputs=*/ArrayRef<Type>(inputTypes),
+                           /*results=*/ArrayRef<Type>()));
+  });
+
+  shotLoopBuilder.getBlock()->walk([&](CallCircuitOp op){
+    for (auto const &input : llvm::enumerate(inputValues)) 
+      op->insertOperands(input.index(), ValueRange({input.value()}));
+
+    // for (auto const &qubitSSA : llvm::enumerate(ssaQubitValues)) 
+    //   op->insertOperands(qubitSSA.index(), ValueRange({qubitSSA.value().second}));
+    
+  });
+
 }
 
 } // namespace qssc::frontend::openqasm3
