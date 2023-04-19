@@ -609,6 +609,13 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
     CArg<"ArrayRef<DictionaryAttr>", "{}">:$argAttrs
     )>];
   let extraClassDeclaration = [{
+    static CircuitOp create(Location location, StringRef name, FunctionType type,
+                         ArrayRef<NamedAttribute> attrs = {});
+    static CircuitOp create(Location location, StringRef name, FunctionType type,
+                         Operation::dialect_attr_range attrs);
+    static CircuitOp create(Location location, StringRef name, FunctionType type,
+                         ArrayRef<NamedAttribute> attrs,
+                         ArrayRef<DictionaryAttr> argAttrs);
 
     /// Create a deep copy of this circuit and all of its blocks, remapping any
     /// operands that use values outside of the circuit using the map that is
