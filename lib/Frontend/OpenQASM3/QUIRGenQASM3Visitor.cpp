@@ -38,7 +38,6 @@
 //===----------------------------------------------------------------------===//
 
 // PARAMETERS TODO:
-//   Fix CI
 //   Test with qasm file that should generate more that one quir.circuit
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
@@ -242,22 +241,21 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
 
   // Set the builder to add circuit operations inside the for loop
   builder.setInsertionPointAfter(shotInit);
-
-  varHandler.setClassicalBuilder(builder);
-    classicalBuilder = builder;
+  classicalBuilder = builder;
 
   if (!enableQUIRCircuit)
     return;
 
   shotLoopBuilder = builder;
+  shotLoopBuilder.setInsertionPointAfter(shotInit);
+
   auto circuit = topLevelBuilder.create<CircuitOp>(
     initialLocation, "circuit_0",
     topLevelBuilder.getFunctionType(
                           /*inputs=*/ArrayRef<Type>(),
                           /*results=*/ArrayRef<Type>()));
   auto block = circuit.addEntryBlock();
-  builder.create<mlir::quir::CallCircuitOp>(initialLocation,circuit, ValueRange({}));
-  shotLoopBuilder.setInsertionPointAfter(shotInit);
+
   OpBuilder circuitBuilder(circuit.getBody());
   builder = circuitBuilder;
   builder.create<mlir::quir::ReturnOp>(initialLocation, ValueRange({}));
@@ -1769,40 +1767,28 @@ void QUIRGenQASM3Visitor::finalizeCircuit() {
                            /*inputs=*/ArrayRef<Type>(inputTypes),
                            /*results=*/ArrayRef<Type>(outputTypes)));
 
-    // replace the call_circuit
-    shotLoopBuilder.getBlock()->walk([&](CallCircuitOp callCircuitOp){
-      // create a new call circuit op with the correct operands and outputs
-      // and replace the old placeholder
+    auto newCallOp = shotLoopBuilder.create<mlir::quir::CallCircuitOp>(
+      circuitOp->getLoc(),circuitOp.getName(),
+      TypeRange(outputTypes), ValueRange(inputValues));
 
-      if (callCircuitOp.getCallee() != circuitOp.getName())
-        return WalkResult::advance();
+    // replace the uses of the measurements outside of the circuit
+    // with the results of the call_circuit
 
-      auto newCallOp = shotLoopBuilder.create<mlir::quir::CallCircuitOp>(
-        callCircuitOp->getLoc(),callCircuitOp.getCallee(),
-        TypeRange(outputTypes), ValueRange(inputValues));
-      newCallOp->moveBefore(callCircuitOp);
-      callCircuitOp->erase();
+    for (auto const &output : llvm::enumerate(outputValues)) {
+        Value value = output.value();
+        auto replacementOp = newCallOp->getResult(output.index());
 
-      // replace the uses of the measurements outside of the circuit
-      // with the results of the call_circuit
+        value.replaceUsesWithIf(replacementOp, [&](OpOperand &operand) {
+              return !dyn_cast<mlir::quir::ReturnOp>(operand.getOwner());
+        });
+    }
 
-      for (auto const &output : llvm::enumerate(outputValues)) {
-          Value value = output.value();
-          auto replacementOp = newCallOp->getResult(output.index());
-
-          value.replaceUsesWithIf(replacementOp, [&](OpOperand &operand) {
-                return !dyn_cast<mlir::quir::ReturnOp>(operand.getOwner());
-          });
+    // move uses of the results after the call_circuit
+    for (auto const &output : newCallOp.getResults()) {
+      for (auto *user : output.getUsers()) {
+        newCallOp->moveBefore(user);
       }
-
-      // move uses of the results after the call_circuit
-      for (auto const &output : newCallOp.getResults()) {
-        for (auto *user : output.getUsers()) {
-          user->moveAfter(newCallOp);
-        }
-      }
-      return WalkResult::advance();
-    }); // walk - CallCircuitOp
+    }
   }); // walk - CircuitOp
 } // finalizeCircuit()
 

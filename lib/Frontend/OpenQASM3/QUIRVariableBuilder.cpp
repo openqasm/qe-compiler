@@ -99,7 +99,7 @@ void QUIRVariableBuilder::generateParameterDeclaration(
 mlir::Value QUIRVariableBuilder::generateParameterLoad(
     mlir::Location location, llvm::StringRef variableName) {
 
-  auto op = classicalBuilder.create<mlir::qcs::ParameterLoadOp>(location,
+  auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(location,
   builder.getType<mlir::quir::AngleType>(64),
   variableName.str() + "_parameter");
   return op;
@@ -121,7 +121,7 @@ void QUIRVariableBuilder::generateVariableAssignment(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Value assignedValue) {
 
-    classicalBuilder.create<mlir::oq3::VariableAssignOp>(location, 
+    getClassicalBuilder().create<mlir::oq3::VariableAssignOp>(location, 
                                               variableName,
                                               assignedValue);
 }
@@ -152,9 +152,9 @@ void QUIRVariableBuilder::generateCBitSingleBitAssignment(
         location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)), cbitWithInsertedBit);
 
 #else
-  classicalBuilder.create<mlir::oq3::CBitAssignBitOp>(
-      location, mlir::SymbolRefAttr::get(classicalBuilder.getStringAttr(variableName)),
-      classicalBuilder.getIndexAttr(bitPosition), classicalBuilder.getIndexAttr(registerWidth),
+  getClassicalBuilder().create<mlir::oq3::CBitAssignBitOp>(
+      location, mlir::SymbolRefAttr::get(getClassicalBuilder().getStringAttr(variableName)),
+      getClassicalBuilder().getIndexAttr(bitPosition), getClassicalBuilder().getIndexAttr(registerWidth),
       assignedValue);
 #endif
 }
@@ -163,7 +163,7 @@ mlir::Value
 QUIRVariableBuilder::generateVariableUse(mlir::Location location,
                                          llvm::StringRef variableName,
                                          mlir::Type variableType) {
-  return classicalBuilder.create<mlir::oq3::VariableLoadOp>(location, 
+  return getClassicalBuilder().create<mlir::oq3::VariableLoadOp>(location, 
                                                    variableType,
                                                    variableName);
 }

@@ -40,7 +40,7 @@ namespace qssc::frontend::openqasm3 {
 class QUIRVariableBuilder {
 public:
   QUIRVariableBuilder(mlir::OpBuilder &builder) : builder(builder), 
-    classicalBuilder(builder) {}
+    classicalBuilder(builder), useClassicalBuilder(false) {}
 
   /// Generate code for declaring a variable (at the builder's current insertion
   /// point).
@@ -216,12 +216,14 @@ public:
 
   mlir::Type resolveQUIRVariableType(const QASM::ASTResultNode *node);
 
-  void setClassicalBuilder(mlir::OpBuilder b) { classicalBuilder = b;}
+  void setClassicalBuilder(mlir::OpBuilder b) { classicalBuilder = b; useClassicalBuilder = true;}
 
 private:
   mlir::OpBuilder &builder;
-  mlir::OpBuilder classicalBuilder;
+  mlir::OpBuilder classicalBuilder; // reference works for tests - copy works for circuit
+  bool useClassicalBuilder;
 
+  mlir::OpBuilder getClassicalBuilder() { return (useClassicalBuilder) ? classicalBuilder : builder; }
   std::unordered_map<std::string, mlir::Type> variables;
 
   std::unordered_map<mlir::Operation *, mlir::Operation *> lastDeclaration;
