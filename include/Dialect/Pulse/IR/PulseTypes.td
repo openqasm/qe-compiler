@@ -54,14 +54,6 @@ def Pulse_PortType : Pulse_Type<"Port", "port"> {
     }];
 }
 
-// TODO: The requirement for PortGroup is unclear. It is likely possible to remove its existence.
-def Pulse_PortGroupType : Pulse_Type<"PortGroup", "port_group"> {
-    let summary = "a collection of ports";
-    let description = [{
-        To be replaced or removed.
-    }];
-}
-
 def Pulse_WaveformType : Pulse_Type<"Waveform", "waveform"> {
     let summary = "a waveform for interacting with qubits";
     let description = [{
@@ -79,6 +71,6 @@ def Pulse_MixedFrameType : Pulse_Type<"MixedFrame", "mixed_frame"> {
 def AnyFrame : AnyTypeOf<[Pulse_FrameType, Pulse_MixedFrameType]>;
 
 def AnyPulse : AnyTypeOf<[Pulse_CaptureType, Pulse_FrameType, Pulse_KernelType, Pulse_PortType,
-                          Pulse_PortGroupType, Pulse_WaveformType, Pulse_MixedFrameType]>;
+                          Pulse_WaveformType, Pulse_MixedFrameType]>;
 
 #endif // PULSE_TYPES
