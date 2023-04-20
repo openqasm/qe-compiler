@@ -37,7 +37,11 @@
 ///
 //===----------------------------------------------------------------------===//
 
+// PARAMETERS TODO:
+//   Test with qasm file that should generate more that one quir.circuit
+
 #include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -48,6 +52,7 @@
 #include <Frontend/OpenQASM3/QUIRVariableBuilder.h>
 
 #include <llvm/ADT/SmallVector.h>
+#include <mlir/IR/Visitors.h>
 #include <qasm/AST/ASTDelay.h>
 #include <qasm/AST/ASTTypeEnums.h>
 
@@ -1031,7 +1036,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
         measurement);
   }
 
-  // the node's string respresentation may be shorter or longer than the
+  // the node's string representation may be shorter or longer than the
   // classical bit expression, so truncate to trailing (least-significant bits)
   // or take full string
   auto stringRepr = llvm::StringRef(node->AsString()).take_back(node->Size());
@@ -1041,8 +1046,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
   // initializing a classical register value from it.
   auto location = getLocation(node);
   auto initializerVal = classicalBuilder.create<mlir::arith::ConstantOp>(
-      location, classicalBuilder.getIntegerAttr(classicalBuilder.getIntegerType(node->Size()),
-                                       initializer));
+      location, classicalBuilder.getIntegerAttr(
+        classicalBuilder.getIntegerType(node->Size()),initializer));
 
   return classicalBuilder.create<mlir::oq3::CastOp>(
       location, builder.getType<mlir::quir::CBitType>(node->Size()),
@@ -1685,52 +1690,118 @@ void QUIRGenQASM3Visitor::finalizeCircuit() {
   if (!enableQUIRCircuit)
     return;
 
-  //std::vector<Type> inputTypes;
+  // rewrite the circuit and call circuit ops to fix region and usage
+  //
+  // a few things need to be done:
+  // 1: there are classical operations which define ssa values which will be
+  //    used inside of quir.circuits.
+  //    these ssa need to be added to the argument list of the circuit,
+  //    the operand list of the call_circuit and the ssa uses need to be
+  //    replaced with the arguments to the circuit.
+  // 2: there are measurement results inside the quir.circuit which need to
+  //    be returned from the ciruit and their uses replaced with the results
+  //    of the call_circuit
+
   llvm::SmallVector<Type> inputTypes;
   llvm::SmallVector<Value> inputValues;
+  llvm::SmallVector<Type> outputTypes;
+  llvm::SmallVector<Value> outputValues;
 
-  topLevelBuilder.getBlock()->walk([&](CircuitOp op){
-    for (auto const &qubitSSA : llvm::enumerate(ssaValues)) { 
-        Value value = qubitSSA.value().second;
-        for (auto *user : value.getUsers()) {
-          if (op->isAncestor(user)) {
-            auto arg = op.body().front().addArgument(value.getType(), value.getLoc());
-            value.replaceAllUsesWith(arg);
-            inputTypes.push_back(value.getType());
-            inputValues.push_back(value);
-            break;
-          }
+  // Test every Circuit Op
+  topLevelBuilder.getBlock()->walk([&](CircuitOp circuitOp){
+
+    inputTypes.clear();
+    inputValues.clear();
+    outputTypes.clear();
+    outputValues.clear();
+
+    // check all of the ssa saved values to determine if they
+    // are used inside the circuit op and insert an argument
+    // in the quir.circuit
+
+    auto insertArgumentsAndReplaceUse =  [&](Value value) {
+      for (auto *user : value.getUsers()) {
+        if (circuitOp->isAncestor(user)) {
+          auto arg = circuitOp.body().front().addArgument(value.getType(), value.getLoc());
+          value.replaceAllUsesWith(arg);
+          inputTypes.push_back(value.getType());
+          inputValues.push_back(value);
+          break;
         }
+      }
+    };
+
+    for (auto const &ssa : llvm::enumerate(ssaValues)) {
+        Value value = ssa.value().second;
+        insertArgumentsAndReplaceUse(value);
     }
+
+    // do the same thing for ssaOtherValues (new class of ssa values tracked for
+    // parameters)
 
     for (auto const &qubitSSA : llvm::enumerate(ssaOtherValues)) { 
         Value value = qubitSSA.value();
-        for (auto *user : value.getUsers()) {
-          if (op->isAncestor(user)) {
-            auto arg = op.body().front().addArgument(value.getType(), value.getLoc());
-            value.replaceAllUsesWith(arg);
-            inputTypes.push_back(value.getType());
-            inputValues.push_back(value);
-            break;
-          }
-        }
+        insertArgumentsAndReplaceUse(value);
     }
 
+    // look for measurements inside of this circuit op and collect a list
+    // of outputs
 
-    op.setType(topLevelBuilder.getFunctionType(
+    circuitOp.walk([&](MeasureOp measOp){
+      for (auto result : measOp->getResults()) {
+        outputTypes.push_back(result.getType());
+        outputValues.push_back(result);
+      }
+    });
+
+    // find the return op and set the outputs
+    // an empty return was added when the circuit was created so we can
+    // just insert the outputValues
+    circuitOp.walk([&](mlir::quir::ReturnOp returnOp) {
+      returnOp->insertOperands(0, ValueRange(outputValues));
+    });
+
+
+    // change the input / output types for the quir.circuit
+    circuitOp.setType(topLevelBuilder.getFunctionType(
                            /*inputs=*/ArrayRef<Type>(inputTypes),
-                           /*results=*/ArrayRef<Type>()));
-  });
+                           /*results=*/ArrayRef<Type>(outputTypes)));
 
-  shotLoopBuilder.getBlock()->walk([&](CallCircuitOp op){
-    for (auto const &input : llvm::enumerate(inputValues)) 
-      op->insertOperands(input.index(), ValueRange({input.value()}));
+    // replace the call_circuit
+    shotLoopBuilder.getBlock()->walk([&](CallCircuitOp callCircuitOp){
+      // create a new call circuit op with the correct operands and outputs
+      // and replace the old placeholder
 
-    // for (auto const &qubitSSA : llvm::enumerate(ssaQubitValues)) 
-    //   op->insertOperands(qubitSSA.index(), ValueRange({qubitSSA.value().second}));
-    
-  });
+      if (callCircuitOp.getCallee() != circuitOp.getName())
+        return WalkResult::advance();
 
-}
+      auto newCallOp = shotLoopBuilder.create<mlir::quir::CallCircuitOp>(
+        callCircuitOp->getLoc(),callCircuitOp.getCallee(),
+        TypeRange(outputTypes), ValueRange(inputValues));
+      newCallOp->moveBefore(callCircuitOp);
+      callCircuitOp->erase();
+
+      // replace the uses of the measurements outside of the circuit
+      // with the results of the call_circuit
+
+      for (auto const &output : llvm::enumerate(outputValues)) {
+          Value value = output.value();
+          auto replacementOp = newCallOp->getResult(output.index());
+
+          value.replaceUsesWithIf(replacementOp, [&](OpOperand &operand) {
+                return !dyn_cast<mlir::quir::ReturnOp>(operand.getOwner());
+          });
+      }
+
+      // move uses of the results after the call_circuit
+      for (auto const &output : newCallOp.getResults()) {
+        for (auto *user : output.getUsers()) {
+          user->moveAfter(newCallOp);
+        }
+      }
+      return WalkResult::advance();
+    }); // walk - CallCircuitOp
+  }); // walk - CircuitOp
+} // finalizeCircuit()
 
 } // namespace qssc::frontend::openqasm3
