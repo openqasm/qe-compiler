@@ -38,6 +38,7 @@
 //===----------------------------------------------------------------------===//
 
 // PARAMETERS TODO:
+//   Fix CI
 //   Test with qasm file that should generate more that one quir.circuit
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
@@ -242,28 +243,29 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
   // Set the builder to add circuit operations inside the for loop
   builder.setInsertionPointAfter(shotInit);
 
-  if (enableQUIRCircuit) {
-    shotLoopBuilder = builder;
-    auto circuit = topLevelBuilder.create<CircuitOp>(
-      initialLocation, "circuit_0",
-      topLevelBuilder.getFunctionType(
-                           /*inputs=*/ArrayRef<Type>(),
-                           /*results=*/ArrayRef<Type>()));
-    auto block = circuit.addEntryBlock();
-    builder.create<mlir::quir::CallCircuitOp>(initialLocation,circuit, ValueRange({}));
-    shotLoopBuilder.setInsertionPointAfter(shotInit);
-    OpBuilder b(circuit.getBody());
-    builder = b;
-    builder.create<mlir::quir::ReturnOp>(initialLocation, ValueRange({}));
-    builder.setInsertionPointToStart(block);
-  }
+  varHandler.setClassicalBuilder(builder);
+    classicalBuilder = builder;
 
-  if (enableQUIRCircuit && enableEnforceQuantum) {
+  if (!enableQUIRCircuit)
+    return;
+
+  shotLoopBuilder = builder;
+  auto circuit = topLevelBuilder.create<CircuitOp>(
+    initialLocation, "circuit_0",
+    topLevelBuilder.getFunctionType(
+                          /*inputs=*/ArrayRef<Type>(),
+                          /*results=*/ArrayRef<Type>()));
+  auto block = circuit.addEntryBlock();
+  builder.create<mlir::quir::CallCircuitOp>(initialLocation,circuit, ValueRange({}));
+  shotLoopBuilder.setInsertionPointAfter(shotInit);
+  OpBuilder circuitBuilder(circuit.getBody());
+  builder = circuitBuilder;
+  builder.create<mlir::quir::ReturnOp>(initialLocation, ValueRange({}));
+  builder.setInsertionPointToStart(block);
+
+  if (enableEnforceQuantum) {
     varHandler.setClassicalBuilder(shotLoopBuilder);
     classicalBuilder = shotLoopBuilder;
-  } else {
-    varHandler.setClassicalBuilder(builder);
-    classicalBuilder = builder;
   }
 }
 
