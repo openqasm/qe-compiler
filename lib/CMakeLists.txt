@@ -56,3 +56,8 @@ set_property(GLOBAL PROPERTY QSSC_API_LIBS ${qssc_api_libs})
 # not materialize as an artifact by itself
 add_library(QSSCLib INTERFACE)
 target_link_libraries(QSSCLib INTERFACE ${qssc_api_libs})
+
+# Expose (i.e., write to disk) static library with same contents as `QSSCLib`,
+# including interface to `compile()` in `api.h`.
+qssc_add_library(QSSC "API/api.cpp" ADDITIONAL_HEADER_DIRS ${QSSC_INCLUDE_DIR}/API)
+target_link_libraries(QSSC ${qssc_api_libs})
