@@ -94,12 +94,6 @@ static llvm::cl::opt<bool> enableQUIRCircuit(
   "enable-circuit",
   llvm::cl::desc("enable quir.circuit"),
   llvm::cl::init(false));
-  
-static llvm::cl::opt<bool> enableEnforceQuantum(
-  "enforce-quantum",
-  llvm::cl::desc("enforce quantum only in quir.circuit"),
-  llvm::cl::init(false));
-
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
@@ -1724,10 +1718,11 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
   builder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
   builder.setInsertionPointToStart(block);
 
-  if (enableEnforceQuantum) {
-    varHandler.setClassicalBuilder(shotLoopBuilder);
-    classicalBuilder = shotLoopBuilder;
-  }
+  // set builders so that classical operations are inserted into
+  // the shot loop rather than into the quir.circuit
+  varHandler.setClassicalBuilder(shotLoopBuilder);
+  classicalBuilder = shotLoopBuilder;
+
   buildingInCircuit = true;
 }
 
