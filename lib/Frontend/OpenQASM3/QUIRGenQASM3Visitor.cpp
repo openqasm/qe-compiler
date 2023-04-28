@@ -369,9 +369,8 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
   // Reset the OpBuilder and SSA values now that we've processed the 'if'
   // statement
 
-  if (buildingInCircuit) {
+  if (buildingInCircuit)
     finishCircuit();
-  }
 
   builder = prevBuilder;
   std::swap(ssaValues, ifSsaValues);
@@ -398,9 +397,8 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
     // Reset the OpBuilder and SSA values now that we've processed the 'else'
     // statement
 
-    if (buildingInCircuit) {
+    if (buildingInCircuit)
       finishCircuit();
-    }
 
     builder = elseBuilder;
     std::swap(ssaValues, elseSsaValues);
@@ -613,6 +611,10 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
   const ASTGateQOpList &opList = gateNode->GetOpList();
   for (ASTGateQOpNode *i : opList)
     BaseQASM3Visitor::visit(i);
+
+  if (buildingInCircuit)
+    finishCircuit();
+
   builder.create<mlir::ReturnOp>(getLocation(node));
 
   // Restore SSA Values and OpBuilder as we exit the function
@@ -686,7 +688,7 @@ void QUIRGenQASM3Visitor::visit(const ASTHGateOpNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
-  switchCircuit(true, getLocation(node));
+  switchCircuit(false, getLocation(node));
 
   const ASTGateNode *gateNode = node->GetGateNode();
   const size_t numParams = gateNode->ParamsSize();
@@ -1737,7 +1739,7 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
 void QUIRGenQASM3Visitor::finishCircuit() {
 
-  if (!enableQUIRCircuit)
+  if (!enableQUIRCircuit || !buildingInCircuit)
     return;
 
   // rewrite the circuit and add a call circuit ops to fix region and usage
