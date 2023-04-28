@@ -39,8 +39,8 @@ namespace qssc::frontend::openqasm3 {
 
 class QUIRVariableBuilder {
 public:
-  QUIRVariableBuilder(mlir::OpBuilder &builder) : builder(builder), 
-    classicalBuilder(builder), useClassicalBuilder(false) {}
+  QUIRVariableBuilder(mlir::OpBuilder &builder)
+      : builder(builder), classicalBuilder(builder) {}
 
   /// Generate code for declaring a variable (at the builder's current insertion
   /// point).
@@ -58,19 +58,18 @@ public:
                                    bool isInputVariable = false,
                                    bool isOutputVariable = false);
 
-  /// Generate code for declaring a input parameter (at the builder's current 
+  /// Generate code for declaring a input parameter (at the builder's current
   /// insertion point).
   ///
   /// @param location source location related to the generated code.
   /// @param variableName name of the variable. (_parameter will be added)
   /// @param type type of the variable.
   void generateParameterDeclaration(mlir::Location location,
-                                   llvm::StringRef variableName,
-                                   mlir::Type type,
-                                   mlir::Value assignedValue);
+                                    llvm::StringRef variableName,
+                                    mlir::Type type, mlir::Value assignedValue);
 
-  mlir::Value generateParameterLoad(
-    mlir::Location location, llvm::StringRef variableName);
+  mlir::Value generateParameterLoad(mlir::Location location,
+                                    llvm::StringRef variableName);
 
   /// Generate code for declaring an array (at the builder's current insertion
   /// point).
@@ -216,15 +215,21 @@ public:
 
   mlir::Type resolveQUIRVariableType(const QASM::ASTResultNode *node);
 
-  void setClassicalBuilder(mlir::OpBuilder b) { classicalBuilder = b; useClassicalBuilder = true;}
-  void disableClassicalBuilder() {useClassicalBuilder = false;}
+  void setClassicalBuilder(mlir::OpBuilder b) {
+    classicalBuilder = b;
+    useClassicalBuilder = true;
+  }
+  void disableClassicalBuilder() { useClassicalBuilder = false; }
 
 private:
   mlir::OpBuilder &builder;
-  mlir::OpBuilder classicalBuilder; // reference works for tests - copy works for circuit
-  bool useClassicalBuilder;
+  mlir::OpBuilder
+      classicalBuilder; // reference works for tests - copy works for circuit
+  bool useClassicalBuilder{false};
 
-  mlir::OpBuilder getClassicalBuilder() { return (useClassicalBuilder) ? classicalBuilder : builder; }
+  mlir::OpBuilder getClassicalBuilder() {
+    return (useClassicalBuilder) ? classicalBuilder : builder;
+  }
   std::unordered_map<std::string, mlir::Type> variables;
 
   std::unordered_map<mlir::Operation *, mlir::Operation *> lastDeclaration;

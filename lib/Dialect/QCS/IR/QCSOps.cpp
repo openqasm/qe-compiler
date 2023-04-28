@@ -34,8 +34,8 @@ using namespace mlir::qcs;
 
 static LogicalResult
 verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
-                              mlir::Operation *op,
-                              bool operandMustMatchSymbolType = false) {
+                               mlir::Operation *op,
+                               bool operandMustMatchSymbolType = false) {
   assert(op);
 
   // Check that op has attribute variable_name

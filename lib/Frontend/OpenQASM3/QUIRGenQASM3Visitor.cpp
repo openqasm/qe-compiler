@@ -80,10 +80,10 @@ namespace qssc::frontend::openqasm3 {
 using ExpressionValueType = mlir::Value;
 
 // temporary feature flags to be used due development of parameters support
-static llvm::cl::opt<bool> enableParameters(
-  "enable-parameters",
-  llvm::cl::desc("enable qasm3 input parameters"),
-  llvm::cl::init(false));
+static llvm::cl::opt<bool>
+    enableParameters("enable-parameters",
+                     llvm::cl::desc("enable qasm3 input parameters"),
+                     llvm::cl::init(false));
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
@@ -653,8 +653,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
         if (const auto *const ident = param->GetValueIdentifier()) {
           pos = varHandler.generateVariableUse(getLocation(node), ident);
           ssaOtherValues.push_back(pos);
-        }
-        else
+        } else
           reportError(node, mlir::DiagnosticSeverity::Error)
               << "Unnamed expressions not supported by QUIRGen yet, assign to "
                  "an identifier";
@@ -901,7 +900,8 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
     // generate variable assignment so that they are reinitialized on every
     // shot.
 
-    if (enableParameters && node->GetModifierType() == QASM::ASTTypeInputModifier) {
+    if (enableParameters &&
+        node->GetModifierType() == QASM::ASTTypeInputModifier) {
       varHandler.generateParameterDeclaration(loc, idNode->GetName(),
                                               variableType, val);
       auto load = varHandler.generateParameterLoad(loc, idNode->GetName());
@@ -1708,10 +1708,10 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
     return;
 
   currentCircuitOp = topLevelBuilder.create<CircuitOp>(
-    location, "circuit_" + std::to_string(circuitCount++),
-    topLevelBuilder.getFunctionType(
-                          /*inputs=*/ArrayRef<Type>(),
-                          /*results=*/ArrayRef<Type>()));
+      location, "circuit_" + std::to_string(circuitCount++),
+      topLevelBuilder.getFunctionType(
+          /*inputs=*/ArrayRef<Type>(),
+          /*results=*/ArrayRef<Type>()));
   auto *block = currentCircuitOp.addEntryBlock();
 
   OpBuilder circuitBuilder(currentCircuitOp.getBody());
@@ -1753,10 +1753,11 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   // are used inside the circuit op and insert an argument
   // in the quir.circuit
 
-  auto insertArgumentsAndReplaceUse =  [&](Value value) {
+  auto insertArgumentsAndReplaceUse = [&](Value value) {
     for (auto *user : value.getUsers()) {
       if (currentCircuitOp->isAncestor(user)) {
-        auto arg = currentCircuitOp.body().front().addArgument(value.getType(), value.getLoc());
+        auto arg = currentCircuitOp.body().front().addArgument(value.getType(),
+                                                               value.getLoc());
         value.replaceUsesWithIf(arg, [&](OpOperand &operand) {
           return (operand.getOwner()->getParentOp() == currentCircuitOp);
         });
@@ -1768,63 +1769,60 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   };
 
   for (auto const &ssa : llvm::enumerate(ssaValues)) {
-      Value value = ssa.value().second;
-      insertArgumentsAndReplaceUse(value);
+    Value value = ssa.value().second;
+    insertArgumentsAndReplaceUse(value);
   }
 
   // do the same thing for ssaOtherValues (new class of ssa values tracked for
   // parameters)
 
   for (auto const &qubitSSA : llvm::enumerate(ssaOtherValues)) {
-      Value value = qubitSSA.value();
-      insertArgumentsAndReplaceUse(value);
+    Value value = qubitSSA.value();
+    insertArgumentsAndReplaceUse(value);
   }
 
-    // look for measurements inside of this circuit op and collect a list
-    // of outputs
+  // look for measurements inside of this circuit op and collect a list
+  // of outputs
 
-    currentCircuitOp.walk([&](MeasureOp measOp){
-      for (auto result : measOp->getResults()) {
-        outputTypes.push_back(result.getType());
-        outputValues.push_back(result);
-      }
-    });
+  currentCircuitOp.walk([&](MeasureOp measOp) {
+    for (auto result : measOp->getResults()) {
+      outputTypes.push_back(result.getType());
+      outputValues.push_back(result);
+    }
+  });
 
-    // find the return op and set the outputs
-    // an empty return was added when the circuit was created so we can
-    // just insert the outputValues
-    currentCircuitOp.walk([&](mlir::quir::ReturnOp returnOp) {
-      returnOp->insertOperands(0, ValueRange(outputValues));
-    });
+  // find the return op and set the outputs
+  // an empty return was added when the circuit was created so we can
+  // just insert the outputValues
+  currentCircuitOp.walk([&](mlir::quir::ReturnOp returnOp) {
+    returnOp->insertOperands(0, ValueRange(outputValues));
+  });
 
+  // change the input / output types for the quir.circuit
+  currentCircuitOp.setType(topLevelBuilder.getFunctionType(
+      /*inputs=*/ArrayRef<Type>(inputTypes),
+      /*results=*/ArrayRef<Type>(outputTypes)));
 
-    // change the input / output types for the quir.circuit
-    currentCircuitOp.setType(topLevelBuilder.getFunctionType(
-                           /*inputs=*/ArrayRef<Type>(inputTypes),
-                           /*results=*/ArrayRef<Type>(outputTypes)));
-
-    auto newCallOp = circuitParentBuilder.create<mlir::quir::CallCircuitOp>(
-      currentCircuitOp->getLoc(),currentCircuitOp.getName(),
+  auto newCallOp = circuitParentBuilder.create<mlir::quir::CallCircuitOp>(
+      currentCircuitOp->getLoc(), currentCircuitOp.getName(),
       TypeRange(outputTypes), ValueRange(inputValues));
 
-    // replace the uses of the measurements outside of the circuit
-    // with the results of the call_circuit
+  // replace the uses of the measurements outside of the circuit
+  // with the results of the call_circuit
 
-    for (auto const &output : llvm::enumerate(outputValues)) {
-        Value value = output.value();
-        auto replacementOp = newCallOp->getResult(output.index());
+  for (auto const &output : llvm::enumerate(outputValues)) {
+    Value value = output.value();
+    auto replacementOp = newCallOp->getResult(output.index());
 
-        value.replaceUsesWithIf(replacementOp, [&](OpOperand &operand) {
-              return !dyn_cast<mlir::quir::ReturnOp>(operand.getOwner());
-        });
-    }
+    value.replaceUsesWithIf(replacementOp, [&](OpOperand &operand) {
+      return !dyn_cast<mlir::quir::ReturnOp>(operand.getOwner());
+    });
+  }
 
-    // move uses of the results after the call_circuit
-    for (auto const &output : newCallOp.getResults()) {
-      for (auto *user : output.getUsers()) {
-        newCallOp->moveBefore(user);
-      }
-    }
+  // move uses of the results after the call_circuit
+  for (auto const &output : newCallOp.getResults())
+    for (auto *user : output.getUsers())
+      newCallOp->moveBefore(user);
 
   // restore varHandler builder and vistor builder to
   // use shot loop
@@ -1837,23 +1835,19 @@ void QUIRGenQASM3Visitor::finishCircuit() {
 void QUIRGenQASM3Visitor::switchCircuit(bool buildInCircuit,
                                         mlir::Location location) {
 
-  if (buildingInCircuit && buildInCircuit) {
+  if (buildingInCircuit && buildInCircuit)
     return;
-  }
 
-  if (!buildingInCircuit && !buildInCircuit) {
+  if (!buildingInCircuit && !buildInCircuit)
     return;
-  }
 
   if (buildingInCircuit && !buildInCircuit) {
     finishCircuit();
     return;
   }
 
-  if (!buildingInCircuit && buildInCircuit) {
+  if (!buildingInCircuit && buildInCircuit)
     startCircuit(location);
-  }
-
 }
 
 } // namespace qssc::frontend::openqasm3

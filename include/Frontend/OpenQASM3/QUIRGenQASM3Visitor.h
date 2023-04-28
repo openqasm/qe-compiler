@@ -42,9 +42,9 @@ private:
   mlir::ModuleOp &newModule;
   mlir::quir::CircuitOp currentCircuitOp;
   std::string filename;
-  bool hasFailed = false;
-  bool buildingInCircuit = false;
-  uint circuitCount = 0;
+  bool hasFailed{false};
+  bool buildingInCircuit{false};
+  uint circuitCount{0};
 
   mlir::Location getLocation(const QASM::ASTBase *);
   bool assign(mlir::Value &, const std::string &);
@@ -90,14 +90,14 @@ public:
   QUIRGenQASM3Visitor(QASM::ASTStatementList *sList, mlir::OpBuilder b,
                       mlir::ModuleOp &newModule, std::string f)
       : BaseQASM3Visitor(sList), builder(b), topLevelBuilder(b),
-        circuitParentBuilder(b),
-        newModule(newModule), filename(std::move(f)), varHandler(builder) {}
+        circuitParentBuilder(b), newModule(newModule), filename(std::move(f)),
+        varHandler(builder) {}
 
   QUIRGenQASM3Visitor(mlir::OpBuilder b, mlir::ModuleOp &newModule,
                       std::string filename)
-      : builder(b), topLevelBuilder(b),  circuitParentBuilder(b),
-        newModule(newModule),
-        filename(std::move(filename)), varHandler(builder) {}
+      : builder(b), topLevelBuilder(b), circuitParentBuilder(b),
+        newModule(newModule), filename(std::move(filename)),
+        varHandler(builder) {}
 
   void initialize(uint numShots, const std::string &shotDelay);
 

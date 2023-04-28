@@ -377,29 +377,30 @@ static LogicalResult verify(CircuitOp op) {
   return success();
 }
 
-CircuitOp CircuitOp::create(Location location, StringRef name, FunctionType type,
-                      ArrayRef<NamedAttribute> attrs) {
+CircuitOp CircuitOp::create(Location location, StringRef name,
+                            FunctionType type, ArrayRef<NamedAttribute> attrs) {
   OpBuilder builder(location->getContext());
   OperationState state(location, getOperationName());
   CircuitOp::build(builder, state, name, type, attrs);
   return cast<CircuitOp>(Operation::create(state));
 }
-CircuitOp CircuitOp::create(Location location, StringRef name, FunctionType type,
-                      Operation::dialect_attr_range attrs) {
+CircuitOp CircuitOp::create(Location location, StringRef name,
+                            FunctionType type,
+                            Operation::dialect_attr_range attrs) {
   SmallVector<NamedAttribute, 8> attrRef(attrs);
   return create(location, name, type, llvm::makeArrayRef(attrRef));
 }
-CircuitOp CircuitOp::create(Location location, StringRef name, FunctionType type,
-                      ArrayRef<NamedAttribute> attrs,
-                      ArrayRef<DictionaryAttr> argAttrs) {
+CircuitOp CircuitOp::create(Location location, StringRef name,
+                            FunctionType type, ArrayRef<NamedAttribute> attrs,
+                            ArrayRef<DictionaryAttr> argAttrs) {
   CircuitOp circ = create(location, name, type, attrs);
   circ.setAllArgAttrs(argAttrs);
   return circ;
 }
 
 void CircuitOp::build(OpBuilder &builder, OperationState &state, StringRef name,
-                   FunctionType type, ArrayRef<NamedAttribute> attrs,
-                   ArrayRef<DictionaryAttr> argAttrs) {
+                      FunctionType type, ArrayRef<NamedAttribute> attrs,
+                      ArrayRef<DictionaryAttr> argAttrs) {
   state.addAttribute(SymbolTable::getSymbolAttrName(),
                      builder.getStringAttr(name));
   state.addAttribute(getTypeAttrName(), TypeAttr::get(type));
