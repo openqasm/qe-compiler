@@ -236,7 +236,6 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
   // Set the builder to add circuit operations inside the for loop
   builder.setInsertionPointAfter(shotInit);
   classicalBuilder = builder;
-  shotLoopBuilder = builder;
 }
 
 void QUIRGenQASM3Visitor::setInputFile(std::string fName) {
@@ -369,6 +368,11 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
 
   // Reset the OpBuilder and SSA values now that we've processed the 'if'
   // statement
+
+  if (buildingInCircuit) {
+    finishCircuit();
+  }
+
   builder = prevBuilder;
   std::swap(ssaValues, ifSsaValues);
 
@@ -393,6 +397,11 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
       BaseQASM3Visitor::visit(opList);
     // Reset the OpBuilder and SSA values now that we've processed the 'else'
     // statement
+
+    if (buildingInCircuit) {
+      finishCircuit();
+    }
+
     builder = elseBuilder;
     std::swap(ssaValues, elseSsaValues);
   }
@@ -1714,14 +1723,14 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
   auto *block = currentCircuitOp.addEntryBlock();
 
   OpBuilder circuitBuilder(currentCircuitOp.getBody());
-  builder = circuitBuilder;
-  builder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
-  builder.setInsertionPointToStart(block);
+  circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
+  circuitBuilder.setInsertionPointToStart(block);
 
   // set builders so that classical operations are inserted into
   // the shot loop rather than into the quir.circuit
-  varHandler.setClassicalBuilder(shotLoopBuilder);
-  classicalBuilder = shotLoopBuilder;
+  varHandler.setClassicalBuilder(builder);
+  classicalBuilder = builder;
+  builder = circuitBuilder;
 
   buildingInCircuit = true;
 }
@@ -1802,7 +1811,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
                            /*inputs=*/ArrayRef<Type>(inputTypes),
                            /*results=*/ArrayRef<Type>(outputTypes)));
 
-    auto newCallOp = shotLoopBuilder.create<mlir::quir::CallCircuitOp>(
+    auto newCallOp = classicalBuilder.create<mlir::quir::CallCircuitOp>(
       currentCircuitOp->getLoc(),currentCircuitOp.getName(),
       TypeRange(outputTypes), ValueRange(inputValues));
 
@@ -1828,7 +1837,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   // restore varHandler builder and vistor builder to
   // use shot loop
   varHandler.disableClassicalBuilder();
-  builder = shotLoopBuilder;
+  builder = classicalBuilder;
 
   buildingInCircuit = false;
 }
