@@ -38,7 +38,7 @@ private:
   std::vector<mlir::Value> ssaOtherValues;
   mlir::OpBuilder builder;
   mlir::OpBuilder topLevelBuilder;
-  mlir::OpBuilder classicalBuilder;
+  mlir::OpBuilder circuitParentBuilder;
   mlir::ModuleOp &newModule;
   mlir::quir::CircuitOp currentCircuitOp;
   std::string filename;
@@ -90,12 +90,12 @@ public:
   QUIRGenQASM3Visitor(QASM::ASTStatementList *sList, mlir::OpBuilder b,
                       mlir::ModuleOp &newModule, std::string f)
       : BaseQASM3Visitor(sList), builder(b), topLevelBuilder(b),
-        classicalBuilder(b),
+        circuitParentBuilder(b),
         newModule(newModule), filename(std::move(f)), varHandler(builder) {}
 
   QUIRGenQASM3Visitor(mlir::OpBuilder b, mlir::ModuleOp &newModule,
                       std::string filename)
-      : builder(b), topLevelBuilder(b),  classicalBuilder(b),
+      : builder(b), topLevelBuilder(b),  circuitParentBuilder(b),
         newModule(newModule),
         filename(std::move(filename)), varHandler(builder) {}
 

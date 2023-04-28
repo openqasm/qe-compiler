@@ -235,7 +235,7 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
 
   // Set the builder to add circuit operations inside the for loop
   builder.setInsertionPointAfter(shotInit);
-  classicalBuilder = builder;
+  circuitParentBuilder = builder;
 }
 
 void QUIRGenQASM3Visitor::setInputFile(std::string fName) {
@@ -996,10 +996,10 @@ QUIRGenQASM3Visitor::visit_(const ASTQubitContainerNode *node) {
   int id = stoi(node->GetIdentifier()->GetQubitMnemonic());
 
   const unsigned size = node->Size();
-  Value qubitRef = classicalBuilder
+  Value qubitRef = circuitParentBuilder
                        .create<DeclareQubitOp>(
-                           getLocation(node), classicalBuilder.getType<QubitType>(size),
-                           classicalBuilder.getIntegerAttr(classicalBuilder.getI32Type(), id))
+                           getLocation(node), circuitParentBuilder.getType<QubitType>(size),
+                           circuitParentBuilder.getIntegerAttr(circuitParentBuilder.getI32Type(), id))
                        .res();
   ssaValues[qId] = qubitRef;
   return qubitRef;
@@ -1054,11 +1054,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
   // build an arbitrary-precision integer and let OQ3_CastOp take care of
   // initializing a classical register value from it.
   auto location = getLocation(node);
-  auto initializerVal = classicalBuilder.create<mlir::arith::ConstantOp>(
-      location, classicalBuilder.getIntegerAttr(
-        classicalBuilder.getIntegerType(node->Size()),initializer));
+  auto initializerVal = circuitParentBuilder.create<mlir::arith::ConstantOp>(
+      location, circuitParentBuilder.getIntegerAttr(
+        circuitParentBuilder.getIntegerType(node->Size()),initializer));
 
-  return classicalBuilder.create<mlir::oq3::CastOp>(
+  return circuitParentBuilder.create<mlir::oq3::CastOp>(
       location, builder.getType<mlir::quir::CBitType>(node->Size()),
       initializerVal);
 }
@@ -1731,7 +1731,7 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
   // set builders so that classical operations are inserted into
   // the shot loop rather than into the quir.circuit
   varHandler.setClassicalBuilder(builder);
-  classicalBuilder = builder;
+  circuitParentBuilder = builder;
   builder = circuitBuilder;
 
   buildingInCircuit = true;
@@ -1813,7 +1813,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
                            /*inputs=*/ArrayRef<Type>(inputTypes),
                            /*results=*/ArrayRef<Type>(outputTypes)));
 
-    auto newCallOp = classicalBuilder.create<mlir::quir::CallCircuitOp>(
+    auto newCallOp = circuitParentBuilder.create<mlir::quir::CallCircuitOp>(
       currentCircuitOp->getLoc(),currentCircuitOp.getName(),
       TypeRange(outputTypes), ValueRange(inputValues));
 
@@ -1839,7 +1839,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   // restore varHandler builder and vistor builder to
   // use shot loop
   varHandler.disableClassicalBuilder();
-  builder = classicalBuilder;
+  builder = circuitParentBuilder;
 
   buildingInCircuit = false;
 }
