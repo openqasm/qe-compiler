@@ -85,11 +85,6 @@ static llvm::cl::opt<bool> enableParameters(
   llvm::cl::desc("enable qasm3 input parameters"),
   llvm::cl::init(false));
 
-static llvm::cl::opt<bool> enableQUIRCircuit(
-  "enable-circuit",
-  llvm::cl::desc("enable quir.circuit"),
-  llvm::cl::init(false));
-
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
                                    node->GetLineNo(), node->GetColNo());
@@ -1709,7 +1704,7 @@ mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
 
 void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
-  if (!enableQUIRCircuit)
+  if (!enableParameters)
     return;
 
   currentCircuitOp = topLevelBuilder.create<CircuitOp>(
@@ -1734,7 +1729,7 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
 void QUIRGenQASM3Visitor::finishCircuit() {
 
-  if (!enableQUIRCircuit || !buildingInCircuit)
+  if (!enableParameters || !buildingInCircuit)
     return;
 
   // rewrite the circuit and add a call circuit ops to fix region and usage

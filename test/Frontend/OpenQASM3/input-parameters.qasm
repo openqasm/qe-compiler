@@ -1,5 +1,5 @@
 OPENQASM 3;
-// RUN: qss-compiler -X=qasm --emit=mlir --enable-circuit --enable-parameters %s | FileCheck %s 
+// RUN: qss-compiler -X=qasm --emit=mlir --enable-parameters %s | FileCheck %s
 
 //
 // This code is part of Qiskit.

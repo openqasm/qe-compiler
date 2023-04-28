@@ -1,5 +1,5 @@
 OPENQASM 3.0;
-// RUN: qss-compiler -X=qasm --enable-circuit --enable-parameters %s | FileCheck %s
+// RUN: qss-compiler -X=qasm --enable-parameters %s | FileCheck %s
 
 //
 // This code is part of Qiskit.
