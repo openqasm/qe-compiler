@@ -1050,8 +1050,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
   // initializing a classical register value from it.
   auto location = getLocation(node);
   auto initializerVal = builder.create<mlir::arith::ConstantOp>(
-      location, builder.getIntegerAttr(
-        builder.getIntegerType(node->Size()),initializer));
+      location, builder.getIntegerAttr(builder.getIntegerType(node->Size()),
+                                       initializer));
 
   return builder.create<mlir::oq3::CastOp>(
       location, builder.getType<mlir::quir::CBitType>(node->Size()),
