@@ -242,14 +242,7 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
   // Set the builder to add circuit operations inside the for loop
   builder.setInsertionPointAfter(shotInit);
   classicalBuilder = builder;
-
-  if (!enableQUIRCircuit)
-    return;
-
   shotLoopBuilder = builder;
-  shotLoopBuilder.setInsertionPointAfter(shotInit);
-
-  startCircuit(initialLocation);
 }
 
 void QUIRGenQASM3Visitor::setInputFile(std::string fName) {
@@ -272,6 +265,8 @@ QUIRGenQASM3Visitor::reportError(ASTBase const *location,
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
+  switchCircuit(false, getLocation(node));
+
   const ASTForLoopNode *loop = node->GetLoop();
 
   if (loop->GetIVMethod() == ASTForLoopNode::IVMethod::IVDiscrete) {
@@ -338,6 +333,8 @@ void QUIRGenQASM3Visitor::visit(const ASTForLoopNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
+  switchCircuit(false, getLocation(node));
+
   // Checking to see if the IfStatementNode has an else part or not
   bool hasElse = node->HasElse();
 
@@ -412,6 +409,8 @@ void QUIRGenQASM3Visitor::visit(const ASTElseStatementNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
+  switchCircuit(false, getLocation(node));
+
   // Getting the number of cases we have
   unsigned caseSize = node->GetNumCaseStatements();
   Location loc = getLocation(node);
@@ -490,6 +489,8 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
+  switchCircuit(false, getLocation(node));
+
   const ASTWhileLoopNode *loop = node->GetLoop();
   Location loc = getLocation(node);
 
@@ -537,6 +538,8 @@ void QUIRGenQASM3Visitor::visit(const ASTFunctionDefinitionNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTFunctionCallNode *node) {
+  switchCircuit(false, getLocation(node));
+
   std::vector<Value> operands;
   for (const auto *expr : *node)
     operands.push_back(visitAndGetExpressionValue(
@@ -559,6 +562,8 @@ void QUIRGenQASM3Visitor::visit(const ASTFunctionCallNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
+  switchCircuit(false, getLocation(node));
+
   const ASTGateNode *gateNode = node->GetGateNode();
 
   const size_t numQubits = gateNode->QubitsSize();
@@ -627,6 +632,8 @@ static const std::string &resolveQCParam(const ASTGateNode *gateNode,
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
+  switchCircuit(true, getLocation(node));
+
   const size_t numQubits = node->QubitsSize();
   const size_t numParams = node->ParamsSize();
   const size_t numQCParams = node->GetNumQCParams();
@@ -676,6 +683,8 @@ void QUIRGenQASM3Visitor::visit(const ASTHGateOpNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
+  switchCircuit(true, getLocation(node));
+
   const ASTGateNode *gateNode = node->GetGateNode();
   const size_t numParams = gateNode->ParamsSize();
   constexpr size_t fixedNumParams = 3;
@@ -720,6 +729,8 @@ void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTCXGateOpNode *node) {
+  switchCircuit(true, getLocation(node));
+
   const ASTGateNode *gateNode = node->GetGateNode();
 
   assert(gateNode->GetNumQCParams() == 2 && "expect 2 qubit parameters.");
@@ -731,12 +742,14 @@ void QUIRGenQASM3Visitor::visit(const ASTCXGateOpNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTResetNode *node) {
+  switchCircuit(true, getLocation(node));
   Value qubitRef = getCurrentValue(node->GetTarget()->GetName());
   builder.create<ResetQubitOp>(getLocation(node), qubitRef);
 }
 
 mlir::Value QUIRGenQASM3Visitor::createMeasurement(const ASTMeasureNode *node,
                                                    bool emitAssignment) {
+  switchCircuit(true, getLocation(node));
   unsigned targetSize = node->GetTargetSize();
   unsigned resultSize = node->GetResultSize();
   // This means that the target/result wasn't an array, but a single qubit/bit.
@@ -796,6 +809,7 @@ void QUIRGenQASM3Visitor::visit(const ASTMeasureNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
+  switchCircuit(true, getLocation(node));
   const ASTDelayNode *delayNode = node->GetDelay();
 
   switch (delayNode->GetDelayType()) {
@@ -854,6 +868,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTBarrierNode *node) {
+  switchCircuit(true, getLocation(node));
   const ASTIdentifierList &idList = node->GetOperandList();
   const size_t numQubits = idList.Size();
   std::vector<Value> args(numQubits);
@@ -867,6 +882,7 @@ void QUIRGenQASM3Visitor::visit(const ASTBarrierNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
+  switchCircuit(false, getLocation(node));
   const ASTIdentifierNode *idNode = node->GetIdentifier();
   const mlir::Location loc = getLocation(node);
 
@@ -919,6 +935,7 @@ void QUIRGenQASM3Visitor::visit(const ASTKernelDeclarationNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTKernelNode *node) {
+  switchCircuit(false, getLocation(node));
   const auto &params = node->GetParameters();
   const size_t numParams = params.size();
   llvm::SmallVector<Type> inputs(numParams);
@@ -969,6 +986,7 @@ Type QUIRGenQASM3Visitor::getQUIRTypeFromDeclaration(
 
 ExpressionValueType
 QUIRGenQASM3Visitor::visit_(const ASTQubitContainerNode *node) {
+  switchCircuit(false, getLocation(node));
   const std::string &qId = node->GetName();
   int id = stoi(node->GetIdentifier()->GetQubitMnemonic());
 
@@ -988,6 +1006,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTQubitNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
+  switchCircuit(false, getLocation(node));
   LLVM_DEBUG(llvm::dbgs() << "ASTCBitNode \"" << node->AsString() << "\" size "
                           << node->Size() << " strlen "
                           << node->AsString().size() << "\n");
@@ -1040,6 +1059,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTDurationNode *node) {
+  switchCircuit(false, getLocation(node));
   // TODO this node may refer to an identifier, not just the encoded value. Fix
   // when replacing the use of ssaValues.
   assert((ssaValues.find(node->GetName()) == ssaValues.end()) &&
@@ -1063,6 +1083,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTStretchNode *node) {
   // when replacing the use of ssaValues.
   // TODO: handling of stretch is broken.
 
+  switchCircuit(false, getLocation(node));
+
   const Value stretchRef = builder.create<DeclareStretchOp>(
       getLocation(node), builder.getType<StretchType>());
   ssaValues[node->GetName()] = stretchRef;
@@ -1071,6 +1093,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTStretchNode *node) {
 
 ExpressionValueType
 QUIRGenQASM3Visitor::visit_(const ASTIdentifierRefNode *node) {
+  switchCircuit(false, getLocation(node));
   unsigned index = node->IsIndexed() ? node->GetIndex() : 0;
   std::string const &variableName = node->GetIdentifier()->GetName();
 
@@ -1106,6 +1129,7 @@ QUIRGenQASM3Visitor::visit_(const ASTIdentifierRefNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTIdentifierNode *node) {
+  switchCircuit(false, getLocation(node));
   llvm::StringRef variableName = node->GetName();
   mlir::Location location = getLocation(node);
 
@@ -1223,6 +1247,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
 
 mlir::Value
 QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTExpressionNode *node) {
+  switchCircuit(false, getLocation(node));
   expression.reset();
   BaseQASM3Visitor::visit(node);
 
@@ -1237,6 +1262,7 @@ QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTExpressionNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
+  switchCircuit(false, getLocation(node));
   // some op types are handled separately
   switch (node->GetOpType()) {
 
@@ -1382,6 +1408,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
+  switchCircuit(true, getLocation(node));
 
   const ASTOperatorNode *operatorNode = nullptr;
 
@@ -1452,6 +1479,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTIntNode *node) {
+  switchCircuit(false, getLocation(node));
   assert(node->GetIdentifier());
 
   if (node->GetIdentifier()->HasSymbolTableEntry() &&
@@ -1473,6 +1501,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTIntNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPIntegerNode *node) {
+  switchCircuit(false, getLocation(node));
   assert(node->GetIdentifier());
 
   if (node->GetIdentifier()->HasSymbolTableEntry() &&
@@ -1496,6 +1525,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPIntegerNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTFloatNode *node) {
+  switchCircuit(false, getLocation(node));
   // TODO this node may refer to an identifier, not just the encoded value. Fix
   // when replacing the use of ssaValues.
   assert(!varHandler.tracksVariable(node->GetName()) &&
@@ -1537,6 +1567,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTFloatNode *node) {
 
 ExpressionValueType
 QUIRGenQASM3Visitor::getValueFromLiteral(const ASTMPDecimalNode *node) {
+  switchCircuit(false, getLocation(node));
   const unsigned bits = node->GetIdentifier()->GetBits();
   double long value = 0.0;
   if (node->IsNumber())
@@ -1566,6 +1597,7 @@ QUIRGenQASM3Visitor::getValueFromLiteral(const ASTMPDecimalNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPDecimalNode *node) {
+  switchCircuit(false, getLocation(node));
   // TODO this node may refer to an identifier, not just the encoded value. Fix
   // when replacing the use of ssaValues.
   assert((ssaValues.find(node->GetName()) == ssaValues.end()) &&
@@ -1576,6 +1608,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPDecimalNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
+  switchCircuit(false, getLocation(node));
   // TODO this node may refer to an identifier, not just the encoded value. Fix
   // when replacing the use of ssaValues.
   std::string name = getExpressionName(node);
@@ -1592,6 +1625,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTAngleNode *node) {
+  switchCircuit(false, getLocation(node));
   assert(node->GetIdentifier());
 
   if (node->GetIdentifier()->HasSymbolTableEntry() &&
@@ -1616,6 +1650,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTAngleNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBoolNode *node) {
+  switchCircuit(false, getLocation(node));
   assert(node->GetIdentifier());
 
   if (node->GetIdentifier()->HasSymbolTableEntry() &&
@@ -1651,6 +1686,7 @@ Type QUIRGenQASM3Visitor::getCastDestinationType(
 
 ExpressionValueType
 QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
+  switchCircuit(false, getLocation(node));
   // visiting the child expression is deferred to BaseQASM3Visitor
   expression.reset();
   BaseQASM3Visitor::visit(node);
@@ -1672,6 +1708,10 @@ mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
 }
 
 void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
+
+  if (!enableQUIRCircuit)
+    return;
+
   currentCircuitOp = topLevelBuilder.create<CircuitOp>(
     location, "circuit_" + std::to_string(circuitCount++),
     topLevelBuilder.getFunctionType(
@@ -1693,6 +1733,9 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
 void QUIRGenQASM3Visitor::finishCircuit() {
 
+  if (!enableQUIRCircuit)
+    return;
+
   // rewrite the circuit and add a call circuit ops to fix region and usage
   //
   // a few things need to be done:
@@ -1710,46 +1753,41 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Value> outputValues;
 
-  inputTypes.clear();
-  inputValues.clear();
-  outputTypes.clear();
-  outputValues.clear();
+  // check all of the ssa saved values to determine if they
+  // are used inside the circuit op and insert an argument
+  // in the quir.circuit
 
-    // check all of the ssa saved values to determine if they
-    // are used inside the circuit op and insert an argument
-    // in the quir.circuit
-
-  auto circuitOp = currentCircuitOp;
-
-    auto insertArgumentsAndReplaceUse =  [&](Value value) {
-      for (auto *user : value.getUsers()) {
-        if (circuitOp->isAncestor(user)) {
-          auto arg = circuitOp.body().front().addArgument(value.getType(), value.getLoc());
-          value.replaceAllUsesWith(arg);
-          inputTypes.push_back(value.getType());
-          inputValues.push_back(value);
-          break;
-        }
+  auto insertArgumentsAndReplaceUse =  [&](Value value) {
+    for (auto *user : value.getUsers()) {
+      if (currentCircuitOp->isAncestor(user)) {
+        auto arg = currentCircuitOp.body().front().addArgument(value.getType(), value.getLoc());
+        value.replaceUsesWithIf(arg, [&](OpOperand &operand) {
+          return (operand.getOwner()->getParentOp() == currentCircuitOp);
+        });
+        inputTypes.push_back(value.getType());
+        inputValues.push_back(value);
+        break;
       }
-    };
-
-    for (auto const &ssa : llvm::enumerate(ssaValues)) {
-        Value value = ssa.value().second;
-        insertArgumentsAndReplaceUse(value);
     }
+  };
 
-    // do the same thing for ssaOtherValues (new class of ssa values tracked for
-    // parameters)
+  for (auto const &ssa : llvm::enumerate(ssaValues)) {
+      Value value = ssa.value().second;
+      insertArgumentsAndReplaceUse(value);
+  }
 
-    for (auto const &qubitSSA : llvm::enumerate(ssaOtherValues)) { 
-        Value value = qubitSSA.value();
-        insertArgumentsAndReplaceUse(value);
-    }
+  // do the same thing for ssaOtherValues (new class of ssa values tracked for
+  // parameters)
+
+  for (auto const &qubitSSA : llvm::enumerate(ssaOtherValues)) {
+      Value value = qubitSSA.value();
+      insertArgumentsAndReplaceUse(value);
+  }
 
     // look for measurements inside of this circuit op and collect a list
     // of outputs
 
-    circuitOp.walk([&](MeasureOp measOp){
+    currentCircuitOp.walk([&](MeasureOp measOp){
       for (auto result : measOp->getResults()) {
         outputTypes.push_back(result.getType());
         outputValues.push_back(result);
@@ -1759,18 +1797,18 @@ void QUIRGenQASM3Visitor::finishCircuit() {
     // find the return op and set the outputs
     // an empty return was added when the circuit was created so we can
     // just insert the outputValues
-    circuitOp.walk([&](mlir::quir::ReturnOp returnOp) {
+    currentCircuitOp.walk([&](mlir::quir::ReturnOp returnOp) {
       returnOp->insertOperands(0, ValueRange(outputValues));
     });
 
 
     // change the input / output types for the quir.circuit
-    circuitOp.setType(topLevelBuilder.getFunctionType(
+    currentCircuitOp.setType(topLevelBuilder.getFunctionType(
                            /*inputs=*/ArrayRef<Type>(inputTypes),
                            /*results=*/ArrayRef<Type>(outputTypes)));
 
     auto newCallOp = shotLoopBuilder.create<mlir::quir::CallCircuitOp>(
-      circuitOp->getLoc(),circuitOp.getName(),
+      currentCircuitOp->getLoc(),currentCircuitOp.getName(),
       TypeRange(outputTypes), ValueRange(inputValues));
 
     // replace the uses of the measurements outside of the circuit
@@ -1792,6 +1830,10 @@ void QUIRGenQASM3Visitor::finishCircuit() {
       }
     }
 
+  // restore varHandler builder and vistor builder to
+  // use shot loop
+  varHandler.disableClassicalBuilder();
+  builder = shotLoopBuilder;
 
   buildingInCircuit = false;
 }

@@ -217,6 +217,7 @@ public:
   mlir::Type resolveQUIRVariableType(const QASM::ASTResultNode *node);
 
   void setClassicalBuilder(mlir::OpBuilder b) { classicalBuilder = b; useClassicalBuilder = true;}
+  void disableClassicalBuilder() {useClassicalBuilder = false;}
 
 private:
   mlir::OpBuilder &builder;
