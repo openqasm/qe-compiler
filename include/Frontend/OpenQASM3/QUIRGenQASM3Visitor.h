@@ -41,8 +41,11 @@ private:
   mlir::OpBuilder topLevelBuilder;
   mlir::OpBuilder classicalBuilder;
   mlir::ModuleOp &newModule;
+  mlir::quir::CircuitOp currentCircuitOp;
   std::string filename;
   bool hasFailed = false;
+  bool buildingInCircuit = false;
+  uint circuitCount = 0;
 
   mlir::Location getLocation(const QASM::ASTBase *);
   bool assign(mlir::Value &, const std::string &);
@@ -99,7 +102,9 @@ public:
 
   void initialize(uint numShots, const std::string &shotDelay);
 
-  void finalizeCircuit();
+  void startCircuit(mlir::Location location);
+  void finishCircuit();
+  void switchCircuit(bool buildInCircuit, mlir::Location location);
 
   void setInputFile(std::string);
 

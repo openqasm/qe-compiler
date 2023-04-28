@@ -249,22 +249,7 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
   shotLoopBuilder = builder;
   shotLoopBuilder.setInsertionPointAfter(shotInit);
 
-  auto circuit = topLevelBuilder.create<CircuitOp>(
-    initialLocation, "circuit_0",
-    topLevelBuilder.getFunctionType(
-                          /*inputs=*/ArrayRef<Type>(),
-                          /*results=*/ArrayRef<Type>()));
-  auto block = circuit.addEntryBlock();
-
-  OpBuilder circuitBuilder(circuit.getBody());
-  builder = circuitBuilder;
-  builder.create<mlir::quir::ReturnOp>(initialLocation, ValueRange({}));
-  builder.setInsertionPointToStart(block);
-
-  if (enableEnforceQuantum) {
-    varHandler.setClassicalBuilder(shotLoopBuilder);
-    classicalBuilder = shotLoopBuilder;
-  }
+  startCircuit(initialLocation);
 }
 
 void QUIRGenQASM3Visitor::setInputFile(std::string fName) {
@@ -1686,11 +1671,29 @@ mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
   return createVoidValue(getLocation(node));
 }
 
-void QUIRGenQASM3Visitor::finalizeCircuit() {
-  if (!enableQUIRCircuit)
-    return;
+void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
+  currentCircuitOp = topLevelBuilder.create<CircuitOp>(
+    location, "circuit_" + std::to_string(circuitCount++),
+    topLevelBuilder.getFunctionType(
+                          /*inputs=*/ArrayRef<Type>(),
+                          /*results=*/ArrayRef<Type>()));
+  auto *block = currentCircuitOp.addEntryBlock();
 
-  // rewrite the circuit and call circuit ops to fix region and usage
+  OpBuilder circuitBuilder(currentCircuitOp.getBody());
+  builder = circuitBuilder;
+  builder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
+  builder.setInsertionPointToStart(block);
+
+  if (enableEnforceQuantum) {
+    varHandler.setClassicalBuilder(shotLoopBuilder);
+    classicalBuilder = shotLoopBuilder;
+  }
+  buildingInCircuit = true;
+}
+
+void QUIRGenQASM3Visitor::finishCircuit() {
+
+  // rewrite the circuit and add a call circuit ops to fix region and usage
   //
   // a few things need to be done:
   // 1: there are classical operations which define ssa values which will be
@@ -1699,7 +1702,7 @@ void QUIRGenQASM3Visitor::finalizeCircuit() {
   //    the operand list of the call_circuit and the ssa uses need to be
   //    replaced with the arguments to the circuit.
   // 2: there are measurement results inside the quir.circuit which need to
-  //    be returned from the ciruit and their uses replaced with the results
+  //    be returned from the circuit and their uses replaced with the results
   //    of the call_circuit
 
   llvm::SmallVector<Type> inputTypes;
@@ -1707,17 +1710,16 @@ void QUIRGenQASM3Visitor::finalizeCircuit() {
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Value> outputValues;
 
-  // Test every Circuit Op
-  topLevelBuilder.getBlock()->walk([&](CircuitOp circuitOp){
-
-    inputTypes.clear();
-    inputValues.clear();
-    outputTypes.clear();
-    outputValues.clear();
+  inputTypes.clear();
+  inputValues.clear();
+  outputTypes.clear();
+  outputValues.clear();
 
     // check all of the ssa saved values to determine if they
     // are used inside the circuit op and insert an argument
     // in the quir.circuit
+
+  auto circuitOp = currentCircuitOp;
 
     auto insertArgumentsAndReplaceUse =  [&](Value value) {
       for (auto *user : value.getUsers()) {
@@ -1789,7 +1791,31 @@ void QUIRGenQASM3Visitor::finalizeCircuit() {
         newCallOp->moveBefore(user);
       }
     }
-  }); // walk - CircuitOp
-} // finalizeCircuit()
+
+
+  buildingInCircuit = false;
+}
+
+void QUIRGenQASM3Visitor::switchCircuit(bool buildInCircuit,
+                                        mlir::Location location) {
+
+  if (buildingInCircuit && buildInCircuit) {
+    return;
+  }
+
+  if (!buildingInCircuit && !buildInCircuit) {
+    return;
+  }
+
+  if (buildingInCircuit && !buildInCircuit) {
+    finishCircuit();
+    return;
+  }
+
+  if (!buildingInCircuit && buildInCircuit) {
+    startCircuit(location);
+  }
+
+}
 
 } // namespace qssc::frontend::openqasm3

@@ -225,7 +225,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
     if (failed(visitor.walkAST()))
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                      "Failed to emit QUIR");
-    visitor.finalizeCircuit();
+    visitor.finishCircuit();
     if (mlir::failed(mlir::verify(newModule))) {
       newModule.dump();
 
