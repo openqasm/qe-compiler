@@ -37,9 +37,6 @@
 ///
 //===----------------------------------------------------------------------===//
 
-// PARAMETERS TODO:
-//   Test with qasm file that should generate more that one quir.circuit
-
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/QCS/IR/QCSAttributes.h"
