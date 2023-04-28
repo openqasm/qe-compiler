@@ -38,10 +38,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 
 #include <Frontend/OpenQASM3/QUIRGenQASM3Visitor.h>
 
@@ -49,11 +49,9 @@
 #include <Frontend/OpenQASM3/QUIRVariableBuilder.h>
 
 #include <llvm/ADT/SmallVector.h>
-#include <mlir/IR/Visitors.h>
 #include <qasm/AST/ASTDelay.h>
 #include <qasm/AST/ASTTypeEnums.h>
 
-#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include <mlir/Dialect/StandardOps/IR/Ops.h>
@@ -993,10 +991,10 @@ QUIRGenQASM3Visitor::visit_(const ASTQubitContainerNode *node) {
   int id = stoi(node->GetIdentifier()->GetQubitMnemonic());
 
   const unsigned size = node->Size();
-  Value qubitRef = circuitParentBuilder
+  Value qubitRef = builder
                        .create<DeclareQubitOp>(
-                           getLocation(node), circuitParentBuilder.getType<QubitType>(size),
-                           circuitParentBuilder.getIntegerAttr(circuitParentBuilder.getI32Type(), id))
+                           getLocation(node), builder.getType<QubitType>(size),
+                           builder.getIntegerAttr(builder.getI32Type(), id))
                        .res();
   ssaValues[qId] = qubitRef;
   return qubitRef;
@@ -1051,11 +1049,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
   // build an arbitrary-precision integer and let OQ3_CastOp take care of
   // initializing a classical register value from it.
   auto location = getLocation(node);
-  auto initializerVal = circuitParentBuilder.create<mlir::arith::ConstantOp>(
-      location, circuitParentBuilder.getIntegerAttr(
-        circuitParentBuilder.getIntegerType(node->Size()),initializer));
+  auto initializerVal = builder.create<mlir::arith::ConstantOp>(
+      location, builder.getIntegerAttr(
+        builder.getIntegerType(node->Size()),initializer));
 
-  return circuitParentBuilder.create<mlir::oq3::CastOp>(
+  return builder.create<mlir::oq3::CastOp>(
       location, builder.getType<mlir::quir::CBitType>(node->Size()),
       initializerVal);
 }
