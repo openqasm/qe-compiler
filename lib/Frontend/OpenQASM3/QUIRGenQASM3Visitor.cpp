@@ -1810,7 +1810,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
     auto replacementOp = newCallOp->getResult(output.index());
 
     value.replaceUsesWithIf(replacementOp, [&](OpOperand &operand) {
-      return !dyn_cast<mlir::quir::ReturnOp>(operand.getOwner());
+      return !isa<mlir::quir::ReturnOp>(operand.getOwner());
     });
   }
 
