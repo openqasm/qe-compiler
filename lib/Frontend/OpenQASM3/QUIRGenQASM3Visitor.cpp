@@ -1768,17 +1768,14 @@ void QUIRGenQASM3Visitor::finishCircuit() {
     }
   };
 
-  for (auto const &ssa : llvm::enumerate(ssaValues)) {
-    Value value = ssa.value().second;
-    insertArgumentsAndReplaceUse(value);
+  for (auto const &ssa : ssaValues) {
+    insertArgumentsAndReplaceUse(ssa.second);
   }
 
   // do the same thing for ssaOtherValues (new class of ssa values tracked for
   // parameters)
-
-  for (auto const &qubitSSA : llvm::enumerate(ssaOtherValues)) {
-    Value value = qubitSSA.value();
-    insertArgumentsAndReplaceUse(value);
+  for (auto const &ssa : ssaOtherValues) {
+    insertArgumentsAndReplaceUse(ssa);
   }
 
   // look for measurements inside of this circuit op and collect a list
