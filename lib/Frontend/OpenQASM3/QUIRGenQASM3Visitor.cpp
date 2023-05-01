@@ -902,9 +902,9 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
 
     if (enableParameters &&
         node->GetModifierType() == QASM::ASTTypeInputModifier) {
-      varHandler.generateParameterDeclaration(loc, idNode->GetName(),
+      varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
                                               variableType, val);
-      auto load = varHandler.generateParameterLoad(loc, idNode->GetName());
+      auto load = varHandler.generateParameterLoad(loc, idNode->GetMangledName());
       varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
     } else
       varHandler.generateVariableAssignment(loc, idNode->GetName(), val);
@@ -1815,7 +1815,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   // move uses of the results after the call_circuit
   for (auto const &output : newCallOp.getResults())
     for (auto *user : output.getUsers())
-      newCallOp->moveBefore(user);
+      user->moveAfter(newCallOp);
 
   // restore varHandler builder and vistor builder to
   // use shot loop
