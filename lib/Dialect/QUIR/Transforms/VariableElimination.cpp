@@ -38,6 +38,8 @@
 #include "mlir/IR/SymbolTable.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include <llvm/ADT/SmallVector.h>
+
 namespace mlir {
 void affineScalarReplaceCopy(FuncOp f, DominanceInfo &domInfo,
                              PostDominanceInfo &postDomInfo);
@@ -273,13 +275,18 @@ struct RemoveAllocaWithIsolatedStoresPattern
 LogicalResult RemoveAllocaWithIsolatedStoresPattern::matchAndRewrite(
     mlir::memref::AllocaOp op, mlir::PatternRewriter &rewriter) const {
 
+  llvm::SmallVector<mlir::Operation *> usersToErase;
+
   // Check that the only users are store operations
-  for (auto *user : op.getResult().getUsers())
+  // push to small vector for erasing
+  for (auto *user : op.getResult().getUsers()) {
+    usersToErase.push_back(user);
     if (!mlir::isa<mlir::AffineStoreOp>(user))
       return failure();
+  }
 
   // Drop all users
-  for (auto *user : op.getResult().getUsers())
+  for (auto *user : usersToErase)
     rewriter.eraseOp(user);
 
   // and remove the alloca
