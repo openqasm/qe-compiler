@@ -285,9 +285,11 @@ LogicalResult RemoveAllocaWithIsolatedStoresPattern::matchAndRewrite(
       return failure();
   }
 
+  // Drop all users
   for (auto *user : usersToErase)
     rewriter.eraseOp(user);
 
+  // and remove the alloca
   rewriter.eraseOp(op);
   return success();
 }
