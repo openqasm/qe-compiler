@@ -222,14 +222,28 @@ public:
   void disableClassicalBuilder() { useClassicalBuilder = false; }
 
 private:
+  // default builder - reference from QUIRGenQASM3Vistor class
   mlir::OpBuilder &builder;
+
+  // classical builder - used by QUIRGenQASM3Vistor class when
+  // building inside a quir.circuit operation.
+  //
+  // the classical builder is used to insert classical operations such as a
+  // oq3.variable_load operation which are added to support a real time
+  // operation such as a quir.call_gate. The classical builder maintains the
+  // insertion point for the supporting classical operations which should be
+  // inserted at the same scope as the `quir.call_circuit` corresponding to the
+  // currently being inserted `quir.circuit`
+  //
+  // see also: QUIRGenQASM3Visitor::switchCircuit
   mlir::OpBuilder
-      classicalBuilder; // reference works for tests - copy works for circuit
+      classicalBuilder;
   bool useClassicalBuilder{false};
 
   mlir::OpBuilder getClassicalBuilder() {
     return (useClassicalBuilder) ? classicalBuilder : builder;
   }
+
   std::unordered_map<std::string, mlir::Type> variables;
 
   std::unordered_map<mlir::Operation *, mlir::Operation *> lastDeclaration;
