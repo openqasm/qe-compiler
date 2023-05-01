@@ -79,7 +79,7 @@ namespace qssc::frontend::openqasm3 {
 
 using ExpressionValueType = mlir::Value;
 
-// temporary feature flags to be used due development of parameters support
+// temporary feature flags to be used during development of parameters support
 static llvm::cl::opt<bool>
     enableParameters("enable-parameters",
                      llvm::cl::desc("enable qasm3 input parameters"),
