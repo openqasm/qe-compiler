@@ -265,18 +265,6 @@ def QCS_DeclareParameterOp : QCS_Op<"declare_parameter", [Symbol]> {
             $_state.addAttribute("initial_value", value);
         }]>,
     ];
-
-    let verifier = [{
-        auto t = (*this).type();
-
-        if( t.isa<::mlir::quir::AngleType>() )
-            return success();
-        std::string str;
-        llvm::raw_string_ostream os(str);
-        t.print(os);
-
-        return emitOpError("MLIR type " + str + " not supported for declarations.");
-    }];
 }
 
 def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
