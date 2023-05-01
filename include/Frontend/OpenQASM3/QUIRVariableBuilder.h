@@ -236,8 +236,7 @@ private:
   // currently being inserted `quir.circuit`
   //
   // see also: QUIRGenQASM3Visitor::switchCircuit
-  mlir::OpBuilder
-      classicalBuilder;
+  mlir::OpBuilder classicalBuilder;
   bool useClassicalBuilder{false};
 
   mlir::OpBuilder getClassicalBuilder() {

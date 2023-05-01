@@ -1768,15 +1768,13 @@ void QUIRGenQASM3Visitor::finishCircuit() {
     }
   };
 
-  for (auto const &ssa : ssaValues) {
+  for (auto const &ssa : ssaValues)
     insertArgumentsAndReplaceUse(ssa.second);
-  }
 
   // do the same thing for ssaOtherValues (new class of ssa values tracked for
   // parameters)
-  for (auto const &ssa : ssaOtherValues) {
+  for (auto const &ssa : ssaOtherValues)
     insertArgumentsAndReplaceUse(ssa);
-  }
 
   // look for measurements inside of this circuit op and collect a list
   // of outputs
@@ -1830,41 +1828,41 @@ void QUIRGenQASM3Visitor::finishCircuit() {
 void QUIRGenQASM3Visitor::switchCircuit(bool buildInCircuit,
                                         mlir::Location location) {
 
-  // Switch the state of building inside a quir.circuit or not. 
+  // Switch the state of building inside a quir.circuit or not.
   //
   // This method is used to control the building of operations inside
   // or outside of a quir.circuit based on the AST Node type. This method
   // should be called from each overridden ::visit_ method. The method
   // should use the buildInCircuit argument to indicate if that ASTNode Type
-  // should be placed inside of a quir.circuit or not. The location is the 
-  // ASTNode's location in the QASM3 file. 
+  // should be placed inside of a quir.circuit or not. The location is the
+  // ASTNode's location in the QASM3 file.
   //
   // The buildInCircuit argument is used with the buildingInCircuit class
-  // instance variable to determine if a quir.circuit should be started or 
+  // instance variable to determine if a quir.circuit should be started or
   // finished. This (partially) enables the appropriate grouping of operations.
-  // Additional support for the grouping of operations is enabled by the 
-  // QUIRVariableBuilder classicalBuilder. 
+  // Additional support for the grouping of operations is enabled by the
+  // QUIRVariableBuilder classicalBuilder.
   //
   // There are four cases:
 
   // Operations are being built in a quir.circuit and the operations being added
-  // for the current AST Node should be placed in a circuit. Do nothing with 
-  // regard to the circuit building (this will group operations inside the 
-  // quir.circuit). 
+  // for the current AST Node should be placed in a circuit. Do nothing with
+  // regard to the circuit building (this will group operations inside the
+  // quir.circuit).
 
   if (buildingInCircuit && buildInCircuit)
     return;
 
   // Operations are NOT being built in a quir.circuit and the operations being
   // added for the current AST Node should not be placed in a circuit.
-  // Do nothing. 
+  // Do nothing.
 
   if (!buildingInCircuit && !buildInCircuit)
     return;
 
   // Operations are being built in a quir.circuit and the operations being added
-  // for the current AST Node should NOT be placed in a circuit. Finish the 
-  // current circuit (add quir.call_circuit and set builder location to 
+  // for the current AST Node should NOT be placed in a circuit. Finish the
+  // current circuit (add quir.call_circuit and set builder location to
   // after then quir.call_circuit operation, at the current classical scope).
 
   if (buildingInCircuit && !buildInCircuit) {
@@ -1872,10 +1870,10 @@ void QUIRGenQASM3Visitor::switchCircuit(bool buildInCircuit,
     return;
   }
 
-  // Operations are NOT being built in a quir.circuit and the operations being 
-  // added for the current AST Node should be placed in a circuit. Start a new 
-  // circuit. Create a new quir.circuit and create new operations inside the 
-  // circuit. 
+  // Operations are NOT being built in a quir.circuit and the operations being
+  // added for the current AST Node should be placed in a circuit. Start a new
+  // circuit. Create a new quir.circuit and create new operations inside the
+  // circuit.
 
   if (!buildingInCircuit && buildInCircuit)
     startCircuit(location);
