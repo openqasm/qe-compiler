@@ -12,3 +12,5 @@
 
 add_mlir_dialect(Pulse pulse)
 qssc_add_mlir_doc(Pulse PulseDialect generated/Dialect/Pulse/ -gen-dialect-doc)
+
+add_mlir_interface(PulseInterfaces)

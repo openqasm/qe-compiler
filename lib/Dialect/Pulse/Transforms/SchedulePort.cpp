@@ -87,7 +87,7 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
   // TODO: check for a better way to do this with getTerminator or back()
   sequenceOp->walk([&](ReturnOp op) {
     IntegerAttr timepointAttr = builder.getI64IntegerAttr(maxTime);
-    op->setAttr("pulse.timepoint", timepointAttr);
+    PulseOpSchedulingInterface::setTimepoint(op, timepointAttr);
   });
   return maxTime;
 }
@@ -164,7 +164,7 @@ void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
     for (auto *op : index.second) {
       // set attribute on op with current timepoint
       IntegerAttr timepointAttr = builder.getI64IntegerAttr(currentTimepoint);
-      op->setAttr("pulse.timepoint", timepointAttr);
+      PulseOpSchedulingInterface::setTimepoint(op, timepointAttr);
 
       // update currentTimepoint if DelayOp or playOp
       if (auto delayOp = dyn_cast<DelayOp>(op))
@@ -204,8 +204,8 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
             !op2.hasTrait<mlir::pulse::HasTargetFrame>())
           return false;
 
-        auto currentTime = getTimepoint(&op1);
-        auto nextTime = getTimepoint(&op2);
+        auto currentTime = PulseOpSchedulingInterface::getTimepoint(&op1);
+        auto nextTime = PulseOpSchedulingInterface::getTimepoint(&op2);
 
         // order by timepoint
         return currentTime < nextTime;
