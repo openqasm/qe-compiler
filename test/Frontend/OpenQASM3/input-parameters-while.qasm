@@ -21,7 +21,7 @@ gate h q {
 gate rz(phi) q { }
 
 input angle theta = 3.141;
-// CHECK: qcs.declare_parameter @theta_parameter : !quir.angle<64> = #quir.angle<3.141000e+00 : !quir.angle<64>>
+// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00 : !quir.angle<64>>
 
 qubit $0;
 int n = 1;
