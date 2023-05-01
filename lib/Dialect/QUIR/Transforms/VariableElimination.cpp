@@ -37,8 +37,8 @@
 #include "mlir/IR/Dominance.h"
 #include "mlir/IR/SymbolTable.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+
 #include <llvm/ADT/SmallVector.h>
-#include <llvm/Support/raw_ostream.h>
 
 namespace mlir {
 void affineScalarReplaceCopy(FuncOp f, DominanceInfo &domInfo,
