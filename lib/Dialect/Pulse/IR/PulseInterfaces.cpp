@@ -38,7 +38,8 @@ int64_t interfaces_impl::getTimepoint(mlir::Operation *op) {
   return 0;
 }
 
-void interfaces_impl::setTimepoint(mlir::Operation *op, IntegerAttr timepointAttr) {
+void interfaces_impl::setTimepoint(mlir::Operation *op,
+                                   IntegerAttr timepointAttr) {
   op->setAttr("pulse.timepoint", timepointAttr);
 }
 
@@ -48,6 +49,7 @@ int64_t interfaces_impl::getSetupLatency(Operation *op) {
   return 0;
 }
 
-void interfaces_impl::setSetupLatency(Operation *op, IntegerAttr setupLatencyAttr) {
+void interfaces_impl::setSetupLatency(Operation *op,
+                                      IntegerAttr setupLatencyAttr) {
   op->setAttr("pulse.setupLatency", setupLatencyAttr);
 }
