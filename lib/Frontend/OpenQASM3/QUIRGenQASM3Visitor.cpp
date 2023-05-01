@@ -1782,10 +1782,8 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   // of outputs
 
   currentCircuitOp.walk([&](MeasureOp measOp) {
-    for (auto result : measOp->getResults()) {
-      outputTypes.push_back(result.getType());
-      outputValues.push_back(result);
-    }
+    outputTypes.append(measOp.result_type_begin(), measOp.result_type_end());
+    outputValues.append(measOp.result_begin(), measOp.result_end());
   });
 
   // find the return op and set the outputs
