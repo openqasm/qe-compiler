@@ -101,8 +101,7 @@ QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
                                            llvm::StringRef variableName) {
 
   auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
-      location, builder.getType<mlir::quir::AngleType>(64),
-      variableName.str());
+      location, builder.getType<mlir::quir::AngleType>(64), variableName.str());
   return op;
 }
 

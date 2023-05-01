@@ -904,7 +904,8 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
         node->GetModifierType() == QASM::ASTTypeInputModifier) {
       varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
                                               variableType, val);
-      auto load = varHandler.generateParameterLoad(loc, idNode->GetMangledName());
+      auto load =
+          varHandler.generateParameterLoad(loc, idNode->GetMangledName());
       varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
     } else
       varHandler.generateVariableAssignment(loc, idNode->GetName(), val);
