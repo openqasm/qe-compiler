@@ -17,11 +17,11 @@
 #ifndef PULSE_PULSEOPS_H
 #define PULSE_PULSEOPS_H
 
+#include "Dialect/Pulse/IR/PulseInterfaces.h"
 #include "Dialect/Pulse/IR/PulseTraits.h"
 #include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
-#include "Dialect/Pulse/IR/PulseInterfaces.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/Builders.h"
