@@ -50,8 +50,8 @@ public:
   llvm::Expected<ContentBuffer &> readMember(llvm::StringRef path,
                                              bool markForWriteBack = true);
 
-  struct zip *getBackingZip() {    // TODO remove after cleanup
-    if (auto err = ensureOpen()) { 
+  struct zip *getBackingZip() { // TODO remove after cleanup
+    if (auto err = ensureOpen()) {
       llvm::errs() << err;
       return nullptr;
     }
@@ -73,8 +73,7 @@ private:
   llvm::Error ensureOpen();
 };
 
-llvm::Error extractLibZipError(llvm::StringRef info,
-                                      zip_error_t &zipError);
+llvm::Error extractLibZipError(llvm::StringRef info, zip_error_t &zipError);
 
 } // namespace qssc::payload
 

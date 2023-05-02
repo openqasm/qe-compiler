@@ -27,7 +27,6 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
-
 namespace qssc::parameters {
 
 class ParameterSource {
@@ -37,54 +36,53 @@ public:
   virtual ~ParameterSource() = default;
 };
 
-// PatchableBinary - abstract class to be subclassed by targets to 
-// define and implement patchable target binaries 
+// PatchableBinary - abstract class to be subclassed by targets to
+// define and implement patchable target binaries
 class PatchableBinary {
 public:
   virtual ~PatchableBinary() = default;
   virtual llvm::Error patch(PatchPoint const &patchPoint,
-                            ParameterSource const &parameters) = 0; 
+                            ParameterSource const &parameters) = 0;
   virtual void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
-                                  llvm::StringRef paramMapFileName,
-                                  qssc::parameters::Signature &sig) = 0;
+                                          llvm::StringRef paramMapFileName,
+                                          qssc::parameters::Signature &sig) = 0;
 };
 
-// PatchableBinary - abstract class to be subclassed by targets to 
+// PatchableBinary - abstract class to be subclassed by targets to
 // define and implement a factory for creating PatchableBinary objects
 class PatchableBinaryFactory {
 public:
   virtual ~PatchableBinaryFactory() = default;
-  virtual PatchableBinary * create() = 0;
-  virtual PatchableBinary * create(std::vector<char> &buf) = 0;
-  virtual PatchableBinary * create(std::string &str) = 0;
+  virtual PatchableBinary *create() = 0;
+  virtual PatchableBinary *create(std::vector<char> &buf) = 0;
+  virtual PatchableBinary *create(std::string &str) = 0;
 };
 
-
 // NullPatchableBinary - concrete implementation of PatchableBinary for
-// targets that do not want to support patchable binaries 
-class NullPatchableBinary : public PatchableBinary{
+// targets that do not want to support patchable binaries
+class NullPatchableBinary : public PatchableBinary {
   llvm::Error patch(PatchPoint const &patchPoint,
-                            ParameterSource const &parameters) override {
-                              return llvm::Error::success();
-  }; 
+                    ParameterSource const &parameters) override {
+    return llvm::Error::success();
+  };
   void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
                                   llvm::StringRef paramMapFileName,
-                                  qssc::parameters::Signature &sig) override {};
+                                  qssc::parameters::Signature &sig) override{};
 };
 
 // NullPatchableBinary - concrete implementation of PatchableBinaryFactory for
-// targets that do not want to support patchable binaries 
-class NullPatchableBinaryFactory : public PatchableBinaryFactory{
-  PatchableBinary * create() override { return new NullPatchableBinary(); }
-  PatchableBinary * create(std::vector<char> &buf) override { return create(); }
-  PatchableBinary * create(std::string &str) override { return create(); }
+// targets that do not want to support patchable binaries
+class NullPatchableBinaryFactory : public PatchableBinaryFactory {
+  PatchableBinary *create() override { return new NullPatchableBinary(); }
+  PatchableBinary *create(std::vector<char> &buf) override { return create(); }
+  PatchableBinary *create(std::string &str) override { return create(); }
 };
 
 // TODO generalize type of parameters
 llvm::Error bindParameters(llvm::StringRef moduleInputPath,
                            llvm::StringRef payloadOutputPath,
                            ParameterSource const &parameters,
-                           PatchableBinaryFactory * factory);
+                           PatchableBinaryFactory *factory);
 
 } // namespace qssc::parameters
 

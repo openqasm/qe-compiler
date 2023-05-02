@@ -38,10 +38,10 @@ namespace qssc {
 int compile(int argc, char const **argv, std::string *outputString,
             llvm::Optional<DiagnosticCallback> diagnosticCb);
 
-llvm::Error
-bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
-               llvm::StringRef payloadOutputPath,
-               qssc::parameters::ParameterSource &parameters);
+llvm::Error bindParameters(llvm::StringRef target,
+                           llvm::StringRef moduleInputPath,
+                           llvm::StringRef payloadOutputPath,
+                           qssc::parameters::ParameterSource &parameters);
 
 } // namespace qssc
 #endif // QSS_COMPILER_LIB_H

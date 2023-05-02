@@ -27,8 +27,7 @@
 
 namespace qssc::payload {
 
-llvm::Error extractLibZipError(llvm::StringRef info,
-                                      zip_error_t &zipError) {
+llvm::Error extractLibZipError(llvm::StringRef info, zip_error_t &zipError) {
   std::string errorMsg;
   llvm::raw_string_ostream errorMsgStream(errorMsg);
 
@@ -171,4 +170,3 @@ PatchableZipPayload::~PatchableZipPayload() {
 }
 
 } // namespace qssc::payload
-

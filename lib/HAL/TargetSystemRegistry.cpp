@@ -34,7 +34,8 @@ public:
   }
 
   // Return NullPatchableBinaryFactory
-  qssc::parameters::PatchableBinaryFactory * getPatchableBinaryFactory() override {
+  qssc::parameters::PatchableBinaryFactory *
+  getPatchableBinaryFactory() override {
     return new qssc::parameters::NullPatchableBinaryFactory();
   }
 };

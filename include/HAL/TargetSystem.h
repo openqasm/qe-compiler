@@ -90,7 +90,8 @@ public:
   virtual llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                                    payload::Payload &payload) = 0;
 
-  virtual qssc::parameters::PatchableBinaryFactory * getPatchableBinaryFactory() = 0;
+  virtual qssc::parameters::PatchableBinaryFactory *
+  getPatchableBinaryFactory() = 0;
 
   virtual ~TargetSystem() = default;
 

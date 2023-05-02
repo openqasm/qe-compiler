@@ -78,9 +78,8 @@ llvm::Error TargetSystemInfo::registerTargetPassPipelines() const {
 llvm::Expected<qssc::parameters::PatchableBinaryFactory *>
 TargetSystemInfo::getPatchableBinaryFactory(mlir::MLIRContext *context) const {
   auto it = impl->managedTargets.find(context);
-  if (it != impl->managedTargets.end()) {
+  if (it != impl->managedTargets.end())
     return it->getSecond().get()->getPatchableBinaryFactory();
-  }
 
   // Check if a default value exists.
   it = impl->managedTargets.find(nullptr);

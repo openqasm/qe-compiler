@@ -663,10 +663,10 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
   return 0;
 }
 
-llvm::Error qssc::bindParameters(
-    llvm::StringRef target, llvm::StringRef moduleInputPath,
-    llvm::StringRef payloadOutputPath,
-    qssc::parameters::ParameterSource &parameters) {
+llvm::Error
+qssc::bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
+                     llvm::StringRef payloadOutputPath,
+                     qssc::parameters::ParameterSource &parameters) {
 
   MLIRContext context{};
 
@@ -688,8 +688,9 @@ llvm::Error qssc::bindParameters(
   auto factory = targetInfo.getPatchableBinaryFactory(&context);
   if (auto err = factory.takeError()) {
     return llvm::joinErrors(
-        llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                "Unable to get patchable binary factory for target!"),
+        llvm::createStringError(
+            llvm::inconvertibleErrorCode(),
+            "Unable to get patchable binary factory for target!"),
         std::move(err));
   }
 

@@ -75,7 +75,8 @@ public:
   auto getConfig() -> MockConfig & { return *mockConfig; }
 
   // Return NullPatchableBinaryFactory
-  qssc::parameters::PatchableBinaryFactory * getPatchableBinaryFactory() override {
+  qssc::parameters::PatchableBinaryFactory *
+  getPatchableBinaryFactory() override {
     return new qssc::parameters::NullPatchableBinaryFactory();
   }
 

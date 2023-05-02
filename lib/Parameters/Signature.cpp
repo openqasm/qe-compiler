@@ -50,8 +50,6 @@ void Signature::dump() {
   }
 }
 
-std::string Signature::serialize() {
-  return "";
-}
+std::string Signature::serialize() { return ""; }
 
 } // namespace qssc::parameters

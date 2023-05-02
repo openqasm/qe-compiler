@@ -56,7 +56,8 @@ static llvm::Expected<std::string> readFileFromZip(zip_t *zip, zip_stat_t &zs) {
   return fileBuf;
 }
 
-llvm::Error parseSignature(zip_t *zip, Signature &sig, PatchableBinary *binary) {
+llvm::Error parseSignature(zip_t *zip, Signature &sig,
+                           PatchableBinary *binary) {
   zip_stat_t zs;
   auto numEntries = zip_get_num_entries(zip, 0);
 
@@ -94,9 +95,8 @@ llvm::Expected<Signature> parseSignature(zip_t *zip, PatchableBinary *binary) {
 }
 
 llvm::Error updateParameters(qssc::payload::PatchableZipPayload &payload,
-                             Signature &sig,
-                             ParameterSource const &parameters,
-                             PatchableBinaryFactory * binaryFactory) {
+                             Signature &sig, ParameterSource const &parameters,
+                             PatchableBinaryFactory *binaryFactory) {
 
   for (auto &entry : sig.patchPointsByBinary) {
     auto binaryName = entry.getKey();
@@ -112,8 +112,8 @@ llvm::Error updateParameters(qssc::payload::PatchableZipPayload &payload,
 
     auto &binaryData = binaryDataOrErr.get();
 
-    PatchableBinary * binary = binaryFactory->create(binaryData);
-    
+    PatchableBinary *binary = binaryFactory->create(binaryData);
+
     for (auto const &patchPoint : entry.getValue())
       if (auto err = binary->patch(patchPoint, parameters)) {
         delete binary;
@@ -127,9 +127,9 @@ llvm::Error updateParameters(qssc::payload::PatchableZipPayload &payload,
 }
 
 llvm::Error bindParameters(llvm::StringRef moduleInputPath,
-                                       llvm::StringRef payloadOutputPath,
-                                       ParameterSource const &parameters,
-                                       PatchableBinaryFactory * factory) {
+                           llvm::StringRef payloadOutputPath,
+                           ParameterSource const &parameters,
+                           PatchableBinaryFactory *factory) {
 
   // TODO, ofc, all of this wants to be properly abstracted and decoupled
 
@@ -146,7 +146,7 @@ llvm::Error bindParameters(llvm::StringRef moduleInputPath,
 
   Signature sig;
 
-  PatchableBinary * binary = factory->create();
+  PatchableBinary *binary = factory->create();
   if (auto err = parseSignature(payload.getBackingZip(), sig, binary)) {
     delete binary;
     return err;
