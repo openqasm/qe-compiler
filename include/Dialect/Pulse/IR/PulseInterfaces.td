@@ -34,20 +34,20 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
     let cppNamespace = "::mlir::pulse";
 
     let extraSharedClassDeclaration = [{
-        static int64_t getTimepoint(mlir::Operation *op) {
+        static llvm::Optional<int64_t> getTimepoint(mlir::Operation *op) {
             return interfaces_impl::getTimepoint(op);
         }
 
-        static void setTimepoint(mlir::Operation *op, IntegerAttr timepointAttr) {
-            return interfaces_impl::setTimepoint(op, timepointAttr);
+        static void setTimepoint(mlir::Operation *op, int64_t timepoint) {
+            return interfaces_impl::setTimepoint(op, timepoint);
         }
 
-        static int64_t getSetupLatency(mlir::Operation *op) {
+        static llvm::Optional<int64_t> getSetupLatency(mlir::Operation *op) {
             return interfaces_impl::getSetupLatency(op);
         }
 
-        static void setSetupLatency(mlir::Operation *op, IntegerAttr setupLatencyAttr) {
-            return interfaces_impl::setSetupLatency(op, setupLatencyAttr);
+        static void setSetupLatency(mlir::Operation *op, int64_t setupLatency) {
+            return interfaces_impl::setSetupLatency(op, setupLatency);
         }
     }];
 }

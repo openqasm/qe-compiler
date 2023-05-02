@@ -20,6 +20,8 @@
 
 #include "Dialect/Pulse/IR/PulseInterfaces.h"
 
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
+
 using namespace mlir::pulse;
 
 //===----------------------------------------------------------------------===//
@@ -32,24 +34,24 @@ using namespace mlir::pulse;
 // PulseOpSchedulingInterface
 //===----------------------------------------------------------------------===//
 
-int64_t interfaces_impl::getTimepoint(mlir::Operation *op) {
+llvm::Optional<int64_t> interfaces_impl::getTimepoint(mlir::Operation *op) {
   if (op->hasAttr("pulse.timepoint"))
     return op->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
-  return 0;
+  return llvm::None;
 }
 
-void interfaces_impl::setTimepoint(mlir::Operation *op,
-                                   IntegerAttr timepointAttr) {
-  op->setAttr("pulse.timepoint", timepointAttr);
+void interfaces_impl::setTimepoint(mlir::Operation *op, int64_t timepoint) {
+  mlir::OpBuilder builder(op);
+  op->setAttr("pulse.timepoint", builder.getI64IntegerAttr(timepoint));
 }
 
-int64_t interfaces_impl::getSetupLatency(Operation *op) {
+llvm::Optional<int64_t> interfaces_impl::getSetupLatency(Operation *op) {
   if (op->hasAttr("pulse.setupLatency"))
     return op->getAttrOfType<IntegerAttr>("pulse.setupLatency").getInt();
-  return 0;
+  return llvm::None;
 }
 
-void interfaces_impl::setSetupLatency(Operation *op,
-                                      IntegerAttr setupLatencyAttr) {
-  op->setAttr("pulse.setupLatency", setupLatencyAttr);
+void interfaces_impl::setSetupLatency(Operation *op, int64_t setupLatency) {
+  mlir::OpBuilder builder(op);
+  op->setAttr("pulse.setupLatency", builder.getI64IntegerAttr(setupLatency));
 }

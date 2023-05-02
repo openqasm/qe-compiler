@@ -33,10 +33,10 @@ namespace mlir::pulse::interfaces_impl {
 // PulseOpSchedulingInterface
 //===----------------------------------------------------------------------===//
 
-int64_t getTimepoint(mlir::Operation *op);
-void setTimepoint(mlir::Operation *op, IntegerAttr timepointAttr);
-int64_t getSetupLatency(mlir::Operation *op);
-void setSetupLatency(mlir::Operation *op, IntegerAttr setupLatencyAttr);
+llvm::Optional<int64_t> getTimepoint(mlir::Operation *op);
+void setTimepoint(mlir::Operation *op, int64_t timepoint);
+llvm::Optional<int64_t> getSetupLatency(mlir::Operation *op);
+void setSetupLatency(mlir::Operation *op, int64_t setupLatency);
 
 } // namespace mlir::pulse::interfaces_impl
 
