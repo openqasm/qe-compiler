@@ -52,6 +52,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
+#include "Parameters/Parameters.h"
 
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
@@ -99,23 +100,68 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
   return pybind11::make_tuple(success, pybind11::bytes(outputStr));
 }
 
+class MapParameterSource : public qssc::parameters::ParameterSource {
+
+public:
+  MapParameterSource(
+      const std::unordered_map<std::string, double> &parameterMap)
+      : parameterMap(parameterMap) {}
+
+  double getAngleParameter(llvm::StringRef name) const override {
+    std::string name_{name};
+    auto pos = parameterMap.find(name_);
+
+    if (pos == parameterMap.end())
+      return 0.0; // TODO need to make this Optional and error handling!
+
+    return pos->second;
+  }
+
+private:
+  const std::unordered_map<std::string, double> &parameterMap;
+};
+
 pybind11::tuple
 py_link_file(const std::string &inputPath, const std::string &outputPath,
              const std::string &target,
              const std::unordered_map<std::string, double> &parameters) {
 
 #ifndef NDEBUG
+
+  /*
+    TODO design problem: how to make parameters available in C++ code without
+    copying them over or exposing python wrapper classes in C++?
+
+    let's not optimize yet: copying the parameters is probably fine
+
+    have a wrapper class (virtual or pimpl-style) that hides the python stuff
+
+    corner stone: in C++, a variant makes the most sense to me (with typedef /
+    using)
+
+    so, about calling into the target: the current target registry instantiation
+    does a full shebang of MLIR context and config, which we do not want here.
+
+    step 1: fully delegate to target.
+      - have a static function
+  */
+
+  // TODO can we have some form of "Any" for parameter values?
+
   std::cout << "input " << inputPath << "\n";
   std::cout << "output " << outputPath << "\n";
 
+#if 0
   std::cout << "parameters (as seen from C++): \n";
 
   for (auto &item : parameters)
     std::cout << item.first << " = " << item.second << "\n";
 #endif
+#endif
 
-  auto successOrErr =
-      qssc::bindParameters(target, inputPath, outputPath, parameters);
+  MapParameterSource source(parameters);
+
+  auto successOrErr = qssc::bindParameters(target, inputPath, outputPath, source);
 
   if (successOrErr) {
     std::string errorMsg;
@@ -127,6 +173,9 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
   }
   return pybind11::make_tuple(true, pybind11::none());
 }
+
+// TODO pybind 11
+// - optional output path
 
 PYBIND11_MODULE(py_qssc, m) {
   m.doc() = "Python bindings for the QSS Compiler.";

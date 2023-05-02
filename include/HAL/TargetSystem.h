@@ -25,6 +25,8 @@
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
+#include "Parameters/Parameters.h"
+
 #include <string>
 #include <vector>
 
@@ -87,6 +89,8 @@ public:
   virtual llvm::Error addPayloadPasses(mlir::PassManager &pm) = 0;
   virtual llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                                    payload::Payload &payload) = 0;
+
+  virtual qssc::parameters::PatchableBinaryFactory * getPatchableBinaryFactory() = 0;
 
   virtual ~TargetSystem() = default;
 

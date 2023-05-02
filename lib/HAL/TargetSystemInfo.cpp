@@ -74,3 +74,20 @@ llvm::Error TargetSystemInfo::registerTargetPasses() const {
 llvm::Error TargetSystemInfo::registerTargetPassPipelines() const {
   return passPipelineRegistrar();
 }
+
+llvm::Expected<qssc::parameters::PatchableBinaryFactory *>
+TargetSystemInfo::getPatchableBinaryFactory(mlir::MLIRContext *context) const {
+  auto it = impl->managedTargets.find(context);
+  if (it != impl->managedTargets.end()) {
+    return it->getSecond().get()->getPatchableBinaryFactory();
+  }
+
+  // Check if a default value exists.
+  it = impl->managedTargets.find(nullptr);
+  if (it != impl->managedTargets.end())
+    return it->getSecond().get()->getPatchableBinaryFactory();
+
+  return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                 "Error: no target of type '" + getName() +
+                                     "' registered for the given context.\n");
+}

@@ -35,6 +35,7 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
+#include "Parameters/Parameters.h"
 #include "Payload/Payload.h"
 #include "Payload/PayloadRegistry.h"
 #include "QSSC.h"
@@ -665,7 +666,14 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
 llvm::Error qssc::bindParameters(
     llvm::StringRef target, llvm::StringRef moduleInputPath,
     llvm::StringRef payloadOutputPath,
-    std::unordered_map<std::string, double> const &parameters) {
+    qssc::parameters::ParameterSource &parameters) {
+
+  MLIRContext context{};
+
+  qssc::hal::registry::TargetSystemInfo &targetInfo =
+      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(target)
+           .getValueOr(qssc::hal::registry::TargetSystemRegistry::
+                           nullTargetSystemInfo());
 
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload
@@ -677,7 +685,14 @@ llvm::Error qssc::bindParameters(
     return llvm::make_error<llvm::StringError>(
         "Failed to copy circuit module to payload", copyError);
 
-  // TODO actually update parameters, tbd in later commits.
+  auto factory = targetInfo.getPatchableBinaryFactory(&context);
+  if (auto err = factory.takeError()) {
+    return llvm::joinErrors(
+        llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                "Unable to get patchable binary factory for target!"),
+        std::move(err));
+  }
 
-  return llvm::Error::success();
+  return qssc::parameters::bindParameters(moduleInputPath, payloadOutputPath,
+                                          parameters, factory.get());
 }

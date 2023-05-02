@@ -15,10 +15,9 @@
 #define TARGETSYSTEMINFO_H
 
 #include "HAL/TargetSystem.h"
-
-#include "Support/Pimpl.h"
-
+#include "Parameters/Parameters.h"
 #include "Plugin/PluginInfo.h"
+#include "Support/Pimpl.h"
 
 namespace qssc::hal::registry {
 
@@ -59,6 +58,8 @@ public:
   /// Register this target's MLIR passe pipelines with the QSSC system.
   /// Should only be called once on initialization.
   llvm::Error registerTargetPassPipelines() const;
+
+  getPatchableBinaryFactory(mlir::MLIRContext *context) const;
 
 private:
   struct Impl;

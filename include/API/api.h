@@ -18,6 +18,7 @@
 #define QSS_COMPILER_LIB_H
 
 #include "API/error.h"
+#include "Parameters/Parameters.h"
 
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
@@ -40,7 +41,7 @@ int compile(int argc, char const **argv, std::string *outputString,
 llvm::Error
 bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
                llvm::StringRef payloadOutputPath,
-               std::unordered_map<std::string, double> const &parameters);
+               qssc::parameters::ParameterSource &parameters);
 
 } // namespace qssc
 #endif // QSS_COMPILER_LIB_H

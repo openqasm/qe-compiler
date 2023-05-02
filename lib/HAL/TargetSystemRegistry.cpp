@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "HAL/TargetSystemRegistry.h"
+#include "Parameters/Parameters.h"
 
 using namespace qssc::hal::registry;
 
@@ -30,6 +31,11 @@ public:
   llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                            qssc::payload::Payload &payload) override {
     return llvm::Error::success();
+  }
+
+  // Return NullPatchableBinaryFactory
+  qssc::parameters::PatchableBinaryFactory * getPatchableBinaryFactory() override {
+    return new qssc::parameters::NullPatchableBinaryFactory();
   }
 };
 } // namespace
