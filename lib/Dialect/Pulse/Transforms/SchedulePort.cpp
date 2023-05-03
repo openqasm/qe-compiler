@@ -67,7 +67,7 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
   uint32_t numMixedFrames = 0;
   auto mixedFrameSequences = buildMixedFrameMap(sequenceOp, numMixedFrames);
 
-  uint64_t maxTime = 0;
+  int64_t maxTime = 0;
 
   addTimepoints(builder, mixedFrameSequences, maxTime);
 
@@ -85,9 +85,7 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
 
   // assign timepoint to return
   // TODO: check for a better way to do this with getTerminator or back()
-  sequenceOp->walk([&](ReturnOp op) {
-    PulseOpSchedulingInterface::setTimepoint(op, maxTime);
-  });
+  sequenceOp->walk([&](ReturnOp op) { op.setTimepoint(maxTime); });
   return maxTime;
 }
 
@@ -150,7 +148,7 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
 
 void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
                                      mixedFrameMap_t &mixedFrameSequences,
-                                     uint64_t &maxTime) {
+                                     int64_t &maxTime) {
 
   // add timepoint to operations in mixedFrameSequences where timepoints
   // are calculated based on the duration of delayOps
@@ -159,25 +157,23 @@ void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
   // independently for each mixed frame.
 
   for (const auto &index : mixedFrameSequences) {
-    uint64_t currentTimepoint = 0;
+    int64_t currentTimepoint = 0;
     for (auto *op : index.second) {
       // set attribute on op with current timepoint
       PulseOpSchedulingInterface::setTimepoint(op, currentTimepoint);
 
       // update currentTimepoint if DelayOp or playOp
       if (auto delayOp = dyn_cast<DelayOp>(op))
-        currentTimepoint += delayOp.getDuration();
+        currentTimepoint +=
+            delayOp.getPulseOpDuration(nullptr /*callSequenceOp*/).get();
       else if (auto playOp = dyn_cast<PlayOp>(op)) {
-        if (!playOp->hasAttrOfType<IntegerAttr>("pulse.duration")) {
-          playOp.emitError() << "SchedulingPortPass requires that PlayOps be "
-                                "labeled with a pulse.duration attribute";
+        llvm::Expected<uint64_t> durOrError =
+            playOp.getPulseOpDuration(nullptr /*callSequenceOp*/);
+        if (auto err = durOrError.takeError()) {
+          playOp.emitError() << toString(std::move(err));
           signalPassFailure();
         }
-        // MLIR does does not have a setUI64IntegerAttr so duration is stored
-        // in a I64IntegerAttr but should be treated as a uint64_t
-        uint64_t duration = static_cast<uint64_t>(
-            playOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
-        currentTimepoint += duration;
+        currentTimepoint += durOrError.get();
       }
     }
     if (currentTimepoint > maxTime)

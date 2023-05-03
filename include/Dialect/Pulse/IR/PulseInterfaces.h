@@ -23,6 +23,8 @@
 
 #include "mlir/IR/OpDefinition.h"
 
+#include "llvm/Support/Error.h"
+
 //===----------------------------------------------------------------------===//
 // Operation Interface Types
 //===----------------------------------------------------------------------===//
@@ -35,8 +37,12 @@ namespace mlir::pulse::interfaces_impl {
 
 llvm::Optional<int64_t> getTimepoint(mlir::Operation *op);
 void setTimepoint(mlir::Operation *op, int64_t timepoint);
-llvm::Optional<int64_t> getSetupLatency(mlir::Operation *op);
-void setSetupLatency(mlir::Operation *op, int64_t setupLatency);
+llvm::Optional<uint64_t> getSetupLatency(mlir::Operation *op);
+void setSetupLatency(mlir::Operation *op, uint64_t setupLatency);
+llvm::Expected<uint64_t>
+getPulseOpDuration(mlir::Operation *op,
+                   mlir::Operation *callSequenceOp = nullptr);
+void setPulseOpDuration(mlir::Operation *op, uint64_t setupLatency);
 
 } // namespace mlir::pulse::interfaces_impl
 

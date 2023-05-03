@@ -31,6 +31,19 @@
 
 namespace mlir::pulse {
 
+//===----------------------------------------------------------------------===//
+// Waveform_CreateOp
+//===----------------------------------------------------------------------===//
+
+llvm::Expected<uint64_t> Waveform_CreateOp::getPulseOpDuration(
+    mlir::Operation *callSequenceOp = nullptr) {
+  auto shape = (*this).samples().getType().getShape();
+  if (shape[0] < 0)
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "duration must be >= 0.");
+  return shape[0];
+}
+
 /// Verifier for pulse.waveform operation.
 static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
   // Check that samples is a tensor with two dimensions: outer is the number of
@@ -48,12 +61,18 @@ static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
   }
 
   // Check duration
-  auto dur = op.getDuration();
-  if (dur < 0)
-    return op.emitOpError("duration must be >= 0.");
+  auto durOrError = op.getPulseOpDuration(nullptr /*callSequenceOp*/);
+  if (auto err = durOrError.takeError())
+    return op.emitOpError(toString(std::move(err)));
 
   return mlir::success();
 }
+
+//===----------------------------------------------------------------------===//
+//
+// end Waveform_CreateOp
+//
+//===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
 // CallSequenceOp
@@ -291,6 +310,17 @@ static LogicalResult verify(ReturnOp op) {
   return success();
 }
 
+llvm::Optional<int64_t> ReturnOp::getTimepoint() {
+  if ((*this)->hasAttr("pulse.timepoint"))
+    return (*this)->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
+  return llvm::None;
+}
+
+void ReturnOp::setTimepoint(int64_t timepoint) {
+  mlir::OpBuilder builder(*this);
+  (*this)->setAttr("pulse.timepoint", builder.getI64IntegerAttr(timepoint));
+}
+
 //===----------------------------------------------------------------------===//
 //
 // end ReturnOp
@@ -301,18 +331,31 @@ static LogicalResult verify(ReturnOp op) {
 // PlayOp
 //===----------------------------------------------------------------------===//
 
-llvm::Expected<int> PlayOp::getDuration(CallSequenceOp callOp) {
+llvm::Expected<uint64_t>
+PlayOp::getPulseOpDuration(mlir::Operation *callSequenceOp = nullptr) {
+
+  auto callOp = dyn_cast_or_null<CallSequenceOp>(callSequenceOp);
+  if (!callOp) {
+    if ((*this)->hasAttr("pulse.duration"))
+      return static_cast<uint64_t>(
+          (*this)->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "Operation does not have a pulse.duration attribute, and no "
+        "callSequenceOp argument is specified.");
+  }
   // check if wfr is of type Waveform_CreateOp; this is the case if wfrOp is
   // defined in the same block as playOp e.g., if both are defined inside a
   // sequenceOp
-  if (auto castOp = dyn_cast_or_null<Waveform_CreateOp>(wfr().getDefiningOp()))
-    return castOp.getDuration();
+  if (auto castOp =
+          dyn_cast_or_null<Waveform_CreateOp>((*this).wfr().getDefiningOp()))
+    return castOp.getPulseOpDuration(nullptr /*callSequenceOp*/).get();
 
-  auto argIndex = wfr().cast<BlockArgument>().getArgNumber();
-  auto *argOp = callOp.getOperand(argIndex).getDefiningOp();
+  auto argIndex = (*this).wfr().cast<BlockArgument>().getArgNumber();
+  auto *argOp = callOp->getOperand(argIndex).getDefiningOp();
   auto wfrOp = dyn_cast_or_null<Waveform_CreateOp>(argOp);
   if (wfrOp)
-    return wfrOp.getDuration();
+    return wfrOp.getPulseOpDuration(nullptr /*callSequenceOp*/).get();
   return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                  "Could not get the wfrOp!");
 }
@@ -346,9 +389,197 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
       "Failed to hash waveform name from play operation");
 }
 
+llvm::Optional<int64_t> PlayOp::getTimepoint() {
+  if ((*this)->hasAttr("pulse.timepoint"))
+    return (*this)->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
+  return llvm::None;
+}
+
+void PlayOp::setTimepoint(int64_t timepoint) {
+  mlir::OpBuilder builder(*this);
+  (*this)->setAttr("pulse.timepoint", builder.getI64IntegerAttr(timepoint));
+}
+
+llvm::Optional<uint64_t> PlayOp::getSetupLatency() {
+  if ((*this)->hasAttr("pulse.setupLatency"))
+    return static_cast<uint64_t>(
+        (*this)->getAttrOfType<IntegerAttr>("pulse.setupLatency").getInt());
+  return llvm::None;
+}
+
+void PlayOp::setSetupLatency(uint64_t setupLatency) {
+  mlir::OpBuilder builder(*this);
+  (*this)->setAttr("pulse.setupLatency",
+                   builder.getI64IntegerAttr(setupLatency));
+}
+
 //===----------------------------------------------------------------------===//
 //
 // end PlayOp
+//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// CaptureOp
+//===----------------------------------------------------------------------===//
+
+llvm::Optional<int64_t> CaptureOp::getTimepoint() {
+  if ((*this)->hasAttr("pulse.timepoint"))
+    return (*this)->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
+  return llvm::None;
+}
+
+void CaptureOp::setTimepoint(int64_t timepoint) {
+  mlir::OpBuilder builder(*this);
+  (*this)->setAttr("pulse.timepoint", builder.getI64IntegerAttr(timepoint));
+}
+
+llvm::Optional<uint64_t> CaptureOp::getSetupLatency() {
+  if ((*this)->hasAttr("pulse.setupLatency"))
+    return static_cast<uint64_t>(
+        (*this)->getAttrOfType<IntegerAttr>("pulse.setupLatency").getInt());
+  return llvm::None;
+}
+
+void CaptureOp::setSetupLatency(uint64_t setupLatency) {
+  mlir::OpBuilder builder(*this);
+  (*this)->setAttr("pulse.setupLatency",
+                   builder.getI64IntegerAttr(setupLatency));
+}
+
+//===----------------------------------------------------------------------===//
+//
+// end CaptureOp
+//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// DelayOp
+//===----------------------------------------------------------------------===//
+
+llvm::Expected<uint64_t>
+DelayOp::getPulseOpDuration(mlir::Operation *callSequenceOp = nullptr) {
+  // get op that defines duration and return its value
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).dur().getDefiningOp());
+  if (durDeclOp) {
+    if (durDeclOp.value() < 0)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "duration must be >= 0.");
+    return durDeclOp.value();
+  }
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Could not get the value of the op that defines duration!");
+}
+
+//===----------------------------------------------------------------------===//
+//
+// end DelayOp
+//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// GaussianOp
+//===----------------------------------------------------------------------===//
+
+llvm::Expected<uint64_t>
+GaussianOp::getPulseOpDuration(mlir::Operation *callSequenceOp = nullptr) {
+  // get op that defines duration and return its value
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).dur().getDefiningOp());
+  if (durDeclOp) {
+    if (durDeclOp.value() < 0)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "duration must be >= 0.");
+    return durDeclOp.value();
+  }
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Could not get the value of the op that defines duration!");
+}
+
+//===----------------------------------------------------------------------===//
+//
+// end GaussianOp
+//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// GaussianSquareOp
+//===----------------------------------------------------------------------===//
+
+llvm::Expected<uint64_t> GaussianSquareOp::getPulseOpDuration(
+    mlir::Operation *callSequenceOp = nullptr) {
+  // get op that defines duration and return its value
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).dur().getDefiningOp());
+  if (durDeclOp) {
+    if (durDeclOp.value() < 0)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "duration must be >= 0.");
+    return durDeclOp.value();
+  }
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Could not get the value of the op that defines duration!");
+}
+
+//===----------------------------------------------------------------------===//
+//
+// end GaussianSquareOp
+//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// DragOp
+//===----------------------------------------------------------------------===//
+
+llvm::Expected<uint64_t>
+DragOp::getPulseOpDuration(mlir::Operation *callSequenceOp = nullptr) {
+  // get op that defines duration and return its value
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).dur().getDefiningOp());
+  if (durDeclOp) {
+    if (durDeclOp.value() < 0)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "duration must be >= 0.");
+    return durDeclOp.value();
+  }
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Could not get the value of the op that defines duration!");
+}
+
+//===----------------------------------------------------------------------===//
+//
+// end DragOp
+//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// ConstOp
+//===----------------------------------------------------------------------===//
+
+llvm::Expected<uint64_t>
+ConstOp::getPulseOpDuration(mlir::Operation *callSequenceOp = nullptr) {
+  // get op that defines duration and return its value
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).dur().getDefiningOp());
+  if (durDeclOp) {
+    if (durDeclOp.value() < 0)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "duration must be >= 0.");
+    return durDeclOp.value();
+  }
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Could not get the value of the op that defines duration!");
+}
+
+//===----------------------------------------------------------------------===//
+//
+// end ConstOp
 //
 //===----------------------------------------------------------------------===//
 

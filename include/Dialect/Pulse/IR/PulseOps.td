@@ -33,7 +33,8 @@ include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 
-def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed]> {
+def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed,
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
     let summary = "Create a Gaussian waveform.";
     let description = [{
         The `pulse.gaussian` operation creates a Gaussian waveform.
@@ -51,24 +52,17 @@ def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed]> {
         attr-dict `(` $dur `,` $amp `,` $sigma `)` `:` `(` type($dur) `,` type($amp) `,` type($sigma) `)` `->` type($wfr)
     }];
 
-    let extraClassDeclaration = [{
-        int getDuration() {
-            // get op that defines duration and return its value
-            auto durDeclOp = dyn_cast<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-            return durDeclOp.value();
-        }
-    }];
-
     let verifier = [{
-        auto dur = (*this).getDuration();
-        if (dur < 0)
-            return emitOpError("duration must be >= 0.");
+        auto durOrError = (*this).getPulseOpDuration();
+        if (auto err = durOrError.takeError())
+          return emitOpError(toString(std::move(err)));
         return success();
     }];
 }
 
 
-def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, SequenceAllowed]> {
+def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, SequenceAllowed,
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
     let summary = "Create a Gaussian Square waveform.";
     let description = [{
         The `pulse.gaussian_square` operation creates a Gaussian Square waveform. It is a Gaussian
@@ -89,23 +83,16 @@ def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, Sequence
         attr-dict `(` $dur `,` $amp `,` $sigma `,` $width `)` `:` `(` type($dur) `,` type($amp) `,` type($sigma) `,` type($width) `)` `->` type($wfr)
     }];
 
-    let extraClassDeclaration = [{
-        int getDuration() {
-            // get op that defines duration and return its value
-            auto durDeclOp = dyn_cast<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-            return durDeclOp.value();
-        }
-    }];
-
     let verifier = [{
-        auto dur = (*this).getDuration();
-        if (dur < 0)
-            return emitOpError("duration must be >= 0.");
+        auto durOrError = (*this).getPulseOpDuration();
+        if (auto err = durOrError.takeError())
+          return emitOpError(toString(std::move(err)));
         return success();
     }];
 }
 
-def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed]> {
+def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed,
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
     let summary = "Create a Drag waveform.";
     let description = [{
         The `pulse.drag` operation creates a DRAG waveform. The DRAG waveform is composed of a
@@ -127,23 +114,16 @@ def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed]> {
         attr-dict `(` $dur `,` $amp `,` $sigma `,` $beta `)` `:` `(` type($dur) `,` type($amp) `,` type($sigma) `,` type($beta) `)` `->` type($wfr)
     }];
 
-    let extraClassDeclaration = [{
-        int getDuration() {
-            // get op that defines duration and return its value
-            auto durDeclOp = dyn_cast<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-            return durDeclOp.value();
-        }
-    }];
-
     let verifier = [{
-        auto dur = (*this).getDuration();
-        if (dur < 0)
-            return emitOpError("duration must be >= 0.");
+        auto durOrError = (*this).getPulseOpDuration();
+        if (auto err = durOrError.takeError())
+          return emitOpError(toString(std::move(err)));
         return success();
     }];
 }
 
-def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed]> {
+def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed,
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
     let summary = "Create a Constant waveform.";
     let description = [{
         The `pulse.const_waveform` operation creates a constant waveform. This is a flat top waveform
@@ -163,23 +143,16 @@ def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed]> 
         attr-dict `(` $dur `,` $amp `)` `:` `(` type($dur) `,` type($amp) `)` `->` type($wfr)
     }];
 
-    let extraClassDeclaration = [{
-        int getDuration() {
-            // get op that defines duration and return its value
-            auto durDeclOp = dyn_cast<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-            return durDeclOp.value();
-        }
-    }];
-
     let verifier = [{
-        auto dur = (*this).getDuration();
-        if (dur < 0)
-            return emitOpError("duration must be >= 0.");
+        auto durOrError = (*this).getPulseOpDuration();
+        if (auto err = durOrError.takeError())
+          return emitOpError(toString(std::move(err)));
         return success();
     }];
 }
 
-def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, SequenceAllowed]> {
+def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, SequenceAllowed,
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
     let summary = "Creates a pulse waveform from a list of complex numbers.";
     let description = [{
         The `pulse.waveform` operation creates a waveform from a list of complex numbers. The complex
@@ -197,10 +170,6 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, Sequenc
 
     let assemblyFormat = [{
         attr-dict $samples `->` type($wfr)
-    }];
-
-    let extraClassDeclaration = [{
-        int getDuration() { auto shape = samples().getType().getShape(); return shape[0]; }
     }];
 
     // TODO in LLVM 15 + this can become just let hasVerifier = 1;
@@ -317,7 +286,9 @@ def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAll
     }];
 }
 
-def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame]> {
+def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame,
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getTimepoint", "setTimepoint",
+     "getSetupLatency", "setSetupLatency", "getPulseOpDuration"]>]> {
     let summary = "Play a waveform on a given frame.";
     let description = [{
         The `pulse.play` operation plays a waveform on a frame,
@@ -351,14 +322,8 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame]> {
     }];
 
     let extraClassDeclaration = [{
-        // get the duration of the waveform being played
-        llvm::Expected<int> getDuration (CallSequenceOp callOp);
-
         // get a string hash of the waveform and target being played
         llvm::Expected<std::string> getWaveformHash(CallSequenceOp callOp);
-
-        // get channel name
-        llvm::Expected<std::string> getChannelName(CallSequenceOp callOp, uint qubitId);
     }];
 
     let verifier = [{
@@ -555,7 +520,9 @@ let summary = "Set a scaling factor for pulses of a frame.";
     }];
 }
 
-def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
+def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame,
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getTimepoint", "setTimepoint",
+     "getSetupLatency", "setSetupLatency"]>]> {
     let summary = "Capture the incoming port and use a kernel for integration.";
     let description = [{
         The `pulse.capture` operation captures the incoming data on a frame using a kernel.
@@ -586,7 +553,8 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
     }];
 }
 
-def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
+def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame,
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
     let summary = "Delay by an integer duration of samples on a set of pulse frames.";
     let description = [{
         The `pulse.delay` operation represents a delay operation of integer length on a set of pulse
@@ -613,15 +581,11 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
         auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
         if (durDeclOp && durDeclOp.value() < 0)
            return emitOpError("duration must be >= 0.");
-        
+
         if (!(*this).target().isa<BlockArgument>())
             return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        
-        return success();
-    }];
 
-    let extraClassDeclaration = [{
-        int getDuration() {return dyn_cast<mlir::arith::ConstantIntOp>(dur().getDefiningOp()).value();}
+        return success();
     }];
 }
 
@@ -893,7 +857,8 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
   let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
-def Pulse_ReturnOp : Pulse_Op<"return", [NoSideEffect, Terminator, ReturnLike, SequenceRequired]>,
+def Pulse_ReturnOp : Pulse_Op<"return", [NoSideEffect, Terminator, ReturnLike, SequenceRequired,
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getTimepoint", "setTimepoint"]>]>,
     Arguments<(ins Variadic<AnyClassical>:$operands)>, Results<(outs)> {
         let summary = "Terminator for pulse.sequence.";
         let description = [{

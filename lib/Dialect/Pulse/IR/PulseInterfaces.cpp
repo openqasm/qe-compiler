@@ -39,19 +39,36 @@ llvm::Optional<int64_t> interfaces_impl::getTimepoint(mlir::Operation *op) {
     return op->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
   return llvm::None;
 }
-
 void interfaces_impl::setTimepoint(mlir::Operation *op, int64_t timepoint) {
   mlir::OpBuilder builder(op);
   op->setAttr("pulse.timepoint", builder.getI64IntegerAttr(timepoint));
 }
 
-llvm::Optional<int64_t> interfaces_impl::getSetupLatency(Operation *op) {
+// MLIR does does not have a setUI64IntegerAttr so duration and setup latency
+// are stored as I64IntegerAttr but should be treated as a uint64_t
+llvm::Optional<uint64_t> interfaces_impl::getSetupLatency(Operation *op) {
   if (op->hasAttr("pulse.setupLatency"))
-    return op->getAttrOfType<IntegerAttr>("pulse.setupLatency").getInt();
+    return static_cast<uint64_t>(
+        op->getAttrOfType<IntegerAttr>("pulse.setupLatency").getInt());
   return llvm::None;
 }
 
-void interfaces_impl::setSetupLatency(Operation *op, int64_t setupLatency) {
+void interfaces_impl::setSetupLatency(Operation *op, uint64_t setupLatency) {
   mlir::OpBuilder builder(op);
   op->setAttr("pulse.setupLatency", builder.getI64IntegerAttr(setupLatency));
+}
+
+llvm::Expected<uint64_t>
+interfaces_impl::getPulseOpDuration(Operation *op, Operation *callSequenceOp) {
+  if (op->hasAttr("pulse.duration"))
+    return static_cast<uint64_t>(
+        op->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Operation does not have a pulse.duration attribute.");
+}
+
+void interfaces_impl::setPulseOpDuration(Operation *op, uint64_t duration) {
+  mlir::OpBuilder builder(op);
+  op->setAttr("pulse.duration", builder.getI64IntegerAttr(duration));
 }

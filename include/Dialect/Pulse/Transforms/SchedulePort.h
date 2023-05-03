@@ -56,7 +56,7 @@ private:
                                      uint32_t &numMixedFrames);
 
   void addTimepoints(mlir::OpBuilder &builder,
-                     mixedFrameMap_t &mixedFrameSequences, uint64_t &maxTime);
+                     mixedFrameMap_t &mixedFrameSequences, int64_t &maxTime);
   void sortOpsByTimepoint(SequenceOp &sequenceOp);
 };
 } // namespace mlir::pulse
