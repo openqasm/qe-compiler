@@ -85,6 +85,11 @@ static llvm::cl::opt<bool>
                      llvm::cl::desc("enable qasm3 input parameters"),
                      llvm::cl::init(false));
 
+static llvm::cl::opt<bool>
+    enableCircuits("enable-circuits",
+                     llvm::cl::desc("enable quir circuits"),
+                     llvm::cl::init(false));
+
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
                                    node->GetLineNo(), node->GetColNo());
@@ -1850,6 +1855,9 @@ void QUIRGenQASM3Visitor::switchCircuit(bool buildInCircuit,
   // for the current AST Node should be placed in a circuit. Do nothing with
   // regard to the circuit building (this will group operations inside the
   // quir.circuit).
+
+  if (!enableCircuits)
+    return;
 
   if (buildingInCircuit && buildInCircuit)
     return;
