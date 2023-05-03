@@ -23,6 +23,7 @@
 #include "Dialect/QCS/IR/QCSTypes.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
 
@@ -47,6 +48,18 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
   // Check that symbol reference resolves to a parameter declaration
   auto declOp =
       symbolTable.lookupNearestSymbolFrom<DeclareParameterOp>(op, paramRefAttr);
+
+  // check higher level modules
+  if (!declOp) {
+    auto targetModuleOp = op->getParentOfType<mlir::ModuleOp>();
+    if (targetModuleOp) {
+      auto topLevelModuleOp = targetModuleOp->getParentOfType<mlir::ModuleOp>();
+      if (!declOp && topLevelModuleOp)
+        declOp = symbolTable.lookupNearestSymbolFrom<DeclareParameterOp>(
+            topLevelModuleOp, paramRefAttr);
+    }
+  }
+
   if (!declOp)
     return op->emitOpError() << "no valid reference to a parameter '"
                              << paramRefAttr.getValue() << "'";
