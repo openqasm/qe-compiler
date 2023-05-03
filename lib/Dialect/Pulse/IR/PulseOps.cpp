@@ -348,14 +348,24 @@ PlayOp::getPulseOpDuration(mlir::Operation *callSequenceOp = nullptr) {
   // defined in the same block as playOp e.g., if both are defined inside a
   // sequenceOp
   if (auto castOp =
-          dyn_cast_or_null<Waveform_CreateOp>((*this).wfr().getDefiningOp()))
-    return castOp.getPulseOpDuration(nullptr /*callSequenceOp*/).get();
+          dyn_cast_or_null<Waveform_CreateOp>((*this).wfr().getDefiningOp())) {
+    llvm::Expected<uint64_t> durOrError =
+        castOp.getPulseOpDuration(nullptr /*callSequenceOp*/);
+    if (auto err = durOrError.takeError())
+      return err;
+    return durOrError.get();
+  }
 
   auto argIndex = (*this).wfr().cast<BlockArgument>().getArgNumber();
   auto *argOp = callOp->getOperand(argIndex).getDefiningOp();
   auto wfrOp = dyn_cast_or_null<Waveform_CreateOp>(argOp);
-  if (wfrOp)
-    return wfrOp.getPulseOpDuration(nullptr /*callSequenceOp*/).get();
+  if (wfrOp) {
+    llvm::Expected<uint64_t> durOrError =
+        wfrOp.getPulseOpDuration(nullptr /*callSequenceOp*/);
+    if (auto err = durOrError.takeError())
+      return err;
+    return durOrError.get();
+  }
   return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                  "Could not get the wfrOp!");
 }

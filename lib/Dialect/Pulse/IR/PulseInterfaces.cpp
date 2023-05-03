@@ -39,6 +39,7 @@ llvm::Optional<int64_t> interfaces_impl::getTimepoint(mlir::Operation *op) {
     return op->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
   return llvm::None;
 }
+
 void interfaces_impl::setTimepoint(mlir::Operation *op, int64_t timepoint) {
   mlir::OpBuilder builder(op);
   op->setAttr("pulse.timepoint", builder.getI64IntegerAttr(timepoint));
