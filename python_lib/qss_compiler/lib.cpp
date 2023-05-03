@@ -123,7 +123,7 @@ private:
 
 pybind11::tuple
 py_link_file(const std::string &inputPath, const std::string &outputPath,
-             const std::string &target,
+             const std::string &target, const std::string &configPath,
              const std::unordered_map<std::string, double> &parameters) {
 
 #ifndef NDEBUG
@@ -161,7 +161,7 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
 
   MapParameterSource source(parameters);
 
-  auto successOrErr = qssc::bindParameters(target, inputPath, outputPath, source);
+  auto successOrErr = qssc::bindParameters(target, configPath, inputPath, outputPath, source);
 
   if (successOrErr) {
     std::string errorMsg;

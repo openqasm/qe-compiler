@@ -29,6 +29,7 @@
 #include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/Optional.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
@@ -664,7 +665,8 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
 }
 
 llvm::Error
-qssc::bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
+qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
+                     llvm::StringRef moduleInputPath,
                      llvm::StringRef payloadOutputPath,
                      qssc::parameters::ParameterSource &parameters) {
 
@@ -674,6 +676,16 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
       *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(target)
            .getValueOr(qssc::hal::registry::TargetSystemRegistry::
                            nullTargetSystemInfo());
+
+  llvm::errs() << "Loaded target " << targetInfo.getName() << "\n";
+
+  auto created = targetInfo.createTarget(&context, configPath);
+  if (auto err = created.takeError()) {
+    return llvm::joinErrors(
+        llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                "Unable to create target!"),
+        std::move(err));
+  }
 
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload

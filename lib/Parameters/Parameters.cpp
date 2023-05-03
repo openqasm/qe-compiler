@@ -159,8 +159,6 @@ llvm::Error bindParameters(llvm::StringRef moduleInputPath,
   if (auto err = updateParameters(payload, sig, parameters, factory))
     return err;
 
-  // TODO update parameters
-
   if (auto err = payload.writeBack())
     return err;
 

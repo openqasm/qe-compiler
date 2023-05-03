@@ -76,6 +76,7 @@ def link_file(
 
     input_file = _stringify_path(link_options.input_file)
     output_file = _stringify_path(link_options.output_file)
+    config_path = _stringify_path(link_options.config_path)
 
     for _, value in link_options.parameters.items():
         if not isinstance(value, float):
@@ -96,7 +97,8 @@ def link_file(
         resources_path = version_py_path.parent / "resources"
         os_environ["QSSC_RESOURCES"] = str(resources_path)
         success, errorMsg = _link_file(
-            input_file, output_file, link_options.target, link_options.parameters
+            input_file, output_file, link_options.target, config_path,
+            link_options.parameters
         )
         if not success:
             raise QSSLinkingFailure(errorMsg)
