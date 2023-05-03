@@ -163,10 +163,15 @@ void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
       PulseOpSchedulingInterface::setTimepoint(op, currentTimepoint);
 
       // update currentTimepoint if DelayOp or playOp
-      if (auto delayOp = dyn_cast<DelayOp>(op))
-        currentTimepoint +=
-            delayOp.getPulseOpDuration(nullptr /*callSequenceOp*/).get();
-      else if (auto playOp = dyn_cast<PlayOp>(op)) {
+      if (auto delayOp = dyn_cast<DelayOp>(op)) {
+        llvm::Expected<uint64_t> durOrError =
+            delayOp.getPulseOpDuration(nullptr /*callSequenceOp*/);
+        if (auto err = durOrError.takeError()) {
+          delayOp.emitError() << toString(std::move(err));
+          signalPassFailure();
+        }
+        currentTimepoint += durOrError.get();
+      } else if (auto playOp = dyn_cast<PlayOp>(op)) {
         llvm::Expected<uint64_t> durOrError =
             playOp.getPulseOpDuration(nullptr /*callSequenceOp*/);
         if (auto err = durOrError.takeError()) {
