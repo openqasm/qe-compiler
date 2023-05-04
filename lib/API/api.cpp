@@ -678,8 +678,6 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
            .getValueOr(qssc::hal::registry::TargetSystemRegistry::
                            nullTargetSystemInfo());
 
-  llvm::errs() << "Loaded target " << targetInfo.getName() << "\n";
-
   auto created = targetInfo.createTarget(&context, configPath);
   if (auto err = created.takeError()) {
     return llvm::joinErrors(
@@ -695,6 +693,8 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
             llvm::inconvertibleErrorCode(), "Unable to load target!"),
         std::move(err));
   }
+
+  llvm::outs() << "Loaded target " << targetInfo.getName() << "\n";
 
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload
