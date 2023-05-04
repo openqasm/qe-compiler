@@ -127,27 +127,6 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
              const std::unordered_map<std::string, double> &parameters) {
 
 #ifndef NDEBUG
-
-  /*
-    TODO design problem: how to make parameters available in C++ code without
-    copying them over or exposing python wrapper classes in C++?
-
-    let's not optimize yet: copying the parameters is probably fine
-
-    have a wrapper class (virtual or pimpl-style) that hides the python stuff
-
-    corner stone: in C++, a variant makes the most sense to me (with typedef /
-    using)
-
-    so, about calling into the target: the current target registry instantiation
-    does a full shebang of MLIR context and config, which we do not want here.
-
-    step 1: fully delegate to target.
-      - have a static function
-  */
-
-  // TODO can we have some form of "Any" for parameter values?
-
 #if 0
   std::cout << "input " << inputPath << "\n";
   std::cout << "output " << outputPath << "\n";
