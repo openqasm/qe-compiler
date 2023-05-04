@@ -153,8 +153,6 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
   return pybind11::make_tuple(true, pybind11::none());
 }
 
-// TODO pybind 11
-// - optional output path
 
 PYBIND11_MODULE(py_qssc, m) {
   m.doc() = "Python bindings for the QSS Compiler.";
