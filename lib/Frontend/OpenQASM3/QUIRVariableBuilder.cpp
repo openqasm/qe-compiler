@@ -22,8 +22,10 @@
 #include "Frontend/OpenQASM3/QUIRVariableBuilder.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -70,6 +72,39 @@ void QUIRVariableBuilder::generateVariableDeclaration(
   variables.emplace(variableName.str(), type);
 }
 
+void QUIRVariableBuilder::generateParameterDeclaration(
+    mlir::Location location, llvm::StringRef variableName, mlir::Type type,
+    mlir::Value assignedValue) {
+
+  mlir::OpBuilder::InsertionGuard g(builder);
+  auto *symbolTableOp = mlir::SymbolTable::getNearestSymbolTable(
+      builder.getInsertionBlock()->getParentOp());
+  assert(symbolTableOp &&
+         "require surrounding op with a symbol table (should be the Module)");
+  auto surroundingModuleOp = mlir::dyn_cast<mlir::ModuleOp>(*symbolTableOp);
+  assert(surroundingModuleOp && "assume symbol table residing in module");
+  builder.setInsertionPoint(&surroundingModuleOp.front());
+
+  // add qcs input parameter
+  auto constantOp =
+      mlir::dyn_cast<mlir::quir::ConstantOp>(assignedValue.getDefiningOp());
+  auto declareParameterOp = builder.create<mlir::qcs::DeclareParameterOp>(
+      location, variableName.str(), mlir::TypeAttr::get(type),
+      constantOp.value());
+
+  declareParameterOp->moveBefore(lastDeclaration[surroundingModuleOp]);
+  lastDeclaration[surroundingModuleOp] = declareParameterOp;
+}
+
+mlir::Value
+QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
+                                           llvm::StringRef variableName) {
+
+  auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
+      location, builder.getType<mlir::quir::AngleType>(64), variableName.str());
+  return op;
+}
+
 void QUIRVariableBuilder::generateArrayVariableDeclaration(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Type elementType, int64_t width) {
@@ -86,8 +121,8 @@ void QUIRVariableBuilder::generateVariableAssignment(
     mlir::Location location, llvm::StringRef variableName,
     mlir::Value assignedValue) {
 
-  builder.create<mlir::oq3::VariableAssignOp>(location, variableName,
-                                              assignedValue);
+  getClassicalBuilder().create<mlir::oq3::VariableAssignOp>(
+      location, variableName, assignedValue);
 }
 
 void QUIRVariableBuilder::generateArrayVariableElementAssignment(
@@ -116,10 +151,12 @@ void QUIRVariableBuilder::generateCBitSingleBitAssignment(
         location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)), cbitWithInsertedBit);
 
 #else
-  builder.create<mlir::oq3::CBitAssignBitOp>(
-      location, mlir::SymbolRefAttr::get(builder.getStringAttr(variableName)),
-      builder.getIndexAttr(bitPosition), builder.getIndexAttr(registerWidth),
-      assignedValue);
+  getClassicalBuilder().create<mlir::oq3::CBitAssignBitOp>(
+      location,
+      mlir::SymbolRefAttr::get(
+          getClassicalBuilder().getStringAttr(variableName)),
+      getClassicalBuilder().getIndexAttr(bitPosition),
+      getClassicalBuilder().getIndexAttr(registerWidth), assignedValue);
 #endif
 }
 
@@ -127,8 +164,8 @@ mlir::Value
 QUIRVariableBuilder::generateVariableUse(mlir::Location location,
                                          llvm::StringRef variableName,
                                          mlir::Type variableType) {
-  return builder.create<mlir::oq3::VariableLoadOp>(location, variableType,
-                                                   variableName);
+  return getClassicalBuilder().create<mlir::oq3::VariableLoadOp>(
+      location, variableType, variableName);
 }
 
 mlir::Value QUIRVariableBuilder::generateArrayVariableElementUse(

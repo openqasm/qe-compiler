@@ -39,7 +39,8 @@ namespace qssc::frontend::openqasm3 {
 
 class QUIRVariableBuilder {
 public:
-  QUIRVariableBuilder(mlir::OpBuilder &builder) : builder(builder) {}
+  QUIRVariableBuilder(mlir::OpBuilder &builder)
+      : builder(builder), classicalBuilder(builder) {}
 
   /// Generate code for declaring a variable (at the builder's current insertion
   /// point).
@@ -56,6 +57,19 @@ public:
                                    mlir::Type type,
                                    bool isInputVariable = false,
                                    bool isOutputVariable = false);
+
+  /// Generate code for declaring a input parameter (at the builder's current
+  /// insertion point).
+  ///
+  /// @param location source location related to the generated code.
+  /// @param variableName name of the variable. (_parameter will be added)
+  /// @param type type of the variable.
+  void generateParameterDeclaration(mlir::Location location,
+                                    llvm::StringRef variableName,
+                                    mlir::Type type, mlir::Value assignedValue);
+
+  mlir::Value generateParameterLoad(mlir::Location location,
+                                    llvm::StringRef variableName);
 
   /// Generate code for declaring an array (at the builder's current insertion
   /// point).
@@ -201,8 +215,33 @@ public:
 
   mlir::Type resolveQUIRVariableType(const QASM::ASTResultNode *node);
 
+  void setClassicalBuilder(mlir::OpBuilder b) {
+    classicalBuilder = b;
+    useClassicalBuilder = true;
+  }
+  void disableClassicalBuilder() { useClassicalBuilder = false; }
+
 private:
+  // default builder - reference from QUIRGenQASM3Vistor class
   mlir::OpBuilder &builder;
+
+  // classical builder - used by QUIRGenQASM3Vistor class when
+  // building inside a quir.circuit operation.
+  //
+  // the classical builder is used to insert classical operations such as a
+  // oq3.variable_load operation which are added to support a real time
+  // operation such as a quir.call_gate. The classical builder maintains the
+  // insertion point for the supporting classical operations which should be
+  // inserted at the same scope as the `quir.call_circuit` corresponding to the
+  // currently being inserted `quir.circuit`
+  //
+  // see also: QUIRGenQASM3Visitor::switchCircuit
+  mlir::OpBuilder classicalBuilder;
+  bool useClassicalBuilder{false};
+
+  mlir::OpBuilder getClassicalBuilder() {
+    return (useClassicalBuilder) ? classicalBuilder : builder;
+  }
 
   std::unordered_map<std::string, mlir::Type> variables;
 
