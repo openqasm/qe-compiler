@@ -287,6 +287,11 @@ def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
 
     let results = (outs AnyClassical:$res);
 
+    let extraClassDeclaration = [{
+        // Return the angle value from the initial value
+        APFloat getAngleFromInitialValue();
+    }];
+
     let assemblyFormat = [{
         $parameter_name `:` type($res) attr-dict
     }];

@@ -21,6 +21,7 @@
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QCS/IR/QCSDialect.h"
 #include "Dialect/QCS/IR/QCSTypes.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include <mlir/IR/BuiltinAttributes.h>
@@ -83,7 +84,43 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
   return success();
 }
 
+//===----------------------------------------------------------------------===//
+// ParameterLoadOp
+//===----------------------------------------------------------------------===//
+
 LogicalResult
 ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   return verifyQCSParameterOpSymbolUses(symbolTable, getOperation(), true);
 }
+
+// Returns the float value from the initial value of this parameter
+APFloat ParameterLoadOp::getAngleFromInitialValue() {
+  auto op = getOperation();
+  auto paramRefAttr =
+      op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
+  auto declOp = mlir::SymbolTable::lookupNearestSymbolFrom<
+      mlir::qcs::DeclareParameterOp>(op, paramRefAttr);
+
+  // check higher level modules
+
+  auto currentScopeOp = op->getParentOfType<mlir::ModuleOp>();
+  do {
+    declOp = mlir::SymbolTable::lookupNearestSymbolFrom<
+            mlir::qcs::DeclareParameterOp>(currentScopeOp, paramRefAttr);
+    if (declOp)
+      break;
+    currentScopeOp = currentScopeOp->getParentOfType<mlir::ModuleOp>();
+    assert(currentScopeOp);
+  } while (!declOp);
+
+  assert(declOp);
+  auto retVal = declOp.initial_value()
+                    .getValue()
+                    .dyn_cast<mlir::quir::AngleAttr>()
+                    .getValue();
+  return retVal;
+}
+
+//===----------------------------------------------------------------------===//
+// End ParameterLoadOp
+//===----------------------------------------------------------------------===//
