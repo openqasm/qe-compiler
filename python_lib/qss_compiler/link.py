@@ -44,6 +44,8 @@ class LinkOptions:
     """Hardware target to select."""
     parameters: Mapping[str, Any]
     """Circuit parameters as mapping of name to value."""
+    config_path: str
+    """Taget configuration path."""
 
 
 def _prepare_link_options(
