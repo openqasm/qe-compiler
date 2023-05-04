@@ -148,10 +148,10 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
 
   // TODO can we have some form of "Any" for parameter values?
 
+#if 0
   std::cout << "input " << inputPath << "\n";
   std::cout << "output " << outputPath << "\n";
 
-#if 0
   std::cout << "parameters (as seen from C++): \n";
 
   for (auto &item : parameters)
