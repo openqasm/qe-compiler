@@ -670,6 +670,7 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
                      llvm::StringRef payloadOutputPath,
                      qssc::parameters::ParameterSource &parameters) {
 
+
   MLIRContext context{};
 
   qssc::hal::registry::TargetSystemInfo &targetInfo =
@@ -687,6 +688,14 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
         std::move(err));
   }
 
+  auto targetInst = targetInfo.getTarget(&context);
+  if (auto err = targetInst.takeError()) {
+    return llvm::joinErrors(
+        llvm::createStringError(
+            llvm::inconvertibleErrorCode(), "Unable to load target!"),
+        std::move(err));
+  }
+
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload
   // (instead of read module, update, write payload)
@@ -697,15 +706,7 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
     return llvm::make_error<llvm::StringError>(
         "Failed to copy circuit module to payload", copyError);
 
-  auto factory = targetInfo.getPatchableBinaryFactory(&context);
-  if (auto err = factory.takeError()) {
-    return llvm::joinErrors(
-        llvm::createStringError(
-            llvm::inconvertibleErrorCode(),
-            "Unable to get patchable binary factory for target!"),
-        std::move(err));
-  }
-
+  auto * factory = targetInst.get()->getPatchableBinaryFactory();
   return qssc::parameters::bindParameters(moduleInputPath, payloadOutputPath,
-                                          parameters, factory.get());
+                                          parameters, factory);
 }

@@ -59,9 +59,6 @@ public:
   /// Should only be called once on initialization.
   llvm::Error registerTargetPassPipelines() const;
 
-  llvm::Expected<qssc::parameters::PatchableBinaryFactory *>
-  getPatchableBinaryFactory(mlir::MLIRContext *context) const;
-
 private:
   struct Impl;
 
