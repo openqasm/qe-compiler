@@ -98,15 +98,16 @@ APFloat ParameterLoadOp::getAngleFromInitialValue() {
   auto op = getOperation();
   auto paramRefAttr =
       op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
-  auto declOp = mlir::SymbolTable::lookupNearestSymbolFrom<
-      mlir::qcs::DeclareParameterOp>(op, paramRefAttr);
+  auto declOp =
+      mlir::SymbolTable::lookupNearestSymbolFrom<mlir::qcs::DeclareParameterOp>(
+          op, paramRefAttr);
 
   // check higher level modules
 
   auto currentScopeOp = op->getParentOfType<mlir::ModuleOp>();
   do {
     declOp = mlir::SymbolTable::lookupNearestSymbolFrom<
-            mlir::qcs::DeclareParameterOp>(currentScopeOp, paramRefAttr);
+        mlir::qcs::DeclareParameterOp>(currentScopeOp, paramRefAttr);
     if (declOp)
       break;
     currentScopeOp = currentScopeOp->getParentOfType<mlir::ModuleOp>();
