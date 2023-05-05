@@ -86,9 +86,8 @@ static llvm::cl::opt<bool>
                      llvm::cl::init(false));
 
 static llvm::cl::opt<bool>
-    enableCircuits("enable-circuits",
-                     llvm::cl::desc("enable quir circuits"),
-                     llvm::cl::init(false));
+    enableCircuits("enable-circuits", llvm::cl::desc("enable quir circuits"),
+                   llvm::cl::init(false));
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
@@ -1248,7 +1247,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
 
 mlir::Value
 QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTExpressionNode *node) {
-  switchCircuit(false, getLocation(node));
+  // do not switch circuit here
   expression.reset();
   BaseQASM3Visitor::visit(node);
 
@@ -1568,7 +1567,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTFloatNode *node) {
 
 ExpressionValueType
 QUIRGenQASM3Visitor::getValueFromLiteral(const ASTMPDecimalNode *node) {
-  switchCircuit(false, getLocation(node));
+  // do not switchCircuit(false, getLocation(node));
   const unsigned bits = node->GetIdentifier()->GetBits();
   double long value = 0.0;
   if (node->IsNumber())
@@ -1626,7 +1625,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTAngleNode *node) {
-  switchCircuit(false, getLocation(node));
+  // do not switchCircuit(false, getLocation(node));
   assert(node->GetIdentifier());
 
   if (node->GetIdentifier()->HasSymbolTableEntry() &&
@@ -1687,7 +1686,7 @@ Type QUIRGenQASM3Visitor::getCastDestinationType(
 
 ExpressionValueType
 QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
-  switchCircuit(false, getLocation(node));
+  // do not switchCircuit(false, getLocation(node));
   // visiting the child expression is deferred to BaseQASM3Visitor
   expression.reset();
   BaseQASM3Visitor::visit(node);
