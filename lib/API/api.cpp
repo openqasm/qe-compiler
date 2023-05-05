@@ -670,7 +670,6 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
                      llvm::StringRef payloadOutputPath,
                      qssc::parameters::ParameterSource &parameters) {
 
-
   MLIRContext context{};
 
   qssc::hal::registry::TargetSystemInfo &targetInfo =
@@ -689,8 +688,8 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
   auto targetInst = targetInfo.getTarget(&context);
   if (auto err = targetInst.takeError()) {
     return llvm::joinErrors(
-        llvm::createStringError(
-            llvm::inconvertibleErrorCode(), "Unable to load target!"),
+        llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                "Unable to load target!"),
         std::move(err));
   }
 
@@ -706,7 +705,7 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
     return llvm::make_error<llvm::StringError>(
         "Failed to copy circuit module to payload", copyError);
 
-  auto * factory = targetInst.get()->getPatchableBinaryFactory();
+  auto *factory = targetInst.get()->getPatchableBinaryFactory();
   return qssc::parameters::bindParameters(moduleInputPath, payloadOutputPath,
                                           parameters, factory);
 }

@@ -38,8 +38,7 @@ namespace qssc {
 int compile(int argc, char const **argv, std::string *outputString,
             llvm::Optional<DiagnosticCallback> diagnosticCb);
 
-llvm::Error bindParameters(llvm::StringRef target,
-                           llvm::StringRef configPath,
+llvm::Error bindParameters(llvm::StringRef target, llvm::StringRef configPath,
                            llvm::StringRef moduleInputPath,
                            llvm::StringRef payloadOutputPath,
                            qssc::parameters::ParameterSource &parameters);
