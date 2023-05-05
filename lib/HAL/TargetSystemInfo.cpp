@@ -74,4 +74,3 @@ llvm::Error TargetSystemInfo::registerTargetPasses() const {
 llvm::Error TargetSystemInfo::registerTargetPassPipelines() const {
   return passPipelineRegistrar();
 }
-
