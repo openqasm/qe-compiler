@@ -20,6 +20,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/QuantumDecoration.h"
+#include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/Dialect/SCF/SCF.h"
@@ -133,7 +134,7 @@ void QuantumDecorationPass::runOnOperation() {
 
   moduleOp->walk([&](Operation *op) {
     if (dyn_cast<scf::IfOp>(op) || dyn_cast<scf::ForOp>(op) ||
-        dyn_cast<quir::SwitchOp>(op)) {
+        dyn_cast<quir::SwitchOp>(op) || dyn_cast<quir::CircuitOp>(op)) {
       std::unordered_set<int> involvedQubits;
       op->walk([&](Operation *subOp) { processOp(subOp, involvedQubits); });
       std::vector<int> qubitVec;

@@ -60,8 +60,9 @@ auto SubroutineCloningPass::lookupQubitId(const Value val) -> int {
   return -1;
 } // lookupQubitId
 
+template <class CallLikeOp>
 auto SubroutineCloningPass::getMangledName(Operation *op) -> std::string {
-  auto callOp = dyn_cast<CallSubroutineOp>(op);
+  auto callOp = dyn_cast<CallLikeOp>(op);
   std::string mangledName = callOp.callee().str();
 
   std::vector<Value> qOperands;
@@ -80,8 +81,9 @@ auto SubroutineCloningPass::getMangledName(Operation *op) -> std::string {
   return mangledName;
 } // getMangledName
 
+template <class CallLikeOp, class FuncLikeOp>
 void SubroutineCloningPass::processCallOp(Operation *op) {
-  auto callOp = dyn_cast<CallSubroutineOp>(op);
+  auto callOp = dyn_cast<CallLikeOp>(op);
   OpBuilder build(moduleOperation->getRegion(0));
 
   // look for func def match
@@ -92,7 +94,7 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
     qubitCallOperands(callOp, qOperands);
 
     // first get the mangled name
-    std::string mangledName = getMangledName(callOp);
+    std::string mangledName = getMangledName<CallLikeOp>(callOp);
     callOp->setAttr("callee",
                     FlatSymbolRefAttr::get(&getContext(), mangledName));
 
@@ -103,7 +105,7 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
       return;
 
     // clone the func def with the new name
-    FuncOp newFunc = cast<FuncOp>(build.clone(*findOp));
+    FuncLikeOp newFunc = cast<FuncLikeOp>(build.clone(*findOp));
     newFunc->moveBefore(findOp);
     clonedFuncs.emplace(findOp);
     newFunc->setAttr(SymbolTable::getSymbolAttrName(),
@@ -111,7 +113,7 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
 
     // add qubit ID attributes to all the arguments
     for (uint ii = 0; ii < callOp.operands().size(); ++ii) {
-      if (callOp.operands()[ii].getType().isa<QubitType>()) {
+      if (callOp.operands()[ii].getType().template isa<QubitType>()) {
         int qId =
             lookupQubitId(callOp.operands()[ii]); // copy qubitId from call
         newFunc.setArgAttrs(
@@ -123,7 +125,7 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
     }
 
     // add calls within the new func def to the callWorkList
-    newFunc->walk([&](CallSubroutineOp op) { callWorkList.push_back(op); });
+    newFunc->walk([&](CallLikeOp op) { callWorkList.push_back(op); });
 
   } else { // matching function not found
     callOp->emitOpError() << "No matching function def found for "
@@ -149,7 +151,15 @@ void SubroutineCloningPass::runOnOperation() {
   while (!callWorkList.empty()) {
     Operation *op = callWorkList.front();
     callWorkList.pop_front();
-    processCallOp(op);
+    processCallOp<CallSubroutineOp, FuncOp>(op);
+  }
+
+  mainFunc->walk([&](CallCircuitOp op) { callWorkList.push_back(op); });
+
+  while (!callWorkList.empty()) {
+    Operation *op = callWorkList.front();
+    callWorkList.pop_front();
+    processCallOp<CallCircuitOp, CircuitOp>(op);
   }
 
   // All subroutine defs that have been cloned are no longer needed
