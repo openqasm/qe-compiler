@@ -1284,7 +1284,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
   return operand;
 }
 
-mlir::Value
+llvm::Expected<mlir::Value>
 QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTExpressionNode *node) {
   switchCircuit(false, getLocation(node));
   expression.reset();

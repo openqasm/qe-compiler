@@ -58,7 +58,7 @@ private:
 
   mlir::Value visitAndGetExpressionValue(QASM::ASTExpressionNode const *node);
   template <class NodeType>
-  mlir::Value visitAndGetExpressionValue(NodeType const *node) {
+  llvm::Expected<mlir::Value> visitAndGetExpressionValue(NodeType const *node) {
     return visit_(node);
   }
 
