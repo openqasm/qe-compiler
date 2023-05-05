@@ -25,6 +25,7 @@
 #include "Frontend/OpenQASM3/QUIRVariableBuilder.h"
 
 #include "mlir/Dialect/Complex/IR/Complex.h"
+#include "llvm/Support/Error.h"
 
 #include <unordered_map>
 
@@ -52,7 +53,8 @@ private:
   std::string getExpressionName(const QASM::ASTExpressionNode *);
 
   /// hold intermediate expression value while visiting child nodes
-  llvm::Optional<mlir::Value> expression;
+  // llvm::Optional<mlir::Value> expression;
+  llvm::Expected<mlir::Value> expression;
 
   mlir::Value visitAndGetExpressionValue(QASM::ASTExpressionNode const *node);
   template <class NodeType>
@@ -110,7 +112,7 @@ public:
   mlir::LogicalResult walkAST();
 
 protected:
-  using ExpressionValueType = mlir::Value;
+  using ExpressionValueType = llvm::Expected<mlir::Value>;
 
   void visit(const QASM::ASTForStatementNode *) override;
 

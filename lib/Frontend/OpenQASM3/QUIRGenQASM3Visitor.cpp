@@ -62,6 +62,7 @@
 #include <llvm/ADT/Twine.h>
 #include <llvm/Support/Debug.h>
 #include <llvm/Support/ErrorHandling.h>
+#include <llvm/Support/Error.h>
 
 #include <cstdint>
 #include <string>
@@ -77,7 +78,7 @@ using namespace QASM;
 
 namespace qssc::frontend::openqasm3 {
 
-using ExpressionValueType = mlir::Value;
+using ExpressionValueType = llvm::Expected<mlir::Value>;
 
 // temporary feature flags to be used during development of parameters support
 static llvm::cl::opt<bool>
@@ -627,11 +628,12 @@ static const std::string &resolveQCParam(const ASTGateNode *gateNode,
   auto *qId = qcParam->GetIdentifier();
 
   // same issue here. Not able to run reportError here
-  // assert(qId && "qcParam symbolTableEntry is invalid");
-  if (!qId) {
-    reportError(gateNode, mlir::DiagnosticSeverity::Error)
-          << "qcParam symbolTableEntry is invalid";
-  }
+  // error: use of undeclared identifier 'reportError'
+  assert(qId && "qcParam symbolTableEntry is invalid");
+  // if (!qId) {
+  //   reportError(gateNode, mlir::DiagnosticSeverity::Error)
+  //         << "qcParam symbolTableEntry is invalid";
+  // }
   return qId->GetName();
 }
 
@@ -666,6 +668,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
           reportError(node, mlir::DiagnosticSeverity::Error)
               << "Unnamed expressions not supported by QUIRGen yet, assign to "
                  "an identifier";
+          return createVoidValue(node);
       }
     } else {
       args.push_back(visitAndGetExpressionValue(param));
@@ -701,12 +704,14 @@ void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
   if (gateNode->GetNumQubits() != 0) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "assume Qubits to be passed in quantum circuit parameters.";
+    return;
   }
 
   if (gateNode->GetNumQCParams() != 1) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "U gate is a single-qubit gate, expect to have one qubit parameter"
         << "only.";
+    return;
   }
 
   Value qubitRef = getCurrentValue(resolveQCParam(gateNode, 0));
@@ -724,8 +729,8 @@ void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
         else
           reportError(node, mlir::DiagnosticSeverity::Error)
               << "Unnamed expressions not supported by QUIRGen yet, assign to "
-                 "an "
-                 "identifier";
+                 "an identifier";
+          return;
       }
     } else {
       angles[i] = visitAndGetExpressionValue(param);
@@ -744,6 +749,7 @@ void QUIRGenQASM3Visitor::visit(const ASTCXGateOpNode *node) {
   if (gateNode->GetNumQCParams() != 2) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "is expecting 2 qubit parameters.";
+    return;
   }
 
   Value controlQubit = getCurrentValue(resolveQCParam(gateNode, 0));
@@ -806,6 +812,7 @@ mlir::Value QUIRGenQASM3Visitor::createMeasurement(const ASTMeasureNode *node,
         reportError(node, mlir::DiagnosticSeverity::Error)
             << "ASTIdentifierNode of ASTTYpe ASTTypeIdentifierRef "
             << "should also be an ASTIdentifierRefNode";
+        return createVoidValue(node);
       }
       identifier = refnode->GetIdentifier();
     }
@@ -962,6 +969,7 @@ void QUIRGenQASM3Visitor::visit(const ASTKernelNode *node) {
   if (!node->HasResult()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Every kernel node must have a return node";
+    return;
   }
   llvm::SmallVector<Type> outputs;
   if (!node->GetResult()->IsVoid())
@@ -1032,6 +1040,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
   if (!node->GetIdentifier()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Node identifier not found";
+    return createVoidValue(node);
   }
   // The name "bitset" indicates that this node represents an unnamed value.
   // Otherwise, this node represents the use of a variable.
@@ -1087,6 +1096,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTDurationNode *node) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "ASTDurationNode referring to a previously declared duration is not "
         << "supported yet.";
+    return createVoidValue(node);
   }
   const auto durationRef = createDurationRef(
       getLocation(node), node->GetDuration(), node->GetLengthUnit());
@@ -1232,13 +1242,14 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
   if (!identifier->HasSymbolTableEntry()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "failed walking to the right identifier, or the identifier is "
-           "missing "
-        << "its reference to the symbol table";
+        << "missing its reference to the symbol table";
+    return createVoidValue(node);
   }
   auto const *symTableEntry = identifier->GetSymbolTableEntry();
   if (!symTableEntry) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Identifier not in the symbol table";
+    return createVoidValue(node);
   }
 
   mlir::Type variableType = varHandler.resolveQUIRVariableType(symTableEntry);
@@ -1371,10 +1382,12 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
     if (leftType != boolType) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Left-hand side of the expression is not Bool";
+      return createVoidValue(node);
     }
     if (rightType != boolType) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Right-hand side of the expression is not Bool";
+      return createVoidValue(node);
     }
     break;
 
@@ -1451,15 +1464,18 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
     if (node->GetExpression()->GetASTType() != QASM::ASTTypeOpTy) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Operation type invalid";
+      return createVoidValue(node);
     }
     operatorNode = dynamic_cast<const ASTOperatorNode *>(node->GetExpression());
     if (!operatorNode) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "mismatch of ASTType and class";
+      return createVoidValue(node);
     }
     if (operatorNode->GetOpType() != ASTOpTypeLogicalNot) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Operation type is not of type logical not";
+      return createVoidValue(node);
     }
     break;
 
@@ -1473,6 +1489,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   if (!operatorNode) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "mismatch of ASTType and class";
+    return createVoidValue(node);
   }
 
   const Location loc = getLocation(node);
@@ -1487,6 +1504,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "ASTOperatorNode's target must be either expression or "
              "identifier.";
+      return createVoidValue(node);
     }
 
     if (id->IsReference()) {
@@ -1532,6 +1550,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTIntNode *node) {
   if (!node->GetIdentifier()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Identifier not found.";
+    return createVoidValue(node);
   }
 
   if (node->GetIdentifier()->HasSymbolTableEntry() &&
@@ -1541,6 +1560,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTIntNode *node) {
     if (!node->GetIdentifier()->GetSymbolTableEntry()) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Identifier not found in symbol table.";
+      return createVoidValue(node);
     }
     return varHandler.generateVariableUse(getLocation(node),
                                           node->GetIdentifier());
@@ -1560,6 +1580,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPIntegerNode *node) {
   if (!node->GetIdentifier()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Identifier not found.";
+    return createVoidValue(node);
   }
 
   if (node->GetIdentifier()->HasSymbolTableEntry() &&
@@ -1570,6 +1591,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPIntegerNode *node) {
     if (!node->GetIdentifier()->GetSymbolTableEntry()) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Identifier not found in symbol table.";
+      return createVoidValue(node);
     }
     return varHandler.generateVariableUse(getLocation(node),
                                           node->GetIdentifier());
@@ -1593,6 +1615,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTFloatNode *node) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "ASTDurationNode referring to a previously declared duration is not "
         << "supported yet.";
+    return createVoidValue(node);
   }
 
   const unsigned bits = node->GetBits();
@@ -1666,8 +1689,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPDecimalNode *node) {
   if (ssaValues.find(node->GetName()) != ssaValues.end()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "ASTMPDecimalNode referring to a previously declared duration is "
-           "not "
-        << "supported yet.";
+        << "not supported yet.";
+    return createVoidValue(node);
   }
 
   return getValueFromLiteral(node);
@@ -1682,8 +1705,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
   if (ssaValues.find(name) != ssaValues.end()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "ASTMPComplexNode referring to a previously declared duration is "
-           "not "
-        << "supported yet.";
+        << "not supported yet.";
+    return createVoidValue(node);
   }
 
   Value real = getValueFromLiteral(node->GetRealAsMPDecimal());
@@ -1698,6 +1721,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTAngleNode *node) {
   if (!node->GetIdentifier()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Identifier not found.";
+    return createVoidValue(node);
   }
 
   if (node->GetIdentifier()->HasSymbolTableEntry() &&
@@ -1708,6 +1732,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTAngleNode *node) {
     if (!node->GetIdentifier()->GetSymbolTableEntry()) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Identifier not found in symbol table.";
+      return createVoidValue(node);
     }
     return varHandler.generateVariableUse(getLocation(node),
                                           node->GetIdentifier());
@@ -1729,6 +1754,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBoolNode *node) {
   if (!node->GetIdentifier()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Identifier not found.";
+    return createVoidValue(node);
   }
 
   if (node->GetIdentifier()->HasSymbolTableEntry() &&
@@ -1738,6 +1764,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBoolNode *node) {
     if (!node->GetIdentifier()->GetSymbolTableEntry()) {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Identifier not found in symbol table.";
+      return createVoidValue(node);
     }
     return varHandler.generateVariableUse(
         getLocation(node), node->GetName(),
@@ -1774,6 +1801,7 @@ QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
   if (!expression.hasValue()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "failed to get expression value from child";
+    return createVoidValue(node);
   }
   mlir::Value operandRef = expression.getValue();
 
