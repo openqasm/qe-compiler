@@ -22,6 +22,7 @@
 #include "BreakReset.h"
 #include "FunctionArgumentSpecialization.h"
 #include "LoadElimination.h"
+#include "MergeCircuits.h"
 #include "MergeMeasures.h"
 #include "MergeParallelResets.h"
 #include "QuantumDecoration.h"

@@ -61,6 +61,8 @@ void QuantumDecorationPass::processOp(Operation *op,
     processOp(castOp, retSet);
   else if (auto castOp = dyn_cast<ResetQubitOp>(op))
     processOp(castOp, retSet);
+  else if (auto castOp = dyn_cast<CallCircuitOp>(op))
+    processOp(castOp, retSet);
 } // processOp Operation *
 
 void QuantumDecorationPass::processOp(Builtin_UOp builtinUOp,
@@ -127,6 +129,15 @@ void QuantumDecorationPass::processOp(BarrierOp barrierOp,
   for (Value &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp BarrierOp
+
+void QuantumDecorationPass::processOp(CallCircuitOp callOp,
+                                      std::unordered_set<int> &retSet) {
+  std::vector<Value> qubitOperands;
+  qubitCallOperands(callOp, qubitOperands);
+
+  for (Value &val : qubitOperands)
+    retSet.emplace(lookupOrMinus1(val));
+} // processOp CallGateOp
 
 void QuantumDecorationPass::runOnOperation() {
   ModuleOp moduleOp = getOperation();

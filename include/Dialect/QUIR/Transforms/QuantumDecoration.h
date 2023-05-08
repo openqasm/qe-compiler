@@ -46,6 +46,7 @@ struct QuantumDecorationPass
   void processOp(BarrierOp op, std::unordered_set<int> &retSet);
   void processOp(MeasureOp op, std::unordered_set<int> &retSet);
   void processOp(ResetQubitOp op, std::unordered_set<int> &retSet);
+  void processOp(CallCircuitOp op, std::unordered_set<int> &retSet);
   void runOnOperation() override;
 
   llvm::StringRef getArgument() const override;
