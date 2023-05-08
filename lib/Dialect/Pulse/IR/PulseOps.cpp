@@ -356,7 +356,8 @@ PlayOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
     llvm::Expected<uint64_t> durOrError =
         wfrOp.getDuration(nullptr /*callSequenceOp*/);
     if (auto err = durOrError.takeError())
-      return err;
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     toString(std::move(err)));
     return durOrError.get();
   }
   return llvm::createStringError(llvm::inconvertibleErrorCode(),
