@@ -33,8 +33,7 @@ include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 
-def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed,
-    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
+def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed]> {
     let summary = "Create a Gaussian waveform.";
     let description = [{
         The `pulse.gaussian` operation creates a Gaussian waveform.
@@ -53,16 +52,15 @@ def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed,
     }];
 
     let verifier = [{
-        auto durOrError = (*this).getPulseOpDuration();
-        if (auto err = durOrError.takeError())
-          return emitOpError(toString(std::move(err)));
+        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+        if (durDeclOp && durDeclOp.value() < 0)
+           return emitOpError("duration must be >= 0.");
         return success();
     }];
 }
 
 
-def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, SequenceAllowed,
-    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
+def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, SequenceAllowed]> {
     let summary = "Create a Gaussian Square waveform.";
     let description = [{
         The `pulse.gaussian_square` operation creates a Gaussian Square waveform. It is a Gaussian
@@ -84,15 +82,14 @@ def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, Sequence
     }];
 
     let verifier = [{
-        auto durOrError = (*this).getPulseOpDuration();
-        if (auto err = durOrError.takeError())
-          return emitOpError(toString(std::move(err)));
+        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+        if (durDeclOp && durDeclOp.value() < 0)
+           return emitOpError("duration must be >= 0.");
         return success();
     }];
 }
 
-def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed,
-    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
+def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed]> {
     let summary = "Create a Drag waveform.";
     let description = [{
         The `pulse.drag` operation creates a DRAG waveform. The DRAG waveform is composed of a
@@ -115,15 +112,14 @@ def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed,
     }];
 
     let verifier = [{
-        auto durOrError = (*this).getPulseOpDuration();
-        if (auto err = durOrError.takeError())
-          return emitOpError(toString(std::move(err)));
+        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+        if (durDeclOp && durDeclOp.value() < 0)
+           return emitOpError("duration must be >= 0.");
         return success();
     }];
 }
 
-def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed,
-    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
+def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed]> {
     let summary = "Create a Constant waveform.";
     let description = [{
         The `pulse.const_waveform` operation creates a constant waveform. This is a flat top waveform
@@ -144,15 +140,15 @@ def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed,
     }];
 
     let verifier = [{
-        auto durOrError = (*this).getPulseOpDuration();
-        if (auto err = durOrError.takeError())
-          return emitOpError(toString(std::move(err)));
+        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+        if (durDeclOp && durDeclOp.value() < 0)
+           return emitOpError("duration must be >= 0.");
         return success();
     }];
 }
 
 def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, SequenceAllowed,
-    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getDuration"]>]> {
     let summary = "Creates a pulse waveform from a list of complex numbers.";
     let description = [{
         The `pulse.waveform` operation creates a waveform from a list of complex numbers. The complex
@@ -287,8 +283,7 @@ def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAll
 }
 
 def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame,
-    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getTimepoint", "setTimepoint",
-     "getSetupLatency", "setSetupLatency", "getPulseOpDuration"]>]> {
+    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getDuration"]>]> {
     let summary = "Play a waveform on a given frame.";
     let description = [{
         The `pulse.play` operation plays a waveform on a frame,
@@ -520,9 +515,7 @@ let summary = "Set a scaling factor for pulses of a frame.";
     }];
 }
 
-def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame,
-    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getTimepoint", "setTimepoint",
-     "getSetupLatency", "setSetupLatency"]>]> {
+def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
     let summary = "Capture the incoming port and use a kernel for integration.";
     let description = [{
         The `pulse.capture` operation captures the incoming data on a frame using a kernel.
@@ -553,8 +546,7 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame,
     }];
 }
 
-def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame,
-    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getPulseOpDuration"]>]> {
+def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
     let summary = "Delay by an integer duration of samples on a set of pulse frames.";
     let description = [{
         The `pulse.delay` operation represents a delay operation of integer length on a set of pulse
@@ -857,8 +849,7 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
   let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
-def Pulse_ReturnOp : Pulse_Op<"return", [NoSideEffect, Terminator, ReturnLike, SequenceRequired,
-    DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getTimepoint", "setTimepoint"]>]>,
+def Pulse_ReturnOp : Pulse_Op<"return", [NoSideEffect, Terminator, ReturnLike, SequenceRequired]>,
     Arguments<(ins Variadic<AnyClassical>:$operands)>, Results<(outs)> {
         let summary = "Terminator for pulse.sequence.";
         let description = [{

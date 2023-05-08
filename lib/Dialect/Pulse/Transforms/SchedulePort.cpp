@@ -85,7 +85,9 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
 
   // assign timepoint to return
   // TODO: check for a better way to do this with getTerminator or back()
-  sequenceOp->walk([&](ReturnOp op) { op.setTimepoint(maxTime); });
+  sequenceOp->walk([&](ReturnOp op) {
+    PulseOpSchedulingInterface::setTimepoint(op, maxTime);
+  });
   return maxTime;
 }
 
@@ -165,7 +167,7 @@ void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
       // update currentTimepoint if DelayOp or playOp
       if (auto delayOp = dyn_cast<DelayOp>(op)) {
         llvm::Expected<uint64_t> durOrError =
-            delayOp.getPulseOpDuration(nullptr /*callSequenceOp*/);
+            PulseOpSchedulingInterface::getDuration<DelayOp>(delayOp);
         if (auto err = durOrError.takeError()) {
           delayOp.emitError() << toString(std::move(err));
           signalPassFailure();
@@ -173,7 +175,7 @@ void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
         currentTimepoint += durOrError.get();
       } else if (auto playOp = dyn_cast<PlayOp>(op)) {
         llvm::Expected<uint64_t> durOrError =
-            playOp.getPulseOpDuration(nullptr /*callSequenceOp*/);
+            playOp.getDuration(nullptr /*callSequenceOp*/);
         if (auto err = durOrError.takeError()) {
           playOp.emitError() << toString(std::move(err));
           signalPassFailure();

@@ -81,23 +81,23 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
         InterfaceMethod<
         /*desc=*/"Get the total duration of a pulse operation",
         /*retTy=*/"::llvm::Expected<uint64_t>",
-        /*methodName=*/"getPulseOpDuration",
+        /*methodName=*/"getDuration",
         /*args=*/(ins "Operation *":$other),
         /*methodBody=*/[{}],
         /*defaultImplementation=*/[{
             // By default, return the pulse.duration attribute
-            return PulseOpSchedulingInterface::getPulseOpDuration($_op, other);
+            return PulseOpSchedulingInterface::getDuration($_op, other);
         }]
         >,
         InterfaceMethod<
         /*desc=*/"Set the total duration of a pulse operation",
         /*retTy=*/"void",
-        /*methodName=*/"setPulseOpDuration",
+        /*methodName=*/"setDuration",
         /*args=*/(ins "uint64_t":$other),
         /*methodBody=*/[{}],
         /*defaultImplementation=*/[{
             // By default, set the pulse.duration attribute given an input arg
-            return PulseOpSchedulingInterface::setPulseOpDuration($_op, other);
+            return PulseOpSchedulingInterface::setDuration($_op, other);
         }]
         >,
     ];
@@ -119,12 +119,29 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
             return interfaces_impl::setSetupLatency(op, setupLatency);
         }
 
-        static llvm::Expected<uint64_t> getPulseOpDuration(mlir::Operation *op, mlir::Operation *callSequenceOp) {
-            return interfaces_impl::getPulseOpDuration(op, callSequenceOp);
+        static llvm::Expected<uint64_t> getDuration(mlir::Operation *op, mlir::Operation *callSequenceOp) {
+            return interfaces_impl::getDuration(op, callSequenceOp);
         }
 
-        static void setPulseOpDuration(mlir::Operation *op, uint64_t duration) {
-            return interfaces_impl::setPulseOpDuration(op, duration);
+        static void setDuration(mlir::Operation *op, uint64_t duration) {
+            return interfaces_impl::setDuration(op, duration);
+        }
+
+        // getDuration implementation for pulse operations with duration arg
+        template <typename OpClass>
+        static llvm::Expected<uint64_t> getDuration(Operation *op) {
+            auto castOp = dyn_cast<OpClass>(op);
+            auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+                castOp.dur().getDefiningOp());
+            if (durDeclOp) {
+                if (durDeclOp.value() < 0)
+                return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                                "duration must be >= 0.");
+                return durDeclOp.value();
+            }
+            return llvm::createStringError(
+                llvm::inconvertibleErrorCode(),
+                "Could not get the value of the op that defines duration!");
         }
     }];
 }

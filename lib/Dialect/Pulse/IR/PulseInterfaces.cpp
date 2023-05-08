@@ -60,7 +60,7 @@ void interfaces_impl::setSetupLatency(Operation *op, uint64_t setupLatency) {
 }
 
 llvm::Expected<uint64_t>
-interfaces_impl::getPulseOpDuration(Operation *op, Operation *callSequenceOp) {
+interfaces_impl::getDuration(Operation *op, Operation *callSequenceOp) {
   if (op->hasAttr("pulse.duration"))
     return static_cast<uint64_t>(
         op->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
@@ -69,7 +69,7 @@ interfaces_impl::getPulseOpDuration(Operation *op, Operation *callSequenceOp) {
       "Operation does not have a pulse.duration attribute.");
 }
 
-void interfaces_impl::setPulseOpDuration(Operation *op, uint64_t duration) {
+void interfaces_impl::setDuration(Operation *op, uint64_t duration) {
   mlir::OpBuilder builder(op);
   op->setAttr("pulse.duration", builder.getI64IntegerAttr(duration));
 }
