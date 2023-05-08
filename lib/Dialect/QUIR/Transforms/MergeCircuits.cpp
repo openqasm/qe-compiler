@@ -62,7 +62,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
     if (!nextCallCircuitOp)
       return failure();
 
-    auto moduleOp = callCircuitOp->getParentOfType<ModuleOp>();
+    // auto moduleOp = callCircuitOp->getParentOfType<ModuleOp>();
 
     // moduleOp.dump();
 
