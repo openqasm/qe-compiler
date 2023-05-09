@@ -11,4 +11,3 @@
 # that they have been altered from the originals.
 
 add_subdirectory(IR)
-add_subdirectory(Transforms)
