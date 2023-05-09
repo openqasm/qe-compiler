@@ -1772,7 +1772,8 @@ void QUIRGenQASM3Visitor::finishCircuit() {
 
   auto insertArgumentsAndReplaceUse = [&](Value value) {
     // if value is located in current circuit - do nothing and return
-    if (value.getDefiningOp()->getParentOp() == currentCircuitOp) 
+    if (value.getDefiningOp() &&
+        value.getDefiningOp()->getParentOp() == currentCircuitOp)
       return;
     for (auto *user : value.getUsers()) {
       if (currentCircuitOp->isAncestor(user)) {
