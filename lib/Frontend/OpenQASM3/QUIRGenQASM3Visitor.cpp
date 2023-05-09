@@ -899,7 +899,8 @@ void QUIRGenQASM3Visitor::visit(const ASTBarrierNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
-  switchCircuit(false, getLocation(node));
+  // defer switching circuit until type is known due to
+  // the "Old Path" at the end of this method
   const ASTIdentifierNode *idNode = node->GetIdentifier();
   const mlir::Location loc = getLocation(node);
 
@@ -912,6 +913,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
   case ASTTypeFloat:
   case ASTTypeMPDecimal:
   case ASTTypeMPComplex: {
+    switchCircuit(false, getLocation(node));
     auto variableType = varHandler.resolveQUIRVariableType(node);
     auto val = visitAndGetExpressionValue(node->GetExpression());
 
@@ -1733,15 +1735,15 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
   if (!enableCircuits)
     return;
 
-  if (debugCircuits)
-    llvm::outs() << "Start Circuit\n";
-
   currentCircuitOp = topLevelBuilder.create<CircuitOp>(
       location, "circuit_" + std::to_string(circuitCount++),
       topLevelBuilder.getFunctionType(
           /*inputs=*/ArrayRef<Type>(),
           /*results=*/ArrayRef<Type>()));
   auto *block = currentCircuitOp.addEntryBlock();
+
+  if (debugCircuits)
+    llvm::errs() << "Start Circuit " << currentCircuitOp.sym_name() << "\n";
 
   OpBuilder circuitBuilder(currentCircuitOp.getBody());
   circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
@@ -1766,7 +1768,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
     return;
 
   if (debugCircuits)
-    llvm::outs() << "Finish Circuit\n";
+    llvm::errs() << "Finish Circuit " << currentCircuitOp.sym_name() << "\n";
 
   // rewrite the circuit and add a call circuit ops to fix region and usage
   //

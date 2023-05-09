@@ -1,10 +1,10 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast %s | FileCheck %s --check-prefix AST
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR
-// RUN: qss-compiler -X=qasm --emit=mlir %s  --enable-circuits=false | grep -v OK | qss-compiler -X=mlir --enable-circuits=false - | FileCheck %s --match-full-lines --check-prefixes MLIR
-// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits| FileCheck %s --match-full-lines --check-prefixes MLIR
-// RUN: qss-compiler -X=qasm --emit=mlir %s  --enable-circuits | grep -v OK | qss-compiler -X=mlir --enable-circuits - | FileCheck %s --match-full-lines --check-prefixes MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false | grep -v OK | qss-compiler -X=mlir --enable-circuits=false - | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s  --enable-circuits | grep -v OK | qss-compiler -X=mlir --enable-circuits - | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -61,6 +61,15 @@ gate x q {
 
 gate cx control, target { }
 
+// MLIR-CIRCUITS: quir.circuit @circuit_3([[QUBIT2:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT0:%.*]]: !quir.qubit<1>) -> (i1, i1) {
+// MLIR-CIRCUITS: [[DURATION0:%.*]] = quir.constant #quir.duration<"30ns" : !quir.duration>
+// MLIR-CIRCUITS: [[DURATION1:%.*]] = quir.constant #quir.duration<"40ns" : !quir.duration>
+// MLIR-CIRCUITS: [[DURATION2:%.*]] = quir.constant #quir.duration<"50ns" : !quir.duration>
+// MLIR-CIRCUITS: quir.delay [[DURATION0]], ([[QUBIT0]]) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.delay [[DURATION1]], ([[QUBIT1]]) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.delay [[DURATION2]], ([[QUBIT2]]) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // MLIR: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
 // MLIR: [[QUBIT2:%.*]] = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
@@ -87,9 +96,9 @@ cx $1, $2;
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=30, unit=Nanoseconds, name=for_0))
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=40, unit=Nanoseconds, name=for_1))
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=50, unit=Nanoseconds, name=for_2))
-// MLIR: [[DURATION0:%.*]] = quir.constant #quir.duration<"30ns" : !quir.duration>
-// MLIR: [[DURATION1:%.*]] = quir.constant #quir.duration<"40ns" : !quir.duration>
-// MLIR: [[DURATION2:%.*]] = quir.constant #quir.duration<"50ns" : !quir.duration>
+// MLIR-NO-CIRCUITS: [[DURATION0:%.*]] = quir.constant #quir.duration<"30ns" : !quir.duration>
+// MLIR-NO-CIRCUITS: [[DURATION1:%.*]] = quir.constant #quir.duration<"40ns" : !quir.duration>
+// MLIR-NO-CIRCUITS: [[DURATION2:%.*]] = quir.constant #quir.duration<"50ns" : !quir.duration>
 duration for_0 = 30ns;
 duration for_1 = 40ns;
 duration for_2 = 50ns;
@@ -109,9 +118,9 @@ duration for_2 = 50ns;
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=for_0, qubit=IdentifierNode(name=$0, bits=1)))
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=for_1, qubit=IdentifierNode(name=$1, bits=1)))
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=for_2, qubit=IdentifierNode(name=$2, bits=1)))
-// MLIR: quir.delay [[DURATION0]], ([[QUBIT0]]) : !quir.duration, (!quir.qubit<1>) -> ()
-// MLIR: quir.delay [[DURATION1]], ([[QUBIT1]]) : !quir.duration, (!quir.qubit<1>) -> ()
-// MLIR: quir.delay [[DURATION2]], ([[QUBIT2]]) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.delay [[DURATION0]], ([[QUBIT0]]) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.delay [[DURATION1]], ([[QUBIT1]]) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.delay [[DURATION2]], ([[QUBIT2]]) : !quir.duration, (!quir.qubit<1>) -> ()
 delay [for_0] $0;
 delay [for_1] $1;
 delay [for_2] $2;
@@ -129,18 +138,23 @@ delay [for_2] $2;
 // AST-PRETTY: IdentifierNode(name=$1, bits=1),
 // AST-PRETTY: IdentifierNode(name=$2, bits=1),
 // AST-PRETTY: ])
-// MLIR: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
 barrier $0, $1, $2;
 
 cx $0, $1;
 h $0;
 c0 = measure $0;
-// MLIR: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]
+// MLIR-NO-CIRCUITS: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]
+
 c1 = measure $1;
-// MLIR: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]
+// MLIR-NO-CIRCUITS: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]
+// MLIR-CIRCUITS: %[[MVAL:.*]]:2 = quir.call_circuit @circuit_3(%2, %1, %0) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
+// MLIR-CIRCUITS: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]#1
+// MLIR-CIRCUITS: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]#0
+
 
 // AST: <GenericGateOpNode>
 // AST: <GateOpNode>
@@ -161,7 +175,8 @@ if (c0==1) {
 
 // MLIR: scf.if %{{.*}} {
 if (c1==1) {
-    // MLIR: quir.call_gate @x({{.*}}) : (!quir.qubit<1>) -> ()
+    // MLIR-NO-CIRCUITS: quir.call_gate @x({{.*}}) : (!quir.qubit<1>) -> ()
+    // MLIR-CIRCUITS: quir.call_circuit @circuit_5(%2) : (!quir.qubit<1>) -> ()
     x $2;
 }
 
