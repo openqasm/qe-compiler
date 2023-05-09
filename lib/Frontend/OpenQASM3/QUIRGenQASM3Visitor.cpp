@@ -315,6 +315,10 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
   const ASTStatementList &loopNode = loop->GetStatementList();
   BaseQASM3Visitor::visit(&loopNode);
 
+  // make sure to switch out of any circuit inside for loop
+  if (buildingInCircuit)
+    finishCircuit();
+
   // Set the builder to add the next operations after the for loop.
   builder.setInsertionPointAfter(forOp);
   std::swap(ssaValues, forSsaValues);
@@ -469,6 +473,10 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   OpBuilder defaultRegionBuilder(defaultRegion);
   builder = defaultRegionBuilder;
   BaseQASM3Visitor::visit(node->GetDefaultStatement()->GetStatementList());
+
+  if (buildingInCircuit)
+    finishCircuit();
+
   // add YieldOp to terminate default regions
   builder.create<quir::YieldOp>(loc);
 
@@ -482,6 +490,10 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
     i++;
     builder = caseRegionBuilder;
     BaseQASM3Visitor::visit(caseValue->GetStatementList());
+
+    if (buildingInCircuit)
+      finishCircuit();
+
     // add YieldOp to terminate all case regions
     builder.create<quir::YieldOp>(loc);
   }
@@ -507,6 +519,9 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
 
   const ASTStatementList &statementList = loop->GetStatementList();
   BaseQASM3Visitor::visit(&statementList);
+
+  if (buildingInCircuit)
+    finishCircuit();
 
   builder.create<scf::YieldOp>(loc);
   builder.setInsertionPointAfter(whileOp);
