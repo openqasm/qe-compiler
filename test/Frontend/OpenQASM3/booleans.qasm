@@ -1,6 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -17,10 +18,15 @@ OPENQASM 3.0;
 
 qubit $0;
 
-// MLIR-DAG: %true = arith.constant true
-// MLIR-DAG: %false = arith.constant false
 // MLIR-DAG: oq3.declare_variable @condition_true : i1
 // MLIR-DAG: oq3.declare_variable @condition_false : i1
+
+// MLIR-CIRCUITS: quir.circuit @circuit_0(%[[ARG0:.*]]: !quir.qubit<1>) {
+// MLIR-CIRCUITS: quir.builtin_U %[[ARG0]], %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// MLIR-CIRCUITS: quir.return
+
+// MLIR-DAG: %true = arith.constant true
+// MLIR-DAG: %false = arith.constant false
 // MLIR-DAG: oq3.variable_assign @condition_true : i1 = %true
 // MLIR-DAG: oq3.variable_assign @condition_false : i1 = %false
 // AST-PRETTY: DeclarationNode(type=ASTTypeBool, BoolNode(name=condition_true, true))
@@ -33,7 +39,8 @@ bool my_bool;
 
 // MLIR: [[CONDITION_TRUE:%.*]] = oq3.variable_load @condition_true : i1
 // MLIR: scf.if [[CONDITION_TRUE]] {
-// MLIR: quir.builtin_U %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<{{.*}}>, !quir.angle<{{.*}}>, !quir.angle<{{.*}}>
+// MLIR-NO-CIRCUITS: quir.builtin_U %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<{{.*}}>, !quir.angle<{{.*}}>, !quir.angle<{{.*}}>
+// MLIR-CIRCUITS: quir.call_circuit @circuit_0(%{{.*}}) : (!quir.qubit<1>) -> ()
 // AST-PRETTY: condition=IdentifierNode(name=condition_true, bits=8),
 if (condition_true) {
   U(1.57079632679, 0.0, 3.14159265359) $0;

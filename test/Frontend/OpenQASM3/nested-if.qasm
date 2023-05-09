@@ -1,5 +1,6 @@
 OPENQASM 3.0;
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -34,7 +35,8 @@ gate x q {
 x $2;
 x $3;
 
-// MLIR: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: [[MEASURE2:%.*]] = quir.call_circuit @circuit_0([[QUBIT3]], [[QUBIT2]]) : (!quir.qubit<1>, !quir.qubit<1>) -> i1
 // MLIR: oq3.cbit_assign_bit @is_excited<1> [0] : i1 = [[MEASURE2]]
 is_excited = measure $2;
 
@@ -46,7 +48,8 @@ is_excited = measure $2;
 // MLIR: [[COND0:%.*]] = arith.cmpi eq, [[EXCITEDCAST]], [[CONST]] : i32
 // MLIR: scf.if [[COND0]] {
 if (is_excited == 1) {
-// MLIR: [[MEASURE3:%.*]] = quir.measure([[QUBIT3]]) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: [[MEASURE3:%.*]] = quir.measure([[QUBIT3]]) : (!quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: [[MEASURE3:%.*]] = quir.call_circuit @circuit_1([[QUBIT3]]) : (!quir.qubit<1>) -> i1
 // MLIR: oq3.cbit_assign_bit @other<1> [0] : i1 = [[MEASURE3]]
   other = measure $3;
 // MLIR: [[OTHER:%.*]] = oq3.variable_load @other : !quir.cbit<1>
@@ -55,10 +58,12 @@ if (is_excited == 1) {
 // MLIR: [[COND1:%.*]] = arith.cmpi eq, [[OTHERCAST]], [[CONST]] : i32
 // MLIR: scf.if [[COND1]] {
   if (other == 1){
-// MLIR: quir.call_gate @x([[QUBIT2]]) : (!quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.call_gate @x([[QUBIT2]]) : (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.call_circuit @circuit_2([[QUBIT2]]) : (!quir.qubit<1>) -> ()
      x $2;
   }
 }
-// MLIR: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: [[MEASURE2:%.*]] = quir.measure([[QUBIT2]]) : (!quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: [[MEASURE2:%.*]] = quir.call_circuit @circuit_3([[QUBIT2]]) : (!quir.qubit<1>) -> i1
 // MLIR: oq3.cbit_assign_bit @result<1> [0] : i1 = [[MEASURE2]]
 result = measure $2;

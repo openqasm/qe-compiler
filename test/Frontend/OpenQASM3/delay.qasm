@@ -1,6 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -22,7 +23,7 @@ OPENQASM 3.0;
 qubit $0;
 qubit $1;
 
-
+// MLIR-CIRCUITS: quir.circuit @circuit_0(%arg0: !quir.qubit<1>, %arg1: !quir.qubit<1>) {
 // MLIR: {{.*}} = quir.constant #quir.duration<"5ns" : !quir.duration>
 // MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=5, unit=Nanoseconds, name=t))
@@ -51,8 +52,10 @@ delay[40dt] $1;
 // MLIR: quir.delay {{.*}}, ({{.*}}, {{.*}}) : !quir.duration, (!quir.qubit<1>, !quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=10Nanoseconds, qubit=IdentifierNode(name=$0, bits=1), IdentifierNode(name=$1, bits=1), ))
 delay [10ns] $0, $1;
+// MLIR-CIRCUITS: quir.return
 
-// MLIR: {{.*}} = oq3.declare_stretch : !quir.stretch
+// MLIR-CIRCUITS: quir.circuit @circuit_1(%arg0: !quir.stretch, %arg1: !quir.qubit<1>, %arg2: !quir.qubit<1>) {
+// MLIR-NO-CIRCUITS: {{.*}} = oq3.declare_stretch : !quir.stretch
 // MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.stretch, (!quir.qubit<1>) -> ()
 // AST-PRETTY: StretchStatementNode(StretchNode(name=a))
 // AST-PRETTY: DelayStatementNode(DelayNode(stretch=StretchNode(name=a), qubit=IdentifierNode(name=$0, bits=1), ))
@@ -62,3 +65,12 @@ delay[a] $0;
 // MLIR: quir.delay {{.*}}, ({{.*}}, {{.*}}) : !quir.stretch, (!quir.qubit<1>, !quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(stretch=StretchNode(name=a), qubit=IdentifierNode(name=$0, bits=1), IdentifierNode(name=$1, bits=1), ))
 delay[a] $0, $1;
+
+//MLIR-CIRCUITS: quir.return
+//MLIR-CIRCUITS: func @main() -> i32 {
+//MLIR-CIRCUITS: quir.call_circuit @circuit_0(%1, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+// TODO: Two oq3.declare_stretch statements are generated independent of --enable-circuits
+//       This does no harm but might potentially be fixed at some point
+//MLIR-CIRCUITS: %3 = oq3.declare_stretch : !quir.stretch
+//MLIR-CIRCUITS: quir.call_circuit @circuit_1(%3, %1, %0) : (!quir.stretch, !quir.qubit<1>, !quir.qubit<1>) -> ()
+

@@ -1,5 +1,6 @@
 OPENQASM 3.0;
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -14,15 +15,17 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// MLIR: func @g(%arg0: !quir.qubit<1>, %arg1: !quir.qubit<1>) {
+// MLIR: func @g([[QUBIT0:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>) {
+// MLIR-CIRCUITS: quir.circuit @circuit_0([[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT0:%.*]]: !quir.qubit<1>) {
 gate g qa, qb {
-    // MLIR: quir.builtin_U %arg0{{.*}}
-    // MLIR: quir.builtin_U %arg1{{.*}}
+    // MLIR: quir.builtin_U [[QUBIT0]]{{.*}}
+    // MLIR: quir.builtin_U [[QUBIT1]]{{.*}}
     U(1.57079632679, 0.0, 3.14159265359) qa;
     U(1.57079632679, 0.0, 3.14159265359) qb;
 }
 
 // MLIR: func @g4(%arg0: !quir.qubit<1>, %arg1: !quir.qubit<1>, %arg2: !quir.qubit<1>) {
+// MLIR-CIRCUITS: quir.circuit @circuit_1([[QUBIT0:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT2:%.*]]: !quir.qubit<1>) {
 gate g4 qa, qb, qc {
     U(1.57079632679, 0.0, 3.14159265359) qa;
     U(0.0, 0.0, 3.14159265359) qb;
@@ -33,7 +36,8 @@ qubit $2;
 qubit $3;
 qubit $4;
 
-// MLIR: quir.call_gate @g(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> ()
-// MLIR: quir.call_gate @g4(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.call_gate @g(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.call_gate @g4(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.call_circuit @circuit_2(%2, %1, %0) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 g $2, $3;
 g4 $2, $3, $4;

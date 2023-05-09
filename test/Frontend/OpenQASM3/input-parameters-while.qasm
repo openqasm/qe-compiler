@@ -28,21 +28,32 @@ int n = 1;
 
 bit is_excited;
 
-// verify gate function has not changed
 // CHECK: func @h(%arg0: !quir.qubit<1>) {
-// CHECK: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// CHECK: quir.call_circuit @circuit_0(%arg0) : (!quir.qubit<1>) -> ()
 // CHECK-NEXT: return 
 // CHECK-NEXT: }
 
-// CHECK: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) -> i1 {
-// CHECK-NEXT:  quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
-// CHECK: %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
-// CHECK-NEXT: quir.return %0 : i1
+// CHECK: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) {
+// CHECK-NEXT: %angle = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
+// CHECK-NEXT: %angle_0 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
+// CHECK-NEXT: %angle_1 = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+// CHECK-NEXT: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// CHECK-NEXT: quir.return
 // CHECK-NEXT: }
 
-// CHECK: quir.circuit @circuit_1(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
+// CHECK: func @rz(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
+// CHECK-NEXT: return 
+// CHECK-NEXT: }
+
+// CHECK: quir.circuit @circuit_1(%arg0: !quir.qubit<1>) -> i1 {
 // CHECK-NEXT: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
-// CHECK: quir.call_gate @rz(%arg0, %arg1) : (!quir.qubit<1>, !quir.angle<64>) -> ()
+// CHECK %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
+// CHECK: quir.return %0 : i1
+// CHECK-NEXT: }
+
+// CHECK: quir.circuit @circuit_2(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
+// CHECK-NEXT: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
+// CHECK quir.call_gate @rz(%arg0, %arg1) : (!quir.qubit<1>) -> ()
 // CHECK: quir.return 
 // CHECK-NEXT: }
 
@@ -58,7 +69,7 @@ bit is_excited;
 while (n != 0) {
     h $0;
     is_excited = measure $0;
-    // CHECK: [[MEASURE:%.*]] = quir.call_circuit @circuit_0([[QUBIT]]) : (!quir.qubit<1>) -> i1
+    // CHECK: [[MEASURE:%.*]] = quir.call_circuit @circuit_1([[QUBIT]]) : (!quir.qubit<1>) -> i1
     // CHECK: oq3.cbit_assign_bit @is_excited<1> [0] : i1 = [[MEASURE]]
     // CHECK: [[EXCITED:%.*]] = oq3.variable_load @is_excited : !quir.cbit<1>
     // CHECK: [[COND2:%.*]] = "oq3.cast"([[EXCITED]]) : (!quir.cbit<1>) -> i1
@@ -66,7 +77,7 @@ while (n != 0) {
     // CHECK: scf.if [[COND2]] {
     if (is_excited) {
         // CHECK:  [[THETA:%.*]] = oq3.variable_load @theta : !quir.angle<64>
-        // CHECK:  quir.call_circuit @circuit_1([[QUBIT]], [[THETA]]) : (!quir.qubit<1>, !quir.angle<64>) -> ()
+        // CHECK:  quir.call_circuit @circuit_2([[QUBIT]], [[THETA]]) : (!quir.qubit<1>, !quir.angle<64>) -> ()
         // CHECK: }
         h $0;
         rz(theta) $0;

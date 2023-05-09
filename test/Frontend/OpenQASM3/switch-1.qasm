@@ -1,6 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -18,10 +19,11 @@ OPENQASM 3.0;
 int i = 15;
 qubit $0;
 // MLIR: quir.switch %{{.*}}{
-// MLIR:     %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR:     %angle_0 = quir.constant #quir.angle<1.000000e-01 : !quir.angle<64>>
-// MLIR:     %angle_1 = quir.constant #quir.angle<2.000000e-01 : !quir.angle<64>>
-// MLIR:     quir.builtin_U %{{.*}}, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// MLIR-NO-CIRCUITS: %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS: %angle_0 = quir.constant #quir.angle<1.000000e-01 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS: %angle_1 = quir.constant #quir.angle<2.000000e-01 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS: quir.builtin_U %{{.*}}, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// MLIR-CIRCUITS:    quir.call_circuit @circuit_0(%0) : (!quir.qubit<1>) -> () 
 // MLIR: }[1 : {
 // MLIR: }2 : {
 // MLIR: }3 : {

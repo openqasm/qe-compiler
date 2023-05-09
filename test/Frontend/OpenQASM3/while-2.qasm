@@ -1,6 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -36,17 +37,19 @@ while (n != 0) {
     // MLIR: %3 = arith.cmpi eq, %2, %c2_i32_0 : i32
     // MLIR: scf.if %3 {
     if (n == 2) {
-        // MLIR: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-        // MLIR: %cst = constant unit
+        // MLIR-NO-CIRCUITS: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
+        // MLIR-NO-CIRCUITS: %cst = constant unit
+        // MLIR-CIRCUITS: quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> () 
         // MLIR: %c1_i32 = arith.constant 1 : i32
         // MLIR: oq3.variable_assign @n : i32 = %c1_i32
         h $0;
         n = 1;
     // MLIR: } else {
     } else {
-        // MLIR: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-        // MLIR: %cst = constant unit
-        // MLIR: %4 = quir.measure(%0) : (!quir.qubit<1>) -> i1
+        // MLIR-NO-CIRCUITS: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
+        // MLIR-NO-CIRCUITS: %cst = constant unit
+        // MLIR-NO-CIRCUITS: %4 = quir.measure(%0) : (!quir.qubit<1>) -> i1
+        // MLIR-CIRCUITS: %4 = quir.call_circuit @circuit_2(%0) : (!quir.qubit<1>) -> i1
         // MLIR: oq3.cbit_assign_bit @is_excited<1> [0] : i1 = %4
         // MLIR: %c0_i32_1 = arith.constant 0 : i32
         // MLIR: oq3.variable_assign @n : i32 = %c0_i32_1

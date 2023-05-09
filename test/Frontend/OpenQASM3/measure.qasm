@@ -1,6 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s  --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -21,7 +22,8 @@ qubit $0;
 bit a;
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=a, bits=1))
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0
-// MLIR: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
+// MLIR-NO-CIRCUITS: [[MEASURE0:%.*]] = quir.measure([[QUBIT0]])
+// MLIR-CIRCUITS: [[MEASURE0:%.*]] = quir.call_circuit @circuit_0([[QUBIT0]])
 // MLIR: oq3.cbit_assign_bit @a<1> [0] : i1 = [[MEASURE0]]
 a = measure $0;
 
