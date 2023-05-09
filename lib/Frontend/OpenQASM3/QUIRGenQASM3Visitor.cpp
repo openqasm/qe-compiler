@@ -1743,6 +1743,10 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
 void QUIRGenQASM3Visitor::finishCircuit() {
 
+  // TODO: some input files (see Frontend/OpenQASM3/conditionals.qasm)
+  // may result in an empty circuit containing just a quir.return
+  // consider deleting empty circuit - currently does no harm
+
   if (!enableCircuits || !buildingInCircuit)
     return;
 
