@@ -49,6 +49,7 @@
 #include <Frontend/OpenQASM3/QUIRVariableBuilder.h>
 
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/raw_ostream.h>
 #include <qasm/AST/ASTDelay.h>
 #include <qasm/AST/ASTTypeEnums.h>
 
@@ -87,6 +88,10 @@ static llvm::cl::opt<bool>
 
 static llvm::cl::opt<bool>
     enableCircuits("enable-circuits", llvm::cl::desc("enable quir circuits"),
+                   llvm::cl::init(true));
+
+static llvm::cl::opt<bool>
+    debugCircuits("debug-circuits", llvm::cl::desc("debug quir circuits"),
                    llvm::cl::init(false));
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
@@ -681,7 +686,7 @@ void QUIRGenQASM3Visitor::visit(const ASTHGateOpNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
-  switchCircuit(false, getLocation(node));
+  switchCircuit(true, getLocation(node));
 
   const ASTGateNode *gateNode = node->GetGateNode();
   const size_t numParams = gateNode->ParamsSize();
@@ -816,7 +821,6 @@ void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
     Value duration = getCurrentValue(delayNode->GetDurationNode()->GetName());
     Value qubitRef =
         getCurrentValue(delayNode->GetDelayQubitIdentifier()->GetName());
-
     builder.create<DelayOp>(getLocation(delayNode), duration, qubitRef);
     break;
   }
@@ -1061,7 +1065,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTDurationNode *node) {
-  switchCircuit(false, getLocation(node));
+  switchCircuit(true, getLocation(node));
   // TODO this node may refer to an identifier, not just the encoded value. Fix
   // when replacing the use of ssaValues.
   assert((ssaValues.find(node->GetName()) == ssaValues.end()) &&
@@ -1711,8 +1715,11 @@ mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
 
 void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
-  if (!enableParameters)
+  if (!enableCircuits)
     return;
+
+  if (debugCircuits)
+    llvm::outs() << "Start Circuit\n";
 
   currentCircuitOp = topLevelBuilder.create<CircuitOp>(
       location, "circuit_" + std::to_string(circuitCount++),
@@ -1736,8 +1743,11 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
 void QUIRGenQASM3Visitor::finishCircuit() {
 
-  if (!enableParameters || !buildingInCircuit)
+  if (!enableCircuits || !buildingInCircuit)
     return;
+
+  if (debugCircuits)
+    llvm::outs() << "Finish Circuit\n";
 
   // rewrite the circuit and add a call circuit ops to fix region and usage
   //
@@ -1761,6 +1771,9 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   // in the quir.circuit
 
   auto insertArgumentsAndReplaceUse = [&](Value value) {
+    // if value is located in current circuit - do nothing and return
+    if (value.getDefiningOp()->getParentOp() == currentCircuitOp) 
+      return;
     for (auto *user : value.getUsers()) {
       if (currentCircuitOp->isAncestor(user)) {
         auto arg = currentCircuitOp.body().front().addArgument(value.getType(),
@@ -1856,6 +1869,9 @@ void QUIRGenQASM3Visitor::switchCircuit(bool buildInCircuit,
   // for the current AST Node should be placed in a circuit. Do nothing with
   // regard to the circuit building (this will group operations inside the
   // quir.circuit).
+
+  if (debugCircuits)
+    llvm::outs() << "switchCircuit\n";
 
   if (!enableCircuits)
     return;
