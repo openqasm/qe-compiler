@@ -83,7 +83,7 @@ using ExpressionValueType = mlir::Value;
 static llvm::cl::opt<bool>
     enableParameters("enable-parameters",
                      llvm::cl::desc("enable qasm3 input parameters"),
-                     llvm::cl::init(false));
+                     llvm::cl::init(true));
 
 static llvm::cl::opt<bool>
     enableCircuits("enable-circuits", llvm::cl::desc("enable quir circuits"),
@@ -904,8 +904,10 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
     // generate variable assignment so that they are reinitialized on every
     // shot.
 
+    // parameter support currently limited to quir::AngleType
     if (enableParameters &&
-        node->GetModifierType() == QASM::ASTTypeInputModifier) {
+        node->GetModifierType() == QASM::ASTTypeInputModifier &&
+        variableType.isa<mlir::quir::AngleType>()) {
       varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
                                               variableType, val);
       auto load =
