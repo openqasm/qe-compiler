@@ -1853,11 +1853,22 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   }
 
   // move uses of the results after the call_circuit
-  for (auto const &output : newCallOp.getResults())
-    for (auto *user : output.getUsers())
-      user->moveAfter(newCallOp);
+  // move use of uses as well
+  llvm::SmallVector<Operation *> workList;
+  Operation * op = newCallOp;
+  do {
+    if (!workList.empty()) {
+      op = workList.back();
+      workList.pop_back();
+    }
+    for (auto const &output : op->getResults())
+      for (auto *user : output.getUsers()) {
+        user->moveAfter(op);
+        workList.push_back(user);
+      }
+  } while (!workList.empty());
 
-  // restore varHandler builder and vistor builder to
+  // restore varHandler builder and visitor builder to
   // use shot loop
   varHandler.disableClassicalBuilder();
   builder = circuitParentBuilder;

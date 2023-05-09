@@ -32,7 +32,8 @@ qubit $1;
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=b, bits=1, value=1, MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$1:0, bits=1))], result=CBitNode(name=ast-measure-result-{{.*}}, bits=1))
 // AST-PRETTY: ))
 // MLIR: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1
-// MLIR: [[MEASURE1:%.*]] = quir.measure([[QUBIT1]])
+// MLIR-NO-CIRCUITS: [[MEASURE1:%.*]] = quir.measure([[QUBIT1]])
+// MLIR-CIRCUITS: [[MEASURE1:%.*]] = quir.call_circuit @circuit_1([[QUBIT1]]) : (!quir.qubit<1>) -> i1
 // MLIR: [[MEASURE1_CAST:%.*]] = "oq3.cast"([[MEASURE1]]) : (i1) -> !quir.cbit<1>
 // MLIR: oq3.variable_assign @b : !quir.cbit<1> = [[MEASURE1_CAST]]
 bit b = measure $1;
