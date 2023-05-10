@@ -760,7 +760,8 @@ void QUIRGenQASM3Visitor::visit(const ASTCXGateOpNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTResetNode *node) {
-  switchCircuit(true, getLocation(node));
+  // do not insert reset into circuit due to BreakResetPass
+  switchCircuit(false, getLocation(node));
   Value qubitRef = getCurrentValue(node->GetTarget()->GetName());
   builder.create<ResetQubitOp>(getLocation(node), qubitRef);
 }

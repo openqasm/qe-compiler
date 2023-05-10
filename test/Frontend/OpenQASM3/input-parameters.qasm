@@ -1,5 +1,5 @@
 OPENQASM 3;
-// RUN: qss-compiler -X=qasm --emit=mlir --enable-parameters --enable-circuits %s | FileCheck %s
+// RUN: qss-compiler -X=qasm --emit=mlir --enable-parameters --enable-circuits %s | FileCheck %s --check-prefixes=CHECK,CHECK-XX
 
 //
 // This code is part of Qiskit.
@@ -16,6 +16,10 @@ OPENQASM 3;
 
 // This test case validates that input and output modifiers for variables are
 // parsed correctly and are reflected in generated QUIR.
+
+// TODO: putting resets in circuits has been disabled. The XX-tests 
+// are the correct tests if it is re-enabled. The CHECK-XX should be removed
+// in that case
 
 qubit $0;
 qubit $2;
@@ -37,7 +41,7 @@ bit b;
 b = measure $0;
 
 // CHECK: quir.circuit @circuit_0(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
-// CHECK-NEXT: quir.reset %arg0 : !quir.qubit<1>
+// XX-CHECK-NEXT: quir.reset %arg0 : !quir.qubit<1>
 // CHECK-NEXT: quir.call_gate @sx(%arg0) : (!quir.qubit<1>) -> ()
 // CHECK: quir.return 
 // CHECK-NEXT: } 
@@ -54,6 +58,7 @@ b = measure $0;
 
 // CHECK: %2 = qcs.parameter_load @_QX64_5thetaEE_ : !quir.angle<64>
 // CHECK: oq3.variable_assign @theta : !quir.angle<64> = %2
+// CHECK-XX: quir.reset %0 : !quir.qubit<1>
 // CHECK-NOT: oq3.variable_assign @theta : !quir.angle<64> = %angle
 
 // CHECK: quir.call_circuit @circuit_0(%0, %3) : (!quir.qubit<1>, !quir.angle<64>) -> ()
