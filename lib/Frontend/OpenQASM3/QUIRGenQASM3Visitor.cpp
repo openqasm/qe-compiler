@@ -1760,15 +1760,21 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
 void QUIRGenQASM3Visitor::finishCircuit() {
 
-  // TODO: some input files (see Frontend/OpenQASM3/conditionals.qasm)
-  // may result in an empty circuit containing just a quir.return
-  // consider deleting empty circuit - currently does no harm
-
   if (!enableCircuits || !buildingInCircuit)
     return;
 
   if (debugCircuits)
     llvm::errs() << "Finish Circuit " << currentCircuitOp.sym_name() << "\n";
+
+  // check if the first Op in the circuit is a ReturnOp
+  // if so - no ops were added - erase circuit and return
+  if (isa<quir::ReturnOp>(currentCircuitOp.front().begin())) {
+    currentCircuitOp->erase();
+    varHandler.disableClassicalBuilder();
+    builder = circuitParentBuilder;
+    buildingInCircuit = false;
+    return;
+  }
 
   // rewrite the circuit and add a call circuit ops to fix region and usage
   //
