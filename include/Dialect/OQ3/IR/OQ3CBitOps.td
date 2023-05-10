@@ -204,6 +204,9 @@ def OQ3_CBitExtractBitOp : OQ3_Op<"cbit_extractbit", [NoSideEffect]> {
     }];
 
     let hasFolder = 1;
+
+    // TODO in LLVM 15 + this can become just let hasVerifier = 1;
+    let verifier = [{ return ::verify(*this);}];
 }
 
 // -----

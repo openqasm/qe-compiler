@@ -27,6 +27,8 @@
 
 #include "Dialect/QCS/IR/QCSTypes.h"
 
+#include "mlir/IR/SymbolTable.h"
+
 #define GET_OP_CLASSES
 #include "Dialect/QCS/IR/QCSOps.h.inc"
 

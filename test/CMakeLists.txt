@@ -22,7 +22,7 @@ add_custom_target(check-qss-compiler COMMENT "Running LIT suites")
 add_custom_target(check-tests DEPENDS run-qss-compiler-unittests check-qss-compiler COMMENT "Running all tests")
 
 # Add QSS core LIT suite.
-qssc_add_lit_test_suite(check-qss-core "QSS Compiler Core" "${CMAKE_CURRENT_SOURCE_DIR}" "")
+qssc_add_lit_test_suite(check-qss-core "QSS Compiler Core" "${CMAKE_CURRENT_SOURCE_DIR}" "${LIT_TEST_EXTRA_ARGS}")
 
 # Add target LIT suites.
 foreach(lit_dir ${QSSC_TARGET_TEST_DIRS})

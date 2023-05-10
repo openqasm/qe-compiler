@@ -35,11 +35,16 @@ private:
   // References to MLIR single static assignment Values
   // (TODO needs to be refactored)
   std::unordered_map<std::string, mlir::Value> ssaValues;
+  std::vector<mlir::Value> ssaOtherValues;
   mlir::OpBuilder builder;
   mlir::OpBuilder topLevelBuilder;
+  mlir::OpBuilder circuitParentBuilder;
   mlir::ModuleOp &newModule;
+  mlir::quir::CircuitOp currentCircuitOp;
   std::string filename;
-  bool hasFailed = false;
+  bool hasFailed{false};
+  bool buildingInCircuit{false};
+  uint circuitCount{0};
 
   mlir::Location getLocation(const QASM::ASTBase *);
   bool assign(mlir::Value &, const std::string &);
@@ -85,14 +90,20 @@ public:
   QUIRGenQASM3Visitor(QASM::ASTStatementList *sList, mlir::OpBuilder b,
                       mlir::ModuleOp &newModule, std::string f)
       : BaseQASM3Visitor(sList), builder(b), topLevelBuilder(b),
-        newModule(newModule), filename(std::move(f)), varHandler(builder) {}
+        circuitParentBuilder(b), newModule(newModule), filename(std::move(f)),
+        varHandler(builder) {}
 
   QUIRGenQASM3Visitor(mlir::OpBuilder b, mlir::ModuleOp &newModule,
                       std::string filename)
-      : builder(b), topLevelBuilder(b), newModule(newModule),
-        filename(std::move(filename)), varHandler(builder) {}
+      : builder(b), topLevelBuilder(b), circuitParentBuilder(b),
+        newModule(newModule), filename(std::move(filename)),
+        varHandler(builder) {}
 
   void initialize(uint numShots, const std::string &shotDelay);
+
+  void startCircuit(mlir::Location location);
+  void finishCircuit();
+  void switchCircuit(bool buildInCircuit, mlir::Location location);
 
   void setInputFile(std::string);
 

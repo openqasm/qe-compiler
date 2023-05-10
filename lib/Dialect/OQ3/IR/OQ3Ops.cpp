@@ -68,6 +68,10 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
 static llvm::Optional<mlir::Value>
 findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
 
+  // for single-bit registers, CBitExtractBitOp is the identity.
+  if (val.getType().isInteger(1))
+    return val;
+
   mlir::Operation *op = val.getDefiningOp();
 
   // follow chains of CBit_InsertBit operations and try to find one matching the
@@ -79,12 +83,9 @@ findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
     op = insertBitOp.operand().getDefiningOp();
   }
 
-  // is the value defined by an i1 constant? then that would be the bit
-  if (auto constantOp =
-          mlir::dyn_cast_or_null<mlir::arith::ConstantIntOp>(op)) {
-    if (constantOp.getType().isInteger(1))
-      return constantOp.getResult();
-  }
+  // did we identify an op that provides the single bit?
+  if (op && op->getResult(0).getType().isInteger(1))
+    return op->getResult(0);
 
   return llvm::None;
 }
@@ -97,6 +98,20 @@ CBitExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
   if (foundDefiningBitOrNone)
     return foundDefiningBitOrNone.getValue();
   return nullptr;
+}
+
+static LogicalResult verify(CBitExtractBitOp op) {
+
+  auto t = op.getOperand().getType();
+
+  if (auto cbitType = t.dyn_cast<mlir::quir::CBitType>();
+      cbitType && op.index().ult(cbitType.getWidth()))
+    return success();
+
+  if (t.isIntOrIndex() && op.index().ult(t.getIntOrFloatBitWidth()))
+    return success();
+
+  return op.emitOpError("index must be less than the width of the operand.");
 }
 
 LogicalResult

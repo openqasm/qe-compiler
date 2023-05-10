@@ -58,3 +58,17 @@ set_property(GLOBAL PROPERTY QSSC_API_LIBS ${qssc_api_libs})
 # not materialize as an artifact by itself
 add_library(QSSCLib INTERFACE)
 target_link_libraries(QSSCLib INTERFACE ${qssc_api_libs})
+
+# Expose (i.e., write to disk) static library with same contents as `QSSCLib`,
+# including interface to `compile()` in `api.h`.
+qssc_add_library(QSSC "API/api.cpp" ADDITIONAL_HEADER_DIRS ${QSSC_INCLUDE_DIR}/API)
+set_target_properties(QSSC PROPERTIES PUBLIC_HEADER ${QSSC_INCLUDE_DIR}/API/api.h)
+target_link_libraries(QSSC ${qssc_api_libs})
+install(
+        TARGETS
+        QSSC
+        PUBLIC_HEADER DESTINATION
+        "${CMAKE_INSTALL_INCLUDEDIR}/API"
+        LIBRARY DESTINATION
+        "${CMAKE_INSTALL_LIBDIR}"
+)
