@@ -37,6 +37,7 @@
 #include <mlir/IR/Operation.h>
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/IR/Region.h>
+#include <mlir/Support/LogicalResult.h>
 #include <unordered_set>
 #include <vector>
 
@@ -67,12 +68,9 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
     // moduleOp.dump();
 
     // good to merge
-    MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
+    return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
                                          nextCallCircuitOp);
 
-    // moduleOp.dump();
-
-    return success();
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
 } // end anonymous namespace
@@ -94,11 +92,15 @@ CircuitOp MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp) {
   return circuitOp;
 }
 
-void MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
+LogicalResult MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
                                           CallCircuitOp callCircuitOp,
                                           CallCircuitOp nextCallCircuitOp) {
   auto circuitOp = getCircuitOp(callCircuitOp);
   auto nextCircuitOp = getCircuitOp(nextCallCircuitOp);
+
+  // can not handle merging circuits which both have results
+  if (callCircuitOp->getNumResults() > 0 && nextCallCircuitOp->getNumResults() > 0)
+    return failure();
 
   OpBuilder builder(circuitOp);
   builder.setInsertionPointAfter(nextCircuitOp);
@@ -198,11 +200,19 @@ void MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   //     callCircuitOp->getLoc(), newName.str(),
   //     TypeRange(outputTypes), ValueRange(callInputValues));
 
-  rewriter.replaceOpWithNewOp<CallCircuitOp>(nextCallCircuitOp, newName.str(),
+  if (nextCallCircuitOp->getNumResults() == outputTypes.size()) {
+    rewriter.replaceOpWithNewOp<CallCircuitOp>(nextCallCircuitOp, newName.str(),
                                              TypeRange(outputTypes),
                                              ValueRange(callInputValues));
-  rewriter.eraseOp(callCircuitOp);
+    rewriter.eraseOp(callCircuitOp);
+  } else {
+    rewriter.replaceOpWithNewOp<CallCircuitOp>(callCircuitOp, newName.str(),
+                                             TypeRange(outputTypes),
+                                             ValueRange(callInputValues));
+    rewriter.eraseOp(nextCallCircuitOp);
+  }
   // nextCallCircuitOp->erase();
+  return success();
 }
 
 void MergeCircuitsPass::runOnOperation() {

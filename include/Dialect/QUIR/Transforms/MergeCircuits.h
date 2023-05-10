@@ -36,7 +36,7 @@ struct MergeCircuitsPass
   void runOnOperation() override;
 
   static CircuitOp getCircuitOp(CallCircuitOp callCircuitOp);
-  static void mergeCallCircuits(PatternRewriter &rewriter,
+  static LogicalResult mergeCallCircuits(PatternRewriter &rewriter,
                                 CallCircuitOp callCircuitOp,
                                 CallCircuitOp nextCallCircuitOp);
 
