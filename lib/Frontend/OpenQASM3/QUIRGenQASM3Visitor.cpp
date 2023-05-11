@@ -167,11 +167,13 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
   std::string durationString = std::to_string(durationValue);
   llvm::SmallString<32> buf;
 
-  return builder.create<quir::ConstantOp>(
+  auto ssa =  circuitParentBuilder.create<quir::ConstantOp>(
       location,
       DurationAttr::get(builder.getContext(), builder.getType<DurationType>(),
                         durationString +
                             getDurationUnitShortName(durationUnit).str()));
+  ssaOtherValues.push_back(ssa);
+  return ssa;
 }
 
 void QUIRGenQASM3Visitor::initialize(uint numShots,

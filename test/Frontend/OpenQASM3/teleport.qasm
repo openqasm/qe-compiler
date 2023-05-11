@@ -61,10 +61,7 @@ gate x q {
 
 gate cx control, target { }
 
-// MLIR-CIRCUITS: quir.circuit @circuit_3([[QUBIT2:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT0:%.*]]: !quir.qubit<1>) -> (i1, i1) {
-// MLIR-CIRCUITS: [[DURATION0:%.*]] = quir.constant #quir.duration<"30ns" : !quir.duration>
-// MLIR-CIRCUITS: [[DURATION1:%.*]] = quir.constant #quir.duration<"40ns" : !quir.duration>
-// MLIR-CIRCUITS: [[DURATION2:%.*]] = quir.constant #quir.duration<"50ns" : !quir.duration>
+// MLIR-CIRCUITS: quir.circuit @circuit_3([[DURATION2:%.*]]: !quir.duration, [[DURATION1:%.*]]: !quir.duration, [[QUBIT2:%.*]]: !quir.qubit<1>, [[DURATION0:%.*]]: !quir.duration, [[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT0:%.*]]: !quir.qubit<1>) -> (i1, i1) {
 // MLIR-CIRCUITS: quir.delay [[DURATION0]], ([[QUBIT0]]) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS: quir.delay [[DURATION1]], ([[QUBIT1]]) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS: quir.delay [[DURATION2]], ([[QUBIT2]]) : !quir.duration, (!quir.qubit<1>) -> ()
@@ -96,9 +93,9 @@ cx $1, $2;
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=30, unit=Nanoseconds, name=for_0))
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=40, unit=Nanoseconds, name=for_1))
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=50, unit=Nanoseconds, name=for_2))
-// MLIR-NO-CIRCUITS: [[DURATION0:%.*]] = quir.constant #quir.duration<"30ns" : !quir.duration>
-// MLIR-NO-CIRCUITS: [[DURATION1:%.*]] = quir.constant #quir.duration<"40ns" : !quir.duration>
-// MLIR-NO-CIRCUITS: [[DURATION2:%.*]] = quir.constant #quir.duration<"50ns" : !quir.duration>
+// MLIR: [[DURATION0:%.*]] = quir.constant #quir.duration<"30ns" : !quir.duration>
+// MLIR: [[DURATION1:%.*]] = quir.constant #quir.duration<"40ns" : !quir.duration>
+// MLIR: [[DURATION2:%.*]] = quir.constant #quir.duration<"50ns" : !quir.duration>
 duration for_0 = 30ns;
 duration for_1 = 40ns;
 duration for_2 = 50ns;
@@ -151,7 +148,7 @@ c0 = measure $0;
 c1 = measure $1;
 // MLIR-NO-CIRCUITS: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
 // MLIR-NO-CIRCUITS: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]
-// MLIR-CIRCUITS: %[[MVAL:.*]]:2 = quir.call_circuit @circuit_3(%2, %1, %0) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
+// MLIR-CIRCUITS: %[[MVAL:.*]]:2 = quir.call_circuit @circuit_3(%dur_4, %dur_3, %2, %dur_2, %1, %0) : (!quir.duration, !quir.duration, !quir.qubit<1>, !quir.duration, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
 // MLIR-CIRCUITS: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]#1
 // MLIR-CIRCUITS: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]#0
 
