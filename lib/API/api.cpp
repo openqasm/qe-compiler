@@ -665,10 +665,10 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
   return 0;
 }
 
-llvm::Error qssc::bindParameters(
-    std::string_view target, std::string_view moduleInputPath,
-    std::string_view payloadOutputPath,
-    std::unordered_map<std::string, double> const &parameters) {
+llvm::Error
+_bindParameters(std::string_view target, std::string_view moduleInputPath,
+                std::string_view payloadOutputPath,
+                std::unordered_map<std::string, double> const &parameters) {
 
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload
@@ -683,4 +683,24 @@ llvm::Error qssc::bindParameters(
   // TODO actually update parameters, tbd in later commits.
 
   return llvm::Error::success();
+}
+
+int qssc::bindParameters(
+    std::string_view target, std::string_view moduleInputPath,
+    std::string_view payloadOutputPath,
+    std::unordered_map<std::string, double> const &parameters,
+    std::string *errorMessage) {
+
+  auto successOrErr =
+      _bindParameters(target, moduleInputPath, payloadOutputPath, parameters);
+
+  if (successOrErr) {
+    if (errorMessage) {
+      llvm::raw_string_ostream errorMsgStream(*errorMessage);
+      llvm::logAllUnhandledErrors(std::move(successOrErr), errorMsgStream,
+                                  "Error: ");
+    }
+    return 1;
+  }
+  return 0;
 }
