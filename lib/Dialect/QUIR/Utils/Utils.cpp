@@ -319,6 +319,25 @@ bool isQuantumOp(Operation *op) {
 }
 
 llvm::Expected<Duration>
+Duration::parseDuration(mlir::quir::DelayOp &delayOp) {
+  std::string durationStr;
+  auto durationDeclare = delayOp.time().getDefiningOp<quir::ConstantOp>();
+  if (durationDeclare) {
+    auto durAttr = durationDeclare.value().dyn_cast<quir::DurationAttr>();
+    durationStr = durAttr.getValue().str();
+  } else {
+    auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
+    auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
+        delayOp.time().getParentBlock()->getParentOp());
+    assert(circuitOp && "can only handler circuit arguments");
+    auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::DurationAttr>(
+        argNum, mlir::quir::getDurationAttrName());
+    durationStr = argAttr.getValue().str();
+  }
+  return Duration::parseDuration(durationStr);
+}
+
+llvm::Expected<Duration>
 Duration::parseDuration(mlir::quir::ConstantOp &duration) {
   auto durAttr = duration.value().dyn_cast<DurationAttr>();
   if (!durAttr)
