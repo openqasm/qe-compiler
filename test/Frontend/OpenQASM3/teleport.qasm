@@ -61,11 +61,10 @@ gate x q {
 
 gate cx control, target { }
 
-// MLIR-CIRCUITS: quir.circuit @circuit_3([[DURATION2:%.*]]: !quir.duration, [[DURATION1:%.*]]: !quir.duration, [[QUBIT2:%.*]]: !quir.qubit<1>, [[DURATION0:%.*]]: !quir.duration, [[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT0:%.*]]: !quir.qubit<1>) -> (i1, i1) {
+// MLIR-CIRCUITS: quir.circuit @circuit_3([[DURATION2:%.*]]: !quir.duration, [[DURATION1:%.*]]: !quir.duration, [[QUBIT2:%.*]]: !quir.qubit<1>, [[DURATION0:%.*]]: !quir.duration, [[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT0:%.*]]: !quir.qubit<1>) {
 // MLIR-CIRCUITS: quir.delay [[DURATION0]], ([[QUBIT0]]) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS: quir.delay [[DURATION1]], ([[QUBIT1]]) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS: quir.delay [[DURATION2]], ([[QUBIT2]]) : !quir.duration, (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // MLIR: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
@@ -135,7 +134,7 @@ delay [for_2] $2;
 // AST-PRETTY: IdentifierNode(name=$1, bits=1),
 // AST-PRETTY: IdentifierNode(name=$2, bits=1),
 // AST-PRETTY: ])
-// MLIR-NO-CIRCUITS: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
 barrier $0, $1, $2;
 
@@ -148,7 +147,7 @@ c0 = measure $0;
 c1 = measure $1;
 // MLIR-NO-CIRCUITS: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
 // MLIR-NO-CIRCUITS: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]
-// MLIR-CIRCUITS: %[[MVAL:.*]]:2 = quir.call_circuit @circuit_3(%dur_4, %dur_3, %2, %dur_2, %1, %0) : (!quir.duration, !quir.duration, !quir.qubit<1>, !quir.duration, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
+// MLIR-CIRCUITS: %[[MVAL:.*]]:2 = quir.call_circuit @circuit_4(%1, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
 // MLIR-CIRCUITS: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]#1
 // MLIR-CIRCUITS: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]#0
 
