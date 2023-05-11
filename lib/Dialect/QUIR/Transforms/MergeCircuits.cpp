@@ -30,6 +30,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
 #include <mlir/IR/BlockAndValueMapping.h>
@@ -97,10 +98,6 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
                                           CallCircuitOp nextCallCircuitOp) {
   auto circuitOp = getCircuitOp(callCircuitOp);
   auto nextCircuitOp = getCircuitOp(nextCallCircuitOp);
-
-  // can not handle merging circuits which both have results
-  if (callCircuitOp->getNumResults() > 0 && nextCallCircuitOp->getNumResults() > 0)
-    return failure();
 
   OpBuilder builder(circuitOp);
   builder.setInsertionPointAfter(nextCircuitOp);
@@ -196,22 +193,35 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   callInputValues.append(nextCallCircuitOp->getOperands().begin(),
                          nextCallCircuitOp.getOperands().end());
 
-  // auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
-  //     callCircuitOp->getLoc(), newName.str(),
-  //     TypeRange(outputTypes), ValueRange(callInputValues));
-
   if (nextCallCircuitOp->getNumResults() == outputTypes.size()) {
     rewriter.replaceOpWithNewOp<CallCircuitOp>(nextCallCircuitOp, newName.str(),
                                              TypeRange(outputTypes),
                                              ValueRange(callInputValues));
     rewriter.eraseOp(callCircuitOp);
-  } else {
+  } else if (callCircuitOp->getNumResults() == outputTypes.size()) {
     rewriter.replaceOpWithNewOp<CallCircuitOp>(callCircuitOp, newName.str(),
                                              TypeRange(outputTypes),
                                              ValueRange(callInputValues));
     rewriter.eraseOp(nextCallCircuitOp);
+  } else {
+    // can not directly replace a call circuit since the number of results does
+    // not match
+
+    auto numCallResults = callCircuitOp->getNumResults();
+
+    auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
+         callCircuitOp->getLoc(), newName.str(),
+         TypeRange(outputTypes), ValueRange(callInputValues));
+    for( const auto& res : llvm::enumerate(callCircuitOp->getResults())) {
+      res.value().replaceAllUsesWith(newCallOp.getResult(res.index()));
+    }
+    for( const auto& res : llvm::enumerate(nextCallCircuitOp->getResults())) {
+      res.value().replaceAllUsesWith(newCallOp.getResult(res.index()+numCallResults));
+    }
+    callCircuitOp->erase();
+    nextCallCircuitOp->erase();
   }
-  // nextCallCircuitOp->erase();
+
   return success();
 }
 
