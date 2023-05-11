@@ -19,11 +19,9 @@
 
 #include "API/error.h"
 
-#include "llvm/ADT/Optional.h"
-#include "llvm/ADT/StringRef.h"
-#include "llvm/Support/Error.h"
-
+#include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace qssc {
@@ -35,12 +33,19 @@ namespace qssc {
 /// @param diagnosticCb an optional callback that will receive emitted
 /// diagnostics
 int compile(int argc, char const **argv, std::string *outputString,
-            llvm::Optional<DiagnosticCallback> diagnosticCb);
+            std::optional<DiagnosticCallback> diagnosticCb);
 
-llvm::Error
-bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
-               llvm::StringRef payloadOutputPath,
-               std::unordered_map<std::string, double> const &parameters);
+/// @brief Call the parameter binder
+/// @param target name of the target to employ
+/// @param moduleInputPath path of the module to use as input
+/// @param payloadOutputPath path of the payload to generate as output
+/// @param parameters bindings for the parameters in the module to apply
+/// @param errorMessage optional output for any occurring error message
+/// @return 0 on success
+int bindParameters(std::string_view target, std::string_view moduleInputPath,
+                   std::string_view payloadOutputPath,
+                   std::unordered_map<std::string, double> const &parameters,
+                   std::string *errorMessage);
 
 } // namespace qssc
 #endif // QSS_COMPILER_LIB_H

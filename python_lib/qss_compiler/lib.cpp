@@ -114,17 +114,11 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
     std::cout << item.first << " = " << item.second << "\n";
 #endif
 
-  auto successOrErr =
-      qssc::bindParameters(target, inputPath, outputPath, parameters);
-
-  if (successOrErr) {
-    std::string errorMsg;
-    llvm::raw_string_ostream errorMsgStream(errorMsg);
-    llvm::logAllUnhandledErrors(std::move(successOrErr), errorMsgStream,
-                                "Error: ");
-
+  std::string errorMsg;
+  if (qssc::bindParameters(target, inputPath, outputPath, parameters, &errorMsg)) {
     return pybind11::make_tuple(false, errorMsg);
   }
+
   return pybind11::make_tuple(true, pybind11::none());
 }
 
