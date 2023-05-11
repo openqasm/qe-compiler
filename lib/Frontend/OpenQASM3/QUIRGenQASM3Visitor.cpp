@@ -888,7 +888,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTBarrierNode *node) {
-  switchCircuit(true, getLocation(node));
+  switchCircuit(false, getLocation(node));
   const ASTIdentifierList &idList = node->GetOperandList();
   const size_t numQubits = idList.Size();
   std::vector<Value> args(numQubits);
