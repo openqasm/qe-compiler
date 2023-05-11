@@ -19,11 +19,11 @@
 
 #include "API/error.h"
 
-#include "llvm/ADT/Optional.h"
-#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace qssc {
@@ -35,11 +35,11 @@ namespace qssc {
 /// @param diagnosticCb an optional callback that will receive emitted
 /// diagnostics
 int compile(int argc, char const **argv, std::string *outputString,
-            llvm::Optional<DiagnosticCallback> diagnosticCb);
+            std::optional<DiagnosticCallback> diagnosticCb);
 
 llvm::Error
-bindParameters(llvm::StringRef target, llvm::StringRef moduleInputPath,
-               llvm::StringRef payloadOutputPath,
+bindParameters(std::string_view target, std::string_view moduleInputPath,
+               std::string_view payloadOutputPath,
                std::unordered_map<std::string, double> const &parameters);
 
 } // namespace qssc

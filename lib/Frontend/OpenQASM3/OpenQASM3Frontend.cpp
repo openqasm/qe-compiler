@@ -34,13 +34,13 @@
 #include "mlir/Support/FileUtilities.h"
 
 #include "llvm/ADT/ArrayRef.h"
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
 
 #include <mutex>
+#include <optional>
 #include <sstream>
 
 static llvm::cl::OptionCategory openqasm3Cat(
@@ -70,7 +70,7 @@ static std::mutex qasmParserLock;
 llvm::Error qssc::frontend::openqasm3::parse(
     std::string const &source, bool sourceIsFilename, bool emitRawAST,
     bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp &newModule,
-    llvm::Optional<qssc::DiagnosticCallback> diagnosticCallback) {
+    std::optional<qssc::DiagnosticCallback> diagnosticCallback) {
 
   // The QASM parser can only be called from a single thread.
   std::lock_guard<std::mutex> qasmParserLockGuard(qasmParserLock);
@@ -86,7 +86,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
   // access to diagnosticCallback to forward diagnostics, make it available in a
   // global variable.
   diagnosticCallback_ =
-      diagnosticCallback.hasValue() ? diagnosticCallback.getPointer() : nullptr;
+      diagnosticCallback.has_value() ? &diagnosticCallback.value() : nullptr;
   sourceMgr_ = &sourceMgr;
 
   QASM::QasmDiagnosticEmitter::SetHandler(

@@ -51,6 +51,9 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <optional>
+#include <string>
+#include <string_view>
 #include <utility>
 
 using namespace mlir;
@@ -436,7 +439,7 @@ static void dumpMLIR_(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
 
 static llvm::Error
 compile_(int argc, char const **argv, std::string *outputString,
-         llvm::Optional<qssc::DiagnosticCallback> diagnosticCb) {
+         std::optional<qssc::DiagnosticCallback> diagnosticCb) {
   // Initialize LLVM to start.
   llvm::InitLLVM y(argc, argv);
 
@@ -653,7 +656,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 }
 
 int qssc::compile(int argc, char const **argv, std::string *outputString,
-                  llvm::Optional<DiagnosticCallback> diagnosticCb) {
+                  std::optional<DiagnosticCallback> diagnosticCb) {
   if (auto err = compile_(argc, argv, outputString, std::move(diagnosticCb))) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;
@@ -663,8 +666,8 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
 }
 
 llvm::Error qssc::bindParameters(
-    llvm::StringRef target, llvm::StringRef moduleInputPath,
-    llvm::StringRef payloadOutputPath,
+    std::string_view target, std::string_view moduleInputPath,
+    std::string_view payloadOutputPath,
     std::unordered_map<std::string, double> const &parameters) {
 
   // ZipPayloads are implemented with libzip, which only supports updating a zip
