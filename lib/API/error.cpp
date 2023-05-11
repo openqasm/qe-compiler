@@ -23,8 +23,6 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include <string>
-
 namespace qssc {
 static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   using namespace qssc;

@@ -40,7 +40,6 @@
 #include "llvm/Support/SourceMgr.h"
 
 #include <mutex>
-#include <optional>
 #include <sstream>
 
 static llvm::cl::OptionCategory openqasm3Cat(

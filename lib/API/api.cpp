@@ -51,9 +51,6 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
-#include <optional>
-#include <string>
-#include <string_view>
 #include <utility>
 
 using namespace mlir;
