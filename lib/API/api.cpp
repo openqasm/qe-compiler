@@ -53,6 +53,7 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <string_view>
 #include <utility>
 
 using namespace mlir;
@@ -438,7 +439,7 @@ static void dumpMLIR_(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
 
 static llvm::Error
 compile_(int argc, char const **argv, std::string *outputString,
-         llvm::Optional<qssc::DiagnosticCallback> diagnosticCb) {
+         std::optional<qssc::DiagnosticCallback> diagnosticCb) {
   // Initialize LLVM to start.
   llvm::InitLLVM y(argc, argv);
 
@@ -655,7 +656,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 }
 
 int qssc::compile(int argc, char const **argv, std::string *outputString,
-                  llvm::Optional<DiagnosticCallback> diagnosticCb) {
+                  std::optional<DiagnosticCallback> diagnosticCb) {
   if (auto err = compile_(argc, argv, outputString, std::move(diagnosticCb))) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;
@@ -665,10 +666,10 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
 }
 
 llvm::Error
-qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
-                     llvm::StringRef moduleInputPath,
-                     llvm::StringRef payloadOutputPath,
-                     qssc::parameters::ParameterSource &parameters) {
+_bindParameters(std::string_view target, std::string_view configPath,
+                std::string_view moduleInputPath,
+                std::string_view payloadOutputPath,
+                std::unordered_map<std::string, double> const &parameters) {
 
   MLIRContext context{};
 
@@ -708,4 +709,25 @@ qssc::bindParameters(llvm::StringRef target, llvm::StringRef configPath,
   auto *factory = targetInst.get()->getPatchableBinaryFactory();
   return qssc::parameters::bindParameters(moduleInputPath, payloadOutputPath,
                                           parameters, factory);
+}
+
+int qssc::bindParameters(
+    std::string_view target, std:string_view configPath,
+    std::string_view moduleInputPath,
+    std::string_view payloadOutputPath,
+    std::unordered_map<std::string, double> const &parameters,
+    std::string *errorMessage) {
+
+  auto successOrErr =
+      _bindParameters(target, configPath, moduleInputPath, payloadOutputPath, parameters);
+
+  if (successOrErr) {
+    if (errorMessage) {
+      llvm::raw_string_ostream errorMsgStream(*errorMessage);
+      llvm::logAllUnhandledErrors(std::move(successOrErr), errorMsgStream,
+                                  "Error: ");
+    }
+    return 1;
+  }
+  return 0;
 }

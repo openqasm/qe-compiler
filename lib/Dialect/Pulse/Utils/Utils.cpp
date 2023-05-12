@@ -31,8 +31,4 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
   return wfrOp;
 }
 
-int getTimepoint(Operation *op) {
-  return op->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
-}
-
 } // end namespace mlir::pulse

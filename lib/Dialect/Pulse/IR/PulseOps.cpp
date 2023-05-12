@@ -31,6 +31,19 @@
 
 namespace mlir::pulse {
 
+//===----------------------------------------------------------------------===//
+// Waveform_CreateOp
+//===----------------------------------------------------------------------===//
+
+llvm::Expected<uint64_t>
+Waveform_CreateOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
+  auto shape = (*this).samples().getType().getShape();
+  if (shape[0] < 0)
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "duration must be >= 0.");
+  return shape[0];
+}
+
 /// Verifier for pulse.waveform operation.
 static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
   // Check that samples is a tensor with two dimensions: outer is the number of
@@ -48,12 +61,18 @@ static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
   }
 
   // Check duration
-  auto dur = op.getDuration();
-  if (dur < 0)
-    return op.emitOpError("duration must be >= 0.");
+  auto durOrError = op.getDuration(nullptr /*callSequenceOp*/);
+  if (auto err = durOrError.takeError())
+    return op.emitOpError(toString(std::move(err)));
 
   return mlir::success();
 }
+
+//===----------------------------------------------------------------------===//
+//
+// end Waveform_CreateOp
+//
+//===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
 // CallSequenceOp
@@ -301,18 +320,46 @@ static LogicalResult verify(ReturnOp op) {
 // PlayOp
 //===----------------------------------------------------------------------===//
 
-llvm::Expected<int> PlayOp::getDuration(CallSequenceOp callOp) {
+llvm::Expected<uint64_t>
+PlayOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
+
+  // check if callSequenceOp arg is specified and if not, return the value of
+  // pulse.duration attribute
+  auto callOp = dyn_cast_or_null<CallSequenceOp>(callSequenceOp);
+  if (!callOp) {
+    if ((*this)->hasAttr("pulse.duration"))
+      return static_cast<uint64_t>(
+          (*this)->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "Operation does not have a pulse.duration attribute, and no "
+        "callSequenceOp argument is specified.");
+  }
+
   // check if wfr is of type Waveform_CreateOp; this is the case if wfrOp is
   // defined in the same block as playOp e.g., if both are defined inside a
   // sequenceOp
-  if (auto castOp = dyn_cast_or_null<Waveform_CreateOp>(wfr().getDefiningOp()))
-    return castOp.getDuration();
+  if (auto castOp =
+          dyn_cast_or_null<Waveform_CreateOp>((*this).wfr().getDefiningOp())) {
+    llvm::Expected<uint64_t> durOrError =
+        castOp.getDuration(nullptr /*callSequenceOp*/);
+    if (auto err = durOrError.takeError())
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     toString(std::move(err)));
+    return durOrError.get();
+  }
 
-  auto argIndex = wfr().cast<BlockArgument>().getArgNumber();
-  auto *argOp = callOp.getOperand(argIndex).getDefiningOp();
+  auto argIndex = (*this).wfr().cast<BlockArgument>().getArgNumber();
+  auto *argOp = callOp->getOperand(argIndex).getDefiningOp();
   auto wfrOp = dyn_cast_or_null<Waveform_CreateOp>(argOp);
-  if (wfrOp)
-    return wfrOp.getDuration();
+  if (wfrOp) {
+    llvm::Expected<uint64_t> durOrError =
+        wfrOp.getDuration(nullptr /*callSequenceOp*/);
+    if (auto err = durOrError.takeError())
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     toString(std::move(err)));
+    return durOrError.get();
+  }
   return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                  "Could not get the wfrOp!");
 }

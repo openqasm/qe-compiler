@@ -140,16 +140,11 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
 
   MapParameterSource source(parameters);
 
-  auto successOrErr = qssc::bindParameters(target, configPath, inputPath, outputPath, source);
-
-  if (successOrErr) {
-    std::string errorMsg;
-    llvm::raw_string_ostream errorMsgStream(errorMsg);
-    llvm::logAllUnhandledErrors(std::move(successOrErr), errorMsgStream,
-                                "Error: ");
-
+  std::string errorMsg;
+  if (qssc::bindParameters(target, configPath, inputPath, outputPath, source, &errorMsg)) {
     return pybind11::make_tuple(false, errorMsg);
   }
+
   return pybind11::make_tuple(true, pybind11::none());
 }
 
