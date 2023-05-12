@@ -28,6 +28,7 @@
 #include "QuantumDecoration.h"
 #include "RemoveQubitOperands.h"
 #include "ReorderMeasurements.h"
+#include "ReorderCircuits.h"
 #include "SubroutineCloning.h"
 #include "UnusedVariable.h"
 #include "VariableElimination.h"

@@ -260,6 +260,7 @@ void registerQuirPasses() {
   PassRegistration<quir::AddShotLoopPass>();
   PassRegistration<quir::QuantumDecorationPass>();
   PassRegistration<quir::ReorderMeasurementsPass>();
+  PassRegistration<quir::ReorderCircuitsPass>();
   PassRegistration<quir::MergeCircuitsPass>();
   PassRegistration<quir::MergeMeasuresLexographicalPass>();
   PassRegistration<quir::MergeMeasuresTopologicalPass>();
