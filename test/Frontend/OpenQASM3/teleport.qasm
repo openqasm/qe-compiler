@@ -142,15 +142,13 @@ cx $0, $1;
 h $0;
 c0 = measure $0;
 // MLIR-NO-CIRCUITS: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
-// MLIR-NO-CIRCUITS: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]
+// MLIR-CIRCUITS: %[[MVAL:.*]] = quir.call_circuit @circuit_4(%1, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> i1
+// MLIR: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]
 
 c1 = measure $1;
 // MLIR-NO-CIRCUITS: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
-// MLIR-NO-CIRCUITS: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]
-// MLIR-CIRCUITS: %[[MVAL:.*]]:2 = quir.call_circuit @circuit_4(%1, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
-// MLIR-CIRCUITS: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]#1
-// MLIR-CIRCUITS: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]#0
-
+// MLIR-CIRCUITS: %[[MVAL:.*]] = quir.call_circuit @circuit_5(%1) : (!quir.qubit<1>) -> i1
+// MLIR: oq3.cbit_assign_bit @c1<1> [0] : i1 = %[[MVAL]]
 
 // AST: <GenericGateOpNode>
 // AST: <GateOpNode>
@@ -172,7 +170,7 @@ if (c0==1) {
 // MLIR: scf.if %{{.*}} {
 if (c1==1) {
     // MLIR-NO-CIRCUITS: quir.call_gate @x({{.*}}) : (!quir.qubit<1>) -> ()
-    // MLIR-CIRCUITS: quir.call_circuit @circuit_5(%2) : (!quir.qubit<1>) -> ()
+    // MLIR-CIRCUITS: quir.call_circuit @circuit_6(%2) : (!quir.qubit<1>) -> ()
     x $2;
 }
 

@@ -821,12 +821,12 @@ mlir::Value QUIRGenQASM3Visitor::createMeasurement(const ASTMeasureNode *node,
         getLocation(node), identifier->GetName(), measureOp.outs().front(),
         resultIndex, identifier->GetBits());
   }
-
   return measureOp.outs().front();
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTMeasureNode *node) {
   createMeasurement(node, true);
+  finishCircuit();
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
@@ -1061,9 +1061,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
           getLocation(node), builder.getBoolAttr(false));
     }
     auto measurement = createMeasurement(nodeGateOp, false);
-    return builder.create<mlir::oq3::CastOp>(
+    auto castOp =  builder.create<mlir::oq3::CastOp>(
         getLocation(node), builder.getType<mlir::quir::CBitType>(1),
         measurement);
+    finishCircuit();
+    return castOp;
   }
 
   // the node's string representation may be shorter or longer than the
