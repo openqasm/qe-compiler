@@ -61,7 +61,7 @@ gate x q {
 
 gate cx control, target { }
 
-// MLIR-CIRCUITS: quir.circuit @circuit_3([[DURATION2:%.*]]: !quir.duration, [[DURATION1:%.*]]: !quir.duration, [[QUBIT2:%.*]]: !quir.qubit<1>, [[DURATION0:%.*]]: !quir.duration, [[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT0:%.*]]: !quir.qubit<1>) {
+// MLIR-CIRCUITS: quir.circuit @circuit_3(%arg0: !quir.{{.*}}, %arg1: !quir.{{.*}}, %arg2: !quir.{{.*}}, %arg3: !quir.{{.*}}, %arg4: !quir.{{.*}}, %arg5: !quir.{{.*}}) {
 // NOTE can not enforce parameter ordering on the builtin_U because the order of the quir.circuit parameters changes when tested with github actions
 // MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
