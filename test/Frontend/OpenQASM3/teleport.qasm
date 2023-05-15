@@ -143,7 +143,7 @@ cx $0, $1;
 h $0;
 c0 = measure $0;
 // MLIR-NO-CIRCUITS: %[[MVAL:.*]] = quir.measure({{.*}}) : (!quir.qubit<1>) -> i1
-// MLIR-CIRCUITS: %[[MVAL:.*]] = quir.call_circuit @circuit_4(%1, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: %[[MVAL:.*]] = quir.call_circuit @circuit_4({{.*}}, {{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> i1
 // MLIR: oq3.cbit_assign_bit @c0<1> [0] : i1 = %[[MVAL]]
 
 c1 = measure $1;

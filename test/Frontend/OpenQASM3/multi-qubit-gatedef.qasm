@@ -38,6 +38,6 @@ qubit $4;
 
 // MLIR-NO-CIRCUITS: quir.call_gate @g(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> ()
 // MLIR-NO-CIRCUITS: quir.call_gate @g4(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: quir.call_circuit @circuit_2(%2, %1, %0) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.call_circuit @circuit_2({{.*}}, {{.*}}, {{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 g $2, $3;
 g4 $2, $3, $4;

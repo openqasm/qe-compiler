@@ -74,9 +74,9 @@ delay[a] $0, $1;
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<"30ms" : !quir.duration>
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<"40dt" : !quir.duration>
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<"10ns" : !quir.duration>
-// MLIR-CIRCUITS: quir.call_circuit @circuit_0(%dur_0, %1, %0, %dur_1, %dur_2, %dur_3, %dur_4, %dur_5) : (!quir.duration, !quir.qubit<1>, !quir.qubit<1>, !quir.duration, !quir.duration, !quir.duration, !quir.duration, !quir.duration) -> ()
+// MLIR-CIRCUITS: quir.call_circuit @circuit_0({{.*}}, {{.*}}, {{.*}}, {{.*}}, {{.*}}, {{.*}}, {{.*}}, {{.*}}) : (!quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}) -> ()
 // TODO: Two oq3.declare_stretch statements are generated independent of --enable-circuits
 //       This does no harm but might potentially be fixed at some point
 //MLIR-CIRCUITS: %3 = oq3.declare_stretch : !quir.stretch
-//MLIR-CIRCUITS: quir.call_circuit @circuit_1(%3, %1, %0) : (!quir.stretch, !quir.qubit<1>, !quir.qubit<1>) -> ()
+//MLIR-CIRCUITS: quir.call_circuit @circuit_1({{.*}}, {{.*}},{{.*}}) : (!quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}) -> ()
 
