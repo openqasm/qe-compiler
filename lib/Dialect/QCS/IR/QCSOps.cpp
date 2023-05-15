@@ -95,7 +95,7 @@ ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
 // Returns the float value from the initial value of this parameter
 APFloat ParameterLoadOp::getAngleFromInitialValue() {
-  auto op = getOperation();
+  auto *op = getOperation();
   auto paramRefAttr =
       op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
   auto declOp =

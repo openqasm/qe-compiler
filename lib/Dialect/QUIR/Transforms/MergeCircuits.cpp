@@ -97,7 +97,8 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
                     nextCircuitOp->getOperandTypes().end());
 
   // merge circuit names
-  llvm::Twine newName = circuitOp.sym_name() + "_" + nextCircuitOp.sym_name();
+  std::string newName =
+      (circuitOp.sym_name() + "_" + nextCircuitOp.sym_name()).str();
 
   // create new circuit operation by cloning first circuit
   CircuitOp newCircuitOp = cast<CircuitOp>(builder.clone(*circuitOp));
