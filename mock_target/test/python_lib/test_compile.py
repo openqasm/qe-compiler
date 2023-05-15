@@ -31,6 +31,7 @@ from qss_compiler import (
     QSSCompilationFailure,
 )
 
+compiler_extra_args = ["--enable-circuits=false"]
 
 def check_mlir_string(mlir):
     assert isinstance(mlir, str)
@@ -49,6 +50,7 @@ def test_compile_file_to_qem(example_qasm3_tmpfile, mock_config_file, check_payl
         output_file=None,
         target="mock",
         config_path=mock_config_file,
+        extra_args=compiler_extra_args,
     )
     # QEM payload is returned as byte sequence
     assert isinstance(qem, bytes)
@@ -69,6 +71,7 @@ def test_compile_str_to_qem(mock_config_file, example_qasm3_str, check_payload):
         output_file=None,
         target="mock",
         config_path=mock_config_file,
+        extra_args=compiler_extra_args,
     )
     # QEM payload is returned as byte sequence
     assert isinstance(qem, bytes)
@@ -90,6 +93,7 @@ def test_compile_file_to_qem_file(example_qasm3_tmpfile, mock_config_file, tmp_p
         output_file=tmpfile,
         target="mock",
         config_path=mock_config_file,
+        extra_args=compiler_extra_args,
     )
 
     # no direct return
@@ -113,6 +117,7 @@ def test_compile_str_to_qem_file(mock_config_file, tmp_path, example_qasm3_str, 
         output_file=tmpfile,
         target="mock",
         config_path=mock_config_file,
+        extra_args=compiler_extra_args,
     )
 
     # no direct return
@@ -138,6 +143,7 @@ def test_compile_failing_str_to_qem(
             output_file=None,
             target="mock",
             config_path=mock_config_file,
+            extra_args=compiler_extra_args,
         )
 
 
@@ -155,6 +161,7 @@ def test_compile_failing_file_to_qem(
             output_file=None,
             target="mock",
             config_path=mock_config_file,
+            extra_args=compiler_extra_args,
         )
 
 
@@ -168,7 +175,7 @@ def test_compile_options(mock_config_file, example_qasm3_str):
         config_path=mock_config_file,
         shot_delay=100,
         num_shots=10000,
-        extra_args=["--pass-statistics"],
+        extra_args= compiler_extra_args + ["--pass-statistics"],
     )
 
     mlir = compile_str(example_qasm3_str, compile_options=compile_options)
@@ -190,6 +197,7 @@ async def test_async_compile_str(mock_config_file, example_qasm3_str, check_payl
         output_file=None,
         target="mock",
         config_path=mock_config_file,
+        extra_args=compiler_extra_args,
     )
     # Start a task that sleeps shorter than the compilation and then takes a
     # timestamp. If the compilation blocks the event loop, then the timestamp
@@ -224,6 +232,7 @@ async def test_async_compile_file(example_qasm3_tmpfile, mock_config_file, check
         output_file=None,
         target="mock",
         config_path=mock_config_file,
+        extra_args=compiler_extra_args,
     )
     # Start a task that sleeps shorter than the compilation and then takes a
     # timestamp. If the compilation blocks the event loop, then the timestamp
