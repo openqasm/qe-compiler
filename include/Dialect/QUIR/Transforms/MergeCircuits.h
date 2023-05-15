@@ -1,4 +1,4 @@
-//===- MergeMeasures.h - Merge measurement ops ------------------*- C++ -*-===//
+//===- MergeCircuits.h - Merge circuits ops ---------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,8 +14,8 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file declares the pass for merging measurements into a single measure
-///  op
+///  This file declares the pass for merging back-to-back circuits into single
+///  circuit when possible.
 ///
 //===----------------------------------------------------------------------===//
 
