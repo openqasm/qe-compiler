@@ -131,10 +131,6 @@ llvm::Error bindParameters(llvm::StringRef moduleInputPath,
                            ParameterSource const &parameters,
                            PatchableBinaryFactory *factory) {
 
-  // TODO, ofc, all of this wants to be properly abstracted and decoupled
-
-  // argh, libzip only supports in-place updates of zip archives
-
   std::error_code copyError =
       llvm::sys::fs::copy_file(moduleInputPath, payloadOutputPath);
 
@@ -153,8 +149,6 @@ llvm::Error bindParameters(llvm::StringRef moduleInputPath,
   }
 
   delete binary;
-
-  // sig.dump();
 
   if (auto err = updateParameters(payload, sig, parameters, factory))
     return err;
