@@ -25,7 +25,7 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 #include "mlir/Pass/Pass.h"
-#include <mlir/IR/PatternMatch.h>
+#include "mlir/IR/PatternMatch.h"
 
 namespace mlir::quir {
 
