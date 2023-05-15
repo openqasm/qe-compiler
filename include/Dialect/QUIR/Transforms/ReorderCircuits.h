@@ -25,7 +25,7 @@
 
 namespace mlir::quir {
 
-/// @brief Move calll_circuits when possible
+/// @brief Move call_circuits when possible
 struct ReorderCircuitsPass
     : public PassWrapper<ReorderCircuitsPass, OperationPass<>> {
   void runOnOperation() override;
