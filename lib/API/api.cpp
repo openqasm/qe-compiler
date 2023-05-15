@@ -736,13 +736,12 @@ _bindParameters(std::string_view target, std::string_view configPath,
 
 int qssc::bindParameters(
     std::string_view target, std::string_view configPath,
-    std::string_view moduleInputPath,
-    std::string_view payloadOutputPath,
+    std::string_view moduleInputPath, std::string_view payloadOutputPath,
     std::unordered_map<std::string, double> const &parameters,
     std::string *errorMessage) {
 
-  auto successOrErr =
-      _bindParameters(target, configPath, moduleInputPath, payloadOutputPath, parameters);
+  auto successOrErr = _bindParameters(target, configPath, moduleInputPath,
+                                      payloadOutputPath, parameters);
 
   if (successOrErr) {
     if (errorMessage) {

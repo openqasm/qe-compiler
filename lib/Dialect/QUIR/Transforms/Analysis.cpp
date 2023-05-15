@@ -32,8 +32,7 @@ PurelyUnitaryAnalysis::PurelyUnitaryAnalysis(mlir::Operation *op) {
         llvm::isa<mlir::scf::YieldOp>(op) or
         // declaring CallCircuitOp may be cheating
         // may need to walk all ops in circuit and verify
-        llvm::isa<mlir::quir::CallCircuitOp>(op)
-        )
+        llvm::isa<mlir::quir::CallCircuitOp>(op))
       return mlir::WalkResult::advance();
     return WalkResult::interrupt();
   });

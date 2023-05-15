@@ -24,8 +24,8 @@
 
 #include "Dialect/QUIR/IR/QUIROps.h"
 
-#include "mlir/Pass/Pass.h"
 #include "mlir/IR/PatternMatch.h"
+#include "mlir/Pass/Pass.h"
 
 namespace mlir::quir {
 
@@ -36,8 +36,8 @@ struct MergeCircuitsPass
 
   static CircuitOp getCircuitOp(CallCircuitOp callCircuitOp);
   static LogicalResult mergeCallCircuits(PatternRewriter &rewriter,
-                                CallCircuitOp callCircuitOp,
-                                CallCircuitOp nextCallCircuitOp);
+                                         CallCircuitOp callCircuitOp,
+                                         CallCircuitOp nextCallCircuitOp);
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;

@@ -136,8 +136,7 @@ struct Duration {
   static llvm::Expected<Duration>
   parseDuration(mlir::quir::ConstantOp &duration);
   /// Construct a Duration from a DelayOp
-  static llvm::Expected<Duration>
-  parseDuration(mlir::quir::DelayOp &delayOp);
+  static llvm::Expected<Duration> parseDuration(mlir::quir::DelayOp &delayOp);
   /// Convert duration to cycles. dt is in SI (seconds).
   Duration convertToCycles(double dt) const;
 };

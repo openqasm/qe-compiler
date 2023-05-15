@@ -318,8 +318,7 @@ bool isQuantumOp(Operation *op) {
   return false;
 }
 
-llvm::Expected<Duration>
-Duration::parseDuration(mlir::quir::DelayOp &delayOp) {
+llvm::Expected<Duration> Duration::parseDuration(mlir::quir::DelayOp &delayOp) {
   std::string durationStr;
   auto durationDeclare = delayOp.time().getDefiningOp<quir::ConstantOp>();
   if (durationDeclare) {

@@ -51,7 +51,9 @@ static inline llvm::StringRef getNoReportUserResultAttrName() {
 
 static inline llvm::StringRef getAngleAttrName() { return "quir.angleValue"; }
 
-static inline llvm::StringRef getDurationAttrName() { return "quir.durationValue"; }
+static inline llvm::StringRef getDurationAttrName() {
+  return "quir.durationValue";
+}
 
 } // namespace mlir::quir
 

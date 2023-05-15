@@ -52,7 +52,7 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
 
     if (auto circuitOp = resetOp->getParentOfType<CircuitOp>()) {
       llvm::outs() << "Need to handle reset in circuitOp\n";
-      // TODO: implement a strategy for breaking resets inside of 
+      // TODO: implement a strategy for breaking resets inside of
       // currently the QUIRGenQASM3Visitor does not put resets
       // inside of circuits to prevent problems with this pass.
       return failure();

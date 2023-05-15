@@ -41,30 +41,32 @@ namespace {
 // This pattern matches on a measure op and a non-measure op and moves the
 // non-measure op to occur earlier lexicographically if that does not change
 // the topological ordering
-struct ReorderCircuitsAndNonCircuitPat : public OpRewritePattern<CallCircuitOp> {
+struct ReorderCircuitsAndNonCircuitPat
+    : public OpRewritePattern<CallCircuitOp> {
   explicit ReorderCircuitsAndNonCircuitPat(MLIRContext *ctx)
       : OpRewritePattern<CallCircuitOp>(ctx) {}
 
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
 
-      // Accumulate qubits in measurement set
-      std::set<uint> currQubits = callCircuitOp.getOperatedQubits();
-      LLVM_DEBUG(llvm::dbgs() << "Matching on call_circuit for qubits:\t");
-      LLVM_DEBUG(for (uint id : currQubits) llvm::dbgs() << id << " ");
-      LLVM_DEBUG(llvm::dbgs() << "\n");
+    // Accumulate qubits in measurement set
+    std::set<uint> currQubits = callCircuitOp.getOperatedQubits();
+    LLVM_DEBUG(llvm::dbgs() << "Matching on call_circuit for qubits:\t");
+    LLVM_DEBUG(for (uint id : currQubits) llvm::dbgs() << id << " ");
+    LLVM_DEBUG(llvm::dbgs() << "\n");
 
-      auto nextAffineStoreOpp = dyn_cast<mlir::AffineStoreOp>(callCircuitOp->getNextNode());
-      if (nextAffineStoreOpp) {
-        bool moveAffine = true;
-        for (auto operand : nextAffineStoreOpp->getOperands()) 
-          if (operand.getDefiningOp() == callCircuitOp)
-            moveAffine = false;
-        if (moveAffine) {
-          nextAffineStoreOpp->moveBefore(callCircuitOp);
-          return success();
-        }
+    auto nextAffineStoreOpp =
+        dyn_cast<mlir::AffineStoreOp>(callCircuitOp->getNextNode());
+    if (nextAffineStoreOpp) {
+      bool moveAffine = true;
+      for (auto operand : nextAffineStoreOpp->getOperands())
+        if (operand.getDefiningOp() == callCircuitOp)
+          moveAffine = false;
+      if (moveAffine) {
+        nextAffineStoreOpp->moveBefore(callCircuitOp);
+        return success();
       }
+    }
 
     return failure();
   } // matchAndRewrite
@@ -89,8 +91,7 @@ void ReorderCircuitsPass::runOnOperation() {
   // there may be call_circuits within circuits that have not been properly
   // labeled with their qubit arguments
 
-  if (failed(
-          applyPatternsAndFoldGreedily(mainFunc, std::move(patterns))))
+  if (failed(applyPatternsAndFoldGreedily(mainFunc, std::move(patterns))))
     signalPassFailure();
 } // runOnOperation
 
@@ -99,6 +100,7 @@ llvm::StringRef ReorderCircuitsPass::getArgument() const {
 }
 
 llvm::StringRef ReorderCircuitsPass::getDescription() const {
-  return "Move call_circuits to be as lexicograpically as late as possible without "
+  return "Move call_circuits to be as lexicograpically as late as possible "
+         "without "
          "affecting the topological ordering.";
 }

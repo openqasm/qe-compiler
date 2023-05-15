@@ -134,8 +134,7 @@ auto ClassicalOnlyDetectionPass::hasQuantumSubOps(Operation *inOp) -> bool {
         dyn_cast<CallDefCalGateOp>(op) || dyn_cast<CallDefcalMeasureOp>(op) ||
         dyn_cast<DelayOp>(op) || dyn_cast<CallGateOp>(op) ||
         dyn_cast<MeasureOp>(op) || dyn_cast<DeclareQubitOp>(op) ||
-        dyn_cast<ResetQubitOp>(op) ||
-        dyn_cast<CallCircuitOp>(op)) {
+        dyn_cast<ResetQubitOp>(op) || dyn_cast<CallCircuitOp>(op)) {
       retVal = false;
       return WalkResult::interrupt();
     }

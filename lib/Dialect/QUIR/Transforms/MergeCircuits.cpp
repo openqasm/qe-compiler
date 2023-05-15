@@ -27,9 +27,9 @@
 #include "mlir/IR/BlockAndValueMapping.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Operation.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
-#include "mlir/Support/LogicalResult.h"
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
@@ -59,7 +59,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
       return failure();
 
     return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
-                                         nextCallCircuitOp);
+                                                nextCallCircuitOp);
 
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
@@ -75,9 +75,10 @@ CircuitOp MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp) {
   return circuitOp;
 }
 
-LogicalResult MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
-                                          CallCircuitOp callCircuitOp,
-                                          CallCircuitOp nextCallCircuitOp) {
+LogicalResult
+MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
+                                     CallCircuitOp callCircuitOp,
+                                     CallCircuitOp nextCallCircuitOp) {
   auto circuitOp = getCircuitOp(callCircuitOp);
   auto nextCircuitOp = getCircuitOp(nextCallCircuitOp);
 
@@ -189,13 +190,13 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   // replace or create new based on origina outputType sizes
   if (nextCallCircuitOp->getNumResults() == outputTypes.size()) {
     rewriter.replaceOpWithNewOp<CallCircuitOp>(nextCallCircuitOp, newName.str(),
-                                             TypeRange(outputTypes),
-                                             ValueRange(callInputValues));
+                                               TypeRange(outputTypes),
+                                               ValueRange(callInputValues));
     rewriter.eraseOp(callCircuitOp);
   } else if (callCircuitOp->getNumResults() == outputTypes.size()) {
     rewriter.replaceOpWithNewOp<CallCircuitOp>(callCircuitOp, newName.str(),
-                                             TypeRange(outputTypes),
-                                             ValueRange(callInputValues));
+                                               TypeRange(outputTypes),
+                                               ValueRange(callInputValues));
     rewriter.eraseOp(nextCallCircuitOp);
   } else {
     // can not directly replace a call circuit since the number of results does
@@ -204,13 +205,13 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
     auto numCallResults = callCircuitOp->getNumResults();
 
     auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
-         callCircuitOp->getLoc(), newName.str(),
-         TypeRange(outputTypes), ValueRange(callInputValues));
-    for( const auto& res : llvm::enumerate(callCircuitOp->getResults())) {
+        callCircuitOp->getLoc(), newName.str(), TypeRange(outputTypes),
+        ValueRange(callInputValues));
+    for (const auto &res : llvm::enumerate(callCircuitOp->getResults()))
       res.value().replaceAllUsesWith(newCallOp.getResult(res.index()));
-    }
-    for( const auto& res : llvm::enumerate(nextCallCircuitOp->getResults())) {
-      res.value().replaceAllUsesWith(newCallOp.getResult(res.index()+numCallResults));
+    for (const auto &res : llvm::enumerate(nextCallCircuitOp->getResults())) {
+      res.value().replaceAllUsesWith(
+          newCallOp.getResult(res.index() + numCallResults));
     }
     callCircuitOp->erase();
     nextCallCircuitOp->erase();

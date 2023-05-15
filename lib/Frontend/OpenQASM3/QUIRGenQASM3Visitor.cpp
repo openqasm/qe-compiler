@@ -90,9 +90,9 @@ static llvm::cl::opt<bool>
     enableCircuits("enable-circuits", llvm::cl::desc("enable quir circuits"),
                    llvm::cl::init(true));
 
-static llvm::cl::opt<bool>
-    debugCircuits("debug-circuits", llvm::cl::desc("debug quir circuits"),
-                   llvm::cl::init(false));
+static llvm::cl::opt<bool> debugCircuits("debug-circuits",
+                                         llvm::cl::desc("debug quir circuits"),
+                                         llvm::cl::init(false));
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
@@ -167,7 +167,7 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
   std::string durationString = std::to_string(durationValue);
   llvm::SmallString<32> buf;
 
-  auto ssa =  circuitParentBuilder.create<quir::ConstantOp>(
+  auto ssa = circuitParentBuilder.create<quir::ConstantOp>(
       location,
       DurationAttr::get(builder.getContext(), builder.getType<DurationType>(),
                         durationString +
@@ -1061,7 +1061,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
           getLocation(node), builder.getBoolAttr(false));
     }
     auto measurement = createMeasurement(nodeGateOp, false);
-    auto castOp =  builder.create<mlir::oq3::CastOp>(
+    auto castOp = builder.create<mlir::oq3::CastOp>(
         getLocation(node), builder.getType<mlir::quir::CBitType>(1),
         measurement);
     finishCircuit();
@@ -1868,7 +1868,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   // move uses of the results after the call_circuit
   // move use of uses as well
   llvm::SmallVector<Operation *> workList;
-  Operation * op = newCallOp;
+  Operation *op = newCallOp;
   do {
     if (!workList.empty()) {
       op = workList.back();
