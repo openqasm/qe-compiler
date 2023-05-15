@@ -29,8 +29,7 @@
 
 namespace mlir::quir {
 
-/// @brief Merge together measures in a circuit that are lexicographically
-/// adjacent into a single variadic measurement.
+/// @brief Merge together back to back circuits into a single circuit
 struct MergeCircuitsPass
     : public PassWrapper<MergeCircuitsPass, OperationPass<>> {
   void runOnOperation() override;
