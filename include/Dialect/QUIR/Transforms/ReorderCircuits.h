@@ -13,7 +13,8 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file declares the pass for moving measurements as late as possible
+///  This file declares the pass for moving call_circuits operations later
+///  when possible.
 ///
 //===----------------------------------------------------------------------===//
 
@@ -24,7 +25,7 @@
 
 namespace mlir::quir {
 
-/// @brief Move measures in a circuit to be as late as possible topologically
+/// @brief Move calll_circuits when possible
 struct ReorderCircuitsPass
     : public PassWrapper<ReorderCircuitsPass, OperationPass<>> {
   void runOnOperation() override;
