@@ -52,7 +52,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
-#include "Parameters/Parameters.h"
 
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
@@ -100,27 +99,6 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
   return pybind11::make_tuple(success, pybind11::bytes(outputStr));
 }
 
-class MapParameterSource : public qssc::parameters::ParameterSource {
-
-public:
-  MapParameterSource(
-      const std::unordered_map<std::string, double> &parameterMap)
-      : parameterMap(parameterMap) {}
-
-  double getAngleParameter(llvm::StringRef name) const override {
-    std::string name_{name};
-    auto pos = parameterMap.find(name_);
-
-    if (pos == parameterMap.end())
-      return 0.0; // TODO need to make this Optional and error handling!
-
-    return pos->second;
-  }
-
-private:
-  const std::unordered_map<std::string, double> &parameterMap;
-};
-
 pybind11::tuple
 py_link_file(const std::string &inputPath, const std::string &outputPath,
              const std::string &target, const std::string &configPath,
@@ -138,10 +116,8 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
 #endif
 #endif
 
-  MapParameterSource source(parameters);
-
   std::string errorMsg;
-  if (qssc::bindParameters(target, configPath, inputPath, outputPath, source, &errorMsg)) {
+  if (qssc::bindParameters(target, configPath, inputPath, outputPath, parameters, &errorMsg)) {
     return pybind11::make_tuple(false, errorMsg);
   }
 

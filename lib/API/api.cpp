@@ -665,6 +665,27 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
   return 0;
 }
 
+class MapParameterSource : public qssc::parameters::ParameterSource {
+
+public:
+  MapParameterSource(
+      const std::unordered_map<std::string, double> &parameterMap)
+      : parameterMap(parameterMap) {}
+
+  double getAngleParameter(llvm::StringRef name) const override {
+    std::string name_{name};
+    auto pos = parameterMap.find(name_);
+
+    if (pos == parameterMap.end())
+      return 0.0; // TODO need to make this Optional and error handling!
+
+    return pos->second;
+  }
+
+private:
+  const std::unordered_map<std::string, double> &parameterMap;
+};
+
 llvm::Error
 _bindParameters(std::string_view target, std::string_view configPath,
                 std::string_view moduleInputPath,
@@ -678,7 +699,7 @@ _bindParameters(std::string_view target, std::string_view configPath,
            .getValueOr(qssc::hal::registry::TargetSystemRegistry::
                            nullTargetSystemInfo());
 
-  auto created = targetInfo.createTarget(&context, configPath);
+  auto created = targetInfo.createTarget(&context, llvm::StringRef(configPath));
   if (auto err = created.takeError()) {
     return llvm::joinErrors(
         llvm::createStringError(llvm::inconvertibleErrorCode(),
@@ -706,13 +727,15 @@ _bindParameters(std::string_view target, std::string_view configPath,
     return llvm::make_error<llvm::StringError>(
         "Failed to copy circuit module to payload", copyError);
 
+  MapParameterSource source(parameters);
+
   auto *factory = targetInst.get()->getPatchableBinaryFactory();
   return qssc::parameters::bindParameters(moduleInputPath, payloadOutputPath,
-                                          parameters, factory);
+                                          source, factory);
 }
 
 int qssc::bindParameters(
-    std::string_view target, std:string_view configPath,
+    std::string_view target, std::string_view configPath,
     std::string_view moduleInputPath,
     std::string_view payloadOutputPath,
     std::unordered_map<std::string, double> const &parameters,
