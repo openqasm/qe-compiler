@@ -1,4 +1,4 @@
-//===- Parameters.cpp -------------------------------------------*- C++ -*-===//
+//===- PatchableZipPayload.cpp - file supporting parameters ------* C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,7 +14,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file implements parameter binding.
+///  This file implements utility functions for patching files in zip archives
 ///
 //===----------------------------------------------------------------------===//
 
