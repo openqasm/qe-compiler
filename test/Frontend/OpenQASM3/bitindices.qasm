@@ -19,7 +19,6 @@ OPENQASM 3.0;
 // MLIR: module
 // MLIR-DAG: func @main
 
-
 // AST-PRETTY DeclarationNode(type=ASTTypeBitset, CBitNode(name=a, bits=1))
 // DeclarationNode(type=ASTTypeBitset, CBitNode(name=b, bits=2, value=10))
 // MLIR-DAG: oq3.declare_variable @a : !quir.cbit<1>
