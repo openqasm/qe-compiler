@@ -102,9 +102,8 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
 
   // create new circuit operation by cloning first circuit
   CircuitOp newCircuitOp = cast<CircuitOp>(builder.clone(*circuitOp));
-  newCircuitOp->setAttr(
-      SymbolTable::getSymbolAttrName(),
-      StringAttr::get(circuitOp->getContext(), newName));
+  newCircuitOp->setAttr(SymbolTable::getSymbolAttrName(),
+                        StringAttr::get(circuitOp->getContext(), newName));
 
   // store original return operations for later use
   quir::ReturnOp returnOp;
