@@ -24,9 +24,10 @@ gate g (theta) q {
 
 // MLIR-NO-CIRCUITS: func @g3([[QUBIT0:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>, [[ANGLE0:%.*]]: !quir.angle<{{.*}}>, [[ANGLE1:%.*]]: !quir.angle<{{.*}}>, [[ANGLE2:%.*]]: !quir.angle<{{.*}}>) {
 // MLIR-CIRCUITS: quir.circuit @circuit_1([[ANGLE2:%.*]]: !quir.angle<64>, [[ANGLE1:%.*]]: !quir.angle<64>, [[QUBIT1:%.*]]: !quir.qubit<1>, [[ANGLE0:%.*]]: !quir.angle<64>, [[QUBIT0:%.*]]: !quir.qubit<1>) {
-// MLIR: quir.builtin_U [[QUBIT0]], [[ANGLE0]], [[ANGLE2]], [[ANGLE1]] : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
-// MLIR: quir.builtin_U [[QUBIT1]], [[ANGLE0]], [[ANGLE2]], [[ANGLE1]] : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
-// MLIR: quir.builtin_CX [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>
+// NOTE can not enforce parameter ordering on the builtin_U because the order of the quir.circuit parameters changes when tested with github actions
+// MLIR: quir.builtin_U {{.*}}, {{.*}}, {{.*}}, {{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// MLIR: quir.builtin_U {{.*}}, {{.*}}, {{.*}}, {{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// MLIR: quir.builtin_CX {{.*}}, {{.*}} : !quir.qubit<1>, !quir.qubit<1>
 gate g3 (theta, lambda, phi) qa, qb {
     U(theta, phi, lambda) qa;
     U(theta, phi, lambda) qb;

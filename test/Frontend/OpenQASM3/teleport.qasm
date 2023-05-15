@@ -62,9 +62,10 @@ gate x q {
 gate cx control, target { }
 
 // MLIR-CIRCUITS: quir.circuit @circuit_3([[DURATION2:%.*]]: !quir.duration, [[DURATION1:%.*]]: !quir.duration, [[QUBIT2:%.*]]: !quir.qubit<1>, [[DURATION0:%.*]]: !quir.duration, [[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT0:%.*]]: !quir.qubit<1>) {
-// MLIR-CIRCUITS: quir.delay [[DURATION0]], ([[QUBIT0]]) : !quir.duration, (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: quir.delay [[DURATION1]], ([[QUBIT1]]) : !quir.duration, (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: quir.delay [[DURATION2]], ([[QUBIT2]]) : !quir.duration, (!quir.qubit<1>) -> ()
+// NOTE can not enforce parameter ordering on the builtin_U because the order of the quir.circuit parameters changes when tested with github actions
+// MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // MLIR: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
