@@ -23,14 +23,12 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
+#include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
-#include <llvm/Support/Debug.h>
-
-#include <algorithm>
-#include <mlir/Dialect/Affine/IR/AffineOps.h>
+#include "llvm/Support/Debug.h"
 
 #define DEBUG_TYPE "QUIRReorderMeasurements"
 
@@ -38,9 +36,10 @@ using namespace mlir;
 using namespace mlir::quir;
 
 namespace {
-// This pattern matches on a measure op and a non-measure op and moves the
-// non-measure op to occur earlier lexicographically if that does not change
-// the topological ordering
+// This pattern matches on a call_circuit op followed by an affine store
+// if the affine store is not use of the call_circuit the affine store
+// is moved before the call_circuit - this enables potential merging
+// of call_circuit / circuits calls
 struct ReorderCircuitsAndNonCircuitPat
     : public OpRewritePattern<CallCircuitOp> {
   explicit ReorderCircuitsAndNonCircuitPat(MLIRContext *ctx)
@@ -83,7 +82,7 @@ void ReorderCircuitsPass::runOnOperation() {
 
   if (!mainFunc) {
     signalPassFailure();
-    llvm::errs() << "Unable to find main function! Cannot add shot loop\n";
+    llvm::errs() << "Unable to find main function!\n";
     return;
   }
 
@@ -100,7 +99,5 @@ llvm::StringRef ReorderCircuitsPass::getArgument() const {
 }
 
 llvm::StringRef ReorderCircuitsPass::getDescription() const {
-  return "Move call_circuits to be as lexicograpically as late as possible "
-         "without "
-         "affecting the topological ordering.";
+  return "Move call_circuits later if possible.";
 }
