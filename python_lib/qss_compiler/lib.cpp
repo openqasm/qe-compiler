@@ -104,17 +104,6 @@ py_link_file(const std::string &inputPath, const std::string &outputPath,
              const std::string &target, const std::string &configPath,
              const std::unordered_map<std::string, double> &parameters) {
 
-#ifndef NDEBUG
-#if 0
-  std::cout << "input " << inputPath << "\n";
-  std::cout << "output " << outputPath << "\n";
-
-  std::cout << "parameters (as seen from C++): \n";
-
-  for (auto &item : parameters)
-    std::cout << item.first << " = " << item.second << "\n";
-#endif
-#endif
 
   std::string errorMsg;
   if (qssc::bindParameters(target, configPath, inputPath, outputPath, parameters, &errorMsg)) {

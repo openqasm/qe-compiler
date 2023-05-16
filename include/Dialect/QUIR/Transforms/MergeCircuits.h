@@ -14,7 +14,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file declares the pass for merging back-to-back circuits into single
+///  This file declares the pass for merging back-to-back circuits into a single
 ///  circuit when possible.
 ///
 //===----------------------------------------------------------------------===//
