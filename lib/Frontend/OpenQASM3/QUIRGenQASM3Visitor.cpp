@@ -84,11 +84,11 @@ using ExpressionValueType = mlir::Value;
 static llvm::cl::opt<bool>
     enableParameters("enable-parameters",
                      llvm::cl::desc("enable qasm3 input parameters"),
-                     llvm::cl::init(true));
+                     llvm::cl::init(false));
 
 static llvm::cl::opt<bool>
     enableCircuits("enable-circuits", llvm::cl::desc("enable quir circuits"),
-                   llvm::cl::init(true));
+                   llvm::cl::init(false));
 
 static llvm::cl::opt<bool> debugCircuits("debug-circuits",
                                          llvm::cl::desc("debug quir circuits"),
