@@ -85,7 +85,8 @@ llvm::Error parseSignature(zip_t *zip, Signature &sig,
   return llvm::Error::success();
 }
 
-llvm::Expected<Signature> parseSignature(zip_t *zip, std::shared_ptr<PatchableBinary> binary) {
+llvm::Expected<Signature>
+parseSignature(zip_t *zip, std::shared_ptr<PatchableBinary> binary) {
   Signature sig;
 
   if (auto err = parseSignature(zip, sig, binary))
@@ -112,12 +113,12 @@ llvm::Error updateParameters(qssc::payload::PatchableZipPayload &payload,
 
     auto &binaryData = binaryDataOrErr.get();
 
-    auto binary = std::shared_ptr<PatchableBinary>(binaryFactory->create(binaryData));
+    auto binary =
+        std::shared_ptr<PatchableBinary>(binaryFactory->create(binaryData));
 
     for (auto const &patchPoint : entry.getValue())
-      if (auto err = binary->patch(patchPoint, parameters)) {
+      if (auto err = binary->patch(patchPoint, parameters))
         return err;
-      }
   }
 
   return llvm::Error::success();
@@ -140,9 +141,8 @@ llvm::Error bindParameters(llvm::StringRef moduleInputPath,
   Signature sig;
 
   auto binary = std::shared_ptr<PatchableBinary>(factory->create());
-  if (auto err = parseSignature(payload.getBackingZip(), sig, binary)) {
+  if (auto err = parseSignature(payload.getBackingZip(), sig, binary))
     return err;
-  }
 
   if (auto err = updateParameters(payload, sig, parameters, factory))
     return err;
