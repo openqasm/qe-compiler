@@ -17,6 +17,7 @@
 #ifndef PULSE_PULSEOPS_H
 #define PULSE_PULSEOPS_H
 
+#include "Dialect/Pulse/IR/PulseInterfaces.h"
 #include "Dialect/Pulse/IR/PulseTraits.h"
 #include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"

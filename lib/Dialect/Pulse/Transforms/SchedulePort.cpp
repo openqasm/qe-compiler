@@ -67,7 +67,7 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
   uint32_t numMixedFrames = 0;
   auto mixedFrameSequences = buildMixedFrameMap(sequenceOp, numMixedFrames);
 
-  uint64_t maxTime = 0;
+  int64_t maxTime = 0;
 
   addTimepoints(builder, mixedFrameSequences, maxTime);
 
@@ -86,8 +86,7 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
   // assign timepoint to return
   // TODO: check for a better way to do this with getTerminator or back()
   sequenceOp->walk([&](ReturnOp op) {
-    IntegerAttr timepointAttr = builder.getI64IntegerAttr(maxTime);
-    op->setAttr("pulse.timepoint", timepointAttr);
+    PulseOpSchedulingInterface::setTimepoint(op, maxTime);
   });
   return maxTime;
 }
@@ -151,7 +150,7 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
 
 void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
                                      mixedFrameMap_t &mixedFrameSequences,
-                                     uint64_t &maxTime) {
+                                     int64_t &maxTime) {
 
   // add timepoint to operations in mixedFrameSequences where timepoints
   // are calculated based on the duration of delayOps
@@ -160,26 +159,28 @@ void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
   // independently for each mixed frame.
 
   for (const auto &index : mixedFrameSequences) {
-    uint64_t currentTimepoint = 0;
+    int64_t currentTimepoint = 0;
     for (auto *op : index.second) {
       // set attribute on op with current timepoint
-      IntegerAttr timepointAttr = builder.getI64IntegerAttr(currentTimepoint);
-      op->setAttr("pulse.timepoint", timepointAttr);
+      PulseOpSchedulingInterface::setTimepoint(op, currentTimepoint);
 
       // update currentTimepoint if DelayOp or playOp
-      if (auto delayOp = dyn_cast<DelayOp>(op))
-        currentTimepoint += delayOp.getDuration();
-      else if (auto playOp = dyn_cast<PlayOp>(op)) {
-        if (!playOp->hasAttrOfType<IntegerAttr>("pulse.duration")) {
-          playOp.emitError() << "SchedulingPortPass requires that PlayOps be "
-                                "labeled with a pulse.duration attribute";
+      if (auto delayOp = dyn_cast<DelayOp>(op)) {
+        llvm::Expected<uint64_t> durOrError =
+            PulseOpSchedulingInterface::getDuration<DelayOp>(delayOp);
+        if (auto err = durOrError.takeError()) {
+          delayOp.emitError() << toString(std::move(err));
           signalPassFailure();
         }
-        // MLIR does does not have a setUI64IntegerAttr so duration is stored
-        // in a I64IntegerAttr but should be treated as a uint64_t
-        uint64_t duration = static_cast<uint64_t>(
-            playOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
-        currentTimepoint += duration;
+        currentTimepoint += durOrError.get();
+      } else if (auto playOp = dyn_cast<PlayOp>(op)) {
+        llvm::Expected<uint64_t> durOrError =
+            playOp.getDuration(nullptr /*callSequenceOp*/);
+        if (auto err = durOrError.takeError()) {
+          playOp.emitError() << toString(std::move(err));
+          signalPassFailure();
+        }
+        currentTimepoint += durOrError.get();
       }
     }
     if (currentTimepoint > maxTime)
@@ -195,21 +196,35 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
   for (Region &region : sequenceOp->getRegions()) {
     for (Block &block : region.getBlocks()) {
       auto &blockOps = block.getOperations();
-      blockOps.sort([](Operation &op1, Operation &op2) {
-        // put constants ahead of everything else
-        if (isa<arith::ConstantIntOp>(op1) && !isa<arith::ConstantIntOp>(op2))
-          return true;
+      blockOps.sort(
+          [&](Operation &op1, Operation &op2) {
+            // put constants ahead of everything else
+            if (isa<arith::ConstantIntOp>(op1) &&
+                !isa<arith::ConstantIntOp>(op2))
+              return true;
 
-        if (!op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
-            !op2.hasTrait<mlir::pulse::HasTargetFrame>())
-          return false;
+            if (!op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
+                !op2.hasTrait<mlir::pulse::HasTargetFrame>())
+              return false;
 
-        auto currentTime = getTimepoint(&op1);
-        auto nextTime = getTimepoint(&op2);
+            llvm::Optional<int64_t> currentTimepoint =
+                PulseOpSchedulingInterface::getTimepoint(&op1);
+            if (!currentTimepoint.hasValue()) {
+              op1.emitError()
+                  << "Operation does not have a pulse.timepoint attribute.";
+              signalPassFailure();
+            }
+            llvm::Optional<int64_t> nextTimepoint =
+                PulseOpSchedulingInterface::getTimepoint(&op2);
+            if (!nextTimepoint.hasValue()) {
+              op2.emitError()
+                  << "Operation does not have a pulse.timepoint attribute.";
+              signalPassFailure();
+            }
 
-        // order by timepoint
-        return currentTime < nextTime;
-      }); // blockOps.sort
+            // order by timepoint
+            return currentTimepoint.getValue() < nextTimepoint.getValue();
+          }); // blockOps.sort
     }
   }
 } // sortOpsByType

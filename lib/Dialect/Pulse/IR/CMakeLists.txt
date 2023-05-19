@@ -13,6 +13,7 @@
 add_mlir_dialect_library(MLIRPulseDialect
 
         PulseDialect.cpp
+        PulseInterfaces.cpp
         PulseOps.cpp
         PulseTypes.cpp
 

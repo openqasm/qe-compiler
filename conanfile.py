@@ -42,6 +42,10 @@ class QSSCompilerConan(ConanFile):
         for req in self.conan_data["requirements"]:
             self.requires(req)
 
+    def configure(self):
+        if self.settings.os == "Macos":
+            self.options["qasm"].shared = True
+
     def build_requirements(self):
         tool_pkgs = ["llvm", "clang-tools-extra"]
         # Add packages necessary for build.
