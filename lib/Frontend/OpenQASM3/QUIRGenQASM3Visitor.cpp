@@ -61,8 +61,8 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/Support/Debug.h>
-#include <llvm/Support/ErrorHandling.h>
 #include <llvm/Support/Error.h>
+#include <llvm/Support/ErrorHandling.h>
 
 #include <cstdint>
 #include <string>
@@ -127,7 +127,7 @@ QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
   if (const auto *idNode =
           dynamic_cast<const ASTIdentifierNode *>(node->GetExpression()))
     return idNode->GetName();
-    
+
   if (!node->GetIdentifier()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Identifier not found.";
@@ -328,7 +328,12 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
 
   // Create an SSA Value from the if statement condition
   const ASTExpressionNode *exprNode = node->GetExpression();
-  Value condition = visitAndGetExpressionValue(exprNode);
+  auto conditionOrError = visitAndGetExpressionValue(exprNode);
+  if (!conditionOrError) {
+    assert(hasFailed && "visitAndGetExpressionValue generated error");
+    return;
+  }
+  Value condition = conditionOrError.get();
 
   Value conditionBool;
   if (condition.getType() == builder.getI1Type()) {
@@ -426,23 +431,26 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
 
   ASTType quantityType = node->GetQuantityType();
 
+  llvm::Expected<mlir::Value> flagOrError(llvm::createStringError(
+      llvm::inconvertibleErrorCode(), "Initializing error flag"));
   mlir::Value flag;
+
   switch (quantityType) {
   case ASTTypeInt:
   case ASTTypeUInt:
-    flag = visit_(node->GetIntQuantity());
+    flagOrError = visit_(node->GetIntQuantity());
     break;
   case ASTTypeMPInteger:
-    flag = visit_(node->GetMPIntegerQuantity());
+    flagOrError = visit_(node->GetMPIntegerQuantity());
     break;
   case ASTTypeBinaryOp:
-    flag = visit_(node->GetBinaryOpQuantity());
+    flagOrError = visit_(node->GetBinaryOpQuantity());
     break;
   case ASTTypeUnaryOp:
-    flag = visit_(node->GetUnaryOpQuantity());
+    flagOrError = visit_(node->GetUnaryOpQuantity());
     break;
   case ASTTypeIdentifier:
-    flag = visit_(node->GetIdentifierQuantity());
+    flagOrError = visit_(node->GetIdentifierQuantity());
     break;
   // TODO: ASTFunctionCallNode is not supported in QUIRGen
   case ASTTypeFunctionCall:
@@ -451,6 +459,15 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   default:
     break;
   }
+
+  // Check if there was an error or not
+  if (!flagOrError) {
+    assert(hasFailed);
+    return;
+  }
+
+  // Since this is not an error, assigning to flag
+  flag = flagOrError.get();
 
   auto switchOp = builder.create<quir::SwitchOp>(
       loc, /*resultTypes=*/mlir::TypeRange{}, flag, caseValuesAttr,
@@ -495,7 +512,14 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
   builder.createBlock(&whileOp.getBefore());
 
   const ASTExpressionNode *exprNode = loop->GetExpression();
-  Value condition = visitAndGetExpressionValue(exprNode);
+  auto conditionOrError = visitAndGetExpressionValue(exprNode);
+
+  if (!conditionOrError) {
+    assert(hasFailed && "visitAndGetExpressionValue returned error");
+    return;
+  }
+
+  Value condition = conditionOrError.get();
 
   builder.create<scf::ConditionOp>(loc, condition, ValueRange({}));
 
@@ -537,9 +561,15 @@ void QUIRGenQASM3Visitor::visit(const ASTFunctionCallNode *node) {
   switchCircuit(false, getLocation(node));
 
   std::vector<Value> operands;
-  for (const auto *expr : *node)
-    operands.push_back(visitAndGetExpressionValue(
-        dynamic_cast<const ASTExpressionNode *>(expr)));
+  for (const auto *expr : *node) {
+    auto expressionOrError = visitAndGetExpressionValue(
+        dynamic_cast<const ASTExpressionNode *>(expr));
+    if (!expressionOrError) {
+      assert(hasFailed && "visitAndGetExpressionValue returned Error");
+      return;
+    }
+    operands.push_back(expressionOrError.get());
+  }
   ValueRange operandRange(operands.data(), operands.size());
 
   llvm::SmallVector<Type, 1> resultTypes;
@@ -552,7 +582,6 @@ void QUIRGenQASM3Visitor::visit(const ASTFunctionCallNode *node) {
                                        resultRange, operandRange);
 
   // fill the expression in case the call result is assigned to something
-  expression.reset(); // should be reset, operand visiting above sets expression
   if (node->ReturnsResult())
     expression = callOp->getResult(0); // QASM3 can only return 1 result
 }
@@ -668,10 +697,17 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
           reportError(node, mlir::DiagnosticSeverity::Error)
               << "Unnamed expressions not supported by QUIRGen yet, assign to "
                  "an identifier";
-          return createVoidValue(node);
+        return createVoidValue(node);
       }
     } else {
-      args.push_back(visitAndGetExpressionValue(param));
+      auto expressionValue = visitAndGetExpressionValue(param);
+      // Check for error
+      if (!expressionValue) {
+        assert(hasFailed && "visitAndGetExpressionValue returned error");
+        return expressionValue;
+      }
+      // If not, get values from the function
+      args.push_back(expressionValue.get());
     }
   }
 
@@ -726,14 +762,22 @@ void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
       if (!assign(angles[i], param->GetGateParamName())) {
         if (const auto *const ident = param->GetValueIdentifier())
           angles[i] = varHandler.generateVariableUse(getLocation(node), ident);
-        else
+        else {
           reportError(node, mlir::DiagnosticSeverity::Error)
               << "Unnamed expressions not supported by QUIRGen yet, assign to "
                  "an identifier";
           return;
+        }
       }
     } else {
-      angles[i] = visitAndGetExpressionValue(param);
+      auto expressionValue = visitAndGetExpressionValue(param);
+      // Check for error
+      if (!expressionValue) {
+        assert(hasFailed && "visitAndGetExpressionValue returned error");
+        return;
+      }
+      // If not, get values from the function
+      angles[i] = expressionValue.get();
     }
   }
 
@@ -924,18 +968,23 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
         node->GetModifierType() == QASM::ASTTypeInputModifier,
         node->GetModifierType() == QASM::ASTTypeOutputModifier);
 
+    if (!val) {
+      assert(hasFailed && "visitAndGetExpressionValue returned Error");
+      return;
+    }
+
     // generate variable assignment so that they are reinitialized on every
     // shot.
 
     if (enableParameters &&
         node->GetModifierType() == QASM::ASTTypeInputModifier) {
       varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
-                                              variableType, val);
+                                              variableType, val.get());
       auto load =
           varHandler.generateParameterLoad(loc, idNode->GetMangledName());
       varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
     } else
-      varHandler.generateVariableAssignment(loc, idNode->GetName(), val);
+      varHandler.generateVariableAssignment(loc, idNode->GetName(), val.get());
 
     return;
   }
@@ -1202,7 +1251,14 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
   const ASTExpressionNode *left = node->GetLeft();
   const ASTExpressionNode *right = node->GetRight();
 
-  Value rightRef = visitAndGetExpressionValue(right);
+  auto rightRefOrError = visitAndGetExpressionValue(right);
+
+  if (!rightRefOrError) {
+    assert(hasFailed && "visitAndGetExpressionValue returned error");
+    return rightRefOrError;
+  }
+
+  Value rightRef = rightRefOrError.get();
 
   if (left->GetASTType() != ASTTypeIdentifier) {
     reportError(node, mlir::DiagnosticSeverity::Error)
@@ -1227,7 +1283,14 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
 
   // old & incorrect handling, TODO handle all variables the new way and remove.
   if (!left->IsIdentifier() || !varHandler.tracksVariable(variableName)) {
-    Value leftRef = visitAndGetExpressionValue(left);
+    auto leftRefOrError = visitAndGetExpressionValue(left);
+
+    if (!leftRefOrError) {
+      assert(hasFailed && "visitAndGetExpressionValue returned error");
+      return leftRefOrError;
+    }
+
+    Value leftRef = leftRefOrError.get();
 
     Value opRef = rightRef;
     if (leftRef.getType() != rightRef.getType()) {
@@ -1287,17 +1350,10 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
 llvm::Expected<mlir::Value>
 QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTExpressionNode *node) {
   switchCircuit(false, getLocation(node));
-  expression.reset();
   BaseQASM3Visitor::visit(node);
-
-  if (!expression.hasValue()) {
-    llvm::errs() << "Error: visiting node " << PrintTypeEnum(node->GetASTType())
-                 << " " << node << " failed to return an expression\n";
-    llvm::errs() << getLocation(node) << "\n";
-    llvm_unreachable("no expression returned by visitor!");
-  }
-  ssaOtherValues.push_back((expression.getValue()));
-  return expression.getValue();
+  if (expression)
+    ssaOtherValues.push_back((expression.get()));
+  return std::move(expression);
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
@@ -1315,8 +1371,21 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
   const ASTExpressionNode *left = node->GetLeft();
   const ASTExpressionNode *right = node->GetRight();
 
-  mlir::Value leftRef = visitAndGetExpressionValue(left);
-  mlir::Value rightRef = visitAndGetExpressionValue(right);
+  auto leftRefOrError = visitAndGetExpressionValue(left);
+  auto rightRefOrError = visitAndGetExpressionValue(right);
+
+  if (!leftRefOrError) {
+    assert(hasFailed && "visitAndGetExpressionValue returned error");
+    return leftRefOrError;
+  }
+
+  if (!rightRefOrError) {
+    assert(hasFailed && "visitAndGetExpressionValue returned error");
+    return rightRefOrError;
+  }
+
+  mlir::Value leftRef = leftRefOrError.get();
+  mlir::Value rightRef = rightRefOrError.get();
 
   Type leftType = leftRef.getType();
   Type rightType = rightRef.getType();
@@ -1496,8 +1565,15 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   mlir::Value targetValue;
 
   if (operatorNode->IsExpression()) {
-    targetValue =
+    auto targetValueOrError =
         visitAndGetExpressionValue(operatorNode->GetTargetExpression());
+
+    if (!targetValueOrError) {
+      assert(hasFailed && "visitAndGetExpressionValue returned error");
+      return targetValueOrError;
+    }
+
+    targetValue = targetValueOrError.get();
   } else {
     const auto *id = operatorNode->GetTargetIdentifier();
     if (!id) {
@@ -1509,10 +1585,24 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
 
     if (id->IsReference()) {
       const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
-      targetValue = visitAndGetExpressionValue(idRef);
+      // Check for error
+      auto expressionValue = visitAndGetExpressionValue(idRef);
+      if (!expressionValue) {
+        assert(hasFailed && "visitAndGetExpressionValue returned error");
+        return expressionValue;
+      }
+      // If not, get values from the function
+      targetValue = expressionValue.get();
     } else {
-      targetValue =
+      auto expressionValue =
           visitAndGetExpressionValue(operatorNode->GetTargetIdentifier());
+      // Check for error
+      if (!expressionValue) {
+        assert(hasFailed && "visitAndGetExpressionValue returned error");
+        return expressionValue;
+      }
+      // If not, get values from the function
+      targetValue = expressionValue.get();
     }
   }
 
@@ -1709,8 +1799,21 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
     return createVoidValue(node);
   }
 
-  Value real = getValueFromLiteral(node->GetRealAsMPDecimal());
-  Value imag = getValueFromLiteral(node->GetImagAsMPDecimal());
+  auto realOrError = getValueFromLiteral(node->GetRealAsMPDecimal());
+  auto imagOrError = getValueFromLiteral(node->GetImagAsMPDecimal());
+
+  if (!realOrError) {
+    assert(hasFailed && "Error in real value");
+    return realOrError;
+  }
+
+  if (!imagOrError) {
+    assert(hasFailed && "Error in imag value");
+    return imagOrError;
+  }
+
+  Value real = realOrError.get();
+  Value imag = imagOrError.get();
 
   return builder.create<complex::CreateOp>(
       getLocation(node), ComplexType::get(real.getType()), real, imag);
@@ -1796,14 +1899,14 @@ ExpressionValueType
 QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
   switchCircuit(false, getLocation(node));
   // visiting the child expression is deferred to BaseQASM3Visitor
-  expression.reset();
   BaseQASM3Visitor::visit(node);
-  if (!expression.hasValue()) {
-    reportError(node, mlir::DiagnosticSeverity::Error)
-        << "failed to get expression value from child";
-    return createVoidValue(node);
+
+  if (!expression) {
+    assert(hasFailed && "Expected visit functions to signal error state");
+    return std::move(expression);
   }
-  mlir::Value operandRef = expression.getValue();
+
+  mlir::Value operandRef = expression.get();
 
   Value opRef = builder.create<CastOp>(
       getLocation(node), getCastDestinationType(node, builder), operandRef);

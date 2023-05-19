@@ -56,7 +56,8 @@ private:
   // llvm::Optional<mlir::Value> expression;
   llvm::Expected<mlir::Value> expression;
 
-  mlir::Value visitAndGetExpressionValue(QASM::ASTExpressionNode const *node);
+  llvm::Expected<mlir::Value>
+  visitAndGetExpressionValue(QASM::ASTExpressionNode const *node);
   template <class NodeType>
   llvm::Expected<mlir::Value> visitAndGetExpressionValue(NodeType const *node) {
     return visit_(node);
@@ -93,12 +94,16 @@ public:
                       mlir::ModuleOp &newModule, std::string f)
       : BaseQASM3Visitor(sList), builder(b), topLevelBuilder(b),
         circuitParentBuilder(b), newModule(newModule), filename(std::move(f)),
+        expression(llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                           "Testing error")),
         varHandler(builder) {}
 
   QUIRGenQASM3Visitor(mlir::OpBuilder b, mlir::ModuleOp &newModule,
                       std::string filename)
       : builder(b), topLevelBuilder(b), circuitParentBuilder(b),
         newModule(newModule), filename(std::move(filename)),
+        expression(llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                           "Testing error")),
         varHandler(builder) {}
 
   void initialize(uint numShots, const std::string &shotDelay);
