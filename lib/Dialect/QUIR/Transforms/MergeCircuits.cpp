@@ -49,7 +49,6 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
 
-    // get next operation and test for Delay
     Operation *nextOp = callCircuitOp->getNextNode();
     if (!nextOp)
       return failure();
