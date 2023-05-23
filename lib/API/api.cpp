@@ -669,10 +669,12 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
 class MapAngleArgumentSource : public qssc::parameters::ArgumentSource {
 
 public:
-  MapAngleArgumentSource(const std::unordered_map<std::string, double> &parameterMap)
+  MapAngleArgumentSource(
+      const std::unordered_map<std::string, double> &parameterMap)
       : parameterMap(parameterMap) {}
 
-  qssc::parameters::ArgumentType getArgumentValue(llvm::StringRef name) const override {
+  qssc::parameters::ArgumentType
+  getArgumentValue(llvm::StringRef name) const override {
     std::string name_{name};
     auto pos = parameterMap.find(name_);
 
@@ -728,9 +730,10 @@ _bindArguments(std::string_view target, std::string_view configPath,
   MapAngleArgumentSource source(arguments);
 
   auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
-  if (!factory.hasValue()){
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Unable to load bind arguments implementation for target!");
+  if (!factory.hasValue()) {
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "Unable to load bind arguments implementation for target!");
   }
   return qssc::parameters::bindArguments(moduleInputPath, payloadOutputPath,
                                          source, factory.getValue());

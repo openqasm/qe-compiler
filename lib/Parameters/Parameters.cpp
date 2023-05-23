@@ -58,8 +58,9 @@ static llvm::Expected<std::string> readFileFromZip(zip_t *zip, zip_stat_t &zs) {
   return fileBuf;
 }
 
-llvm::Error parseSignature(zip_t *zip, Signature &sig,
-                           const std::shared_ptr<BindArgumentsImplementation> &impl) {
+llvm::Error
+parseSignature(zip_t *zip, Signature &sig,
+               const std::shared_ptr<BindArgumentsImplementation> &impl) {
   zip_stat_t zs;
   auto numEntries = zip_get_num_entries(zip, 0);
 
@@ -88,7 +89,8 @@ llvm::Error parseSignature(zip_t *zip, Signature &sig,
 }
 
 llvm::Expected<Signature>
-parseSignature(zip_t *zip, const std::shared_ptr<BindArgumentsImplementation> &impl) {
+parseSignature(zip_t *zip,
+               const std::shared_ptr<BindArgumentsImplementation> &impl) {
   Signature sig;
 
   if (auto err = parseSignature(zip, sig, impl))
@@ -115,8 +117,8 @@ llvm::Error updateParameters(qssc::payload::PatchableZipPayload &payload,
 
     auto &binaryData = binaryDataOrErr.get();
 
-    auto binary =
-        std::shared_ptr<BindArgumentsImplementation>(factory->create(binaryData));
+    auto binary = std::shared_ptr<BindArgumentsImplementation>(
+        factory->create(binaryData));
 
     for (auto const &patchPoint : entry.getValue())
       if (auto err = binary->patch(patchPoint, arguments))

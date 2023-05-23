@@ -28,7 +28,6 @@
 
 #include "Parameters/Parameters.h"
 
-
 #include <string>
 #include <vector>
 
@@ -93,7 +92,9 @@ public:
                                    payload::Payload &payload) = 0;
 
   virtual llvm::Optional<qssc::parameters::BindArgumentsImplementationFactory *>
-  getBindArgumentsImplementationFactory() {return llvm::None;};
+  getBindArgumentsImplementationFactory() {
+    return llvm::None;
+  };
 
   virtual ~TargetSystem() = default;
 

@@ -32,7 +32,6 @@ public:
                            qssc::payload::Payload &payload) override {
     return llvm::Error::success();
   }
-
 };
 } // namespace
 
