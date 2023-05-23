@@ -88,7 +88,7 @@ llvm::Error parseSignature(zip_t *zip, Signature &sig,
 }
 
 llvm::Expected<Signature>
-parseSignature(zip_t *zip, std::shared_ptr<PatchableBinary> binary) {
+parseSignature(zip_t *zip, const std::shared_ptr<PatchableBinary> &binary) {
   Signature sig;
 
   if (auto err = parseSignature(zip, sig, binary))
