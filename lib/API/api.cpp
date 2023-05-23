@@ -31,6 +31,7 @@
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/SourceMgr.h"
@@ -53,7 +54,6 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
-#include <llvm/Support/Error.h>
 #include <string_view>
 #include <utility>
 
