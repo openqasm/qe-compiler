@@ -715,8 +715,6 @@ _bindParameters(std::string_view target, std::string_view configPath,
         std::move(err));
   }
 
-  llvm::outs() << "Loaded target " << targetInfo.getName() << "\n";
-
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload
   // (instead of read module, update, write payload)
