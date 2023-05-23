@@ -25,6 +25,8 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 
+#include <utility>
+
 namespace qssc::parameters {
 
 using namespace payload;
@@ -57,7 +59,7 @@ static llvm::Expected<std::string> readFileFromZip(zip_t *zip, zip_stat_t &zs) {
 }
 
 llvm::Error parseSignature(zip_t *zip, Signature &sig,
-                           std::shared_ptr<PatchableBinary> binary) {
+                           const std::shared_ptr<PatchableBinary>& binary) {
   zip_stat_t zs;
   auto numEntries = zip_get_num_entries(zip, 0);
 
