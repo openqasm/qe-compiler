@@ -50,39 +50,19 @@ public:
 
 // PatchableBinary - abstract class to be subclassed by targets to
 // define and implement a factory for creating PatchableBinary objects
-class PatchableBinaryFactory {
+class BindArgumentsImplementationFactory {
 public:
-  virtual ~PatchableBinaryFactory() = default;
+  virtual ~BindArgumentsImplementationFactory() = default;
   virtual PatchableBinary *create() = 0;
   virtual PatchableBinary *create(std::vector<char> &buf) = 0;
   virtual PatchableBinary *create(std::string &str) = 0;
-};
-
-// NullPatchableBinary - concrete implementation of PatchableBinary for
-// targets that do not want to support patchable binaries
-class NullPatchableBinary : public PatchableBinary {
-  llvm::Error patch(PatchPoint const &patchPoint,
-                    ArgumentSource const &arguments) override {
-    return llvm::Error::success();
-  };
-  void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
-                                  llvm::StringRef paramMapFileName,
-                                  qssc::parameters::Signature &sig) override{};
-};
-
-// NullPatchableBinary - concrete implementation of PatchableBinaryFactory for
-// targets that do not want to support patchable binaries
-class NullPatchableBinaryFactory : public PatchableBinaryFactory {
-  PatchableBinary *create() override { return new NullPatchableBinary(); }
-  PatchableBinary *create(std::vector<char> &buf) override { return create(); }
-  PatchableBinary *create(std::string &str) override { return create(); }
 };
 
 // TODO generalize type of arguments
 llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
-                          PatchableBinaryFactory *factory);
+                          BindArgumentsImplementationFactory *factory);
 
 } // namespace qssc::parameters
 

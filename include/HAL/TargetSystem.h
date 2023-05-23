@@ -20,12 +20,14 @@
 #ifndef TARGETSYSTEM_H
 #define TARGETSYSTEM_H
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallString.h"
 
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
 #include "Parameters/Parameters.h"
+
 
 #include <string>
 #include <vector>
@@ -90,8 +92,8 @@ public:
   virtual llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                                    payload::Payload &payload) = 0;
 
-  virtual qssc::parameters::PatchableBinaryFactory *
-  getPatchableBinaryFactory() = 0;
+  virtual llvm::Optional<qssc::parameters::BindArgumentsImplementationFactory *>
+  getBindArgumentsImplementationFactory() {return llvm::None;};
 
   virtual ~TargetSystem() = default;
 

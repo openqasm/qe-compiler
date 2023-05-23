@@ -99,7 +99,7 @@ parseSignature(zip_t *zip, const std::shared_ptr<PatchableBinary> &binary) {
 
 llvm::Error updateParameters(qssc::payload::PatchableZipPayload &payload,
                              Signature &sig, ArgumentSource const &arguments,
-                             PatchableBinaryFactory *binaryFactory) {
+                             BindArgumentsImplementationFactory *binaryFactory) {
 
   for (auto &entry : sig.patchPointsByBinary) {
     auto binaryName = entry.getKey();
@@ -129,7 +129,7 @@ llvm::Error updateParameters(qssc::payload::PatchableZipPayload &payload,
 llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
-                          PatchableBinaryFactory *factory) {
+                          BindArgumentsImplementationFactory *factory) {
 
   std::error_code copyError =
       llvm::sys::fs::copy_file(moduleInputPath, payloadOutputPath);

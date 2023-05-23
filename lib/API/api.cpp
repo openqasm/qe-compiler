@@ -53,6 +53,7 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <llvm/Support/Error.h>
 #include <string_view>
 #include <utility>
 
@@ -726,9 +727,13 @@ _bindArguments(std::string_view target, std::string_view configPath,
 
   MapArgumentSource source(arguments);
 
-  auto *factory = targetInst.get()->getPatchableBinaryFactory();
+  auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
+  if (!factory.hasValue()){
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Unable to load bind arguments implementation for target!");
+  }
   return qssc::parameters::bindArguments(moduleInputPath, payloadOutputPath,
-                                         source, factory);
+                                         source, factory.getValue());
 }
 
 int qssc::bindArguments(

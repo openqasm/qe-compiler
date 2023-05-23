@@ -74,12 +74,6 @@ public:
                            payload::Payload &payload) override;
   auto getConfig() -> MockConfig & { return *mockConfig; }
 
-  // Return NullPatchableBinaryFactory
-  qssc::parameters::PatchableBinaryFactory *
-  getPatchableBinaryFactory() override {
-    return new qssc::parameters::NullPatchableBinaryFactory();
-  }
-
 private:
   std::unique_ptr<MockConfig> mockConfig;
 }; // class MockSystem

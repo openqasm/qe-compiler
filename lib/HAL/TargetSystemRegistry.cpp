@@ -33,11 +33,6 @@ public:
     return llvm::Error::success();
   }
 
-  // Return NullPatchableBinaryFactory
-  qssc::parameters::PatchableBinaryFactory *
-  getPatchableBinaryFactory() override {
-    return new qssc::parameters::NullPatchableBinaryFactory();
-  }
 };
 } // namespace
 
