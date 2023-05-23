@@ -672,7 +672,7 @@ public:
   MapAngleArgumentSource(const std::unordered_map<std::string, double> &parameterMap)
       : parameterMap(parameterMap) {}
 
-  std::any getParameter(llvm::StringRef name) const override {
+  qssc::parameters::ArgumentType getArgumentValue(llvm::StringRef name) const override {
     std::string name_{name};
     auto pos = parameterMap.find(name_);
 
@@ -680,10 +680,6 @@ public:
       return 0.0; // TODO need to make this Optional and error handling!
 
     return pos->second;
-  }
-
-  double getAngleParameter(llvm::StringRef name) {
-    return std::any_cast<double>(this->getParameter(name));
   }
 
 private:

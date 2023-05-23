@@ -27,13 +27,15 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
-#include <any>
+#include <variant>
 
 namespace qssc::parameters {
 
+using ArgumentType = std::variant<double>;
+
 class ArgumentSource {
 public:
-  virtual std::any getParameter(llvm::StringRef name) const = 0;
+  virtual ArgumentType getArgumentValue(llvm::StringRef name) const = 0;
 
   virtual ~ArgumentSource() = default;
 };
