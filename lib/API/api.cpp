@@ -666,13 +666,13 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
   return 0;
 }
 
-class MapArgumentSource : public qssc::parameters::ArgumentSource {
+class MapAngleArgumentSource : public qssc::parameters::ArgumentSource {
 
 public:
-  MapArgumentSource(const std::unordered_map<std::string, double> &parameterMap)
+  MapAngleArgumentSource(const std::unordered_map<std::string, double> &parameterMap)
       : parameterMap(parameterMap) {}
 
-  double getAngleParameter(llvm::StringRef name) const override {
+  std::any getParameter(llvm::StringRef name) const override {
     std::string name_{name};
     auto pos = parameterMap.find(name_);
 
@@ -680,6 +680,10 @@ public:
       return 0.0; // TODO need to make this Optional and error handling!
 
     return pos->second;
+  }
+
+  double getAngleParameter(llvm::StringRef name) {
+    return std::any_cast<double>(this->getParameter(name));
   }
 
 private:
@@ -725,7 +729,7 @@ _bindArguments(std::string_view target, std::string_view configPath,
     return llvm::make_error<llvm::StringError>(
         "Failed to copy circuit module to payload", copyError);
 
-  MapArgumentSource source(arguments);
+  MapAngleArgumentSource source(arguments);
 
   auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
   if (!factory.hasValue()){

@@ -27,11 +27,13 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <any>
+
 namespace qssc::parameters {
 
 class ArgumentSource {
 public:
-  virtual double getAngleParameter(llvm::StringRef name) const = 0;
+  virtual std::any getParameter(llvm::StringRef name) const = 0;
 
   virtual ~ArgumentSource() = default;
 };
