@@ -59,7 +59,7 @@ static llvm::Expected<std::string> readFileFromZip(zip_t *zip, zip_stat_t &zs) {
 }
 
 llvm::Error parseSignature(zip_t *zip, Signature &sig,
-                           const std::shared_ptr<PatchableBinary> &binary) {
+                           const std::shared_ptr<BindArgumentsImplementation> &impl) {
   zip_stat_t zs;
   auto numEntries = zip_get_num_entries(zip, 0);
 
@@ -81,17 +81,17 @@ llvm::Error parseSignature(zip_t *zip, Signature &sig,
 
     auto &fileBuf = fileBufOrErr.get();
 
-    binary->parseParamMapIntoSignature(fileBuf, name, sig);
+    impl->parseParamMapIntoSignature(fileBuf, name, sig);
   }
 
   return llvm::Error::success();
 }
 
 llvm::Expected<Signature>
-parseSignature(zip_t *zip, const std::shared_ptr<PatchableBinary> &binary) {
+parseSignature(zip_t *zip, const std::shared_ptr<BindArgumentsImplementation> &impl) {
   Signature sig;
 
-  if (auto err = parseSignature(zip, sig, binary))
+  if (auto err = parseSignature(zip, sig, impl))
     return std::move(err);
 
   return sig;
@@ -99,7 +99,7 @@ parseSignature(zip_t *zip, const std::shared_ptr<PatchableBinary> &binary) {
 
 llvm::Error updateParameters(qssc::payload::PatchableZipPayload &payload,
                              Signature &sig, ArgumentSource const &arguments,
-                             BindArgumentsImplementationFactory *binaryFactory) {
+                             BindArgumentsImplementationFactory *factory) {
 
   for (auto &entry : sig.patchPointsByBinary) {
     auto binaryName = entry.getKey();
@@ -116,7 +116,7 @@ llvm::Error updateParameters(qssc::payload::PatchableZipPayload &payload,
     auto &binaryData = binaryDataOrErr.get();
 
     auto binary =
-        std::shared_ptr<PatchableBinary>(binaryFactory->create(binaryData));
+        std::shared_ptr<BindArgumentsImplementation>(factory->create(binaryData));
 
     for (auto const &patchPoint : entry.getValue())
       if (auto err = binary->patch(patchPoint, arguments))
@@ -142,7 +142,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
 
   Signature sig;
 
-  auto binary = std::shared_ptr<PatchableBinary>(factory->create());
+  auto binary = std::shared_ptr<BindArgumentsImplementation>(factory->create());
   if (auto err = parseSignature(payload.getBackingZip(), sig, binary))
     return err;
 

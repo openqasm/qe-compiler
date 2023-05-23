@@ -36,11 +36,11 @@ public:
   virtual ~ArgumentSource() = default;
 };
 
-// PatchableBinary - abstract class to be subclassed by targets to
-// define and implement patchable target binaries
-class PatchableBinary {
+// BindArgumentsImplementation - abstract class to be subclassed by targets to
+// define and implement methods for binding arguments to compiled payloads
+class BindArgumentsImplementation {
 public:
-  virtual ~PatchableBinary() = default;
+  virtual ~BindArgumentsImplementation() = default;
   virtual llvm::Error patch(PatchPoint const &patchPoint,
                             ArgumentSource const &arguments) = 0;
   virtual void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
@@ -48,14 +48,15 @@ public:
                                           qssc::parameters::Signature &sig) = 0;
 };
 
-// PatchableBinary - abstract class to be subclassed by targets to
-// define and implement a factory for creating PatchableBinary objects
+// BindArgumentsImplementationFactory - abstract class to be subclassed by t
+// targets that define and implement a factory for creating
+// BindArgumentsImplementation objects
 class BindArgumentsImplementationFactory {
 public:
   virtual ~BindArgumentsImplementationFactory() = default;
-  virtual PatchableBinary *create() = 0;
-  virtual PatchableBinary *create(std::vector<char> &buf) = 0;
-  virtual PatchableBinary *create(std::string &str) = 0;
+  virtual BindArgumentsImplementation *create() = 0;
+  virtual BindArgumentsImplementation *create(std::vector<char> &buf) = 0;
+  virtual BindArgumentsImplementation *create(std::string &str) = 0;
 };
 
 // TODO generalize type of arguments
