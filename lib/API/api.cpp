@@ -665,11 +665,10 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
   return 0;
 }
 
-class MapParameterSource : public qssc::parameters::ParameterSource {
+class MapArgumentSource : public qssc::parameters::ArgumentSource {
 
 public:
-  MapParameterSource(
-      const std::unordered_map<std::string, double> &parameterMap)
+  MapArgumentSource(const std::unordered_map<std::string, double> &parameterMap)
       : parameterMap(parameterMap) {}
 
   double getAngleParameter(llvm::StringRef name) const override {
@@ -687,10 +686,10 @@ private:
 };
 
 llvm::Error
-_bindParameters(std::string_view target, std::string_view configPath,
-                std::string_view moduleInputPath,
-                std::string_view payloadOutputPath,
-                std::unordered_map<std::string, double> const &parameters) {
+_bindArguments(std::string_view target, std::string_view configPath,
+               std::string_view moduleInputPath,
+               std::string_view payloadOutputPath,
+               std::unordered_map<std::string, double> const &arguments) {
 
   MLIRContext context{};
 
@@ -725,21 +724,21 @@ _bindParameters(std::string_view target, std::string_view configPath,
     return llvm::make_error<llvm::StringError>(
         "Failed to copy circuit module to payload", copyError);
 
-  MapParameterSource source(parameters);
+  MapArgumentSource source(arguments);
 
   auto *factory = targetInst.get()->getPatchableBinaryFactory();
-  return qssc::parameters::bindParameters(moduleInputPath, payloadOutputPath,
-                                          source, factory);
+  return qssc::parameters::bindArguments(moduleInputPath, payloadOutputPath,
+                                         source, factory);
 }
 
-int qssc::bindParameters(
+int qssc::bindArguments(
     std::string_view target, std::string_view configPath,
     std::string_view moduleInputPath, std::string_view payloadOutputPath,
-    std::unordered_map<std::string, double> const &parameters,
+    std::unordered_map<std::string, double> const &arguments,
     std::string *errorMessage) {
 
-  auto successOrErr = _bindParameters(target, configPath, moduleInputPath,
-                                      payloadOutputPath, parameters);
+  auto successOrErr = _bindArguments(target, configPath, moduleInputPath,
+                                     payloadOutputPath, arguments);
 
   if (successOrErr) {
     if (errorMessage) {

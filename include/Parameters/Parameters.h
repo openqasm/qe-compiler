@@ -29,11 +29,11 @@
 
 namespace qssc::parameters {
 
-class ParameterSource {
+class ArgumentSource {
 public:
   virtual double getAngleParameter(llvm::StringRef name) const = 0;
 
-  virtual ~ParameterSource() = default;
+  virtual ~ArgumentSource() = default;
 };
 
 // PatchableBinary - abstract class to be subclassed by targets to
@@ -42,7 +42,7 @@ class PatchableBinary {
 public:
   virtual ~PatchableBinary() = default;
   virtual llvm::Error patch(PatchPoint const &patchPoint,
-                            ParameterSource const &parameters) = 0;
+                            ArgumentSource const &arguments) = 0;
   virtual void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
                                           llvm::StringRef paramMapFileName,
                                           qssc::parameters::Signature &sig) = 0;
@@ -62,7 +62,7 @@ public:
 // targets that do not want to support patchable binaries
 class NullPatchableBinary : public PatchableBinary {
   llvm::Error patch(PatchPoint const &patchPoint,
-                    ParameterSource const &parameters) override {
+                    ArgumentSource const &arguments) override {
     return llvm::Error::success();
   };
   void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
@@ -78,11 +78,11 @@ class NullPatchableBinaryFactory : public PatchableBinaryFactory {
   PatchableBinary *create(std::string &str) override { return create(); }
 };
 
-// TODO generalize type of parameters
-llvm::Error bindParameters(llvm::StringRef moduleInputPath,
-                           llvm::StringRef payloadOutputPath,
-                           ParameterSource const &parameters,
-                           PatchableBinaryFactory *factory);
+// TODO generalize type of arguments
+llvm::Error bindArguments(llvm::StringRef moduleInputPath,
+                          llvm::StringRef payloadOutputPath,
+                          ArgumentSource const &arguments,
+                          PatchableBinaryFactory *factory);
 
 } // namespace qssc::parameters
 
