@@ -52,6 +52,10 @@ public:
   virtual void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
                                           llvm::StringRef paramMapFileName,
                                           qssc::arguments::Signature &sig) = 0;
+  virtual qssc::payload::PatchablePayload *
+  getPayload(llvm::StringRef payloadOutputPath) = 0;
+  virtual llvm::Expected<Signature>
+  parseSignature(qssc::payload::PatchablePayload *payload) = 0;
 };
 
 // BindArgumentsImplementationFactory - abstract class to be subclassed by t

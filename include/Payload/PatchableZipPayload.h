@@ -21,6 +21,9 @@
 #ifndef PAYLOAD_PATCHABLE_ZIP_PAYLOAD_H
 #define PAYLOAD_PATCHABLE_ZIP_PAYLOAD_H
 
+#include "Arguments/Arguments.h"
+#include "Payload/Payload.h"
+
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
@@ -29,7 +32,7 @@
 #include <zip.h>
 
 namespace qssc::payload {
-class PatchableZipPayload {
+class PatchableZipPayload : public PatchablePayload {
 public:
   PatchableZipPayload(std::string path) : path(std::move(path)), zip(nullptr) {}
   PatchableZipPayload(llvm::StringRef path) : path(path), zip(nullptr) {}
@@ -43,13 +46,13 @@ public:
 
   ~PatchableZipPayload();
 
-  llvm::Error writeBack();
+  llvm::Error writeBack() override;
   void discardChanges();
 
   using ContentBuffer = std::vector<char>;
 
-  llvm::Expected<ContentBuffer &> readMember(llvm::StringRef path,
-                                             bool markForWriteBack = true);
+  llvm::Expected<ContentBuffer &>
+  readMember(llvm::StringRef path, bool markForWriteBack = true) override;
 
   struct zip *getBackingZip() { // TODO remove after cleanup
     if (auto err = ensureOpen()) {
@@ -75,6 +78,7 @@ private:
 };
 
 llvm::Error extractLibZipError(llvm::StringRef info, zip_error_t &zipError);
+llvm::Expected<std::string> readFileFromZip(zip_t *zip, zip_stat_t &zs);
 
 } // namespace qssc::payload
 

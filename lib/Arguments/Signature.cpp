@@ -22,7 +22,7 @@
 #include "Arguments/Signature.h"
 
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace qssc::arguments {
 

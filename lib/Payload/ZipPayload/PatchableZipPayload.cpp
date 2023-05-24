@@ -28,6 +28,32 @@
 
 namespace qssc::payload {
 
+llvm::Expected<std::string> readFileFromZip(zip_t *zip, zip_stat_t &zs) {
+  auto *zipFile = zip_fopen_index(zip, zs.index, 0);
+
+  if (!zipFile) {
+    auto *err = zip_get_error(zip);
+    return extractLibZipError("Opening file within zip", *err);
+  }
+
+  std::string fileBuf(zs.size, '\0');
+
+  if (zip_fread(zipFile, (void *)fileBuf.data(), fileBuf.size()) !=
+      (zip_int64_t)fileBuf.size()) {
+    auto *err = zip_file_get_error(zipFile);
+    return extractLibZipError("Reading data from file within zip", *err);
+  }
+
+  if (auto errorCode = zip_fclose(zipFile) != 0) {
+    zip_error_t err;
+
+    zip_error_init_with_code(&err, errorCode);
+    return extractLibZipError("Closing file in zip", err);
+  }
+
+  return fileBuf;
+}
+
 llvm::Error extractLibZipError(llvm::StringRef info, zip_error_t &zipError) {
   std::string errorMsg;
   llvm::raw_string_ostream errorMsgStream(errorMsg);
