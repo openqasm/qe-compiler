@@ -26,6 +26,7 @@
 #include "mlir/Dialect/SCF/SCF.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/SymbolTable.h"
 
 #include "llvm/ADT/BitVector.h"
 #include "llvm/ADT/StringRef.h"
@@ -33,6 +34,7 @@
 #include "llvm/Support/Error.h"
 
 #include <regex>
+#include <utility>
 
 namespace mlir::quir {
 
@@ -407,6 +409,31 @@ Duration Duration::convertToCycles(double dt) const {
     break;
   }
   return {convertedDuration, DurationUnit::dt};
+}
+
+std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,
+                                                 Value result) {
+  auto opRes = result.cast<OpResult>();
+  uint resNum = opRes.getResultNumber();
+  return std::make_tuple(measureOp.qubits()[resNum], measureOp);
+}
+
+std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
+                                                 Value result) {
+  auto opRes = result.cast<OpResult>();
+  uint resNum = opRes.getResultNumber();
+
+  Operation *findOp =
+      SymbolTable::lookupNearestSymbolFrom<mlir::quir::CircuitOp>(
+          callCircuitOp, callCircuitOp.calleeAttr());
+
+  auto circuitOp = dyn_cast<CircuitOp>(findOp);
+  auto returnOp = dyn_cast<quir::ReturnOp>(circuitOp.back().getTerminator());
+  auto circuitResult = returnOp->getOperand(resNum).cast<OpResult>();
+  auto measureOp = dyn_cast<MeasureOp>(circuitResult.getDefiningOp());
+
+  return std::make_tuple(measureOp.qubits()[circuitResult.getResultNumber()],
+                         measureOp);
 }
 
 } // end namespace mlir::quir

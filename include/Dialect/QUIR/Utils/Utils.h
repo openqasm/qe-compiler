@@ -142,4 +142,10 @@ struct Duration {
 };
 /// Extract the Duration from a ConstantOp
 
+// get qubit id from the result of a measurement
+std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,
+                                                 Value result);
+std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
+                                                 Value result);
+
 } // end namespace mlir::quir
