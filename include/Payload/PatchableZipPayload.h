@@ -21,6 +21,7 @@
 #ifndef PAYLOAD_PATCHABLE_ZIP_PAYLOAD_H
 #define PAYLOAD_PATCHABLE_ZIP_PAYLOAD_H
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
 #include <zip.h>
