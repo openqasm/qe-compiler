@@ -25,7 +25,7 @@
 #include "llvm/Support/Error.h"
 
 #include <zip.h>
-
+#include <string>
 #include <unordered_map>
 
 namespace qssc::payload {
