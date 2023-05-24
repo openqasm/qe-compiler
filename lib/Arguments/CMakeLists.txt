@@ -10,6 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-add_library(QSSCParameters Signature.cpp Parameters.cpp)
+add_library(QSSCArguments Signature.cpp Arguments.cpp)
 
-target_link_libraries(QSSCParameters QSSCPayloadZip libzip::zip)
+target_link_libraries(QSSCArguments QSSCPayloadZip libzip::zip)

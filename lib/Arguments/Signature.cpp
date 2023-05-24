@@ -14,16 +14,17 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file implements the Signature of a circuit module.
+///  This file implements the Parameter Signature of a circuit module for
+///  updating arguments after compilation.
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Parameters/Signature.h"
+#include "Arguments/Signature.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
-namespace qssc::parameters {
+namespace qssc::arguments {
 
 void Signature::addParameterPatchPoint(llvm::StringRef expression,
                                        llvm::StringRef patchType,
@@ -52,4 +53,4 @@ void Signature::dump() {
 
 std::string Signature::serialize() { return ""; }
 
-} // namespace qssc::parameters
+} // namespace qssc::arguments

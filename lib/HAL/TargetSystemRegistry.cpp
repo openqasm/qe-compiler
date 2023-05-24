@@ -13,7 +13,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "HAL/TargetSystemRegistry.h"
-#include "Parameters/Parameters.h"
 
 using namespace qssc::hal::registry;
 

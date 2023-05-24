@@ -15,13 +15,13 @@
 //===----------------------------------------------------------------------===//
 ///
 ///  This file declares the Signature of a circuit module, that is, the
-///  parameters accepted by the type and location information about where they
+///  arguments accepted by the type and location information about where they
 ///  need to be patched in the module.
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef PARAMETER_SIGNATURE_H
-#define PARAMETER_SIGNATURE_H
+#ifndef ARGUMENTS_SIGNATURE_H
+#define ARGUMENTS_SIGNATURE_H
 
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-namespace qssc::parameters {
+namespace qssc::arguments {
 
 class PatchPoint {
   std::string expression_;
@@ -66,6 +66,6 @@ public:
   static Signature deserialize(llvm::StringRef);
 };
 
-} // namespace qssc::parameters
+} // namespace qssc::arguments
 
 #endif // PARAMETER_SIGNATURE_H

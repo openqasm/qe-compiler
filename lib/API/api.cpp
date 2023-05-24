@@ -37,7 +37,7 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
-#include "Parameters/Parameters.h"
+#include "Arguments/Arguments.h"
 #include "Payload/Payload.h"
 #include "Payload/PayloadRegistry.h"
 #include "QSSC.h"
@@ -666,14 +666,14 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
   return 0;
 }
 
-class MapAngleArgumentSource : public qssc::parameters::ArgumentSource {
+class MapAngleArgumentSource : public qssc::arguments::ArgumentSource {
 
 public:
   MapAngleArgumentSource(
       const std::unordered_map<std::string, double> &parameterMap)
       : parameterMap(parameterMap) {}
 
-  qssc::parameters::ArgumentType
+  qssc::arguments::ArgumentType
   getArgumentValue(llvm::StringRef name) const override {
     std::string name_{name};
     auto pos = parameterMap.find(name_);
@@ -735,8 +735,8 @@ _bindArguments(std::string_view target, std::string_view configPath,
         llvm::inconvertibleErrorCode(),
         "Unable to load bind arguments implementation for target!");
   }
-  return qssc::parameters::bindArguments(moduleInputPath, payloadOutputPath,
-                                         source, factory.getValue());
+  return qssc::arguments::bindArguments(moduleInputPath, payloadOutputPath,
+                                        source, factory.getValue());
 }
 
 int qssc::bindArguments(

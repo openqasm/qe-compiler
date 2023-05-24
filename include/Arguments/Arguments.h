@@ -1,4 +1,4 @@
-//===- Parameters.h ---------------------------------------------*- C++ -*-===//
+//===- Arguments.h ---------------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,22 +14,24 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file declares parameter binding interface for targets to subclass.
+///  This file declares an top level interface for patching circuit arguments
+///  after compilation. These are abstract class. A target will need to define
+///  concrete classes to utilize the bindArguments interface.
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef PARAMETERS_H
-#define PARAMETERS_H
+#ifndef ARGUMENTS_H
+#define ARGUMENTS_H
 
 #include "Dialect/QCS/IR/QCSTypes.h"
 
-#include "Parameters/Signature.h"
+#include "Arguments/Signature.h"
 #include "Payload/Payload.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
-namespace qssc::parameters {
+namespace qssc::arguments {
 
 using ArgumentType = mlir::qcs::ParameterType;
 
@@ -49,7 +51,7 @@ public:
                             ArgumentSource const &arguments) = 0;
   virtual void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
                                           llvm::StringRef paramMapFileName,
-                                          qssc::parameters::Signature &sig) = 0;
+                                          qssc::arguments::Signature &sig) = 0;
 };
 
 // BindArgumentsImplementationFactory - abstract class to be subclassed by t
@@ -69,6 +71,6 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           ArgumentSource const &arguments,
                           BindArgumentsImplementationFactory *factory);
 
-} // namespace qssc::parameters
+} // namespace qssc::arguments
 
-#endif // PARAMETERS_H
+#endif // ARGUMENTS_H

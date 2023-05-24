@@ -1,4 +1,4 @@
-//===- Parameters.cpp -------------------------------------------*- C++ -*-===//
+//===- Arguments.cpp -------------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,11 +14,11 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file implements parameter binding.
+///  This file implements support for updating argument values after compilation
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Parameters/Parameters.h"
+#include "Arguments/Arguments.h"
 #include "Payload/PatchableZipPayload.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -27,7 +27,7 @@
 
 #include <utility>
 
-namespace qssc::parameters {
+namespace qssc::arguments {
 
 using namespace payload;
 
@@ -157,4 +157,4 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
   return llvm::Error::success();
 }
 
-} // namespace qssc::parameters
+} // namespace qssc::arguments

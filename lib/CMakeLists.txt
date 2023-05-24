@@ -16,7 +16,7 @@ add_subdirectory(Conversion)
 add_subdirectory(Dialect)
 add_subdirectory(Frontend)
 add_subdirectory(HAL)
-add_subdirectory(Parameters)
+add_subdirectory(Arguments)
 add_subdirectory(Payload)
 add_subdirectory(Utils)
 
@@ -36,7 +36,7 @@ set(qssc_api_libs
         QSSCHAL
         QSSCOpenQASM3Frontend
         QSSConfig
-        QSSCParameters
+        QSSCArguments
         QSSCPayload
         QSSCCore
         ${mlir_dialect_libs}

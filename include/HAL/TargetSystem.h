@@ -26,7 +26,7 @@
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
-#include "Parameters/Parameters.h"
+#include "Arguments/Arguments.h"
 
 #include <string>
 #include <vector>
@@ -91,7 +91,7 @@ public:
   virtual llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                                    payload::Payload &payload) = 0;
 
-  virtual llvm::Optional<qssc::parameters::BindArgumentsImplementationFactory *>
+  virtual llvm::Optional<qssc::arguments::BindArgumentsImplementationFactory *>
   getBindArgumentsImplementationFactory() {
     return llvm::None;
   };

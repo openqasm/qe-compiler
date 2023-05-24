@@ -15,6 +15,7 @@
 //===----------------------------------------------------------------------===//
 ///
 ///  This file implements utility functions for patching files in zip archives
+///  with updated arguments
 ///
 //===----------------------------------------------------------------------===//
 
