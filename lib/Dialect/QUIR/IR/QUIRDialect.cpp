@@ -152,7 +152,7 @@ LogicalResult AngleType::verify(function_ref<InFlightDiagnostic()> emitError,
   return success();
 }
 
-// Materialize a constant, can be any buildable type, used by canonicalization
+/// Materialize a constant, can be any buildable type, used by canonicalization
 Operation *QUIRDialect::materializeConstant(OpBuilder &builder, Attribute value,
                                             Type type, Location loc) {
   return builder.create<quir::ConstantOp>(loc, value, type);
