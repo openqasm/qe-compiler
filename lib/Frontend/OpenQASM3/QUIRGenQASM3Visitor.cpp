@@ -659,13 +659,10 @@ std::string QUIRGenQASM3Visitor::resolveQCParam(const ASTGateNode *gateNode,
   auto *qcParam = gateNode->GetQCParams()[index];
   auto *qId = qcParam->GetIdentifier();
 
-  // same issue here. Not able to run reportError here
-  // error: use of undeclared identifier 'reportError'
-  assert(qId && "qcParam symbolTableEntry is invalid");
-  // if (!qId) {
-  //   reportError(gateNode, mlir::DiagnosticSeverity::Error)
-  //         << "qcParam symbolTableEntry is invalid";
-  // }
+  if (!qId) {
+    reportError(gateNode, mlir::DiagnosticSeverity::Error)
+        << "qcParam symbolTableEntry is invalid";
+  }
   return qId->GetName();
 }
 
