@@ -31,7 +31,6 @@ namespace qssc::arguments {
 
 using namespace payload;
 
-// TODO move to payload utilities
 static llvm::Expected<std::string> readFileFromZip(zip_t *zip, zip_stat_t &zs) {
   auto *zipFile = zip_fopen_index(zip, zs.index, 0);
 
