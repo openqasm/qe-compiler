@@ -21,17 +21,17 @@
 #ifndef PARAMETERS_H
 #define PARAMETERS_H
 
+#include "Dialect/QCS/IR/QCSTypes.h"
+
 #include "Parameters/Signature.h"
 #include "Payload/Payload.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
-#include <variant>
-
 namespace qssc::parameters {
 
-using ArgumentType = std::variant<double>;
+using ArgumentType = mlir::qcs::ParameterType;
 
 class ArgumentSource {
 public:

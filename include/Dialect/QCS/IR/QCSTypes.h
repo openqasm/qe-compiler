@@ -25,6 +25,10 @@
 // `System` dialects are ironed out.
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-namespace mlir::qcs {} // namespace mlir::qcs
+#include <variant>
+
+namespace mlir::qcs {
+using ParameterType = std::variant<double>;
+} // namespace mlir::qcs
 
 #endif // DIALECT_QCS_QCSTYPES_H_

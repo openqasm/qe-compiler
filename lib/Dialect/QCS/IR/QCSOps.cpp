@@ -94,7 +94,7 @@ ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 }
 
 // Returns the float value from the initial value of this parameter
-APFloat ParameterLoadOp::getAngleFromInitialValue() {
+ParameterType ParameterLoadOp::getInitialValue() {
   auto *op = getOperation();
   auto paramRefAttr =
       op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
@@ -115,10 +115,13 @@ APFloat ParameterLoadOp::getAngleFromInitialValue() {
   } while (!declOp);
 
   assert(declOp);
-  auto retVal = declOp.initial_value()
-                    .getValue()
-                    .dyn_cast<mlir::quir::AngleAttr>()
-                    .getValue();
+  auto angleAttr =
+      declOp.initial_value().getValue().dyn_cast<mlir::quir::AngleAttr>();
+  if (!angleAttr) {
+    op->emitError("Parameters are currently limited to angles only.");
+    return 0.0;
+  }
+  auto retVal = angleAttr.getValue().convertToDouble();
   return retVal;
 }
 
