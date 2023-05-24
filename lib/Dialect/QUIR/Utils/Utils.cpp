@@ -34,6 +34,7 @@
 #include "llvm/Support/Error.h"
 
 #include <regex>
+#include <tuple>
 #include <utility>
 
 namespace mlir::quir {

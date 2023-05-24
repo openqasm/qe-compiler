@@ -20,13 +20,13 @@
 #ifndef TARGETSYSTEM_H
 #define TARGETSYSTEM_H
 
+#include "Arguments/Arguments.h"
+
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallString.h"
 
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
-
-#include "Arguments/Arguments.h"
 
 #include <string>
 #include <vector>
