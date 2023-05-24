@@ -856,7 +856,7 @@ mlir::Value QUIRGenQASM3Visitor::createMeasurement(const ASTMeasureNode *node,
           dynamic_cast<const ASTIdentifierRefNode *>(identifier);
       if (!refnode) {
         reportError(node, mlir::DiagnosticSeverity::Error)
-            << "ASTIdentifierNode of ASTTYpe ASTTypeIdentifierRef "
+            << "ASTIdentifierNode of ASTType ASTTypeIdentifierRef "
             << "should also be an ASTIdentifierRefNode";
         return createVoidValue(node);
       }
@@ -963,18 +963,19 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
   case ASTTypeMPDecimal:
   case ASTTypeMPComplex: {
     auto variableType = varHandler.resolveQUIRVariableType(node);
-    auto val = visitAndGetExpressionValue(node->GetExpression());
+    auto valOrError = visitAndGetExpressionValue(node->GetExpression());
 
     varHandler.generateVariableDeclaration(
         loc, idNode->GetName(), variableType,
         node->GetModifierType() == QASM::ASTTypeInputModifier,
         node->GetModifierType() == QASM::ASTTypeOutputModifier);
 
-    if (!val) {
+    if (!valOrError) {
       assert(hasFailed && "visitAndGetExpressionValue returned error but did "
                           "not set state to failed.");
       return;
     }
+    auto val = valOrError.get();
 
     // generate variable assignment so that they are reinitialized on every
     // shot.
@@ -982,12 +983,12 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
     if (enableParameters &&
         node->GetModifierType() == QASM::ASTTypeInputModifier) {
       varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
-                                              variableType, val.get());
+                                              variableType, val);
       auto load =
           varHandler.generateParameterLoad(loc, idNode->GetMangledName());
       varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
     } else
-      varHandler.generateVariableAssignment(loc, idNode->GetName(), val.get());
+      varHandler.generateVariableAssignment(loc, idNode->GetName(), val);
 
     return;
   }
@@ -1261,7 +1262,6 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
                         "set state to failed.");
     return rightRefOrError;
   }
-
   Value rightRef = rightRefOrError.get();
 
   if (left->GetASTType() != ASTTypeIdentifier) {
@@ -1294,7 +1294,6 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
                           "not set state to failed.");
       return leftRefOrError;
     }
-
     Value leftRef = leftRefOrError.get();
 
     Value opRef = rightRef;
@@ -1384,14 +1383,13 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
                         "set state to failed.");
     return leftRefOrError;
   }
+  mlir::Value leftRef = leftRefOrError.get();
 
   if (!rightRefOrError) {
     assert(hasFailed && "visitAndGetExpressionValue returned error but did not "
                         "set state to failed.");
     return rightRefOrError;
   }
-
-  mlir::Value leftRef = leftRefOrError.get();
   mlir::Value rightRef = rightRefOrError.get();
 
   Type leftType = leftRef.getType();
@@ -1414,10 +1412,10 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
   LLVM_DEBUG(llvm::dbgs() << "binary op "
                           << QASM::PrintOpTypeEnum(node->GetOpType())
                           << " between\n");
-  LLVM_DEBUG(llvm::dbgs() << "  lhs (ASTTYpe "
+  LLVM_DEBUG(llvm::dbgs() << "  lhs (ASTType "
                           << QASM::PrintTypeEnum(left->GetASTType()) << ") "
                           << leftRef << "\n");
-  LLVM_DEBUG(llvm::dbgs() << "  rhs (ASTTYpe "
+  LLVM_DEBUG(llvm::dbgs() << "  rhs (ASTType "
                           << QASM::PrintTypeEnum(right->GetASTType()) << ") "
                           << rightRef << "\n");
   LLVM_DEBUG(llvm::dbgs() << "  common bit width " << bits << "\n");
@@ -1580,7 +1578,6 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
                           "not set state to failed.");
       return targetValueOrError;
     }
-
     targetValue = targetValueOrError.get();
   } else {
     const auto *id = operatorNode->GetTargetIdentifier();
@@ -1594,25 +1591,25 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
     if (id->IsReference()) {
       const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
       // Check for error
-      auto expressionValue = visitAndGetExpressionValue(idRef);
-      if (!expressionValue) {
+      auto expressionValueOrError = visitAndGetExpressionValue(idRef);
+      if (!expressionValueOrError) {
         assert(hasFailed && "visitAndGetExpressionValue returned error but did "
                             "not set state to failed.");
-        return expressionValue;
+        return expressionValueOrError;
       }
       // If not, get values from the function
-      targetValue = expressionValue.get();
+      targetValue = expressionValueOrError.get();
     } else {
-      auto expressionValue =
+      auto expressionValueOrError =
           visitAndGetExpressionValue(operatorNode->GetTargetIdentifier());
       // Check for error
-      if (!expressionValue) {
+      if (!expressionValueOrError) {
         assert(hasFailed && "visitAndGetExpressionValue returned error but did "
                             "not set state to failed.");
-        return expressionValue;
+        return expressionValueOrError;
       }
       // If not, get values from the function
-      targetValue = expressionValue.get();
+      targetValue = expressionValueOrError.get();
     }
   }
 
@@ -1816,13 +1813,12 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
     assert(hasFailed && "Error in real value");
     return realOrError;
   }
+  Value real = realOrError.get();
 
   if (!imagOrError) {
     assert(hasFailed && "Error in imag value");
     return imagOrError;
   }
-
-  Value real = realOrError.get();
   Value imag = imagOrError.get();
 
   return builder.create<complex::CreateOp>(
@@ -1896,7 +1892,6 @@ Type QUIRGenQASM3Visitor::getCastDestinationType(
     return builder.getI1Type();
 
   default:
-
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Unsupported cast destination type "
         << PrintTypeEnum(node->GetCastTo());
@@ -1910,12 +1905,10 @@ QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
   switchCircuit(false, getLocation(node));
   // visiting the child expression is deferred to BaseQASM3Visitor
   BaseQASM3Visitor::visit(node);
-
   if (!expression) {
     assert(hasFailed && "Expected visit functions to signal error state");
     return std::move(expression);
   }
-
   mlir::Value operandRef = expression.get();
 
   Value opRef = builder.create<CastOp>(
