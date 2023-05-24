@@ -74,7 +74,7 @@ private:
                                     mlir::OpBuilder &builder);
 
   std::string resolveQCParam(const QASM::ASTGateNode *gateNode,
-                                         unsigned int index);
+                             unsigned int index);
 
   /// \brief
   /// Create a diagnostic with the specified severity and location from the
