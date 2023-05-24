@@ -330,7 +330,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
   const ASTExpressionNode *exprNode = node->GetExpression();
   auto conditionOrError = visitAndGetExpressionValue(exprNode);
   if (!conditionOrError) {
-    assert(hasFailed && "visitAndGetExpressionValue generated error");
+    assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
     return;
   }
   Value condition = conditionOrError.get();
@@ -462,7 +462,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
 
   // Check if there was an error or not
   if (!flagOrError) {
-    assert(hasFailed);
+    assert(hasFailed && "visitor functions returned error");
     return;
   }
 
@@ -515,7 +515,7 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
   auto conditionOrError = visitAndGetExpressionValue(exprNode);
 
   if (!conditionOrError) {
-    assert(hasFailed && "visitAndGetExpressionValue returned error");
+    assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
     return;
   }
 
@@ -565,7 +565,7 @@ void QUIRGenQASM3Visitor::visit(const ASTFunctionCallNode *node) {
     auto expressionOrError = visitAndGetExpressionValue(
         dynamic_cast<const ASTExpressionNode *>(expr));
     if (!expressionOrError) {
-      assert(hasFailed && "visitAndGetExpressionValue returned Error");
+      assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
       return;
     }
     operands.push_back(expressionOrError.get());
@@ -651,7 +651,7 @@ void QUIRGenQASM3Visitor::visit(const ASTGenericGateOpNode *node) {
   visit(gateNode);
 }
 
-static const std::string &resolveQCParam(const ASTGateNode *gateNode,
+std::string QUIRGenQASM3Visitor::resolveQCParam(const ASTGateNode *gateNode,
                                          unsigned int index) {
   auto *qcParam = gateNode->GetQCParams()[index];
   auto *qId = qcParam->GetIdentifier();
@@ -703,7 +703,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
       auto expressionValue = visitAndGetExpressionValue(param);
       // Check for error
       if (!expressionValue) {
-        assert(hasFailed && "visitAndGetExpressionValue returned error");
+        assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
         return expressionValue;
       }
       // If not, get values from the function
@@ -773,7 +773,7 @@ void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
       auto expressionValue = visitAndGetExpressionValue(param);
       // Check for error
       if (!expressionValue) {
-        assert(hasFailed && "visitAndGetExpressionValue returned error");
+        assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
         return;
       }
       // If not, get values from the function
@@ -969,7 +969,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
         node->GetModifierType() == QASM::ASTTypeOutputModifier);
 
     if (!val) {
-      assert(hasFailed && "visitAndGetExpressionValue returned Error");
+      assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
       return;
     }
 
@@ -1254,7 +1254,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
   auto rightRefOrError = visitAndGetExpressionValue(right);
 
   if (!rightRefOrError) {
-    assert(hasFailed && "visitAndGetExpressionValue returned error");
+    assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
     return rightRefOrError;
   }
 
@@ -1286,7 +1286,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
     auto leftRefOrError = visitAndGetExpressionValue(left);
 
     if (!leftRefOrError) {
-      assert(hasFailed && "visitAndGetExpressionValue returned error");
+      assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
       return leftRefOrError;
     }
 
@@ -1375,12 +1375,12 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
   auto rightRefOrError = visitAndGetExpressionValue(right);
 
   if (!leftRefOrError) {
-    assert(hasFailed && "visitAndGetExpressionValue returned error");
+    assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
     return leftRefOrError;
   }
 
   if (!rightRefOrError) {
-    assert(hasFailed && "visitAndGetExpressionValue returned error");
+    assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
     return rightRefOrError;
   }
 
@@ -1569,7 +1569,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
         visitAndGetExpressionValue(operatorNode->GetTargetExpression());
 
     if (!targetValueOrError) {
-      assert(hasFailed && "visitAndGetExpressionValue returned error");
+      assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
       return targetValueOrError;
     }
 
@@ -1588,7 +1588,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
       // Check for error
       auto expressionValue = visitAndGetExpressionValue(idRef);
       if (!expressionValue) {
-        assert(hasFailed && "visitAndGetExpressionValue returned error");
+        assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
         return expressionValue;
       }
       // If not, get values from the function
@@ -1598,7 +1598,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
           visitAndGetExpressionValue(operatorNode->GetTargetIdentifier());
       // Check for error
       if (!expressionValue) {
-        assert(hasFailed && "visitAndGetExpressionValue returned error");
+        assert(hasFailed && "visitAndGetExpressionValue returned error but did not set state to failed.");
         return expressionValue;
       }
       // If not, get values from the function

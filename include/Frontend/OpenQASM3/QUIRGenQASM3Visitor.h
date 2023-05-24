@@ -53,7 +53,6 @@ private:
   std::string getExpressionName(const QASM::ASTExpressionNode *);
 
   /// hold intermediate expression value while visiting child nodes
-  // llvm::Optional<mlir::Value> expression;
   llvm::Expected<mlir::Value> expression;
 
   llvm::Expected<mlir::Value>
@@ -73,6 +72,9 @@ private:
 
   mlir::Type getCastDestinationType(const QASM::ASTCastExpressionNode *node,
                                     mlir::OpBuilder &builder);
+
+  std::string resolveQCParam(const QASM::ASTGateNode *gateNode,
+                                         unsigned int index);
 
   /// \brief
   /// Create a diagnostic with the specified severity and location from the
