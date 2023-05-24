@@ -466,7 +466,6 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
     assert(hasFailed && "visitor functions returned error");
     return;
   }
-
   // Since this is not an error, assigning to flag
   flag = flagOrError.get();
 
@@ -520,7 +519,6 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
                         "set state to failed.");
     return;
   }
-
   Value condition = conditionOrError.get();
 
   builder.create<scf::ConditionOp>(loc, condition, ValueRange({}));
@@ -693,11 +691,12 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
         if (const auto *const ident = param->GetValueIdentifier()) {
           pos = varHandler.generateVariableUse(getLocation(node), ident);
           ssaOtherValues.push_back(pos);
-        } else
+        } else {
           reportError(node, mlir::DiagnosticSeverity::Error)
               << "Unnamed expressions not supported by QUIRGen yet, assign to "
                  "an identifier";
-        return createVoidValue(node);
+          return createVoidValue(node);
+        }
       }
     } else {
       auto expressionValue = visitAndGetExpressionValue(param);
