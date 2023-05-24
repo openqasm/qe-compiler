@@ -24,9 +24,9 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
-#include <zip.h>
 #include <string>
 #include <unordered_map>
+#include <zip.h>
 
 namespace qssc::payload {
 class PatchableZipPayload {
