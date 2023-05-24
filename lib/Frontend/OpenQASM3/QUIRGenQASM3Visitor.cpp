@@ -111,7 +111,7 @@ mlir::Value QUIRGenQASM3Visitor::getCurrentValue(const std::string &valueName) {
   return pos->second;
 }
 
-std::string
+llvm::Expected<std::string>
 QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
 
   if (const auto *refNode =
@@ -1263,9 +1263,17 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
   }
   Value rightRef = rightRefOrError.get();
 
+  llvm::Expected<std::string> leftNameOrError = getExpressionName(left);
+  if (!leftNameOrError) {
+    assert(hasFailed && "getExpressionName returned an error but did not set "
+                        "the state to failed.");
+    return createVoidValue(node);
+  }
+  std::string leftName = leftNameOrError.get();
+
   if (left->GetASTType() != ASTTypeIdentifier) {
     reportError(node, mlir::DiagnosticSeverity::Error)
-        << "Cannot handle assignment to " << getExpressionName(left)
+        << "Cannot handle assignment to " << leftName
         << " which is not an identifier";
     return createVoidValue(node);
   }
@@ -1693,7 +1701,14 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPIntegerNode *node) {
                                           node->GetIdentifier());
   }
 
-  std::string name = getExpressionName(node);
+  llvm::Expected<std::string> nameOrError = getExpressionName(node);
+  if (!nameOrError) {
+    assert(hasFailed && "getExpressionName returned an error but did not set "
+                        "the state to failed.");
+    return createVoidValue(node);
+  }
+  std::string name = nameOrError.get();
+
   const unsigned bits = node->GetBits();
   bool isSigned = node->IsSigned();
   int64_t value = isSigned ? node->ToSignedInt() : node->ToUnsignedInt();
@@ -1796,7 +1811,13 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
   switchCircuit(false, getLocation(node));
   // TODO this node may refer to an identifier, not just the encoded value. Fix
   // when replacing the use of ssaValues.
-  std::string name = getExpressionName(node);
+  llvm::Expected<std::string> nameOrError = getExpressionName(node);
+  if (!nameOrError) {
+    assert(hasFailed && "getExpressionName returned an error but did not set "
+                        "the state to failed.");
+    return createVoidValue(node);
+  }
+  std::string name = nameOrError.get();
 
   if (ssaValues.find(name) != ssaValues.end()) {
     reportError(node, mlir::DiagnosticSeverity::Error)

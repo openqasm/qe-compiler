@@ -50,7 +50,8 @@ private:
   mlir::Location getLocation(const QASM::ASTBase *);
   bool assign(mlir::Value &, const std::string &);
   mlir::Value getCurrentValue(const std::string &valueName);
-  std::string getExpressionName(const QASM::ASTExpressionNode *);
+  llvm::Expected<std::string>
+  getExpressionName(const QASM::ASTExpressionNode *);
 
   /// hold intermediate expression value while visiting child nodes
   llvm::Expected<mlir::Value> expression;
