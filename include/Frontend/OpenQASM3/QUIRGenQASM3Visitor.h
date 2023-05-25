@@ -74,8 +74,8 @@ private:
   mlir::Type getCastDestinationType(const QASM::ASTCastExpressionNode *node,
                                     mlir::OpBuilder &builder);
 
-  std::string resolveQCParam(const QASM::ASTGateNode *gateNode,
-                             unsigned int index);
+  llvm::Expected<std::string> resolveQCParam(const QASM::ASTGateNode *gateNode,
+                                             unsigned int index);
 
   /// \brief
   /// Create a diagnostic with the specified severity and location from the

@@ -131,6 +131,8 @@ QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
   if (!node->GetIdentifier()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Identifier not found.";
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Failed to get the Identifier");
   }
   return node->GetIdentifier()->GetName();
 }
@@ -652,14 +654,17 @@ void QUIRGenQASM3Visitor::visit(const ASTGenericGateOpNode *node) {
   visit(gateNode);
 }
 
-std::string QUIRGenQASM3Visitor::resolveQCParam(const ASTGateNode *gateNode,
-                                                unsigned int index) {
+llvm::Expected<std::string>
+QUIRGenQASM3Visitor::resolveQCParam(const ASTGateNode *gateNode,
+                                    unsigned int index) {
   auto *qcParam = gateNode->GetQCParams()[index];
   auto *qId = qcParam->GetIdentifier();
 
   if (!qId) {
     reportError(gateNode, mlir::DiagnosticSeverity::Error)
         << "qcParam symbolTableEntry is invalid";
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Failed to get the Identifier");
   }
   return qId->GetName();
 }
@@ -677,8 +682,17 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
   for (unsigned i = 0; i < numQubits; i++)
     args.push_back(getCurrentValue(node->GetQubit(i)->GetGateQubitName()));
 
-  for (size_t i = 0; i < numQCParams; i++)
-    args.push_back(getCurrentValue(resolveQCParam(node, i)));
+  for (size_t i = 0; i < numQCParams; i++) {
+    auto resolveQCParamOrError = resolveQCParam(node, i);
+    if (!resolveQCParamOrError) {
+      assert(hasFailed && "resolveQCParam returned an Error but did "
+                          "not set state to failed.");
+      return createVoidValue(node);
+    }
+    auto resolveQCParam = resolveQCParamOrError.get();
+
+    args.push_back(getCurrentValue(resolveQCParam));
+  }
 
   for (unsigned i = 0; i < numParams; i++) {
     const auto *const param = node->GetParam(i);
@@ -750,7 +764,15 @@ void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
     return;
   }
 
-  Value qubitRef = getCurrentValue(resolveQCParam(gateNode, 0));
+  auto resolveQCParamOrError = resolveQCParam(gateNode, 0);
+  if (!resolveQCParamOrError) {
+    assert(hasFailed && "resolveQCParam returned an Error but did "
+                        "not set state to failed.");
+    return;
+  }
+  auto resolveQCParam = resolveQCParamOrError.get();
+
+  Value qubitRef = getCurrentValue(resolveQCParam);
 
   std::array<Value, fixedNumParams> angles;
   for (unsigned i = 0; i < fixedNumParams; i++) {
@@ -797,8 +819,25 @@ void QUIRGenQASM3Visitor::visit(const ASTCXGateOpNode *node) {
     return;
   }
 
-  Value controlQubit = getCurrentValue(resolveQCParam(gateNode, 0));
-  Value targetQubit = getCurrentValue(resolveQCParam(gateNode, 1));
+  auto resolveQCParam0OrError = resolveQCParam(gateNode, 0);
+  if (!resolveQCParam0OrError) {
+    assert(hasFailed && "resolveQCParam returned an Error but did "
+                        "not set state to failed.");
+    return;
+  }
+  auto resolveQCParam0 = resolveQCParam0OrError.get();
+
+  Value controlQubit = getCurrentValue(resolveQCParam0);
+
+  auto resolveQCParam1OrError = resolveQCParam(gateNode, 1);
+  if (!resolveQCParam1OrError) {
+    assert(hasFailed && "resolveQCParam returned an Error but did "
+                        "not set state to failed.");
+    return;
+  }
+  auto resolveQCParam1 = resolveQCParam1OrError.get();
+
+  Value targetQubit = getCurrentValue(resolveQCParam1);
 
   builder.create<BuiltinCXOp>(getLocation(node), controlQubit, targetQubit);
 }
