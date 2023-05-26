@@ -58,7 +58,7 @@ public:
   parseSignature(qssc::payload::PatchablePayload *payload) = 0;
 };
 
-// BindArgumentsImplementationFactory - abstract class to be subclassed by t
+// BindArgumentsImplementationFactory - abstract class to be subclassed by
 // targets that define and implement a factory for creating
 // BindArgumentsImplementation objects
 class BindArgumentsImplementationFactory {

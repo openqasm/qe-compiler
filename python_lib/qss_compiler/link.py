@@ -43,7 +43,7 @@ class LinkOptions:
     target: str
     """Hardware target to select."""
     arguments: Mapping[str, Any]
-    """Circuit arguments as mapping of name to value."""
+    """Set the specific execution arguments of a pre-compiled program as a mapping of name to value."""
     config_path: str = ""
     """Target configuration path."""
 
