@@ -38,8 +38,12 @@ namespace mlir::quir {
 struct SubroutineCloningPass
     : public PassWrapper<SubroutineCloningPass, OperationPass<>> {
   auto lookupQubitId(const Value val) -> int;
+
+  template <class CallLikeOp>
   auto getMangledName(Operation *op) -> std::string;
+  template <class CallLikeOp, class FuncLikeOp>
   void processCallOp(Operation *op);
+
   void runOnOperation() override;
 
   std::deque<Operation *> callWorkList;

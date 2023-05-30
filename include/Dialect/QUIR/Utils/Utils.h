@@ -135,9 +135,17 @@ struct Duration {
   /// Construct a Duration from a ConstantOp
   static llvm::Expected<Duration>
   parseDuration(mlir::quir::ConstantOp &duration);
+  /// Construct a Duration from a DelayOp
+  static llvm::Expected<Duration> parseDuration(mlir::quir::DelayOp &delayOp);
   /// Convert duration to cycles. dt is in SI (seconds).
   Duration convertToCycles(double dt) const;
 };
 /// Extract the Duration from a ConstantOp
+
+// get qubit id from the result of a measurement
+std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,
+                                                 Value result);
+std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
+                                                 Value result);
 
 } // end namespace mlir::quir

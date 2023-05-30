@@ -1,6 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -24,6 +25,25 @@ int n = 1;
 
 bit is_excited;
 
+// MLIR-CIRCUITS: func @h(%arg0: !quir.qubit<1>) {
+// MLIR-CIRCUITS: quir.call_circuit @circuit_0(%arg0) : (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: return 
+
+// MLIR-CIRCUITS: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) {
+// MLIR-CIRCUITS: %angle = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
+// MLIR-CIRCUITS: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// MLIR-CIRCUITS: quir.return
+  
+// MLIR-CIRCUITS: quir.circuit @circuit_1(%arg0: !quir.qubit<1>) -> i1 {
+// MLIR-CIRCUITS: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: %cst = constant unit
+// MLIR-CIRCUITS: %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: quir.return %0 : i1
+  
+// MLIR-CIRCUITS: quir.circuit @circuit_2(%arg0: !quir.qubit<1>) {
+// MLIR-CIRCUITS: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.return
+
 // AST-PRETTY: WhileStatement(condition=BinaryOpNode(type=ASTOpTypeCompNeq, left=IdentifierNode(name=n, bits=32), right=IntNode(signed=true, value=0, bits=32))
 // MLIR: scf.while : () -> () {
 // MLIR:     %2 = oq3.variable_load @n : i32
@@ -36,18 +56,20 @@ while (n != 0) {
     // AST-PRETTY: HGateOpNode(params=[], qubits=[], qcparams=[$0],
     // AST-PRETTY: ops=[
     // AST-PRETTY: UGateOpNode(params=[AngleNode(value=1.57079632679000003037, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=3.14159265359000006157, bits=64)], qubits=[], qcparams=[q])
-    // MLIR: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-    // MLIR: %cst = constant unit
+    // MLIR-NO-CIRCUITS: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
+    // MLIR-NO-CIRCUITS: %cst = constant unit
     h $0;
-    // MLIR: %2 = quir.measure(%0) : (!quir.qubit<1>) -> i1
+    // MLIR-NO-CIRCUITS: %2 = quir.measure(%0) : (!quir.qubit<1>) -> i1
+    // MLIR-CIRCUITS: %2 = quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> i1
     // MLIR: oq3.cbit_assign_bit @is_excited<1> [0] : i1 = %2
     // MLIR: %3 = oq3.variable_load @is_excited : !quir.cbit<1>
     // MLIR: %4 = "oq3.cast"(%3) : (!quir.cbit<1>) -> i1
     is_excited = measure $0;
     // MLIR: scf.if %4 {
     if (is_excited) {
-        // MLIR:     quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-        // MLIR:     %cst_1 = constant unit
+        // MLIR-NO-CIRCUITS:     quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
+        // MLIR-NO-CIRCUITS:     %cst_1 = constant unit
+        // MLIR-CIRCUITS: quir.call_circuit @circuit_2(%0) : (!quir.qubit<1>) -> ()
         // MLIR: }
         h $0;
     }

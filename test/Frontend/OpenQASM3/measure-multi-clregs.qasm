@@ -1,6 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -26,7 +27,8 @@ qubit $1;
 // Single qubit measurement into single qubit
 bit clbit;
 
-// MLIR: [[MEASURE1:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: [[MEASURE1:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: [[MEASURE1:%.*]] = quir.call_circuit @circuit_0([[QUBIT0]]) : (!quir.qubit<1>) -> i1
 // MLIR: oq3.cbit_assign_bit @clbit<1> [0] : i1 = [[MEASURE1]]
 clbit = measure $0;
 
@@ -37,17 +39,20 @@ barrier $0;
 bit[4] clreg;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=clreg, bits=4)[index=1])
-// MLIR: [[MEASURE2:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.cbit_assign_bit @clreg<4> [1] : i1 = [[MEASURE2]]
+// MLIR-NO-CIRCUITS: [[MEASURE2:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: [[MEASURE2:%.*]] = quir.call_circuit @circuit_1([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: oq3.cbit_assign_bit @clreg<4> [1] : i1 = [[MEASURE2]]
 clreg[1] = measure $0;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=clreg, bits=4)[index=0])
-// MLIR: [[MEASURE3:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.cbit_assign_bit @clreg<4> [0] : i1 = [[MEASURE3]]
+// MLIR-NO-CIRCUITS: [[MEASURE3:%.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: [[MEASURE3:%.*]] = quir.call_circuit @circuit_2([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: oq3.cbit_assign_bit @clreg<4> [0] : i1 = [[MEASURE3]]
 clreg[0] = measure $0;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$1:0, bits=1))], result=CBitNode(name=clreg, bits=4)[index=3])
-// MLIR: [[MEASURE4:%.*]] = quir.measure([[QUBIT1]]) : (!quir.qubit<1>) -> i1
-// MLIR: oq3.cbit_assign_bit @clreg<4> [3] : i1 = [[MEASURE4]]
+// MLIR-NO-CIRCUITS: [[MEASURE4:%.*]] = quir.measure([[QUBIT1]]) : (!quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: [[MEASURE4:%.*]] = quir.call_circuit @circuit_3([[QUBIT1]]) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: oq3.cbit_assign_bit @clreg<4> [3] : i1 = [[MEASURE4]]
 clreg[3] = measure $1;
 //

@@ -49,6 +49,7 @@
 #include <Frontend/OpenQASM3/QUIRVariableBuilder.h>
 
 #include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/raw_ostream.h>
 #include <qasm/AST/ASTDelay.h>
 #include <qasm/AST/ASTTypeEnums.h>
 
@@ -85,6 +86,14 @@ static llvm::cl::opt<bool>
     enableParameters("enable-parameters",
                      llvm::cl::desc("enable qasm3 input parameters"),
                      llvm::cl::init(false));
+
+static llvm::cl::opt<bool>
+    enableCircuits("enable-circuits", llvm::cl::desc("enable quir circuits"),
+                   llvm::cl::init(false));
+
+static llvm::cl::opt<bool> debugCircuits("debug-circuits",
+                                         llvm::cl::desc("debug quir circuits"),
+                                         llvm::cl::init(false));
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
@@ -165,11 +174,13 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
   std::string durationString = std::to_string(durationValue);
   llvm::SmallString<32> buf;
 
-  return builder.create<quir::ConstantOp>(
+  auto ssa = circuitParentBuilder.create<quir::ConstantOp>(
       location,
       DurationAttr::get(builder.getContext(), builder.getType<DurationType>(),
                         durationString +
                             getDurationUnitShortName(durationUnit).str()));
+  ssaOtherValues.push_back(ssa);
+  return ssa;
 }
 
 void QUIRGenQASM3Visitor::initialize(uint numShots,
@@ -312,6 +323,10 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
   // check inside for loop
   const ASTStatementList &loopNode = loop->GetStatementList();
   BaseQASM3Visitor::visit(&loopNode);
+
+  // make sure to switch out of any circuit inside for loop
+  if (buildingInCircuit)
+    finishCircuit();
 
   // Set the builder to add the next operations after the for loop.
   builder.setInsertionPointAfter(forOp);
@@ -484,6 +499,10 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   OpBuilder defaultRegionBuilder(defaultRegion);
   builder = defaultRegionBuilder;
   BaseQASM3Visitor::visit(node->GetDefaultStatement()->GetStatementList());
+
+  if (buildingInCircuit)
+    finishCircuit();
+
   // add YieldOp to terminate default regions
   builder.create<quir::YieldOp>(loc);
 
@@ -497,6 +516,10 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
     i++;
     builder = caseRegionBuilder;
     BaseQASM3Visitor::visit(caseValue->GetStatementList());
+
+    if (buildingInCircuit)
+      finishCircuit();
+
     // add YieldOp to terminate all case regions
     builder.create<quir::YieldOp>(loc);
   }
@@ -529,6 +552,9 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
 
   const ASTStatementList &statementList = loop->GetStatementList();
   BaseQASM3Visitor::visit(&statementList);
+
+  if (buildingInCircuit)
+    finishCircuit();
 
   builder.create<scf::YieldOp>(loc);
   builder.setInsertionPointAfter(whileOp);
@@ -739,7 +765,7 @@ void QUIRGenQASM3Visitor::visit(const ASTHGateOpNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
-  switchCircuit(false, getLocation(node));
+  switchCircuit(true, getLocation(node));
 
   const ASTGateNode *gateNode = node->GetGateNode();
   const size_t numParams = gateNode->ParamsSize();
@@ -843,7 +869,8 @@ void QUIRGenQASM3Visitor::visit(const ASTCXGateOpNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTResetNode *node) {
-  switchCircuit(true, getLocation(node));
+  // do not insert reset into circuit due to BreakResetPass
+  switchCircuit(false, getLocation(node));
   Value qubitRef = getCurrentValue(node->GetTarget()->GetName());
   builder.create<ResetQubitOp>(getLocation(node), qubitRef);
 }
@@ -905,12 +932,12 @@ mlir::Value QUIRGenQASM3Visitor::createMeasurement(const ASTMeasureNode *node,
         getLocation(node), identifier->GetName(), measureOp.outs().front(),
         resultIndex, identifier->GetBits());
   }
-
   return measureOp.outs().front();
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTMeasureNode *node) {
   createMeasurement(node, true);
+  finishCircuit();
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
@@ -923,7 +950,6 @@ void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
     Value duration = getCurrentValue(delayNode->GetDurationNode()->GetName());
     Value qubitRef =
         getCurrentValue(delayNode->GetDelayQubitIdentifier()->GetName());
-
     builder.create<DelayOp>(getLocation(delayNode), duration, qubitRef);
     break;
   }
@@ -973,7 +999,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTBarrierNode *node) {
-  switchCircuit(true, getLocation(node));
+  switchCircuit(false, getLocation(node));
   const ASTIdentifierList &idList = node->GetOperandList();
   const size_t numQubits = idList.Size();
   std::vector<Value> args(numQubits);
@@ -987,7 +1013,8 @@ void QUIRGenQASM3Visitor::visit(const ASTBarrierNode *node) {
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
-  switchCircuit(false, getLocation(node));
+  // defer switching circuit until type is known due to
+  // the "Old Path" at the end of this method
   const ASTIdentifierNode *idNode = node->GetIdentifier();
   const mlir::Location loc = getLocation(node);
 
@@ -1000,6 +1027,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
   case ASTTypeFloat:
   case ASTTypeMPDecimal:
   case ASTTypeMPComplex: {
+    switchCircuit(false, getLocation(node));
     auto variableType = varHandler.resolveQUIRVariableType(node);
     auto valOrError = visitAndGetExpressionValue(node->GetExpression());
 
@@ -1018,8 +1046,10 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
     // generate variable assignment so that they are reinitialized on every
     // shot.
 
+    // parameter support currently limited to quir::AngleType
     if (enableParameters &&
-        node->GetModifierType() == QASM::ASTTypeInputModifier) {
+        node->GetModifierType() == QASM::ASTTypeInputModifier &&
+        variableType.isa<mlir::quir::AngleType>()) {
       varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
                                               variableType, val);
       auto load =
@@ -1156,9 +1186,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
           getLocation(node), builder.getBoolAttr(false));
     }
     auto measurement = createMeasurement(nodeGateOp, false);
-    return builder.create<mlir::oq3::CastOp>(
+    auto castOp = builder.create<mlir::oq3::CastOp>(
         getLocation(node), builder.getType<mlir::quir::CBitType>(1),
         measurement);
+    finishCircuit();
+    return castOp;
   }
 
   // the node's string representation may be shorter or longer than the
@@ -1180,7 +1212,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTDurationNode *node) {
-  switchCircuit(false, getLocation(node));
+  switchCircuit(true, getLocation(node));
   // TODO this node may refer to an identifier, not just the encoded value. Fix
   // when replacing the use of ssaValues.
   if (ssaValues.find(node->GetName()) != ssaValues.end()) {
@@ -1399,7 +1431,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
 
 llvm::Expected<mlir::Value>
 QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTExpressionNode *node) {
-  switchCircuit(false, getLocation(node));
+  // do not switch circuit here
   BaseQASM3Visitor::visit(node);
   if (expression)
     ssaOtherValues.push_back((expression.get()));
@@ -1803,7 +1835,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTFloatNode *node) {
 
 ExpressionValueType
 QUIRGenQASM3Visitor::getValueFromLiteral(const ASTMPDecimalNode *node) {
-  switchCircuit(false, getLocation(node));
+  // do not switchCircuit(false, getLocation(node));
   const unsigned bits = node->GetIdentifier()->GetBits();
   double long value = 0.0;
   if (node->IsNumber())
@@ -1885,7 +1917,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTAngleNode *node) {
-  switchCircuit(false, getLocation(node));
+  // do not switchCircuit(false, getLocation(node));
   if (!node->GetIdentifier()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Identifier not found.";
@@ -1961,7 +1993,7 @@ Type QUIRGenQASM3Visitor::getCastDestinationType(
 
 ExpressionValueType
 QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
-  switchCircuit(false, getLocation(node));
+  // do not switchCircuit(false, getLocation(node));
   // visiting the child expression is deferred to BaseQASM3Visitor
   BaseQASM3Visitor::visit(node);
   if (!expression) {
@@ -1986,7 +2018,7 @@ mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
 
 void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
-  if (!enableParameters)
+  if (!enableCircuits)
     return;
 
   currentCircuitOp = topLevelBuilder.create<CircuitOp>(
@@ -1995,6 +2027,9 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
           /*inputs=*/ArrayRef<Type>(),
           /*results=*/ArrayRef<Type>()));
   auto *block = currentCircuitOp.addEntryBlock();
+
+  if (debugCircuits)
+    llvm::errs() << "Start Circuit " << currentCircuitOp.sym_name() << "\n";
 
   OpBuilder circuitBuilder(currentCircuitOp.getBody());
   circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
@@ -2011,8 +2046,21 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
 
 void QUIRGenQASM3Visitor::finishCircuit() {
 
-  if (!enableParameters || !buildingInCircuit)
+  if (!enableCircuits || !buildingInCircuit)
     return;
+
+  if (debugCircuits)
+    llvm::errs() << "Finish Circuit " << currentCircuitOp.sym_name() << "\n";
+
+  // check if the first Op in the circuit is a ReturnOp
+  // if so - no ops were added - erase circuit and return
+  if (isa<quir::ReturnOp>(currentCircuitOp.front().begin())) {
+    currentCircuitOp->erase();
+    varHandler.disableClassicalBuilder();
+    builder = circuitParentBuilder;
+    buildingInCircuit = false;
+    return;
+  }
 
   // rewrite the circuit and add a call circuit ops to fix region and usage
   //
@@ -2036,6 +2084,10 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   // in the quir.circuit
 
   auto insertArgumentsAndReplaceUse = [&](Value value) {
+    // if value is located in current circuit - do nothing and return
+    if (value.getDefiningOp() &&
+        value.getDefiningOp()->getParentOp() == currentCircuitOp)
+      return;
     for (auto *user : value.getUsers()) {
       if (currentCircuitOp->isAncestor(user)) {
         auto arg = currentCircuitOp.body().front().addArgument(value.getType(),
@@ -2095,11 +2147,22 @@ void QUIRGenQASM3Visitor::finishCircuit() {
   }
 
   // move uses of the results after the call_circuit
-  for (auto const &output : newCallOp.getResults())
-    for (auto *user : output.getUsers())
-      user->moveAfter(newCallOp);
+  // move use of uses as well
+  llvm::SmallVector<Operation *> workList;
+  Operation *op = newCallOp;
+  do {
+    if (!workList.empty()) {
+      op = workList.back();
+      workList.pop_back();
+    }
+    for (auto const &output : op->getResults())
+      for (auto *user : output.getUsers()) {
+        user->moveAfter(op);
+        workList.push_back(user);
+      }
+  } while (!workList.empty());
 
-  // restore varHandler builder and vistor builder to
+  // restore varHandler builder and visitor builder to
   // use shot loop
   varHandler.disableClassicalBuilder();
   builder = circuitParentBuilder;
@@ -2131,6 +2194,12 @@ void QUIRGenQASM3Visitor::switchCircuit(bool buildInCircuit,
   // for the current AST Node should be placed in a circuit. Do nothing with
   // regard to the circuit building (this will group operations inside the
   // quir.circuit).
+
+  if (debugCircuits)
+    llvm::outs() << "switchCircuit\n";
+
+  if (!enableCircuits)
+    return;
 
   if (buildingInCircuit && buildInCircuit)
     return;

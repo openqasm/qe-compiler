@@ -50,6 +50,14 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
                                 PatternRewriter &rewriter) const override {
     quir::ConstantOp constantDurationOp;
 
+    if (auto circuitOp = resetOp->getParentOfType<CircuitOp>()) {
+      llvm::errs() << "Need to handle reset in circuitOp\n";
+      // TODO: implement a strategy for breaking resets inside of
+      // currently the QUIRGenQASM3Visitor does not put resets
+      // inside of circuits to prevent problems with this pass.
+      return failure();
+    }
+
     if (numIterations_ > 1 && delayCycles_ > 0) {
       std::string durationString = std::to_string(delayCycles_) + "dt";
       constantDurationOp = rewriter.create<quir::ConstantOp>(

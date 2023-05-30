@@ -385,7 +385,7 @@ def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [DeclareOpInterfaceMethod
     }];
 }
 
-def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormalizable, DeclareOpInterfaceMethods<SymbolUserOpInterface>, DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>]> {
+def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormalizable, DeclareOpInterfaceMethods<SymbolUserOpInterface>, DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>, NonInterferingNonDeadSideEffect]> {
     let summary = "Call a circuit operation";
     let description = [{
         The `quir.call_circuit` operation represents calls to launch a quantum circuit in the target system.

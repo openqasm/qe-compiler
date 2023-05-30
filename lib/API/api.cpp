@@ -29,12 +29,15 @@
 #include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/Optional.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
+#include "Arguments/Arguments.h"
 #include "Payload/Payload.h"
 #include "Payload/PayloadRegistry.h"
 #include "QSSC.h"
@@ -51,6 +54,7 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <string_view>
 #include <utility>
 
 using namespace mlir;
@@ -662,10 +666,56 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
   return 0;
 }
 
+class MapAngleArgumentSource : public qssc::arguments::ArgumentSource {
+
+public:
+  MapAngleArgumentSource(
+      const std::unordered_map<std::string, double> &parameterMap)
+      : parameterMap(parameterMap) {}
+
+  qssc::arguments::ArgumentType
+  getArgumentValue(llvm::StringRef name) const override {
+    std::string name_{name};
+    auto pos = parameterMap.find(name_);
+
+    if (pos == parameterMap.end())
+      return 0.0; // TODO need to make this Optional and error handling!
+
+    return pos->second;
+  }
+
+private:
+  const std::unordered_map<std::string, double> &parameterMap;
+};
+
 llvm::Error
-_bindParameters(std::string_view target, std::string_view moduleInputPath,
-                std::string_view payloadOutputPath,
-                std::unordered_map<std::string, double> const &parameters) {
+_bindArguments(std::string_view target, std::string_view configPath,
+               std::string_view moduleInputPath,
+               std::string_view payloadOutputPath,
+               std::unordered_map<std::string, double> const &arguments) {
+
+  MLIRContext context{};
+
+  qssc::hal::registry::TargetSystemInfo &targetInfo =
+      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(target)
+           .getValueOr(qssc::hal::registry::TargetSystemRegistry::
+                           nullTargetSystemInfo());
+
+  auto created = targetInfo.createTarget(&context, llvm::StringRef(configPath));
+  if (auto err = created.takeError()) {
+    return llvm::joinErrors(
+        llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                "Unable to create target!"),
+        std::move(err));
+  }
+
+  auto targetInst = targetInfo.getTarget(&context);
+  if (auto err = targetInst.takeError()) {
+    return llvm::joinErrors(
+        llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                "Unable to load target!"),
+        std::move(err));
+  }
 
   // ZipPayloads are implemented with libzip, which only supports updating a zip
   // archive in-place. Thus, copy module to payload first, then update payload
@@ -677,19 +727,26 @@ _bindParameters(std::string_view target, std::string_view moduleInputPath,
     return llvm::make_error<llvm::StringError>(
         "Failed to copy circuit module to payload", copyError);
 
-  // TODO actually update parameters, tbd in later commits.
+  MapAngleArgumentSource source(arguments);
 
-  return llvm::Error::success();
+  auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
+  if (!factory.hasValue()) {
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "Unable to load bind arguments implementation for target!");
+  }
+  return qssc::arguments::bindArguments(moduleInputPath, payloadOutputPath,
+                                        source, factory.getValue());
 }
 
-int qssc::bindParameters(
-    std::string_view target, std::string_view moduleInputPath,
-    std::string_view payloadOutputPath,
-    std::unordered_map<std::string, double> const &parameters,
+int qssc::bindArguments(
+    std::string_view target, std::string_view configPath,
+    std::string_view moduleInputPath, std::string_view payloadOutputPath,
+    std::unordered_map<std::string, double> const &arguments,
     std::string *errorMessage) {
 
-  auto successOrErr =
-      _bindParameters(target, moduleInputPath, payloadOutputPath, parameters);
+  auto successOrErr = _bindArguments(target, configPath, moduleInputPath,
+                                     payloadOutputPath, arguments);
 
   if (successOrErr) {
     if (errorMessage) {

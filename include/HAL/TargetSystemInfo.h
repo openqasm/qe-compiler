@@ -14,11 +14,10 @@
 #ifndef TARGETSYSTEMINFO_H
 #define TARGETSYSTEMINFO_H
 
+#include "Arguments/Arguments.h"
 #include "HAL/TargetSystem.h"
-
-#include "Support/Pimpl.h"
-
 #include "Plugin/PluginInfo.h"
+#include "Support/Pimpl.h"
 
 namespace qssc::hal::registry {
 

@@ -1,7 +1,8 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast %s | FileCheck %s --check-prefix AST
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --match-full-lines --check-prefix MLIR
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -38,7 +39,8 @@ qubit $0;
 bit result;
 
 // AST-PRETTY: MeasureNode(qubits=[QubitContainerNode(QubitNode(name=$0:0, bits=1))], result=CBitNode(name=result, bits=1))
-// MLIR: %[[MVAL:.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+// MLIR-NO-CIRCUITS: %[[MVAL:.*]] = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+// MLIR-CIRCUITS: %[[MVAL:.*]] = quir.call_circuit @circuit_0([[QUBIT0]]) : (!quir.qubit<1>) -> i1
 // MLIR: oq3.cbit_assign_bit @result<1> [0] : i1 = %[[MVAL]]
 result = measure $0;
 
@@ -81,7 +83,8 @@ result = measure $0;
 // MLIR: %c1_i32 = arith.constant 1 : i32
 // MLIR: %{{.*}} = arith.cmpi eq, %{{.*}}, %c1_i32 : i32
 // MLIR: scf.if %{{.*}} {
-// MLIR: quir.builtin_U [[QUBIT0]], %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// MLIR-NO-CIRCUITS: quir.builtin_U [[QUBIT0]], %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
+// MLIR-CIRCUITS: quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> ()
 if (result==1) {
     U(3.1415926, 0, 3.1415926) $0;
 }

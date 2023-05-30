@@ -42,8 +42,10 @@ class LinkOptions:
     """Path to output payload."""
     target: str
     """Hardware target to select."""
-    parameters: Mapping[str, Any]
-    """Circuit parameters as mapping of name to value."""
+    arguments: Mapping[str, Any]
+    """Set the specific execution arguments of a pre-compiled program as a mapping of name to value."""
+    config_path: str = ""
+    """Target configuration path."""
 
 
 def _prepare_link_options(
@@ -58,17 +60,17 @@ def link_file(
     link_options: Optional[LinkOptions] = None,
     **kwargs,
 ):
-    """Link a module and bind parameters to create a payload.
+    """Link a module and bind arguments to create a payload.
 
     Consume a circuit module in a file and binds the provided circuit
-    parameters, delivering a payload as output in a file.
+    arguments, delivering a payload as output in a file.
 
     Args:
         input_file: Path to the circuit module to link.
         output_file: Path to write the output payload to.
-        target: Compiler target to invoke for binding parameters (must match
+        target: Compiler target to invoke for binding arguments (must match
             with the target that created the module).
-        parameters: Circuit parameters as name/value map.
+        arguments: Circuit arguments as name/value map.
 
     Returns: Produces a payload in a file.
     """
@@ -76,11 +78,12 @@ def link_file(
 
     input_file = _stringify_path(link_options.input_file)
     output_file = _stringify_path(link_options.output_file)
+    config_path = _stringify_path(link_options.config_path)
 
-    for _, value in link_options.parameters.items():
+    for _, value in link_options.arguments.items():
         if not isinstance(value, float):
             raise QSSLinkingFailure(
-                f"Only double parameters are supported, not {type(value)}"
+                f"Only double arguments are supported, not {type(value)}"
             )
 
     # keep in mind that most of the infrastructure in the compile paths is for
@@ -96,7 +99,8 @@ def link_file(
         resources_path = version_py_path.parent / "resources"
         os_environ["QSSC_RESOURCES"] = str(resources_path)
         success, errorMsg = _link_file(
-            input_file, output_file, link_options.target, link_options.parameters
+            input_file, output_file, link_options.target, config_path,
+            link_options.arguments
         )
         if not success:
             raise QSSLinkingFailure(errorMsg)

@@ -29,7 +29,10 @@ namespace mlir::quir {
 PurelyUnitaryAnalysis::PurelyUnitaryAnalysis(mlir::Operation *op) {
   mlir::WalkResult result = op->walk([&](mlir::Operation *op) {
     if (op->hasTrait<mlir::quir::UnitaryOp>() or
-        llvm::isa<mlir::scf::YieldOp>(op))
+        llvm::isa<mlir::scf::YieldOp>(op) or
+        // declaring CallCircuitOp may be cheating
+        // may need to walk all ops in circuit and verify
+        llvm::isa<mlir::quir::CallCircuitOp>(op))
       return mlir::WalkResult::advance();
     return WalkResult::interrupt();
   });

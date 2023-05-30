@@ -287,6 +287,11 @@ def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
 
     let results = (outs AnyClassical:$res);
 
+    let extraClassDeclaration = [{
+        // Return the initial value
+        ParameterType getInitialValue();
+    }];
+
     let assemblyFormat = [{
         $parameter_name `:` type($res) attr-dict
     }];

@@ -16,6 +16,7 @@ set(QSSC_PAYLOAD_PATHS
         )
 
 qssc_add_plugin(QSSCPayloadZip QSSC_PAYLOAD_PLUGIN
+        PatchableZipPayload.cpp
         ZipPayload.cpp
 
         ADDITIONAL_HEADER_DIRS

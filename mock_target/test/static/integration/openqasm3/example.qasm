@@ -1,5 +1,5 @@
 OPENQASM 3.0;
-// RUN: qss-compiler %s --target mock --config %TEST_CFG --emit=qem --plaintext-payload | FileCheck %s
+// RUN: qss-compiler %s --target mock --config %TEST_CFG --emit=qem --plaintext-payload --enable-circuits=false| FileCheck %s
 
 // (C) Copyright IBM 2023.
 //

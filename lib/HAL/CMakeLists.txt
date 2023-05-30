@@ -39,6 +39,7 @@ qssc_add_library(QSSCHAL
 
     LINK_LIBS
     ${qssc_targets}
+    QSSCArguments
 )
 
 # Add include directory to pick up generated Targets.inc

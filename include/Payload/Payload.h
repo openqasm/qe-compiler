@@ -85,6 +85,16 @@ protected:
   std::unordered_map<std::filesystem::path, std::string, PathHash> files;
 }; // class Payload
 
+// PatchablePayload for payloads that support patching after compilation
+class PatchablePayload {
+public:
+  virtual ~PatchablePayload() = default;
+  using ContentBuffer = std::vector<char>;
+  virtual llvm::Expected<ContentBuffer &>
+  readMember(llvm::StringRef path, bool markForWriteBack = true) = 0;
+  virtual llvm::Error writeBack() = 0;
+}; // class PatchablePayload
+
 } // namespace qssc::payload
 
 #endif // PAYLOAD_PAYLOAD_H

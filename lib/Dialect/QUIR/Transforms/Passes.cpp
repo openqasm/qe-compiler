@@ -134,7 +134,7 @@ auto ClassicalOnlyDetectionPass::hasQuantumSubOps(Operation *inOp) -> bool {
         dyn_cast<CallDefCalGateOp>(op) || dyn_cast<CallDefcalMeasureOp>(op) ||
         dyn_cast<DelayOp>(op) || dyn_cast<CallGateOp>(op) ||
         dyn_cast<MeasureOp>(op) || dyn_cast<DeclareQubitOp>(op) ||
-        dyn_cast<ResetQubitOp>(op)) {
+        dyn_cast<ResetQubitOp>(op) || dyn_cast<CallCircuitOp>(op)) {
       retVal = false;
       return WalkResult::interrupt();
     }
@@ -151,7 +151,8 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
 
   moduleOperation->walk([&](Operation *op) {
     if (dyn_cast<scf::IfOp>(op) || dyn_cast<scf::ForOp>(op) ||
-        dyn_cast<scf::WhileOp>(op) || dyn_cast<quir::SwitchOp>(op))
+        dyn_cast<scf::WhileOp>(op) || dyn_cast<quir::SwitchOp>(op) ||
+        dyn_cast<quir::CircuitOp>(op))
       op->setAttr(llvm::StringRef("quir.classicalOnly"),
                   b.getBoolAttr(hasQuantumSubOps(op)));
     if (auto funcOp = dyn_cast<FuncOp>(op)) {
@@ -167,6 +168,7 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
       }
       bool quantumDeclarations = false;
       funcOp->walk([&](DeclareQubitOp op) { quantumDeclarations = true; });
+      funcOp->walk([&](CallCircuitOp op) { quantumDeclarations = true; });
       op->setAttr(
           llvm::StringRef("quir.classicalOnly"),
           b.getBoolAttr(!quantumOperands && !quantumDeclarations && !isMain));
@@ -257,6 +259,8 @@ void registerQuirPasses() {
   PassRegistration<quir::AddShotLoopPass>();
   PassRegistration<quir::QuantumDecorationPass>();
   PassRegistration<quir::ReorderMeasurementsPass>();
+  PassRegistration<quir::ReorderCircuitsPass>();
+  PassRegistration<quir::MergeCircuitsPass>();
   PassRegistration<quir::MergeMeasuresLexographicalPass>();
   PassRegistration<quir::MergeMeasuresTopologicalPass>();
   PassRegistration<quir::QUIRAngleConversionPass>();

@@ -21,8 +21,10 @@
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QCS/IR/QCSDialect.h"
 #include "Dialect/QCS/IR/QCSTypes.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
 
@@ -47,6 +49,18 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
   // Check that symbol reference resolves to a parameter declaration
   auto declOp =
       symbolTable.lookupNearestSymbolFrom<DeclareParameterOp>(op, paramRefAttr);
+
+  // check higher level modules
+  if (!declOp) {
+    auto targetModuleOp = op->getParentOfType<mlir::ModuleOp>();
+    if (targetModuleOp) {
+      auto topLevelModuleOp = targetModuleOp->getParentOfType<mlir::ModuleOp>();
+      if (!declOp && topLevelModuleOp)
+        declOp = symbolTable.lookupNearestSymbolFrom<DeclareParameterOp>(
+            topLevelModuleOp, paramRefAttr);
+    }
+  }
+
   if (!declOp)
     return op->emitOpError() << "no valid reference to a parameter '"
                              << paramRefAttr.getValue() << "'";
@@ -70,7 +84,47 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
   return success();
 }
 
+//===----------------------------------------------------------------------===//
+// ParameterLoadOp
+//===----------------------------------------------------------------------===//
+
 LogicalResult
 ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   return verifyQCSParameterOpSymbolUses(symbolTable, getOperation(), true);
 }
+
+// Returns the float value from the initial value of this parameter
+ParameterType ParameterLoadOp::getInitialValue() {
+  auto *op = getOperation();
+  auto paramRefAttr =
+      op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
+  auto declOp =
+      mlir::SymbolTable::lookupNearestSymbolFrom<mlir::qcs::DeclareParameterOp>(
+          op, paramRefAttr);
+
+  // check higher level modules
+
+  auto currentScopeOp = op->getParentOfType<mlir::ModuleOp>();
+  do {
+    declOp = mlir::SymbolTable::lookupNearestSymbolFrom<
+        mlir::qcs::DeclareParameterOp>(currentScopeOp, paramRefAttr);
+    if (declOp)
+      break;
+    currentScopeOp = currentScopeOp->getParentOfType<mlir::ModuleOp>();
+    assert(currentScopeOp);
+  } while (!declOp);
+
+  assert(declOp);
+  auto angleAttr =
+      declOp.initial_value().getValue().dyn_cast<mlir::quir::AngleAttr>();
+  if (!angleAttr) {
+    op->emitError("Parameters are currently limited to angles only.");
+    return 0.0;
+  }
+  auto retVal = angleAttr.getValue().convertToDouble();
+  return retVal;
+}
+
+//===----------------------------------------------------------------------===//
+// End ParameterLoadOp
+//===----------------------------------------------------------------------===//
