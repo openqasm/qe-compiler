@@ -25,6 +25,7 @@
 #include "Frontend/OpenQASM3/QUIRVariableBuilder.h"
 
 #include "mlir/Dialect/Complex/IR/Complex.h"
+#include "llvm/Support/Error.h"
 
 #include <unordered_map>
 
@@ -49,14 +50,16 @@ private:
   mlir::Location getLocation(const QASM::ASTBase *);
   bool assign(mlir::Value &, const std::string &);
   mlir::Value getCurrentValue(const std::string &valueName);
-  std::string getExpressionName(const QASM::ASTExpressionNode *);
+  llvm::Expected<std::string>
+  getExpressionName(const QASM::ASTExpressionNode *);
 
   /// hold intermediate expression value while visiting child nodes
-  llvm::Optional<mlir::Value> expression;
+  llvm::Expected<mlir::Value> expression;
 
-  mlir::Value visitAndGetExpressionValue(QASM::ASTExpressionNode const *node);
+  llvm::Expected<mlir::Value>
+  visitAndGetExpressionValue(QASM::ASTExpressionNode const *node);
   template <class NodeType>
-  mlir::Value visitAndGetExpressionValue(NodeType const *node) {
+  llvm::Expected<mlir::Value> visitAndGetExpressionValue(NodeType const *node) {
     return visit_(node);
   }
 
@@ -70,6 +73,9 @@ private:
 
   mlir::Type getCastDestinationType(const QASM::ASTCastExpressionNode *node,
                                     mlir::OpBuilder &builder);
+
+  llvm::Expected<std::string> resolveQCParam(const QASM::ASTGateNode *gateNode,
+                                             unsigned int index);
 
   /// \brief
   /// Create a diagnostic with the specified severity and location from the
@@ -91,12 +97,16 @@ public:
                       mlir::ModuleOp &newModule, std::string f)
       : BaseQASM3Visitor(sList), builder(b), topLevelBuilder(b),
         circuitParentBuilder(b), newModule(newModule), filename(std::move(f)),
+        expression(llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                           "Testing error")),
         varHandler(builder) {}
 
   QUIRGenQASM3Visitor(mlir::OpBuilder b, mlir::ModuleOp &newModule,
                       std::string filename)
       : builder(b), topLevelBuilder(b), circuitParentBuilder(b),
         newModule(newModule), filename(std::move(filename)),
+        expression(llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                           "Testing error")),
         varHandler(builder) {}
 
   void initialize(uint numShots, const std::string &shotDelay);
@@ -110,7 +120,7 @@ public:
   mlir::LogicalResult walkAST();
 
 protected:
-  using ExpressionValueType = mlir::Value;
+  using ExpressionValueType = llvm::Expected<mlir::Value>;
 
   void visit(const QASM::ASTForStatementNode *) override;
 
