@@ -282,7 +282,8 @@ def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
     }];
 
     let arguments = (ins
-        FlatSymbolRefAttr:$parameter_name
+        FlatSymbolRefAttr:$parameter_name,
+        OptionalAttr<AnyAttr>:$initial_value
     );
 
     let results = (outs AnyClassical:$res);
