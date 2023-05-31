@@ -24,10 +24,7 @@
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
-<<<<<<< HEAD
 #include <llvm/Support/Casting.h>
-=======
->>>>>>> main
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/BuiltinOps.h>
 #include <mlir/IR/SymbolTable.h>
@@ -100,7 +97,6 @@ ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 // Returns the float value from the initial value of this parameter
 ParameterType ParameterLoadOp::getInitialValue() {
   auto *op = getOperation();
-<<<<<<< HEAD
   auto paramLoadOp = mlir::dyn_cast<ParameterLoadOp>(*op);
 
   if (!paramLoadOp.initial_value().hasValue())
@@ -108,41 +104,12 @@ ParameterType ParameterLoadOp::getInitialValue() {
 
   auto angleAttr =
       paramLoadOp.initial_value().getValue().dyn_cast<mlir::quir::AngleAttr>();
-=======
-  auto paramRefAttr =
-      op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
-  auto declOp =
-      mlir::SymbolTable::lookupNearestSymbolFrom<mlir::qcs::DeclareParameterOp>(
-          op, paramRefAttr);
-
-  // check higher level modules
-
-  auto currentScopeOp = op->getParentOfType<mlir::ModuleOp>();
-  do {
-    declOp = mlir::SymbolTable::lookupNearestSymbolFrom<
-        mlir::qcs::DeclareParameterOp>(currentScopeOp, paramRefAttr);
-    if (declOp)
-      break;
-    currentScopeOp = currentScopeOp->getParentOfType<mlir::ModuleOp>();
-    assert(currentScopeOp);
-  } while (!declOp);
-
-  assert(declOp);
-  auto angleAttr =
-      declOp.initial_value().getValue().dyn_cast<mlir::quir::AngleAttr>();
->>>>>>> main
   if (!angleAttr) {
     op->emitError("Parameters are currently limited to angles only.");
     return 0.0;
   }
-<<<<<<< HEAD
 
   return angleAttr.getValue().convertToDouble();
-  ;
-=======
-  auto retVal = angleAttr.getValue().convertToDouble();
-  return retVal;
->>>>>>> main
 }
 
 //===----------------------------------------------------------------------===//
