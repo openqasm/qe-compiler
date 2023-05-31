@@ -21,7 +21,7 @@ gate h q {
 gate rz(phi) q { }
 
 input angle theta = 3.141;
-// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00 : !quir.angle<64>>
+// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64>
 
 qubit $0;
 int n = 1;
@@ -59,6 +59,7 @@ bit is_excited;
 
 // CHECK: func @main() -> i32 {
 // CHECK: scf.for %arg0 = %c0 to %c1000 step %c1 {
+// CHECK: {{%.*}} = qcs.parameter_load @_QX64_5thetaEE_ : !quir.angle<64> {initial_value = #quir.angle<3.141000e+00 : !quir.angle<64>>}
 // CHECK: [[QUBIT:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // CHECK: scf.while : () -> () {
 // CHECK:    [[N:%.*]] = oq3.variable_load @n : i32
