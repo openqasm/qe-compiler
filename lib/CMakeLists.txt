@@ -29,7 +29,7 @@ get_property(qssc_targets GLOBAL PROPERTY QSSC_TARGETS)
 get_property(mlir_dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(mlir_conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 
-# All liibraries for the QSS-Compiler
+# All libraries for the QSS-Compiler
 set(qssc_api_libs
         ${qssc_targets}
         QSSCAPI
@@ -61,16 +61,40 @@ set_property(GLOBAL PROPERTY QSSC_API_LIBS ${qssc_api_libs})
 add_library(QSSCLib INTERFACE)
 target_link_libraries(QSSCLib INTERFACE ${qssc_api_libs})
 
-# Expose (i.e., write to disk) static library with same contents as `QSSCLib`,
-# including interface to `compile()` in `api.h`.
-qssc_add_library(QSSC "API/api.cpp" ADDITIONAL_HEADER_DIRS ${QSSC_INCLUDE_DIR}/API)
-set_target_properties(QSSC PROPERTIES PUBLIC_HEADER ${QSSC_INCLUDE_DIR}/API/api.h)
-target_link_libraries(QSSC ${qssc_api_libs})
-install(
-        TARGETS
-        QSSC
-        PUBLIC_HEADER DESTINATION
-        "${CMAKE_INSTALL_INCLUDEDIR}/API"
+if(INSTALL_BUNDLED_STATIC_LIB)
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        message(FATAL_ERROR "Bundling qss-compiler into a single static library on MacOS is not yet supported.")
+        # MacOS's libtool appears capable of bundling static libraries.
+    endif()
+    add_library(QSSCompiler STATIC API/api.cpp)
+    target_link_libraries(QSSCompiler PUBLIC
+           ${qssc_targets}
+            QSSCAPI
+            QSSCHAL
+            QSSCOpenQASM3Frontend
+            QSSConfig
+            QSSCArguments
+            QSSCPayload
+            QSSCPayloadZip
+            QSSCCore
+            Utils
+            ${mlir_dialect_libs}
+            ${mlir_conversion_libs}
+    )
+    bundle_static_library(QSSCompiler QSSCompilerBundled)
+    install(FILES
+        ${CMAKE_BINARY_DIR}/libQSSCompilerBundled.a
+        DESTINATION
+        "${CMAKE_INSTALL_LIBDIR}"
+    )
+    # install API library and its headers
+    install(TARGETS
+        QSSCAPI
         LIBRARY DESTINATION
         "${CMAKE_INSTALL_LIBDIR}"
-)
+    FILE_SET HEADERS DESTINATION
+        "${CMAKE_INSTALL_INCLUDEDIR}/API"
+
+    )
+
+endif()
