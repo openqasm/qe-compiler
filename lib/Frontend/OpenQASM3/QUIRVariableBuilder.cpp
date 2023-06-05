@@ -86,8 +86,6 @@ void QUIRVariableBuilder::generateParameterDeclaration(
   builder.setInsertionPoint(&surroundingModuleOp.front());
 
   // add qcs input parameter
-  // auto constantOp =
-  //    mlir::dyn_cast<mlir::quir::ConstantOp>(assignedValue.getDefiningOp());
   auto declareParameterOp = builder.create<mlir::qcs::DeclareParameterOp>(
       location, variableName.str(), mlir::TypeAttr::get(type));
 
