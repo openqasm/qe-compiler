@@ -244,25 +244,19 @@ def QCS_DeclareParameterOp : QCS_Op<"declare_parameter", [Symbol]> {
 
     let arguments = (ins
         SymbolNameAttr:$sym_name,
-        TypeAttr:$type,
-        OptionalAttr<AnyAttr>:$initial_value
+        TypeAttr:$type
     );
 
     let results = (outs);
 
     let assemblyFormat = [{
-        attr-dict $sym_name `:` $type (`=` $initial_value^)?
+        attr-dict $sym_name `:` $type
     }];
 
     let builders = [
         OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::TypeAttr":$type), [{
             $_state.addAttribute("sym_name", $_builder.getStringAttr(sym_name));
             $_state.addAttribute("type", type);
-        }]>,
-        OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::TypeAttr":$type, "Attribute":$value), [{
-            $_state.addAttribute("sym_name", $_builder.getStringAttr(sym_name));
-            $_state.addAttribute("type", type);
-            $_state.addAttribute("initial_value", value);
         }]>,
     ];
 }
