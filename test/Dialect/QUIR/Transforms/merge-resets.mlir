@@ -171,6 +171,7 @@ module  {
       // TOPO: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]], [[QUBIT3]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
       quir.reset %1 : !quir.qubit<1>
       // TOPO: quir.reset [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>
+      // TOPO: %{{.*}} = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
       %res0 = quir.measure(%1) : (!quir.qubit<1>) -> (i1)
       quir.reset %2 : !quir.qubit<1>
       // TOPO-NOT: quir.reset [[QUBIT1]] : !quir.qubit<1>
@@ -180,9 +181,11 @@ module  {
       quir.barrier %1, %2, %3, %4 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
       // TOPO: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]], [[QUBIT3]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
       %res2 = quir.measure(%1) : (!quir.qubit<1>) -> (i1)
+      // TOPO: %{{.*}} = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
       quir.reset %1 : !quir.qubit<1>
       // TOPO-NOT: quir.reset [[QUBIT1]] : !quir.qubit<1>
       %res3 = quir.measure(%2) : (!quir.qubit<1>) -> (i1)
+      // TOPO: %{{.*}} = quir.measure([[QUBIT1]]) : (!quir.qubit<1>) -> i1
       quir.reset %2 : !quir.qubit<1>
       // TOPO: quir.reset [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>
 
