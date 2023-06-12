@@ -177,7 +177,7 @@ module  {
       // TOPO-NOT: quir.reset [[QUBIT1]] : !quir.qubit<1>
       %res1 = quir.measure(%2) : (!quir.qubit<1>) -> (i1)
 
-      // Delay resets adter measures
+      // Delay resets after measures
       quir.barrier %1, %2, %3, %4 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
       // TOPO: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]], [[QUBIT3]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
       %res2 = quir.measure(%1) : (!quir.qubit<1>) -> (i1)
