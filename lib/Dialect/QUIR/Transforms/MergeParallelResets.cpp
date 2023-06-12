@@ -133,7 +133,9 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     // There are 2 possible merge directions; we can hoist the next reset
     // to merge with this one (if nothing uses the future qubit between here
     // and the next reset), or we can delay this reset until the next one (if
-    // nothing uses this qubit between here and the next reset).
+    // nothing uses this qubit between here and the next reset). Both options
+    // are possible because the reset operation doesn't produce a result, so
+    // deferring it is trivial.
                                     
     // Get the qubits used in both this reset and the next
     auto curQubits = resetOp.getOperatedQubits();
@@ -173,10 +175,19 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
         resetQubitOperands.append(qubit);
       rewriter.eraseOp(nextResetOp);
     } else {
-      // Defer this reset into the next one0
-      auto nextResetQubitOperands = nextResetOp.qubitsMutable();
-      for (auto qubit : resetOp.qubits())
-        nextResetQubitOperands.append(qubit);
+      // Defer this reset into the next one. We want to insert at the
+      // front (to keep the order right), so replace this instruction
+      // with a new ResetOp
+      std::vector<Value> opVec;
+      opVec.reserve(resetOp.getNumOperands() + nextResetOp.getNumOperands());
+      opVec.insert(opVec.end(), resetOp.getOperands().begin(),
+                   resetOp.getOperands().end());
+      opVec.insert(opVec.end(), nextResetOp.getOperands().begin(),
+                   nextResetOp.getOperands().end());
+
+      rewriter.setInsertionPoint(nextResetOp);
+      rewriter.create<ResetQubitOp>(nextResetOp.getLoc(), opVec);
+      rewriter.eraseOp(nextResetOp);
       rewriter.eraseOp(resetOp);
     }
     return success();
