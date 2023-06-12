@@ -136,7 +136,7 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     // nothing uses this qubit between here and the next reset). Both options
     // are possible because the reset operation doesn't produce a result, so
     // deferring it is trivial.
-                                    
+
     // Get the qubits used in both this reset and the next
     auto curQubits = resetOp.getOperatedQubits();
     auto nextQubits = nextResetOp.getOperatedQubits();
@@ -153,14 +153,14 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     // that direction, so check for intersections
     std::set<int> mergeFwdIntersection;
     std::set_intersection(
-        fwdQubits.begin(), fwdQubits.end(),
-        nextQubits.begin(), nextQubits.end(),
+        fwdQubits.begin(), fwdQubits.end(), nextQubits.begin(),
+        nextQubits.end(),
         std::inserter(mergeFwdIntersection, mergeFwdIntersection.begin()));
 
     std::set<int> mergeBackIntersection;
     std::set_intersection(
-        backQubits.begin(), backQubits.end(),
-        curQubits.begin(), curQubits.end(),
+        backQubits.begin(), backQubits.end(), curQubits.begin(),
+        curQubits.end(),
         std::inserter(mergeBackIntersection, mergeBackIntersection.begin()));
 
     if (!mergeFwdIntersection.empty() && !mergeBackIntersection.empty())
