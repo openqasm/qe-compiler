@@ -48,10 +48,9 @@
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/RegisterDialects.h"
-
-#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
