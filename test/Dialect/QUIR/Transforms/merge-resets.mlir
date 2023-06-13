@@ -78,7 +78,8 @@ module  {
       // CHECK-NOT: quir.reset [[QUBIT0]] : !quir.qubit<1>
       quir.reset %2 : !quir.qubit<1>
       // CHECK-NOT: quir.reset [[QUBIT1]] : !quir.qubit<1>
-      quir.barrier %3, %4 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+      // We need to barrier all the qubits to keep us from delaying the first resets to combine with the later ones
+      quir.barrier %1, %2, %3, %4 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
       // CHECK: quir.reset [[QUBIT2]], [[QUBIT3]] : !quir.qubit<1>, !quir.qubit<1>
       // TOPO: quir.reset [[QUBIT2]], [[QUBIT3]] : !quir.qubit<1>, !quir.qubit<1>
       quir.reset %3 : !quir.qubit<1>
@@ -88,7 +89,7 @@ module  {
 
       // CHECK-NOT: quir.reset {{.*}} : !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>
 
-      quir.barrier %1, %2 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+      quir.barrier %1, %2, %3, %4 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
       // Check that resets are not merged across gates
       // gate x q { }
@@ -145,6 +146,50 @@ module  {
       // TOPO: quir.reset [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>
       // TOPO: quir.call_gate @x([[QUBIT0]]) : (!quir.qubit<1>) -> ()
       // TOPO: quir.call_gate @x([[QUBIT1]]) : (!quir.qubit<1>) -> ()
+
+
+      // Tests for DELAYING a reset to a later point
+      quir.barrier %1, %2, %3, %4 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+      // TOPO: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]], [[QUBIT3]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+      quir.reset %1 : !quir.qubit<1>
+      // TOPO-NOT: quir.reset [[QUBIT0]] : !quir.qubit<1>
+      quir.reset %2 : !quir.qubit<1>
+      // TOPO-NOT: quir.reset [[QUBIT1]] : !quir.qubit<1>
+      quir.barrier %3, %4 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+      quir.reset %3 : !quir.qubit<1>
+      // TOPO-NOT: quir.reset [[QUBIT2]] : !quir.qubit<1>
+      quir.reset %4 : !quir.qubit<1>
+      // TOPO-NOT: quir.reset [[QUBIT3]] : !quir.qubit<1>
+      // TOPO: quir.barrier [[QUBIT2]], [[QUBIT3]] : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+      // TOPO: quir.reset [[QUBIT0]], [[QUBIT1]], [[QUBIT2]], [[QUBIT3]] : !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>
+
+
+      // Tests for measurement interleaving
+
+      // Hoist resets above measures
+      quir.barrier %1, %2, %3, %4 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+      // TOPO: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]], [[QUBIT3]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+      quir.reset %1 : !quir.qubit<1>
+      // TOPO: quir.reset [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>
+      // TOPO: %{{.*}} = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+      %res0 = quir.measure(%1) : (!quir.qubit<1>) -> (i1)
+      quir.reset %2 : !quir.qubit<1>
+      // TOPO-NOT: quir.reset [[QUBIT1]] : !quir.qubit<1>
+      %res1 = quir.measure(%2) : (!quir.qubit<1>) -> (i1)
+
+      // Delay resets after measures
+      quir.barrier %1, %2, %3, %4 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+      // TOPO: quir.barrier [[QUBIT0]], [[QUBIT1]], [[QUBIT2]], [[QUBIT3]] : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+      %res2 = quir.measure(%1) : (!quir.qubit<1>) -> (i1)
+      // TOPO: %{{.*}} = quir.measure([[QUBIT0]]) : (!quir.qubit<1>) -> i1
+      quir.reset %1 : !quir.qubit<1>
+      // TOPO-NOT: quir.reset [[QUBIT1]] : !quir.qubit<1>
+      %res3 = quir.measure(%2) : (!quir.qubit<1>) -> (i1)
+      // TOPO: %{{.*}} = quir.measure([[QUBIT1]]) : (!quir.qubit<1>) -> i1
+      quir.reset %2 : !quir.qubit<1>
+      // TOPO: quir.reset [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>
+
+
     }
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32

@@ -121,9 +121,6 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
 
   LogicalResult matchAndRewrite(ResetQubitOp resetOp,
                                 PatternRewriter &rewriter) const override {
-    // Accumulate qubits in reset set
-    std::set<uint> curQubits = resetOp.getOperatedQubits();
-
     // Find the next measurement operation accumulating qubits along the
     // topological path if it exists
     auto [nextResetOpt, observedQubits] =
@@ -131,31 +128,68 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     if (!nextResetOpt.hasValue())
       return failure();
 
-    // If any qubit along path touches the same qubits we cannot merge the next
-    // reset.
-    curQubits.insert(observedQubits.begin(), observedQubits.end());
-
-    auto resetQubitOperands = resetOp.qubitsMutable();
-
-    // found a measure and a measure, now make sure they aren't working on the
-    // same qubit and that we can resolve them both
     ResetQubitOp nextResetOp = nextResetOpt.getValue();
+
+    // There are 2 possible merge directions; we can hoist the next reset
+    // to merge with this one (if nothing uses the future qubit between here
+    // and the next reset), or we can delay this reset until the next one (if
+    // nothing uses this qubit between here and the next reset). Both options
+    // are possible because the reset operation doesn't produce a result, so
+    // deferring it is trivial.
+
+    // Get the qubits used in both this reset and the next
+    auto curQubits = resetOp.getOperatedQubits();
     auto nextQubits = nextResetOp.getOperatedQubits();
 
-    // If there is an intersection we cannot merge
-    std::set<int> mergeIntersection;
-    std::set_intersection(
-        curQubits.begin(), curQubits.end(), nextQubits.begin(),
-        nextQubits.end(),
-        std::inserter(mergeIntersection, mergeIntersection.begin()));
+    // Form a forward set (all qubits used between here and the next
+    // reset, including this operation) and a backward set (all qubits
+    // used between here and the next reset, including the next)
+    std::set<uint> fwdQubits = curQubits;
+    fwdQubits.insert(observedQubits.begin(), observedQubits.end());
+    std::set<uint> backQubits = nextQubits;
+    backQubits.insert(observedQubits.begin(), observedQubits.end());
 
-    if (!mergeIntersection.empty())
+    // If any qubit along path touches the same qubits we cannot merge in
+    // that direction, so check for intersections
+    std::set<int> mergeFwdIntersection;
+    std::set_intersection(
+        fwdQubits.begin(), fwdQubits.end(), nextQubits.begin(),
+        nextQubits.end(),
+        std::inserter(mergeFwdIntersection, mergeFwdIntersection.begin()));
+
+    std::set<int> mergeBackIntersection;
+    std::set_intersection(
+        backQubits.begin(), backQubits.end(), curQubits.begin(),
+        curQubits.end(),
+        std::inserter(mergeBackIntersection, mergeBackIntersection.begin()));
+
+    if (!mergeFwdIntersection.empty() && !mergeBackIntersection.empty())
+      // Can't merge in EITHER direction
       return failure();
 
-    // good to merge
-    for (auto qubit : nextResetOp.qubits())
-      resetQubitOperands.append(qubit);
-    rewriter.eraseOp(nextResetOp);
+    // good to merge one way or the other. Prefer hoisting the next reset.
+    if (mergeFwdIntersection.empty()) {
+      // Hoist the next reset into this one
+      auto resetQubitOperands = resetOp.qubitsMutable();
+      for (auto qubit : nextResetOp.qubits())
+        resetQubitOperands.append(qubit);
+      rewriter.eraseOp(nextResetOp);
+    } else {
+      // Defer this reset into the next one. We want to insert at the
+      // front (to keep the order right), so replace this instruction
+      // with a new ResetOp
+      std::vector<Value> opVec;
+      opVec.reserve(resetOp.getNumOperands() + nextResetOp.getNumOperands());
+      opVec.insert(opVec.end(), resetOp.getOperands().begin(),
+                   resetOp.getOperands().end());
+      opVec.insert(opVec.end(), nextResetOp.getOperands().begin(),
+                   nextResetOp.getOperands().end());
+
+      rewriter.setInsertionPoint(nextResetOp);
+      rewriter.create<ResetQubitOp>(nextResetOp.getLoc(), opVec);
+      rewriter.eraseOp(nextResetOp);
+      rewriter.eraseOp(resetOp);
+    }
     return success();
   }
 
