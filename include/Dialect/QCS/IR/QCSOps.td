@@ -288,7 +288,7 @@ def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
     let results = (outs AnyClassical:$res);
 
     let extraClassDeclaration = [{
-        // Return the initial value - using ParameterIntialValueAnalysis
+        // Return the initial value - using ParameterInitialValueAnalysis
         ParameterType getInitialValue(std::unordered_map<std::string, ParameterType> &parameterNames);
 
         // Return the initial value - slower SymbolTable version
