@@ -51,6 +51,8 @@
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/RegisterDialects.h"
 
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
+
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
@@ -236,6 +238,7 @@ auto getExtension(const std::string &inStr) -> qss::FileExtension {
 
 llvm::Error registerPasses() {
   // TODO: Register standalone passes here.
+  PassRegistration<mlir::qcs::ParameterInitalValueAnalysisPass>();
   llvm::Error err = llvm::Error::success();
   mlir::quir::registerQuirPasses();
   mlir::quir::registerQuirPassPipeline();

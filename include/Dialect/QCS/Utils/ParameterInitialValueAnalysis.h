@@ -1,0 +1,63 @@
+//===- ParameterInitialValueAnalysis.h - initial_value cache ------ C++ -*-===//
+//
+// (C) Copyright IBM 2023.
+//
+// Any modifications or derivative works of this code must retain this
+// copyright notice, and modified files need to carry a notice indicating
+// that they have been altered from the originals.
+//
+//===----------------------------------------------------------------------===//
+///
+/// This file defines a MLIR Analysis for parameter inputs which
+/// caches the initial_value of the input parameter
+///
+/// Note: by default this analysis is always treated as valid unless
+/// the invalidate() method is called.
+///
+//===----------------------------------------------------------------------===//
+
+#ifndef QCS_PARAMETER_INITIAL_VALUE_ANALYSIS_H
+#define QCS_PARAMETER_INITIAL_VALUE_ANALYSIS_H
+
+#include "Dialect/QCS/IR/QCSOps.h"
+
+#include "mlir/Pass/AnalysisManager.h"
+#include "mlir/Pass/Pass.h"
+
+#include "llvm/Support/Error.h"
+
+#include <string>
+#include <unordered_map>
+
+namespace mlir::qcs {
+
+using namespace mlir;
+
+class ParameterInitalValueAnalysis {
+private:
+  std::unordered_map<std::string, ParameterType> initial_values_;
+  bool invalid_;
+
+public:
+  ParameterInitalValueAnalysis(mlir::Operation *op);
+  std::unordered_map<std::string, ParameterType> &getNames() {
+    return initial_values_;
+  }
+  void invalidate() { invalid_ = true; }
+  bool isInvalidated(const AnalysisManager::PreservedAnalyses &pa) {
+    return invalid_;
+  }
+};
+
+struct ParameterInitalValueAnalysisPass
+    : public PassWrapper<ParameterInitalValueAnalysisPass, OperationPass<>> {
+
+  void runOnOperation() override;
+
+  llvm::StringRef getArgument() const override;
+  llvm::StringRef getDescription() const override;
+}; // struct ParameterInitalValueAnalysisPass
+
+} // namespace mlir::qcs
+
+#endif // QCS_PARAMETER_INITIAL_VALUE_ANALYSIS_H

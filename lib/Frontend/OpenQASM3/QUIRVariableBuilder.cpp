@@ -86,23 +86,23 @@ void QUIRVariableBuilder::generateParameterDeclaration(
   builder.setInsertionPoint(&surroundingModuleOp.front());
 
   // add qcs input parameter
+  auto constantOp =
+      mlir::dyn_cast<mlir::quir::ConstantOp>(assignedValue.getDefiningOp());
   auto declareParameterOp = builder.create<mlir::qcs::DeclareParameterOp>(
-      location, variableName.str(), mlir::TypeAttr::get(type));
+      location, variableName.str(), mlir::TypeAttr::get(type),
+      constantOp.value());
+  ;
 
   declareParameterOp->moveBefore(lastDeclaration[surroundingModuleOp]);
   lastDeclaration[surroundingModuleOp] = declareParameterOp;
 }
 
-mlir::Value QUIRVariableBuilder::generateParameterLoad(
-    mlir::Location location, llvm::StringRef variableName, mlir::Type type,
-    mlir::Value assignedValue) {
+mlir::Value
+QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
+                                           llvm::StringRef variableName) {
 
-  // add qcs input parameter
-  auto constantOp =
-      mlir::dyn_cast<mlir::quir::ConstantOp>(assignedValue.getDefiningOp());
   auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
-      location, builder.getType<mlir::quir::AngleType>(64), variableName.str(),
-      constantOp.value());
+      location, builder.getType<mlir::quir::AngleType>(64), variableName.str());
   return op;
 }
 

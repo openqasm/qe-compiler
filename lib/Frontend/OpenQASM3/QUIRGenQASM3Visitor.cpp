@@ -1052,8 +1052,8 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
         variableType.isa<mlir::quir::AngleType>()) {
       varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
                                               variableType, val);
-      auto load = varHandler.generateParameterLoad(
-          loc, idNode->GetMangledName(), variableType, val);
+      auto load =
+          varHandler.generateParameterLoad(loc, idNode->GetMangledName());
       varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
     } else
       varHandler.generateVariableAssignment(loc, idNode->GetName(), val);

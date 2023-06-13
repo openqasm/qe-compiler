@@ -244,19 +244,25 @@ def QCS_DeclareParameterOp : QCS_Op<"declare_parameter", [Symbol]> {
 
     let arguments = (ins
         SymbolNameAttr:$sym_name,
-        TypeAttr:$type
+        TypeAttr:$type,
+        OptionalAttr<AnyAttr>:$initial_value
     );
 
     let results = (outs);
 
     let assemblyFormat = [{
-        attr-dict $sym_name `:` $type
+        attr-dict $sym_name `:` $type (`=` $initial_value^)?
     }];
 
     let builders = [
         OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::TypeAttr":$type), [{
             $_state.addAttribute("sym_name", $_builder.getStringAttr(sym_name));
             $_state.addAttribute("type", type);
+        }]>,
+        OpBuilder<(ins "::llvm::StringRef":$sym_name, "::mlir::TypeAttr":$type, "Attribute":$value), [{
+            $_state.addAttribute("sym_name", $_builder.getStringAttr(sym_name));
+            $_state.addAttribute("type", type);
+            $_state.addAttribute("initial_value", value);
         }]>,
     ];
 }
@@ -276,14 +282,16 @@ def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
     }];
 
     let arguments = (ins
-        FlatSymbolRefAttr:$parameter_name,
-        OptionalAttr<AnyAttr>:$initial_value
+        FlatSymbolRefAttr:$parameter_name
     );
 
     let results = (outs AnyClassical:$res);
 
     let extraClassDeclaration = [{
-        // Return the initial value
+        // Return the initial value - using ParameterIntialValueAnalysis
+        ParameterType getInitialValue(std::unordered_map<std::string, ParameterType> &parameterNames);
+
+        // Return the initial value - slower SymbolTable version
         ParameterType getInitialValue();
     }];
 

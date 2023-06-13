@@ -23,6 +23,8 @@
 #include "Dialect/QCS/IR/QCSTypes.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
+
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include <llvm/Support/Casting.h>
 #include <mlir/IR/BuiltinAttributes.h>
@@ -97,19 +99,53 @@ ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 // Returns the float value from the initial value of this parameter
 ParameterType ParameterLoadOp::getInitialValue() {
   auto *op = getOperation();
-  auto paramLoadOp = mlir::dyn_cast<ParameterLoadOp>(*op);
+  auto paramRefAttr =
+      op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
+  auto declOp =
+      mlir::SymbolTable::lookupNearestSymbolFrom<mlir::qcs::DeclareParameterOp>(
+          op, paramRefAttr);
 
-  if (!paramLoadOp.initial_value().hasValue())
-    return 0.0;
+  // check higher level modules
 
+  auto currentScopeOp = op->getParentOfType<mlir::ModuleOp>();
+  do {
+    declOp = mlir::SymbolTable::lookupNearestSymbolFrom<
+        mlir::qcs::DeclareParameterOp>(currentScopeOp, paramRefAttr);
+    if (declOp)
+      break;
+    currentScopeOp = currentScopeOp->getParentOfType<mlir::ModuleOp>();
+    assert(currentScopeOp);
+  } while (!declOp);
+
+  assert(declOp);
   auto angleAttr =
-      paramLoadOp.initial_value().getValue().dyn_cast<mlir::quir::AngleAttr>();
+      declOp.initial_value().getValue().dyn_cast<mlir::quir::AngleAttr>();
   if (!angleAttr) {
     op->emitError("Parameters are currently limited to angles only.");
     return 0.0;
   }
+  auto retVal = angleAttr.getValue().convertToDouble();
+  return retVal;
+}
 
-  return angleAttr.getValue().convertToDouble();
+// Returns the float value from the initial value of this parameter
+// this version uses a precomputed map of parrameter_name to the intial_value
+// in order to avoid slow SymbolTable lookups
+ParameterType ParameterLoadOp::getInitialValue(
+    std::unordered_map<std::string, ParameterType> &declareParametersMap) {
+  auto *op = getOperation();
+  auto paramRefAttr =
+      op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
+
+  auto paramOpEntry = declareParametersMap.find(paramRefAttr.getValue().str());
+
+  if (paramOpEntry == declareParametersMap.end()) {
+    op->emitError("Could not find declare parameter op" +
+                  paramRefAttr.getValue().str());
+    return 0.0;
+  }
+
+  return paramOpEntry->second;
 }
 
 //===----------------------------------------------------------------------===//
