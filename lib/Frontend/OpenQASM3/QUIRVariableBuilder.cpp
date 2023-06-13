@@ -91,7 +91,6 @@ void QUIRVariableBuilder::generateParameterDeclaration(
   auto declareParameterOp = builder.create<mlir::qcs::DeclareParameterOp>(
       location, variableName.str(), mlir::TypeAttr::get(type),
       constantOp.value());
-  ;
 
   declareParameterOp->moveBefore(lastDeclaration[surroundingModuleOp]);
   lastDeclaration[surroundingModuleOp] = declareParameterOp;
