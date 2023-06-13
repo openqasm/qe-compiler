@@ -26,10 +26,9 @@
 #include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include <llvm/Support/Casting.h>
-#include <mlir/IR/BuiltinAttributes.h>
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/SymbolTable.h>
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/SymbolTable.h"
 
 using namespace mlir;
 using namespace mlir::qcs;

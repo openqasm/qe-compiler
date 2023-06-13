@@ -22,11 +22,11 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "mlir/IR/BuiltinOps.h"
 
-#define DEBUG_TYPE "ParameterInitalValueAnalysis"
+#define DEBUG_TYPE "ParameterInitialValueAnalysis"
 
 using namespace mlir::qcs;
 
-ParameterInitalValueAnalysis::ParameterInitalValueAnalysis(
+ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
     mlir::Operation *op) {
   op->walk([&](DeclareParameterOp declareParameterOp) {
     double initial_value = 0.0;
@@ -44,14 +44,14 @@ ParameterInitalValueAnalysis::ParameterInitalValueAnalysis(
   invalid_ = false;
 }
 
-void ParameterInitalValueAnalysisPass::runOnOperation() {
-  getAnalysis<ParameterInitalValueAnalysis>();
-} // ParameterInitalValueAnalysisPass::runOnOperation()
+void ParameterInitialValueAnalysisPass::runOnOperation() {
+  getAnalysis<ParameterInitialValueAnalysis>();
+} // ParameterInitialValueAnalysisPass::runOnOperation()
 
-llvm::StringRef ParameterInitalValueAnalysisPass::getArgument() const {
-  return "oq2-parameter-names-analysis";
+llvm::StringRef ParameterInitialValueAnalysisPass::getArgument() const {
+  return "qcs-parameter-initial-value-analysis";
 }
 
-llvm::StringRef ParameterInitalValueAnalysisPass::getDescription() const {
-  return "Run ParameterNamesAnalysis";
+llvm::StringRef ParameterInitialValueAnalysisPass::getDescription() const {
+  return "Run ParameterIntialValueAnalysis";
 }

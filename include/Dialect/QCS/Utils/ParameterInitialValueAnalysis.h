@@ -33,13 +33,13 @@ namespace mlir::qcs {
 
 using namespace mlir;
 
-class ParameterInitalValueAnalysis {
+class ParameterInitialValueAnalysis {
 private:
   std::unordered_map<std::string, ParameterType> initial_values_;
   bool invalid_;
 
 public:
-  ParameterInitalValueAnalysis(mlir::Operation *op);
+  ParameterInitialValueAnalysis(mlir::Operation *op);
   std::unordered_map<std::string, ParameterType> &getNames() {
     return initial_values_;
   }
@@ -49,14 +49,14 @@ public:
   }
 };
 
-struct ParameterInitalValueAnalysisPass
-    : public PassWrapper<ParameterInitalValueAnalysisPass, OperationPass<>> {
+struct ParameterInitialValueAnalysisPass
+    : public PassWrapper<ParameterInitialValueAnalysisPass, OperationPass<>> {
 
   void runOnOperation() override;
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
-}; // struct ParameterInitalValueAnalysisPass
+}; // struct ParameterInitialValueAnalysisPass
 
 } // namespace mlir::qcs
 
