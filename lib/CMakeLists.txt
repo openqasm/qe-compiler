@@ -64,7 +64,7 @@ target_link_libraries(QSSCLib INTERFACE ${qssc_api_libs})
 if(INSTALL_BUNDLED_STATIC_LIB)
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         message(FATAL_ERROR "Bundling qss-compiler into a single static library on MacOS is not yet supported.")
-        # MacOS's libtool appears capable of bundling static libraries.
+        # If you consider adding that support, MacOS's libtool could be an option since it appears capable of bundling static libraries.
     endif()
     add_library(QSSCompiler STATIC API/api.cpp)
     target_link_libraries(QSSCompiler PUBLIC
