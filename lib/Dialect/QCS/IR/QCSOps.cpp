@@ -23,10 +23,12 @@
 #include "Dialect/QCS/IR/QCSTypes.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
+
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include <mlir/IR/BuiltinAttributes.h>
-#include <mlir/IR/BuiltinOps.h>
-#include <mlir/IR/SymbolTable.h>
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/SymbolTable.h"
 
 using namespace mlir;
 using namespace mlir::qcs;
@@ -123,6 +125,26 @@ ParameterType ParameterLoadOp::getInitialValue() {
   }
   auto retVal = angleAttr.getValue().convertToDouble();
   return retVal;
+}
+
+// Returns the float value from the initial value of this parameter
+// this version uses a precomputed map of parrameter_name to the intial_value
+// in order to avoid slow SymbolTable lookups
+ParameterType ParameterLoadOp::getInitialValue(
+    std::unordered_map<std::string, ParameterType> &declareParametersMap) {
+  auto *op = getOperation();
+  auto paramRefAttr =
+      op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
+
+  auto paramOpEntry = declareParametersMap.find(paramRefAttr.getValue().str());
+
+  if (paramOpEntry == declareParametersMap.end()) {
+    op->emitError("Could not find declare parameter op" +
+                  paramRefAttr.getValue().str());
+    return 0.0;
+  }
+
+  return paramOpEntry->second;
 }
 
 //===----------------------------------------------------------------------===//

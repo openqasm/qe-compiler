@@ -20,7 +20,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
+#include "Dialect/Pulse/IR/PulseOps.h"
 
+#include "mlir/IR/Visitors.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
 #include "llvm/Support/Debug.h"
@@ -89,7 +91,22 @@ struct RemoveUnusedArgumentsPattern
 
 void RemoveUnusedArgumentsPass::runOnOperation() {
 
+  bool runPattern = false;
+  auto op = getOperation();
+
+  // test for the presence of at least one CallSequenceOp
+  // if a CallSequenceOp exists run the pattern
+  // if not return early to save time
+  op->walk([&](CallSequenceOp csOp) {
+    runPattern = true;
+    return WalkResult::interrupt();
+  });
+
+  if (!runPattern)
+    return;
+
   RewritePatternSet patterns(&getContext());
+
   patterns.add<RemoveUnusedArgumentsPattern>(&getContext());
 
   if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns))))

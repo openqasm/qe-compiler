@@ -23,6 +23,11 @@
 
 #include "mlir/Pass/Pass.h"
 
+#include "llvm/ADT/StringRef.h"
+
+#include <string>
+#include <unordered_map>
+
 namespace mlir::quir {
 struct QUIRAngleConversionPass
     : public PassWrapper<QUIRAngleConversionPass, OperationPass<>> {
@@ -30,6 +35,9 @@ struct QUIRAngleConversionPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+
+private:
+  std::unordered_map<std::string, FuncOp> functionOps;
 }; // struct QUIRAngleConversionPass
 
 } // end namespace mlir::quir

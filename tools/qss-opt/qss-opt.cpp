@@ -44,6 +44,7 @@
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
 #include "Dialect/QCS/IR/QCSDialect.h"
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 
@@ -99,6 +100,7 @@ static llvm::cl::opt<bool> allowUnregisteredDialects(
 auto main(int argc, char **argv) -> int {
   mlir::registerAllPasses();
   mlir::registerConversionPasses();
+  mlir::qcs::registerQCSPasses();
   mlir::quir::registerQuirPasses();
   mlir::quir::registerQuirPassPipeline();
   mlir::pulse::registerPulsePasses();

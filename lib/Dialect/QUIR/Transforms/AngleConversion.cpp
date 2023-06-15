@@ -21,14 +21,15 @@
 #include "Dialect/QUIR/Transforms/AngleConversion.h"
 
 #include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/Transforms/Analysis.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/Dialect/SCF/SCF.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/SymbolTable.h"
-#include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+
+#include "llvm/ADT/StringRef.h"
+
+#include <string>
+#include <unordered_map>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -36,16 +37,17 @@ using namespace mlir::quir;
 namespace {
 
 struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
-  explicit AngleConversion(MLIRContext *ctx)
-      : OpRewritePattern<quir::CallGateOp>(ctx) {}
+  explicit AngleConversion(MLIRContext *ctx,
+                           std::unordered_map<std::string, FuncOp> &functionOps)
+      : OpRewritePattern<quir::CallGateOp>(ctx), functionOps_(functionOps) {}
   LogicalResult matchAndRewrite(quir::CallGateOp callGateOp,
                                 PatternRewriter &rewriter) const override {
     // find the corresponding FuncOp
-    Operation *findOp = SymbolTable::lookupNearestSymbolFrom<FuncOp>(
-        callGateOp, callGateOp.calleeAttr());
-    if (!findOp)
+    auto findOp = functionOps_.find(callGateOp.calleeAttr().getValue().str());
+    if (findOp == functionOps_.end())
       return failure();
-    FuncOp funcOp = dyn_cast<FuncOp>(findOp);
+
+    FuncOp funcOp = findOp->second;
     FunctionType fType = funcOp.getType();
 
     for (auto &pair : llvm::enumerate(callGateOp.getArgOperands())) {
@@ -65,6 +67,9 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
     }
     return success();
   }
+
+private:
+  std::unordered_map<std::string, FuncOp> &functionOps_;
 }; // struct AngleConversion
 
 } // end anonymous namespace
@@ -72,8 +77,12 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
 // Entry point for the pass.
 void QUIRAngleConversionPass::runOnOperation() {
 
+  auto *op = getOperation();
+  op->walk(
+      [&](FuncOp funcOp) { functionOps[funcOp.sym_name().str()] = funcOp; });
+
   RewritePatternSet patterns(&getContext());
-  patterns.add<AngleConversion>(&getContext());
+  patterns.add<AngleConversion>(&getContext(), functionOps);
 
   if (failed(
           applyPatternsAndFoldGreedily(getOperation(), std::move(patterns)))) {

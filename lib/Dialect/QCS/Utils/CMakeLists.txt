@@ -10,5 +10,15 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-add_subdirectory(IR)
-add_subdirectory(Utils)
+add_mlir_dialect_library(MLIRQCSUtils
+    ParameterInitialValueAnalysis.cpp
+
+    ADDITIONAL_HEADER_DIRS
+    ${PROJECT_SOURCE_DIR}/include/QCS
+
+    DEPENDS
+    MLIROQ3OpsIncGen
+
+    LINK_LIBS PUBLIC
+    MLIRIR
+    )
