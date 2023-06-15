@@ -58,6 +58,10 @@ struct ParameterInitialValueAnalysisPass
   llvm::StringRef getDescription() const override;
 }; // struct ParameterInitialValueAnalysisPass
 
+// TODO: move registerQCSPasses to separate header if additional passes
+// are added to the QCS Dialect
+void registerQCSPasses();
+
 } // namespace mlir::qcs
 
 #endif // QCS_PARAMETER_INITIAL_VALUE_ANALYSIS_H

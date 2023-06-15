@@ -238,7 +238,7 @@ auto getExtension(const std::string &inStr) -> qss::FileExtension {
 llvm::Error registerPasses() {
   // TODO: Register standalone passes here.
   llvm::Error err = llvm::Error::success();
-  PassRegistration<mlir::qcs::ParameterInitialValueAnalysisPass>();
+  mlir::qcs::registerQCSPasses();
   mlir::quir::registerQuirPasses();
   mlir::quir::registerQuirPassPipeline();
   mlir::pulse::registerPulsePasses();
