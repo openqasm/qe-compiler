@@ -41,6 +41,7 @@
 #include "Payload/PayloadRegistry.h"
 
 #include "Dialect/OQ3/IR/OQ3Dialect.h"
+#include "Dialect/OQ3/Transforms/Passes.h"
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
 #include "Dialect/QCS/IR/QCSDialect.h"
@@ -100,6 +101,8 @@ static llvm::cl::opt<bool> allowUnregisteredDialects(
 auto main(int argc, char **argv) -> int {
   mlir::registerAllPasses();
   mlir::registerConversionPasses();
+  mlir::oq3::registerOQ3Passes();
+  mlir::oq3::registerOQ3PassPipeline();
   mlir::qcs::registerQCSPasses();
   mlir::quir::registerQuirPasses();
   mlir::quir::registerQuirPassPipeline();

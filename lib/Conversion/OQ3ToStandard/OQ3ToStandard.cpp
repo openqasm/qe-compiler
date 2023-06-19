@@ -150,10 +150,12 @@ struct CBitInsertBitOpConversionPattern
         loc, maskOp.getType(), adaptor.assigned_bit());
 
     if (!op.index().isNonPositive()) {
+      APInt truncated = op.index();
+      if (static_cast<uint>(cbitWidth) < truncated.getBitWidth())
+        truncated = truncated.trunc(cbitWidth);
       auto shiftAmount = rewriter.create<mlir::arith::ConstantOp>(
           loc, extendedBit.getType(),
-          rewriter.getIntegerAttr(extendedBit.getType(),
-                                  op.index().trunc(cbitWidth)));
+          rewriter.getIntegerAttr(extendedBit.getType(), truncated));
       extendedBit =
           rewriter.create<mlir::LLVM::ShlOp>(loc, extendedBit, shiftAmount);
     }
@@ -187,10 +189,12 @@ struct CBitExtractBitOpConversionPattern
       return success();
     }
 
+    APInt truncated = op.index();
+    if (static_cast<uint>(bitWidth) < truncated.getBitWidth())
+      truncated = truncated.trunc(bitWidth);
     auto shiftAmount = rewriter.create<mlir::arith::ConstantOp>(
         location, convertedOperand.getType(),
-        rewriter.getIntegerAttr(convertedOperand.getType(),
-                                op.index().trunc(bitWidth)));
+        rewriter.getIntegerAttr(convertedOperand.getType(), truncated));
     auto shiftedRegister = rewriter.create<mlir::LLVM::LShrOp>(
         location, convertedOperand.getType(), convertedOperand, shiftAmount);
     auto extractedBit = rewriter.create<mlir::LLVM::TruncOp>(
