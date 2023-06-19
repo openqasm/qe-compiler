@@ -46,6 +46,8 @@ class LinkOptions:
     """Set the specific execution arguments of a pre-compiled program as a mapping of name to value."""
     config_path: str = ""
     """Target configuration path."""
+    treat_warnings_as_errors: bool = True
+    """Treat link warnings as errors"""
 
 
 def _prepare_link_options(
@@ -100,7 +102,7 @@ def link_file(
         os_environ["QSSC_RESOURCES"] = str(resources_path)
         success, errorMsg = _link_file(
             input_file, output_file, link_options.target, config_path,
-            link_options.arguments
+            link_options.arguments, link_options.treat_warnings_as_errors
         )
         if not success:
             raise QSSLinkingFailure(errorMsg)

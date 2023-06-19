@@ -34,6 +34,7 @@ using namespace payload;
 
 llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
                              Signature &sig, ArgumentSource const &arguments,
+                             bool treatWarningsAsErrors,
                              BindArgumentsImplementationFactory *factory) {
 
   for (auto &entry : sig.patchPointsByBinary) {
@@ -52,6 +53,7 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
 
     auto binary = std::shared_ptr<BindArgumentsImplementation>(
         factory->create(binaryData));
+    binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
     for (auto const &patchPoint : entry.getValue())
       if (auto err = binary->patch(patchPoint, arguments))
@@ -64,6 +66,7 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
 llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
+                          bool treatWarningsAsErrors,
                           BindArgumentsImplementationFactory *factory) {
 
   std::error_code copyError =
@@ -74,14 +77,17 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
         "Failed to copy circuit module to payload", copyError);
 
   auto binary = std::unique_ptr<BindArgumentsImplementation>(factory->create());
+  binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
+
   auto payload =
       std::unique_ptr<PatchablePayload>(binary->getPayload(payloadOutputPath));
+
   auto sigOrError = binary->parseSignature(payload.get());
   if (auto err = sigOrError.takeError())
     return err;
 
-  if (auto err =
-          updateParameters(payload.get(), sigOrError.get(), arguments, factory))
+  if (auto err = updateParameters(payload.get(), sigOrError.get(), arguments,
+                                  treatWarningsAsErrors, factory))
     return err;
 
   if (auto err = payload->writeBack())

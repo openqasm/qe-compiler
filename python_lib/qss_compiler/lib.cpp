@@ -102,11 +102,12 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
 pybind11::tuple
 py_link_file(const std::string &inputPath, const std::string &outputPath,
              const std::string &target, const std::string &configPath,
-             const std::unordered_map<std::string, double> &arguments) {
+             const std::unordered_map<std::string, double> &arguments,
+             const bool treatWarningsAsErrors) {
 
 
   std::string errorMsg;
-  if (qssc::bindArguments(target, configPath, inputPath, outputPath, arguments, &errorMsg)) {
+  if (qssc::bindArguments(target, configPath, inputPath, outputPath, arguments, treatWarningsAsErrors, &errorMsg)) {
     return pybind11::make_tuple(false, errorMsg);
   }
 
