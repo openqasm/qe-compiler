@@ -43,27 +43,27 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-#include <Frontend/OpenQASM3/QUIRGenQASM3Visitor.h>
+#include "Frontend/OpenQASM3/BaseQASM3Visitor.h"
+#include "Frontend/OpenQASM3/QUIRGenQASM3Visitor.h"
+#include "Frontend/OpenQASM3/QUIRVariableBuilder.h"
 
-#include <Frontend/OpenQASM3/BaseQASM3Visitor.h>
-#include <Frontend/OpenQASM3/QUIRVariableBuilder.h>
-
-#include <llvm/ADT/SmallVector.h>
-#include <llvm/Support/raw_ostream.h>
-#include <qasm/AST/ASTDelay.h>
-#include <qasm/AST/ASTTypeEnums.h>
+#include "qasm/AST/ASTDelay.h"
+#include "qasm/AST/ASTTypeEnums.h"
 
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
-#include <mlir/Dialect/StandardOps/IR/Ops.h>
-#include <mlir/IR/Builders.h>
-#include <mlir/IR/BuiltinOps.h>
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/BuiltinTypes.h"
 
-#include <llvm/ADT/StringRef.h>
-#include <llvm/ADT/Twine.h>
-#include <llvm/Support/Debug.h>
-#include <llvm/Support/Error.h>
-#include <llvm/Support/ErrorHandling.h>
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/Twine.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <cstdint>
 #include <string>
@@ -730,6 +730,10 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
       if (!assign(pos, param->GetGateParamName())) {
         if (const auto *const ident = param->GetValueIdentifier()) {
           pos = varHandler.generateVariableUse(getLocation(node), ident);
+          if (pos.getType() != builder.getType<AngleType>(64)) {
+            pos = circuitParentBuilder.create<CastOp>(
+                pos.getLoc(), builder.getType<AngleType>(64), pos);
+          }
           ssaOtherValues.push_back(pos);
         } else {
           reportError(node, mlir::DiagnosticSeverity::Error)
@@ -1049,11 +1053,12 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
     // parameter support currently limited to quir::AngleType
     if (enableParameters &&
         node->GetModifierType() == QASM::ASTTypeInputModifier &&
-        variableType.isa<mlir::quir::AngleType>()) {
+        (variableType.isa<mlir::quir::AngleType>() ||
+         variableType.isa<mlir::Float64Type>())) {
       varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
                                               variableType, val);
       auto load =
-          varHandler.generateParameterLoad(loc, idNode->GetMangledName());
+          varHandler.generateParameterLoad(loc, idNode->GetMangledName(), val);
       varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
     } else
       varHandler.generateVariableAssignment(loc, idNode->GetName(), val);

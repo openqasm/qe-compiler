@@ -30,6 +30,9 @@ gate rz(phi) q { }
 input angle theta = 3.141;
 // CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00 : !quir.angle<64>>
 
+input float[64] theta2 = 1.56;
+// CHECK: qcs.declare_parameter @_QDDd64_6theta2EE_ : f64 = 1.560000e+00 : f64
+
 reset $0;
 
 sx $0;
@@ -39,6 +42,14 @@ sx $0;
 bit b;
 
 b = measure $0;
+
+sx $0;
+rz(theta2) $0;
+sx $0;
+
+bit c;
+
+c = measure $0;
 
 // CHECK: quir.circuit @circuit_0(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
 // XX-CHECK-NEXT: quir.reset %arg0 : !quir.qubit<1>
@@ -58,9 +69,15 @@ b = measure $0;
 
 // CHECK: %2 = qcs.parameter_load @_QX64_5thetaEE_ : !quir.angle<64>
 // CHECK: oq3.variable_assign @theta : !quir.angle<64> = %2
+// CHECK: %3 = qcs.parameter_load @_QDDd64_6theta2EE_ : f64
+// CHECK: oq3.variable_assign @theta2 : f64 = %3
 // CHECK-XX: quir.reset %0 : !quir.qubit<1>
 // CHECK-NOT: oq3.variable_assign @theta : !quir.angle<64> = %angle
 
-// CHECK: quir.call_circuit @circuit_0(%0, %3) : (!quir.qubit<1>, !quir.angle<64>) -> ()
-// CHECK: %5 = quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> i1
-// CHECK: oq3.cbit_assign_bit @b<1> [0] : i1 = %5
+// CHECK: quir.call_circuit @circuit_0(%0, %4) : (!quir.qubit<1>, !quir.angle<64>) -> ()
+// CHECK: %6 = quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> i1
+// CHECK: oq3.cbit_assign_bit @b<1> [0] : i1 = %6
+
+// CHECK: %7 = oq3.variable_load @theta2 : f64
+// CHECK: %8 = "oq3.cast"(%7) : (f64) -> !quir.angle<64>
+// CHECK: quir.call_circuit @circuit_2(%0, %8) : (!quir.qubit<1>, !quir.angle<64>) -> ()
