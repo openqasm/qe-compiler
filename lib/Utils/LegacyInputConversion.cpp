@@ -14,8 +14,6 @@
 //
 //===----------------------------------------------------------------------===//
 #include "Utils/LegacyInputConversion.h"
-#include "Utils/SystemDefinition.h"
-#include "Utils/SystemNodes.h"
 
 #include <cstdint>
 #include <fstream>

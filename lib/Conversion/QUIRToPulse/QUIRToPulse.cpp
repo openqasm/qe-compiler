@@ -14,6 +14,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
+#if 0
 #include "Conversion/QUIRToPulse/QUIRToPulse.h"
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
@@ -21,9 +22,6 @@
 #include "Dialect/Pulse/Transforms/SystemCreation.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
-#include "Utils/LegacyInputConversion.h"
-#include "Utils/SystemDefinition.h"
-#include "Utils/SystemNodes.h"
 
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/Complex/IR/Complex.h"
@@ -62,6 +60,7 @@ public:
       MLIRContext *ctx, TypeConverter &typeConverter,
       std::reference_wrapper<qu::LegacyInputConversion> setup)
       : OpConversionPattern(typeConverter, ctx, 1), setup_(setup) {}
+
   LogicalResult
   matchAndRewrite(quir::DeclareQubitOp originalOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
@@ -298,7 +297,6 @@ void QUIRToPulsePass::runOnOperation() {
                     "error usually indicates that the system creation pass has "
                     "not been run prior to this point.";
   }
-
   auto symbolTable = SymbolTable(moduleOp);
   auto symbolTableRef = std::ref(symbolTable);
 
@@ -332,3 +330,4 @@ llvm::StringRef QUIRToPulsePass::getDescription() const {
   return "Convert QUIR to Pulse.";
 }
 } // namespace mlir::pulse
+#endif

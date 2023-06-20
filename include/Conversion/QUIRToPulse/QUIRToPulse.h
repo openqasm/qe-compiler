@@ -21,8 +21,6 @@
 #ifndef PULSE_CONVERSION_QUIRTOPULSE_H
 #define PULSE_CONVERSION_QUIRTOPULSE_H
 
-#include "Utils/LegacyInputConversion.h"
-#include "Utils/SystemNodes.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/Location.h"
 #include "mlir/IR/MLIRContext.h"
@@ -32,11 +30,16 @@
 #include <functional>
 #include <memory>
 
+#if 0
+using namespace qssc::utils;
+#endif
 namespace mlir::pulse {
 
+#if 0
 void processPlayOps(const std::shared_ptr<::qssc::utils::PlayOp> &play,
                     Location loc, MLIRContext *ctx, Value target,
                     OpBuilder builder);
+#endif
 
 class QUIRTypeConverter : public TypeConverter {
 public:
@@ -44,6 +47,7 @@ public:
   QUIRTypeConverter();
 };
 
+#if 0
 class QUIRToPulsePass
     : public PassWrapper<QUIRToPulsePass, OperationPass<ModuleOp>> {
 public:
@@ -56,7 +60,7 @@ public:
 protected:
   Optional<std::reference_wrapper<qssc::utils::LegacyInputConversion>> setup_;
 };
-
+#endif
 } // namespace mlir::pulse
 
 #endif // PULSE_CONVERSION_QUIRTOPULSE_H

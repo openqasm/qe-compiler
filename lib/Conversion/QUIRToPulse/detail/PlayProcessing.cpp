@@ -13,12 +13,12 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
+#if 0
 
 #include "Conversion/QUIRToPulse/QUIRToPulse.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
-#include "Utils/SystemNodes.h"
 
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
 #include "mlir/Dialect/Complex/IR/Complex.h"
@@ -166,3 +166,4 @@ void processPlayOps(const std::shared_ptr<qu::PlayOp> &play, Location loc,
   }
 }
 } // namespace mlir::pulse
+#endif

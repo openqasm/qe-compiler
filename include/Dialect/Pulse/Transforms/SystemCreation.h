@@ -17,7 +17,6 @@
 #ifndef PULSE_LEGACY_SYSTEM_DEFINITION_H
 #define PULSE_LEGACY_SYSTEM_DEFINITION_H
 
-#include "Utils/SystemDefinition.h"
 #include "mlir/Pass/AnalysisManager.h"
 #include "mlir/Pass/Pass.h"
 #include <map>
