@@ -259,7 +259,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                 else:
                     childproc.kill()
                     childproc.join()
-                    raise QSSCompilationFailure(
+                    raise QSSCompilationCommunicationFailure(
                         "The compile process delivered an unexpected object instead of status or "
                         "diagnostic information. This points to inconsistencies in the Python "
                         "interface code between the calling process and the compile process."
@@ -274,13 +274,13 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             # make sure that child process terminates
             childproc.kill()
             childproc.join()
-            raise QSSCompilationFailure(
+            raise QSSCompilationEOFFailure(
                 "compile process exited before delivering output.", diagnostics
             )
 
         childproc.join()
         if childproc.exitcode != 0:
-            raise QSSCompilationFailure(
+            raise QSSCompilerNonZeroStatus(
                 (
                     "compile process exited with non-zero status "
                     + str(childproc.exitcode)
@@ -382,7 +382,7 @@ def compile_str(
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
 ) -> Union[bytes, str, None]:
-    """! Compile the given input program to the specified output type using the
+    """Compile the given input program to the specified output type using the
     given target.
 
     Produces output in a file (if parameter output_file is provided) or returns

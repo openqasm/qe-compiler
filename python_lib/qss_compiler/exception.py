@@ -46,5 +46,17 @@ class NoInputCompilerError(QSSCompilerError):
     """Raised when no input file or string is provided"""
 
 
+class QSSCompilationCommunicationFailure(QSSCompilerError):
+    """Raised on compilation communication failure."""
+
+
+class QSSCompilationEOFFailure(QSSCompilerError):
+    """Raised in case of EOF error."""
+
+
+class QSSCompilerNonZeroStatus(QSSCompilerError):
+    """Raised when non-zero status is returned."""
+
+
 class QSSCompilationFailure(QSSCompilerError):
-    """Raised on compilation failure."""
+    """Raised during other compilation failure."""
