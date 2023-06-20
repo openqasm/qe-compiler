@@ -20,8 +20,15 @@ from .compile import (  # noqa: F401
     InputType,
     OutputType,
     CompileOptions,
-    QSSCompilationFailure,
+)
+
+from .exception import (
     QSSCompilerError,
+    QSSCompilerNoInputError,
+    QSSCompilerCommunicationFailure,
+    QSSCompilerEOFFailure,
+    QSSCompilerNonZeroStatus,
+    QSSCompilationFailure,
 )
 
 from .py_qssc import (  # noqa: F401
