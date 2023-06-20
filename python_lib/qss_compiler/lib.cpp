@@ -125,6 +125,12 @@ PYBIND11_MODULE(py_qssc, m) {
                                        pybind11::arithmetic())
       .value("OpenQASM3ParseFailure",
              qssc::ErrorCategory::OpenQASM3ParseFailure)
+      .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
+      .value("QSSCompilerNoInputError", qssc::ErrorCategory::QSSCompilerNoInputError)
+      .value("QSSCompilerCommunicationFailure", qssc::ErrorCategory::QSSCompilerCommunicationFailure)
+      .value("QSSCompilerEOFFailure", qssc::ErrorCategory::QSSCompilerEOFFailure)
+      .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
+      .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
       .export_values();
 
