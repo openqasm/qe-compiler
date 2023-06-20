@@ -12,7 +12,5 @@
 
 set(SOURCES DebugIndent.cpp)
 
-include_directories(${Boost_INCLUDE_DIRS})
-
 add_library(Utils ${SOURCES})
 target_link_libraries(Utils ${BOOST_LIBRARIES})

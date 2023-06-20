@@ -340,10 +340,6 @@ find_package(pybind11 REQUIRED)
 # nlohmann_json -------------------------------------------------------------------
 include_directories(BEFORE SYSTEM ${nlohmann_json_INCLUDE_DIRS})
 
-# Boost -------------------------------------------------------------------
-find_package(Boost REQUIRED)
-include_directories(BEFORE SYSTEM ${Boost_INCLUDE_DIRS})
-
 # ------------------------------------------------------------------------------
 # QSS-COMPILER
 # ------------------------------------------------------------------------------
