@@ -259,7 +259,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                 else:
                     childproc.kill()
                     childproc.join()
-                    raise QSSCompilationCommunicationFailure(
+                    raise QSSCompilerCommunicationFailure(
                         "The compile process delivered an unexpected object instead of status or "
                         "diagnostic information. This points to inconsistencies in the Python "
                         "interface code between the calling process and the compile process."
@@ -274,7 +274,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             # make sure that child process terminates
             childproc.kill()
             childproc.join()
-            raise QSSCompilationEOFFailure(
+            raise QSSCompilerEOFFailure(
                 "compile process exited before delivering output.", diagnostics
             )
 
