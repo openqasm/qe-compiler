@@ -34,10 +34,17 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
       auto angleAttr = declareParameterOp.initial_value()
                            .getValue()
                            .dyn_cast<mlir::quir::AngleAttr>();
-      if (!angleAttr)
-        op->emitError("Parameters are currently limited to angles only.");
-      else
+      auto floatAttr =
+          declareParameterOp.initial_value().getValue().dyn_cast<FloatAttr>();
+      if (!(angleAttr || floatAttr))
+        op->emitError(
+            "Parameters are currently limited to angles or float[64] only.");
+
+      if (angleAttr)
         initial_value = angleAttr.getValue().convertToDouble();
+
+      if (floatAttr)
+        initial_value = floatAttr.getValue().convertToDouble();
     }
     initial_values_[declareParameterOp.sym_name().str()] = initial_value;
   });
