@@ -168,7 +168,7 @@ class _CompilerExecution:
             args.append("--direct")
             args.append(str(self.input_str))
         else:
-            raise NoInputCompilerError("Neither input file nor input string provided.")
+            raise QSSCompilerNoInputError("Neither input file nor input string provided.")
 
         return args
 

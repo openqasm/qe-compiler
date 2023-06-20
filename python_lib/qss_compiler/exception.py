@@ -42,7 +42,7 @@ class QSSCompilerError(Exception):
         return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
 
 
-class NoInputCompilerError(QSSCompilerError):
+class QSSCompilerNoInputError(QSSCompilerError):
     """Raised when no input file or string is provided"""
 
 
