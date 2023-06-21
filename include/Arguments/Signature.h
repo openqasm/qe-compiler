@@ -25,6 +25,7 @@
 
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
 
 #include <string>
 #include <vector>
@@ -51,6 +52,8 @@ public:
   uint64_t offset() const { return offset_; }
 };
 
+using PatchPointVector = std::vector<PatchPoint>;
+
 struct Signature {
   // TODO consider deduplicating strings by using UniqueStringSaver
   llvm::StringMap<std::vector<PatchPoint>> patchPointsByBinary;
@@ -59,11 +62,12 @@ public:
   void addParameterPatchPoint(llvm::StringRef expression,
                               llvm::StringRef patchType,
                               llvm::StringRef binaryComponent, uint64_t offset);
+  void addParameterPatchPoint(llvm::StringRef binaryComponent, PatchPoint p);
   void dump();
 
   std::string serialize();
 
-  static Signature deserialize(llvm::StringRef);
+  static llvm::Expected<Signature> deserialize(llvm::StringRef);
 };
 
 } // namespace qssc::arguments
