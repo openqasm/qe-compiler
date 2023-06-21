@@ -21,6 +21,8 @@
 #ifndef DIALECT_QCS_QCSOPS_H_
 #define DIALECT_QCS_QCSOPS_H_
 
+#include <unordered_map>
+
 // TODO: move necessary components to `QCS`
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIRTraits.h"
