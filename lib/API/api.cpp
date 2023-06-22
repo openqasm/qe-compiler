@@ -49,6 +49,7 @@
 #include "Dialect/OQ3/Transforms/Passes.h"
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/RegisterDialects.h"
 
@@ -241,6 +242,7 @@ llvm::Error registerPasses() {
   mlir::oq3::registerOQ3Passes();
   mlir::oq3::registerOQ3PassPipeline();
   mlir::quir::registerQuirPasses();
+  mlir::qcs::registerQCSPasses();
   mlir::quir::registerQuirPassPipeline();
   mlir::pulse::registerPulsePasses();
   mlir::pulse::registerPulsePassPipeline();
