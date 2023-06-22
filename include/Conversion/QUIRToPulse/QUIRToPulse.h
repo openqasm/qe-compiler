@@ -30,16 +30,7 @@
 #include <functional>
 #include <memory>
 
-#if 0
-using namespace qssc::utils;
-#endif
 namespace mlir::pulse {
-
-#if 0
-void processPlayOps(const std::shared_ptr<::qssc::utils::PlayOp> &play,
-                    Location loc, MLIRContext *ctx, Value target,
-                    OpBuilder builder);
-#endif
 
 class QUIRTypeConverter : public TypeConverter {
 public:
@@ -47,20 +38,6 @@ public:
   QUIRTypeConverter();
 };
 
-#if 0
-class QUIRToPulsePass
-    : public PassWrapper<QUIRToPulsePass, OperationPass<ModuleOp>> {
-public:
-  void getDependentDialects(DialectRegistry &registry) const override;
-  void runOnOperation() override;
-
-  llvm::StringRef getArgument() const override;
-  llvm::StringRef getDescription() const override;
-
-protected:
-  Optional<std::reference_wrapper<qssc::utils::LegacyInputConversion>> setup_;
-};
-#endif
 } // namespace mlir::pulse
 
 #endif // PULSE_CONVERSION_QUIRTOPULSE_H

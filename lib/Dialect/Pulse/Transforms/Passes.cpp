@@ -38,9 +38,6 @@ namespace mlir::pulse {
 void pulsePassPipelineBuilder(OpPassManager &pm) {}
 
 void registerPulsePasses() {
-#if 0
-  PassRegistration<QUIRToPulsePass>();
-#endif
   PassRegistration<MergeDelayPass>();
   PassRegistration<RemoveUnusedArgumentsPass>();
   PassRegistration<SchedulePortPass>();
