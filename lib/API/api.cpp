@@ -241,8 +241,8 @@ llvm::Error registerPasses() {
   llvm::Error err = llvm::Error::success();
   mlir::oq3::registerOQ3Passes();
   mlir::oq3::registerOQ3PassPipeline();
-  mlir::quir::registerQuirPasses();
   mlir::qcs::registerQCSPasses();
+  mlir::quir::registerQuirPasses();
   mlir::quir::registerQuirPassPipeline();
   mlir::pulse::registerPulsePasses();
   mlir::pulse::registerPulsePassPipeline();
