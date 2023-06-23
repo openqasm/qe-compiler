@@ -1070,6 +1070,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
             << "  warning. Parameters are not enabled. Enable with "
                "--enable-parameters.";
         genParameter = false;
+        break;
       }
 
       if (!(variableType.isa<mlir::quir::AngleType>() ||
