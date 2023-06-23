@@ -40,13 +40,14 @@ int compile(int argc, char const **argv, std::string *outputString,
 /// @param moduleInputPath path of the module to use as input
 /// @param payloadOutputPath path of the payload to generate as output
 /// @param arguments bindings for the parameters in the module to apply
+/// @param treatWarningsAsErrors return errors in place of warnings
 /// @param errorMessage optional output for any occurring error message
 /// @return 0 on success
 int bindArguments(std::string_view target, std::string_view configPath,
                   std::string_view moduleInputPath,
                   std::string_view payloadOutputPath,
                   std::unordered_map<std::string, double> const &arguments,
-                  std::string *errorMessage);
+                  bool treatWarningsAsErrors, std::string *errorMessage);
 
 } // namespace qssc
 #endif // QSS_COMPILER_LIB_H

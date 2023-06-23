@@ -33,7 +33,7 @@
 
 namespace qssc::arguments {
 
-using ArgumentType = mlir::qcs::ParameterType;
+using ArgumentType = std::variant<llvm::Optional<double>>;
 
 class ArgumentSource {
 public:
@@ -49,13 +49,18 @@ public:
   virtual ~BindArgumentsImplementation() = default;
   virtual llvm::Error patch(PatchPoint const &patchPoint,
                             ArgumentSource const &arguments) = 0;
-  virtual void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
-                                          llvm::StringRef paramMapFileName,
-                                          qssc::arguments::Signature &sig) = 0;
+  virtual llvm::Error
+  parseParamMapIntoSignature(llvm::StringRef paramMapContents,
+                             llvm::StringRef paramMapFileName,
+                             qssc::arguments::Signature &sig) = 0;
   virtual qssc::payload::PatchablePayload *
   getPayload(llvm::StringRef payloadOutputPath) = 0;
   virtual llvm::Expected<Signature>
   parseSignature(qssc::payload::PatchablePayload *payload) = 0;
+  void setTreatWarningsAsErrors(bool val) { treatWarningsAsErrors_ = val; }
+
+protected:
+  bool treatWarningsAsErrors_{false};
 };
 
 // BindArgumentsImplementationFactory - abstract class to be subclassed by
@@ -73,6 +78,7 @@ public:
 llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
+                          bool treatWarningsAsErrors,
                           BindArgumentsImplementationFactory *factory);
 
 } // namespace qssc::arguments

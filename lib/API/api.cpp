@@ -684,8 +684,7 @@ public:
     auto pos = parameterMap.find(name_);
 
     if (pos == parameterMap.end())
-      return 0.0; // TODO need to make this Optional and error handling!
-
+      return llvm::None;
     return pos->second;
   }
 
@@ -697,7 +696,8 @@ llvm::Error
 _bindArguments(std::string_view target, std::string_view configPath,
                std::string_view moduleInputPath,
                std::string_view payloadOutputPath,
-               std::unordered_map<std::string, double> const &arguments) {
+               std::unordered_map<std::string, double> const &arguments,
+               bool treatWarningsAsErrors) {
 
   MLIRContext context{};
 
@@ -741,17 +741,19 @@ _bindArguments(std::string_view target, std::string_view configPath,
         "Unable to load bind arguments implementation for target!");
   }
   return qssc::arguments::bindArguments(moduleInputPath, payloadOutputPath,
-                                        source, factory.getValue());
+                                        source, treatWarningsAsErrors,
+                                        factory.getValue());
 }
 
 int qssc::bindArguments(
     std::string_view target, std::string_view configPath,
     std::string_view moduleInputPath, std::string_view payloadOutputPath,
     std::unordered_map<std::string, double> const &arguments,
-    std::string *errorMessage) {
+    bool treatWarningsAsErrors, std::string *errorMessage) {
 
-  auto successOrErr = _bindArguments(target, configPath, moduleInputPath,
-                                     payloadOutputPath, arguments);
+  auto successOrErr =
+      _bindArguments(target, configPath, moduleInputPath, payloadOutputPath,
+                     arguments, treatWarningsAsErrors);
 
   if (successOrErr) {
     if (errorMessage) {
