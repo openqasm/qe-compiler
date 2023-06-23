@@ -43,10 +43,10 @@ static std::string_view getErrorCategoryAsString(ErrorCategory category) {
     return "EOF Error";
 
   case ErrorCategory::QSSCompilerNonZeroStatus:
-    return "Error ";
+    return "Errored because non-zero status is returned";
 
   case ErrorCategory::QSSCompilationFailure:
-    return "Errored because non-zero status is returned";
+    return "Failure during compilation";
 
   case ErrorCategory::UncategorizedError:
     return "Compilation failure";

@@ -275,14 +275,14 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             childproc.kill()
             childproc.join()
             raise QSSCompilerEOFFailure(
-                "compile process exited before delivering output.", diagnostics
+                "Compile process exited before delivering output.", diagnostics
             )
 
         childproc.join()
         if childproc.exitcode != 0:
             raise QSSCompilerNonZeroStatus(
                 (
-                    "compile process exited with non-zero status "
+                    "Compile process exited with non-zero status "
                     + str(childproc.exitcode)
                     + (" yet appears  still alive" if childproc.is_alive() else "")
                 ),
