@@ -40,7 +40,7 @@ void Signature::addParameterPatchPoint(llvm::StringRef expression,
 }
 
 void Signature::addParameterPatchPoint(llvm::StringRef binaryComponent,
-                                       PatchPoint p) {
+                                       const PatchPoint &p) {
 
   auto &patchPoints = patchPointsByBinary[binaryComponent];
   patchPoints.push_back(p);

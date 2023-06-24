@@ -62,7 +62,8 @@ public:
   void addParameterPatchPoint(llvm::StringRef expression,
                               llvm::StringRef patchType,
                               llvm::StringRef binaryComponent, uint64_t offset);
-  void addParameterPatchPoint(llvm::StringRef binaryComponent, PatchPoint p);
+  void addParameterPatchPoint(llvm::StringRef binaryComponent,
+                              const PatchPoint &p);
   void dump();
 
   std::string serialize();
