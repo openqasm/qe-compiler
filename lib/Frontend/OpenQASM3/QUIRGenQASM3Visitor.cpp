@@ -369,7 +369,6 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
 
   // Save current level OpBuilder
   OpBuilder prevBuilder = builder;
-  OpBuilder prevCircuitParentBuilder = builder;
 
   // Dictionary of SSA values used inside "if"
   std::unordered_map<std::string, mlir::Value> ifSsaValues = ssaValues;
@@ -395,7 +394,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
     finishCircuit();
 
   builder = prevBuilder;
-  circuitParentBuilder = prevCircuitParentBuilder;
+  circuitParentBuilder = builder;
   std::swap(ssaValues, ifSsaValues);
 
   // Else
@@ -500,7 +499,6 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
 
   // Save current level OpBuilder
   OpBuilder prevBuilder = builder;
-  OpBuilder prevCircuitParentBuilder = builder;
 
   // Parse the default region.
   Region &defaultRegion = switchOp.defaultRegion();
@@ -535,7 +533,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
     builder.create<quir::YieldOp>(loc);
   }
   builder = prevBuilder;
-  circuitParentBuilder = prevCircuitParentBuilder;
+  circuitParentBuilder = builder;
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
