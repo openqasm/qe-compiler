@@ -319,6 +319,7 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
   // set up the builders to point to the proper places
   OpBuilder b(&forOp.getRegion());
   builder = b;
+  circuitParentBuilder = b;
 
   // check inside for loop
   const ASTStatementList &loopNode = loop->GetStatementList();
@@ -330,6 +331,7 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
 
   // Set the builder to add the next operations after the for loop.
   builder.setInsertionPointAfter(forOp);
+  circuitParentBuilder.setInsertionPointAfter(forOp);
   std::swap(ssaValues, forSsaValues);
 }
 
@@ -376,6 +378,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
   // New OpBuilder for the if statement Region
   OpBuilder ifRegionBuilder(ifOp.getThenRegion());
   builder = ifRegionBuilder;
+  circuitParentBuilder = ifRegionBuilder;
 
   // single statement within the if block
   if (const ASTStatementNode *opNode = node->GetOpNode())
@@ -391,6 +394,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
     finishCircuit();
 
   builder = prevBuilder;
+  circuitParentBuilder = builder;
   std::swap(ssaValues, ifSsaValues);
 
   // Else
@@ -405,6 +409,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
 
     OpBuilder ElseRegionBuilder(ifOp.getElseRegion());
     builder = ElseRegionBuilder;
+    circuitParentBuilder = builder;
 
     // single statement within the else block
     if (const ASTStatementNode *opNode = node->GetElse()->GetOpNode())
@@ -419,6 +424,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
       finishCircuit();
 
     builder = elseBuilder;
+    circuitParentBuilder = builder;
     std::swap(ssaValues, elseSsaValues);
   }
 }
@@ -498,6 +504,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   defaultRegion.emplaceBlock();
   OpBuilder defaultRegionBuilder(defaultRegion);
   builder = defaultRegionBuilder;
+  circuitParentBuilder = defaultRegionBuilder;
   BaseQASM3Visitor::visit(node->GetDefaultStatement()->GetStatementList());
 
   if (buildingInCircuit)
@@ -515,6 +522,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
     OpBuilder caseRegionBuilder(caseRegion);
     i++;
     builder = caseRegionBuilder;
+    circuitParentBuilder = caseRegionBuilder;
     BaseQASM3Visitor::visit(caseValue->GetStatementList());
 
     if (buildingInCircuit)
@@ -524,6 +532,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
     builder.create<quir::YieldOp>(loc);
   }
   builder = prevBuilder;
+  circuitParentBuilder = builder;
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
@@ -549,6 +558,7 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
   builder.create<scf::ConditionOp>(loc, condition, ValueRange({}));
 
   builder.createBlock(&whileOp.getAfter());
+  circuitParentBuilder = builder;
 
   const ASTStatementList &statementList = loop->GetStatementList();
   BaseQASM3Visitor::visit(&statementList);
@@ -558,6 +568,7 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
 
   builder.create<scf::YieldOp>(loc);
   builder.setInsertionPointAfter(whileOp);
+  circuitParentBuilder.setInsertionPointAfter(whileOp);
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTWhileLoopNode *node) {
@@ -660,6 +671,7 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
   // New OpBuilder for the gate declaration Region
   OpBuilder gateDeclarationBuilder(func.getBody());
   builder = gateDeclarationBuilder;
+  circuitParentBuilder = builder;
 
   const ASTGateQOpList &opList = gateNode->GetOpList();
   for (ASTGateQOpNode *i : opList)
@@ -672,6 +684,7 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
 
   // Restore SSA Values and OpBuilder as we exit the function
   builder = prevBuilder;
+  circuitParentBuilder = builder;
   std::swap(ssaValues, gateSsaValues);
 }
 
