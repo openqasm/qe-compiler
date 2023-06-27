@@ -406,11 +406,10 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
 
     // Save current level OpBuilder
     OpBuilder elseBuilder = builder;
-    OpBuilder prevElseCircuitParentBuilder = builder;
 
     OpBuilder ElseRegionBuilder(ifOp.getElseRegion());
     builder = ElseRegionBuilder;
-    circuitParentBuilder = ElseRegionBuilder;
+    circuitParentBuilder = builder;
 
     // single statement within the else block
     if (const ASTStatementNode *opNode = node->GetElse()->GetOpNode())
@@ -425,7 +424,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
       finishCircuit();
 
     builder = elseBuilder;
-    circuitParentBuilder = prevElseCircuitParentBuilder;
+    circuitParentBuilder = builder;
     std::swap(ssaValues, elseSsaValues);
   }
 }
