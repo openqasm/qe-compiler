@@ -319,6 +319,7 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
   // set up the builders to point to the proper places
   OpBuilder b(&forOp.getRegion());
   builder = b;
+  circuitParentBuilder = b;
 
   // check inside for loop
   const ASTStatementList &loopNode = loop->GetStatementList();
@@ -330,6 +331,7 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
 
   // Set the builder to add the next operations after the for loop.
   builder.setInsertionPointAfter(forOp);
+  circuitParentBuilder.setInsertionPointAfter(forOp);
   std::swap(ssaValues, forSsaValues);
 }
 
