@@ -60,7 +60,7 @@ from os import environ as os_environ
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
-from .exception import *
+from .exceptions import *
 from .py_qssc import _compile_with_args, Diagnostic
 
 # use the forkserver context to create a server process
