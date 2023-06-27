@@ -561,6 +561,7 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
   builder.create<scf::ConditionOp>(loc, condition, ValueRange({}));
 
   builder.createBlock(&whileOp.getAfter());
+  circuitParentBuilder = builder;
 
   const ASTStatementList &statementList = loop->GetStatementList();
   BaseQASM3Visitor::visit(&statementList);
@@ -570,6 +571,7 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
 
   builder.create<scf::YieldOp>(loc);
   builder.setInsertionPointAfter(whileOp);
+  circuitParentBuilder.setInsertionPointAfter(whileOp);
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTWhileLoopNode *node) {
@@ -672,6 +674,7 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
   // New OpBuilder for the gate declaration Region
   OpBuilder gateDeclarationBuilder(func.getBody());
   builder = gateDeclarationBuilder;
+  circuitParentBuilder = builder;
 
   const ASTGateQOpList &opList = gateNode->GetOpList();
   for (ASTGateQOpNode *i : opList)
@@ -684,6 +687,7 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
 
   // Restore SSA Values and OpBuilder as we exit the function
   builder = prevBuilder;
+  circuitParentBuilder = builder;
   std::swap(ssaValues, gateSsaValues);
 }
 
