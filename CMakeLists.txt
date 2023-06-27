@@ -152,6 +152,18 @@ if(QSSC_WITH_MOCK_TARGET)
     )
 endif()
 
+option(QSSC_WITH_SIMULATOR_TARGET "Available targets include the built-in simulator target" ON)
+if(QSSC_WITH_SIMULATOR_TARGET)
+    set(QSSC_TARGET_DIRS
+            ${QSSC_TARGET_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/target_simulator
+    )
+    set(QSSC_TARGET_TEST_DIRS
+            ${QSSC_TARGET_TEST_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/target_simulator/test
+    )
+endif()
+
 set(QSSC_PAYLOAD_PATHS
         ""
         CACHE STRING
