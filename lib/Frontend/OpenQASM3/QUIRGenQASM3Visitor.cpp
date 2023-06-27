@@ -500,12 +500,14 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
 
   // Save current level OpBuilder
   OpBuilder prevBuilder = builder;
+  OpBuilder prevCircuitParentBuilder = builder;
 
   // Parse the default region.
   Region &defaultRegion = switchOp.defaultRegion();
   defaultRegion.emplaceBlock();
   OpBuilder defaultRegionBuilder(defaultRegion);
   builder = defaultRegionBuilder;
+  circuitParentBuilder = defaultRegionBuilder;
   BaseQASM3Visitor::visit(node->GetDefaultStatement()->GetStatementList());
 
   if (buildingInCircuit)
@@ -523,6 +525,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
     OpBuilder caseRegionBuilder(caseRegion);
     i++;
     builder = caseRegionBuilder;
+    circuitParentBuilder = caseRegionBuilder;
     BaseQASM3Visitor::visit(caseValue->GetStatementList());
 
     if (buildingInCircuit)
@@ -532,6 +535,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
     builder.create<quir::YieldOp>(loc);
   }
   builder = prevBuilder;
+  circuitParentBuilder = prevCircuitParentBuilder;
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
