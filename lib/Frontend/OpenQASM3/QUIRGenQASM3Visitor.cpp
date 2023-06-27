@@ -367,6 +367,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
 
   // Save current level OpBuilder
   OpBuilder prevBuilder = builder;
+  OpBuilder prevCircuitParentBuilder = builder;
 
   // Dictionary of SSA values used inside "if"
   std::unordered_map<std::string, mlir::Value> ifSsaValues = ssaValues;
@@ -376,6 +377,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
   // New OpBuilder for the if statement Region
   OpBuilder ifRegionBuilder(ifOp.getThenRegion());
   builder = ifRegionBuilder;
+  circuitParentBuilder = ifRegionBuilder;
 
   // single statement within the if block
   if (const ASTStatementNode *opNode = node->GetOpNode())
@@ -391,6 +393,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
     finishCircuit();
 
   builder = prevBuilder;
+  circuitParentBuilder = prevCircuitParentBuilder;
   std::swap(ssaValues, ifSsaValues);
 
   // Else
@@ -402,9 +405,11 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
 
     // Save current level OpBuilder
     OpBuilder elseBuilder = builder;
+    OpBuilder prevElseCircuitParentBuilder = builder;
 
     OpBuilder ElseRegionBuilder(ifOp.getElseRegion());
     builder = ElseRegionBuilder;
+    circuitParentBuilder = ElseRegionBuilder;
 
     // single statement within the else block
     if (const ASTStatementNode *opNode = node->GetElse()->GetOpNode())
@@ -419,6 +424,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
       finishCircuit();
 
     builder = elseBuilder;
+    circuitParentBuilder = prevElseCircuitParentBuilder;
     std::swap(ssaValues, elseSsaValues);
   }
 }
