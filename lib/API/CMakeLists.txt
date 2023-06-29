@@ -17,4 +17,11 @@ set(LIBS
         )
 target_link_libraries(QSSCAPI ${LIBS})
 
+target_sources(QSSCAPI
+    PRIVATE api.cpp error.cpp
+    INTERFACE FILE_SET HEADERS
+    BASE_DIRS ${QSSC_INCLUDE_DIR}/API
+    FILES ${QSSC_INCLUDE_DIR}/API/api.h ${QSSC_INCLUDE_DIR}/API/error.h
+    )
+
 add_dependencies(QSSCAPI MLIROQ3Dialect MLIRQCSDialect MLIRQUIRDialect)

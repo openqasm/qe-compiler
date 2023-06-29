@@ -10,7 +10,16 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-set(SOURCES DebugIndent.cpp)
+add_mlir_dialect_library(MLIROQ3Transforms
+    LimitCBitWidth.cpp
+    Passes.cpp
 
-add_library(Utils ${SOURCES})
-target_link_libraries(Utils ${BOOST_LIBRARIES})
+    ADDITIONAL_HEADER_DIRS
+    ${PROJECT_SOURCE_DIR}/include/OQ3
+
+    DEPENDS
+    MLIROQ3OpsIncGen
+
+    LINK_LIBS PUBLIC
+    MLIRIR
+    )

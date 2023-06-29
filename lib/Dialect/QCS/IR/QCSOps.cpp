@@ -117,13 +117,25 @@ ParameterType ParameterLoadOp::getInitialValue() {
   } while (!declOp);
 
   assert(declOp);
+
+  double retVal;
+
   auto angleAttr =
       declOp.initial_value().getValue().dyn_cast<mlir::quir::AngleAttr>();
-  if (!angleAttr) {
-    op->emitError("Parameters are currently limited to angles only.");
+  auto floatAttr = declOp.initial_value().getValue().dyn_cast<FloatAttr>();
+
+  if (!(angleAttr || floatAttr)) {
+    op->emitError(
+        "Parameters are currently limited to angles or float[64] only.");
     return 0.0;
   }
-  auto retVal = angleAttr.getValue().convertToDouble();
+
+  if (angleAttr)
+    retVal = angleAttr.getValue().convertToDouble();
+
+  if (floatAttr)
+    retVal = floatAttr.getValue().convertToDouble();
+
   return retVal;
 }
 

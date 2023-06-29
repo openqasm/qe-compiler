@@ -85,12 +85,25 @@ void QUIRVariableBuilder::generateParameterDeclaration(
   assert(surroundingModuleOp && "assume symbol table residing in module");
   builder.setInsertionPoint(&surroundingModuleOp.front());
 
+  mlir::qcs::DeclareParameterOp declareParameterOp;
+
   // add qcs input parameter
-  auto constantOp =
-      mlir::dyn_cast<mlir::quir::ConstantOp>(assignedValue.getDefiningOp());
-  auto declareParameterOp = builder.create<mlir::qcs::DeclareParameterOp>(
-      location, variableName.str(), mlir::TypeAttr::get(type),
-      constantOp.value());
+  if (auto constantOp = mlir::dyn_cast<mlir::quir::ConstantOp>(
+          assignedValue.getDefiningOp())) {
+    declareParameterOp =
+        getClassicalBuilder().create<mlir::qcs::DeclareParameterOp>(
+            location, variableName.str(),
+            builder.getType<mlir::quir::AngleType>(64), constantOp.value());
+  }
+
+  // if the source is a arith::ConstantOp cast to angle
+  if (auto constantOp = mlir::dyn_cast<mlir::arith::ConstantOp>(
+          assignedValue.getDefiningOp())) {
+    declareParameterOp =
+        getClassicalBuilder().create<mlir::qcs::DeclareParameterOp>(
+            location, variableName.str(), constantOp.getType(),
+            constantOp.getValue());
+  }
 
   declareParameterOp->moveBefore(lastDeclaration[surroundingModuleOp]);
   lastDeclaration[surroundingModuleOp] = declareParameterOp;
@@ -98,11 +111,27 @@ void QUIRVariableBuilder::generateParameterDeclaration(
 
 mlir::Value
 QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
-                                           llvm::StringRef variableName) {
+                                           llvm::StringRef variableName,
+                                           mlir::Value assignedValue) {
 
-  auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
-      location, builder.getType<mlir::quir::AngleType>(64), variableName.str());
-  return op;
+  if (auto constantOp = mlir::dyn_cast<mlir::quir::ConstantOp>(
+          assignedValue.getDefiningOp())) {
+    auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
+        location, builder.getType<mlir::quir::AngleType>(64),
+        variableName.str());
+    return op;
+  }
+
+  // if the source is a arith::ConstantOp cast to angle
+  if (auto constantOp = mlir::dyn_cast<mlir::arith::ConstantOp>(
+          assignedValue.getDefiningOp())) {
+    auto loadOp = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
+        location, constantOp.getType(), variableName.str());
+    return loadOp;
+  }
+
+  assert(false &&
+         "Unsupported defining value operation for parameter variable");
 }
 
 void QUIRVariableBuilder::generateArrayVariableDeclaration(
