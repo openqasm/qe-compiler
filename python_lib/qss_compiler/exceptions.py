@@ -24,8 +24,7 @@ from .py_qssc import Diagnostic
 
 
 def _diagnostics_to_str(diagnostics):
-    # return "\n".join([str(diag) for diag in diagnostics])
-    return [str(diag) for diag in diagnostics]
+    return "\n".join([str(diag) for diag in diagnostics])
 
 
 class QSSCompilerError(Exception):
@@ -34,15 +33,13 @@ class QSSCompilerError(Exception):
 
     def __init__(self, *message: str, diagnostics: Optional[List[Diagnostic]] = None):
         """Set the error message."""
-        # super().__init__(" ".join(message))
-        # self.message = " ".join(message)
-        self.message = message
+        super().__init__(" ".join(message))
+        self.message = " ".join(message)
         self.diagnostics = [] if diagnostics is None else diagnostics
 
     def __str__(self):
         """Return the message."""
-        # return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
-        return [self.message, _diagnostics_to_str(self.diagnostics)]
+        return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
 
 
 class QSSCompilerNoInputError(QSSCompilerError):

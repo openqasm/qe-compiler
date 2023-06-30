@@ -21,10 +21,6 @@ from qss_compiler import (
     ErrorCategory,
     InputType,
     OutputType,
-    QSSCompilerNoInputError,
-    QSSCompilerCommunicationFailure,
-    QSSCompilerEOFFailure,
-    QSSCompilerNonZeroStatus,
     QSSCompilationFailure,
     Severity,
 )
