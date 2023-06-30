@@ -60,7 +60,7 @@ from os import environ as os_environ
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
-from .exceptions import *
+from . import exceptions
 from .py_qssc import _compile_with_args, Diagnostic
 
 # use the forkserver context to create a server process
@@ -168,7 +168,7 @@ class _CompilerExecution:
             args.append("--direct")
             args.append(str(self.input_str))
         else:
-            raise QSSCompilerNoInputError("Neither input file nor input string provided.")
+            raise exceptions.QSSCompilerNoInputError("Neither input file nor input string provided.")
 
         return args
 
@@ -259,7 +259,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                 else:
                     childproc.kill()
                     childproc.join()
-                    raise QSSCompilerCommunicationFailure(
+                    raise exceptions.QSSCompilerCommunicationFailure(
                         "The compile process delivered an unexpected object instead of status or "
                         "diagnostic information. This points to inconsistencies in the Python "
                         "interface code between the calling process and the compile process."
@@ -274,13 +274,13 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             # make sure that child process terminates
             childproc.kill()
             childproc.join()
-            raise QSSCompilerEOFFailure(
+            raise exceptions.QSSCompilerEOFFailure(
                 "Compile process exited before delivering output.", diagnostics
             )
 
         childproc.join()
         if childproc.exitcode != 0:
-            raise QSSCompilerNonZeroStatus(
+            raise exceptions.QSSCompilerNonZeroStatus(
                 (
                     "Compile process exited with non-zero status "
                     + str(childproc.exitcode)
@@ -290,7 +290,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             )
 
         if not success:
-            raise QSSCompilationFailure("Failure during compilation", diagnostics)
+            raise exceptions.QSSCompilationFailure("Failure during compilation", diagnostics)
 
     except mp.ProcessError as e:
         raise QSSCompilerError(

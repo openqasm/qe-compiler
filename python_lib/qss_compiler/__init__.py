@@ -22,7 +22,7 @@ from .compile import (  # noqa: F401
     CompileOptions,
 )
 
-from .exception import (
+from .exceptions import (
     QSSCompilerError,
     QSSCompilerNoInputError,
     QSSCompilerCommunicationFailure,
