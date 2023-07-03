@@ -293,7 +293,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             raise exceptions.QSSCompilationFailure("Failure during compilation", diagnostics)
 
     except mp.ProcessError as e:
-        raise QSSCompilerError(
+        raise exceptions.QSSCompilerError(
             "It's likely that you've hit a bug in the QSS Compiler. Please "
             "submit an issue to the team with relevant information "
             "(https://github.com/Qiskit/qss-compiler/issues):\n"
