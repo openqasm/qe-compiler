@@ -33,8 +33,7 @@ class QSSCompilerError(Exception):
 
     def __init__(self, *message: str, diagnostics: Optional[List[Diagnostic]] = None):
         """Set the error message."""
-        super().__init__(" ".join(message))
-        self.message = " ".join(message)
+        self.message = message
         self.diagnostics = [] if diagnostics is None else diagnostics
 
     def __str__(self):
