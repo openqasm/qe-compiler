@@ -1,4 +1,4 @@
-//===- QUIRToStd.cpp - Convert QUIR to Std Dialect --------------*- C++ -*-===//
+//===- OQ3ToAER.cpp - Convert OQ3 to AER --------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,10 +14,10 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file implements passes for converting QUIR to std dialect
+//  This file implements passes for converting OQ3 to AER
 //
 //===----------------------------------------------------------------------===//
-#include "Conversion/QUIRToStandard/QUIRToStandard.h"
+#include "Conversion/OQ3ToAER.h"
 #include "Conversion/QUIRToStandard/TypeConversion.h"
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
 
@@ -42,20 +42,41 @@
 
 using namespace mlir;
 
+#include <exception>
+
 namespace qssc::targets::simulator::conversion {
-struct ReturnConversionPat : public OpConversionPattern<mlir::ReturnOp> {
+  
+struct RemoveOQ3ConversionPat : public OpConversionPattern<oq3::DeclareVariableOp> {
+  explicit RemoveOQ3ConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, 1)
+  {}
 
-  explicit ReturnConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-      : OpConversionPattern(typeConverter, ctx, /*benefit=*/1) {}
-
-  LogicalResult
-  matchAndRewrite(mlir::ReturnOp retOp, OpAdaptor adaptor,
-                  ConversionPatternRewriter &rewriter) const override {
-    rewriter.create<mlir::ReturnOp>(retOp->getLoc(), adaptor.getOperands());
-    rewriter.replaceOp(retOp, {});
+  LogicalResult matchAndRewrite(oq3::DeclareVariableOp declOp,
+                                oq3::DeclareVariableOp::Adaptor adapter,
+                                ConversionPatternRewriter &rewriter) const override {
+    llvm::outs() << "debug: why?\n";
+    rewriter.eraseOp(declOp);
     return success();
-  } // matchAndRewrite
-};  // struct ReturnConversionPat
+  }
+};
+  
+struct QBitDeclConversionPat : public OpConversionPattern<quir::DeclareQubitOp> {
+  explicit QBitDeclConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, 1)
+  {}
+
+  LogicalResult matchAndRewrite(quir::DeclareQubitOp declOp,
+                                quir::DeclareQubitOp::Adaptor adapter,
+                                ConversionPatternRewriter &rewriter) const override {
+    //const int width = declOp->getAttr("width");
+    auto *context = declOp->getContext();
+    const auto aerAllocationFunType = LLVM::LLVMFunctionType::get(IntegerType::get(context, 32),
+                                                                  IntegerType::get(context, 32));
+    rewriter.create<LLVM::LLVMFuncOp>(declOp->getLoc(), "aer_allocate_qubits", aerAllocationFunType);
+    rewriter.eraseOp(declOp);
+    return success();
+  }
+};
 
 // Convert quir.constant op to a std dialect constant op
 // convert angles to integer values so we don't have to use soft-float
@@ -95,85 +116,14 @@ struct ConstantOpConversionPat : public OpConversionPattern<quir::ConstantOp> {
   } // matchAndRewrite
 };  // struct ConstantOpConversionPat
 
-template <class QuirOp, class StdOp>
-struct AngleBinOpConversionPat : public OpConversionPattern<QuirOp> {
 
-  explicit AngleBinOpConversionPat(MLIRContext *ctx,
-                                   TypeConverter &typeConverter)
-      : OpConversionPattern<QuirOp>(typeConverter, ctx, /*benefit=*/1) {}
-
-  LogicalResult
-  matchAndRewrite(QuirOp binOp, typename QuirOp::Adaptor adaptor,
-                  ConversionPatternRewriter &rewriter) const override {
-    auto operands = adaptor.getOperands();
-    auto angleWidth =
-        binOp.lhs().getType().template dyn_cast<quir::AngleType>().getWidth();
-
-    // cannot handle non-parameterized angle types
-    if (!angleWidth.hasValue())
-      return failure();
-
-    int64_t maskVal = ((int64_t)1 << (int64_t)angleWidth.getValue()) - 1;
-    auto iType = operands[0].getType().template dyn_cast<IntegerType>();
-    IntegerAttr iAttr = rewriter.getIntegerAttr(iType, maskVal);
-
-    auto stdOp =
-        rewriter.create<StdOp>(binOp.getLoc(), iType, operands[0], operands[1]);
-    auto maskOp =
-        rewriter.create<mlir::arith::ConstantOp>(binOp->getLoc(), iType, iAttr);
-    auto andOp = rewriter.create<mlir::LLVM::AndOp>(
-        binOp->getLoc(), stdOp.getResult(), maskOp.getResult());
-    rewriter.replaceOp(binOp, {andOp.getODSResults(0)});
-    return success();
-  } // matchAndRewrite
-};  // struct AngleBinOpConversionPat
-
-// convert the comm op to a value to be removed or remove it completely as it is
-// not supported by the simulator target.
-template <class CommOp>
-struct CommOpConversionPat : public OpConversionPattern<CommOp> {
-
-  explicit CommOpConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-      : OpConversionPattern<CommOp>(typeConverter, ctx, /*benefit=*/1) {}
-
-  LogicalResult
-  matchAndRewrite(CommOp commOp, typename CommOp::Adaptor adaptor,
-                  ConversionPatternRewriter &rewriter) const override {
-    const auto numResults = commOp.getOperation()->getNumResults();
-
-    switch (numResults) {
-    case 0:
-      rewriter.replaceOp(commOp.getOperation(), {});
-      return success();
-
-    case 1: {
-      // shift the floating point value up by the desired precision
-      int64_t iVal = 1;
-      IntegerType i1Type = rewriter.getI1Type();
-
-      IntegerAttr iAttr = rewriter.getIntegerAttr(i1Type, iVal);
-      auto constOp = rewriter.create<mlir::arith::ConstantOp>(commOp->getLoc(),
-                                                              i1Type, iAttr);
-      rewriter.replaceOp(commOp.getOperation(), {constOp.getODSResults(0)});
-      return success();
-    }
-
-    default:
-      commOp.emitOpError()
-          << "Error: " << commOp.getOperation() << " with " << numResults
-          << " is not currently handled by the pattern CommOpConversionPat!\n";
-      return failure();
-    }
-  } // matchAndRewrite
-};  // struct CommOpConversionPat
-
-void conversion::SimulatorQUIRToStdPass::getDependentDialects(
+void conversion::QUIRToAERPass::getDependentDialects(
     DialectRegistry &registry) const {
   registry.insert<LLVM::LLVMDialect, mlir::memref::MemRefDialect,
                   mlir::AffineDialect, arith::ArithmeticDialect>();
 }
 
-void SimulatorQUIRToStdPass::runOnOperation(SimulatorSystem &system) {
+void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   ModuleOp moduleOp = getOperation();
 
   // Attempt to apply the conversion only to the controller module
@@ -194,11 +144,11 @@ void SimulatorQUIRToStdPass::runOnOperation(SimulatorSystem &system) {
                          mlir::AffineDialect, memref::MemRefDialect,
                          scf::SCFDialect, StandardOpsDialect,
                          mlir::pulse::PulseDialect>();
-  // Since we are converting QUIR -> STD/LLVM, make QUIR illegal.
+  // Since we are converting QUIR -> AER/LLVM, make QUIR illegal.
   // Further, because OQ3 and QCS ops are migrated from QUIR, make them also
   // illegal.
   target
-      .addIllegalDialect<quir::QUIRDialect, qcs::QCSDialect, oq3::OQ3Dialect>();
+    .addIllegalDialect<quir::QUIRDialect, qcs::QCSDialect, oq3::OQ3Dialect>();
   target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
   target.addDynamicallyLegalOp<FuncOp>(
       [&](FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
@@ -229,13 +179,8 @@ void SimulatorQUIRToStdPass::runOnOperation(SimulatorSystem &system) {
   populateCallOpTypeConversionPattern(patterns, typeConverter);
   // clang-format off
   patterns.add<ConstantOpConversionPat,
-               ReturnConversionPat,
-               CommOpConversionPat<qcs::RecvOp>,
-               CommOpConversionPat<qcs::BroadcastOp>,
-               AngleBinOpConversionPat<oq3::AngleAddOp, mlir::arith::AddIOp>,
-               AngleBinOpConversionPat<oq3::AngleSubOp, mlir::arith::SubIOp>,
-               AngleBinOpConversionPat<oq3::AngleMulOp, mlir::arith::MulIOp>,
-               AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>>(
+               QBitDeclConversionPat,
+               RemoveOQ3ConversionPat>(
       context, typeConverter);
   // clang-format on
 
@@ -261,12 +206,12 @@ void SimulatorQUIRToStdPass::runOnOperation(SimulatorSystem &system) {
   }
 } // QUIRToStdPass::runOnOperation()
 
-llvm::StringRef SimulatorQUIRToStdPass::getArgument() const {
-  return "simulator-quir-to-std";
+llvm::StringRef QUIRToAERPass::getArgument() const {
+  return "simulator-oq3-to-aer";
 }
 
-llvm::StringRef SimulatorQUIRToStdPass::getDescription() const {
-  return "Convert QUIR ops to std dialect";
+llvm::StringRef QUIRToAERPass::getDescription() const {
+  return "Convert OQ3 ops to aer";
 }
 
 } // namespace qssc::targets::simulator::conversion

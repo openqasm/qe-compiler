@@ -14,12 +14,12 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file declares the pass for converting QUIR to std dialect
+//  This file declares the pass for converting OpenQASM3 to AER
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SIMULATOR_CONVERSION_QUIRTOSTD_H
-#define SIMULATOR_CONVERSION_QUIRTOSTD_H
+#ifndef SIMULATOR_CONVERSION_OQ3AER_H
+#define SIMULATOR_CONVERSION_OQ3AER_H
 
 #include "Simulator.h"
 
@@ -29,21 +29,22 @@
 #include "mlir/Pass/Pass.h"
 
 namespace qssc::targets::simulator::conversion {
-struct SimulatorQUIRToStdPass
+struct QUIRToAERPass
     : public mlir::PassWrapper<
-          SimulatorQUIRToStdPass,
+          QUIRToAERPass,
           hal::TargetOperationPass<SimulatorSystem, mlir::ModuleOp>> {
   void runOnOperation(SimulatorSystem &system) override;
   void getDependentDialects(mlir::DialectRegistry &registry) const override;
-
+  
   bool externalizeOutputVariables;
 
-  SimulatorQUIRToStdPass(bool externalizeOutputVariables)
-      : PassWrapper(), externalizeOutputVariables(externalizeOutputVariables) {}
+  QUIRToAERPass(bool externalizeOutputVariables)
+      : PassWrapper(), externalizeOutputVariables(externalizeOutputVariables)
+  {}
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
 };
 } // namespace qssc::targets::simulator::conversion
 
-#endif // SIMULATOR_CONVERSION_QUIRTOSTD_H
+#endif // SIMULATOR_CONVERSION_OQ3AER_H

@@ -16,8 +16,8 @@
 
 #include "Simulator.h"
 
-//#include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
-#include "Conversion/QUIRToStandard/QUIRToStandard.h"
+#include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
+#include "Conversion/OQ3ToAER.h"
 
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "HAL/TargetSystemRegistry.h"
@@ -78,8 +78,8 @@ int qssc::targets::simulator::init() {
   return registered ? 0 : -1;
 }
 
-const std::vector<std::string> SimulatorSystem::childNames = {"SimulatorChild1",
-                                                         "SimulatorChild2"};
+const std::vector<std::string> SimulatorSystem::childNames =
+    {"SimulatorChild1", "SimulatorChild2"};
 
 SimulatorConfig::SimulatorConfig(llvm::StringRef configurationPath)
     : SystemConfiguration() {
@@ -90,9 +90,9 @@ SimulatorSystem::SimulatorSystem(std::unique_ptr<SimulatorConfig> config)
 } // SimulatorSystem
 
 llvm::Error SimulatorSystem::registerTargetPasses() {
-  mlir::PassRegistration<conversion::SimulatorQUIRToStdPass>(
-      []() -> std::unique_ptr<conversion::SimulatorQUIRToStdPass> {
-        return std::make_unique<conversion::SimulatorQUIRToStdPass>(false);
+  mlir::PassRegistration<conversion::QUIRToAERPass>(
+      []() -> std::unique_ptr<conversion::QUIRToAERPass> {
+        return std::make_unique<conversion::QUIRToAERPass>(false);
       });
 
   return llvm::Error::success();
@@ -143,5 +143,111 @@ llvm::Error SimulatorSystem::addToPayload(mlir::ModuleOp &moduleOp,
   for (auto &instrument : instruments)
     if (auto err = instrument->addToPayload(moduleOp, payload))
       return err;
+
+  buildLLVMPayload(moduleOp, payload);
+
+  // TODO: if buildLLVMPayload failed?
   return llvm::Error::success();
 } // SimulatorSystem::addToPayload
+
+void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
+                                       payload::Payload &payload) {
+
+  auto *context = moduleOp.getContext();
+  assert(context);
+  
+  // Register LLVM dialect and all infrastructure required for translation to
+  // LLVM IR
+  mlir::registerLLVMDialectTranslation(*context);
+  
+  mlir::PassManager pm(context);
+  pm.addPass(std::make_unique<conversion::QUIRToAERPass>(false));
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(mlir::createLowerToLLVMPass());
+  pm.addPass(mlir::LLVM::createLegalizeForExportPass());
+  if(failed(pm.run(moduleOp))) {
+    llvm::errs() << "Problems converting `Simulator` module to AER!\n";
+    return;
+  }
+
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeAllTargetMCs();
+  
+  // Setup the machine properties for the target architecture.
+  std::string targetTriple = llvm::sys::getDefaultTargetTriple();
+  std::string errorMessage;
+  const auto *target =
+      llvm::TargetRegistry::lookupTarget(targetTriple, errorMessage);
+  if(!target) {
+    llvm::errs() << "Unable to find target: " << errorMessage << "\n";
+    return;
+  }
+  
+  std::string cpu("generic");
+  llvm::SubtargetFeatures features;
+  std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(
+      targetTriple, cpu, features.getString(), {}, {}));
+  auto dataLayout = machine->createDataLayout();
+  
+  // TODO
+  if(auto err =
+        quir::translateModuleToLLVMDialect(moduleOp, dataLayout)) {
+    llvm::errs() << err;
+    return;
+  }
+  
+  // Build LLVM payload
+  llvm::LLVMContext llvmContext;
+  std::unique_ptr<llvm::Module> llvmModule =
+      mlir::translateModuleToLLVMIR(moduleOp, llvmContext);
+  if(!llvmModule) {
+    llvm::errs() << "Error converting LLVM module to LLVM IR!\n";
+    llvm::errs() << moduleOp << "\n";
+    return;
+  }
+  
+  // TODO: why do not use created datalayout above?
+  llvmModule->setDataLayout(machine->createDataLayout());
+  llvmModule->setTargetTriple(targetTriple);
+  
+  // Optionally run an optimization pipeline over the llvm module.
+  auto optPipeline = mlir::makeOptimizingTransformer(0, 0, nullptr);
+  if (auto err = optPipeline(llvmModule.get())) {
+    llvm::errs() << "Failed to optimize LLVM IR " << err << "\n";
+    return;
+  }
+  // TODO: What's doing here?
+  std::string *payloadStr = payload.getFile("llvmModule.il");
+  llvm::raw_string_ostream llvmOStream(*payloadStr);
+  llvmOStream << *llvmModule;
+  
+  llvm::SmallString<128> objPath;
+  int objFd;
+  if (auto err = llvm::sys::fs::createTemporaryFile("simulatorModule", "o", objFd, objPath)) {
+    llvm::errs() << "Failed to create temporary object file for simulator module.\n";
+    return;
+  }
+  auto obj = std::make_unique<llvm::ToolOutputFile>(objPath, objFd);
+  llvm::legacy::PassManager pass;
+  if(machine->addPassesToEmitFile(pass, obj->os(), nullptr,
+                                  llvm::CodeGenFileType::CGFT_ObjectFile)) {
+    llvm::errs() << "Cannot emit object files with TargetMachine.\n";
+    return;
+  }
+  pass.run(*llvmModule);
+  obj->os().flush();
+
+  std::ifstream binary(objPath.c_str(), std::ios_base::binary);
+  if(!binary) {
+    llvm::errs() << "Failed to open generated simulator object file " << objPath;
+    return;
+  }
+  
+  std::string binaryContents{
+    std::istreambuf_iterator<char>(binary),
+    std::istreambuf_iterator<char>()};
+  
+  payload.getFile("simulator.bin")->assign(std::move(binaryContents));
+} // SimulatorSystem::buildLLVMPayload

@@ -51,9 +51,12 @@ public:
   llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
   auto getConfig() -> SimulatorConfig & { return *simulatorConfig; }
-
+  
 private:
   std::unique_ptr<SimulatorConfig> simulatorConfig;
+  
+private:
+  void buildLLVMPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload);
 }; // class SimulatorSystem
 
 } // namespace qssc::targets::simulator
