@@ -25,6 +25,7 @@ from qss_compiler import (
 )
 from qss_compiler.exceptions import QSSCompilationFailure
 
+
 def check_mlir_string(mlir):
     assert isinstance(mlir, str)
     assert "module" in mlir
