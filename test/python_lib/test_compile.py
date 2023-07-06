@@ -21,10 +21,9 @@ from qss_compiler import (
     ErrorCategory,
     InputType,
     OutputType,
-    QSSCompilationFailure,
     Severity,
 )
-
+from qss_compiler.exceptions import QSSCompilationFailure
 
 def check_mlir_string(mlir):
     assert isinstance(mlir, str)
