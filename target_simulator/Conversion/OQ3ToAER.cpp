@@ -45,7 +45,46 @@ using namespace mlir;
 #include <exception>
 
 namespace qssc::targets::simulator::conversion {
+
+struct RemoveQCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
+  explicit RemoveQCSInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
+  {}
   
+  LogicalResult matchAndRewrite(qcs::SystemInitOp initOp,
+                                qcs::SystemInitOp::Adaptor adapter,
+                                ConversionPatternRewriter &rewriter) const override {
+    initOp.erase(); // TODO: Why rewriter.eraseOp(initOp) doen't work?
+    return success();
+  }
+};
+
+struct RemoveQCSShotInitConversionPat : public OpConversionPattern<qcs::ShotInitOp> {
+  explicit RemoveQCSShotInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
+  {}
+  
+  LogicalResult matchAndRewrite(qcs::ShotInitOp initOp,
+                                qcs::ShotInitOp::Adaptor adapter,
+                                ConversionPatternRewriter &rewriter) const override {
+    initOp.erase(); // TODO: Why rewriter.eraseOp(initOp) doen't work?
+    return success();
+  }
+};
+
+struct RemoveQCSFinalizeConversionPat : public OpConversionPattern<qcs::SystemFinalizeOp> {
+  explicit RemoveQCSFinalizeConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
+  {}
+  
+  LogicalResult matchAndRewrite(qcs::SystemFinalizeOp initOp,
+                                qcs::SystemFinalizeOp::Adaptor adapter,
+                                ConversionPatternRewriter &rewriter) const override {
+    initOp.erase(); // TODO: Why rewriter.eraseOp(initOp) doen't work?
+    return success();
+  }
+};
+
 struct RemoveOQ3ConversionPat : public OpConversionPattern<oq3::DeclareVariableOp> {
   explicit RemoveOQ3ConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
     : OpConversionPattern(typeConverter, ctx, 1)
@@ -147,17 +186,8 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   // Since we are converting QUIR -> AER/LLVM, make QUIR illegal.
   // Further, because OQ3 and QCS ops are migrated from QUIR, make them also
   // illegal.
-  target
-    .addIllegalDialect<quir::QUIRDialect, qcs::QCSDialect, oq3::OQ3Dialect>();
-  target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
-  target.addDynamicallyLegalOp<FuncOp>(
-      [&](FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
-  target.addDynamicallyLegalOp<CallOp>([&](CallOp op) {
-    return typeConverter.isSignatureLegal(op.getCalleeType());
-  });
-  target.addDynamicallyLegalOp<mlir::ReturnOp>([&](mlir::ReturnOp op) {
-    return typeConverter.isLegal(op.getOperandTypes());
-  });
+  target.addIllegalDialect<qcs::QCSDialect>();
+  //target.addIllegalOp<oq3::DeclareVariableOp, quir::DeclareQubitOp>();
   // We mark `ConstantOp` legal so we don't err when attempting to convert a
   // constant `DurationType`. (Only `AngleType` is currently handled by the
   // conversion pattern, `ConstantOpConversionPat`.)
@@ -179,30 +209,18 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   populateCallOpTypeConversionPattern(patterns, typeConverter);
   // clang-format off
   patterns.add<ConstantOpConversionPat,
-               QBitDeclConversionPat,
-               RemoveOQ3ConversionPat>(
+               RemoveQCSInitConversionPat,
+               RemoveQCSShotInitConversionPat,
+               RemoveQCSFinalizeConversionPat>(
       context, typeConverter);
   // clang-format on
-
-  quir::populateVariableToGlobalMemRefConversionPatterns(
-      patterns, typeConverter, externalizeOutputVariables);
 
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`
   // operations were not converted successfully.
   if (failed(applyPartialConversion(controllerModuleOp, target,
                                     std::move(patterns)))) {
-    // If we fail conversion remove remaining ops for the Target target.
-    controllerModuleOp.walk([&](Operation *op) {
-      if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||
-          llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
-          llvm::isa<qcs::QCSDialect>(op->getDialect())) {
-        llvm::outs() << "Removing unsupported " << op->getName() << " \n";
-        op->dropAllReferences();
-        op->dropAllDefinedValueUses();
-        op->erase();
-      }
-    });
+    llvm::outs() << "Failed applyPartialConversion\n";
   }
 } // QUIRToStdPass::runOnOperation()
 
