@@ -12,8 +12,6 @@
 
 add_mlir_conversion_library(QUIRToPulse
 
-QUIRToPulse.cpp
-detail/PlayProcessing.cpp
 detail/TypeConversion.cpp
 
 ADDITIONAL_HEADER_DIRS

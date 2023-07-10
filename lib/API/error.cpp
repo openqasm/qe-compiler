@@ -30,6 +30,24 @@ static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   case ErrorCategory::OpenQASM3ParseFailure:
     return "OpenQASM 3 parse error";
 
+  case ErrorCategory::QSSCompilerError:
+    return "Unknown compiler error";
+
+  case ErrorCategory::QSSCompilerNoInputError:
+    return "Error when no input file or string is provided";
+
+  case ErrorCategory::QSSCompilerCommunicationFailure:
+    return "Error on compilation communication failure";
+
+  case ErrorCategory::QSSCompilerEOFFailure:
+    return "EOF Error";
+
+  case ErrorCategory::QSSCompilerNonZeroStatus:
+    return "Errored because non-zero status is returned";
+
+  case ErrorCategory::QSSCompilationFailure:
+    return "Failure during compilation";
+
   case ErrorCategory::UncategorizedError:
     return "Compilation failure";
   }
