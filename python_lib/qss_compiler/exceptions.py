@@ -31,7 +31,7 @@ class QSSCompilerError(Exception):
     """Raised on errors invoking the compiler or when the interaction between
     Python interface and native backend code fails."""
 
-    def __init__(self, *message: str, diagnostics: Optional[List[Diagnostic]] = None):
+    def __init__(self, message: str, diagnostics: Optional[List[Diagnostic]] = None):
         """Set the error message."""
         self.message = message
         self.diagnostics = [] if diagnostics is None else diagnostics
@@ -59,3 +59,25 @@ class QSSCompilerNonZeroStatus(QSSCompilerError):
 
 class QSSCompilationFailure(QSSCompilerError):
     """Raised during other compilation failure."""
+
+class QSSLinkingFailure(QSSCompilerError):
+    """Raised on linking failure."""
+
+class QSSArgumentInputTypeError(QSSLinkingFailure):
+    """Raised when argument type is invalid"""
+
+class QSSLinkSignatureError(QSSLinkingFailure):
+    """Raised when signature file format is invalid"""
+
+class QSSLinkAddressError(QSSLinkingFailure):
+    """Raised when signature link address is invalid"""
+
+class QSSLinkSignatureNotFound(QSSLinkingFailure):
+    """Raised when argument signature file is not found"""
+
+class QSSLinkArgumentNotFoundWarning(QSSLinkingFailure):
+    """Raised when parameter name in signature is not found in arguments"""
+
+class QSSLinkInvalidPatchTypeError(QSSLinkingFailure):
+    """Raised when parameter patch type is invalid"""
+

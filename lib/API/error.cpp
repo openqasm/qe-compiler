@@ -48,6 +48,21 @@ static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   case ErrorCategory::QSSCompilationFailure:
     return "Failure during compilation";
 
+  case ErrorCategory::QSSLinkSignatureError:
+    return "Signature file format is invalid";
+
+  case ErrorCategory::QSSLinkAddressError:
+    return "Signature address is invalid";
+
+  case ErrorCategory::QSSLinkSignatureNotFound:
+    return "Signature file not found";
+
+  case ErrorCategory::QSSLinkArgumentNotFoundWarning:
+    return "Parameter in signature not found in arguments";
+
+  case ErrorCategory::QSSLinkInvalidPatchTypeError:
+    return "Invalid patch point type";
+
   case ErrorCategory::UncategorizedError:
     return "Compilation failure";
   }
