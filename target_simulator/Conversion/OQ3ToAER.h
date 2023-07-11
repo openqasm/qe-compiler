@@ -44,6 +44,9 @@ struct QUIRToAERPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  
+private:
+  void declareAerFunctions(mlir::ModuleOp moduleOp);
 };
 } // namespace qssc::targets::simulator::conversion
 

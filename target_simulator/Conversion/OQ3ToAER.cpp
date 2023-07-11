@@ -26,6 +26,7 @@
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/Utils/Utils.h"
 
 #include "SimulatorUtils.h"
 
@@ -46,6 +47,12 @@ using namespace mlir;
 
 namespace qssc::targets::simulator::conversion {
 
+namespace {
+
+static std::map<std::string, LLVM::LLVMFuncOp> aerFuncTable;
+  
+}
+
 struct RemoveQCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
   explicit RemoveQCSInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
     : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
@@ -54,7 +61,7 @@ struct RemoveQCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp
   LogicalResult matchAndRewrite(qcs::SystemInitOp initOp,
                                 qcs::SystemInitOp::Adaptor adapter,
                                 ConversionPatternRewriter &rewriter) const override {
-    initOp.erase(); // TODO: Why rewriter.eraseOp(initOp) doen't work?
+    initOp.erase();
     return success();
   }
 };
@@ -165,13 +172,8 @@ void conversion::QUIRToAERPass::getDependentDialects(
 void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   ModuleOp moduleOp = getOperation();
 
-  // Attempt to apply the conversion only to the controller module
-  ModuleOp controllerModuleOp = getControllerModule(moduleOp);
-  if (!controllerModuleOp)
-    controllerModuleOp = moduleOp;
-
   // First remove all arguments from synchronization ops
-  controllerModuleOp->walk([](qcs::SynchronizeOp synchOp) {
+  moduleOp->walk([](qcs::SynchronizeOp synchOp) {
     synchOp.qubitsMutable().assign(ValueRange({}));
   });
 
@@ -207,19 +209,30 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
-  // clang-format off
   patterns.add<ConstantOpConversionPat,
                RemoveQCSInitConversionPat,
                RemoveQCSShotInitConversionPat,
-               RemoveQCSFinalizeConversionPat>(
+               QBitDeclConversionPat>(
       context, typeConverter);
-  // clang-format on
+  
+  // Aer initialization
+  declareAerFunctions(moduleOp);
+  auto mainFunc = mlir::quir::getMainFunction(moduleOp);
+  if(!mainFunc) return;
+
+  OpBuilder builder(mainFunc);
+  auto mainBody = &mainFunc->getRegion(0).getBlocks().front();
+  builder.setInsertionPointToStart(mainBody);
+  auto aerState = builder.create<LLVM::CallOp>(builder.getUnknownLoc(),
+                                               aerFuncTable.at("aer_state"),
+                                               ValueRange{}).getResult(0);
+  
+  patterns.add<FinalizeConversionPat>(context, typeConverter, aerState);
 
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`
   // operations were not converted successfully.
-  if (failed(applyPartialConversion(controllerModuleOp, target,
-                                    std::move(patterns)))) {
+  if (failed(applyPartialConversion(moduleOp, target, std::move(patterns)))) {
     llvm::outs() << "Failed applyPartialConversion\n";
   }
 } // QUIRToStdPass::runOnOperation()
@@ -230,6 +243,46 @@ llvm::StringRef QUIRToAERPass::getArgument() const {
 
 llvm::StringRef QUIRToAERPass::getDescription() const {
   return "Convert OQ3 ops to aer";
+}
+
+void QUIRToAERPass::declareAerFunctions(ModuleOp moduleOp) {
+  using LLVM::LLVMFunctionType;
+
+  aerFuncTable.clear();
+
+  OpBuilder builder(moduleOp);
+
+  auto registerFunc = [&](const char* name, LLVMFunctionType ty) {
+    const auto loc = builder.getUnknownLoc();
+    const auto f = builder.create<LLVM::LLVMFuncOp>(loc, name, ty);
+    aerFuncTable.insert({name, f});
+  };
+
+  auto context = moduleOp->getContext();
+  builder.setInsertionPointToStart(moduleOp.getBody());
+  // common types
+  const auto voidType = LLVM::LLVMVoidType::get(context);
+  const auto i8Type = IntegerType::get(context, 8);
+  const auto i64Type = IntegerType::get(context, 64);
+  const auto aerStateType = LLVM::LLVMPointerType::get(i8Type);
+  const auto strType = LLVM::LLVMPointerType::get(i8Type);
+  // @aer_state(...) -> i8*
+  const auto aerStateFunType = LLVMFunctionType::get(aerStateType, {}, true);
+  registerFunc("aer_state", aerStateFunType);
+  // @aer_state_configure(i8* noundef, i8* noundef, i8* noundef) -> void
+  const auto aerStateConfigureType = LLVMFunctionType::get(voidType,
+                                                           {strType, strType, strType});
+  registerFunc("aer_state_configure", aerStateConfigureType);
+  // @aer_allocate_qubits(i8* noundef, i64 noundef) -> i64
+  const auto aerAllocQubitsType = LLVMFunctionType::get(i64Type,
+                                                        {aerStateType, i64Type});
+  registerFunc("aer_allocate_qubits", aerAllocQubitsType);
+  // @aer_state_initialize(...) -> i8*
+  const auto aerStateInitType = LLVMFunctionType::get(aerStateType, {}, true);
+  registerFunc("aer_state_initialize", aerStateInitType);
+  // @aer_state_finalize(i8* noundef) -> void
+  const auto aerStateFinalizeType = LLVMFunctionType::get(voidType, aerStateType);
+  registerFunc("aer_state_finalize", aerStateFinalizeType);
 }
 
 } // namespace qssc::targets::simulator::conversion
