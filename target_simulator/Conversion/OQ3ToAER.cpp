@@ -80,7 +80,7 @@ struct RemoveQCSShotInitConversionPat : public OpConversionPattern<qcs::ShotInit
 };
 
 struct FinalizeConversionPat : public OpConversionPattern<qcs::SystemFinalizeOp> {
-  explicit FinalizeConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value &aerState)
+  explicit FinalizeConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value aerState)
     : OpConversionPattern(typeConverter, ctx, /* benefit= */1),
       aerState(aerState)
   {}
@@ -98,7 +98,7 @@ struct FinalizeConversionPat : public OpConversionPattern<qcs::SystemFinalizeOp>
   }
   
 private:
-  Value &aerState;
+  Value aerState;
 };
 
 struct RemoveOQ3ConversionPat : public OpConversionPattern<oq3::DeclareVariableOp> {
@@ -109,26 +109,81 @@ struct RemoveOQ3ConversionPat : public OpConversionPattern<oq3::DeclareVariableO
   LogicalResult matchAndRewrite(oq3::DeclareVariableOp declOp,
                                 oq3::DeclareVariableOp::Adaptor adapter,
                                 ConversionPatternRewriter &rewriter) const override {
-    llvm::outs() << "debug: why?\n";
-    rewriter.eraseOp(declOp);
+    // TODO
     return success();
   }
 };
   
-struct QBitDeclConversionPat : public OpConversionPattern<quir::DeclareQubitOp> {
-  explicit QBitDeclConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern(typeConverter, ctx, 1)
+struct QubitDeclConversionPat : public OpConversionPattern<quir::DeclareQubitOp> {
+  explicit QubitDeclConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value aerState)
+    : OpConversionPattern(typeConverter, ctx, 1),
+      aerState(aerState)
   {}
 
   LogicalResult matchAndRewrite(quir::DeclareQubitOp declOp,
                                 quir::DeclareQubitOp::Adaptor adapter,
                                 ConversionPatternRewriter &rewriter) const override {
-    //const int width = declOp->getAttr("width");
-    auto *context = declOp->getContext();
-    const auto aerAllocationFunType = LLVM::LLVMFunctionType::get(IntegerType::get(context, 32),
-                                                                  IntegerType::get(context, 32));
-    rewriter.create<LLVM::LLVMFuncOp>(declOp->getLoc(), "aer_allocate_qubits", aerAllocationFunType);
-    rewriter.eraseOp(declOp);
+    //const int width = declOp->getAttr("width").dyn_cast<IntegerAttr>().getValue();
+    PatternRewriter::InsertionGuard insertGuard(rewriter);
+    const int width = declOp.getType().dyn_cast<quir::QubitType>().getWidth();
+    rewriter.setInsertionPointAfter(declOp);
+    const auto widthAttr = rewriter.getIntegerAttr(rewriter.getI64Type(), width);
+    auto constOp = rewriter.create<arith::ConstantOp>(declOp->getLoc(),
+                                                      rewriter.getI64Type(),
+                                                      widthAttr);
+    rewriter.create<LLVM::CallOp>(declOp->getLoc(),
+                                  aerFuncTable.at("aer_allocate_qubits"),
+                                  ValueRange{aerState, constOp});
+    // TODO: erase
+    //rewriter.eraseOp(declOp);
+    return success();
+  }
+  
+private:
+  Value aerState;
+};
+
+struct BuiltinUConversionPat : public OpConversionPattern<quir::Builtin_UOp> {
+  explicit BuiltinUConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, 1)
+  {}
+  
+  LogicalResult matchAndResult(quir::Builtin_UOp op,
+                               quir::Builtin_UOp::Adaptor adaptor,
+                               ConversionPatternRewriter &rewriter)
+  {
+    // TODO: erase
+    //rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+struct BuiltinCXConversionPat : public OpConversionPattern<quir::BuiltinCXOp> {
+  explicit BuiltinCXConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, 1)
+  {}
+  
+  LogicalResult matchAndResult(quir::BuiltinCXOp op,
+                               quir::BuiltinCXOp::Adaptor adaptor,
+                               ConversionPatternRewriter &rewriter)
+  {
+    // TODO: erase
+    //rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+struct MeasureConversionPat : public OpConversionPattern<quir::MeasureOp> {
+  explicit MeasureConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, 1)
+  {}
+  
+  LogicalResult matchAndResult(quir::MeasureOp op,
+                               quir::MeasureOp::Adaptor adaptor,
+                               ConversionPatternRewriter &rewriter)
+  {
+    // TODO: erase
+    //rewriter.eraseOp(op);
     return success();
   }
 };
@@ -214,7 +269,6 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   target.addLegalOp<quir::SwitchOp>();
   target.addLegalOp<quir::YieldOp>();
   // WIP: remove these operations in future.
-  target.addLegalOp<quir::DeclareQubitOp>();
   target.addLegalOp<quir::Builtin_UOp, quir::BuiltinCXOp>();
 
   RewritePatternSet patterns(context);
@@ -223,8 +277,7 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   populateCallOpTypeConversionPattern(patterns, typeConverter);
   patterns.add<ConstantOpConversionPat,
                RemoveQCSInitConversionPat,
-               RemoveQCSShotInitConversionPat,
-               QBitDeclConversionPat>(
+               RemoveQCSShotInitConversionPat>(
       context, typeConverter);
   
   // Aer initialization
@@ -239,7 +292,8 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
                                                aerFuncTable.at("aer_state"),
                                                ValueRange{}).getResult(0);
   
-  patterns.add<FinalizeConversionPat>(context, typeConverter, aerState);
+  patterns.add<FinalizeConversionPat, QubitDeclConversionPat>(
+    context, typeConverter, aerState);
 
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`
