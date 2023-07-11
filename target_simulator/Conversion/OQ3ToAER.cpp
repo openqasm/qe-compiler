@@ -79,17 +79,26 @@ struct RemoveQCSShotInitConversionPat : public OpConversionPattern<qcs::ShotInit
   }
 };
 
-struct RemoveQCSFinalizeConversionPat : public OpConversionPattern<qcs::SystemFinalizeOp> {
-  explicit RemoveQCSFinalizeConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
+struct FinalizeConversionPat : public OpConversionPattern<qcs::SystemFinalizeOp> {
+  explicit FinalizeConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value &aerState)
+    : OpConversionPattern(typeConverter, ctx, /* benefit= */1),
+      aerState(aerState)
   {}
   
-  LogicalResult matchAndRewrite(qcs::SystemFinalizeOp initOp,
+  LogicalResult matchAndRewrite(qcs::SystemFinalizeOp finOp,
                                 qcs::SystemFinalizeOp::Adaptor adapter,
                                 ConversionPatternRewriter &rewriter) const override {
-    initOp.erase(); // TODO: Why rewriter.eraseOp(initOp) doen't work?
+    PatternRewriter::InsertionGuard insertGuard(rewriter);
+    rewriter.setInsertionPointAfter(finOp);
+    rewriter.create<LLVM::CallOp>(rewriter.getUnknownLoc(),
+                                  aerFuncTable.at("aer_state_finalize"),
+                                  aerState);
+    rewriter.eraseOp(finOp);
     return success();
   }
+  
+private:
+  Value &aerState;
 };
 
 struct RemoveOQ3ConversionPat : public OpConversionPattern<oq3::DeclareVariableOp> {
@@ -204,6 +213,9 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   target.addLegalOp<quir::ConstantOp>();
   target.addLegalOp<quir::SwitchOp>();
   target.addLegalOp<quir::YieldOp>();
+  // WIP: remove these operations in future.
+  target.addLegalOp<quir::DeclareQubitOp>();
+  target.addLegalOp<quir::Builtin_UOp, quir::BuiltinCXOp>();
 
   RewritePatternSet patterns(context);
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
