@@ -31,7 +31,7 @@ class QSSCompilerError(Exception):
     """Raised on errors invoking the compiler or when the interaction between
     Python interface and native backend code fails."""
 
-    def __init__(self, *message: str, diagnostics: Optional[List[Diagnostic]] = None):
+    def __init__(self, message: str, diagnostics: Optional[List[Diagnostic]] = None):
         """Set the error message."""
         self.message = message
         self.diagnostics = [] if diagnostics is None else diagnostics
