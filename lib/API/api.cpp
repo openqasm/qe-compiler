@@ -737,9 +737,14 @@ _bindArguments(std::string_view target, std::string_view configPath,
 
   auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
   if (!factory.hasValue()) {
-    return llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        "Unable to load bind arguments implementation for target!");
+    qssc::Diagnostic diag{
+      qssc::Severity::Error,
+      qssc::ErrorCategory::QSSLinkerNotImplemented,
+      "Unable to load bind arguments implementation for target."
+    };
+    if (onDiagnostic)
+      (*onDiagnostic)(diag);
+    return llvm::createStringError(llvm::inconvertibleErrorCode(), diag.toString());
   }
   return qssc::arguments::bindArguments(moduleInputPath, payloadOutputPath,
                                         source, treatWarningsAsErrors,

@@ -112,6 +112,7 @@ def link_file(
         if not success:
 
             exception_mapping = {
+                ErrorCategory.QSSLinkerNotImplemented: exceptions.QSSLinkerNotImplemented,
                 ErrorCategory.QSSLinkSignatureError: exceptions.QSSLinkSignatureError,
                 ErrorCategory.QSSLinkAddressError: exceptions.QSSLinkAddressError,
                 ErrorCategory.QSSLinkSignatureNotFound: exceptions.QSSLinkSignatureNotFound,
@@ -123,5 +124,5 @@ def link_file(
                 pass
             elif diagnostics[0].category in exception_mapping.keys():
                 raise exception_mapping[diagnostics[0].category](diagnostics[0].message, diagnostics)
-            raise exceptions.QSSLinkingFailure("Unknown linking failure")
+            raise exceptions.QSSLinkingFailure("Unknown linking failure", diagnostics)
 

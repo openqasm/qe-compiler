@@ -63,6 +63,9 @@ class QSSCompilationFailure(QSSCompilerError):
 class QSSLinkingFailure(QSSCompilerError):
     """Raised on linking failure."""
 
+class QSSLinkerNotImplemented(QSSCompilerError):
+    """Raised on linking failure."""
+
 class QSSArgumentInputTypeError(QSSLinkingFailure):
     """Raised when argument type is invalid"""
 
