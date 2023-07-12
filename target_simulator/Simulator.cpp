@@ -17,7 +17,7 @@
 #include "Simulator.h"
 
 #include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
-#include "Conversion/OQ3ToAER.h"
+#include "Conversion/QUIRToAer.h"
 
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "HAL/TargetSystemRegistry.h"

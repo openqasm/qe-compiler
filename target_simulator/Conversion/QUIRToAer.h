@@ -14,12 +14,12 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file declares the pass for converting OpenQASM3 to AER
+//  This file declares the pass for converting QUIR to Aer
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SIMULATOR_CONVERSION_OQ3AER_H
-#define SIMULATOR_CONVERSION_OQ3AER_H
+#ifndef SIMULATOR_CONVERSION_QUIRAER_H
+#define SIMULATOR_CONVERSION_QUIRAER_H
 
 #include "Simulator.h"
 
@@ -50,4 +50,4 @@ private:
 };
 } // namespace qssc::targets::simulator::conversion
 
-#endif // SIMULATOR_CONVERSION_OQ3AER_H
+#endif // SIMULATOR_CONVERSION_QUIRAER_H

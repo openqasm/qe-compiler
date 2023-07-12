@@ -1,4 +1,4 @@
-//===- OQ3ToAER.cpp - Convert OQ3 to AER --------------*- C++ -*-===//
+//===- QUIRToAER.cpp - Convert OQ3 to AER --------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,10 +14,10 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file implements passes for converting OQ3 to AER
+//  This file implements passes for converting QUIR to AER
 //
 //===----------------------------------------------------------------------===//
-#include "Conversion/OQ3ToAER.h"
+#include "Conversion/QUIRToAer.h"
 #include "Conversion/TypeConversion.h"
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
 
