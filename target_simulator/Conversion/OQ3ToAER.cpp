@@ -199,9 +199,15 @@ struct AngleConversionPat : public OpConversionPattern<quir::ConstantOp> {
                                quir::ConstantOp::Adaptor adaptor,
                                ConversionPatternRewriter &rewriter) const override
   {
-    llvm::outs() << "debug: Constant\n";
-    // TODO: erase
-    //rewriter.eraseOp(op);
+    if(auto angleAttr = op.value().dyn_cast<quir::AngleAttr>()) {
+      rewriter.setInsertionPointAfter(op);
+      const auto angle = angleAttr.getValue().convertToDouble();
+      const auto fType = rewriter.getF64Type();
+      FloatAttr fAttr = rewriter.getFloatAttr(fType, angle);
+      rewriter.create<arith::ConstantOp>(op->getLoc(), fType, fAttr);
+      // TODO: replace with above
+      //rewriter.eraseOp(op);
+    }
     return success();
   }
 };
