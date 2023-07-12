@@ -47,8 +47,13 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
 
     auto binaryDataOrErr = payload->readMember(binaryName);
 
-    if (!binaryDataOrErr)
-      return binaryDataOrErr.takeError();
+    if (!binaryDataOrErr) {
+      auto error = binaryDataOrErr.takeError();
+      return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                            qssc::ErrorCategory::QSSLinkSignatureError,
+                            "Error reading " + binaryName.str() + " " +
+                                toString(std::move(error)));
+    }
 
     auto &binaryData = binaryDataOrErr.get();
 
@@ -78,7 +83,8 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
     return llvm::make_error<llvm::StringError>(
         "Failed to copy circuit module to payload", copyError);
 
-  auto binary = std::unique_ptr<BindArgumentsImplementation>(factory->create(onDiagnostic));
+  auto binary = std::unique_ptr<BindArgumentsImplementation>(
+      factory->create(onDiagnostic));
   binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
   auto payload =

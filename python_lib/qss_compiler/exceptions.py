@@ -84,3 +84,6 @@ class QSSLinkArgumentNotFoundWarning(QSSLinkingFailure):
 class QSSLinkInvalidPatchTypeError(QSSLinkingFailure):
     """Raised when parameter patch type is invalid"""
 
+class QSSLinkInvalidArgumentError(QSSLinkingFailure):
+    """Raised when argument is invalid"""
+

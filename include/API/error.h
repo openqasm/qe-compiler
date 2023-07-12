@@ -21,6 +21,8 @@
 #ifndef QSS_COMPILER_ERROR_H
 #define QSS_COMPILER_ERROR_H
 
+#include "llvm/Support/Error.h"
+
 #include <functional>
 #include <string>
 
@@ -64,6 +66,11 @@ public:
 };
 
 using DiagnosticCallback = std::function<void(const Diagnostic &)>;
+
+llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
+                           Severity severity, ErrorCategory category,
+                           std::string message,
+                           std::error_code ec = llvm::inconvertibleErrorCode());
 
 } // namespace qssc
 

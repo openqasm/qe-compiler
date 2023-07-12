@@ -738,18 +738,16 @@ _bindArguments(std::string_view target, std::string_view configPath,
   auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
   if (!factory.hasValue()) {
     qssc::Diagnostic diag{
-      qssc::Severity::Error,
-      qssc::ErrorCategory::QSSLinkerNotImplemented,
-      "Unable to load bind arguments implementation for target."
-    };
+        qssc::Severity::Error, qssc::ErrorCategory::QSSLinkerNotImplemented,
+        "Unable to load bind arguments implementation for target."};
     if (onDiagnostic)
       (*onDiagnostic)(diag);
-    return llvm::createStringError(llvm::inconvertibleErrorCode(), diag.toString());
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   diag.toString());
   }
   return qssc::arguments::bindArguments(moduleInputPath, payloadOutputPath,
                                         source, treatWarningsAsErrors,
-                                        factory.getValue(),
-                                        onDiagnostic);
+                                        factory.getValue(), onDiagnostic);
 }
 
 int qssc::bindArguments(
@@ -757,12 +755,13 @@ int qssc::bindArguments(
     std::string_view moduleInputPath, std::string_view payloadOutputPath,
     std::unordered_map<std::string, double> const &arguments,
     bool treatWarningsAsErrors,
-    std::optional<qssc::DiagnosticCallback>  onDiagnostic) {
+    std::optional<qssc::DiagnosticCallback> onDiagnostic) {
 
- if (auto err =  _bindArguments(target, configPath, moduleInputPath, payloadOutputPath,
-                     arguments, treatWarningsAsErrors, std::move(onDiagnostic))) {
-        llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
-        return 1;
+  if (auto err = _bindArguments(
+          target, configPath, moduleInputPath, payloadOutputPath, arguments,
+          treatWarningsAsErrors, std::move(onDiagnostic))) {
+    llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
+    return 1;
   }
   return 0;
 }

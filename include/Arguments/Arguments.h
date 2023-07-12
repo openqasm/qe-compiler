@@ -71,9 +71,12 @@ protected:
 class BindArgumentsImplementationFactory {
 public:
   virtual ~BindArgumentsImplementationFactory() = default;
-  virtual BindArgumentsImplementation *create(OptDiagnosticCallback onDiagnostic) = 0;
-  virtual BindArgumentsImplementation *create(std::vector<char> &buf,OptDiagnosticCallback onDiagnostic) = 0;
-  virtual BindArgumentsImplementation *create(std::string &str, OptDiagnosticCallback onDiagnostic) = 0;
+  virtual BindArgumentsImplementation *
+  create(OptDiagnosticCallback onDiagnostic) = 0;
+  virtual BindArgumentsImplementation *
+  create(std::vector<char> &buf, OptDiagnosticCallback onDiagnostic) = 0;
+  virtual BindArgumentsImplementation *
+  create(std::string &str, OptDiagnosticCallback onDiagnostic) = 0;
 };
 
 // TODO generalize type of arguments
