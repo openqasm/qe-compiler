@@ -50,7 +50,7 @@ namespace qssc::targets::simulator::conversion {
 namespace {
 
 static std::map<std::string, LLVM::LLVMFuncOp> aerFuncTable;
-  
+
 }
 
 struct RemoveQCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
@@ -101,19 +101,6 @@ private:
   Value aerState;
 };
 
-struct RemoveOQ3ConversionPat : public OpConversionPattern<oq3::DeclareVariableOp> {
-  explicit RemoveOQ3ConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern(typeConverter, ctx, 1)
-  {}
-
-  LogicalResult matchAndRewrite(oq3::DeclareVariableOp declOp,
-                                oq3::DeclareVariableOp::Adaptor adapter,
-                                ConversionPatternRewriter &rewriter) const override {
-    // TODO
-    return success();
-  }
-};
-  
 struct QubitDeclConversionPat : public OpConversionPattern<quir::DeclareQubitOp> {
   explicit QubitDeclConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value aerState)
     : OpConversionPattern(typeConverter, ctx, 1),
@@ -123,7 +110,6 @@ struct QubitDeclConversionPat : public OpConversionPattern<quir::DeclareQubitOp>
   LogicalResult matchAndRewrite(quir::DeclareQubitOp declOp,
                                 quir::DeclareQubitOp::Adaptor adapter,
                                 ConversionPatternRewriter &rewriter) const override {
-    //const int width = declOp->getAttr("width").dyn_cast<IntegerAttr>().getValue();
     PatternRewriter::InsertionGuard insertGuard(rewriter);
     const int width = declOp.getType().dyn_cast<quir::QubitType>().getWidth();
     rewriter.setInsertionPointAfter(declOp);
@@ -144,87 +130,81 @@ private:
 };
 
 struct BuiltinUConversionPat : public OpConversionPattern<quir::Builtin_UOp> {
-  explicit BuiltinUConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern(typeConverter, ctx, 1)
+  explicit BuiltinUConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value aerState)
+    : OpConversionPattern(typeConverter, ctx, 1),
+      aerState(aerState)
   {}
   
-  LogicalResult matchAndResult(quir::Builtin_UOp op,
-                               quir::Builtin_UOp::Adaptor adaptor,
-                               ConversionPatternRewriter &rewriter)
+  LogicalResult matchAndRewrite(quir::Builtin_UOp op,
+                                quir::Builtin_UOp::Adaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override
   {
     // TODO: erase
     //rewriter.eraseOp(op);
+    op.getOperand(0).print(llvm::outs()); llvm::outs() << "\n";
+    throw std::runtime_error("");
     return success();
   }
+  
+private:
+  Value aerState;
 };
 
 struct BuiltinCXConversionPat : public OpConversionPattern<quir::BuiltinCXOp> {
-  explicit BuiltinCXConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern(typeConverter, ctx, 1)
+  explicit BuiltinCXConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value aerState)
+    : OpConversionPattern(typeConverter, ctx, 1),
+      aerState(aerState)
   {}
   
-  LogicalResult matchAndResult(quir::BuiltinCXOp op,
-                               quir::BuiltinCXOp::Adaptor adaptor,
-                               ConversionPatternRewriter &rewriter)
+  LogicalResult matchAndRewrite(quir::BuiltinCXOp op,
+                                quir::BuiltinCXOp::Adaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override
   {
     // TODO: erase
     //rewriter.eraseOp(op);
+    throw std::runtime_error("");
     return success();
   }
+  
+private:
+  Value aerState;
 };
 
 struct MeasureConversionPat : public OpConversionPattern<quir::MeasureOp> {
-  explicit MeasureConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+  explicit MeasureConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value aerState)
+    : OpConversionPattern(typeConverter, ctx, 1),
+      aerState(aerState)
+  {}
+  
+  LogicalResult matchAndRewrite(quir::MeasureOp op,
+                                quir::MeasureOp::Adaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override
+  {
+    // TODO: erase
+    //rewriter.eraseOp(op);
+    throw std::runtime_error("");
+    return success();
+  }
+  
+private:
+  Value aerState;
+};
+
+struct AngleConversionPat : public OpConversionPattern<quir::ConstantOp> {
+  explicit AngleConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
     : OpConversionPattern(typeConverter, ctx, 1)
   {}
   
-  LogicalResult matchAndResult(quir::MeasureOp op,
-                               quir::MeasureOp::Adaptor adaptor,
-                               ConversionPatternRewriter &rewriter)
+  LogicalResult matchAndRewrite(quir::ConstantOp op,
+                               quir::ConstantOp::Adaptor adaptor,
+                               ConversionPatternRewriter &rewriter) const override
   {
+    llvm::outs() << "debug: Constant\n";
     // TODO: erase
     //rewriter.eraseOp(op);
     return success();
   }
 };
-
-// Convert quir.constant op to a std dialect constant op
-// convert angles to integer values so we don't have to use soft-float
-struct ConstantOpConversionPat : public OpConversionPattern<quir::ConstantOp> {
-
-  explicit ConstantOpConversionPat(MLIRContext *ctx,
-                                   TypeConverter &typeConverter)
-      : OpConversionPattern(typeConverter, ctx, /*benefit=*/1) {}
-
-  LogicalResult
-  matchAndRewrite(quir::ConstantOp constOp, OpAdaptor adaptor,
-                  ConversionPatternRewriter &rewriter) const override {
-    if (auto angleAttr = constOp.value().dyn_cast<quir::AngleAttr>()) {
-      auto angleWidth = constOp.getType().cast<quir::AngleType>().getWidth();
-
-      // cannot handle non-parameterized angle types
-      if (!angleWidth.hasValue())
-        return failure();
-
-      int64_t multiplier = (int64_t)1 << (int64_t)angleWidth.getValue();
-      // shift the floating point value up by the desired precision
-      double fVal = angleAttr.getValue().convertToDouble() * multiplier;
-      IntegerType iType;
-      if (angleWidth.getValue() > 31)
-        iType = rewriter.getI64Type();
-      else
-        iType = rewriter.getI32Type();
-      IntegerAttr iAttr = rewriter.getIntegerAttr(iType, (int64_t)fVal);
-
-      auto arithConstOp = rewriter.create<mlir::arith::ConstantOp>(
-          constOp->getLoc(), iType, iAttr);
-      rewriter.replaceOp(constOp, {arithConstOp});
-      return success();
-    }
-    // attribute type is not handled (for now)
-    return failure();
-  } // matchAndRewrite
-};  // struct ConstantOpConversionPat
 
 
 void conversion::QUIRToAERPass::getDependentDialects(
@@ -253,31 +233,14 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   // Further, because OQ3 and QCS ops are migrated from QUIR, make them also
   // illegal.
   target.addIllegalDialect<qcs::QCSDialect>();
-  //target.addIllegalOp<oq3::DeclareVariableOp, quir::DeclareQubitOp>();
-  // We mark `ConstantOp` legal so we don't err when attempting to convert a
-  // constant `DurationType`. (Only `AngleType` is currently handled by the
-  // conversion pattern, `ConstantOpConversionPat`.)
-  // Note that marking 'legal' does not preclude conversion if a pattern is
-  // matched. However, because other ops also do not have implemented
-  // conversions, we will still observe errors of the type:
-  // ```
-  // loc("-":0:0): error: failed to legalize operation 'namespace.op' that was
-  // explicitly marked illegal
-  // ```
-  // which for the `simulator_target` are harmless.
-  target.addLegalOp<quir::ConstantOp>();
-  target.addLegalOp<quir::SwitchOp>();
-  target.addLegalOp<quir::YieldOp>();
-  // WIP: remove these operations in future.
-  target.addLegalOp<quir::Builtin_UOp, quir::BuiltinCXOp>();
 
   RewritePatternSet patterns(context);
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
-  patterns.add<ConstantOpConversionPat,
-               RemoveQCSInitConversionPat,
-               RemoveQCSShotInitConversionPat>(
+  patterns.add<RemoveQCSInitConversionPat,
+               RemoveQCSShotInitConversionPat,
+               AngleConversionPat>(
       context, typeConverter);
   
   // Aer initialization
@@ -292,8 +255,23 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
                                                aerFuncTable.at("aer_state"),
                                                ValueRange{}).getResult(0);
   
-  patterns.add<FinalizeConversionPat, QubitDeclConversionPat>(
+  patterns.add<FinalizeConversionPat,
+               QubitDeclConversionPat,
+               BuiltinUConversionPat,
+               BuiltinCXConversionPat,
+               MeasureConversionPat
+               >(
     context, typeConverter, aerState);
+  moduleOp->walk([](quir::MeasureOp op) {
+      op.print(llvm::outs()); llvm::outs() << "\n";
+  });
+  moduleOp->walk([](quir::Builtin_UOp op) {
+      op.print(llvm::outs()); llvm::outs() << "\n";
+  });
+  moduleOp->walk([](quir::BuiltinCXOp op) {
+      op.print(llvm::outs()); llvm::outs() << "\n";
+  });
+
 
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`
