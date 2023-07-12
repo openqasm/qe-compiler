@@ -154,9 +154,19 @@ struct BuiltinCXConversionPat : public OpConversionPattern<quir::BuiltinCXOp> {
                                 quir::BuiltinCXOp::Adaptor adaptor,
                                 ConversionPatternRewriter &rewriter) const override
   {
-    //TODO
-    rewriter.eraseOp(op);
-    return success();
+    auto qID1 = quir::lookupQubitId(op->getOperand(0));
+    auto qID2 = quir::lookupQubitId(op->getOperand(1));
+    if(qID1 && qID2) {
+      auto q1 = qubitTable.at(*qID1);
+      auto q2 = qubitTable.at(*qID2);
+      rewriter.create<LLVM::CallOp>(
+          op->getLoc(),
+          aerFuncTable.at("aer_apply_cx"),
+          ValueRange{aerState, q1, q2});
+      rewriter.eraseOp(op);
+      return success();
+    }
+    return failure();
   }
   
 private:
