@@ -24,6 +24,7 @@
 #include "llvm/Support/Error.h"
 
 #include <functional>
+#include <optional>
 #include <string>
 
 namespace qssc {
