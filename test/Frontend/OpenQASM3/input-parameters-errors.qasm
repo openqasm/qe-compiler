@@ -31,7 +31,7 @@ input float badFloat;
 // NO-CIRCUITS: loc("-":0:0): error: the --enable-parameters circuit requires --enable-circuits
 // CIRCUITS-NOT: error: Input parameter theta type error. Input parameters must be angle or float[64].
 // CIRCUITS-NOT: error: Input parameter theta2 type error. Input parameters must be angle or float[64].
-// CIRCUITS-: error: Input parameter badComplex type error. Input parameters must be angle or float[64].
+// CIRCUITS: error: Input parameter badComplex type error. Input parameters must be angle or float[64].
 // CIRCUITS: error: Input parameter badBit type error. Input parameters must be angle or float[64].
 // CIRCUITS: error: Input parameter badBool type error. Input parameters must be angle or float[64].
 // CIRCUITS: error: Input parameter badInt type error. Input parameters must be angle or float[64].
