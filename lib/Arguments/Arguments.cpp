@@ -18,6 +18,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "API/error.h"
 #include "Arguments/Arguments.h"
 #include "Payload/Payload.h"
 
