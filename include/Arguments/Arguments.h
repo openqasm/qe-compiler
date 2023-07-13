@@ -23,6 +23,7 @@
 #ifndef ARGUMENTS_H
 #define ARGUMENTS_H
 
+#include "API/error.h"
 #include "Dialect/QCS/IR/QCSTypes.h"
 
 #include "Arguments/Signature.h"
@@ -34,6 +35,7 @@
 namespace qssc::arguments {
 
 using ArgumentType = std::variant<llvm::Optional<double>>;
+using OptDiagnosticCallback = std::optional<qssc::DiagnosticCallback>;
 
 class ArgumentSource {
 public:
@@ -69,9 +71,12 @@ protected:
 class BindArgumentsImplementationFactory {
 public:
   virtual ~BindArgumentsImplementationFactory() = default;
-  virtual BindArgumentsImplementation *create() = 0;
-  virtual BindArgumentsImplementation *create(std::vector<char> &buf) = 0;
-  virtual BindArgumentsImplementation *create(std::string &str) = 0;
+  virtual BindArgumentsImplementation *
+  create(OptDiagnosticCallback onDiagnostic) = 0;
+  virtual BindArgumentsImplementation *
+  create(std::vector<char> &buf, OptDiagnosticCallback onDiagnostic) = 0;
+  virtual BindArgumentsImplementation *
+  create(std::string &str, OptDiagnosticCallback onDiagnostic) = 0;
 };
 
 // TODO generalize type of arguments
@@ -79,7 +84,8 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
                           bool treatWarningsAsErrors,
-                          BindArgumentsImplementationFactory *factory);
+                          BindArgumentsImplementationFactory *factory,
+                          const OptDiagnosticCallback &onDiagnostic);
 
 } // namespace qssc::arguments
 

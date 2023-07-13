@@ -23,12 +23,50 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <utility>
+
 namespace qssc {
 static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   using namespace qssc;
   switch (category) {
   case ErrorCategory::OpenQASM3ParseFailure:
     return "OpenQASM 3 parse error";
+
+  case ErrorCategory::QSSCompilerError:
+    return "Unknown compiler error";
+
+  case ErrorCategory::QSSCompilerNoInputError:
+    return "Error when no input file or string is provided";
+
+  case ErrorCategory::QSSCompilerCommunicationFailure:
+    return "Error on compilation communication failure";
+
+  case ErrorCategory::QSSCompilerEOFFailure:
+    return "EOF Error";
+
+  case ErrorCategory::QSSCompilerNonZeroStatus:
+    return "Errored because non-zero status is returned";
+
+  case ErrorCategory::QSSCompilationFailure:
+    return "Failure during compilation";
+
+  case ErrorCategory::QSSLinkerNotImplemented:
+    return "BindArguments not implemented for target";
+
+  case ErrorCategory::QSSLinkSignatureError:
+    return "Signature file format is invalid";
+
+  case ErrorCategory::QSSLinkAddressError:
+    return "Signature address is invalid";
+
+  case ErrorCategory::QSSLinkSignatureNotFound:
+    return "Signature file not found";
+
+  case ErrorCategory::QSSLinkArgumentNotFoundWarning:
+    return "Parameter in signature not found in arguments";
+
+  case ErrorCategory::QSSLinkInvalidPatchTypeError:
+    return "Invalid patch point type";
 
   case ErrorCategory::UncategorizedError:
     return "Compilation failure";
@@ -61,6 +99,17 @@ std::string Diagnostic::toString() const {
   ostream << message;
 
   return str;
+}
+
+llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
+                           Severity severity, ErrorCategory category,
+                           std::string message, std::error_code ec) {
+  auto *diagnosticCallback =
+      onDiagnostic.has_value() ? &onDiagnostic.value() : nullptr;
+  qssc::Diagnostic diag{severity, category, std::move(message)};
+  if (diagnosticCallback)
+    (*diagnosticCallback)(diag);
+  return llvm::createStringError(ec, diag.toString());
 }
 
 } // namespace qssc

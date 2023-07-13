@@ -697,7 +697,8 @@ _bindArguments(std::string_view target, std::string_view configPath,
                std::string_view moduleInputPath,
                std::string_view payloadOutputPath,
                std::unordered_map<std::string, double> const &arguments,
-               bool treatWarningsAsErrors) {
+               bool treatWarningsAsErrors,
+               std::optional<qssc::DiagnosticCallback> onDiagnostic) {
 
   MLIRContext context{};
 
@@ -736,31 +737,30 @@ _bindArguments(std::string_view target, std::string_view configPath,
 
   auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
   if (!factory.hasValue()) {
-    return llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        "Unable to load bind arguments implementation for target!");
+    qssc::Diagnostic diag{
+        qssc::Severity::Error, qssc::ErrorCategory::QSSLinkerNotImplemented,
+        "Unable to load bind arguments implementation for target."};
+    if (onDiagnostic)
+      (*onDiagnostic)(diag);
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   diag.toString());
   }
   return qssc::arguments::bindArguments(moduleInputPath, payloadOutputPath,
                                         source, treatWarningsAsErrors,
-                                        factory.getValue());
+                                        factory.getValue(), onDiagnostic);
 }
 
 int qssc::bindArguments(
     std::string_view target, std::string_view configPath,
     std::string_view moduleInputPath, std::string_view payloadOutputPath,
     std::unordered_map<std::string, double> const &arguments,
-    bool treatWarningsAsErrors, std::string *errorMessage) {
+    bool treatWarningsAsErrors,
+    std::optional<qssc::DiagnosticCallback> onDiagnostic) {
 
-  auto successOrErr =
-      _bindArguments(target, configPath, moduleInputPath, payloadOutputPath,
-                     arguments, treatWarningsAsErrors);
-
-  if (successOrErr) {
-    if (errorMessage) {
-      llvm::raw_string_ostream errorMsgStream(*errorMessage);
-      llvm::logAllUnhandledErrors(std::move(successOrErr), errorMsgStream,
-                                  "Error: ");
-    }
+  if (auto err = _bindArguments(
+          target, configPath, moduleInputPath, payloadOutputPath, arguments,
+          treatWarningsAsErrors, std::move(onDiagnostic))) {
+    llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
     return 1;
   }
   return 0;

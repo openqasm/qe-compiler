@@ -46,9 +46,9 @@ Waveform_CreateOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
 
 /// Verifier for pulse.waveform operation.
 static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
-  // Check that samples is a tensor with two dimensions: outer is the number of
+  // Check that samples has two dimensions: outer is the number of
   // samples, inner is complex numbers with two elements [real, imag]
-  auto attrType = op.samples().getType().cast<mlir::TensorType>();
+  auto attrType = op.samples().getType().cast<mlir::ShapedType>();
   auto attrShape = attrType.getShape();
   if (attrShape.size() != 2) {
     return op.emitOpError() << ", which declares a sample waveform, must be "

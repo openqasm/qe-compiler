@@ -19,6 +19,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Arguments/Arguments.h"
+#include "API/error.h"
 #include "Payload/Payload.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -35,7 +36,8 @@ using namespace payload;
 llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
                              Signature &sig, ArgumentSource const &arguments,
                              bool treatWarningsAsErrors,
-                             BindArgumentsImplementationFactory *factory) {
+                             BindArgumentsImplementationFactory *factory,
+                             const OptDiagnosticCallback &onDiagnostic) {
 
   for (auto &entry : sig.patchPointsByBinary) {
     auto binaryName = entry.getKey();
@@ -46,13 +48,18 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
 
     auto binaryDataOrErr = payload->readMember(binaryName);
 
-    if (!binaryDataOrErr)
-      return binaryDataOrErr.takeError();
+    if (!binaryDataOrErr) {
+      auto error = binaryDataOrErr.takeError();
+      return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                            qssc::ErrorCategory::QSSLinkSignatureError,
+                            "Error reading " + binaryName.str() + " " +
+                                toString(std::move(error)));
+    }
 
     auto &binaryData = binaryDataOrErr.get();
 
     auto binary = std::shared_ptr<BindArgumentsImplementation>(
-        factory->create(binaryData));
+        factory->create(binaryData, onDiagnostic));
     binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
     for (auto const &patchPoint : entry.getValue())
@@ -67,7 +74,8 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
                           bool treatWarningsAsErrors,
-                          BindArgumentsImplementationFactory *factory) {
+                          BindArgumentsImplementationFactory *factory,
+                          const OptDiagnosticCallback &onDiagnostic) {
 
   std::error_code copyError =
       llvm::sys::fs::copy_file(moduleInputPath, payloadOutputPath);
@@ -76,7 +84,8 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
     return llvm::make_error<llvm::StringError>(
         "Failed to copy circuit module to payload", copyError);
 
-  auto binary = std::unique_ptr<BindArgumentsImplementation>(factory->create());
+  auto binary = std::unique_ptr<BindArgumentsImplementation>(
+      factory->create(onDiagnostic));
   binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
   auto payload =
@@ -87,7 +96,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
     return err;
 
   if (auto err = updateParameters(payload.get(), sigOrError.get(), arguments,
-                                  treatWarningsAsErrors, factory))
+                                  treatWarningsAsErrors, factory, onDiagnostic))
     return err;
 
   if (auto err = payload->writeBack())

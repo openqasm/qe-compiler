@@ -60,38 +60,12 @@ from os import environ as os_environ
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
+from . import exceptions
 from .py_qssc import _compile_with_args, Diagnostic
 
 # use the forkserver context to create a server process
 # for forking new compiler processes
 mp_ctx = mp.get_context("forkserver")
-
-
-def _diagnostics_to_str(diagnostics):
-    return "\n".join([str(diag) for diag in diagnostics])
-
-
-class QSSCompilerError(Exception):
-    """Raised on errors invoking the compiler or when the interaction between
-    Python interface and native backend code fails."""
-
-    def __init__(self, message: str, diagnostics: Optional[List[Diagnostic]] = None):
-        self.message = message
-        self.diagnostics = [] if diagnostics is None else diagnostics
-
-    def __str__(self):
-        return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
-
-
-class QSSCompilationFailure(Exception):
-    """Raised on compilation failure."""
-
-    def __init__(self, message: str, diagnostics: Optional[List[Diagnostic]] = None):
-        self.message = message
-        self.diagnostics = [] if diagnostics is None else diagnostics
-
-    def __str__(self):
-        return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
 
 
 class InputType(Enum):
@@ -194,7 +168,7 @@ class _CompilerExecution:
             args.append("--direct")
             args.append(str(self.input_str))
         else:
-            raise QSSCompilerError("Neither input file nor input string provided.")
+            raise exceptions.QSSCompilerNoInputError("Neither input file nor input string provided.")
 
         return args
 
@@ -285,7 +259,7 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                 else:
                     childproc.kill()
                     childproc.join()
-                    raise QSSCompilerError(
+                    raise exceptions.QSSCompilerCommunicationFailure(
                         "The compile process delivered an unexpected object instead of status or "
                         "diagnostic information. This points to inconsistencies in the Python "
                         "interface code between the calling process and the compile process."
@@ -300,15 +274,15 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             # make sure that child process terminates
             childproc.kill()
             childproc.join()
-            raise QSSCompilerError(
-                "compile process exited before delivering output.", diagnostics
+            raise exceptions.QSSCompilerEOFFailure(
+                "Compile process exited before delivering output.", diagnostics
             )
 
         childproc.join()
         if childproc.exitcode != 0:
-            raise QSSCompilerError(
+            raise exceptions.QSSCompilerNonZeroStatus(
                 (
-                    "compile process exited with non-zero status "
+                    "Compile process exited with non-zero status "
                     + str(childproc.exitcode)
                     + (" yet appears  still alive" if childproc.is_alive() else "")
                 ),
@@ -316,10 +290,10 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             )
 
         if not success:
-            raise QSSCompilationFailure("Failure during compilation", diagnostics)
+            raise exceptions.QSSCompilationFailure("Failure during compilation", diagnostics)
 
     except mp.ProcessError as e:
-        raise QSSCompilerError(
+        raise exceptions.QSSCompilerError(
             "It's likely that you've hit a bug in the QSS Compiler. Please "
             "submit an issue to the team with relevant information "
             "(https://github.com/Qiskit/qss-compiler/issues):\n"
@@ -408,7 +382,7 @@ def compile_str(
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
 ) -> Union[bytes, str, None]:
-    """! Compile the given input program to the specified output type using the
+    """Compile the given input program to the specified output type using the
     given target.
 
     Produces output in a file (if parameter output_file is provided) or returns
