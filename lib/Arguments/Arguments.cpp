@@ -36,7 +36,7 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
                              Signature &sig, ArgumentSource const &arguments,
                              bool treatWarningsAsErrors,
                              BindArgumentsImplementationFactory *factory,
-                             OptDiagnosticCallback onDiagnostic) {
+                             const OptDiagnosticCallback &onDiagnostic) {
 
   for (auto &entry : sig.patchPointsByBinary) {
     auto binaryName = entry.getKey();
@@ -74,7 +74,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           ArgumentSource const &arguments,
                           bool treatWarningsAsErrors,
                           BindArgumentsImplementationFactory *factory,
-                          OptDiagnosticCallback onDiagnostic) {
+                          const OptDiagnosticCallback &onDiagnostic) {
 
   std::error_code copyError =
       llvm::sys::fs::copy_file(moduleInputPath, payloadOutputPath);

@@ -85,7 +85,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           ArgumentSource const &arguments,
                           bool treatWarningsAsErrors,
                           BindArgumentsImplementationFactory *factory,
-                          OptDiagnosticCallback onDiagnostic);
+                          const OptDiagnosticCallback &onDiagnostic);
 
 } // namespace qssc::arguments
 
