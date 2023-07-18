@@ -248,6 +248,25 @@ struct RemoveConversionPat : public OpConversionPattern<Op> {
   }
 };
 
+// TDOO
+// Probably I should implement this pattern as another pass
+struct FunctionConversionPat : public OpConversionPattern<mlir::FuncOp> {
+  explicit FunctionConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value aerState)
+    : OpConversionPattern(typeConverter, ctx, 1), aerState(aerState)
+  {}
+  
+  LogicalResult matchAndRewrite(mlir::FuncOp funcOp, mlir::FuncOp::Adaptor adaptor,
+      ConversionPatternRewriter &rewriter) const override {
+    // Assume: funcOp != mainFunc
+    rewriter.eraseOp(funcOp);
+    return success();
+  }
+  
+private:
+  Value aerState;
+};
+
+
 void conversion::QUIRToAERPass::getDependentDialects(
     DialectRegistry &registry) const {
   registry.insert<LLVM::LLVMDialect, mlir::memref::MemRefDialect,
@@ -274,6 +293,9 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   // Further, because OQ3 and QCS ops are migrated from QUIR, make them also
   // illegal.
   target.addIllegalDialect<qcs::QCSDialect, oq3::OQ3Dialect>();
+  target.addDynamicallyLegalOp<FuncOp>([&](FuncOp op) {
+    return typeConverter.isSignatureLegal(op.getType());
+  });
 
   RewritePatternSet patterns(context);
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
@@ -307,7 +329,8 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   patterns.add<FinalizeConversionPat,
                BuiltinUopConversionPat,
                BuiltinCXConversionPat,
-               MeasureOpConversionPat>(
+               MeasureOpConversionPat,
+               FunctionConversionPat>(
     context, typeConverter, aerState);
 
   // With the target and rewrite patterns defined, we can now attempt the
@@ -367,8 +390,7 @@ void QUIRToAERPass::declareAerFunctions(ModuleOp moduleOp) {
   registerFunc("aer_apply_cx", aerApplyCXType);
   // @aer_apply_measure(i8* noundef, i64* noundef, i64 noundef) -> i64
   const auto aerMeasType = LLVMFunctionType::get(
-      i64Type,
-      {aerStateType, LLVM::LLVMPointerType::get(i64Type), i64Type});
+      i64Type, {aerStateType, LLVM::LLVMPointerType::get(i64Type), i64Type});
   registerFunc("aer_apply_measure", aerMeasType);
   // @aer_state_finalize(i8* noundef) -> void
   const auto aerStateFinalizeType = LLVMFunctionType::get(voidType, aerStateType);
