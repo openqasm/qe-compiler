@@ -758,7 +758,7 @@ int qssc::bindArguments(
 
   if (auto err = _bindArguments(
           target, configPath, moduleInputPath, payloadOutputPath, arguments,
-          treatWarningsAsErrors, std::move(onDiagnostic))) {
+          treatWarningsAsErrors, onDiagnostic)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
     return 1;
   }
