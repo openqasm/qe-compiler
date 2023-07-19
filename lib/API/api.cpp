@@ -55,7 +55,6 @@
 
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
-#include <__config>
 #include <filesystem>
 #include <string_view>
 #include <utility>
