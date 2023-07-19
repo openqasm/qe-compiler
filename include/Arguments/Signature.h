@@ -23,6 +23,8 @@
 #ifndef ARGUMENTS_SIGNATURE_H
 #define ARGUMENTS_SIGNATURE_H
 
+#include "API/error.h"
+
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
@@ -68,7 +70,12 @@ public:
 
   std::string serialize();
 
-  static llvm::Expected<Signature> deserialize(llvm::StringRef);
+  static llvm::Expected<Signature>
+  deserialize(llvm::StringRef,
+              std::optional<qssc::DiagnosticCallback> onDiagnostic,
+              bool treatWarningsAsError = false);
+
+  bool isEmpty() { return patchPointsByBinary.size() == 0; }
 };
 
 } // namespace qssc::arguments

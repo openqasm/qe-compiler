@@ -72,13 +72,16 @@ class QSSArgumentInputTypeError(QSSLinkingFailure):
 class QSSLinkSignatureError(QSSLinkingFailure):
     """Raised when signature file format is invalid"""
 
+class QSSLinkSignatureWarning(QSSLinkingFailure, Warning):
+    """Raised when signature file format is invalid but may still be processed"""
+
 class QSSLinkAddressError(QSSLinkingFailure):
     """Raised when signature link address is invalid"""
 
 class QSSLinkSignatureNotFound(QSSLinkingFailure):
     """Raised when argument signature file is not found"""
 
-class QSSLinkArgumentNotFoundWarning(QSSLinkingFailure):
+class QSSLinkArgumentNotFoundWarning(QSSLinkingFailure, Warning):
     """Raised when parameter name in signature is not found in arguments"""
 
 class QSSLinkInvalidPatchTypeError(QSSLinkingFailure):

@@ -21,6 +21,8 @@
 
 #include "Arguments/Signature.h"
 
+#include "API/error.h"
+
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/raw_ostream.h"
@@ -79,7 +81,9 @@ std::string Signature::serialize() {
   return s.str();
 }
 
-llvm::Expected<Signature> Signature::deserialize(llvm::StringRef buffer) {
+llvm::Expected<Signature>
+Signature::deserialize(llvm::StringRef buffer,
+                       std::optional<qssc::DiagnosticCallback> onDiagnostic, bool treatWarningsAsErrors) {
 
   Signature sig;
 
@@ -87,14 +91,16 @@ llvm::Expected<Signature> Signature::deserialize(llvm::StringRef buffer) {
 
   std::tie(line, buffer) = buffer.split("\n");
   if (line != "circuit_signature") {
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Error: Invalid Signature header\n");
+    return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                          qssc::ErrorCategory::QSSLinkSignatureError,
+                          "Invalid Signature header");
   }
 
   std::tie(line, buffer) = buffer.split("\n");
   if (line != "version 1") {
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Error: Invalid Signature version\n");
+    return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                          qssc::ErrorCategory::QSSLinkSignatureError,
+                          "Invalid Signature version: " + line.str());
   }
 
   std::tie(line, buffer) = buffer.split("\n");
@@ -104,53 +110,59 @@ llvm::Expected<Signature> Signature::deserialize(llvm::StringRef buffer) {
 
   std::tie(label, value) = line.split(' ');
   if (label != "num_binaries:") {
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Error: expected num_binaries:\n");
+    return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                          qssc::ErrorCategory::QSSLinkSignatureError,
+                          "Expected num_binaries:");
   }
   uint numBinaries;
   if (value.getAsInteger(10, numBinaries)) {
-    return llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        "Error: failed to parse number of binaries to integer: " + value.str() +
-            "\n");
+    return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                          qssc::ErrorCategory::QSSLinkSignatureError,
+                          "Failed to parse number of binaries to integer: " +
+                              value.str());
   }
 
   for (uint nBinary = 0; nBinary < numBinaries; nBinary++) {
     std::tie(line, buffer) = buffer.split("\n");
     std::tie(label, value) = line.split(' ');
     if (label != "binary:") {
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Error expected binary:\n");
+      return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                            qssc::ErrorCategory::QSSLinkSignatureError,
+                            "Expected binary:");
     }
     llvm::StringRef binaryName = value;
 
     std::tie(line, buffer) = buffer.split("\n");
     std::tie(label, value) = line.split(' ');
     if (label != "num_patchpoints:") {
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Error: expected num_patchpoints:\n");
+      return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                            qssc::ErrorCategory::QSSLinkSignatureError,
+                            "Expected num_patchpoints:");
     }
     uint numEntries;
     if (value.getAsInteger(10, numEntries)) {
-      return llvm::createStringError(
-          llvm::inconvertibleErrorCode(),
-          "Error: failed to parse number of entries to integer: " +
-              value.str() + "\n");
+      return emitDiagnostic(
+          onDiagnostic, qssc::Severity::Error,
+          qssc::ErrorCategory::QSSLinkSignatureError,
+          "Failed to parse number of entries to integer: " +
+              value.str());
     }
     for (uint nEntry = 0; nEntry < numEntries; nEntry++) {
       std::tie(line, buffer) = buffer.split("\n");
       llvm::SmallVector<llvm::StringRef, 3> components;
       line.split(components, ' ', 2, false);
       if (components.size() != 3) {
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                       "invalid argument entry line: " + line +
-                                           "\n");
+        return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                              qssc::ErrorCategory::QSSLinkSignatureError,
+                              "Invalid argument entry line: " + line.str());
       }
       uint64_t addr;
       if (components[1].getAsInteger(10, addr)) {
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                       "failed to parse address to integer: " +
-                                           components[1].str() + "\n");
+        return emitDiagnostic(
+            onDiagnostic, qssc::Severity::Error,
+            qssc::ErrorCategory::QSSLinkAddressError,
+            "Failed to interpret argument address " +
+                components[1].str());
       }
 
       auto paramPatchType = components[0];
@@ -160,8 +172,21 @@ llvm::Expected<Signature> Signature::deserialize(llvm::StringRef buffer) {
     }
   }
 
-  if (buffer.size() > 0)
-    llvm::errs() << "ignoring extra data at end of signature file\n";
+  if (buffer.size() > 0) {
+    if (treatWarningsAsErrors) {
+      // cast to void to discard llvm::Error
+      return emitDiagnostic(
+          onDiagnostic, qssc::Severity::Error,
+          qssc::ErrorCategory::QSSLinkSignatureWarning,
+          "Ignoring extra data at end of signature file");
+    } else {
+      // cast to void to discard llvm::Error
+      static_cast<void>(emitDiagnostic(
+          onDiagnostic, qssc::Severity::Warning,
+          qssc::ErrorCategory::QSSLinkSignatureWarning,
+          "Ignoring extra data at end of signature file"));
+    }
+  }
   return sig;
 }
 
