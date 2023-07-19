@@ -106,7 +106,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     endif()
 endif()
 
-project(qss-compiler)
+project(qss-compiler CXX)
 project(qss-opt LANGUAGES CXX C)
 
 # ------------------------------------------------------------------------------
