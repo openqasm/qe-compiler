@@ -36,7 +36,7 @@ using namespace payload;
 llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
                              Signature &sig, ArgumentSource const &arguments,
                              bool treatWarningsAsErrors,
-                             BindArgumentsImplementationFactory *factory,
+                             BindArgumentsImplementationFactory &factory,
                              const OptDiagnosticCallback &onDiagnostic) {
 
   for (auto &entry : sig.patchPointsByBinary) {
@@ -59,7 +59,7 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
     auto &binaryData = binaryDataOrErr.get();
 
     auto binary = std::shared_ptr<BindArgumentsImplementation>(
-        factory->create(binaryData, onDiagnostic));
+        factory.create(binaryData, onDiagnostic));
     binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
     for (auto const &patchPoint : entry.getValue())
@@ -74,7 +74,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
                           bool treatWarningsAsErrors,
-                          BindArgumentsImplementationFactory *factory,
+                          BindArgumentsImplementationFactory &factory,
                           const OptDiagnosticCallback &onDiagnostic) {
 
   std::error_code copyError =
@@ -85,7 +85,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
         "Failed to copy circuit module to payload", copyError);
 
   auto binary = std::unique_ptr<BindArgumentsImplementation>(
-      factory->create(onDiagnostic));
+      factory.create(onDiagnostic));
   binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
   auto payload =

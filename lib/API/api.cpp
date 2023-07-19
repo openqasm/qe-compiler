@@ -55,6 +55,7 @@
 
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
+#include <__config>
 #include <filesystem>
 #include <string_view>
 #include <utility>
@@ -736,18 +737,17 @@ _bindArguments(std::string_view target, std::string_view configPath,
   MapAngleArgumentSource source(arguments);
 
   auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
-  if (!factory.hasValue()) {
-    qssc::Diagnostic diag{
-        qssc::Severity::Error, qssc::ErrorCategory::QSSLinkerNotImplemented,
-        "Unable to load bind arguments implementation for target."};
-    if (onDiagnostic)
-      (*onDiagnostic)(diag);
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   diag.toString());
+  if ((!factory.hasValue()) || (factory.getValue() == nullptr)) {
+    return qssc::emitDiagnostic(
+        onDiagnostic, qssc::Severity::Error,
+        qssc::ErrorCategory::QSSLinkerNotImplemented,
+        "Unable to load bind arguments implementation for target.");
   }
+  qssc::arguments::BindArgumentsImplementationFactory &factoryRef =
+      *factory.getValue();
   return qssc::arguments::bindArguments(moduleInputPath, payloadOutputPath,
                                         source, treatWarningsAsErrors,
-                                        factory.getValue(), onDiagnostic);
+                                        factoryRef, onDiagnostic);
 }
 
 int qssc::bindArguments(
