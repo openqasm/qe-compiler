@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 """
-Unit tests for the compiler API.
+Unit tests for the linker API.
 """
 import pytest
 

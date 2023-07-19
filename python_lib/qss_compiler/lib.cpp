@@ -103,7 +103,7 @@ bool
 py_link_file(const std::string &inputPath, const std::string &outputPath,
              const std::string &target, const std::string &configPath,
              const std::unordered_map<std::string, double> &arguments,
-             const bool treatWarningsAsErrors,
+             bool treatWarningsAsErrors,
              qssc::DiagnosticCallback onDiagnostic) {
 
   int status = qssc::bindArguments(target, configPath, inputPath, outputPath, arguments,

@@ -22,6 +22,11 @@ from .compile import (  # noqa: F401
     CompileOptions,
 )
 
+from .exceptions import (  # noqa: F401
+    QSSCompilationFailure,
+    QSSCompilerError,
+)
+
 from .py_qssc import (  # noqa: F401
     Diagnostic,
     ErrorCategory,
