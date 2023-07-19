@@ -83,7 +83,7 @@ std::string Signature::serialize() {
 
 llvm::Expected<Signature>
 Signature::deserialize(llvm::StringRef buffer,
-                       std::optional<qssc::DiagnosticCallback> onDiagnostic,
+                       const std::optional<qssc::DiagnosticCallback> &onDiagnostic,
                        bool treatWarningsAsErrors) {
 
   Signature sig;
@@ -172,17 +172,16 @@ Signature::deserialize(llvm::StringRef buffer,
   }
 
   if (buffer.size() > 0) {
-    if (treatWarningsAsErrors) {
-      // cast to void to discard llvm::Error
-      return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
-                            qssc::ErrorCategory::QSSLinkSignatureWarning,
-                            "Ignoring extra data at end of signature file");
-    } else {
+    if (!treatWarningsAsErrors) {
       // cast to void to discard llvm::Error
       static_cast<void>(
           emitDiagnostic(onDiagnostic, qssc::Severity::Warning,
                          qssc::ErrorCategory::QSSLinkSignatureWarning,
                          "Ignoring extra data at end of signature file"));
+    } else {
+      return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                            qssc::ErrorCategory::QSSLinkSignatureWarning,
+                            "Ignoring extra data at end of signature file");
     }
   }
   return sig;

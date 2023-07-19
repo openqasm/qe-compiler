@@ -72,7 +72,7 @@ public:
 
   static llvm::Expected<Signature>
   deserialize(llvm::StringRef,
-              std::optional<qssc::DiagnosticCallback> onDiagnostic,
+              const std::optional<qssc::DiagnosticCallback> &onDiagnostic,
               bool treatWarningsAsError = false);
 
   bool isEmpty() { return patchPointsByBinary.size() == 0; }
