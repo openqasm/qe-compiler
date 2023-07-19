@@ -194,6 +194,7 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
     DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
     engine.emit(initialLocation, mlir::DiagnosticSeverity::Error)
         << "the --enable-parameters circuit requires --enable-circuits";
+    return;
   }
 
   // create the "main" function
