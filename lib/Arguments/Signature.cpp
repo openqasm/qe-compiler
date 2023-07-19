@@ -83,7 +83,8 @@ std::string Signature::serialize() {
 
 llvm::Expected<Signature>
 Signature::deserialize(llvm::StringRef buffer,
-                       std::optional<qssc::DiagnosticCallback> onDiagnostic, bool treatWarningsAsErrors) {
+                       std::optional<qssc::DiagnosticCallback> onDiagnostic,
+                       bool treatWarningsAsErrors) {
 
   Signature sig;
 
@@ -141,11 +142,10 @@ Signature::deserialize(llvm::StringRef buffer,
     }
     uint numEntries;
     if (value.getAsInteger(10, numEntries)) {
-      return emitDiagnostic(
-          onDiagnostic, qssc::Severity::Error,
-          qssc::ErrorCategory::QSSLinkSignatureError,
-          "Failed to parse number of entries to integer: " +
-              value.str());
+      return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                            qssc::ErrorCategory::QSSLinkSignatureError,
+                            "Failed to parse number of entries to integer: " +
+                                value.str());
     }
     for (uint nEntry = 0; nEntry < numEntries; nEntry++) {
       std::tie(line, buffer) = buffer.split("\n");
@@ -158,11 +158,10 @@ Signature::deserialize(llvm::StringRef buffer,
       }
       uint64_t addr;
       if (components[1].getAsInteger(10, addr)) {
-        return emitDiagnostic(
-            onDiagnostic, qssc::Severity::Error,
-            qssc::ErrorCategory::QSSLinkAddressError,
-            "Failed to interpret argument address " +
-                components[1].str());
+        return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                              qssc::ErrorCategory::QSSLinkAddressError,
+                              "Failed to interpret argument address " +
+                                  components[1].str());
       }
 
       auto paramPatchType = components[0];
@@ -175,16 +174,15 @@ Signature::deserialize(llvm::StringRef buffer,
   if (buffer.size() > 0) {
     if (treatWarningsAsErrors) {
       // cast to void to discard llvm::Error
-      return emitDiagnostic(
-          onDiagnostic, qssc::Severity::Error,
-          qssc::ErrorCategory::QSSLinkSignatureWarning,
-          "Ignoring extra data at end of signature file");
+      return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
+                            qssc::ErrorCategory::QSSLinkSignatureWarning,
+                            "Ignoring extra data at end of signature file");
     } else {
       // cast to void to discard llvm::Error
-      static_cast<void>(emitDiagnostic(
-          onDiagnostic, qssc::Severity::Warning,
-          qssc::ErrorCategory::QSSLinkSignatureWarning,
-          "Ignoring extra data at end of signature file"));
+      static_cast<void>(
+          emitDiagnostic(onDiagnostic, qssc::Severity::Warning,
+                         qssc::ErrorCategory::QSSLinkSignatureWarning,
+                         "Ignoring extra data at end of signature file"));
     }
   }
   return sig;
