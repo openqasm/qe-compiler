@@ -49,7 +49,7 @@ int bindArguments(std::string_view target, std::string_view configPath,
                   std::string_view payloadOutputPath,
                   std::unordered_map<std::string, double> const &arguments,
                   bool treatWarningsAsErrors,
-                  std::optional<DiagnosticCallback> onDiagnostic);
+                  const std::optional<DiagnosticCallback> &onDiagnostic);
 
 } // namespace qssc
 #endif // QSS_COMPILER_LIB_H
