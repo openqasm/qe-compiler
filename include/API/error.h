@@ -21,7 +21,10 @@
 #ifndef QSS_COMPILER_ERROR_H
 #define QSS_COMPILER_ERROR_H
 
+#include "llvm/Support/Error.h"
+
 #include <functional>
+#include <optional>
 #include <string>
 
 namespace qssc {
@@ -34,6 +37,12 @@ enum class ErrorCategory {
   QSSCompilerEOFFailure,
   QSSCompilerNonZeroStatus,
   QSSCompilationFailure,
+  QSSLinkerNotImplemented,
+  QSSLinkSignatureError,
+  QSSLinkAddressError,
+  QSSLinkSignatureNotFound,
+  QSSLinkArgumentNotFoundWarning,
+  QSSLinkInvalidPatchTypeError,
   UncategorizedError,
 };
 
@@ -58,6 +67,11 @@ public:
 };
 
 using DiagnosticCallback = std::function<void(const Diagnostic &)>;
+
+llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
+                           Severity severity, ErrorCategory category,
+                           std::string message,
+                           std::error_code ec = llvm::inconvertibleErrorCode());
 
 } // namespace qssc
 

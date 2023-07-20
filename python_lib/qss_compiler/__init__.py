@@ -36,5 +36,4 @@ from .py_qssc import (  # noqa: F401
 from .link import (  # noqa: F401
     link_file,
     LinkOptions,
-    QSSLinkingFailure,
 )

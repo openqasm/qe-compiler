@@ -99,18 +99,22 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
   return pybind11::make_tuple(success, pybind11::bytes(outputStr));
 }
 
-pybind11::tuple
+bool
 py_link_file(const std::string &inputPath, const std::string &outputPath,
              const std::string &target, const std::string &configPath,
-             const std::unordered_map<std::string, double> &arguments) {
+             const std::unordered_map<std::string, double> &arguments,
+             bool treatWarningsAsErrors,
+             qssc::DiagnosticCallback onDiagnostic) {
 
+  int status = qssc::bindArguments(target, configPath, inputPath, outputPath, arguments,
+                                   treatWarningsAsErrors,
+                                   std::move(onDiagnostic));
 
-  std::string errorMsg;
-  if (qssc::bindArguments(target, configPath, inputPath, outputPath, arguments, &errorMsg)) {
-    return pybind11::make_tuple(false, errorMsg);
-  }
-
-  return pybind11::make_tuple(true, pybind11::none());
+  bool success = status == 0;
+#ifndef NDEBUG
+  std::cerr << "Link " << (success ? "successful" : "failed") << std::endl;
+#endif
+  return success;
 }
 
 
@@ -131,6 +135,12 @@ PYBIND11_MODULE(py_qssc, m) {
       .value("QSSCompilerEOFFailure", qssc::ErrorCategory::QSSCompilerEOFFailure)
       .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
       .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
+      .value("QSSLinkerNotImplemented", qssc::ErrorCategory::QSSLinkerNotImplemented)
+      .value("QSSLinkSignatureError", qssc::ErrorCategory::QSSLinkSignatureError)
+      .value("QSSLinkAddressError", qssc::ErrorCategory::QSSLinkAddressError)
+      .value("QSSLinkSignatureNotFound", qssc::ErrorCategory::QSSLinkSignatureNotFound)
+      .value("QSSLinkArgumentNotFoundWarning", qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
+      .value("QSSLinkInvalidPatchTypeError", qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
       .export_values();
 

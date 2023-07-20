@@ -188,6 +188,15 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
   Location initialLocation =
       mlir::FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
 
+  // validate command line options
+  if (enableParameters && !enableCircuits) {
+    hasFailed = true;
+    DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
+    engine.emit(initialLocation, mlir::DiagnosticSeverity::Error)
+        << "the --enable-parameters circuit requires --enable-circuits";
+    return;
+  }
+
   // create the "main" function
   auto func = topLevelBuilder.create<FuncOp>(
       initialLocation, "main",
@@ -258,6 +267,7 @@ mlir::LogicalResult QUIRGenQASM3Visitor::walkAST() {
 mlir::InFlightDiagnostic
 QUIRGenQASM3Visitor::reportError(ASTBase const *location,
                                  mlir::DiagnosticSeverity severity) {
+
   DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
 
   if (severity == mlir::DiagnosticSeverity::Error)
@@ -1063,17 +1073,36 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
     // generate variable assignment so that they are reinitialized on every
     // shot.
 
+    bool genVariableWithVal = true;
+
     // parameter support currently limited to quir::AngleType
-    if (enableParameters &&
-        node->GetModifierType() == QASM::ASTTypeInputModifier &&
-        (variableType.isa<mlir::quir::AngleType>() ||
-         variableType.isa<mlir::Float64Type>())) {
-      varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
-                                              variableType, val);
-      auto load =
-          varHandler.generateParameterLoad(loc, idNode->GetMangledName(), val);
-      varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
-    } else
+    if (node->GetModifierType() == QASM::ASTTypeInputModifier) {
+      bool genParameter = true;
+      if (!enableParameters) {
+        reportError(node, mlir::DiagnosticSeverity::Warning)
+            << "Input parameter " << idNode->GetName()
+            << "  warning. Parameters are not enabled. Enable with "
+               "--enable-parameters.";
+        genParameter = false;
+      } else if (!(variableType.isa<mlir::quir::AngleType>() ||
+                   variableType.isa<mlir::Float64Type>())) {
+        reportError(node, mlir::DiagnosticSeverity::Error)
+            << "Input parameter " << idNode->GetName()
+            << " type error. Input parameters must be angle or float[64].";
+        genParameter = false;
+      }
+
+      if (genParameter) {
+        varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
+                                                variableType, val);
+        auto load = varHandler.generateParameterLoad(
+            loc, idNode->GetMangledName(), val);
+        varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
+        genVariableWithVal = false;
+      }
+    }
+
+    if (genVariableWithVal)
       varHandler.generateVariableAssignment(loc, idNode->GetName(), val);
 
     return;
