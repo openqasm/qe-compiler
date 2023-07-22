@@ -89,11 +89,11 @@ if(INSTALL_BUNDLED_STATIC_LIB)
     )
     # install API library and its headers
     install(TARGETS
-        QSSCAPI
+            QSSCAPI
         LIBRARY DESTINATION
-        "${CMAKE_INSTALL_LIBDIR}"
-    FILE_SET HEADERS DESTINATION
-        "${CMAKE_INSTALL_INCLUDEDIR}/API"
+            "${CMAKE_INSTALL_LIBDIR}"
+        FILE_SET HEADERS DESTINATION
+            "${CMAKE_INSTALL_INCLUDEDIR}/API"
 
     )
 

@@ -10,7 +10,8 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-cmake_minimum_required(VERSION 3.13.4...3.17)
+# Requires FILE_SET introduced in v3.23.
+cmake_minimum_required(VERSION 3.23)
 
 # ignore the RPATH settings for install_name on macOS.
 # https://cmake.org/cmake/help/latest/policy/CMP0068.html
