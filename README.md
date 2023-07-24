@@ -21,3 +21,10 @@ Alternatively instead of steps 6/7, you can build directly with CMake (also from
 2. Build - `ninja`
 3. Check tests - `ninja check-tests`
 
+### Python library
+The `qss-compiler` Python library will be installed by default to the resolved environment Python when
+installing with conan. To disable add the option `conan build .. -o pythonlib=False`.
+
+### Platforms
+#### Windows
+Building and running the compiler is supported with [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
