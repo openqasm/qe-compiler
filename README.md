@@ -1,7 +1,7 @@
 
 # qss-compiler: An MLIR based quantum compiler for control systems
 
-The qss-compiler is an MLIR based quantum control system compiler with support for OpenQASM 3. It is designed to compiler quantum programs to real quantum hardware and is designed as part the overall Quantum Engine.
+The qss-compiler is an MLIR based quantum control system compiler with support for OpenQASM 3. It is designed to compile quantum programs to real quantum hardware and is designed as part the overall Quantum Engine.
 
 ## Building
 We use [Conan](https://docs.conan.io/en/1.59/index.html) to build the compiler and handle dependencies.
