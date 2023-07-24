@@ -28,8 +28,8 @@ class QSSCompilerConan(ConanFile):
     version = get_version()
     url = "https://github.com/qiskit/qss-compiler"
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False]}
-    default_options = {"shared": False}
+    options = {"shared": [True, False], "pythonlib": [True, False]}
+    default_options = {"shared": False, "pythonlib": True}
     license = "Proprietary"
     author = "IBM Quantum development team"
     topics = ("Compiler", "Scheduler", "OpenQASM3")
@@ -69,20 +69,33 @@ class QSSCompilerConan(ConanFile):
         cmake.configure()
         cmake.build()
 
+        if self.options.pythonlib:
+            self.run(
+            f"cd {self.build_folder}/python_lib \
+                    && pip install -e .[test]"
+            )
+
+        if self.should_test:
+            self.test(cmake)
+
+
     def package(self):
         cmake = self._configure_cmake()
         cmake.install()
-        self.test()
 
-    def test(self):
+        if self.options.pythonlib:
+            self.run(
+            f"cd {self.build_folder}/python_lib \
+                    && pip install .[test]"
+            )
+
+        if self.should_test:
+            self.test(cmake)
+
+    def test(self, cmake):
         cmake = self._configure_cmake()
-        cmake.build(target="check-tests")
-        cmake.build(target="check-format")
-        self.run(
-            f"cd {self.build_folder}/qss-compiler/python_lib \
-                    && pip install .[test] --use-feature=in-tree-build"
-        )
-        self.run(f"cd {self.build_folder} && pytest qss-compiler/python_lib/test")
+        cmake.test(target="check-tests")
+        self.run(f"cd {self.source_folder} && pytest test/python_lib")
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
