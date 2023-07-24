@@ -72,11 +72,11 @@ jobs:
         id: build
         working-directory: build
         run: |
-          conan build .. --test
+          conan build ..
       - name: Test
         id: test
         working-directory: build
-        run: conan build .. --build --test
+        run: conan build .. --test
 
       # On 'pull_request' run Clang tidy
       - name: Clang tidy
