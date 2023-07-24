@@ -14,10 +14,10 @@ To build:
 4. `mkdir build && cd build`
 5. Install Conan dependencies: `conan install .. --build=outdated -pr:h default -pr:b default`
 6. Invoke the build with Conan: `conan build ..`. This will build the compiler.
-7. To run checks: `ninja check-tests`
+7. To run tests: `conan build .. --test`
 
-Alternatively to step 6, you can build directly with CMake (also from within the build folder):
-```
-cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE="Release" ..
-ninja
-```
+Alternatively instead of steps 6/7, you can build directly with CMake (also from within the build folder):
+1. Configure - `cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE="Release" ..`
+2. Build - `ninja`
+3. Check tests - `ninja check-tests`
+
