@@ -41,7 +41,7 @@ def PulseDialect : Dialect {
 class Pulse_Op<string mnemonic, list<Trait> traits = []> :
         Op<PulseDialect, mnemonic, traits>;
 
-include "PulseTypes.td"
-include "PulseOps.td"
+include "Dialect/Pulse/IR/PulseTypes.td"
+include "Dialect/Pulse/IR/PulseOps.td"
 
 #endif // PULSE_DIALECT

@@ -17,7 +17,7 @@
 #ifndef PULSE_OPS
 #define PULSE_OPS
 
-include "PulseTraits.td"
+include "Dialect/Pulse/IR/PulseTraits.td"
 
 include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
 include "Dialect/Pulse/IR/PulseInterfaces.td"
