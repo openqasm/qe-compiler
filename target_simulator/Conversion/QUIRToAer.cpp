@@ -77,17 +77,43 @@ void buildQubitTable(ModuleOp moduleOp, Value aerState) {
 
 }
 
-struct RemoveQCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
-  explicit RemoveQCSInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
+// Assume qcs.init is called before all quir.declare_qubit operations
+struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
+  explicit QCSInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, Value aerState)
+    : OpConversionPattern(typeConverter, ctx, /* benefit= */1), aerState(aerState)
   {}
   
   LogicalResult matchAndRewrite(qcs::SystemInitOp initOp,
                                 qcs::SystemInitOp::Adaptor adapter,
                                 ConversionPatternRewriter &rewriter) const override {
+    
+    // global variables for aer configuration
+    std::map<std::string, mlir::Value> globals;
+    for(auto strVal : {"method", "statevector", "device", "CPU", "precision", "double"}) {
+      auto name = std::string{"aer_config_"} + strVal;
+      globals[strVal] = LLVM::createGlobalString(
+        initOp->getLoc(), rewriter, name,
+        strVal, LLVM::Linkage::Internal);
+    }
+    // configure
+    // aer_state_configure(state, "method", "statevector")
+    // aer_state_configure(state, "device", "CPU")
+    // aer_state_configure(state, "precision", "double")
+    rewriter.create<LLVM::CallOp>(
+        initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
+        ValueRange{aerState, globals["method"], globals["statevector"]});
+    rewriter.create<LLVM::CallOp>(
+        initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
+        ValueRange{aerState, globals["device"], globals["CPU"]});
+    rewriter.create<LLVM::CallOp>(
+        initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
+        ValueRange{aerState, globals["precision"], globals["double"]});
     rewriter.eraseOp(initOp);
     return success();
   }
+  
+private:
+  Value aerState;
 };
 
 struct RemoveQCSShotInitConversionPat : public OpConversionPattern<qcs::ShotInitOp> {
@@ -301,8 +327,7 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
-  patterns.add<RemoveQCSInitConversionPat,
-               RemoveQCSShotInitConversionPat,
+  patterns.add<RemoveQCSShotInitConversionPat,
                RemoveConversionPat<quir::DeclareQubitOp>,
                RemoveConversionPat<oq3::DeclareVariableOp>,
                RemoveConversionPat<oq3::CastOp>,
@@ -316,6 +341,7 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   auto aerState = [&]() -> Value {
     auto mainFunc = mlir::quir::getMainFunction(moduleOp);
     OpBuilder builder(mainFunc);
+
     auto mainBody = &mainFunc->getRegion(0).getBlocks().front();
     builder.setInsertionPointToStart(mainBody);
     return builder.create<LLVM::CallOp>(
@@ -326,7 +352,8 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   // Must build qubit table before applying any conversion
   buildQubitTable(moduleOp, aerState);
   
-  patterns.add<FinalizeConversionPat,
+  patterns.add<QCSInitConversionPat,
+               FinalizeConversionPat,
                BuiltinUopConversionPat,
                BuiltinCXConversionPat,
                MeasureOpConversionPat,
