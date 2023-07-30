@@ -1,4 +1,4 @@
-//===- QUIRToAER.cpp - Convert OQ3 to AER --------------*- C++ -*-===//
+//===- QUIRToAER.cpp - Convert QUIR to AER --------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -87,13 +87,18 @@ struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
                                 qcs::SystemInitOp::Adaptor adapter,
                                 ConversionPatternRewriter &rewriter) const override {
     
-    // global variables for aer configuration
+    // global string values for aer configuration
     std::map<std::string, mlir::Value> globals;
-    for(auto strVal : {"method", "statevector", "device", "CPU", "precision", "double"}) {
-      auto name = std::string{"aer_config_"} + strVal;
-      globals[strVal] = LLVM::createGlobalString(
-        initOp->getLoc(), rewriter, name,
-        strVal, LLVM::Linkage::Internal);
+    const auto config_strs = {
+        "method", "statevector",
+        "device", "CPU",
+        "precision", "double"};
+    for(auto config_str : config_strs) {
+      const auto var_name = std::string("aer_conf_") + config_str;
+      const auto with_null = config_str + std::string("\0", 1);
+      globals[config_str] = LLVM::createGlobalString(
+        initOp->getLoc(), rewriter, var_name,
+        with_null, LLVM::Linkage::Internal);
     }
     // configure
     // aer_state_configure(state, "method", "statevector")

@@ -191,7 +191,7 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
       targetTriple, cpu, features.getString(), {}, {}));
   auto dataLayout = machine->createDataLayout();
   
-  // TODO
+  // TODO: Define a function like `aer::translateModuleToLLVMDialect`
   if(auto err =
         quir::translateModuleToLLVMDialect(moduleOp, dataLayout)) {
     llvm::errs() << err;
@@ -218,10 +218,10 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
     llvm::errs() << "Failed to optimize LLVM IR " << err << "\n";
     return;
   }
-  // TODO: What's doing here?
-  std::string *payloadStr = payload.getFile("llvmModule.il");
-  llvm::raw_string_ostream llvmOStream(*payloadStr);
-  llvmOStream << *llvmModule;
+  
+  // TODO: debug output
+  llvm::outs() << "output il file:\n";
+  llvm::outs() << *llvmModule;
   
   llvm::SmallString<128> objPath;
   int objFd;

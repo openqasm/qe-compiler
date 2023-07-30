@@ -11,6 +11,7 @@
 # that they have been altered from the originals.
 
 add_subdirectory(ZipPayload)
+add_subdirectory(BinaryPayload)
 
 # Register payloads with build system
 foreach(payload_path ${QSSC_PAYLOAD_PATHS})

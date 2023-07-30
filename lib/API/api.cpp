@@ -121,7 +121,7 @@ static llvm::cl::opt<enum InputType> inputType(
                                 "load the input file as a QOBJ file")));
 
 namespace {
-enum Action { None, DumpAST, DumpASTPretty, DumpMLIR, DumpWaveMem, GenQEM };
+enum Action { None, DumpAST, DumpASTPretty, DumpMLIR, DumpWaveMem, GenQEM, GenSim };
 } // anonymous namespace
 static llvm::cl::opt<enum Action> emitAction(
     "emit", llvm::cl::init(Action::None),
@@ -134,7 +134,9 @@ static llvm::cl::opt<enum Action> emitAction(
                                 "output the waveform memory")),
     llvm::cl::values(clEnumValN(GenQEM, "qem",
                                 "generate a quantum executable module (qem) "
-                                "for execution on hardware")));
+                                "for execution on hardware")),
+    llvm::cl::values(clEnumValN(GenSim, "sim",
+                                "generate a binary file for simulation")));
 
 namespace qss {
 enum FileExtension { None, AST, ASTPRETTY, QASM, QOBJ, MLIR, WMEM, QEM };
@@ -435,6 +437,27 @@ static llvm::Error generateQEM_(qssc::hal::TargetSystem &target,
   return llvm::Error::success();
 }
 
+/// @brief Generate a single binary for simulator.
+/// @param target Target to build the simulator for.
+/// @param payload The payload to populate
+/// @param moduleOp The module to build for
+/// @param ostream The output ostream to populate
+/// @return The output error if one occurred.
+static llvm::Error generateSim_(qssc::hal::TargetSystem &target,
+                                std::unique_ptr<qssc::payload::Payload> payload,
+                                mlir::ModuleOp moduleOp,
+                                llvm::raw_ostream *ostream) {
+  if (auto err = target.addToPayload(moduleOp, *payload))
+    return err;
+
+  if (plaintextPayload)
+    payload->writePlain(*ostream);
+  else
+    payload->write(*ostream);
+
+  return llvm::Error::success();
+}
+
 /// @brief Print the output to an ostream.
 /// @param ostream The ostream to populate.
 /// @param moduleOp The ModuleOp to dump.
@@ -551,6 +574,16 @@ compile_(int argc, char const **argv, std::string *outputString,
           std::move(payloadInfo.getValue()->createPluginInstance(config).get());
     }
   }
+  
+  if (emitAction == Action::GenSim) {
+    const std::filesystem::path payloadPath(outputFilename.c_str());
+    const std::string fNamePrefix = payloadPath.stem();
+    const qssc::payload::PayloadConfig config{fNamePrefix, fNamePrefix};
+    auto payloadInfo =
+        qssc::payload::registry::PayloadRegistry::lookupPluginInfo("BINARY");
+    payload =
+        std::move(payloadInfo.getValue()->createPluginInstance(config).get());
+  }
 
   if (outputString) {
     outStringStream.emplace(*outputString);
@@ -645,6 +678,12 @@ compile_(int argc, char const **argv, std::string *outputString,
   if (emitAction == Action::GenQEM) {
     if (auto err = generateQEM_(target, std::move(payload), moduleOp, ostream))
       return err;
+  }
+  
+  if (emitAction == Action::GenSim) {
+    if (auto err = generateSim_(target, std::move(payload), moduleOp, ostream)) {
+      return err;
+    }
   }
 
   // ------------------------------------------------------------
