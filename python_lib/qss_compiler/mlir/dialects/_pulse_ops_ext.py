@@ -23,14 +23,16 @@ class Frame_CreateOp:
     """Specialization for the Frame_Create op class."""
 
     def __init__(self, uid, *, amp=None, freq=None, phase=None,loc=None, ip=None):
-        super().__init__( StringAttr.get(str(uid)), amp, freq, phase, loc=loc, ip=ip)
+        super().__init__(FrameType.get(), StringAttr.get(str(uid)), amp, freq, phase, loc=loc, ip=ip)
 
 class MixFrameOp:
     """Specialization for the MixFrame op class."""
 
-    def __init__(self, signalType, port, frame, *, loc=None, ip=None):
+    def __init__(self, port, frame, *, 
+                 initial_amp=None, initial_freq=None, initial_phase=None, loc=None, ip=None):
         super().__init__(
-            MixedFrameType.get(), StringAttr.get(str(signalType)), port, frame, loc=loc, ip=ip
+            MixedFrameType.get(), port, StringAttr.get(str(frame)), 
+            initial_amp=initial_amp, initial_freq=initial_freq, initial_phase=initial_phase, loc=loc, ip=ip
         )
 
 
@@ -50,11 +52,13 @@ class PlayOp:
 
 class Port_CreateOp:
     def __init__(self, uid, *, loc=None, ip=None):
-        super().__init__(StringAttr.get(str(uid)), loc=loc, ip=ip)
+        super().__init__(PortType.get(), StringAttr.get(str(uid)), loc=loc, ip=ip)
 
 
 class SequenceOp:
-    def __init__(self, sym_name, inputs, results, *, sym_visibility="public", loc=None, ip=None):
+    def __init__(self, sym_name, inputs, results, *, visibility=None, loc=None, ip=None):
+        sym_visibility = StringAttr.get(
+        str(visibility)) if visibility is not None else None
         super().__init__(
             StringAttr.get(str(sym_name)),
             TypeAttr.get(FunctionType.get(inputs=inputs, results=results)),
@@ -76,5 +80,5 @@ class SequenceOp:
 
 
 class Waveform_CreateOp:
-    def __init__(self, samples_2d, *, loc=None, ip=None):
-        super().__init__(DenseElementsAttr.get(samples_2d), loc=loc, ip=ip)
+    def __init__(self, wf, samples_2d, *, loc=None, ip=None):
+        super().__init__(wf, DenseElementsAttr.get(samples_2d), loc=loc, ip=ip)

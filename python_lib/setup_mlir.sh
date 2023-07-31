@@ -1,4 +1,4 @@
-# alias sed=/opt/homebrew/opt/gsed/bin/gsed
+alias sed=/opt/homebrew/opt/gsed/bin/gsed
 pushd qss_compiler/mlir/dialects
 # edit _gen_files
 for a in `ls *_ops_gen.py`; do 
