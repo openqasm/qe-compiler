@@ -1,0 +1,20 @@
+[project]
+name = "mlir"
+version = "14.0.6"
+description = "MLIR Python Bindings"
+requires-python = ">=3.8"
+
+# Requirements: This is done differently by poetry!
+dependencies = [
+    "numpy",
+    "pybind11>=2.8.0",
+    "PyYAML",
+    "dataclasses"
+]
+
+[build-system]
+requires = [
+    "setuptools>=40.6.0",
+    "wheel"
+]
+build-backend = "setuptools.build_meta"
