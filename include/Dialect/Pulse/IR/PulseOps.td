@@ -567,7 +567,7 @@ def Pulse_BarrierOp : Pulse_Op<"barrier", [NoSideEffect, SequenceAllowed]> {
         ```
     }];
 
-    let arguments = (ins Variadic<Pulse_FrameType>:$frames);
+    let arguments = (ins Variadic<AnyFrame>:$frames);
 
     let assemblyFormat = [{
         attr-dict $frames `:` type($frames)

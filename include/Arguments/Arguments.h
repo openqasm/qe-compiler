@@ -23,6 +23,7 @@
 #ifndef ARGUMENTS_H
 #define ARGUMENTS_H
 
+#include "API/error.h"
 #include "Dialect/QCS/IR/QCSTypes.h"
 
 #include "Arguments/Signature.h"
@@ -33,7 +34,8 @@
 
 namespace qssc::arguments {
 
-using ArgumentType = mlir::qcs::ParameterType;
+using ArgumentType = std::variant<llvm::Optional<double>>;
+using OptDiagnosticCallback = std::optional<qssc::DiagnosticCallback>;
 
 class ArgumentSource {
 public:
@@ -49,13 +51,18 @@ public:
   virtual ~BindArgumentsImplementation() = default;
   virtual llvm::Error patch(PatchPoint const &patchPoint,
                             ArgumentSource const &arguments) = 0;
-  virtual void parseParamMapIntoSignature(llvm::StringRef paramMapContents,
-                                          llvm::StringRef paramMapFileName,
-                                          qssc::arguments::Signature &sig) = 0;
+  virtual llvm::Error
+  parseParamMapIntoSignature(llvm::StringRef paramMapContents,
+                             llvm::StringRef paramMapFileName,
+                             qssc::arguments::Signature &sig) = 0;
   virtual qssc::payload::PatchablePayload *
   getPayload(llvm::StringRef payloadOutputPath) = 0;
   virtual llvm::Expected<Signature>
   parseSignature(qssc::payload::PatchablePayload *payload) = 0;
+  void setTreatWarningsAsErrors(bool val) { treatWarningsAsErrors_ = val; }
+
+protected:
+  bool treatWarningsAsErrors_{false};
 };
 
 // BindArgumentsImplementationFactory - abstract class to be subclassed by
@@ -64,16 +71,21 @@ public:
 class BindArgumentsImplementationFactory {
 public:
   virtual ~BindArgumentsImplementationFactory() = default;
-  virtual BindArgumentsImplementation *create() = 0;
-  virtual BindArgumentsImplementation *create(std::vector<char> &buf) = 0;
-  virtual BindArgumentsImplementation *create(std::string &str) = 0;
+  virtual BindArgumentsImplementation *
+  create(OptDiagnosticCallback onDiagnostic) = 0;
+  virtual BindArgumentsImplementation *
+  create(std::vector<char> &buf, OptDiagnosticCallback onDiagnostic) = 0;
+  virtual BindArgumentsImplementation *
+  create(std::string &str, OptDiagnosticCallback onDiagnostic) = 0;
 };
 
 // TODO generalize type of arguments
 llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
-                          BindArgumentsImplementationFactory *factory);
+                          bool treatWarningsAsErrors,
+                          BindArgumentsImplementationFactory &factory,
+                          const OptDiagnosticCallback &onDiagnostic);
 
 } // namespace qssc::arguments
 

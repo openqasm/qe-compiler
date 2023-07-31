@@ -20,6 +20,9 @@ from .compile import (  # noqa: F401
     InputType,
     OutputType,
     CompileOptions,
+)
+
+from .exceptions import (  # noqa: F401
     QSSCompilationFailure,
     QSSCompilerError,
 )
@@ -33,5 +36,4 @@ from .py_qssc import (  # noqa: F401
 from .link import (  # noqa: F401
     link_file,
     LinkOptions,
-    QSSLinkingFailure,
 )

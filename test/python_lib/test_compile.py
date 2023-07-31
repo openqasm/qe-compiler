@@ -21,9 +21,9 @@ from qss_compiler import (
     ErrorCategory,
     InputType,
     OutputType,
-    QSSCompilationFailure,
     Severity,
 )
+from qss_compiler.exceptions import QSSCompilationFailure
 
 
 def check_mlir_string(mlir):
@@ -113,6 +113,7 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     assert hasattr(compfail.value, "diagnostics")
 
     diags = compfail.value.diagnostics
+    
     assert any(
         diag.severity == Severity.Error
         and diag.category == ErrorCategory.OpenQASM3ParseFailure

@@ -22,15 +22,12 @@ package.
 from dataclasses import dataclass
 from importlib import resources as importlib_resources
 from os import environ as os_environ
-from typing import Mapping, Any, Optional
+from typing import Mapping, Any, Optional, Callable
 
-from .py_qssc import _link_file
+from .py_qssc import _link_file, Diagnostic, ErrorCategory
 from .compile import _stringify_path
 
-
-class QSSLinkingFailure(Exception):
-    """Raised on compilation failure."""
-
+from . import exceptions
 
 @dataclass
 class LinkOptions:
@@ -46,6 +43,10 @@ class LinkOptions:
     """Set the specific execution arguments of a pre-compiled program as a mapping of name to value."""
     config_path: str = ""
     """Target configuration path."""
+    treat_warnings_as_errors: bool = True
+    """Treat link warnings as errors"""
+    on_diagnostic: Optional[Callable[[Diagnostic], Any]] = None
+    """Optional callback for processing diagnostic messages from the linker."""
 
 
 def _prepare_link_options(
@@ -80,9 +81,16 @@ def link_file(
     output_file = _stringify_path(link_options.output_file)
     config_path = _stringify_path(link_options.config_path)
 
+    diagnostics = []
+    def on_diagnostic(diag):
+        diagnostics.append(diag)
+
+    if link_options.on_diagnostic is None:
+        link_options.on_diagnostic = on_diagnostic
+
     for _, value in link_options.arguments.items():
         if not isinstance(value, float):
-            raise QSSLinkingFailure(
+            raise exceptions.QSSArgumentInputTypeError(
                 f"Only double arguments are supported, not {type(value)}"
             )
 
@@ -98,9 +106,23 @@ def link_file(
     with importlib_resources.path("qss_compiler", "_version.py") as version_py_path:
         resources_path = version_py_path.parent / "resources"
         os_environ["QSSC_RESOURCES"] = str(resources_path)
-        success, errorMsg = _link_file(
+        success = _link_file(
             input_file, output_file, link_options.target, config_path,
-            link_options.arguments
-        )
+            link_options.arguments, link_options.treat_warnings_as_errors, link_options.on_diagnostic)
         if not success:
-            raise QSSLinkingFailure(errorMsg)
+
+            exception_mapping = {
+                ErrorCategory.QSSLinkerNotImplemented: exceptions.QSSLinkerNotImplemented,
+                ErrorCategory.QSSLinkSignatureError: exceptions.QSSLinkSignatureError,
+                ErrorCategory.QSSLinkAddressError: exceptions.QSSLinkAddressError,
+                ErrorCategory.QSSLinkSignatureNotFound: exceptions.QSSLinkSignatureNotFound,
+                ErrorCategory.QSSLinkArgumentNotFoundWarning: exceptions.QSSLinkArgumentNotFoundWarning,
+                ErrorCategory.QSSLinkInvalidPatchTypeError: exceptions.QSSLinkInvalidPatchTypeError,
+            }
+
+            if diagnostics == [] or not isinstance(diagnostics[0], Diagnostic):
+                pass
+            elif diagnostics[0].category in exception_mapping.keys():
+                raise exception_mapping[diagnostics[0].category](diagnostics[0].message, diagnostics)
+            raise exceptions.QSSLinkingFailure("Unknown linking failure", diagnostics)
+

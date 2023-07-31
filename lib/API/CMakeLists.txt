@@ -10,11 +10,20 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-add_library(QSSCAPI api.cpp error.cpp)
+add_library(QSSCAPI api.cpp)
+
+add_library(QSSCError error.cpp)
 
 set(LIBS
         qasm::qasm
         )
-target_link_libraries(QSSCAPI ${LIBS})
+target_link_libraries(QSSCAPI ${LIBS} QSSCError)
 
-add_dependencies(QSSCAPI MLIROQ3Dialect MLIRQCSDialect MLIRQUIRDialect)
+target_sources(QSSCAPI
+    PRIVATE api.cpp error.cpp
+    INTERFACE FILE_SET HEADERS
+    BASE_DIRS ${QSSC_INCLUDE_DIR}/API
+    FILES ${QSSC_INCLUDE_DIR}/API/api.h ${QSSC_INCLUDE_DIR}/API/error.h
+    )
+
+add_dependencies(QSSCAPI QSSCError MLIROQ3Dialect MLIRQCSDialect MLIRQUIRDialect)

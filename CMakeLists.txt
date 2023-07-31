@@ -10,7 +10,8 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-cmake_minimum_required(VERSION 3.13.4...3.17)
+# Requires FILE_SET introduced in v3.23.
+cmake_minimum_required(VERSION 3.23)
 
 # ignore the RPATH settings for install_name on macOS.
 # https://cmake.org/cmake/help/latest/policy/CMP0068.html
@@ -106,7 +107,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     endif()
 endif()
 
-project(qss-compiler)
+project(qss-compiler CXX)
 project(qss-opt LANGUAGES CXX C)
 
 # ------------------------------------------------------------------------------
@@ -118,6 +119,7 @@ option(ENABLE_ADDRESS_SANITIZER "Compile with google address sanitizer" ${CI_RUN
 option(ENABLE_UNDEFINED_SANITIZER "Compile with google undefined sanitizer" ${CI_RUN})
 option(ENABLE_THREAD_SANITIZER "Compile with google thread sanitizer" ${CI_RUN})
 option(TEST_USE_VG "Run qss-compiler tests under Valgrind" ${CI_RUN})
+option(INSTALL_BUNDLED_STATIC_LIB "Install the qss-compiler as a static library")
 
 set(QSSC_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "QSSC_SRC_DIR")
 set(QSSC_INCLUDE_DIR ${QSSC_SRC_DIR}/include CACHE INTERNAL "QSSC_INCLUDE_DIR")
@@ -300,6 +302,7 @@ endif ()
 # ------------------------------------------------------------------------------
 include_directories(${QSSC_INCLUDE_DIR})
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddQSSC.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/bundle_static_library.cmake)
 
 # QASM -------------------------------------------------------------------------
 set(OPENQASM_CMAKE_PACKAGE ON)
