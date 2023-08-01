@@ -172,6 +172,47 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, Sequenc
     let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
+def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [NoSideEffect]> {
+    let summary = "Creates a container for pulse waveforms.";
+    let description = [{
+        The `pulse.waveform_container` is a container for `pulse.create_waveform` operations. All the `pulse.create_waveform`
+        operations must have a `pulse.waveformName` attribute.
+
+        Example:
+
+        ```mlir
+        pulse.waveform_container {
+        %0 = pulse.create_waveform {pulse.waveformName = "X90"} dense<[[0.0, 0.5], [0.5, 0.5], [0.5, 0.0]]> : tensor<3x2xf64> -> !pulse.waveform
+        %1 = pulse.create_waveform {pulse.waveformName = "Y90"} dense<[[0.1, 0.5], [0.7, 0.5], [0.1, 0.0]]> : tensor<3x2xf64> -> !pulse.waveform
+        pulse.terminator
+        }
+        ```
+    }];
+
+    let regions = (region AnyRegion:$body);
+
+    let assemblyFormat = [{
+        attr-dict $body
+    }];
+
+    let verifier = [{ return ::mlir::pulse::verify(*this); }];
+}
+
+def Pulse_TerminatorOp : Pulse_Op<"terminator", [NoSideEffect, Terminator]>{
+    let summary = "Creates a terminator operation for blocks.";
+    let description = [{
+        The `pulse.terminator` is a terminator operation for blocks used in other pulse dialect operations.
+
+        Example:
+
+        ```mlir
+        pulse.terminator
+        ```
+    }];
+
+    let assemblyFormat = [{attr-dict}];
+}
+
 def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllowed, SameVariadicOperandSize]> {
     let summary = "Creates a frame with a frequency and a phase.";
     let description = [{
