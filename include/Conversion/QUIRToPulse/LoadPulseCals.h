@@ -43,12 +43,12 @@ struct LoadPulseCalsPass
   LoadPulseCalsPass() = default;
   LoadPulseCalsPass(const LoadPulseCalsPass &pass) : PassWrapper(pass) {}
   LoadPulseCalsPass(std::string inDefaultPulseCals) {
-    DEFAULT_PULSE_CALS = inDefaultPulseCals;
+    DEFAULT_PULSE_CALS = std::move(inDefaultPulseCals);
   }
   LoadPulseCalsPass(std::string inDefaultPulseCals,
                     std::string inAdditionalPulseCals) {
-    DEFAULT_PULSE_CALS = inDefaultPulseCals;
-    ADDITIONAL_PULSE_CALS = inAdditionalPulseCals;
+    DEFAULT_PULSE_CALS = std::move(inDefaultPulseCals);
+    ADDITIONAL_PULSE_CALS = std::move(inAdditionalPulseCals);
   }
 
   void runOnOperation() override;

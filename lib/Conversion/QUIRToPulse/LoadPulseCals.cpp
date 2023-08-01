@@ -293,7 +293,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
 void LoadPulseCalsPass::addPulseCalToModule(
     FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp) {
   OpBuilder builder(funcOp.body());
-  auto clonedPulseCalOp = builder.clone(*sequenceOp);
+  auto *clonedPulseCalOp = builder.clone(*sequenceOp);
   auto clonedPulseCalSequenceOp = dyn_cast<SequenceOp>(clonedPulseCalOp);
   clonedPulseCalSequenceOp->moveBefore(funcOp);
 }
@@ -317,7 +317,7 @@ void LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
 
 mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
     std::vector<mlir::pulse::SequenceOp> &sequenceOps,
-    std::string mergedSequenceOpName) {
+    const std::string& mergedSequenceOpName) {
 
   if (sequenceOps.size() == 0)
     assert(false && "sequence op vector is empty; nothing to merge");
@@ -413,13 +413,13 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
 }
 
 bool LoadPulseCalsPass::mergeAttributes(
-    std::vector<mlir::pulse::SequenceOp> &sequenceOps, std::string attrName,
+    std::vector<mlir::pulse::SequenceOp> &sequenceOps, const std::string& attrName,
     std::vector<mlir::Attribute> &attrVector) {
 
   bool allSequenceOpsHasAttr = true;
-  for (std::size_t seqNum = 0; seqNum < sequenceOps.size(); seqNum++) {
-    if (sequenceOps[seqNum]->hasAttr(attrName)) {
-      mlir::ArrayAttr pulseArgs =
+  for (auto & sequenceOp : sequenceOps) {
+    if (sequenceOp->hasAttr(attrName)) {
+      auto pulseArgs =
           sequenceOps[seqNum]->getAttrOfType<ArrayAttr>(attrName);
       for (auto arg : pulseArgs)
         attrVector.push_back(arg);
@@ -448,7 +448,7 @@ std::string LoadPulseCalsPass::getMangledName(std::string &gateName,
 }
 
 std::set<uint32_t>
-LoadPulseCalsPass::getQubitOperands(std::vector<Value> qubitOperands,
+LoadPulseCalsPass::getQubitOperands(const std::vector<Value>& qubitOperands,
                                     CallCircuitOp callCircuitOp) {
 
   std::set<uint32_t> qubits;
