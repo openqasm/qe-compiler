@@ -88,13 +88,13 @@ struct LoadPulseCalsPass
 
   mlir::pulse::SequenceOp
   mergePulseSequenceOps(std::vector<mlir::pulse::SequenceOp> &sequenceOps,
-                        std::string mergedSequenceOpName);
+                        const std::string &mergedSequenceOpName);
   bool mergeAttributes(std::vector<mlir::pulse::SequenceOp> &sequenceOps,
-                       std::string attrName,
+                       const std::string &attrName,
                        std::vector<mlir::Attribute> &attrVector);
   std::string getMangledName(std::string &gateName, std::set<uint32_t> &qubits);
   std::string getMangledName(std::string &gateName, uint32_t qubit);
-  std::set<uint32_t> getQubitOperands(std::vector<Value> qubitOperands,
+  std::set<uint32_t> getQubitOperands(const std::vector<Value> &qubitOperands,
                                       mlir::quir::CallCircuitOp callCircuitOp);
 
   // TODO: move this function to Utils; it's used here and MergeCircuitsPass

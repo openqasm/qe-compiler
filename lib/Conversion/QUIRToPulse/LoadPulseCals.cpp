@@ -317,7 +317,7 @@ void LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
 
 mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
     std::vector<mlir::pulse::SequenceOp> &sequenceOps,
-    const std::string& mergedSequenceOpName) {
+    const std::string &mergedSequenceOpName) {
 
   if (sequenceOps.size() == 0)
     assert(false && "sequence op vector is empty; nothing to merge");
@@ -413,14 +413,13 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
 }
 
 bool LoadPulseCalsPass::mergeAttributes(
-    std::vector<mlir::pulse::SequenceOp> &sequenceOps, const std::string& attrName,
-    std::vector<mlir::Attribute> &attrVector) {
+    std::vector<mlir::pulse::SequenceOp> &sequenceOps,
+    const std::string &attrName, std::vector<mlir::Attribute> &attrVector) {
 
   bool allSequenceOpsHasAttr = true;
-  for (auto & sequenceOp : sequenceOps) {
+  for (auto &sequenceOp : sequenceOps) {
     if (sequenceOp->hasAttr(attrName)) {
-      auto pulseArgs =
-          sequenceOps[seqNum]->getAttrOfType<ArrayAttr>(attrName);
+      auto pulseArgs = sequenceOp->getAttrOfType<ArrayAttr>(attrName);
       for (auto arg : pulseArgs)
         attrVector.push_back(arg);
     } else {
@@ -448,7 +447,7 @@ std::string LoadPulseCalsPass::getMangledName(std::string &gateName,
 }
 
 std::set<uint32_t>
-LoadPulseCalsPass::getQubitOperands(const std::vector<Value>& qubitOperands,
+LoadPulseCalsPass::getQubitOperands(const std::vector<Value> &qubitOperands,
                                     CallCircuitOp callCircuitOp) {
 
   std::set<uint32_t> qubits;
