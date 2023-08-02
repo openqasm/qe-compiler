@@ -113,7 +113,7 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     assert hasattr(compfail.value, "diagnostics")
 
     diags = compfail.value.diagnostics
-    
+
     assert any(
         diag.severity == Severity.Error
         and diag.category == ErrorCategory.OpenQASM3ParseFailure
@@ -126,3 +126,14 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     # check string representation of the exception to contain diagnostic messages
     assert "OpenQASM 3 parse error" in str(compfail.value)
     assert "unknown version number" in str(compfail.value)
+
+
+def test_compile_switch_no_default_str(example_switch_no_default_qasm3_str):
+    """Test compiling switch statement that lacks default case."""
+    mlir = compile_str(
+        example_switch_no_default_qasm3_str,
+        input_type=InputType.QASM3,
+        output_type=OutputType.MLIR,
+        output_file=None,
+    )
+    check_mlir_string(mlir)
