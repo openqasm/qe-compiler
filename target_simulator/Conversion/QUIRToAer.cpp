@@ -128,8 +128,7 @@ void buildQubitTable(ModuleOp moduleOp, AerStateWrapper wrapper) {
         aerFuncTable.at("aer_allocate_qubits"),
         ValueRange{aerState, constOp});
 
-    const int id = *declOp.id();
-    ValueTable::registerQubit(id, alloc.getResult(0));
+    ValueTable::registerQubit(*declOp.id(), alloc.getResult(0));
   });
   
   // TODO
@@ -516,8 +515,8 @@ void QUIRToAERPass::declareAerFunctions(ModuleOp moduleOp) {
   const auto aerAllocQubitsType = LLVMFunctionType::get(i64Type,
                                                         {aerStateType, i64Type});
   registerFunc("aer_allocate_qubits", aerAllocQubitsType);
-  // @aer_state_initialize(...) -> i8*
-  const auto aerStateInitType = LLVMFunctionType::get(aerStateType, {}, true);
+  // @aer_state_initialize(i8*) -> i8*
+  const auto aerStateInitType = LLVMFunctionType::get(aerStateType, {aerStateType});
   registerFunc("aer_state_initialize", aerStateInitType);
   // @aer_apply_u3(i8* noundef, i64 noundef, i64 noundef, i64 noundef) -> void
   const auto aerApplyU3Type = LLVMFunctionType::get(
