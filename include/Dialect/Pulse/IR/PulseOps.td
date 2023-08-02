@@ -172,7 +172,7 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, Sequenc
     let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
-def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [NoSideEffect]> {
+def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [NoSideEffect, NoTerminator]> {
     let summary = "Creates a container for pulse waveforms.";
     let description = [{
         The `pulse.waveform_container` is a container for `pulse.create_waveform` operations. All the `pulse.create_waveform`
@@ -196,21 +196,6 @@ def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [NoSideEffect]> {
     }];
 
     let verifier = [{ return ::mlir::pulse::verify(*this); }];
-}
-
-def Pulse_TerminatorOp : Pulse_Op<"terminator", [NoSideEffect, Terminator]>{
-    let summary = "Creates a terminator operation for blocks.";
-    let description = [{
-        The `pulse.terminator` is a terminator operation for blocks used in other pulse dialect operations.
-
-        Example:
-
-        ```mlir
-        pulse.terminator
-        ```
-    }];
-
-    let assemblyFormat = [{attr-dict}];
 }
 
 def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllowed, SameVariadicOperandSize]> {

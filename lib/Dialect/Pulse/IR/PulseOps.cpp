@@ -84,16 +84,15 @@ static auto verify(WaveformContainerOp &wfrContainerOp) -> mlir::LogicalResult {
   for (Block &block : wfrContainerOp.body().getBlocks()) {
     for (Operation &op : block.getOperations()) {
       // Check that all the operations in the body of the waveform_container are
-      // of type Waveform_CreateOp or TerminatorOp
-      if (!(isa<Waveform_CreateOp>(op) or isa<TerminatorOp>(op)))
+      // of type Waveform_CreateOp
+      if (!isa<Waveform_CreateOp>(op))
         return op.emitOpError()
-               << "operations other than pulse.create_waveform and "
-                  "pulse.terminator are not allowed inside "
-                  "pulse.waveform_container.";
+               << "operations other than pulse.create_waveform are not allowed "
+                  "inside pulse.waveform_container.";
 
       // Check that Waveform_CreateOp operations has pulse.waveformName
       // attribute
-      if (isa<Waveform_CreateOp>(op) and !op.hasAttr("pulse.waveformName"))
+      if (!op.hasAttr("pulse.waveformName"))
         return op.emitOpError()
                << "`pulse.create_waveform` operations in WaveformContainerOp "
                   "must have a `pulse.waveformName` attribute.";
