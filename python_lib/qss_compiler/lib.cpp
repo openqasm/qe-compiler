@@ -136,6 +136,7 @@ PYBIND11_MODULE(py_qssc, m) {
       .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
       .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
       .value("QSSLinkerNotImplemented", qssc::ErrorCategory::QSSLinkerNotImplemented)
+      .value("QSSLinkSignatureWarning", qssc::ErrorCategory::QSSLinkSignatureWarning)
       .value("QSSLinkSignatureError", qssc::ErrorCategory::QSSLinkSignatureError)
       .value("QSSLinkAddressError", qssc::ErrorCategory::QSSLinkAddressError)
       .value("QSSLinkSignatureNotFound", qssc::ErrorCategory::QSSLinkSignatureNotFound)

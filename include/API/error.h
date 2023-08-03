@@ -38,6 +38,7 @@ enum class ErrorCategory {
   QSSCompilerNonZeroStatus,
   QSSCompilationFailure,
   QSSLinkerNotImplemented,
+  QSSLinkSignatureWarning,
   QSSLinkSignatureError,
   QSSLinkAddressError,
   QSSLinkSignatureNotFound,
