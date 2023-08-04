@@ -214,6 +214,9 @@ class LLVMConan(ConanFile):
 
         cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = 4
 
+        cmake.definitions["MLIR_ENABLE_BINDINGS_PYTHON"] = "ON"
+        cmake.definitions["Python3_EXECUTABLE"] = "/Users/joshualou/.venv/IBM/bin/python"
+
         if self.settings.build_type == "Debug":
             cmake.definitions["CMAKE_C_FLAGS"] = "-gz=zlib"
             cmake.definitions["CMAKE_CXX_FLAGS"] = "-gz=zlib"

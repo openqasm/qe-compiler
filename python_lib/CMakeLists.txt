@@ -10,8 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-include(AddMLIRPython)
-
 project(py_qssc)
 
 
@@ -53,8 +51,8 @@ add_subdirectory(qss_compiler)
 add_custom_target(copy_python_files DEPENDS ${PY_LIB_FILES})
 add_dependencies(py_qssc copy_python_files)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include/Dialect/Pulse/IR/)
-link_directories(/Users/joshualou/llvm-project/build/tools/mlir/python_packages/mlir_core/mlir/_mlir_libs)
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include/Dialect/Pulse/IR/)
+link_directories(/Users/joshualou/.conan/data/llvm/14.0.6-2/qss/stable/package/f079c987817be2301097777d034504b249437adf/python_packages/mlir_core/mlir/_mlir_libs)
 
 declare_mlir_python_sources(QSSPythonSources)
 declare_mlir_python_sources(QSSPythonSources.Dialects
