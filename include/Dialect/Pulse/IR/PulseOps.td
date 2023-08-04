@@ -184,7 +184,6 @@ def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [NoSideEffect, No
         pulse.waveform_container {
         %0 = pulse.create_waveform {pulse.waveformName = "X90"} dense<[[0.0, 0.5], [0.5, 0.5], [0.5, 0.0]]> : tensor<3x2xf64> -> !pulse.waveform
         %1 = pulse.create_waveform {pulse.waveformName = "Y90"} dense<[[0.1, 0.5], [0.7, 0.5], [0.1, 0.0]]> : tensor<3x2xf64> -> !pulse.waveform
-        pulse.terminator
         }
         ```
     }];
