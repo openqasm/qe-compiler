@@ -67,8 +67,10 @@ std::map<std::string, LLVM::LLVMFuncOp> aerFuncTable;
 // TODO: Take care of errors, nan and inf.
 using AngleTable = std::map<double, Value>;
 using QubitTable = std::map<int, Value>;
+using VarTable = std::map<std::string, LLVM::GlobalOp>;
 
 // TODO: We should map some IDs (attributes?) to values
+// Split into another file (pass)
 class ValueTable {
 public:
   static void registerAngle(double angle, Value v) {
@@ -80,12 +82,20 @@ public:
     qubitTable[qid] = v;
   }
   
+  static void registerGlobalVar(std::string name, LLVM::GlobalOp v) {
+    varTable[name] = v;
+  }
+  
   static Value lookupAngle(double angle) {
     return angleTable.at(angle);
   }
   
   static Value lookupQubit(int qid) {
     return qubitTable.at(qid);
+  }
+  
+  static LLVM::GlobalOp lookupVariable(std::string name) {
+    return varTable.at(name);
   }
   
   static QubitTable getQubits() {
@@ -100,18 +110,55 @@ public:
   static void clearQubitTable() {
     qubitTable.clear();
   }
+  
+  static void clearVarTable() {
+    varTable.clear();
+  }
 
+  // TODO
+  static std::string getMangledName(StringRef name) {
+    return "__aer__" + name.str();
+  }
+  
 private:
   static AngleTable angleTable;
   static QubitTable qubitTable;
+  static VarTable varTable;
 };
 AngleTable ValueTable::angleTable;
 QubitTable ValueTable::qubitTable;
+VarTable ValueTable::varTable;
+
+
+void buildCBitTable(ModuleOp moduleOp) {
+  ValueTable::clearVarTable();
+  OpBuilder builder(moduleOp);
+  
+  moduleOp.walk([&](oq3::DeclareVariableOp declOp) {
+    if(auto ty = declOp.type().dyn_cast<quir::CBitType>()) {
+      const std::string newName = ValueTable::getMangledName(declOp.getName());
+      const int width = ty.getWidth();
+      const auto iType = builder.getIntegerType(width);
+      builder.setInsertionPointAfter(declOp);
+      auto var = builder.create<LLVM::GlobalOp>(
+          declOp->getLoc(),
+          iType, /*isConstant=*/false,
+          LLVM::Linkage::Weak, // TODO:?
+          newName,
+          builder.getIntegerAttr(iType, 0),
+          /*alignment=*/4);
+      ValueTable::registerGlobalVar(newName, var);
+    } else {
+      llvm::errs() << "Unsupported variable declaration: ";
+      declOp.print(llvm::errs());
+      llvm::errs() << "\n";
+    }
+  });
+}
 
 void buildQubitTable(ModuleOp moduleOp, AerStateWrapper wrapper) {
   ValueTable::clearQubitTable();
   OpBuilder builder(moduleOp);
-  
   
   moduleOp.walk([&](quir::DeclareQubitOp declOp){
     const int width = declOp.getType().dyn_cast<quir::QubitType>().getWidth();
@@ -321,7 +368,10 @@ struct MeasureOpConversionPat : public OpConversionPattern<quir::MeasureOp> {
           op->getLoc(),
           aerFuncTable.at("aer_apply_measure"),
           ValueRange{state, qubitArr.getResult(), arrSizeOp});
-      rewriter.replaceOp(op, meas.getResult(0));
+      auto casted = rewriter.create<arith::TruncIOp>(
+          op->getLoc(), meas.getResult(0), rewriter.getIntegerType(1));
+      rewriter.replaceOp(op, casted.getResult());
+
       return success();
     }
     return failure();
@@ -340,7 +390,7 @@ struct AngleConversionPat : public OpConversionPattern<quir::ConstantOp> {
                                quir::ConstantOp::Adaptor adaptor,
                                ConversionPatternRewriter &rewriter) const override
   {
-    if(auto angleAttr = op.value().dyn_cast<quir::AngleAttr>()) {
+    if (auto angleAttr = op.value().dyn_cast<quir::AngleAttr>()) {
       rewriter.setInsertionPointAfter(op);
       const auto angle = angleAttr.getValue().convertToDouble();
       const auto fType = rewriter.getF64Type();
@@ -349,7 +399,49 @@ struct AngleConversionPat : public OpConversionPattern<quir::ConstantOp> {
       rewriter.replaceOp(op, {constOp});
       // TODO: We must build angle table before applying QUIRToAerPass
       ValueTable::registerAngle(angle, constOp);
+    } else if (op.value().isa<quir::DurationAttr>()) {
+      rewriter.eraseOp(op);
     }
+    return success();
+  }
+};
+
+// Note: Only bitwise assignments are supported now.
+// example: `c[0] <- measure $1;`
+struct CBitAssignConversionPat : public OpConversionPattern<oq3::CBitAssignBitOp> {
+  explicit CBitAssignConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /*benefit=*/1)
+  {}
+  
+  LogicalResult matchAndRewrite(oq3::CBitAssignBitOp op,
+                                oq3::CBitAssignBitOp::Adaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override
+  {
+    const auto name = op.variable_name();
+    const IntegerAttr index = op.indexAttr();
+    const auto mangled = ValueTable::getMangledName(name);
+    auto var = ValueTable::lookupVariable(mangled);
+    auto addr = rewriter.create<LLVM::AddressOfOp>(op->getLoc(), var);
+    auto loaded = rewriter.create<LLVM::LoadOp>(op->getLoc(), addr, /*alignment=*/4);
+    auto assigned = [&]() -> mlir::Value {
+      mlir::Value original = op.assigned_bit();
+      const int width = var.getType().dyn_cast<IntegerType>().getWidth();
+      const int assignedWidth = original.getType().dyn_cast<IntegerType>().getWidth();
+      if (width > assignedWidth) {
+        const Type destTy = rewriter.getIntegerType(width);
+        mlir::Value value = rewriter.create<arith::ExtUIOp>(
+            op->getLoc(), op.assigned_bit(), destTy);
+        auto shift = rewriter.create<LLVM::ConstantOp>(op->getLoc(), destTy, index);
+        return rewriter.create<arith::ShLIOp>(op->getLoc(), value, shift);
+      } else {
+        return original;
+      }
+    }();
+    auto result = rewriter.create<arith::OrIOp>(op->getLoc(), loaded, assigned);
+    rewriter.create<LLVM::StoreOp>(op->getLoc(), result, addr, /*alingment=*/4);
+    
+    rewriter.eraseOp(op);
+
     return success();
   }
 };
@@ -423,16 +515,21 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
   patterns.add<RemoveQCSShotInitConversionPat,
+               CBitAssignConversionPat,
                RemoveConversionPat<quir::DeclareQubitOp>,
-               RemoveConversionPat<oq3::DeclareVariableOp>,
                RemoveConversionPat<oq3::CastOp>,
+               RemoveConversionPat<oq3::DeclareVariableOp>,
                RemoveConversionPat<oq3::VariableAssignOp>,
-               RemoveConversionPat<oq3::CBitAssignBitOp>,
+               RemoveConversionPat<quir::DelayOp>,
+               RemoveConversionPat<quir::BarrierOp>,
+               RemoveConversionPat<quir::CallGateOp>, // TODO
+               RemoveConversionPat<quir::ResetQubitOp>, // TODO?
                AngleConversionPat>(
       context, typeConverter);
   
   // Aer initialization
   declareAerFunctions(moduleOp);
+  buildCBitTable(moduleOp);
   auto aerState = [&]() -> AerStateWrapper {
     auto mainFunc = mlir::quir::getMainFunction(moduleOp);
     OpBuilder builder(mainFunc);
