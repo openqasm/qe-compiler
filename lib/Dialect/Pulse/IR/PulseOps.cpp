@@ -75,6 +75,39 @@ static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
+// waveform_container
+//===----------------------------------------------------------------------===//
+
+/// Verifier for pulse.waveform_container operation.
+static auto verify(WaveformContainerOp &wfrContainerOp) -> mlir::LogicalResult {
+
+  for (Block &block : wfrContainerOp.body().getBlocks()) {
+    for (Operation &op : block.getOperations()) {
+      // Check that all the operations in the body of the waveform_container are
+      // of type Waveform_CreateOp
+      if (!isa<Waveform_CreateOp>(op))
+        return op.emitOpError()
+               << "operations other than pulse.create_waveform are not allowed "
+                  "inside pulse.waveform_container.";
+
+      // Check that Waveform_CreateOp operations has pulse.waveformName
+      // attribute
+      if (!op.hasAttr("pulse.waveformName"))
+        return op.emitOpError()
+               << "`pulse.create_waveform` operations in WaveformContainerOp "
+                  "must have a `pulse.waveformName` attribute.";
+    }
+  }
+  return mlir::success();
+}
+
+//===----------------------------------------------------------------------===//
+//
+// end waveform_container
+//
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
 // CallSequenceOp
 //===----------------------------------------------------------------------===//
 

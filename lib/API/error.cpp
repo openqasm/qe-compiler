@@ -53,6 +53,9 @@ static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   case ErrorCategory::QSSLinkerNotImplemented:
     return "BindArguments not implemented for target";
 
+  case ErrorCategory::QSSLinkSignatureWarning:
+    return "Signature file format is invalid but may be processed";
+
   case ErrorCategory::QSSLinkSignatureError:
     return "Signature file format is invalid";
 
