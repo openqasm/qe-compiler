@@ -30,3 +30,5 @@ qssc_add_plugin(QSSCPayloadZip QSSC_PAYLOAD_PLUGIN
         PLUGIN_REGISTRATION_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/Payload.inc
         )
+
+add_dependencies(QSSCPayloadZip mlir-headers)
