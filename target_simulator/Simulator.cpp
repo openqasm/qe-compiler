@@ -161,6 +161,7 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   mlir::registerLLVMDialectTranslation(*context);
   
   mlir::PassManager pm(context);
+  pm.addPass(std::make_unique<quir::VariableEliminationPass>(false));
   pm.addPass(std::make_unique<conversion::QUIRToAERPass>(false));
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createLowerToLLVMPass());

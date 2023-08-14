@@ -42,6 +42,7 @@ AerTypeConverter::AerTypeConverter() {
   addSourceMaterialization(qubitSourceMaterialization);
   addSourceMaterialization(cBitSourceMaterialization);
   addSourceMaterialization(angleSourceMaterialization);
+  addSourceMaterialization(durationSourceMaterialization);
 
   addConversion(convertCBitType);
   addConversion(legalizeIndexType);
@@ -83,6 +84,7 @@ Optional<Value> AerTypeConverter::qubitSourceMaterialization(
     return llvm::None;
 }
 
+// TODO
 Optional<Value> AerTypeConverter::cBitSourceMaterialization(
     OpBuilder &builder, quir::CBitType qType, ValueRange values,
     Location loc) {
@@ -101,4 +103,14 @@ Optional<Value> AerTypeConverter::angleSourceMaterialization(
   } // for val : valRange
   return llvm::None;
 } // angleSourceMaterialization
+
+// TODO
+Optional<Value> AerTypeConverter::durationSourceMaterialization(
+    OpBuilder &builder, quir::DurationType dType, ValueRange valRange,
+    Location loc) {
+  for (Value val : valRange) {
+    return val;
+  }
+  return llvm::None;
+}
 } // namespace mlir

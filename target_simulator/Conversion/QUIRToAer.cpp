@@ -406,44 +406,28 @@ struct AngleConversionPat : public OpConversionPattern<quir::ConstantOp> {
   }
 };
 
-// Note: Only bitwise assignments are supported now.
-// example: `c[0] <- measure $1;`
-struct CBitAssignConversionPat : public OpConversionPattern<oq3::CBitAssignBitOp> {
-  explicit CBitAssignConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+struct OQ3CastConversionPat : public OpConversionPattern<oq3::CastOp> {
+  explicit OQ3CastConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
     : OpConversionPattern(typeConverter, ctx, /*benefit=*/1)
   {}
   
-  LogicalResult matchAndRewrite(oq3::CBitAssignBitOp op,
-                                oq3::CBitAssignBitOp::Adaptor adaptor,
-                                ConversionPatternRewriter &rewriter) const override
+  LogicalResult matchAndRewrite(oq3::CastOp op, oq3::CastOp::Adaptor adaptor,
+      ConversionPatternRewriter &rewriter) const override
   {
-    const auto name = op.variable_name();
-    const IntegerAttr index = op.indexAttr();
-    const auto mangled = ValueTable::getMangledName(name);
-    auto var = ValueTable::lookupVariable(mangled);
-    auto addr = rewriter.create<LLVM::AddressOfOp>(op->getLoc(), var);
-    auto loaded = rewriter.create<LLVM::LoadOp>(op->getLoc(), addr, /*alignment=*/4);
-    auto assigned = [&]() -> mlir::Value {
-      mlir::Value original = op.assigned_bit();
-      const int width = var.getType().dyn_cast<IntegerType>().getWidth();
-      const int assignedWidth = original.getType().dyn_cast<IntegerType>().getWidth();
-      if (width > assignedWidth) {
-        const Type destTy = rewriter.getIntegerType(width);
-        mlir::Value value = rewriter.create<arith::ExtUIOp>(
-            op->getLoc(), op.assigned_bit(), destTy);
-        auto shift = rewriter.create<LLVM::ConstantOp>(op->getLoc(), destTy, index);
-        return rewriter.create<arith::ShLIOp>(op->getLoc(), value, shift);
-      } else {
-        return original;
-      }
-    }();
-    auto result = rewriter.create<arith::OrIOp>(op->getLoc(), loaded, assigned);
-    rewriter.create<LLVM::StoreOp>(op->getLoc(), result, addr, /*alingment=*/4);
+    // TODO: Support other types
+    auto argTy = op.arg().getType().dyn_cast<IntegerType>();
+    auto retTy = op.out().getType().dyn_cast<IntegerType>();
+    if (argTy.getWidth() <= retTy.getWidth()) {
+      auto cast = rewriter.create<arith::ExtSIOp>(op->getLoc(), op.arg(), retTy);
+      rewriter.replaceOp(op, cast.getResult());
+    } else {
+      auto cast = rewriter.create<arith::TruncIOp>(op->getLoc(), op.arg(), retTy);
+      rewriter.replaceOp(op, cast.getResult());
+    }
     
-    rewriter.eraseOp(op);
-
     return success();
   }
+
 };
 
 template <typename Op>
@@ -471,6 +455,8 @@ struct FunctionConversionPat : public OpConversionPattern<mlir::FuncOp> {
   LogicalResult matchAndRewrite(mlir::FuncOp funcOp, mlir::FuncOp::Adaptor adaptor,
       ConversionPatternRewriter &rewriter) const override {
     // Assume: funcOp != mainFunc
+    if(funcOp.getName() == "main") return success();
+    
     rewriter.eraseOp(funcOp);
     return success();
   }
@@ -515,15 +501,12 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
   patterns.add<RemoveQCSShotInitConversionPat,
-               CBitAssignConversionPat,
+               OQ3CastConversionPat,
                RemoveConversionPat<quir::DeclareQubitOp>,
                RemoveConversionPat<oq3::CastOp>,
-               RemoveConversionPat<oq3::DeclareVariableOp>,
-               RemoveConversionPat<oq3::VariableAssignOp>,
                RemoveConversionPat<quir::DelayOp>,
                RemoveConversionPat<quir::BarrierOp>,
                RemoveConversionPat<quir::CallGateOp>, // TODO
-               RemoveConversionPat<quir::ResetQubitOp>, // TODO?
                AngleConversionPat>(
       context, typeConverter);
   
@@ -572,11 +555,11 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
 } // QUIRToStdPass::runOnOperation()
 
 llvm::StringRef QUIRToAERPass::getArgument() const {
-  return "simulator-oq3-to-aer";
+  return "simulator-quir-to-aer";
 }
 
 llvm::StringRef QUIRToAERPass::getDescription() const {
-  return "Convert OQ3 ops to aer";
+  return "Convert QUIR ops to aer";
 }
 
 void QUIRToAERPass::declareAerFunctions(ModuleOp moduleOp) {

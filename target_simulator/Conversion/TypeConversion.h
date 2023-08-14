@@ -45,6 +45,9 @@ struct AerTypeConverter : public TypeConverter {
   static Optional<Value> angleSourceMaterialization(
       OpBuilder &builder, quir::AngleType aType,
       ValueRange valRange, Location loc);
+  static Optional<Value> durationSourceMaterialization(
+      OpBuilder &builder, quir::DurationType dType,
+      ValueRange valRange, Location loc);
 
 }; // struct AerTypeConverter
 
