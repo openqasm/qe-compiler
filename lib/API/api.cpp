@@ -136,6 +136,10 @@ static llvm::cl::opt<enum Action> emitAction(
                                 "generate a quantum executable module (qem) "
                                 "for execution on hardware")));
 
+static llvm::cl::opt<bool>
+    emitTargetQem("emit-target-qem", llvm::cl::desc("Emit target-specific qem"),
+                  llvm::cl::cat(qssc::config::getQSSCCategory()));
+
 namespace qss {
 enum FileExtension { None, AST, ASTPRETTY, QASM, QOBJ, MLIR, WMEM, QEM };
 } // namespace qss
@@ -542,11 +546,18 @@ compile_(int argc, char const **argv, std::string *outputString,
       payload = std::move(
           payloadInfo.getValue()->createPluginInstance(llvm::None).get());
     } else {
+      const auto targetName = config.targetName.value_or("");
+      const auto pluginName =
+          (emitTargetQem &&
+           qssc::payload::registry::PayloadRegistry::pluginExists(targetName))
+              ? targetName
+              : "ZIP";
       const std::filesystem::path payloadPath(outputFilename.c_str());
       const std::string fNamePrefix = payloadPath.stem();
       const qssc::payload::PayloadConfig config{fNamePrefix, fNamePrefix};
       auto payloadInfo =
-          qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
+          qssc::payload::registry::PayloadRegistry::lookupPluginInfo(
+              pluginName);
       payload =
           std::move(payloadInfo.getValue()->createPluginInstance(config).get());
     }
