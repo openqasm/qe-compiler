@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from importlib import resources as importlib_resources
 from os import environ as os_environ
 from typing import Mapping, Any, Optional, Callable
+import warnings
 
 from .py_qssc import _link_file, Diagnostic, ErrorCategory
 from .compile import _stringify_path
@@ -113,6 +114,7 @@ def link_file(
 
             exception_mapping = {
                 ErrorCategory.QSSLinkerNotImplemented: exceptions.QSSLinkerNotImplemented,
+                ErrorCategory.QSSLinkSignatureWarning: exceptions.QSSLinkSignatureWarning,
                 ErrorCategory.QSSLinkSignatureError: exceptions.QSSLinkSignatureError,
                 ErrorCategory.QSSLinkAddressError: exceptions.QSSLinkAddressError,
                 ErrorCategory.QSSLinkSignatureNotFound: exceptions.QSSLinkSignatureNotFound,
@@ -125,4 +127,15 @@ def link_file(
             elif diagnostics[0].category in exception_mapping.keys():
                 raise exception_mapping[diagnostics[0].category](diagnostics[0].message, diagnostics)
             raise exceptions.QSSLinkingFailure("Unknown linking failure", diagnostics)
+        else:
+            warning_mapping = {
+                ErrorCategory.QSSLinkSignatureWarning: exceptions.QSSLinkSignatureWarning,
+                ErrorCategory.QSSLinkArgumentNotFoundWarning: exceptions.QSSLinkArgumentNotFoundWarning,
+            }
+            if diagnostics == [] or not isinstance(diagnostics[0], Diagnostic):
+                pass
+            else:
+                for diagnostic in diagnostics:
+                    if diagnostic.category in warning_mapping.keys():
+                        warnings.warn(diagnostic.message, warning_mapping[diagnostic.category])
 
