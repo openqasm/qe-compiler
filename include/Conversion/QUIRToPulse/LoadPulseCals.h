@@ -89,9 +89,19 @@ struct LoadPulseCalsPass
   mlir::pulse::SequenceOp
   mergePulseSequenceOps(std::vector<mlir::pulse::SequenceOp> &sequenceOps,
                         const std::string &mergedSequenceOpName);
+  // remove the redundant delay args after merging multiple delayOp pulse cals
+  void removeRedundantDelayArgs(mlir::pulse::SequenceOp sequenceOp,
+                                mlir::OpBuilder &builder);
+  // returns true if all the sequence ops in the input vector has the same
+  // duration
+  bool areAllSequenceOpsHasSameDuration(
+      std::vector<mlir::pulse::SequenceOp> &sequenceOps);
+  // returns true if all the sequence ops in the input vector has attrName
+  // attribute and if yes, merges the attributes
   bool mergeAttributes(std::vector<mlir::pulse::SequenceOp> &sequenceOps,
                        const std::string &attrName,
                        std::vector<mlir::Attribute> &attrVector);
+
   std::string getMangledName(std::string &gateName, std::set<uint32_t> &qubits);
   std::string getMangledName(std::string &gateName, uint32_t qubit);
   std::set<uint32_t> getQubitOperands(const std::vector<Value> &qubitOperands,

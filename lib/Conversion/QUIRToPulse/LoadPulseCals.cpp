@@ -52,8 +52,6 @@ void LoadPulseCalsPass::runOnOperation() {
 
   moduleOp->walk(
       [&](CallCircuitOp callCircOp) { loadPulseCals(callCircOp, mainFunc); });
-
-  // TODO: add pulseWaveformList ops to the module
 }
 
 void LoadPulseCalsPass::loadPulseCals(CallCircuitOp callCircuitOp,
@@ -248,7 +246,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
     }
     SequenceOp mergedPulseSequenceOp =
         mergePulseSequenceOps(sequenceOps, gateMangledName);
-
+    removeRedundantDelayArgs(mergedPulseSequenceOp, builder);
     addPulseCalToModule(funcOp, mergedPulseSequenceOp);
   }
 }
@@ -342,30 +340,6 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
   mergedSequenceOp->setAttr(
       SymbolTable::getSymbolAttrName(),
       StringAttr::get(firstSequenceOp->getContext(), mergedSequenceOpName));
-  // remove pulse duration attribute if exists
-  if (mergedSequenceOp->hasAttr("pulse.duration"))
-    mergedSequenceOp->removeAttr("pulse.duration");
-
-  // check if ALL the sequence ops has args/argPorts attr, and if yes,
-  // merge the attributes and add them to the merged sequence op
-  std::vector<mlir::Attribute> pulseSequenceOpArgs;
-  std::vector<mlir::Attribute> pulseSequenceOpArgPorts;
-  bool allSequenceOpsHasArgsAttr =
-      mergeAttributes(sequenceOps, "pulse.args", pulseSequenceOpArgs);
-  bool allSequenceOpsHasArgPortsAttr =
-      mergeAttributes(sequenceOps, "pulse.argPorts", pulseSequenceOpArgPorts);
-
-  if (allSequenceOpsHasArgsAttr) {
-    mlir::ArrayAttr arrayAttr = builder.getArrayAttr(pulseSequenceOpArgs);
-    mergedSequenceOp->setAttr("pulse.args", arrayAttr);
-  } else if (mergedSequenceOp->hasAttr("pulse.args"))
-    mergedSequenceOp->removeAttr("pulse.args");
-
-  if (allSequenceOpsHasArgPortsAttr) {
-    mlir::ArrayAttr arrayAttr = builder.getArrayAttr(pulseSequenceOpArgPorts);
-    mergedSequenceOp->setAttr("pulse.argPorts", arrayAttr);
-  } else if (mergedSequenceOp->hasAttr("pulse.argPorts"))
-    mergedSequenceOp->removeAttr("pulse.argPorts");
 
   // map original arguments for new sequence based on original sequences'
   // argument numbers
@@ -409,7 +383,117 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
       /*inputs=*/opType.getInputs(),
       /*results=*/ArrayRef<Type>(outputTypes)));
 
+  // check if ALL the sequence ops has the same pulse.duration, and if no,
+  // remove the pulse.duration from the merged sequence op if there exists any;
+  // the pulse.duration of the merged sequence op needs to be re-calculated in
+  // this case.
+  // If yes, no further action is required because the duration is already
+  // cloned when we clone the first sequence
+  bool allSequenceOpsHasSameDuration =
+      areAllSequenceOpsHasSameDuration(sequenceOps);
+  if (!allSequenceOpsHasSameDuration and
+      mergedSequenceOp->hasAttr("pulse.duration"))
+    mergedSequenceOp->removeAttr("pulse.duration");
+
+  // check if ALL the sequence ops has args/argPorts attr, and if yes,
+  // merge the attributes and add them to the merged sequence op
+  std::vector<mlir::Attribute> pulseSequenceOpArgs;
+  std::vector<mlir::Attribute> pulseSequenceOpArgPorts;
+  bool allSequenceOpsHasArgsAttr =
+      mergeAttributes(sequenceOps, "pulse.args", pulseSequenceOpArgs);
+  bool allSequenceOpsHasArgPortsAttr =
+      mergeAttributes(sequenceOps, "pulse.argPorts", pulseSequenceOpArgPorts);
+
+  if (allSequenceOpsHasArgsAttr) {
+    mlir::ArrayAttr arrayAttr = builder.getArrayAttr(pulseSequenceOpArgs);
+    mergedSequenceOp->setAttr("pulse.args", arrayAttr);
+  } else if (mergedSequenceOp->hasAttr("pulse.args"))
+    mergedSequenceOp->removeAttr("pulse.args");
+
+  if (allSequenceOpsHasArgPortsAttr) {
+    mlir::ArrayAttr arrayAttr = builder.getArrayAttr(pulseSequenceOpArgPorts);
+    mergedSequenceOp->setAttr("pulse.argPorts", arrayAttr);
+  } else if (mergedSequenceOp->hasAttr("pulse.argPorts"))
+    mergedSequenceOp->removeAttr("pulse.argPorts");
+
   return mergedSequenceOp;
+}
+
+void LoadPulseCalsPass::removeRedundantDelayArgs(
+    mlir::pulse::SequenceOp sequenceOp, mlir::OpBuilder &builder) {
+
+  // find the first delay arg with integer type, and following redundant delay
+  // args
+  bool delayArgEncountered = false;
+  BlockArgument delayArg;
+  std::vector<std::tuple<BlockArgument, uint>> redundantArgsToRemove;
+  for (uint argIndex = 0; argIndex < sequenceOp.getNumArguments(); argIndex++) {
+    BlockArgument arg = sequenceOp.getArgument(argIndex);
+    if (arg.getType().isa<IntegerType>()) {
+      if (delayArgEncountered)
+        redundantArgsToRemove.push_back(std::make_tuple(arg, argIndex));
+      else {
+        delayArgEncountered = true;
+        delayArg = arg;
+      }
+    }
+  }
+  assert(delayArgEncountered && "no delay arg with integer type exists");
+
+  // need to update pulse.args and pulse.argPorts if it exists
+  std::vector<mlir::Attribute> argAttrVec;
+  std::vector<mlir::Attribute> argPortsAttrVec;
+  bool sequenceOpHasPulseArgs =
+      sequenceOp->hasAttrOfType<ArrayAttr>("pulse.args");
+  bool sequenceOpHasPulseArgPorts =
+      sequenceOp->hasAttrOfType<ArrayAttr>("pulse.argPorts");
+  if (sequenceOpHasPulseArgs)
+    for (auto attr : sequenceOp->getAttrOfType<ArrayAttr>("pulse.args"))
+      argAttrVec.push_back(attr);
+  if (sequenceOpHasPulseArgPorts)
+    for (auto attr : sequenceOp->getAttrOfType<ArrayAttr>("pulse.argPorts"))
+      argPortsAttrVec.push_back(attr);
+
+  for (auto [arg, argIndex] : redundantArgsToRemove) {
+    // replace the uses of the redundant args and delete them
+    arg.replaceAllUsesWith(delayArg);
+    sequenceOp.eraseArgument(argIndex);
+    // update the pulse.args and pulse.argPorts vectors
+    if (sequenceOpHasPulseArgs)
+      argAttrVec.erase(argAttrVec.begin() + argIndex);
+    if (sequenceOpHasPulseArgPorts)
+      argPortsAttrVec.erase(argPortsAttrVec.begin() + argIndex);
+  }
+
+  if (!argPortsAttrVec.empty())
+    sequenceOp->setAttr("pulse.argPorts",
+                        builder.getArrayAttr(argPortsAttrVec));
+
+  if (!argAttrVec.empty())
+    sequenceOp->setAttr("pulse.args", builder.getArrayAttr(argAttrVec));
+}
+
+bool LoadPulseCalsPass::areAllSequenceOpsHasSameDuration(
+    std::vector<mlir::pulse::SequenceOp> &sequenceOps) {
+  bool prevSequenceEncountered = false;
+  uint prevSequencePulseDuration = 0;
+  for (auto &sequenceOp : sequenceOps) {
+    if (!sequenceOp->hasAttrOfType<IntegerAttr>("pulse.duration"))
+      return false;
+    else {
+      uint sequenceDuration =
+          sequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getUInt();
+      if (prevSequenceEncountered and
+          sequenceDuration != prevSequencePulseDuration)
+        return false;
+      else {
+        prevSequenceEncountered = true;
+        prevSequencePulseDuration = sequenceDuration;
+      }
+    }
+  }
+
+  return true;
 }
 
 bool LoadPulseCalsPass::mergeAttributes(
