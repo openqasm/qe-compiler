@@ -51,15 +51,15 @@
 //  https://pybind11.readthedocs.io/en/stable/
 //===----------------------------------------------------------------------===//
 
-//#include "API/api.h"
+#include "API/api.h"
 
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 
-// #include "llvm/ADT/Optional.h"
-// #include <llvm/Support/Error.h>
+#include "llvm/ADT/Optional.h"
+#include <llvm/Support/Error.h>
 
 #include <iostream>
 #include <string>
@@ -68,120 +68,109 @@
 
 /// Call into the qss-compiler via an interface to qss-compile's command line
 /// argument.
-// pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
-//                                    bool outputAsStr,
-//                                    qssc::DiagnosticCallback onDiagnostic) {
-//   std::string outputStr("");
+pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
+                                   bool outputAsStr,
+                                   qssc::DiagnosticCallback onDiagnostic) {
+  std::string outputStr("");
 
-// #ifndef NDEBUG
-//   std::cout << "params passed from python to C++:\n";
-//   for (auto &str : args)
-//     std::cout << str << std::endl;
-// #endif
+#ifndef NDEBUG
+  std::cout << "params passed from python to C++:\n";
+  for (auto &str : args)
+    std::cout << str << std::endl;
+#endif
 
-//   // TODO: need a C++ interface into the compiler with fewer detours. the python
-//   // api (inspired by IREE's python bindings) can be a start.
-//   std::vector<char const *> argv;
-//   argv.reserve(args.size() + 1);
-//   for (auto &str : args)
-//     argv.push_back(str.c_str());
-//   argv.push_back(nullptr);
+  // TODO: need a C++ interface into the compiler with fewer detours. the python
+  // api (inspired by IREE's python bindings) can be a start.
+  std::vector<char const *> argv;
+  argv.reserve(args.size() + 1);
+  for (auto &str : args)
+    argv.push_back(str.c_str());
+  argv.push_back(nullptr);
 
-//   int status = qssc::compile(args.size(), argv.data(),
-//                              outputAsStr ? &outputStr : nullptr,
-//                              std::move(onDiagnostic));
-//   bool success = 0;//status == 0;
+  int status = qssc::compile(args.size(), argv.data(),
+                             outputAsStr ? &outputStr : nullptr,
+                             std::move(onDiagnostic));
+  bool success = status == 0;
 
-// #ifndef NDEBUG
-//   std::cerr << "Compile " << (success ? "successful" : "failed") << std::endl;
-// #endif
+#ifndef NDEBUG
+  std::cerr << "Compile " << (success ? "successful" : "failed") << std::endl;
+#endif
 
-//   return pybind11::make_tuple(success, pybind11::bytes(outputStr));
-// }
+  return pybind11::make_tuple(success, pybind11::bytes(outputStr));
+}
 
-// pybind11::tuple
-// py_link_file(const std::string &inputPath, const std::string &outputPath,
-//              const std::string &target,
-//              const std::unordered_map<std::string, double> &parameters) {
+bool
+py_link_file(const std::string &inputPath, const std::string &outputPath,
+             const std::string &target, const std::string &configPath,
+             const std::unordered_map<std::string, double> &arguments,
+             bool treatWarningsAsErrors,
+             qssc::DiagnosticCallback onDiagnostic) {
 
-// #ifndef NDEBUG
-//   std::cout << "input " << inputPath << "\n";
-//   std::cout << "output " << outputPath << "\n";
+  int status = qssc::bindArguments(target, configPath, inputPath, outputPath, arguments,
+                                   treatWarningsAsErrors,
+                                   std::move(onDiagnostic));
 
-//   std::cout << "parameters (as seen from C++): \n";
-
-//   for (auto &item : parameters)
-//     std::cout << item.first << " = " << item.second << "\n";
-// #endif
-
-//   auto successOrErr =
-//       qssc::bindParameters(target, inputPath, outputPath, parameters);
-
-//   if (successOrErr) {
-//     std::string errorMsg;
-//     llvm::raw_string_ostream errorMsgStream(errorMsg);
-//     llvm::logAllUnhandledErrors(std::move(successOrErr), errorMsgStream,
-//                                 "Error: ");
-
-//     return pybind11::make_tuple(false, errorMsg);
-//   }
-//   return pybind11::make_tuple(true, pybind11::none());
-// }
+  bool success = status == 0;
+#ifndef NDEBUG
+  std::cerr << "Link " << (success ? "successful" : "failed") << std::endl;
+#endif
+  return success;
+}
 
 
 PYBIND11_MODULE(py_qssc, m) {
   m.doc() = "Python bindings for the QSS Compiler.";
 
-//   // m.def("_compile_with_args", &py_compile_by_args,
-//   //       "Call compiler via cli qss-compile");
-//   // m.def("_link_file", &py_link_file, "Call the linker tool");
+  m.def("_compile_with_args", &py_compile_by_args,
+        "Call compiler via cli qss-compile");
+  m.def("_link_file", &py_link_file, "Call the linker tool");
 
-//   pybind11::enum_<qssc::ErrorCategory>(m, "ErrorCategory",
-//                                        pybind11::arithmetic())
-//       .value("OpenQASM3ParseFailure",
-//              qssc::ErrorCategory::OpenQASM3ParseFailure)
-//       .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
-//       .value("QSSCompilerNoInputError", qssc::ErrorCategory::QSSCompilerNoInputError)
-//       .value("QSSCompilerCommunicationFailure", qssc::ErrorCategory::QSSCompilerCommunicationFailure)
-//       .value("QSSCompilerEOFFailure", qssc::ErrorCategory::QSSCompilerEOFFailure)
-//       .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
-//       .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
-//       .value("QSSLinkerNotImplemented", qssc::ErrorCategory::QSSLinkerNotImplemented)
-//       .value("QSSLinkSignatureWarning", qssc::ErrorCategory::QSSLinkSignatureWarning)
-//       .value("QSSLinkSignatureError", qssc::ErrorCategory::QSSLinkSignatureError)
-//       .value("QSSLinkAddressError", qssc::ErrorCategory::QSSLinkAddressError)
-//       .value("QSSLinkSignatureNotFound", qssc::ErrorCategory::QSSLinkSignatureNotFound)
-//       .value("QSSLinkArgumentNotFoundWarning", qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
-//       .value("QSSLinkInvalidPatchTypeError", qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
-//       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
-//       .export_values();
+  pybind11::enum_<qssc::ErrorCategory>(m, "ErrorCategory",
+                                       pybind11::arithmetic())
+      .value("OpenQASM3ParseFailure",
+             qssc::ErrorCategory::OpenQASM3ParseFailure)
+      .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
+      .value("QSSCompilerNoInputError", qssc::ErrorCategory::QSSCompilerNoInputError)
+      .value("QSSCompilerCommunicationFailure", qssc::ErrorCategory::QSSCompilerCommunicationFailure)
+      .value("QSSCompilerEOFFailure", qssc::ErrorCategory::QSSCompilerEOFFailure)
+      .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
+      .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
+      .value("QSSLinkerNotImplemented", qssc::ErrorCategory::QSSLinkerNotImplemented)
+      .value("QSSLinkSignatureWarning", qssc::ErrorCategory::QSSLinkSignatureWarning)
+      .value("QSSLinkSignatureError", qssc::ErrorCategory::QSSLinkSignatureError)
+      .value("QSSLinkAddressError", qssc::ErrorCategory::QSSLinkAddressError)
+      .value("QSSLinkSignatureNotFound", qssc::ErrorCategory::QSSLinkSignatureNotFound)
+      .value("QSSLinkArgumentNotFoundWarning", qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
+      .value("QSSLinkInvalidPatchTypeError", qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
+      .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
+      .export_values();
 
-  // pybind11::enum_<qssc::Severity>(m, "Severity")
-  //     .value("Info", qssc::Severity::Info)
-  //     .value("Warning", qssc::Severity::Warning)
-  //     .value("Error", qssc::Severity::Error)
-  //     .value("Fatal", qssc::Severity::Fatal)
-  //     .export_values();
+  pybind11::enum_<qssc::Severity>(m, "Severity")
+      .value("Info", qssc::Severity::Info)
+      .value("Warning", qssc::Severity::Warning)
+      .value("Error", qssc::Severity::Error)
+      .value("Fatal", qssc::Severity::Fatal)
+      .export_values();
 
-  // pybind11::class_<qssc::Diagnostic>(m, "Diagnostic")
-  //     .def_readonly("severity", &qssc::Diagnostic::severity)
-  //     .def_readonly("category", &qssc::Diagnostic::category)
-  //     .def_readonly("message", &qssc::Diagnostic::message)
-  //     .def("__str__", &qssc::Diagnostic::toString)
-  //     .def(pybind11::pickle(
-  //         [](const qssc::Diagnostic &d) {
-  //           // __getstate__ serializes the C++ object into a tuple
-  //           return pybind11::make_tuple(d.severity, d.category, d.message);
-  //         },
-  //         [](pybind11::tuple const &t) {
-  //           // __setstate__ restores the C++ object from a tuple
-  //           if (t.size() != 3)
-  //             throw std::runtime_error("invalid state for unpickling");
+  pybind11::class_<qssc::Diagnostic>(m, "Diagnostic")
+      .def_readonly("severity", &qssc::Diagnostic::severity)
+      .def_readonly("category", &qssc::Diagnostic::category)
+      .def_readonly("message", &qssc::Diagnostic::message)
+      .def("__str__", &qssc::Diagnostic::toString)
+      .def(pybind11::pickle(
+          [](const qssc::Diagnostic &d) {
+            // __getstate__ serializes the C++ object into a tuple
+            return pybind11::make_tuple(d.severity, d.category, d.message);
+          },
+          [](pybind11::tuple const &t) {
+            // __setstate__ restores the C++ object from a tuple
+            if (t.size() != 3)
+              throw std::runtime_error("invalid state for unpickling");
 
-  //           auto severity = t[0].cast<qssc::Severity>();
-  //           auto category = t[1].cast<qssc::ErrorCategory>();
-  //           auto message = t[2].cast<std::string>();
+            auto severity = t[0].cast<qssc::Severity>();
+            auto category = t[1].cast<qssc::ErrorCategory>();
+            auto message = t[2].cast<std::string>();
 
-  //           return qssc::Diagnostic(severity, category, std::move(message));
-  //         }));
+            return qssc::Diagnostic(severity, category, std::move(message));
+          }));
 }

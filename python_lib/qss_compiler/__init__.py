@@ -12,26 +12,29 @@
 from ._version import version as __version__  # noqa: F401
 from .py_qssc import __doc__  # noqa: F401
 
-# from .compile import (  # noqa: F401
-#     compile_file,
-#     compile_file_async,
-#     compile_str,
-#     compile_str_async,
-#     InputType,
-#     OutputType,
-#     CompileOptions,
-#     QSSCompilationFailure,
-#     QSSCompilerError,
-# )
+from .compile import (  # noqa: F401
+    compile_file,
+    compile_file_async,
+    compile_str,
+    compile_str_async,
+    InputType,
+    OutputType,
+    CompileOptions,
+)
 
-# from .py_qssc import (  # noqa: F401
-#     Diagnostic,
-#     ErrorCategory,
-#     Severity,
-# )
+from .py_qssc import (  # noqa: F401
+    Diagnostic,
+    ErrorCategory,
+    Severity,
+)
 
-# from .link import (  # noqa: F401
-#     link_file,
-#     LinkOptions,
-#     QSSLinkingFailure,
-# )
+from .link import (  # noqa: F401
+    link_file,
+    LinkOptions,
+)
+
+from .exceptions import (   # noqa: F401
+    QSSCompilationFailure,
+    QSSCompilerError,
+    QSSLinkingFailure,
+)

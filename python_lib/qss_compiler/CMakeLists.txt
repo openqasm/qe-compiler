@@ -16,7 +16,7 @@ set(SOURCES
 
 pybind11_add_module(py_qssc SHARED ${SOURCES})
 
-#target_link_libraries(py_qssc PRIVATE QSSCLib)
+target_link_libraries(py_qssc PRIVATE QSSCLib)
 
 # collect python package files from this directory
 # into a variable PY_QSSC_FILES

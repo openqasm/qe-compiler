@@ -13,9 +13,9 @@
 # In[1]:
 
 
-from mlir.ir import Context, InsertionPoint, Location, Module
-from mlir.ir import F64Type, IntegerType, IndexType
-from mlir.dialects import arith, builtin, std, scf
+from qss_compiler.mlir.ir import Context, InsertionPoint, Location, Module
+from qss_compiler.mlir.ir import F64Type, IntegerType, IndexType
+from qss_compiler.mlir.dialects import arith, builtin, std, scf
 
 
 # In[2]:
