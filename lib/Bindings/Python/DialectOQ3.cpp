@@ -1,4 +1,4 @@
-//===- DialectPulse.cpp -  -------------------===//
+//===- DialectOQ3.cpp -  -------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "oq3.h"
+#include "qss-c/Dialect/OQ3.h"
 
 #include "mlir-c/IR.h"
 #include "mlir/Bindings/Python/PybindAdaptors.h"

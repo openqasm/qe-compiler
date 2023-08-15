@@ -1,7 +1,7 @@
 try:
     from mlir.ir import *
     from .QCS import *
-    from ._mlir_libs._ibmDialectsQCS import *
+    from .._mlir_libs._ibmDialectsQCS import *
     from mlir.dialects._ods_common import get_default_loc_context as _get_default_loc_context
 
     from typing import Any, List, Optional, Union

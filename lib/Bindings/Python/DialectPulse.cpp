@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "pulse.h"
+#include "qss-c/Dialect/Pulse.h"
 
 #include "mlir-c/IR.h"
 #include "mlir/Bindings/Python/PybindAdaptors.h"

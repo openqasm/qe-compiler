@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "qcs.h"
+#include "qss-c/Dialect/QCS.h"
 
 #include "mlir-c/IR.h"
 #include "mlir/Bindings/Python/PybindAdaptors.h"

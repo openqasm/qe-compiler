@@ -5,7 +5,7 @@ try:
     from .pulse import *
     from .quir import AngleType, ConstantOp as QUIRConstantOp
     from .complex import CreateOp as ComplexCreateOp
-    from ._mlir_libs._ibmDialectsPulse import *
+    from .._mlir_libs._ibmDialectsPulse import *
     from mlir.dialects._ods_common import get_default_loc_context as _get_default_loc_context
 except ImportError as e:
     raise RuntimeError("Error loading imports from extension module") from e
@@ -77,6 +77,6 @@ class SequenceOp:
         return self.entry_block.arguments
 
 
-class Waveform_CreateOp:
-    def __init__(self, wf, samples_2d, *, loc=None, ip=None):
-        super().__init__(wf, DenseElementsAttr.get(samples_2d), loc=loc, ip=ip)
+# class Waveform_CreateOp:
+#     def __init__(self, wf, samples_2d, *, loc=None, ip=None):
+#         super().__init__(wf, DenseElementsAttr.get(samples_2d), loc=loc, ip=ip)

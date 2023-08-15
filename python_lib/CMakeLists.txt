@@ -61,60 +61,62 @@ declare_mlir_python_sources(QSSPythonSources.Dialects
 
 declare_mlir_dialect_python_bindings(
   ADD_TO_PARENT QSSPythonSources.Dialects
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir/dialects"
-  TD_FILE QUIR.td
+  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir"
+  TD_FILE dialects/QUIR.td
   SOURCES
-    quir.py
-    quir.pyi
-    _quir_ops_ext.py
+    dialects/quir.py
+    dialects/quir.pyi
+    dialects/_quir_ops_ext.py
   DIALECT_NAME quir)
 
 declare_mlir_dialect_python_bindings(
   ADD_TO_PARENT QSSPythonSources.Dialects
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir/dialects"
-  TD_FILE Pulse.td
+  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir"
+  TD_FILE dialects/Pulse.td
   SOURCES
-    pulse.py
-    pulse.pyi
-    _pulse_ops_ext.py
+    dialects/pulse.py
+    dialects/pulse.pyi
+    dialects/_pulse_ops_ext.py
   DIALECT_NAME pulse)
 
 declare_mlir_dialect_python_bindings(
   ADD_TO_PARENT QSSPythonSources.Dialects
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir/dialects"
-  TD_FILE OQ3.td
+  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir"
+  TD_FILE dialects/OQ3.td
   SOURCES
-    OQ3.py
-    OQ3.pyi
-    _oq3_ops_ext.py
+    dialects/OQ3.py
+    dialects/OQ3.pyi
+    dialects/_oq3_ops_ext.py
   DIALECT_NAME oq3)
 
 declare_mlir_dialect_python_bindings(
   ADD_TO_PARENT QSSPythonSources.Dialects
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir/dialects"
-  TD_FILE QCS.td
+  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir"
+  TD_FILE dialects/QCS.td
   SOURCES
-    QCS.py
-    QCS.pyi
-    _qcs_ops_ext.py
+    dialects/QCS.py
+    dialects/QCS.pyi
+    dialects/_qcs_ops_ext.py
   DIALECT_NAME qcs)
 
 # LLVM 14 does not appear to export the complex dialect
 # this may be removed when updating for LLVM 15
 declare_mlir_dialect_python_bindings(
   ADD_TO_PARENT QSSPythonSources.Dialects
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir/dialects"
-  TD_FILE ComplexOps.td
+  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir"
+  TD_FILE dialects/ComplexOps.td
   SOURCES
-    complex.py
-    _complex_ops_ext.py
+    dialects/complex.py
+    dialects/_complex_ops_ext.py
   DIALECT_NAME complex)
 
+
+set(PYTHON_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/Bindings/Python/")
 
 declare_mlir_python_extension(QSSPythonExtension.Dialects.Pulse.Pybind
   MODULE_NAME _ibmDialectsPulse
   ADD_TO_PARENT QSSPythonSources.Dialects.pulse
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/Bindings/Python/"
+  ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
     DialectPulse.cpp
     pulse.cpp
@@ -126,12 +128,15 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.Pulse.Pybind
     MLIRQUIRUtils
     MLIROQ3Dialect
     MLIRQCSDialect
+  EMBED_CAPI_LINK_LIBS
+    MLIRCAPIIR
+    MLIRCAPIPulse
 )
 
 declare_mlir_python_extension(QSSPythonExtension.Dialects.QUIR.Pybind
   MODULE_NAME _ibmDialectsQUIR
   ADD_TO_PARENT QSSPythonSources.Dialects.quir
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/Bindings/Python/"
+  ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
     DialectQUIR.cpp
     quir.cpp
@@ -141,38 +146,60 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.QUIR.Pybind
     MLIRQUIRUtils
     MLIROQ3Dialect
     MLIRQCSDialect
+  EMBED_CAPI_LINK_LIBS
+    MLIRCAPIIR
+    MLIRCAPIQUIR
 )
 
 declare_mlir_python_extension(QSSPythonExtension.Dialects.QCS.Pybind
   MODULE_NAME _ibmDialectsQCS
   ADD_TO_PARENT QSSPythonSources.Dialects.qcs
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/Bindings/Python/"
+  ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
     DialectQCS.cpp
     qcs.cpp
   PRIVATE_LINK_LIBS
     LLVMSupport
     MLIRQCSDialect
+  EMBED_CAPI_LINK_LIBS
+    MLIRCAPIIR
+    MLIRCAPIQCS
 )
 
 declare_mlir_python_extension(QSSPythonExtension.Dialects.OQ3.Pybind
   MODULE_NAME _ibmDialectsOQ3
   ADD_TO_PARENT QSSPythonSources.Dialects.oq3
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/Bindings/Python/"
+  ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
     DialectOQ3.cpp
     oq3.cpp
   PRIVATE_LINK_LIBS
     LLVMSupport
     MLIROQ3Dialect
+  EMBED_CAPI_LINK_LIBS
+    MLIRCAPIIR
+    MLIRCAPIOQ3
 )
 
-
-add_mlir_python_modules(QSSPythonModules
-  ROOT_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/qss_compiler/mlir/dialects/"
-  INSTALL_PREFIX "qss_compiler/mlir/dialects/"
+add_mlir_python_common_capi_library(QSSPythonCAPI
+  INSTALL_COMPONENT QSSPythonModules
+  INSTALL_DESTINATION qss_compiler/mlir/_mlir_libs
+  OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/mlir/_mlir_libs"
+  RELATIVE_INSTALL_ROOT "../../.."
   DECLARED_SOURCES
     QSSPythonSources
+    MLIRPythonSources
+    MLIRPythonExtension.AllPassesRegistration
+)
+
+add_mlir_python_modules(QSSPythonModules
+  ROOT_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/mlir/"
+  INSTALL_PREFIX "mlir/"
+  DECLARED_SOURCES
+    QSSPythonSources
+    MLIRPythonSources
+    MLIRPythonExtension.AllPassesRegistration
+    MLIRPythonCAPIHeaderSources
   COMMON_CAPI_LINK_LIBS
-    MLIRPythonCAPI
+    QSSPythonCAPI
 )
