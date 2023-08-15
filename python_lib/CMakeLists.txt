@@ -55,6 +55,7 @@ add_custom_target(copy_python_files DEPENDS ${PY_LIB_FILES})
 add_dependencies(py_qssc copy_python_files)
 
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include/Dialect/Pulse/IR/)
+# TODO: fix path
 link_directories(/<path_to_mlir>/python_packages/mlir_core/mlir/_mlir_libs)
 
 declare_mlir_python_sources(QSSPythonSources)
