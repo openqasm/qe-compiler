@@ -119,7 +119,6 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.Pulse.Pybind
   ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
     DialectPulse.cpp
-    pulse.cpp
   PRIVATE_LINK_LIBS
     LLVMSupport
     MLIRPulseDialect
@@ -139,7 +138,6 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.QUIR.Pybind
   ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
     DialectQUIR.cpp
-    quir.cpp
   PRIVATE_LINK_LIBS
     LLVMSupport
     MLIRQUIRDialect
@@ -157,7 +155,6 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.QCS.Pybind
   ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
     DialectQCS.cpp
-    qcs.cpp
   PRIVATE_LINK_LIBS
     LLVMSupport
     MLIRQCSDialect
@@ -172,7 +169,6 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.OQ3.Pybind
   ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
     DialectOQ3.cpp
-    oq3.cpp
   PRIVATE_LINK_LIBS
     LLVMSupport
     MLIROQ3Dialect
