@@ -1,12 +1,12 @@
 
 try:
-    from mlir.ir import *
-    from mlir.dialects import arith
+    from ..ir import *
+    from . import arith
     from .pulse import *
     from .quir import AngleType, ConstantOp as QUIRConstantOp
     from .complex import CreateOp as ComplexCreateOp
     from .._mlir_libs._ibmDialectsPulse import *
-    from mlir.dialects._ods_common import get_default_loc_context as _get_default_loc_context
+    from ._ods_common import get_default_loc_context as _get_default_loc_context
 except ImportError as e:
     raise RuntimeError("Error loading imports from extension module") from e
 

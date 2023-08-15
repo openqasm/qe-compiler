@@ -6,7 +6,7 @@
 
 from typing import Optional
 
-from mlir.ir import Type, Context
+from ..ir import Type, Context
 
 __all__ = [
     "CaptureType",

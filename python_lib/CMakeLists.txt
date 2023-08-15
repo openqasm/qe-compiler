@@ -10,8 +10,11 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+include(AddMLIRPython)
+
 project(py_qssc)
 
+add_compile_definitions("MLIR_PYTHON_PACKAGE_PREFIX=qss_compiler.mlir.")
 
 macro(python_pkg_add_file file lib)
     set(src_file ${CMAKE_CURRENT_SOURCE_DIR}/${file})
@@ -180,7 +183,7 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.OQ3.Pybind
 add_mlir_python_common_capi_library(QSSPythonCAPI
   INSTALL_COMPONENT QSSPythonModules
   INSTALL_DESTINATION qss_compiler/mlir/_mlir_libs
-  OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/mlir/_mlir_libs"
+  OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/qss_compiler/mlir/_mlir_libs"
   RELATIVE_INSTALL_ROOT "../../.."
   DECLARED_SOURCES
     QSSPythonSources
@@ -189,8 +192,8 @@ add_mlir_python_common_capi_library(QSSPythonCAPI
 )
 
 add_mlir_python_modules(QSSPythonModules
-  ROOT_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/mlir/"
-  INSTALL_PREFIX "mlir/"
+  ROOT_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/qss_compiler/mlir/"
+  INSTALL_PREFIX "qss_compiler/mlir/"
   DECLARED_SOURCES
     QSSPythonSources
     MLIRPythonSources
