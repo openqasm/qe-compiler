@@ -45,3 +45,11 @@ The reason for that indirection is that python cannot collect files from differe
 From the `qss-compiler` directory, after installation, simply run:
 
     pytest test/python_lib
+
+
+
+## Python Bindings
+
+To enable python bindings, build and install the `qss_compiler` library as described above.
+
+Example scripts for generating Pulse mlir can be found in `./qss_compiler/examples/`.
