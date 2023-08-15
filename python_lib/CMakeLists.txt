@@ -56,7 +56,7 @@ add_dependencies(py_qssc copy_python_files)
 
 # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../include/Dialect/Pulse/IR/)
 # TODO: fix path
-link_directories(/<path_to_mlir>/python_packages/mlir_core/mlir/_mlir_libs)
+link_directories(/Users/joshualou/.conan/data/llvm/14.0.6-2/qss/stable/package/f079c987817be2301097777d034504b249437adf/python_packages/mlir_core/mlir/_mlir_libs)
 
 declare_mlir_python_sources(QSSPythonSources)
 declare_mlir_python_sources(QSSPythonSources.Dialects
