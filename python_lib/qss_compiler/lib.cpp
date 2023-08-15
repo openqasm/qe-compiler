@@ -132,29 +132,29 @@
 PYBIND11_MODULE(py_qssc, m) {
   m.doc() = "Python bindings for the QSS Compiler.";
 
-  // m.def("_compile_with_args", &py_compile_by_args,
-  //       "Call compiler via cli qss-compile");
-  // m.def("_link_file", &py_link_file, "Call the linker tool");
+//   // m.def("_compile_with_args", &py_compile_by_args,
+//   //       "Call compiler via cli qss-compile");
+//   // m.def("_link_file", &py_link_file, "Call the linker tool");
 
-  pybind11::enum_<qssc::ErrorCategory>(m, "ErrorCategory",
-                                       pybind11::arithmetic())
-      .value("OpenQASM3ParseFailure",
-             qssc::ErrorCategory::OpenQASM3ParseFailure)
-      .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
-      .value("QSSCompilerNoInputError", qssc::ErrorCategory::QSSCompilerNoInputError)
-      .value("QSSCompilerCommunicationFailure", qssc::ErrorCategory::QSSCompilerCommunicationFailure)
-      .value("QSSCompilerEOFFailure", qssc::ErrorCategory::QSSCompilerEOFFailure)
-      .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
-      .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
-      .value("QSSLinkerNotImplemented", qssc::ErrorCategory::QSSLinkerNotImplemented)
-      .value("QSSLinkSignatureWarning", qssc::ErrorCategory::QSSLinkSignatureWarning)
-      .value("QSSLinkSignatureError", qssc::ErrorCategory::QSSLinkSignatureError)
-      .value("QSSLinkAddressError", qssc::ErrorCategory::QSSLinkAddressError)
-      .value("QSSLinkSignatureNotFound", qssc::ErrorCategory::QSSLinkSignatureNotFound)
-      .value("QSSLinkArgumentNotFoundWarning", qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
-      .value("QSSLinkInvalidPatchTypeError", qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
-      .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
-      .export_values();
+//   pybind11::enum_<qssc::ErrorCategory>(m, "ErrorCategory",
+//                                        pybind11::arithmetic())
+//       .value("OpenQASM3ParseFailure",
+//              qssc::ErrorCategory::OpenQASM3ParseFailure)
+//       .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
+//       .value("QSSCompilerNoInputError", qssc::ErrorCategory::QSSCompilerNoInputError)
+//       .value("QSSCompilerCommunicationFailure", qssc::ErrorCategory::QSSCompilerCommunicationFailure)
+//       .value("QSSCompilerEOFFailure", qssc::ErrorCategory::QSSCompilerEOFFailure)
+//       .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
+//       .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
+//       .value("QSSLinkerNotImplemented", qssc::ErrorCategory::QSSLinkerNotImplemented)
+//       .value("QSSLinkSignatureWarning", qssc::ErrorCategory::QSSLinkSignatureWarning)
+//       .value("QSSLinkSignatureError", qssc::ErrorCategory::QSSLinkSignatureError)
+//       .value("QSSLinkAddressError", qssc::ErrorCategory::QSSLinkAddressError)
+//       .value("QSSLinkSignatureNotFound", qssc::ErrorCategory::QSSLinkSignatureNotFound)
+//       .value("QSSLinkArgumentNotFoundWarning", qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
+//       .value("QSSLinkInvalidPatchTypeError", qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
+//       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
+//       .export_values();
 
   // pybind11::enum_<qssc::Severity>(m, "Severity")
   //     .value("Info", qssc::Severity::Info)
