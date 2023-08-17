@@ -28,27 +28,53 @@
 
 #include "llvm/Support/SourceMgr.h"
 
+#include <iostream>
+
+#define DEBUG_TYPE "LoadPulseCalsDebug"
+
 using namespace mlir;
 using namespace mlir::quir;
 using namespace mlir::pulse;
 
 void LoadPulseCalsPass::runOnOperation() {
 
+  ModuleOp moduleOp = getOperation();
+  FuncOp mainFunc = dyn_cast<FuncOp>(quir::getMainFunction(moduleOp));
+  if (!mainFunc)
+    assert(false && "could not find the main func");
+
   // check for command line override of the path to default pulse cals
   if (defaultPulseCals.hasValue())
     DEFAULT_PULSE_CALS = defaultPulseCals.getValue();
 
   // parse the default pulse calibrations
-  parsePulseCalsSequenceOps(DEFAULT_PULSE_CALS);
+  if (!DEFAULT_PULSE_CALS.empty()) {
+    LLVM_DEBUG(std::cout << "parsing default pulse calibrations.\n");
+    if (auto err = parsePulseCalsSequenceOps(DEFAULT_PULSE_CALS)) {
+      llvm::errs() << err;
+      return signalPassFailure();
+    }
+  } else
+    LLVM_DEBUG(
+        std::cout << "default pulse calibrations path is not specified.\n");
 
   // parse the additional pulse calibrations
-  if (!ADDITIONAL_PULSE_CALS.empty())
-    parsePulseCalsSequenceOps(ADDITIONAL_PULSE_CALS);
+  if (!ADDITIONAL_PULSE_CALS.empty()) {
+    LLVM_DEBUG(std::cout << "parsing additional pulse calibrations.\n");
+    if (auto err = parsePulseCalsSequenceOps(ADDITIONAL_PULSE_CALS)) {
+      llvm::errs() << err;
+      return signalPassFailure();
+    }
+  } else
+    LLVM_DEBUG(
+        std::cout << "additional pulse calibrations path is not specified.\n");
 
-  ModuleOp moduleOp = getOperation();
-  FuncOp mainFunc = dyn_cast<FuncOp>(quir::getMainFunction(moduleOp));
-  if (!mainFunc)
-    assert(false && "could not find the main func");
+  // parse the user specified pulse calibrations
+  LLVM_DEBUG(std::cout << "parsing user specified pulse calibrations.\n");
+  moduleOp->walk([&](mlir::pulse::SequenceOp sequenceOp) {
+    auto sequenceName = sequenceOp.sym_name().str();
+    pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
+  });
 
   moduleOp->walk(
       [&](CallCircuitOp callCircOp) { loadPulseCals(callCircOp, mainFunc); });
@@ -301,21 +327,30 @@ void LoadPulseCalsPass::addPulseCalToModule(
   }
 }
 
-void LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
+llvm::Error
+LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
   std::string errorMessage;
   llvm::SourceMgr sourceMgr;
   std::unique_ptr<llvm::MemoryBuffer> pulseCalsFile =
       mlir::openInputFile(pulseCalsPath, &errorMessage);
+  if (!pulseCalsFile)
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Failed to open pulse calibrations file: " +
+                                       errorMessage);
   sourceMgr.AddNewSourceBuffer(std::move(pulseCalsFile), llvm::SMLoc());
   mlir::OwningOpRef<ModuleOp> pulseCalsModule(
       mlir::parseSourceFile(sourceMgr, &getContext()));
   if (!pulseCalsModule)
-    assert(false and "problem parsing MLIR pulse calibrations file");
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Failed to parse pulse calibrations file: " +
+                                       pulseCalsPath);
   auto pulseCalsModuleRelease = pulseCalsModule.release();
   pulseCalsModuleRelease->walk([&](mlir::pulse::SequenceOp sequenceOp) {
     auto sequenceName = sequenceOp.sym_name().str();
     pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
   });
+
+  return llvm::Error::success();
 }
 
 mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
