@@ -26,6 +26,8 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
 
+#include <vector>
+
 namespace mlir::pulse {
 
 struct LoadPulseCalsPass
@@ -92,6 +94,10 @@ struct LoadPulseCalsPass
   // remove the redundant delay args after merging multiple delayOp pulse cals
   void removeRedundantDelayArgs(mlir::pulse::SequenceOp sequenceOp,
                                 mlir::OpBuilder &builder);
+
+  // set of pulse cals already added to IR
+  std::unordered_set<std::string> pulseCalsAddedToIR;
+
   // returns true if all the sequence ops in the input vector has the same
   // duration
   bool areAllSequenceOpsHasSameDuration(
@@ -102,10 +108,12 @@ struct LoadPulseCalsPass
                        const std::string &attrName,
                        std::vector<mlir::Attribute> &attrVector);
 
-  std::string getMangledName(std::string &gateName, std::set<uint32_t> &qubits);
+  std::string getMangledName(std::string &gateName,
+                             std::vector<uint32_t> &qubits);
   std::string getMangledName(std::string &gateName, uint32_t qubit);
-  std::set<uint32_t> getQubitOperands(const std::vector<Value> &qubitOperands,
-                                      mlir::quir::CallCircuitOp callCircuitOp);
+  std::vector<uint32_t>
+  getQubitOperands(std::vector<Value> &qubitOperands,
+                   mlir::quir::CallCircuitOp callCircuitOp);
 
   // TODO: move this function to Utils; it's used here and MergeCircuitsPass
   static mlir::quir::CircuitOp
