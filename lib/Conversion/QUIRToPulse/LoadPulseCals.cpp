@@ -493,17 +493,14 @@ bool LoadPulseCalsPass::areAllSequenceOpsHasSameDuration(
   for (auto &sequenceOp : sequenceOps) {
     if (!sequenceOp->hasAttrOfType<IntegerAttr>("pulse.duration"))
       return false;
-    else {
-      uint sequenceDuration =
-          sequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getUInt();
-      if (prevSequenceEncountered and
-          sequenceDuration != prevSequencePulseDuration)
-        return false;
-      else {
-        prevSequenceEncountered = true;
-        prevSequencePulseDuration = sequenceDuration;
-      }
-    }
+
+    uint sequenceDuration =
+        sequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getUInt();
+    if (!prevSequenceEncountered) {
+      prevSequenceEncountered = true;
+      prevSequencePulseDuration = sequenceDuration;
+    } else if (sequenceDuration != prevSequencePulseDuration)
+      return false;
   }
 
   return true;
@@ -559,7 +556,8 @@ LoadPulseCalsPass::getQubitOperands(std::vector<Value> &qubitOperands,
       auto qubitOperand = callCircuitOp->getOperand(argIdx);
       assert(qubitOperand.getDefiningOp<quir::DeclareQubitOp>() &&
              "could not find the qubit op");
-      uint qubitId = *quir::lookupQubitId(qubitOperand.getDefiningOp<quir::DeclareQubitOp>());
+      uint qubitId = *quir::lookupQubitId(
+          qubitOperand.getDefiningOp<quir::DeclareQubitOp>());
       qubits.push_back(qubitId);
     }
   }
