@@ -39,6 +39,7 @@ void pulsePassPipelineBuilder(OpPassManager &pm) {}
 
 void registerPulsePasses() {
   PassRegistration<LoadPulseCalsPass>();
+  PassRegistration<QUIRToPulsePass>();
   PassRegistration<MergeDelayPass>();
   PassRegistration<RemoveUnusedArgumentsPass>();
   PassRegistration<SchedulePortPass>();
