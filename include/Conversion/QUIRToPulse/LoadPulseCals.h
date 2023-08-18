@@ -26,6 +26,9 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
 
+#include <unordered_set>
+#include <vector>
+
 namespace mlir::pulse {
 
 struct LoadPulseCalsPass
@@ -33,13 +36,12 @@ struct LoadPulseCalsPass
   std::string DEFAULT_PULSE_CALS = "";
   std::string ADDITIONAL_PULSE_CALS = "";
 
-  // this pass receives the path to default pulse calibrations file as input.
-  // optionally, it can also receive a path to additional pulse calibrations,
-  // which can be used to (a) override the pulse calibration that will be used
-  // for some quantum gates. e.g., one might be interested to study the impact
-  // of changing the pulse sequence corresponding to cx quantum gate on qubits
-  // 4 and 5, then they can specify the desired pulse sequence in an additional
-  // file; and/or (b) add additional pulse calibrations
+  // this pass uses up to three sources to obtain the pulse calibration
+  // sequences. (1) default pulse calibration file if specified.
+  // (2) additional pulse calibration file if specified; this will
+  // override default pulse calibrations. (3) pulse calibration
+  // sequences specified in the MLIR input program by compiler user;
+  // this will override both default and additional pulse calibrations.
   LoadPulseCalsPass() = default;
   LoadPulseCalsPass(const LoadPulseCalsPass &pass) : PassWrapper(pass) {}
   LoadPulseCalsPass(std::string inDefaultPulseCals) {
@@ -83,7 +85,7 @@ struct LoadPulseCalsPass
   void addPulseCalToModule(FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp);
 
   // parse the pulse cals and add them to pulseCalsNameToSequenceMap
-  void parsePulseCalsSequenceOps(std::string &pulseCalsPath);
+  llvm::Error parsePulseCalsSequenceOps(std::string &pulseCalsPath);
   std::map<std::string, SequenceOp> pulseCalsNameToSequenceMap;
 
   mlir::pulse::SequenceOp
@@ -92,6 +94,10 @@ struct LoadPulseCalsPass
   // remove the redundant delay args after merging multiple delayOp pulse cals
   void removeRedundantDelayArgs(mlir::pulse::SequenceOp sequenceOp,
                                 mlir::OpBuilder &builder);
+
+  // set of pulse cals already added to IR
+  std::unordered_set<std::string> pulseCalsAddedToIR;
+
   // returns true if all the sequence ops in the input vector has the same
   // duration
   bool areAllSequenceOpsHasSameDuration(
@@ -102,10 +108,12 @@ struct LoadPulseCalsPass
                        const std::string &attrName,
                        std::vector<mlir::Attribute> &attrVector);
 
-  std::string getMangledName(std::string &gateName, std::set<uint32_t> &qubits);
+  std::string getMangledName(std::string &gateName,
+                             std::vector<uint32_t> &qubits);
   std::string getMangledName(std::string &gateName, uint32_t qubit);
-  std::set<uint32_t> getQubitOperands(const std::vector<Value> &qubitOperands,
-                                      mlir::quir::CallCircuitOp callCircuitOp);
+  std::vector<uint32_t>
+  getQubitOperands(std::vector<Value> &qubitOperands,
+                   mlir::quir::CallCircuitOp callCircuitOp);
 
   // TODO: move this function to Utils; it's used here and MergeCircuitsPass
   static mlir::quir::CircuitOp

@@ -28,27 +28,53 @@
 
 #include "llvm/Support/SourceMgr.h"
 
+#include <iostream>
+
+#define DEBUG_TYPE "LoadPulseCalsDebug"
+
 using namespace mlir;
 using namespace mlir::quir;
 using namespace mlir::pulse;
 
 void LoadPulseCalsPass::runOnOperation() {
 
+  ModuleOp moduleOp = getOperation();
+  FuncOp mainFunc = dyn_cast<FuncOp>(quir::getMainFunction(moduleOp));
+  assert(mainFunc && "could not find the main func");
+
   // check for command line override of the path to default pulse cals
   if (defaultPulseCals.hasValue())
     DEFAULT_PULSE_CALS = defaultPulseCals.getValue();
 
   // parse the default pulse calibrations
-  parsePulseCalsSequenceOps(DEFAULT_PULSE_CALS);
+  if (!DEFAULT_PULSE_CALS.empty()) {
+    LLVM_DEBUG(std::cout << "parsing default pulse calibrations.\n");
+    if (auto err = parsePulseCalsSequenceOps(DEFAULT_PULSE_CALS)) {
+      llvm::errs() << err;
+      return signalPassFailure();
+    }
+  } else
+    LLVM_DEBUG(
+        std::cout << "default pulse calibrations path is not specified.\n");
 
   // parse the additional pulse calibrations
-  if (!ADDITIONAL_PULSE_CALS.empty())
-    parsePulseCalsSequenceOps(ADDITIONAL_PULSE_CALS);
+  if (!ADDITIONAL_PULSE_CALS.empty()) {
+    LLVM_DEBUG(std::cout << "parsing additional pulse calibrations.\n");
+    if (auto err = parsePulseCalsSequenceOps(ADDITIONAL_PULSE_CALS)) {
+      llvm::errs() << err;
+      return signalPassFailure();
+    }
+  } else
+    LLVM_DEBUG(
+        std::cout << "additional pulse calibrations path is not specified.\n");
 
-  ModuleOp moduleOp = getOperation();
-  FuncOp mainFunc = dyn_cast<FuncOp>(quir::getMainFunction(moduleOp));
-  if (!mainFunc)
-    assert(false && "could not find the main func");
+  // parse the user specified pulse calibrations
+  LLVM_DEBUG(std::cout << "parsing user specified pulse calibrations.\n");
+  moduleOp->walk([&](mlir::pulse::SequenceOp sequenceOp) {
+    auto sequenceName = sequenceOp.sym_name().str();
+    pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
+    pulseCalsAddedToIR.insert(sequenceName);
+  });
 
   moduleOp->walk(
       [&](CallCircuitOp callCircOp) { loadPulseCals(callCircOp, mainFunc); });
@@ -60,8 +86,7 @@ void LoadPulseCalsPass::loadPulseCals(CallCircuitOp callCircuitOp,
   auto circuitOp = getCircuitOp(callCircuitOp);
   circuitOp->walk([&](Operation *op) {
     if (auto castOp = dyn_cast<CallCircuitOp>(op))
-      assert(
-          false &&
+      llvm_unreachable(
           "CallCircuitOp inside another CircuitOp is not allowed in this pass");
     else if (auto castOp = dyn_cast<CallGateOp>(op))
       loadPulseCals(castOp, callCircuitOp, funcOp);
@@ -85,16 +110,15 @@ void LoadPulseCalsPass::loadPulseCals(CallGateOp callGateOp,
                                       FuncOp funcOp) {
   std::vector<Value> qubitOperands;
   qubitCallOperands(callGateOp, qubitOperands);
-  std::set<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
+  std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = callGateOp.calleeAttr().getValue().str();
   std::string gateMangledName = getMangledName(gateName, qubits);
-  if (pulseCalsNameToSequenceMap.find(gateMangledName) ==
-      pulseCalsNameToSequenceMap.end())
-    assert(false && "could not find any pulse calibration for call gate");
+  assert(pulseCalsNameToSequenceMap.find(gateMangledName) !=
+             pulseCalsNameToSequenceMap.end() &&
+         "could not find any pulse calibration for call gate");
 
   OpBuilder builder(funcOp.body());
-  callGateOp->setAttr("pulse.pulseCalName",
-                      builder.getStringAttr(gateMangledName));
+  callGateOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
 
@@ -105,15 +129,15 @@ void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
   std::vector<Value> qubitOperands;
   qubitOperands.push_back(CXOp.control());
   qubitOperands.push_back(CXOp.target());
-  std::set<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
+  std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "cx";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  if (pulseCalsNameToSequenceMap.find(gateMangledName) ==
-      pulseCalsNameToSequenceMap.end())
-    assert(false && "could not find any pulse calibration for the CX gate");
+  assert(pulseCalsNameToSequenceMap.find(gateMangledName) !=
+             pulseCalsNameToSequenceMap.end() &&
+         "could not find any pulse calibration for the CX gate");
 
   OpBuilder builder(funcOp.body());
-  CXOp->setAttr("pulse.pulseCalName", builder.getStringAttr(gateMangledName));
+  CXOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
 
@@ -123,15 +147,15 @@ void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
 
   std::vector<Value> qubitOperands;
   qubitOperands.push_back(UOp.target());
-  std::set<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
+  std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "u3";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  if (pulseCalsNameToSequenceMap.find(gateMangledName) ==
-      pulseCalsNameToSequenceMap.end())
-    assert(false && "could not find any pulse calibration for the U gate");
+  assert(pulseCalsNameToSequenceMap.find(gateMangledName) !=
+             pulseCalsNameToSequenceMap.end() &&
+         "could not find any pulse calibration for the U gate");
 
   OpBuilder builder(funcOp.body());
-  UOp->setAttr("pulse.pulseCalName", builder.getStringAttr(gateMangledName));
+  UOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
 
@@ -143,14 +167,13 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<MeasureOp>(measureOp, qubitOperands);
-  std::set<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
+  std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "measure";
   // check if the measurement is marked with quir.midCircuitMeasure
   if (measureOp->hasAttr("quir.midCircuitMeasure"))
     gateName = "mid_circuit_measure";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  measureOp->setAttr("pulse.pulseCalName",
-                     builder.getStringAttr(gateMangledName));
+  measureOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the measurement gate
@@ -162,16 +185,15 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
     std::vector<SequenceOp> sequenceOps;
     for (auto &qubit : qubits) {
       std::string individualGateMangledName = getMangledName(gateName, qubit);
-      if (pulseCalsNameToSequenceMap.find(individualGateMangledName) ==
-          pulseCalsNameToSequenceMap.end())
-        assert(false &&
-               "could not find pulse calibrations for the measurement gate");
+      assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
+                 pulseCalsNameToSequenceMap.end() &&
+             "could not find pulse calibrations for the measurement gate");
       sequenceOps.push_back(
           pulseCalsNameToSequenceMap[individualGateMangledName]);
     }
     SequenceOp mergedPulseSequenceOp =
         mergePulseSequenceOps(sequenceOps, gateMangledName);
-
+    pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
     addPulseCalToModule(funcOp, mergedPulseSequenceOp);
   }
 }
@@ -184,11 +206,10 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::BarrierOp>(barrierOp, qubitOperands);
-  std::set<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
+  std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "barrier";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  barrierOp->setAttr("pulse.pulseCalName",
-                     builder.getStringAttr(gateMangledName));
+  barrierOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the barrier gate
@@ -200,16 +221,15 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
     std::vector<SequenceOp> sequenceOps;
     for (auto &qubit : qubits) {
       std::string individualGateMangledName = getMangledName(gateName, qubit);
-      if (pulseCalsNameToSequenceMap.find(individualGateMangledName) ==
-          pulseCalsNameToSequenceMap.end())
-        assert(false &&
-               "could not find pulse calibrations for the barrier gate");
+      assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
+                 pulseCalsNameToSequenceMap.end() &&
+             "could not find pulse calibrations for the barrier gate");
       sequenceOps.push_back(
           pulseCalsNameToSequenceMap[individualGateMangledName]);
     }
     SequenceOp mergedPulseSequenceOp =
         mergePulseSequenceOps(sequenceOps, gateMangledName);
-
+    pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
     addPulseCalToModule(funcOp, mergedPulseSequenceOp);
   }
 }
@@ -222,11 +242,10 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::DelayOp>(delayOp, qubitOperands);
-  std::set<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
+  std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "delay";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  delayOp->setAttr("pulse.pulseCalName",
-                   builder.getStringAttr(gateMangledName));
+  delayOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the barrier gate
@@ -238,15 +257,16 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
     std::vector<SequenceOp> sequenceOps;
     for (auto &qubit : qubits) {
       std::string individualGateMangledName = getMangledName(gateName, qubit);
-      if (pulseCalsNameToSequenceMap.find(individualGateMangledName) ==
-          pulseCalsNameToSequenceMap.end())
-        assert(false && "could not find pulse calibrations for the delay gate");
+      assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
+                 pulseCalsNameToSequenceMap.end() &&
+             "could not find pulse calibrations for the delay gate");
       sequenceOps.push_back(
           pulseCalsNameToSequenceMap[individualGateMangledName]);
     }
     SequenceOp mergedPulseSequenceOp =
         mergePulseSequenceOps(sequenceOps, gateMangledName);
     removeRedundantDelayArgs(mergedPulseSequenceOp, builder);
+    pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
     addPulseCalToModule(funcOp, mergedPulseSequenceOp);
   }
 }
@@ -259,11 +279,10 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::ResetQubitOp>(resetOp, qubitOperands);
-  std::set<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
+  std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "reset";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  resetOp->setAttr("pulse.pulseCalName",
-                   builder.getStringAttr(gateMangledName));
+  resetOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the gate
@@ -275,50 +294,62 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
     std::vector<SequenceOp> sequenceOps;
     for (auto &qubit : qubits) {
       std::string individualGateMangledName = getMangledName(gateName, qubit);
-      if (pulseCalsNameToSequenceMap.find(individualGateMangledName) ==
-          pulseCalsNameToSequenceMap.end())
-        assert(false && "could not find pulse calibrations for the reset gate");
+      assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
+                 pulseCalsNameToSequenceMap.end() &&
+             "could not find pulse calibrations for the reset gate");
       sequenceOps.push_back(
           pulseCalsNameToSequenceMap[individualGateMangledName]);
     }
     SequenceOp mergedPulseSequenceOp =
         mergePulseSequenceOps(sequenceOps, gateMangledName);
-
+    pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
     addPulseCalToModule(funcOp, mergedPulseSequenceOp);
   }
 }
 
 void LoadPulseCalsPass::addPulseCalToModule(
     FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp) {
-  OpBuilder builder(funcOp.body());
-  auto *clonedPulseCalOp = builder.clone(*sequenceOp);
-  auto clonedPulseCalSequenceOp = dyn_cast<SequenceOp>(clonedPulseCalOp);
-  clonedPulseCalSequenceOp->moveBefore(funcOp);
+  if (pulseCalsAddedToIR.find(sequenceOp.sym_name().str()) ==
+      pulseCalsAddedToIR.end()) {
+    OpBuilder builder(funcOp.body());
+    auto *clonedPulseCalOp = builder.clone(*sequenceOp);
+    auto clonedPulseCalSequenceOp = dyn_cast<SequenceOp>(clonedPulseCalOp);
+    clonedPulseCalSequenceOp->moveBefore(funcOp);
+    pulseCalsAddedToIR.insert(sequenceOp.sym_name().str());
+  }
 }
 
-void LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
+llvm::Error
+LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
   std::string errorMessage;
   llvm::SourceMgr sourceMgr;
   std::unique_ptr<llvm::MemoryBuffer> pulseCalsFile =
       mlir::openInputFile(pulseCalsPath, &errorMessage);
+  if (!pulseCalsFile)
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Failed to open pulse calibrations file: " +
+                                       errorMessage);
   sourceMgr.AddNewSourceBuffer(std::move(pulseCalsFile), llvm::SMLoc());
   mlir::OwningOpRef<ModuleOp> pulseCalsModule(
       mlir::parseSourceFile(sourceMgr, &getContext()));
   if (!pulseCalsModule)
-    assert(false and "problem parsing MLIR pulse calibrations file");
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Failed to parse pulse calibrations file: " +
+                                       pulseCalsPath);
   auto pulseCalsModuleRelease = pulseCalsModule.release();
   pulseCalsModuleRelease->walk([&](mlir::pulse::SequenceOp sequenceOp) {
     auto sequenceName = sequenceOp.sym_name().str();
     pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
   });
+
+  return llvm::Error::success();
 }
 
 mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
     std::vector<mlir::pulse::SequenceOp> &sequenceOps,
     const std::string &mergedSequenceOpName) {
 
-  if (sequenceOps.size() == 0)
-    assert(false && "sequence op vector is empty; nothing to merge");
+  assert(sequenceOps.size() && "sequence op vector is empty; nothing to merge");
 
   SequenceOp firstSequenceOp = sequenceOps[0];
 
@@ -353,6 +384,7 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
                                       arg.getLoc());
       mapper.map(arg, mergedSequenceOp.getArgument(baseArgNum + cnt));
     }
+    baseArgNum += sequenceOps[seqNum].getNumArguments();
   }
 
   // clone the body of the original sequence ops
@@ -426,13 +458,15 @@ void LoadPulseCalsPass::removeRedundantDelayArgs(
   // args
   bool delayArgEncountered = false;
   BlockArgument delayArg;
-  std::vector<std::tuple<BlockArgument, uint>> redundantArgsToRemove;
+  std::vector<BlockArgument> redundantArgsToRemove;
+  std::vector<uint> redundantArgIndicesToRemove;
   for (uint argIndex = 0; argIndex < sequenceOp.getNumArguments(); argIndex++) {
     BlockArgument arg = sequenceOp.getArgument(argIndex);
     if (arg.getType().isa<IntegerType>()) {
-      if (delayArgEncountered)
-        redundantArgsToRemove.push_back(std::make_tuple(arg, argIndex));
-      else {
+      if (delayArgEncountered) {
+        redundantArgsToRemove.push_back(arg);
+        redundantArgIndicesToRemove.push_back(argIndex);
+      } else {
         delayArgEncountered = true;
         delayArg = arg;
       }
@@ -454,9 +488,14 @@ void LoadPulseCalsPass::removeRedundantDelayArgs(
     for (auto attr : sequenceOp->getAttrOfType<ArrayAttr>("pulse.argPorts"))
       argPortsAttrVec.push_back(attr);
 
-  for (auto [arg, argIndex] : redundantArgsToRemove) {
-    // replace the uses of the redundant args and delete them
+  // replace all uses of the redundant args
+  for (auto arg : redundantArgsToRemove)
     arg.replaceAllUsesWith(delayArg);
+
+  // erase the redundant args
+  std::sort(redundantArgIndicesToRemove.begin(),
+            redundantArgIndicesToRemove.end(), std::greater<uint>());
+  for (auto argIndex : redundantArgIndicesToRemove) {
     sequenceOp.eraseArgument(argIndex);
     // update the pulse.args and pulse.argPorts vectors
     if (sequenceOpHasPulseArgs)
@@ -480,17 +519,14 @@ bool LoadPulseCalsPass::areAllSequenceOpsHasSameDuration(
   for (auto &sequenceOp : sequenceOps) {
     if (!sequenceOp->hasAttrOfType<IntegerAttr>("pulse.duration"))
       return false;
-    else {
-      uint sequenceDuration =
-          sequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getUInt();
-      if (prevSequenceEncountered and
-          sequenceDuration != prevSequencePulseDuration)
-        return false;
-      else {
-        prevSequenceEncountered = true;
-        prevSequencePulseDuration = sequenceDuration;
-      }
-    }
+
+    uint sequenceDuration =
+        sequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getUInt();
+    if (!prevSequenceEncountered) {
+      prevSequenceEncountered = true;
+      prevSequencePulseDuration = sequenceDuration;
+    } else if (sequenceDuration != prevSequencePulseDuration)
+      return false;
   }
 
   return true;
@@ -515,7 +551,7 @@ bool LoadPulseCalsPass::mergeAttributes(
 }
 
 std::string LoadPulseCalsPass::getMangledName(std::string &gateName,
-                                              std::set<uint32_t> &qubits) {
+                                              std::vector<uint32_t> &qubits) {
   std::string gateMangledName = gateName;
   for (int qubit : qubits) {
     gateMangledName += "_";
@@ -530,22 +566,25 @@ std::string LoadPulseCalsPass::getMangledName(std::string &gateName,
   return gateMangledName;
 }
 
-std::set<uint32_t>
-LoadPulseCalsPass::getQubitOperands(const std::vector<Value> &qubitOperands,
+std::vector<uint32_t>
+LoadPulseCalsPass::getQubitOperands(std::vector<Value> &qubitOperands,
                                     CallCircuitOp callCircuitOp) {
 
-  std::set<uint32_t> qubits;
+  std::vector<uint32_t> qubits;
   for (auto &qubit : qubitOperands) {
     if (auto declOp = qubit.getDefiningOp<quir::DeclareQubitOp>()) {
-      qubits.insert(*quir::lookupQubitId(qubit));
+      uint qubitId = *quir::lookupQubitId(declOp);
+      qubits.push_back(qubitId);
     } else {
       // qubit is a block argument
       auto blockArg = qubit.dyn_cast<BlockArgument>();
       unsigned argIdx = blockArg.getArgNumber();
-      auto qubitOp = callCircuitOp->getOperand(argIdx);
-      assert(qubitOp.getDefiningOp<quir::DeclareQubitOp>() &&
+      auto qubitOperand = callCircuitOp->getOperand(argIdx);
+      assert(qubitOperand.getDefiningOp<quir::DeclareQubitOp>() &&
              "could not find the qubit op");
-      qubits.insert(*quir::lookupQubitId(qubitOp));
+      uint qubitId = *quir::lookupQubitId(
+          qubitOperand.getDefiningOp<quir::DeclareQubitOp>());
+      qubits.push_back(qubitId);
     }
   }
   return qubits;
