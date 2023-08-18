@@ -73,6 +73,7 @@ void LoadPulseCalsPass::runOnOperation() {
   moduleOp->walk([&](mlir::pulse::SequenceOp sequenceOp) {
     auto sequenceName = sequenceOp.sym_name().str();
     pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
+    pulseCalsAddedToIR.insert(sequenceName);
   });
 
   moduleOp->walk(
