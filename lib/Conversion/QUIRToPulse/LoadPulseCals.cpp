@@ -117,8 +117,7 @@ void LoadPulseCalsPass::loadPulseCals(CallGateOp callGateOp,
          "could not find any pulse calibration for call gate");
 
   OpBuilder builder(funcOp.body());
-  callGateOp->setAttr("pulse.pulseCalName",
-                      builder.getStringAttr(gateMangledName));
+  callGateOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
 
@@ -137,7 +136,7 @@ void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
          "could not find any pulse calibration for the CX gate");
 
   OpBuilder builder(funcOp.body());
-  CXOp->setAttr("pulse.pulseCalName", builder.getStringAttr(gateMangledName));
+  CXOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
 
@@ -155,7 +154,7 @@ void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
          "could not find any pulse calibration for the U gate");
 
   OpBuilder builder(funcOp.body());
-  UOp->setAttr("pulse.pulseCalName", builder.getStringAttr(gateMangledName));
+  UOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
 
@@ -173,8 +172,7 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
   if (measureOp->hasAttr("quir.midCircuitMeasure"))
     gateName = "mid_circuit_measure";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  measureOp->setAttr("pulse.pulseCalName",
-                     builder.getStringAttr(gateMangledName));
+  measureOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the measurement gate
@@ -210,8 +208,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "barrier";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  barrierOp->setAttr("pulse.pulseCalName",
-                     builder.getStringAttr(gateMangledName));
+  barrierOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the barrier gate
@@ -247,8 +244,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "delay";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  delayOp->setAttr("pulse.pulseCalName",
-                   builder.getStringAttr(gateMangledName));
+  delayOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the barrier gate
@@ -285,8 +281,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "reset";
   std::string gateMangledName = getMangledName(gateName, qubits);
-  resetOp->setAttr("pulse.pulseCalName",
-                   builder.getStringAttr(gateMangledName));
+  resetOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the gate
