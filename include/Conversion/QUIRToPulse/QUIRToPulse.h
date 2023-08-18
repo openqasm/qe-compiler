@@ -28,15 +28,12 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
 
-#include "Utils/DebugIndent.h"
-
 #include <queue>
 
 namespace mlir::pulse {
 
 struct QUIRToPulsePass
-    : public PassWrapper<QUIRToPulsePass, OperationPass<ModuleOp>>,
-      protected qssc::utils::DebugIndent {
+    : public PassWrapper<QUIRToPulsePass, OperationPass<ModuleOp>> {
   std::string WAVEFORM_CONTAINER = "";
 
   // this pass can optionally receive a path to a file containing pulse waveform

@@ -91,7 +91,6 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   auto circuitOp = getCircuitOp(callCircuitOp);
   std::string circName = circuitOp.sym_name().str();
   LLVM_DEBUG(std::cout << "\nConverting QUIR circuit " << circName << ":\n");
-  increaseDebugIndent();
   addCallCircuitToEraseList(callCircuitOp);
   addCircuitToEraseList(circuitOp);
 
@@ -115,11 +114,9 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
 
   // convert quir circuit args if not already converted, and add the converted
   // args to the the converted pulse sequence
-  INDENT_DEBUG("Processing QUIR circuit args.\n");
-  increaseDebugIndent();
+  LLVM_DEBUG(llvm::errs() << "Processing QUIR circuit args.\n");
   processCircuitArgs(callCircuitOp, circuitOp, convertedPulseSequenceOp,
                      mainFunc, entryBuilder);
-  decreaseDebugIndent();
 
   circuitOp->walk([&](Operation *quirOp) {
     if (quirOp->hasAttr("pulse.pulseCalName")) {
@@ -131,15 +128,13 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
       Operation *findOp = SymbolTable::lookupSymbolIn(moduleOp, pulseCalName);
       auto pulseCalSequenceOp = dyn_cast<SequenceOp>(findOp);
 
-      INDENT_DEBUG("Processing Pulse cal args.\n");
-      INDENT_DEBUG("QUIR op: ");
+      LLVM_DEBUG(llvm::errs() << "Processing Pulse cal args.\n");
+      LLVM_DEBUG(llvm::errs() << "QUIR op: ");
       LLVM_DEBUG(quirOp->dump());
-      INDENT_DEBUG("QUIR op Pulse cal: ");
+      LLVM_DEBUG(llvm::errs() << "QUIR op Pulse cal: ");
       LLVM_DEBUG(pulseCalSequenceOp->dump());
-      increaseDebugIndent();
       processPulseCalArgs(quirOp, pulseCalSequenceOp, pulseCalSequenceArgs,
                           convertedPulseSequenceOp, mainFunc, entryBuilder);
-      decreaseDebugIndent();
 
       auto pulseCalCallSequenceOp =
           entryBuilder.create<mlir::pulse::CallSequenceOp>(
@@ -155,7 +150,6 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
                  isa<quir::CircuitOp>(quirOp)))
       assert(false && "quir op is not allowed in this pass.");
   });
-  decreaseDebugIndent();
 
   // update the converted pulse sequence func and add a return op
   auto newFuncType = builder.getFunctionType(
@@ -192,7 +186,7 @@ void QUIRToPulsePass::processCircuitArgs(
     mlir::Type argumentType = arg.getType();
     if (argumentType.isa<mlir::quir::AngleType>()) {
       auto angleOp = callCircuitOp.getOperand(cnt).getDefiningOp();
-      INDENT_DEBUG("angle argument ");
+      LLVM_DEBUG(llvm::errs() << "angle argument ");
       LLVM_DEBUG(angleOp->dump());
       convertedPulseSequenceOp.insertArgument(convertedSequenceOpArgIndex,
                                               builder.getF64Type(), dictArg,
@@ -205,7 +199,7 @@ void QUIRToPulsePass::processCircuitArgs(
       convertedPulseSequenceOpArgs.push_back(convertedAngleToF64);
     } else if (argumentType.isa<mlir::quir::DurationType>()) {
       auto durationOp = callCircuitOp.getOperand(cnt).getDefiningOp();
-      INDENT_DEBUG("duration argument ");
+      LLVM_DEBUG(llvm::errs() << "duration argument ");
       LLVM_DEBUG(durationOp->dump());
       convertedPulseSequenceOp.insertArgument(convertedSequenceOpArgIndex,
                                               builder.getI64Type(), dictArg,
@@ -253,7 +247,7 @@ void QUIRToPulsePass::processPulseCalArgs(
     if (argumentType.isa<WaveformType>()) {
       std::string wfrName =
           argAttr[index].dyn_cast<StringAttr>().getValue().str();
-      INDENT_DEBUG("waveform argument " << wfrName << "\n");
+      LLVM_DEBUG(llvm::errs() << "waveform argument " << wfrName << "\n");
       processWfrOpArg(wfrName, convertedPulseSequenceOp, pulseCalSequenceArgs,
                       argumentValue, mainFunc, builder);
     } else if (argumentType.isa<MixedFrameType>()) {
@@ -261,14 +255,14 @@ void QUIRToPulsePass::processPulseCalArgs(
           argAttr[index].dyn_cast<StringAttr>().getValue().str();
       std::string portName =
           argPortsAttr[index].dyn_cast<StringAttr>().getValue().str();
-      INDENT_DEBUG("mixframe argument " << mixFrameName << "\n");
+      LLVM_DEBUG(llvm::errs() << "mixframe argument " << mixFrameName << "\n");
       processMixFrameOpArg(mixFrameName, portName, convertedPulseSequenceOp,
                            pulseCalSequenceArgs, argumentValue, mainFunc,
                            builder);
     } else if (argumentType.isa<PortType>()) {
       std::string portName =
           argPortsAttr[index].dyn_cast<StringAttr>().getValue().str();
-      INDENT_DEBUG("port argument " << portName << "\n");
+      LLVM_DEBUG(llvm::errs() << "port argument " << portName << "\n");
       processPortOpArg(portName, convertedPulseSequenceOp, pulseCalSequenceArgs,
                        argumentValue, mainFunc, builder);
     } else if (argumentType.isa<FloatType>()) {
@@ -276,7 +270,7 @@ void QUIRToPulsePass::processPulseCalArgs(
         assert(false && "unkown argument.");
       assert(angleOperands.size() && "no angle operand found.");
       auto nextAngle = angleOperands.front();
-      INDENT_DEBUG("angle argument ");
+      LLVM_DEBUG(llvm::errs() << "angle argument ");
       LLVM_DEBUG(nextAngle.dump());
       processAngleArg(nextAngle, convertedPulseSequenceOp, pulseCalSequenceArgs,
                       builder);
@@ -286,7 +280,7 @@ void QUIRToPulsePass::processPulseCalArgs(
         assert(false && "unkown argument.");
       assert(durationOperands.size() && "no duration operand found.");
       auto nextDuration = durationOperands.front();
-      INDENT_DEBUG("duration argument ");
+      LLVM_DEBUG(llvm::errs() << "duration argument ");
       LLVM_DEBUG(nextDuration.dump());
       processDurationArg(nextDuration, convertedPulseSequenceOp,
                          pulseCalSequenceArgs, builder);
