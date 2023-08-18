@@ -75,6 +75,13 @@ class SequenceOp:
     @property
     def arguments(self):
         return self.entry_block.arguments
+    
+    def pulse_args(self, args):
+        for i in range(len(args)):
+            args[i] = StringAttr.get(args[i])
+        arrayAttr = ArrayAttr.get(args)
+        self.attributes.__setitem__("pulse.args", arrayAttr)
+        return
 
 
 # class Waveform_CreateOp:
