@@ -77,9 +77,10 @@ class SequenceOp:
         return self.entry_block.arguments
     
     def pulse_args(self, args):
-        for i in range(len(args)):
-            args[i] = StringAttr.get(args[i])
-        arrayAttr = ArrayAttr.get(args)
+        args_attr = []
+        for i in args:
+            args_attr.append(StringAttr.get(i))
+        arrayAttr = ArrayAttr.get(args_attr)
         self.attributes.__setitem__("pulse.args", arrayAttr)
         return
 
