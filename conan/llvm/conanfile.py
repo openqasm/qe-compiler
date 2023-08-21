@@ -18,6 +18,7 @@ import re
 import os.path
 import os
 import shutil
+import sys
 
 from conan.tools.apple import is_apple_os
 
@@ -215,7 +216,7 @@ class LLVMConan(ConanFile):
         cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = 4
 
         cmake.definitions["MLIR_ENABLE_BINDINGS_PYTHON"] = "ON"
-        cmake.definitions["Python3_EXECUTABLE"] = "/Users/joshualou/.venv/IBM/bin/python"
+        cmake.definitions["Python3_EXECUTABLE"] = sys.executable
 
         if self.settings.build_type == "Debug":
             cmake.definitions["CMAKE_C_FLAGS"] = "-gz=zlib"
