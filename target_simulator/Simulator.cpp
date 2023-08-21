@@ -18,6 +18,7 @@
 
 #include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
 #include "Conversion/QUIRToAer.h"
+#include "Conversion/OutputClassicalRegisters.h"
 
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "HAL/TargetSystemRegistry.h"
@@ -90,6 +91,10 @@ SimulatorSystem::SimulatorSystem(std::unique_ptr<SimulatorConfig> config)
 } // SimulatorSystem
 
 llvm::Error SimulatorSystem::registerTargetPasses() {
+  mlir::PassRegistration<conversion::OutputCRegsPass>(
+      []() -> std::unique_ptr<conversion::OutputCRegsPass> {
+        return std::make_unique<conversion::OutputCRegsPass>(false);
+      });
   mlir::PassRegistration<conversion::QUIRToAERPass>(
       []() -> std::unique_ptr<conversion::QUIRToAERPass> {
         return std::make_unique<conversion::QUIRToAERPass>(false);
@@ -161,6 +166,7 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   mlir::registerLLVMDialectTranslation(*context);
   
   mlir::PassManager pm(context);
+  pm.addPass(std::make_unique<conversion::OutputCRegsPass>(false));
   pm.addPass(std::make_unique<quir::VariableEliminationPass>(false));
   pm.addPass(std::make_unique<conversion::QUIRToAERPass>(false));
   pm.addPass(mlir::createCanonicalizerPass());

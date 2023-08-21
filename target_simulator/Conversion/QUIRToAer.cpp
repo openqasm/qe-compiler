@@ -19,6 +19,7 @@
 //===----------------------------------------------------------------------===//
 #include "Conversion/QUIRToAer.h"
 #include "Conversion/TypeConversion.h"
+#include "Conversion/OQ3ToStandard/OQ3ToStandard.h"
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
@@ -27,8 +28,6 @@
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
-
-#include "SimulatorUtils.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
@@ -51,518 +50,31 @@ namespace {
 
 class AerStateWrapper {
 public:
-  AerStateWrapper(Value mem) : mem(mem) {}
+  AerStateWrapper() = default;
+  AerStateWrapper(LLVM::GlobalOp mem) : mem(mem) {}
   
   Value access(OpBuilder& builder) const {
+    auto addr = getAddr(builder);
     return builder.create<LLVM::LoadOp>(
-        builder.getUnknownLoc(), mem, /*alignment=*/8);
+        builder.getUnknownLoc(), addr, /*alignment=*/8);
+  }
+  
+  Value getAddr(OpBuilder& builder) const {
+    return builder.create<LLVM::AddressOfOp>(builder.getUnknownLoc(), mem);
+  }
+  
+  LLVM::GlobalOp raw() const {
+    return mem;
   }
 
 private:
-  Value mem;
+  LLVM::GlobalOp mem;
 };
-  
+
+AerStateWrapper aerState;
 std::map<std::string, LLVM::LLVMFuncOp> aerFuncTable;
 
-// TODO: Take care of errors, nan and inf.
-using AngleTable = std::map<double, Value>;
-using QubitTable = std::map<int, Value>;
-using VarTable = std::map<std::string, LLVM::GlobalOp>;
-
-// TODO: We should map some IDs (attributes?) to values
-// Split into another file (pass)
-class ValueTable {
-public:
-  static void registerAngle(double angle, Value v) {
-    assert(!std::isnan(angle) && !std::isinf(angle));
-    angleTable[angle] = v;
-  }
-  
-  static void registerQubit(int qid, Value v) {
-    qubitTable[qid] = v;
-  }
-  
-  static void registerGlobalVar(std::string name, LLVM::GlobalOp v) {
-    varTable[name] = v;
-  }
-  
-  static Value lookupAngle(double angle) {
-    return angleTable.at(angle);
-  }
-  
-  static Value lookupQubit(int qid) {
-    return qubitTable.at(qid);
-  }
-  
-  static LLVM::GlobalOp lookupVariable(std::string name) {
-    return varTable.at(name);
-  }
-  
-  static QubitTable getQubits() {
-    return qubitTable;
-  }
-  
-  static void clear() {
-    angleTable.clear();
-    qubitTable.clear();
-  }
-  
-  static void clearQubitTable() {
-    qubitTable.clear();
-  }
-  
-  static void clearVarTable() {
-    varTable.clear();
-  }
-
-  // TODO
-  static std::string getMangledName(StringRef name) {
-    return "__aer__" + name.str();
-  }
-  
-private:
-  static AngleTable angleTable;
-  static QubitTable qubitTable;
-  static VarTable varTable;
-};
-AngleTable ValueTable::angleTable;
-QubitTable ValueTable::qubitTable;
-VarTable ValueTable::varTable;
-
-
-void buildCBitTable(ModuleOp moduleOp) {
-  ValueTable::clearVarTable();
-  OpBuilder builder(moduleOp);
-  
-  moduleOp.walk([&](oq3::DeclareVariableOp declOp) {
-    if(auto ty = declOp.type().dyn_cast<quir::CBitType>()) {
-      const std::string newName = ValueTable::getMangledName(declOp.getName());
-      const int width = ty.getWidth();
-      const auto iType = builder.getIntegerType(width);
-      builder.setInsertionPointAfter(declOp);
-      auto var = builder.create<LLVM::GlobalOp>(
-          declOp->getLoc(),
-          iType, /*isConstant=*/false,
-          LLVM::Linkage::Weak, // TODO:?
-          newName,
-          builder.getIntegerAttr(iType, 0),
-          /*alignment=*/4);
-      ValueTable::registerGlobalVar(newName, var);
-    } else {
-      llvm::errs() << "Unsupported variable declaration: ";
-      declOp.print(llvm::errs());
-      llvm::errs() << "\n";
-    }
-  });
-}
-
-void buildQubitTable(ModuleOp moduleOp, AerStateWrapper wrapper) {
-  ValueTable::clearQubitTable();
-  OpBuilder builder(moduleOp);
-  
-  moduleOp.walk([&](quir::DeclareQubitOp declOp){
-    const int width = declOp.getType().dyn_cast<quir::QubitType>().getWidth();
-    if(width != 1) throw std::runtime_error(""); // TODO
-    
-    builder.setInsertionPointAfter(declOp);
-    const auto widthAttr = builder.getIntegerAttr(
-        builder.getI64Type(), width);
-    auto constOp = builder.create<arith::ConstantOp>(
-        declOp->getLoc(), builder.getI64Type(), widthAttr);
-    auto aerState = wrapper.access(builder);
-    auto alloc = builder.create<LLVM::CallOp>(
-        declOp->getLoc(),
-        aerFuncTable.at("aer_allocate_qubits"),
-        ValueRange{aerState, constOp});
-
-    ValueTable::registerQubit(*declOp.id(), alloc.getResult(0));
-  });
-  
-  // TODO
-  // Assume that qubit declaration with the biggest id is called after any other declaration
-  auto qubitTable = ValueTable::getQubits();
-  if(!qubitTable.empty()) {
-    auto declOp = qubitTable.rbegin()->second.getDefiningOp();
-    builder.setInsertionPointAfter(declOp);
-    auto aerState = wrapper.access(builder);
-    builder.create<LLVM::CallOp>(
-        declOp->getLoc(), aerFuncTable.at("aer_state_initialize"), aerState);
-  }
-}
-
-}
-
-// Assume qcs.init is called before all quir.declare_qubit operations
-struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
-  explicit QCSInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, AerStateWrapper aerState)
-    : OpConversionPattern(typeConverter, ctx, /* benefit= */1), aerState(aerState)
-  {}
-  
-  LogicalResult matchAndRewrite(qcs::SystemInitOp initOp,
-                                qcs::SystemInitOp::Adaptor adapter,
-                                ConversionPatternRewriter &rewriter) const override {
-    
-    // global string values for aer configuration
-    std::map<std::string, mlir::Value> globals;
-    const auto config_strs = {
-        "method", "statevector",
-        "device", "CPU",
-        "precision", "double"};
-    for(auto config_str : config_strs) {
-      const auto var_name = std::string("aer_conf_") + config_str;
-      const auto with_null = config_str + std::string("\0", 1);
-      globals[config_str] = LLVM::createGlobalString(
-        initOp->getLoc(), rewriter, var_name,
-        with_null, LLVM::Linkage::Private);
-    }
-    // configure
-    // aer_state_configure(state, "method", "statevector")
-    // aer_state_configure(state, "device", "CPU")
-    // aer_state_configure(state, "precision", "double")
-    auto state = aerState.access(rewriter);
-    rewriter.create<LLVM::CallOp>(
-        initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
-        ValueRange{state, globals["method"], globals["statevector"]});
-    rewriter.create<LLVM::CallOp>(
-        initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
-        ValueRange{state, globals["device"], globals["CPU"]});
-    rewriter.create<LLVM::CallOp>(
-        initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
-        ValueRange{state, globals["precision"], globals["double"]});
-    rewriter.eraseOp(initOp);
-    return success();
-  }
-  
-private:
-  AerStateWrapper aerState;
-};
-
-struct RemoveQCSShotInitConversionPat : public OpConversionPattern<qcs::ShotInitOp> {
-  explicit RemoveQCSShotInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
-  {}
-  
-  LogicalResult matchAndRewrite(qcs::ShotInitOp initOp,
-                                qcs::ShotInitOp::Adaptor adapter,
-                                ConversionPatternRewriter &rewriter) const override {
-    rewriter.eraseOp(initOp);
-    return success();
-  }
-};
-
-struct FinalizeConversionPat : public OpConversionPattern<qcs::SystemFinalizeOp> {
-  explicit FinalizeConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, AerStateWrapper aerState)
-    : OpConversionPattern(typeConverter, ctx, /* benefit= */1),
-      aerState(aerState)
-  {}
-  
-  LogicalResult matchAndRewrite(qcs::SystemFinalizeOp finOp,
-                                qcs::SystemFinalizeOp::Adaptor adapter,
-                                ConversionPatternRewriter &rewriter) const override {
-    PatternRewriter::InsertionGuard insertGuard(rewriter);
-    rewriter.setInsertionPointAfter(finOp);
-    rewriter.create<LLVM::CallOp>(rewriter.getUnknownLoc(),
-                                  aerFuncTable.at("aer_state_finalize"),
-                                  aerState.access(rewriter));
-    rewriter.eraseOp(finOp);
-    return success();
-  }
-  
-private:
-  AerStateWrapper aerState;
-};
-
-struct BuiltinUopConversionPat : public OpConversionPattern<quir::Builtin_UOp> {
-  explicit BuiltinUopConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, AerStateWrapper aerState)
-    : OpConversionPattern(typeConverter, ctx, /*benefit=*/1),
-      aerState(aerState)
-  {}
-  
-  LogicalResult matchAndRewrite(quir::Builtin_UOp op,
-                                quir::Builtin_UOp::Adaptor adaptor,
-                                ConversionPatternRewriter &rewriter) const override
-  {
-    // qubit, angle{1, 2, 3}
-    assert(op.getOperands().size() == 4);
-
-    std::vector<Value> args;
-    args.emplace_back(aerState.access(rewriter));
-    { // qubit
-      const auto qID = quir::lookupQubitId(op.target());
-      assert(qID);
-      args.emplace_back(ValueTable::lookupQubit(*qID));
-    }
-    for(auto val : {op.theta(), op.phi(), op.lambda()}) {
-      auto angleOp = dyn_cast<quir::ConstantOp>(val.getDefiningOp());
-      const double angle = angleOp.value().dyn_cast<quir::AngleAttr>().getValue().convertToDouble();
-      args.emplace_back(ValueTable::lookupAngle(angle));
-    }
-    rewriter.create<LLVM::CallOp>(
-        op.getLoc(), aerFuncTable.at("aer_apply_u3"), args);
-    rewriter.eraseOp(op);
-    return success();
-  }
-  
-private:
-  AerStateWrapper aerState;
-};
-
-struct BuiltinCXConversionPat : public OpConversionPattern<quir::BuiltinCXOp> {
-  explicit BuiltinCXConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, AerStateWrapper aerState)
-    : OpConversionPattern(typeConverter, ctx, /*benefit=*/1),
-      aerState(aerState)
-  {}
-  
-  LogicalResult matchAndRewrite(quir::BuiltinCXOp op,
-                                quir::BuiltinCXOp::Adaptor adaptor,
-                                ConversionPatternRewriter &rewriter) const override
-  {
-    auto qID1 = quir::lookupQubitId(op->getOperand(0));
-    auto qID2 = quir::lookupQubitId(op->getOperand(1));
-    if(qID1 && qID2) {
-      auto q1 = ValueTable::lookupQubit(*qID1);
-      auto q2 = ValueTable::lookupQubit(*qID2);
-      auto state = aerState.access(rewriter);
-      rewriter.create<LLVM::CallOp>(
-          op->getLoc(),
-          aerFuncTable.at("aer_apply_cx"),
-          ValueRange{state, q1, q2});
-      rewriter.eraseOp(op);
-      return success();
-    }
-    return failure();
-  }
-  
-private:
-  AerStateWrapper aerState;
-};
-
-struct MeasureOpConversionPat : public OpConversionPattern<quir::MeasureOp> {
-  explicit MeasureOpConversionPat(
-      MLIRContext *ctx, TypeConverter &typeConverter, AerStateWrapper aerState)
-    : OpConversionPattern(typeConverter, ctx, /*benefit=*/1),
-      aerState(aerState)
-  {}
-  
-  LogicalResult matchAndRewrite(quir::MeasureOp op,
-                                quir::MeasureOp::Adaptor adaptor,
-                                ConversionPatternRewriter &rewriter) const override
-  {
-    // TODO: Should not create a new array each time.
-    if(auto qID = quir::lookupQubitId(op->getOperand(0))) {
-      auto context = op->getContext();
-      const auto i64Type = IntegerType::get(context, 64);
-      const unsigned arrSize = 1; // TODO
-      const IntegerAttr arraySizeAttr = rewriter.getIntegerAttr(i64Type, arrSize);
-      const unsigned int align = 8; // TODO
-      const auto qubit = ValueTable::lookupQubit(*qID);
-      auto arrSizeOp = rewriter.create<arith::ConstantOp>(
-          op->getLoc(), i64Type, arraySizeAttr);
-      auto qubitArr = rewriter.create<LLVM::AllocaOp>(
-          op->getLoc(),
-          LLVM::LLVMPointerType::get(i64Type),
-          arrSizeOp, align);
-      rewriter.create<LLVM::StoreOp>(op->getLoc(), qubit, qubitArr);
-      auto state = aerState.access(rewriter);
-      auto meas = rewriter.create<LLVM::CallOp>(
-          op->getLoc(),
-          aerFuncTable.at("aer_apply_measure"),
-          ValueRange{state, qubitArr.getResult(), arrSizeOp});
-      auto casted = rewriter.create<arith::TruncIOp>(
-          op->getLoc(), meas.getResult(0), rewriter.getIntegerType(1));
-      rewriter.replaceOp(op, casted.getResult());
-
-      return success();
-    }
-    return failure();
-  }
-  
-private:
-  AerStateWrapper aerState;
-};
-
-struct AngleConversionPat : public OpConversionPattern<quir::ConstantOp> {
-  explicit AngleConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern(typeConverter, ctx, 1)
-  {}
-  
-  LogicalResult matchAndRewrite(quir::ConstantOp op,
-                               quir::ConstantOp::Adaptor adaptor,
-                               ConversionPatternRewriter &rewriter) const override
-  {
-    if (auto angleAttr = op.value().dyn_cast<quir::AngleAttr>()) {
-      rewriter.setInsertionPointAfter(op);
-      const auto angle = angleAttr.getValue().convertToDouble();
-      const auto fType = rewriter.getF64Type();
-      FloatAttr fAttr = rewriter.getFloatAttr(fType, angle);
-      auto constOp = rewriter.create<arith::ConstantOp>(op->getLoc(), fType, fAttr);
-      rewriter.replaceOp(op, {constOp});
-      // TODO: We must build angle table before applying QUIRToAerPass
-      ValueTable::registerAngle(angle, constOp);
-    } else if (op.value().isa<quir::DurationAttr>()) {
-      rewriter.eraseOp(op);
-    }
-    return success();
-  }
-};
-
-struct OQ3CastConversionPat : public OpConversionPattern<oq3::CastOp> {
-  explicit OQ3CastConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern(typeConverter, ctx, /*benefit=*/1)
-  {}
-  
-  LogicalResult matchAndRewrite(oq3::CastOp op, oq3::CastOp::Adaptor adaptor,
-      ConversionPatternRewriter &rewriter) const override
-  {
-    // TODO: Support other types
-    auto argTy = op.arg().getType().dyn_cast<IntegerType>();
-    auto retTy = op.out().getType().dyn_cast<IntegerType>();
-    if (argTy.getWidth() <= retTy.getWidth()) {
-      auto cast = rewriter.create<arith::ExtSIOp>(op->getLoc(), op.arg(), retTy);
-      rewriter.replaceOp(op, cast.getResult());
-    } else {
-      auto cast = rewriter.create<arith::TruncIOp>(op->getLoc(), op.arg(), retTy);
-      rewriter.replaceOp(op, cast.getResult());
-    }
-    
-    return success();
-  }
-
-};
-
-template <typename Op>
-struct RemoveConversionPat : public OpConversionPattern<Op> {
-  using Adaptor = typename Op::Adaptor;
-  
-  explicit RemoveConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-    : OpConversionPattern<Op>(typeConverter, ctx, 1)
-  {}
-  
-  LogicalResult matchAndRewrite(Op op, Adaptor adaptor,
-      ConversionPatternRewriter &rewriter) const override {
-    rewriter.eraseOp(op);
-    return success();
-  }
-};
-
-// TDOO
-// Probably I should implement this pattern as another pass
-struct FunctionConversionPat : public OpConversionPattern<mlir::FuncOp> {
-  explicit FunctionConversionPat(MLIRContext *ctx, TypeConverter &typeConverter, AerStateWrapper aerState)
-    : OpConversionPattern(typeConverter, ctx, 1), aerState(aerState)
-  {}
-  
-  LogicalResult matchAndRewrite(mlir::FuncOp funcOp, mlir::FuncOp::Adaptor adaptor,
-      ConversionPatternRewriter &rewriter) const override {
-    // Assume: funcOp != mainFunc
-    if(funcOp.getName() == "main") return success();
-    
-    rewriter.eraseOp(funcOp);
-    return success();
-  }
-  
-private:
-  AerStateWrapper aerState;
-};
-
-
-void conversion::QUIRToAERPass::getDependentDialects(
-    DialectRegistry &registry) const {
-  registry.insert<LLVM::LLVMDialect, mlir::memref::MemRefDialect,
-                  mlir::AffineDialect, arith::ArithmeticDialect>();
-}
-
-void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
-  ModuleOp moduleOp = getOperation();
-
-  // First remove all arguments from synchronization ops
-  moduleOp->walk([](qcs::SynchronizeOp synchOp) {
-    synchOp.qubitsMutable().assign(ValueRange({}));
-  });
-
-  AerTypeConverter typeConverter;
-  auto *context = &getContext();
-  ConversionTarget target(*context);
-
-  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
-                         mlir::AffineDialect, memref::MemRefDialect,
-                         scf::SCFDialect, StandardOpsDialect,
-                         mlir::pulse::PulseDialect>();
-  // Since we are converting QUIR -> AER/LLVM, make QUIR illegal.
-  // Further, because OQ3 and QCS ops are migrated from QUIR, make them also
-  // illegal.
-  target.addIllegalDialect<qcs::QCSDialect, oq3::OQ3Dialect>();
-  target.addDynamicallyLegalOp<FuncOp>([&](FuncOp op) {
-    return typeConverter.isSignatureLegal(op.getType());
-  });
-
-  RewritePatternSet patterns(context);
-  populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
-                                                           typeConverter);
-  populateCallOpTypeConversionPattern(patterns, typeConverter);
-  patterns.add<RemoveQCSShotInitConversionPat,
-               OQ3CastConversionPat,
-               RemoveConversionPat<quir::DeclareQubitOp>,
-               RemoveConversionPat<oq3::CastOp>,
-               RemoveConversionPat<quir::DelayOp>,
-               RemoveConversionPat<quir::BarrierOp>,
-               RemoveConversionPat<quir::CallGateOp>, // TODO
-               AngleConversionPat>(
-      context, typeConverter);
-  
-  // Aer initialization
-  declareAerFunctions(moduleOp);
-  buildCBitTable(moduleOp);
-  auto aerState = [&]() -> AerStateWrapper {
-    auto mainFunc = mlir::quir::getMainFunction(moduleOp);
-    OpBuilder builder(mainFunc);
-
-    auto mainBody = &mainFunc->getRegion(0).getBlocks().front();
-    builder.setInsertionPointToStart(mainBody);
-    const auto i8Type = IntegerType::get(context, 8);
-    const auto i64Type = IntegerType::get(context, 64);
-    auto arrSizeOp = builder.create<arith::ConstantOp>(
-        builder.getUnknownLoc(), i64Type,
-        builder.getIntegerAttr(i64Type, 1));
-    auto alloca = builder.create<LLVM::AllocaOp>(
-        builder.getUnknownLoc(),
-        LLVM::LLVMPointerType::get(LLVM::LLVMPointerType::get(i8Type)),
-        arrSizeOp, /*alignment=*/8); // alignment must be 8
-    auto call = builder.create<LLVM::CallOp>(
-        builder.getUnknownLoc(),
-        aerFuncTable.at("aer_state"),
-        ValueRange{}).getResult(0);
-    builder.create<LLVM::StoreOp>(builder.getUnknownLoc(), call, alloca);
-    return AerStateWrapper(alloca);
-  }();
-  // Must build qubit table before applying any conversion
-  buildQubitTable(moduleOp, aerState);
-  
-  patterns.add<QCSInitConversionPat,
-               FinalizeConversionPat,
-               BuiltinUopConversionPat,
-               BuiltinCXConversionPat,
-               MeasureOpConversionPat,
-               FunctionConversionPat>(
-    context, typeConverter, aerState);
-
-  // With the target and rewrite patterns defined, we can now attempt the
-  // conversion. The conversion will signal failure if any of our `illegal`
-  // operations were not converted successfully.
-  if (failed(applyPartialConversion(moduleOp, target, std::move(patterns)))) {
-    llvm::outs() << "Failed applyPartialConversion\n";
-  }
-} // QUIRToStdPass::runOnOperation()
-
-llvm::StringRef QUIRToAERPass::getArgument() const {
-  return "simulator-quir-to-aer";
-}
-
-llvm::StringRef QUIRToAERPass::getDescription() const {
-  return "Convert QUIR ops to aer";
-}
-
-void QUIRToAERPass::declareAerFunctions(ModuleOp moduleOp) {
+void declareAerFunctions(ModuleOp moduleOp) {
   using LLVM::LLVMFunctionType;
 
   aerFuncTable.clear();
@@ -613,6 +125,410 @@ void QUIRToAERPass::declareAerFunctions(ModuleOp moduleOp) {
   // @aer_state_finalize(i8* noundef) -> void
   const auto aerStateFinalizeType = LLVMFunctionType::get(voidType, aerStateType);
   registerFunc("aer_state_finalize", aerStateFinalizeType);
+}
+
+// Create an Aer state globally and return a wrapped value
+void createAerState(MLIRContext *ctx, ModuleOp moduleOp) {
+  const auto i8Type = IntegerType::get(ctx, 8);
+
+  OpBuilder builder(moduleOp);
+  builder.setInsertionPointToStart(moduleOp.getBody());
+  auto aerStateTy = LLVM::LLVMPointerType::get(i8Type);
+  auto globalState = builder.create<LLVM::GlobalOp>(
+    moduleOp->getLoc(),
+    aerStateTy, /*isConstant=*/false,
+    LLVM::Linkage::Weak, "aer_state_handler",
+    Attribute{},
+    /*alignment=*/8);
+  aerState = AerStateWrapper(globalState);
+
+  auto mainFunc = mlir::quir::getMainFunction(moduleOp);
+  auto mainBody = &mainFunc->getRegion(0).getBlocks().front();
+  builder.setInsertionPointToStart(mainBody);
+  auto addr = aerState.getAddr(builder);
+  auto call = builder.create<LLVM::CallOp>(
+      builder.getUnknownLoc(),
+      aerFuncTable.at("aer_state"),
+      ValueRange{}).getResult(0);
+  builder.create<LLVM::StoreOp>(builder.getUnknownLoc(), call, addr);
+}
+
+
+// TODO: Take care of errors, nan and inf.
+using AngleTable = std::map<double, Value>;
+using QubitTable = std::map<int, Value>;
+
+// TODO: We should map some IDs (attributes?) to values
+// Split into another file (pass)
+class ValueTable {
+public:
+  static void registerAngle(double angle, Value v) {
+    assert(!std::isnan(angle) && !std::isinf(angle));
+    angleTable[angle] = v;
+  }
+  
+  static void registerQubit(int qid, Value v) {
+    qubitTable[qid] = v;
+  }
+  
+  static Value lookupAngle(double angle) {
+    return angleTable.at(angle);
+  }
+  
+  static Value lookupQubit(int qid) {
+    return qubitTable.at(qid);
+  }
+  
+  static QubitTable getQubits() {
+    return qubitTable;
+  }
+  
+  static void clear() {
+    angleTable.clear();
+    qubitTable.clear();
+  }
+  
+  static void clearQubitTable() {
+    qubitTable.clear();
+  }
+  
+private:
+  static AngleTable angleTable;
+  static QubitTable qubitTable;
+};
+AngleTable ValueTable::angleTable;
+QubitTable ValueTable::qubitTable;
+
+
+void buildQubitTable(ModuleOp moduleOp) {
+  ValueTable::clearQubitTable();
+  OpBuilder builder(moduleOp);
+  
+  moduleOp.walk([&](quir::DeclareQubitOp declOp){
+    const int width = declOp.getType().dyn_cast<quir::QubitType>().getWidth();
+    if(width != 1) throw std::runtime_error(""); // TODO
+    
+    builder.setInsertionPointAfter(declOp);
+    const auto widthAttr = builder.getIntegerAttr(
+        builder.getI64Type(), width);
+    auto constOp = builder.create<arith::ConstantOp>(
+        declOp->getLoc(), builder.getI64Type(), widthAttr);
+    auto state = aerState.access(builder);
+    auto alloc = builder.create<LLVM::CallOp>(
+        declOp->getLoc(),
+        aerFuncTable.at("aer_allocate_qubits"),
+        ValueRange{state, constOp});
+
+    ValueTable::registerQubit(*declOp.id(), alloc.getResult(0));
+  });
+  
+  // TODO
+  // Assume that qubit declaration with the biggest id is called after any other declaration
+  auto qubitTable = ValueTable::getQubits();
+  if(!qubitTable.empty()) {
+    auto declOp = qubitTable.rbegin()->second.getDefiningOp();
+    builder.setInsertionPointAfter(declOp);
+    auto state = aerState.access(builder);
+    builder.create<LLVM::CallOp>(
+        declOp->getLoc(), aerFuncTable.at("aer_state_initialize"), state);
+  }
+}
+
+}
+
+// Assume qcs.init is called before all quir.declare_qubit operations
+struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
+  explicit QCSInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
+  {}
+  
+  LogicalResult matchAndRewrite(qcs::SystemInitOp initOp,
+                                qcs::SystemInitOp::Adaptor adapter,
+                                ConversionPatternRewriter &rewriter) const override {
+    
+    // global string values for aer configuration
+    std::map<std::string, mlir::Value> globals;
+    const auto config_strs = {
+        "method", "statevector",
+        "device", "CPU",
+        "precision", "double"};
+    for(auto config_str : config_strs) {
+      const auto var_name = std::string("aer_conf_") + config_str;
+      const auto with_null = config_str + std::string("\0", 1);
+      globals[config_str] = LLVM::createGlobalString(
+        initOp->getLoc(), rewriter, var_name,
+        with_null, LLVM::Linkage::Private);
+    }
+    // configure
+    // aer_state_configure(state, "method", "statevector")
+    // aer_state_configure(state, "device", "CPU")
+    // aer_state_configure(state, "precision", "double")
+    auto state = aerState.access(rewriter);
+    rewriter.create<LLVM::CallOp>(
+        initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
+        ValueRange{state, globals["method"], globals["statevector"]});
+    rewriter.create<LLVM::CallOp>(
+        initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
+        ValueRange{state, globals["device"], globals["CPU"]});
+    rewriter.create<LLVM::CallOp>(
+        initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
+        ValueRange{state, globals["precision"], globals["double"]});
+    rewriter.eraseOp(initOp);
+    return success();
+  }
+};
+
+struct RemoveQCSShotInitConversionPat : public OpConversionPattern<qcs::ShotInitOp> {
+  explicit RemoveQCSShotInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
+  {}
+  
+  LogicalResult matchAndRewrite(qcs::ShotInitOp initOp,
+                                qcs::ShotInitOp::Adaptor adapter,
+                                ConversionPatternRewriter &rewriter) const override {
+    rewriter.eraseOp(initOp);
+    return success();
+  }
+};
+
+struct FinalizeConversionPat : public OpConversionPattern<qcs::SystemFinalizeOp> {
+  explicit FinalizeConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /* benefit= */1)
+  {}
+  
+  LogicalResult matchAndRewrite(qcs::SystemFinalizeOp finOp,
+                                qcs::SystemFinalizeOp::Adaptor adapter,
+                                ConversionPatternRewriter &rewriter) const override {
+    PatternRewriter::InsertionGuard insertGuard(rewriter);
+    rewriter.setInsertionPointAfter(finOp);
+    rewriter.create<LLVM::CallOp>(rewriter.getUnknownLoc(),
+                                  aerFuncTable.at("aer_state_finalize"),
+                                  aerState.access(rewriter));
+    rewriter.eraseOp(finOp);
+    return success();
+  }
+};
+
+struct BuiltinUopConversionPat : public OpConversionPattern<quir::Builtin_UOp> {
+  explicit BuiltinUopConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /*benefit=*/1)
+  {}
+  
+  LogicalResult matchAndRewrite(quir::Builtin_UOp op,
+                                quir::Builtin_UOp::Adaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override
+  {
+    // qubit, angle{1, 2, 3}
+    assert(op.getOperands().size() == 4);
+
+    std::vector<Value> args;
+    args.emplace_back(aerState.access(rewriter));
+    { // qubit
+      const auto qID = quir::lookupQubitId(op.target());
+      assert(qID);
+      args.emplace_back(ValueTable::lookupQubit(*qID));
+    }
+    for(auto val : {op.theta(), op.phi(), op.lambda()}) {
+      auto angleOp = dyn_cast<quir::ConstantOp>(val.getDefiningOp());
+      const double angle = angleOp.value().dyn_cast<quir::AngleAttr>().getValue().convertToDouble();
+      args.emplace_back(ValueTable::lookupAngle(angle));
+    }
+    rewriter.create<LLVM::CallOp>(
+        op.getLoc(), aerFuncTable.at("aer_apply_u3"), args);
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+struct BuiltinCXConversionPat : public OpConversionPattern<quir::BuiltinCXOp> {
+  explicit BuiltinCXConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /*benefit=*/1)
+  {}
+  
+  LogicalResult matchAndRewrite(quir::BuiltinCXOp op,
+                                quir::BuiltinCXOp::Adaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override
+  {
+    auto qID1 = quir::lookupQubitId(op->getOperand(0));
+    auto qID2 = quir::lookupQubitId(op->getOperand(1));
+    if(qID1 && qID2) {
+      auto q1 = ValueTable::lookupQubit(*qID1);
+      auto q2 = ValueTable::lookupQubit(*qID2);
+      auto state = aerState.access(rewriter);
+      rewriter.create<LLVM::CallOp>(
+          op->getLoc(),
+          aerFuncTable.at("aer_apply_cx"),
+          ValueRange{state, q1, q2});
+      rewriter.eraseOp(op);
+      return success();
+    }
+    return failure();
+  }
+};
+
+struct MeasureOpConversionPat : public OpConversionPattern<quir::MeasureOp> {
+  explicit MeasureOpConversionPat(
+      MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /*benefit=*/1)
+  {}
+  
+  LogicalResult matchAndRewrite(quir::MeasureOp op,
+                                quir::MeasureOp::Adaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override
+  {
+    // TODO: Should not create a new array each time.
+    if(auto qID = quir::lookupQubitId(op->getOperand(0))) {
+      auto context = op->getContext();
+      const auto i64Type = IntegerType::get(context, 64);
+      const unsigned arrSize = 1; // TODO
+      const IntegerAttr arraySizeAttr = rewriter.getIntegerAttr(i64Type, arrSize);
+      const unsigned int align = 8; // TODO
+      const auto qubit = ValueTable::lookupQubit(*qID);
+      auto arrSizeOp = rewriter.create<arith::ConstantOp>(
+          op->getLoc(), i64Type, arraySizeAttr);
+      auto qubitArr = rewriter.create<LLVM::AllocaOp>(
+          op->getLoc(),
+          LLVM::LLVMPointerType::get(i64Type),
+          arrSizeOp, align);
+      rewriter.create<LLVM::StoreOp>(op->getLoc(), qubit, qubitArr);
+      auto state = aerState.access(rewriter);
+      auto meas = rewriter.create<LLVM::CallOp>(
+          op->getLoc(),
+          aerFuncTable.at("aer_apply_measure"),
+          ValueRange{state, qubitArr.getResult(), arrSizeOp});
+      auto casted = rewriter.create<arith::TruncIOp>(
+          op->getLoc(), meas.getResult(0), rewriter.getIntegerType(1));
+      rewriter.replaceOp(op, casted.getResult());
+
+      return success();
+    }
+    return failure();
+  }
+};
+
+struct AngleConversionPat : public OpConversionPattern<quir::ConstantOp> {
+  explicit AngleConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, 1)
+  {}
+  
+  LogicalResult matchAndRewrite(quir::ConstantOp op,
+                                quir::ConstantOp::Adaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override
+  {
+    if (auto angleAttr = op.value().dyn_cast<quir::AngleAttr>()) {
+      rewriter.setInsertionPointAfter(op);
+      const auto angle = angleAttr.getValue().convertToDouble();
+      const auto fType = rewriter.getF64Type();
+      FloatAttr fAttr = rewriter.getFloatAttr(fType, angle);
+      auto constOp = rewriter.create<arith::ConstantOp>(op->getLoc(), fType, fAttr);
+      rewriter.replaceOp(op, {constOp});
+      ValueTable::registerAngle(angle, constOp);
+    } else if (op.value().isa<quir::DurationAttr>()) {
+      rewriter.eraseOp(op);
+    }
+    return success();
+  }
+};
+
+template <typename Op>
+struct RemoveConversionPat : public OpConversionPattern<Op> {
+  using Adaptor = typename Op::Adaptor;
+  
+  explicit RemoveConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern<Op>(typeConverter, ctx, 1)
+  {}
+  
+  LogicalResult matchAndRewrite(Op op, Adaptor adaptor,
+      ConversionPatternRewriter &rewriter) const override {
+    rewriter.eraseOp(op);
+    return success();
+  }
+};
+
+// TDOO: Supporting custom gates is future work.
+struct FunctionConversionPat : public OpConversionPattern<mlir::FuncOp> {
+  explicit FunctionConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, 1)
+  {}
+  
+  LogicalResult matchAndRewrite(mlir::FuncOp funcOp, mlir::FuncOp::Adaptor adaptor,
+      ConversionPatternRewriter &rewriter) const override {
+    // Assume: funcOp != mainFunc
+    if(funcOp.getName() == "main") return success();
+    
+    rewriter.eraseOp(funcOp);
+    return success();
+  }
+};
+
+
+void conversion::QUIRToAERPass::getDependentDialects(
+    DialectRegistry &registry) const {
+  registry.insert<LLVM::LLVMDialect, mlir::memref::MemRefDialect,
+                  mlir::AffineDialect, arith::ArithmeticDialect>();
+}
+
+void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
+  ModuleOp moduleOp = getOperation();
+
+  // First remove all arguments from synchronization ops
+  moduleOp->walk([](qcs::SynchronizeOp synchOp) {
+    synchOp.qubitsMutable().assign(ValueRange({}));
+  });
+
+  AerTypeConverter typeConverter;
+  auto *context = &getContext();
+  ConversionTarget target(*context);
+
+  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
+                         mlir::AffineDialect, memref::MemRefDialect,
+                         scf::SCFDialect, StandardOpsDialect,
+                         mlir::pulse::PulseDialect>();
+  target.addIllegalDialect<qcs::QCSDialect, oq3::OQ3Dialect, quir::QUIRDialect>();
+  target.addDynamicallyLegalOp<FuncOp>([&](FuncOp op) {
+    return typeConverter.isSignatureLegal(op.getType());
+  });
+
+  RewritePatternSet patterns(context);
+  populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
+                                                           typeConverter);
+  populateCallOpTypeConversionPattern(patterns, typeConverter);
+  oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns);
+  patterns.add<RemoveQCSShotInitConversionPat,
+               RemoveConversionPat<quir::DeclareQubitOp>,
+               RemoveConversionPat<quir::DelayOp>, // TODO: Support noise models
+               RemoveConversionPat<quir::BarrierOp>, // TODO: Support noise models
+               RemoveConversionPat<quir::CallGateOp>, // TODO: Support custom gates
+               AngleConversionPat,
+               QCSInitConversionPat,
+               FinalizeConversionPat,
+               BuiltinUopConversionPat,
+               BuiltinCXConversionPat,
+               MeasureOpConversionPat,
+               FunctionConversionPat>(
+      context, typeConverter);
+  
+  // Aer initialization
+  declareAerFunctions(moduleOp);
+  createAerState(context, moduleOp);
+
+  // Must build qubit table before applying any conversion
+  buildQubitTable(moduleOp);
+
+  // With the target and rewrite patterns defined, we can now attempt the
+  // conversion. The conversion will signal failure if any of our `illegal`
+  // operations were not converted successfully.
+  if (failed(applyPartialConversion(moduleOp, target, std::move(patterns)))) {
+    llvm::outs() << "Failed applyPartialConversion\n";
+  }
+} // QUIRToStdPass::runOnOperation()
+
+llvm::StringRef QUIRToAERPass::getArgument() const {
+  return "simulator-quir-to-aer";
+}
+
+llvm::StringRef QUIRToAERPass::getDescription() const {
+  return "Convert QUIR ops to aer";
 }
 
 } // namespace qssc::targets::simulator::conversion

@@ -37,6 +37,7 @@ endif ()
 
 qssc_add_plugin(QSSCTargetSimulator QSSC_TARGET_PLUGIN
 Conversion/QUIRToAER.cpp
+Conversion/OutputClassicalRegisters.cpp
 Conversion/TypeConversion.cpp
 Simulator.cpp
 
