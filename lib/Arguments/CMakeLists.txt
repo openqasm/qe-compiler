@@ -11,5 +11,6 @@
 # that they have been altered from the originals.
 
 add_library(QSSCArguments Signature.cpp Arguments.cpp)
+add_dependencies(QSSCArguments mlir-headers)
 
 target_link_libraries(QSSCArguments QSSCPayloadZip libzip::zip)

@@ -25,6 +25,7 @@ set(SOURCES
         QSSC.cpp
 )
 add_library(QSSCCore ${SOURCES})
+add_dependencies(QSSCCore mlir-headers)
 
 get_property(qssc_targets GLOBAL PROPERTY QSSC_TARGETS)
 get_property(mlir_dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
@@ -62,6 +63,7 @@ set_property(GLOBAL PROPERTY QSSC_API_LIBS ${qssc_api_libs})
 # INTERFACE and dependencies to all targets that refer to the library yet does
 # not materialize as an artifact by itself
 add_library(QSSCLib INTERFACE)
+add_dependencies(QSSCLib mlir-headers)
 target_link_libraries(QSSCLib INTERFACE ${qssc_api_libs})
 
 if(INSTALL_BUNDLED_STATIC_LIB)
@@ -70,6 +72,7 @@ if(INSTALL_BUNDLED_STATIC_LIB)
         # If you consider adding that support, MacOS's libtool could be an option since it appears capable of bundling static libraries.
     endif()
     add_library(QSSCompiler STATIC API/api.cpp)
+    add_dependencies(QSSCompiler mlir-headers)
     target_link_libraries(QSSCompiler PUBLIC
            ${qssc_targets}
             QSSCAPI
