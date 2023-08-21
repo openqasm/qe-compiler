@@ -394,6 +394,7 @@ endforeach()
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES})
 
 add_library(qss-compiler-opt ${SOURCE_FILES})
+add_dependencies(qss-compiler-opt mlir-headers)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
