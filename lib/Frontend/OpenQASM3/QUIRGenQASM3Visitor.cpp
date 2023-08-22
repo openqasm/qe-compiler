@@ -516,9 +516,8 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   builder = defaultRegionBuilder;
   circuitParentBuilder = defaultRegionBuilder;
   if (const ASTDefaultStatementNode *defaultStatementNode =
-          node->GetDefaultStatement()) {
+          node->GetDefaultStatement())
     BaseQASM3Visitor::visit(defaultStatementNode->GetStatementList());
-  }
 
   if (buildingInCircuit)
     finishCircuit();
