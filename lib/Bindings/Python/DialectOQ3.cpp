@@ -17,9 +17,7 @@ using namespace mlir;
 using namespace mlir::python;
 using namespace mlir::python::adaptors;
 
-void populateDialectOQ3Submodule(const pybind11::module &m) {
-  
-}
+void populateDialectOQ3Submodule(const pybind11::module &m) {}
 
 PYBIND11_MODULE(_ibmDialectsOQ3, m) {
   m.doc() = "IBM Quantum OQ3 dialect.";

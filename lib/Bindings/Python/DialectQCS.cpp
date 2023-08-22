@@ -17,9 +17,7 @@ using namespace mlir;
 using namespace mlir::python;
 using namespace mlir::python::adaptors;
 
-void populateDialectQCSSubmodule(const pybind11::module &m) {
-  
-}
+void populateDialectQCSSubmodule(const pybind11::module &m) {}
 
 PYBIND11_MODULE(_ibmDialectsQCS, m) {
   m.doc() = "IBM Quantum QCS dialect.";

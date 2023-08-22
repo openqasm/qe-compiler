@@ -16,7 +16,6 @@ extern "C" {
 
 MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(OQ3, oq3);
 
-
 #ifdef __cplusplus
 }
 #endif

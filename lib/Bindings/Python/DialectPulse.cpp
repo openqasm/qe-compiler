@@ -72,7 +72,6 @@ void populateDialectPulseSubmodule(const pybind11::module &m) {
       "Get an instance of MixedFrameType in given context.", py::arg("cls"),
       py::arg("context") = py::none());
 
-
   //===-------------------------------------------------------------------===//
   // PortType
   //===-------------------------------------------------------------------===//
@@ -116,7 +115,7 @@ PYBIND11_MODULE(_ibmDialectsPulse, m) {
         MlirDialectHandle handle = mlirGetDialectHandle__pulse__();
         mlirDialectHandleRegisterDialect(handle, context);
         if (load)
-           mlirDialectHandleLoadDialect(handle, context);
+          mlirDialectHandleLoadDialect(handle, context);
       },
       py::arg("context") = py::none(), py::arg("load") = true);
 }

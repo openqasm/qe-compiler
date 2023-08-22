@@ -17,4 +17,3 @@
 using namespace mlir;
 
 MLIR_DEFINE_CAPI_DIALECT_REGISTRATION(QCS, qcs, qcs::QCSDialect)
-
