@@ -1,4 +1,4 @@
-//===- Target.inc - Mock target registration --------------------*- C++ -*-===//
+//===- Target.inc - Simulator target registration --------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
