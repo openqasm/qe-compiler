@@ -36,7 +36,7 @@ if ("LLVMAArch64CodeGen" IN_LIST LLVM_AVAILABLE_LIBS)
 endif ()
 
 qssc_add_plugin(QSSCTargetSimulator QSSC_TARGET_PLUGIN
-Conversion/QUIRToAER.cpp
+Conversion/QUIRToAer.cpp
 Conversion/OutputClassicalRegisters.cpp
 Conversion/TypeConversion.cpp
 Simulator.cpp
