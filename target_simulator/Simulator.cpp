@@ -1,4 +1,4 @@
-//===- SimulatorTarget.cpp ----------------------------------------*- C++ -*-===//
+//===- Simulator.cpp ----------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -79,8 +79,7 @@ int qssc::targets::simulator::init() {
   return registered ? 0 : -1;
 }
 
-const std::vector<std::string> SimulatorSystem::childNames =
-    {"SimulatorChild1", "SimulatorChild2"};
+const std::vector<std::string> SimulatorSystem::childNames = {};
 
 SimulatorConfig::SimulatorConfig(llvm::StringRef configurationPath)
     : SystemConfiguration() {
@@ -93,7 +92,7 @@ SimulatorSystem::SimulatorSystem(std::unique_ptr<SimulatorConfig> config)
 llvm::Error SimulatorSystem::registerTargetPasses() {
   mlir::PassRegistration<conversion::OutputCRegsPass>(
       []() -> std::unique_ptr<conversion::OutputCRegsPass> {
-        return std::make_unique<conversion::OutputCRegsPass>(false);
+        return std::make_unique<conversion::OutputCRegsPass>();
       });
   mlir::PassRegistration<conversion::QUIRToAERPass>(
       []() -> std::unique_ptr<conversion::QUIRToAERPass> {
@@ -166,7 +165,11 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   mlir::registerLLVMDialectTranslation(*context);
   
   mlir::PassManager pm(context);
-  pm.addPass(std::make_unique<conversion::OutputCRegsPass>(false));
+  // `OutputCRegsPass` must be applied before `VariableEliminationPass`.
+  // It inserts classical `oq3` instructions for printing the values
+  // of classical registers. These instructions will be converted into
+  // standard ops by `VariableEliminationPass`.
+  pm.addPass(std::make_unique<conversion::OutputCRegsPass>());
   pm.addPass(std::make_unique<quir::VariableEliminationPass>(false));
   pm.addPass(std::make_unique<conversion::QUIRToAERPass>(false));
   pm.addPass(mlir::createCanonicalizerPass());
@@ -198,7 +201,6 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
       targetTriple, cpu, features.getString(), {}, {}));
   auto dataLayout = machine->createDataLayout();
   
-  // TODO: Define a function like `aer::translateModuleToLLVMDialect`
   if(auto err =
         quir::translateModuleToLLVMDialect(moduleOp, dataLayout)) {
     llvm::errs() << err;
@@ -215,8 +217,7 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
     return;
   }
   
-  // TODO: why do not use created datalayout above?
-  llvmModule->setDataLayout(machine->createDataLayout());
+  llvmModule->setDataLayout(dataLayout);
   llvmModule->setTargetTriple(targetTriple);
   
   // Optionally run an optimization pipeline over the llvm module.
@@ -226,7 +227,6 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
     return;
   }
   
-  // TODO: debug output
   llvm::outs() << "output il file:\n";
   llvm::outs() << *llvmModule;
   

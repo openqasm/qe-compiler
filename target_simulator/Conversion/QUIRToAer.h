@@ -1,4 +1,4 @@
-//===- QUIRToStd.h - Convert QUIR to Std Dialect ----------------*- C++ -*-===//
+//===- QUIRToAer.h - Convert QUIR to Aer Dialect ----------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //

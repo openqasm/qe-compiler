@@ -36,10 +36,8 @@ struct OutputCRegsPass
   void runOnOperation(SimulatorSystem &system) override;
   void getDependentDialects(mlir::DialectRegistry &registry) const override;
   
-  bool externalizeOutputVariables;
-
-  OutputCRegsPass(bool externalizeOutputVariables)
-      : PassWrapper(), externalizeOutputVariables(externalizeOutputVariables)
+  OutputCRegsPass()
+      : PassWrapper()
   {}
 
   llvm::StringRef getArgument() const override;
@@ -48,4 +46,3 @@ struct OutputCRegsPass
 } // namespace qssc::targets::simulator::conversion
 
 #endif // SIMULATOR_CONVERSION_OUTPUT_CLASSICAL_REGISTERS_H
-

@@ -39,6 +39,7 @@ std::vector<std::pair<std::string, oq3::DeclareVariableOp>> cbitDecls;
 std::map<std::string, mlir::Value> globalStrs;
 LLVM::LLVMFuncOp printfFuncOp;
 
+// Create definition table that maps classical register names -> defining ops
 void collectCBitDecls(ModuleOp moduleOp) {
   cbitDecls.clear();
   
@@ -67,12 +68,14 @@ void prepareConversion(ModuleOp moduleOp) {
 namespace qssc::targets::simulator::conversion {
 
 // Insert output ops where `qcf.finalize` is called.
-// The reason why `qcf.finalize` is left (that is don't use a conversion pattern)
-// is that a subsequent pass can translate it properly.
+// We do not erase `qcf.finalize` because a subsequent pass may use it
+// for the translation.
 void insertOutputCRegs(ModuleOp moduleOp) {
+  // Assume that `qcf.finalize` is called only once.
   moduleOp->walk([&] (qcs::SystemFinalizeOp op) {
     OpBuilder builder(op);
 
+    // Define constant strings for printing globally.
     if(globalStrs.find("\n") == globalStrs.end()) {
       const auto varName = std::string{"str_endline"};
       const auto value = std::string{"\n\0", 2};
@@ -85,6 +88,8 @@ void insertOutputCRegs(ModuleOp moduleOp) {
       globalStrs["%d"] = LLVM::createGlobalString(
         op->getLoc(), builder, varName, value, LLVM::Linkage::Private);
     }
+    
+    // Print the values of classical registers in the declared order.
     for(auto& [name, declOp] : cbitDecls) {
       if(globalStrs.find(name) == globalStrs.end()) {
         const auto varName = std::string{"str_creg_"} + name;
@@ -114,7 +119,7 @@ void insertOutputCRegs(ModuleOp moduleOp) {
 void OutputCRegsPass::runOnOperation(SimulatorSystem &system) {
   ModuleOp moduleOp = getOperation();
 
-  mlir::TypeConverter typeConverter; // TODO
+  mlir::TypeConverter typeConverter;
   auto *context = &getContext();
   ConversionTarget target(*context);
   
