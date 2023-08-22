@@ -11,7 +11,7 @@ numpy
 pybind11>=2.8.0
 pytest
 pytest-asyncio
-PyYAML
+PyYAML<=6.0,>=3.11
 setuptools_scm
 reno
 Sphinx>=4.0,<7.2
