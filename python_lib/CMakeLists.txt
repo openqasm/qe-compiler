@@ -185,7 +185,9 @@ add_mlir_python_common_capi_library(QSSPythonCAPI
   DECLARED_SOURCES
     QSSPythonSources
     MLIRPythonSources
-    MLIRPythonExtension.AllPassesRegistration
+    ### seems like python bindings don't need to explicitly include this in the CAPI, 
+    ### might need to change in future. Removed to avoid issues with internal CI
+    # MLIRPythonExtension.AllPassesRegistration
 )
 
 add_mlir_python_modules(QSSPythonModules
@@ -194,7 +196,7 @@ add_mlir_python_modules(QSSPythonModules
   DECLARED_SOURCES
     QSSPythonSources
     MLIRPythonSources
-    MLIRPythonExtension.AllPassesRegistration
+    # MLIRPythonExtension.AllPassesRegistration
     MLIRPythonCAPIHeaderSources
   COMMON_CAPI_LINK_LIBS
     QSSPythonCAPI
