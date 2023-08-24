@@ -84,7 +84,7 @@ declare_mlir_dialect_python_bindings(
   ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir"
   TD_FILE dialects/OQ3.td
   SOURCES
-    dialects/OQ3.py
+    dialects/oq3.py
     dialects/OQ3.pyi
     dialects/_oq3_ops_ext.py
   DIALECT_NAME oq3)
@@ -94,7 +94,7 @@ declare_mlir_dialect_python_bindings(
   ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir"
   TD_FILE dialects/QCS.td
   SOURCES
-    dialects/QCS.py
+    dialects/qcs.py
     dialects/QCS.pyi
     dialects/_qcs_ops_ext.py
   DIALECT_NAME qcs)
@@ -185,9 +185,7 @@ add_mlir_python_common_capi_library(QSSPythonCAPI
   DECLARED_SOURCES
     QSSPythonSources
     MLIRPythonSources
-    ### seems like python bindings don't need to explicitly include this in the CAPI, 
-    ### might need to change in future. Removed to avoid issues with internal CI
-    # MLIRPythonExtension.AllPassesRegistration
+    MLIRPythonExtension.AllPassesRegistration
 )
 
 add_mlir_python_modules(QSSPythonModules
@@ -196,7 +194,7 @@ add_mlir_python_modules(QSSPythonModules
   DECLARED_SOURCES
     QSSPythonSources
     MLIRPythonSources
-    # MLIRPythonExtension.AllPassesRegistration
+    MLIRPythonExtension.AllPassesRegistration
     MLIRPythonCAPIHeaderSources
   COMMON_CAPI_LINK_LIBS
     QSSPythonCAPI

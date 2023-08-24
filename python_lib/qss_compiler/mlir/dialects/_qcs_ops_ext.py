@@ -1,6 +1,6 @@
 try:
     from ..ir import *
-    from .QCS import *
+    from .qcs import *
     from .._mlir_libs._ibmDialectsQCS import *
     from ._ods_common import get_default_loc_context as _get_default_loc_context
 
