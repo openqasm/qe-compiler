@@ -54,6 +54,11 @@ add_subdirectory(qss_compiler)
 add_custom_target(copy_python_files DEPENDS ${PY_LIB_FILES})
 add_dependencies(py_qssc copy_python_files)
 
+# TODO: redeclare built-in MLIR python sources and extensions to remove source file dependencies
+get_filename_component(LLVM_CMAKE ${LLVM_DIR} DIRECTORY)
+get_filename_component(LLVM_LIB ${LLVM_CMAKE} DIRECTORY)
+set(LLVM_SRC_PYTHON ${LLVM_LIB} "/src/python/")
+
 declare_mlir_python_sources(QSSPythonSources)
 declare_mlir_python_sources(QSSPythonSources.Dialects
   ADD_TO_PARENT QSSPythonSources)
