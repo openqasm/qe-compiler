@@ -39,6 +39,7 @@ Optional<Type> legalizeIndexType(mlir::IndexType t) { return t; }
 AerTypeConverter::AerTypeConverter() {
   addConversion(convertQubitType);
   addConversion(convertAngleType);
+  addConversion(convertDurationType);
   addSourceMaterialization(qubitSourceMaterialization);
   addSourceMaterialization(cBitSourceMaterialization);
   addSourceMaterialization(angleSourceMaterialization);
@@ -49,12 +50,13 @@ AerTypeConverter::AerTypeConverter() {
 }
 
 Optional<Type> AerTypeConverter::convertQubitType(Type t) {
-  auto *context = t.getContext();
-  return IntegerType::get(context, 64);
+  if(auto qubitTy = t.dyn_cast<quir::QubitType>()) {
+    return IntegerType::get(t.getContext(), 64);
+  }
+  return llvm::None;
 }
 
 Optional<Type> AerTypeConverter::convertAngleType(Type t) {
-
   auto *context = t.getContext();
   if (auto angleType = t.dyn_cast<quir::AngleType>()) {
     auto width = angleType.getWidth();
@@ -63,9 +65,7 @@ Optional<Type> AerTypeConverter::convertAngleType(Type t) {
       llvm::errs() << "Cannot lower an angle with no width!\n";
       return {};
     }
-    if (width > 31)
-      return IntegerType::get(context, 64);
-    return IntegerType::get(context, 32);
+    return Float64Type::get(context);
   }
   if (auto intType = t.dyn_cast<IntegerType>()) {
     // MUST return the converted type as itself to mark legal
@@ -73,7 +73,14 @@ Optional<Type> AerTypeConverter::convertAngleType(Type t) {
     return intType;
   }
   return llvm::None;
-} // convertAngleType
+}
+  
+Optional<Type> AerTypeConverter::convertDurationType(Type t) {
+  if(auto durTy = t.dyn_cast<quir::DurationType>()) {
+    return IntegerType::get(t.getContext(), 64);
+  }
+  return llvm::None;
+}
 
 Optional<Value> AerTypeConverter::qubitSourceMaterialization(
     OpBuilder &builder, quir::QubitType qType, ValueRange values,

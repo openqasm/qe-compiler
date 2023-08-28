@@ -163,17 +163,8 @@ using QubitTable = std::map<int, Value>;
 
 class ValueTable {
 public:
-  static void registerAngle(double angle, Value v) {
-    assert(!std::isnan(angle) && !std::isinf(angle));
-    angleTable[angle] = v;
-  }
-  
   static void registerQubit(int qid, Value v) {
     qubitTable[qid] = v;
-  }
-  
-  static Value lookupAngle(double angle) {
-    return angleTable.at(angle);
   }
   
   static Value lookupQubit(int qid) {
@@ -192,7 +183,6 @@ public:
   }
   
   static void clear() {
-    angleTable.clear();
     qubitTable.clear();
   }
   
@@ -201,7 +191,6 @@ public:
   }
   
 private:
-  static AngleTable angleTable;
   static QubitTable qubitTable;
   // Aer C API requires an array of measured qubits. This provides a common
   // array for the measurements that can avoid a stack allocation for each
@@ -210,7 +199,6 @@ private:
   // the measurements appeared in a given program.
   static LLVM::AllocaOp arrayForMeas;
 };
-AngleTable ValueTable::angleTable;
 QubitTable ValueTable::qubitTable;
 LLVM::AllocaOp ValueTable::arrayForMeas;
 
@@ -356,10 +344,10 @@ struct BuiltinUopConversionPat : public OpConversionPattern<quir::Builtin_UOp> {
       assert(qID);
       args.emplace_back(ValueTable::lookupQubit(*qID));
     }
-    for(auto val : {op.theta(), op.phi(), op.lambda()}) {
-      auto angleOp = dyn_cast<quir::ConstantOp>(val.getDefiningOp());
-      const double angle = angleOp.value().dyn_cast<quir::AngleAttr>().getValue().convertToDouble();
-      args.emplace_back(ValueTable::lookupAngle(angle));
+    // Skip the first operand (= qubit id)
+    auto operands = adaptor.getOperands();
+    for(auto angle = operands.begin() + 1; angle != operands.end(); ++angle) {
+      args.push_back(*angle);
     }
     rewriter.create<LLVM::CallOp>(
         op.getLoc(), aerFuncTable.at("aer_apply_u3"), args);
@@ -431,8 +419,8 @@ struct MeasureOpConversionPat : public OpConversionPattern<quir::MeasureOp> {
   }
 };
 
-struct AngleConversionPat : public OpConversionPattern<quir::ConstantOp> {
-  explicit AngleConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+struct ConstConversionPat : public OpConversionPattern<quir::ConstantOp> {
+  explicit ConstConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
     : OpConversionPattern(typeConverter, ctx, 1)
   {}
   
@@ -447,7 +435,6 @@ struct AngleConversionPat : public OpConversionPattern<quir::ConstantOp> {
       FloatAttr fAttr = rewriter.getFloatAttr(fType, angle);
       auto constOp = rewriter.create<arith::ConstantOp>(op->getLoc(), fType, fAttr);
       rewriter.replaceOp(op, {constOp});
-      ValueTable::registerAngle(angle, constOp);
     } else if (op.value().isa<quir::DurationAttr>()) {
       rewriter.eraseOp(op);
     }
@@ -524,7 +511,7 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
                RemoveConversionPat<quir::DelayOp>, // TODO: Support noise models
                RemoveConversionPat<quir::BarrierOp>, // TODO: Support noise models
                RemoveConversionPat<quir::CallGateOp>, // TODO: Support custom gates
-               AngleConversionPat,
+               ConstConversionPat,
                QCSInitConversionPat,
                FinalizeConversionPat,
                BuiltinUopConversionPat,

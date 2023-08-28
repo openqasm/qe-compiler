@@ -34,7 +34,8 @@ struct AerTypeConverter : public TypeConverter {
   AerTypeConverter();
 
   static Optional<Type> convertQubitType(Type t);
-  static Optional<Type> convertAngleType(Type t); // convertAngleType
+  static Optional<Type> convertAngleType(Type t);
+  static Optional<Type> convertDurationType(Type t);
 
   static Optional<Value> qubitSourceMaterialization(
       OpBuilder &builder, quir::QubitType qType,
