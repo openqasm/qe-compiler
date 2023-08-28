@@ -173,9 +173,8 @@ void insertAerStateInitialize(ModuleOp moduleOp) {
   std::optional<quir::DeclareQubitOp> lastQubitDeclOp;
   moduleOp.walk([&](quir::DeclareQubitOp declOp) {
     if (!lastQubitDeclOp ||
-        lastQubitDeclOp->id().getValue() < declOp.id().getValue()) {
+        lastQubitDeclOp->id().getValue() < declOp.id().getValue())
       lastQubitDeclOp = declOp;
-    }
   });
   assert(lastQubitDeclOp && "At least one qubit must be declared.");
   builder.setInsertionPointAfter(*lastQubitDeclOp);
