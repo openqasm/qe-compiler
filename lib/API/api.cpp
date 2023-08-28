@@ -121,7 +121,15 @@ static llvm::cl::opt<enum InputType> inputType(
                                 "load the input file as a QOBJ file")));
 
 namespace {
-enum Action { None, DumpAST, DumpASTPretty, DumpMLIR, DumpWaveMem, GenQEM, GenSim };
+enum Action {
+  None,
+  DumpAST,
+  DumpASTPretty,
+  DumpMLIR,
+  DumpWaveMem,
+  GenQEM,
+  GenSim
+};
 } // anonymous namespace
 static llvm::cl::opt<enum Action> emitAction(
     "emit", llvm::cl::init(Action::None),
@@ -574,7 +582,7 @@ compile_(int argc, char const **argv, std::string *outputString,
           std::move(payloadInfo.getValue()->createPluginInstance(config).get());
     }
   }
-  
+
   if (emitAction == Action::GenSim) {
     const std::filesystem::path payloadPath(outputFilename.c_str());
     const std::string fNamePrefix = payloadPath.stem();
@@ -679,11 +687,10 @@ compile_(int argc, char const **argv, std::string *outputString,
     if (auto err = generateQEM_(target, std::move(payload), moduleOp, ostream))
       return err;
   }
-  
+
   if (emitAction == Action::GenSim) {
-    if (auto err = generateSim_(target, std::move(payload), moduleOp, ostream)) {
+    if (auto err = generateSim_(target, std::move(payload), moduleOp, ostream))
       return err;
-    }
   }
 
   // ------------------------------------------------------------
