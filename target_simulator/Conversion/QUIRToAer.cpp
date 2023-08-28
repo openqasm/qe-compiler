@@ -166,7 +166,7 @@ void createAerState(MLIRContext *ctx, ModuleOp moduleOp) {
 LLVM::AllocaOp arrayForMeas;
 
 
-void buildQubitTable(ModuleOp moduleOp) {
+void insertAerStateInitialize(ModuleOp moduleOp) {
   OpBuilder builder(moduleOp);
   
   // Insert Aer runtime initialization after qubit declarations.
@@ -184,8 +184,12 @@ void buildQubitTable(ModuleOp moduleOp) {
   auto state = aerState.access(builder);
   builder.create<LLVM::CallOp>(
       lastQubitDeclOp->getLoc(), aerFuncTable.at("aer_state_initialize"), state);
+}
 
-  // Allocate an array for measurements
+// Allocate an array for measurements globally.
+void prepareArrayForMeas(ModuleOp moduleOp) {
+  OpBuilder builder(moduleOp);
+
   const auto i64Type = builder.getIntegerType(64);
   auto mainFunc = mlir::quir::getMainFunction(moduleOp);
   builder.setInsertionPointToStart(&mainFunc->getRegion(0).getBlocks().front());
@@ -475,9 +479,8 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   // Aer initialization
   declareAerFunctions(moduleOp);
   createAerState(context, moduleOp);
-
-  // Must build qubit table before applying any conversion
-  buildQubitTable(moduleOp);
+  insertAerStateInitialize(moduleOp);
+  prepareArrayForMeas(moduleOp);
 
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`
