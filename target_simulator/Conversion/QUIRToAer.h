@@ -35,12 +35,11 @@ struct QUIRToAERPass
           hal::TargetOperationPass<SimulatorSystem, mlir::ModuleOp>> {
   void runOnOperation(SimulatorSystem &system) override;
   void getDependentDialects(mlir::DialectRegistry &registry) const override;
-  
+
   bool externalizeOutputVariables;
 
   QUIRToAERPass(bool externalizeOutputVariables)
-      : PassWrapper(), externalizeOutputVariables(externalizeOutputVariables)
-  {}
+      : PassWrapper(), externalizeOutputVariables(externalizeOutputVariables) {}
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;

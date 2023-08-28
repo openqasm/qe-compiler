@@ -1,4 +1,4 @@
-//===- TypeConversion.h - Convert QUIR types to Std -----*- C++ -*-===//
+//===- TypeConversion.h - Convert QUIR types to Std -------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -37,18 +37,18 @@ struct AerTypeConverter : public TypeConverter {
   static Optional<Type> convertAngleType(Type t);
   static Optional<Type> convertDurationType(Type t);
 
-  static Optional<Value> qubitSourceMaterialization(
-      OpBuilder &builder, quir::QubitType qType,
-      ValueRange valRange, Location loc);
-  static Optional<Value> cBitSourceMaterialization(
-      OpBuilder &builder, quir::CBitType qType,
-      ValueRange valRange, Location loc);
-  static Optional<Value> angleSourceMaterialization(
-      OpBuilder &builder, quir::AngleType aType,
-      ValueRange valRange, Location loc);
-  static Optional<Value> durationSourceMaterialization(
-      OpBuilder &builder, quir::DurationType dType,
-      ValueRange valRange, Location loc);
+  static Optional<Value> qubitSourceMaterialization(OpBuilder &builder,
+                                                    quir::QubitType qType,
+                                                    ValueRange valRange,
+                                                    Location loc);
+  static Optional<Value> angleSourceMaterialization(OpBuilder &builder,
+                                                    quir::AngleType aType,
+                                                    ValueRange valRange,
+                                                    Location loc);
+  static Optional<Value> durationSourceMaterialization(OpBuilder &builder,
+                                                       quir::DurationType dType,
+                                                       ValueRange valRange,
+                                                       Location loc);
 
 }; // struct AerTypeConverter
 

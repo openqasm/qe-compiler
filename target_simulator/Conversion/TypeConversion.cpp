@@ -1,4 +1,4 @@
-//===- TypeConversion.cpp - Convert QUIR types to Std -----*- C++ -*-===//
+//===- TypeConversion.cpp - Convert QUIR types to Std -----------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -41,7 +41,6 @@ AerTypeConverter::AerTypeConverter() {
   addConversion(convertAngleType);
   addConversion(convertDurationType);
   addSourceMaterialization(qubitSourceMaterialization);
-  addSourceMaterialization(cBitSourceMaterialization);
   addSourceMaterialization(angleSourceMaterialization);
   addSourceMaterialization(durationSourceMaterialization);
 
@@ -50,9 +49,8 @@ AerTypeConverter::AerTypeConverter() {
 }
 
 Optional<Type> AerTypeConverter::convertQubitType(Type t) {
-  if(auto qubitTy = t.dyn_cast<quir::QubitType>()) {
+  if (auto qubitTy = t.dyn_cast<quir::QubitType>())
     return IntegerType::get(t.getContext(), 64);
-  }
   return llvm::None;
 }
 
@@ -74,31 +72,20 @@ Optional<Type> AerTypeConverter::convertAngleType(Type t) {
   }
   return llvm::None;
 }
-  
+
 Optional<Type> AerTypeConverter::convertDurationType(Type t) {
-  if(auto durTy = t.dyn_cast<quir::DurationType>()) {
+  if (auto durTy = t.dyn_cast<quir::DurationType>())
     return IntegerType::get(t.getContext(), 64);
-  }
   return llvm::None;
 }
 
-Optional<Value> AerTypeConverter::qubitSourceMaterialization(
-    OpBuilder &builder, quir::QubitType qType, ValueRange values,
-    Location loc) {
-    for(Value val : values) {
-        return val;
-    }
-    return llvm::None;
-}
-
-// TODO
-Optional<Value> AerTypeConverter::cBitSourceMaterialization(
-    OpBuilder &builder, quir::CBitType qType, ValueRange values,
-    Location loc) {
-    for(Value val : values) {
-        return val;
-    }
-    return llvm::None;
+Optional<Value>
+AerTypeConverter::qubitSourceMaterialization(OpBuilder &builder,
+                                             quir::QubitType qType,
+                                             ValueRange values, Location loc) {
+  for (Value val : values)
+    return val;
+  return llvm::None;
 }
 
 Optional<Value> AerTypeConverter::angleSourceMaterialization(
@@ -111,13 +98,11 @@ Optional<Value> AerTypeConverter::angleSourceMaterialization(
   return llvm::None;
 } // angleSourceMaterialization
 
-// TODO
 Optional<Value> AerTypeConverter::durationSourceMaterialization(
     OpBuilder &builder, quir::DurationType dType, ValueRange valRange,
     Location loc) {
-  for (Value val : valRange) {
+  for (Value val : valRange)
     return val;
-  }
   return llvm::None;
 }
 } // namespace mlir

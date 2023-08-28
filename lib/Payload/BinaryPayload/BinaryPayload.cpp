@@ -1,4 +1,4 @@
-//===- BinaryPayload.cpp -------------------------------------------*- C++ -*-===//
+//===- BinaryPayload.cpp ----------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -25,8 +25,8 @@
 #include <sys/stat.h>
 #include <unordered_set>
 
-#include "Config.h"
 #include "BinaryPayload.h"
+#include "Config.h"
 
 #include "Payload/PayloadRegistry.h"
 
@@ -73,7 +73,7 @@ void BinaryPayload::write(llvm::raw_ostream &stream) {
   // single binary data is supported
   assert(orderedFileNames().size() == 1);
 
-  for(auto&& filename : orderedFileNames()) {
+  for (auto &&filename : orderedFileNames()) {
     // write binary data to stream
     stream << files[filename];
   }
@@ -83,7 +83,7 @@ void BinaryPayload::write(std::ostream &stream) {
   // single binary data is supported
   assert(orderedFileNames().size() == 1);
 
-  for(auto&& filename : orderedFileNames()) {
+  for (auto &&filename : orderedFileNames()) {
     // write binary data to stream
     stream << files[filename];
   }

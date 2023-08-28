@@ -1,4 +1,4 @@
-//===- OutputClassicalRegisters.h ----------------------------*- C++ -*-===//
+//===- OutputClassicalRegisters.h -------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -35,10 +35,8 @@ struct OutputCRegsPass
           hal::TargetOperationPass<SimulatorSystem, mlir::ModuleOp>> {
   void runOnOperation(SimulatorSystem &system) override;
   void getDependentDialects(mlir::DialectRegistry &registry) const override;
-  
-  OutputCRegsPass()
-      : PassWrapper()
-  {}
+
+  OutputCRegsPass() : PassWrapper() {}
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;

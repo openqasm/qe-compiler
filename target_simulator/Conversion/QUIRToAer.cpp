@@ -130,9 +130,12 @@ void declareAerFunctions(ModuleOp moduleOp) {
   // @aer_state_finalize(i8* noundef) -> void
   const auto aerStateFinalizeType = LLVMFunctionType::get(voidType, aerStateType);
   registerFunc("aer_state_finalize", aerStateFinalizeType);
+  // For debug: @aer_debug_print(i8*) -> void
+  const auto aerDebugPrintType = LLVMFunctionType::get(voidType, aerStateType);
+  registerFunc("aer_debug_print", aerDebugPrintType);
 }
 
-// Create an Aer state globally and return a wrapped value
+// Create an Aer state globally and then wrap the state value.
 void createAerState(MLIRContext *ctx, ModuleOp moduleOp) {
   const auto i8Type = IntegerType::get(ctx, 8);
 
@@ -270,6 +273,13 @@ struct FinalizeConversionPat : public OpConversionPattern<qcs::SystemFinalizeOp>
                                 ConversionPatternRewriter &rewriter) const override {
     PatternRewriter::InsertionGuard insertGuard(rewriter);
     rewriter.setInsertionPointAfter(finOp);
+    
+    // Debug print
+    // TDOO: remove in future
+    rewriter.create<LLVM::CallOp>(rewriter.getUnknownLoc(),
+                                  aerFuncTable.at("aer_debug_print"),
+                                  aerState.access(rewriter));
+    
     rewriter.create<LLVM::CallOp>(rewriter.getUnknownLoc(),
                                   aerFuncTable.at("aer_state_finalize"),
                                   aerState.access(rewriter));

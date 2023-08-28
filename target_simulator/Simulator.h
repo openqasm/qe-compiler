@@ -1,4 +1,4 @@
-//===- Simulator.h - Simulator target info --------------------------*- C++ -*-===//
+//===- Simulator.h - Simulator target info ----------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -51,10 +51,10 @@ public:
   llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
   auto getConfig() -> SimulatorConfig & { return *simulatorConfig; }
-  
+
 private:
   std::unique_ptr<SimulatorConfig> simulatorConfig;
-  
+
 private:
   void buildLLVMPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload);
 }; // class SimulatorSystem
