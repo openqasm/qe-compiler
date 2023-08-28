@@ -158,84 +158,34 @@ void createAerState(MLIRContext *ctx, ModuleOp moduleOp) {
   builder.create<LLVM::StoreOp>(builder.getUnknownLoc(), call, addr);
 }
 
-using AngleTable = std::map<double, Value>;
-using QubitTable = std::map<int, Value>;
-
-class ValueTable {
-public:
-  static void registerQubit(int qid, Value v) {
-    qubitTable[qid] = v;
-  }
-  
-  static Value lookupQubit(int qid) {
-    return qubitTable.at(qid);
-  }
-  
-  static QubitTable getQubits() {
-    return qubitTable;
-  }
-
-  static void prepareArrayForMeas(LLVM::AllocaOp op) {
-    arrayForMeas = op;
-  }
-  static LLVM::AllocaOp getMeasArray() {
-    return arrayForMeas;
-  }
-  
-  static void clear() {
-    qubitTable.clear();
-  }
-  
-  static void clearQubitTable() {
-    qubitTable.clear();
-  }
-  
-private:
-  static QubitTable qubitTable;
-  // Aer C API requires an array of measured qubits. This provides a common
-  // array for the measurements that can avoid a stack allocation for each
-  // function call of the Aer measurement.
-  // Note that the size of this array must be large enough to perform all
-  // the measurements appeared in a given program.
-  static LLVM::AllocaOp arrayForMeas;
-};
-QubitTable ValueTable::qubitTable;
-LLVM::AllocaOp ValueTable::arrayForMeas;
+// Aer C API requires an array of measured qubits. This provides a common
+// array for the measurements that can avoid a stack allocation for each
+// function call of the Aer measurement.
+// Note that the size of this array must be large enough to perform all
+// the measurements appeared in a given program.
+LLVM::AllocaOp arrayForMeas;
 
 
 void buildQubitTable(ModuleOp moduleOp) {
-  ValueTable::clearQubitTable();
   OpBuilder builder(moduleOp);
   
+  // Insert Aer runtime initialization after qubit declarations.
+  // Assume that the following conditions hold:
+  //   1. Each qubit declaration has a unique id (e.g., {id = 0 : i32}).
+  //   2. The last qubit declaration has the biggest id.
+  std::optional<quir::DeclareQubitOp> lastQubitDeclOp;
   moduleOp.walk([&](quir::DeclareQubitOp declOp){
-    const int width = declOp.getType().dyn_cast<quir::QubitType>().getWidth();
-    if(width != 1) throw std::runtime_error(""); // TODO: support multi-qubit declaration
-    
-    builder.setInsertionPointAfter(declOp);
-    const auto widthAttr = builder.getIntegerAttr(
-        builder.getI64Type(), width);
-    auto constOp = builder.create<arith::ConstantOp>(
-        declOp->getLoc(), builder.getI64Type(), widthAttr);
-    auto state = aerState.access(builder);
-    auto alloc = builder.create<LLVM::CallOp>(
-        declOp->getLoc(),
-        aerFuncTable.at("aer_allocate_qubits"),
-        ValueRange{state, constOp});
-
-    ValueTable::registerQubit(*declOp.id(), alloc.getResult(0));
+    if(!lastQubitDeclOp || lastQubitDeclOp->id().getValue() < declOp.id().getValue()) {
+      lastQubitDeclOp = declOp;
+    }
   });
-  
-  // TODO
-  // Assume that qubit declaration with the biggest id is called after any other declaration
-  auto qubitTable = ValueTable::getQubits();
-  if(!qubitTable.empty()) {
-    auto declOp = qubitTable.rbegin()->second.getDefiningOp();
-    builder.setInsertionPointAfter(declOp);
-    auto state = aerState.access(builder);
-    builder.create<LLVM::CallOp>(
-        declOp->getLoc(), aerFuncTable.at("aer_state_initialize"), state);
-  }
+  assert(lastQubitDeclOp && "At least one qubit must be declared.");
+  builder.setInsertionPointAfter(*lastQubitDeclOp);
+  auto state = aerState.access(builder);
+  builder.create<LLVM::CallOp>(
+      lastQubitDeclOp->getLoc(), aerFuncTable.at("aer_state_initialize"), state);
 
+  // Allocate an array for measurements
   const auto i64Type = builder.getIntegerType(64);
   auto mainFunc = mlir::quir::getMainFunction(moduleOp);
   builder.setInsertionPointToStart(&mainFunc->getRegion(0).getBlocks().front());
@@ -243,10 +193,9 @@ void buildQubitTable(ModuleOp moduleOp) {
   auto arrSizeOp = builder.create<arith::ConstantOp>(
       builder.getUnknownLoc(), i64Type,
       builder.getIntegerAttr(i64Type, arraySize));
-  auto alloca = builder.create<LLVM::AllocaOp>(
+  arrayForMeas = builder.create<LLVM::AllocaOp>(
       builder.getUnknownLoc(),
       LLVM::LLVMPointerType::get(i64Type), arrSizeOp, /*alignment=*/8);
-  ValueTable::prepareArrayForMeas(alloca);
 }
 
 }
@@ -325,6 +274,32 @@ struct FinalizeConversionPat : public OpConversionPattern<qcs::SystemFinalizeOp>
   }
 };
 
+struct DeclareQubitConversionPat : public OpConversionPattern<quir::DeclareQubitOp> {
+  using Adaptor = quir::DeclareQubitOp::Adaptor;
+
+  explicit DeclareQubitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
+    : OpConversionPattern(typeConverter, ctx, /*benefit=*/1)
+  {}
+  
+  LogicalResult matchAndRewrite(quir::DeclareQubitOp op, Adaptor adaptor,
+                                ConversionPatternRewriter &rewriter) const override
+  {
+    const int width = op.getType().dyn_cast<quir::QubitType>().getWidth();
+    assert(width == 1 && "Multi qubit declaration has not supported yet.");
+    
+    const auto sizeAttr = rewriter.getIntegerAttr(rewriter.getI64Type(), width);
+    auto constOp = rewriter.create<arith::ConstantOp>(
+        op->getLoc(), rewriter.getI64Type(), sizeAttr);
+    auto state = aerState.access(rewriter);
+    auto alloc = rewriter.create<LLVM::CallOp>(
+        op->getLoc(),
+        aerFuncTable.at("aer_allocate_qubits"),
+        ValueRange{state, constOp});
+    rewriter.replaceOp(op, alloc.getResults());
+    return success();
+  }
+};
+
 struct BuiltinUopConversionPat : public OpConversionPattern<quir::Builtin_UOp> {
   explicit BuiltinUopConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
     : OpConversionPattern(typeConverter, ctx, /*benefit=*/1)
@@ -334,21 +309,9 @@ struct BuiltinUopConversionPat : public OpConversionPattern<quir::Builtin_UOp> {
                                 quir::Builtin_UOp::Adaptor adaptor,
                                 ConversionPatternRewriter &rewriter) const override
   {
-    // qubit, angle{1, 2, 3}
-    assert(op.getOperands().size() == 4);
-
-    std::vector<Value> args;
-    args.emplace_back(aerState.access(rewriter));
-    { // qubit
-      const auto qID = quir::lookupQubitId(op.target());
-      assert(qID);
-      args.emplace_back(ValueTable::lookupQubit(*qID));
-    }
-    // Skip the first operand (= qubit id)
-    auto operands = adaptor.getOperands();
-    for(auto angle = operands.begin() + 1; angle != operands.end(); ++angle) {
-      args.push_back(*angle);
-    }
+    auto state = aerState.access(rewriter);
+    std::vector<Value> args = {state};
+    args.insert(args.end(), adaptor.getOperands().begin(), adaptor.getOperands().end());
     rewriter.create<LLVM::CallOp>(
         op.getLoc(), aerFuncTable.at("aer_apply_u3"), args);
     rewriter.eraseOp(op);
@@ -365,20 +328,13 @@ struct BuiltinCXConversionPat : public OpConversionPattern<quir::BuiltinCXOp> {
                                 quir::BuiltinCXOp::Adaptor adaptor,
                                 ConversionPatternRewriter &rewriter) const override
   {
-    auto qID1 = quir::lookupQubitId(op->getOperand(0));
-    auto qID2 = quir::lookupQubitId(op->getOperand(1));
-    if(qID1 && qID2) {
-      auto q1 = ValueTable::lookupQubit(*qID1);
-      auto q2 = ValueTable::lookupQubit(*qID2);
-      auto state = aerState.access(rewriter);
-      rewriter.create<LLVM::CallOp>(
-          op->getLoc(),
-          aerFuncTable.at("aer_apply_cx"),
-          ValueRange{state, q1, q2});
-      rewriter.eraseOp(op);
-      return success();
-    }
-    return failure();
+    auto state = aerState.access(rewriter);
+    std::vector<Value> args = {state};
+    args.insert(args.end(), adaptor.getOperands().begin(), adaptor.getOperands().end());
+    rewriter.create<LLVM::CallOp>(
+        op->getLoc(), aerFuncTable.at("aer_apply_cx"), args);
+    rewriter.eraseOp(op);
+    return success();
   }
 };
 
@@ -394,28 +350,24 @@ struct MeasureOpConversionPat : public OpConversionPattern<quir::MeasureOp> {
   {
     assert(op->getNumOperands() == 1
         && "Multi-body measurement have not been supported yet.");
-    if(auto qID = quir::lookupQubitId(op->getOperand(0))) {
-      auto context = op->getContext();
-      const auto i64Type = IntegerType::get(context, 64);
-      const unsigned arrSize = 1; // TODO
-      const IntegerAttr arraySizeAttr = rewriter.getIntegerAttr(i64Type, arrSize);
-      const auto qubit = ValueTable::lookupQubit(*qID);
-      auto arrSizeOp = rewriter.create<arith::ConstantOp>(
-          op->getLoc(), i64Type, arraySizeAttr);
-      auto qubitArr = ValueTable::getMeasArray();
-      rewriter.create<LLVM::StoreOp>(op->getLoc(), qubit, qubitArr);
-      auto state = aerState.access(rewriter);
-      auto meas = rewriter.create<LLVM::CallOp>(
-          op->getLoc(),
-          aerFuncTable.at("aer_apply_measure"),
-          ValueRange{state, qubitArr.getResult(), arrSizeOp});
-      auto casted = rewriter.create<arith::TruncIOp>(
-          op->getLoc(), meas.getResult(0), rewriter.getIntegerType(1));
-      rewriter.replaceOp(op, casted.getResult());
+    auto context = op->getContext();
+    const auto i64Type = IntegerType::get(context, 64);
+    const unsigned arrSize = 1; // TODO
+    const IntegerAttr arraySizeAttr = rewriter.getIntegerAttr(i64Type, arrSize);
+    const auto qubit = *adaptor.getOperands().begin();
+    auto arrSizeOp = rewriter.create<arith::ConstantOp>(
+        op->getLoc(), i64Type, arraySizeAttr);
+    rewriter.create<LLVM::StoreOp>(op->getLoc(), qubit, arrayForMeas);
+    auto state = aerState.access(rewriter);
+    auto meas = rewriter.create<LLVM::CallOp>(
+        op->getLoc(),
+        aerFuncTable.at("aer_apply_measure"),
+        ValueRange{state, arrayForMeas.getResult(), arrSizeOp});
+    auto casted = rewriter.create<arith::TruncIOp>(
+        op->getLoc(), meas.getResult(0), rewriter.getIntegerType(1));
+    rewriter.replaceOp(op, casted.getResult());
 
-      return success();
-    }
-    return failure();
+    return success();
   }
 };
 
@@ -507,10 +459,10 @@ void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
   populateCallOpTypeConversionPattern(patterns, typeConverter);
   oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns);
   patterns.add<RemoveQCSShotInitConversionPat,
-               RemoveConversionPat<quir::DeclareQubitOp>,
                RemoveConversionPat<quir::DelayOp>, // TODO: Support noise models
                RemoveConversionPat<quir::BarrierOp>, // TODO: Support noise models
                RemoveConversionPat<quir::CallGateOp>, // TODO: Support custom gates
+               DeclareQubitConversionPat,
                ConstConversionPat,
                QCSInitConversionPat,
                FinalizeConversionPat,
