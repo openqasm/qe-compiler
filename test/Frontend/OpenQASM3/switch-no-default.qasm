@@ -1,4 +1,5 @@
 OPENQASM 3.0;
+// RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false| FileCheck %s --match-full-lines --check-prefixes MLIR
 // RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR
 
@@ -20,7 +21,11 @@ qubit $0;
 // MLIR: quir.switch %{{.*}}{
 // MLIR: }[0 : {
 // MLIR: }]
+// AST-PRETTY: SwitchStatementNode(SwitchQuantity(name=i, type=ASTTypeIdentifier),
 switch (i) {
+    // AST-PRETTY: statements=[
+    // AST-PRETTY: CaseStatementNode(case=0, ),
+    // AST-PRETTY: ],
     case 0: {
     }
     break;
