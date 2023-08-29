@@ -65,27 +65,6 @@ def example_invalid_qasm3_tmpfile(tmp_path, example_invalid_qasm3_str):
 
 
 @pytest.fixture
-def example_switch_no_default_qasm3_str():
-    return """OPENQASM 3;
-    qubit $0;
-    int a = 1;
-    switch (a) {
-        case 0: {
-            U(1.57079632679, 0.0, 3.14159265359) $0;
-        }
-        break;
-    }
-    """
-
-
-@pytest.fixture
-def example_switch_no_default_qasm3_tmpfile(
-    tmp_path, example_switch_no_default_qasm3_str
-):
-    return __create_tmpfile(tmp_path, example_switch_no_default_qasm3_str)
-
-
-@pytest.fixture
 def example_unsupported_qasm3_str():
     return """OPENQASM 3.0;
     int a;
