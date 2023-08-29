@@ -133,9 +133,12 @@ void PrintQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   }
   vStream << "],\n";
   vStream << "default statement=[\n";
-  const ASTStatementList *statementList =
-      node->GetDefaultStatement()->GetStatementList();
-  BaseQASM3Visitor::visit(statementList);
+  if (const ASTDefaultStatementNode *defaultStatementNode =
+          node->GetDefaultStatement()) {
+    const ASTStatementList *statementList =
+        defaultStatementNode->GetStatementList();
+    BaseQASM3Visitor::visit(statementList);
+  }
   vStream << "])\n";
 }
 
