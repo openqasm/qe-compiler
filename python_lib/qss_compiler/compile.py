@@ -221,7 +221,7 @@ def _compile_child_runner(conn: connection.Connection) -> None:
 
 def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
     assert (
-        execution.input_file is None and execution.input_str is None
+        execution.input_file is not None or execution.input_str is not None
     ), "one of the compile options input_file or input_str must be set"
 
     options = execution.options
