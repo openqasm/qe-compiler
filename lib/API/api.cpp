@@ -121,7 +121,15 @@ static llvm::cl::opt<enum InputType> inputType(
                                 "load the input file as a QOBJ file")));
 
 namespace {
-enum Action { None, DumpAST, DumpASTPretty, DumpMLIR, DumpWaveMem, GenQEM };
+enum Action {
+  None,
+  DumpAST,
+  DumpASTPretty,
+  DumpMLIR,
+  DumpWaveMem,
+  GenQEM,
+  GenQEQEM
+};
 } // anonymous namespace
 static llvm::cl::opt<enum Action> emitAction(
     "emit", llvm::cl::init(Action::None),
@@ -134,14 +142,14 @@ static llvm::cl::opt<enum Action> emitAction(
                                 "output the waveform memory")),
     llvm::cl::values(clEnumValN(GenQEM, "qem",
                                 "generate a quantum executable module (qem) "
-                                "for execution on hardware")));
-
-static llvm::cl::opt<bool>
-    emitTargetQem("emit-target-qem", llvm::cl::desc("Emit target-specific qem"),
-                  llvm::cl::cat(qssc::config::getQSSCCategory()));
+                                "for execution on hardware")),
+    llvm::cl::values(
+        clEnumValN(GenQEQEM, "qe-qem",
+                   "generate a target-specific quantum executable module (qem) "
+                   "for execution on hardware")));
 
 namespace qss {
-enum FileExtension { None, AST, ASTPRETTY, QASM, QOBJ, MLIR, WMEM, QEM };
+enum FileExtension { None, AST, ASTPRETTY, QASM, QOBJ, MLIR, WMEM, QEM, QEQEM };
 } // namespace qss
 
 auto fileExtensionToStr(const qss::FileExtension &inExt) -> std::string {
@@ -166,6 +174,9 @@ auto fileExtensionToStr(const qss::FileExtension &inExt) -> std::string {
     break;
   case qss::FileExtension::QEM:
     return "qem";
+    break;
+  case qss::FileExtension::QEQEM:
+    return "qeqem";
     break;
   default:
     return "none";
@@ -208,6 +219,9 @@ auto fileExtensionToAction(const qss::FileExtension &inExt) -> Action {
   case qss::FileExtension::QEM:
     return Action::GenQEM;
     break;
+  case qss::FileExtension::QEQEM:
+    return Action::GenQEQEM;
+    break;
   default:
     break;
   }
@@ -229,6 +243,8 @@ auto strToFileExtension(const std::string &extStr) -> qss::FileExtension {
     return qss::FileExtension::WMEM;
   if (extStr == "qem" || extStr == "QEM")
     return qss::FileExtension::QEM;
+  if (extStr == "qeqem" || extStr == "QEQEM")
+    return qss::FileExtension::QEQEM;
   return qss::FileExtension::None;
 }
 
@@ -539,27 +555,21 @@ compile_(int argc, char const **argv, std::string *outputString,
   auto outputFile = mlir::openOutputFile(outputFilename, &errorMessage);
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
-  if (emitAction == Action::GenQEM) {
+  if (emitAction == Action::GenQEM || emitAction == Action::GenQEQEM) {
+    const std::filesystem::path payloadPath(outputFilename.c_str());
+    const std::string fNamePrefix = payloadPath.stem();
+    const auto payloadName =
+        (emitAction == Action::GenQEM) ? "ZIP" : config.targetName.value_or("");
+    auto payloadInfo =
+        qssc::payload::registry::PayloadRegistry::lookupPluginInfo(payloadName);
     if (outputFilename == "-") {
-      auto payloadInfo =
-          qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
       payload = std::move(
           payloadInfo.getValue()->createPluginInstance(llvm::None).get());
     } else {
-      const auto targetName = config.targetName.value_or("");
-      const auto pluginName =
-          (emitTargetQem &&
-           qssc::payload::registry::PayloadRegistry::pluginExists(targetName))
-              ? targetName
-              : "ZIP";
-      const std::filesystem::path payloadPath(outputFilename.c_str());
-      const std::string fNamePrefix = payloadPath.stem();
-      const qssc::payload::PayloadConfig config{fNamePrefix, fNamePrefix};
-      auto payloadInfo =
-          qssc::payload::registry::PayloadRegistry::lookupPluginInfo(
-              pluginName);
-      payload =
-          std::move(payloadInfo.getValue()->createPluginInstance(config).get());
+      const qssc::payload::PayloadConfig payloadConfig{fNamePrefix,
+                                                       fNamePrefix};
+      payload = std::move(
+          payloadInfo.getValue()->createPluginInstance(payloadConfig).get());
     }
   }
 
