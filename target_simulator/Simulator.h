@@ -52,6 +52,10 @@ public:
                            payload::Payload &payload) override;
   auto getConfig() -> SimulatorConfig & { return *simulatorConfig; }
 
+  static llvm::Error callTool(
+    llvm::StringRef program, llvm::ArrayRef<llvm::StringRef> args,
+    llvm::ArrayRef<llvm::Optional<llvm::StringRef>> redirects, bool dumpArgs);
+
 private:
   std::unique_ptr<SimulatorConfig> simulatorConfig;
 

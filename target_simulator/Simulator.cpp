@@ -34,6 +34,7 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/Host.h"
+#include "llvm/Support/Program.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/ToolOutputFile.h"
@@ -233,7 +234,7 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
 
   llvm::SmallString<128> objPath;
   int objFd;
-  if (auto err = llvm::sys::fs::createTemporaryFile("simulatorModule", "o",
+  if (auto err = llvm::sys::fs::createTemporaryFile("simulatorModule", "obj",
                                                     objFd, objPath)) {
     llvm::errs()
         << "Failed to create temporary object file for simulator module.\n";
@@ -260,4 +261,71 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
                              std::istreambuf_iterator<char>()};
 
   payload.getFile("simulator.bin")->assign(std::move(binaryContents));
+
+  /* tbd use path relative to a build context */
+  llvm::SmallString<128> binaryPath;
+  int binaryFd;
+  if (auto err = llvm::sys::fs::createTemporaryFile("simulatorModule", "bin",
+                                                    binaryFd, binaryPath))
+    // return llvm::createStringError(err, "Failed to create temporary sim
+    // elf");
+    return;
+
+  char *LD = getenv("LD_PATH");
+  char *AERLIB = getenv("LIBAER_PATH");
+
+  auto simBinary = std::make_unique<llvm::ToolOutputFile>(binaryPath, binaryFd);
+  llvm::SmallVector<llvm::StringRef, 4> lld_argv{"-o", "a.out", objPath,
+                                                 AERLIB};
+
+  llvm::SmallString<128> stdErrPath;
+  if (auto EC = llvm::sys::fs::createTemporaryFile("simulatorModule", "err",
+                                                   stdErrPath)) {
+    return;
+  }
+
+  llvm::Optional<llvm::StringRef> redirects[] = {
+      {""}, {""}, llvm::StringRef(stdErrPath)};
+
+  if (auto err = callTool(LD, lld_argv, redirects, true)) {
+
+    auto bufOrError = llvm::MemoryBuffer::getFile(stdErrPath);
+    if (!bufOrError) {
+      llvm::errs() << "call linker error: " << bufOrError.getError().message()
+                   << ", ret=" << err;
+    } else {
+      llvm::errs() << "call linker error: ret=" << err;
+    }
+    return;
+  }
+
 } // SimulatorSystem::buildLLVMPayload
+
+llvm::Error SimulatorSystem::callTool(
+    llvm::StringRef program, llvm::ArrayRef<llvm::StringRef> args,
+    llvm::ArrayRef<llvm::Optional<llvm::StringRef>> redirects, bool dumpArgs) {
+
+  if (dumpArgs) {
+    llvm::errs() << "Calling " << program << " with args";
+    for (auto const &param : args)
+      llvm::errs() << " " << param;
+    llvm::errs() << "\n";
+  }
+
+  std::string executeError;
+  int ret =
+      llvm::sys::ExecuteAndWait(program, args, /* environment */ llvm::None,
+                                redirects, 0, 0, &executeError);
+
+  if (ret < 0 || executeError.size() > 0)
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   llvm::Twine("Failed to execute ") + program +
+                                       " " + executeError);
+
+  if (ret == 0)
+    return llvm::Error::success();
+  else
+    return llvm::createStringError(
+        std::error_code{ret, std::generic_category()},
+        "%*s failed with return code %d", program.size(), program.data(), ret);
+} // callTool
