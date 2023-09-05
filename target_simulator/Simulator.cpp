@@ -251,15 +251,7 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   pass.run(*llvmModule);
   obj->os().flush();
 
-  /* tbd use path relative to a build context */
-  llvm::SmallString<128> binaryPath;
-  int binaryFd;
-  if (auto err = llvm::sys::fs::createTemporaryFile("simulatorModule", "bin",
-                                                    binaryFd, binaryPath))
-    // return llvm::createStringError(err, "Failed to create temporary sim
-    // elf");
-    return;
-
+  // Link the generated obj with a dynamic library of qiskit Aer
   char *LD = getenv("LD_PATH");
   char *AERLIB = getenv("LIBAER_PATH");
 
@@ -269,7 +261,6 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
     return;
   }
 
-  auto simBinary = std::make_unique<llvm::ToolOutputFile>(binaryPath, binaryFd);
   llvm::SmallVector<llvm::StringRef, 5> lld_argv{"ld", objPath, AERLIB, "-o",
                                                  outputPath};
 
