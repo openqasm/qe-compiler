@@ -269,8 +269,8 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   }
 
   auto simBinary = std::make_unique<llvm::ToolOutputFile>(binaryPath, binaryFd);
-  llvm::SmallVector<llvm::StringRef, 4> lld_argv{"-o", outputPath, objPath,
-                                                 AERLIB};
+  llvm::SmallVector<llvm::StringRef, 5> lld_argv{"ld", objPath, AERLIB, "-o",
+                                                 outputPath};
 
   llvm::SmallString<128> stdErrPath;
   if (auto EC = llvm::sys::fs::createTemporaryFile("simulatorModule", "err",
