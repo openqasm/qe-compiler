@@ -250,18 +250,6 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   pass.run(*llvmModule);
   obj->os().flush();
 
-  std::ifstream binary(objPath.c_str(), std::ios_base::binary);
-  if (!binary) {
-    llvm::errs() << "Failed to open generated simulator object file "
-                 << objPath;
-    return;
-  }
-
-  std::string binaryContents{std::istreambuf_iterator<char>(binary),
-                             std::istreambuf_iterator<char>()};
-
-  payload.getFile("simulator.bin")->assign(std::move(binaryContents));
-
   /* tbd use path relative to a build context */
   llvm::SmallString<128> binaryPath;
   int binaryFd;
@@ -274,8 +262,14 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   char *LD = getenv("LD_PATH");
   char *AERLIB = getenv("LIBAER_PATH");
 
+  llvm::SmallString<128> outputPath;
+  if (auto EC = llvm::sys::fs::createTemporaryFile("simulatorModule", "out",
+                                                   outputPath)) {
+    return;
+  }
+
   auto simBinary = std::make_unique<llvm::ToolOutputFile>(binaryPath, binaryFd);
-  llvm::SmallVector<llvm::StringRef, 4> lld_argv{"-o", "a.out", objPath,
+  llvm::SmallVector<llvm::StringRef, 4> lld_argv{"-o", outputPath, objPath,
                                                  AERLIB};
 
   llvm::SmallString<128> stdErrPath;
@@ -298,6 +292,18 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
     }
     return;
   }
+
+  std::ifstream output(outputPath.c_str(), std::ios_base::binary);
+  if (!output) {
+    llvm::errs() << "Failed to open generated simulator object file "
+                 << outputPath;
+    return;
+  }
+
+  std::string outputContents{std::istreambuf_iterator<char>(output),
+                             std::istreambuf_iterator<char>()};
+
+  payload.getFile("simulator.bin")->assign(std::move(outputContents));
 
 } // SimulatorSystem::buildLLVMPayload
 
