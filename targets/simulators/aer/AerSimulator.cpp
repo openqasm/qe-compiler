@@ -99,7 +99,7 @@ llvm::Error AerSimulator::registerTargetPasses() {
       });
   mlir::PassRegistration<conversion::QUIRToAERPass>(
       []() -> std::unique_ptr<conversion::QUIRToAERPass> {
-        return std::make_unique<conversion::QUIRToAERPass>(false);
+        return std::make_unique<conversion::QUIRToAERPass>();
       });
 
   return llvm::Error::success();
@@ -168,7 +168,7 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   // standard ops by `VariableEliminationPass`.
   pm.addPass(std::make_unique<transforms::OutputCRegsPass>());
   pm.addPass(std::make_unique<quir::VariableEliminationPass>(false));
-  pm.addPass(std::make_unique<conversion::QUIRToAERPass>(false));
+  pm.addPass(std::make_unique<conversion::QUIRToAERPass>());
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createLowerToLLVMPass());
   pm.addPass(mlir::LLVM::createLegalizeForExportPass());

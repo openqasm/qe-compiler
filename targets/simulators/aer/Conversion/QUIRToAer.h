@@ -36,10 +36,7 @@ struct QUIRToAERPass
   void runOnOperation(AerSimulator &system) override;
   void getDependentDialects(mlir::DialectRegistry &registry) const override;
 
-  bool externalizeOutputVariables;
-
-  QUIRToAERPass(bool externalizeOutputVariables)
-      : PassWrapper(), externalizeOutputVariables(externalizeOutputVariables) {}
+  QUIRToAERPass() : PassWrapper() {}
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
