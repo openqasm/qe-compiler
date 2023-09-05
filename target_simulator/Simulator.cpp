@@ -233,9 +233,6 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
     return;
   }
 
-  llvm::outs() << "output il file:\n";
-  llvm::outs() << *llvmModule;
-
   llvm::SmallString<128> objPath;
   int objFd;
   if (auto err = llvm::sys::fs::createTemporaryFile("simulatorModule", "obj",
