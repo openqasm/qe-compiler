@@ -22,11 +22,10 @@
 
 #include <mlir/IR/BuiltinOps.h>
 
-using namespace qssc::targets::mock;
+namespace mock = qssc::targets::systems::mock;
 using namespace mlir;
 
-auto qssc::targets::mock::getControllerModule(ModuleOp topModuleOp)
-    -> ModuleOp {
+auto mock::getControllerModule(ModuleOp topModuleOp) -> ModuleOp {
   ModuleOp retOp = nullptr;
   topModuleOp->walk([&](ModuleOp walkOp) {
     auto nodeType = walkOp->getAttrOfType<StringAttr>("quir.nodeType");
@@ -39,8 +38,7 @@ auto qssc::targets::mock::getControllerModule(ModuleOp topModuleOp)
   return retOp;
 }
 
-auto qssc::targets::mock::getActuatorModules(ModuleOp topModuleOp)
-    -> std::vector<ModuleOp> {
+auto mock::getActuatorModules(ModuleOp topModuleOp) -> std::vector<ModuleOp> {
   std::vector<ModuleOp> retVec;
   topModuleOp->walk([&](ModuleOp walkOp) {
     auto nodeType = walkOp->getAttrOfType<StringAttr>("quir.nodeType");

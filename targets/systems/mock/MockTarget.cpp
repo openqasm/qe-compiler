@@ -55,7 +55,8 @@ using namespace mlir;
 using namespace mlir::quir;
 
 using namespace qssc::hal;
-using namespace qssc::targets::mock;
+namespace mock = qssc::targets::systems::mock;
+using namespace mock;
 
 // The space below at the front of the string causes this category to be printed
 // first
@@ -64,7 +65,7 @@ static llvm::cl::OptionCategory
             "Options that control Mock-specific behavior of the Mock QSS "
             "Compiler target");
 
-int qssc::targets::mock::init() {
+int mock::init() {
   bool registered = registry::TargetSystemRegistry::registerPlugin<MockSystem>(
       "mock", "Mock system for testing the targeting infrastructure.",
       [](llvm::Optional<llvm::StringRef> configurationPath)
@@ -154,8 +155,8 @@ MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
 } // MockSystem
 
 llvm::Error MockSystem::registerTargetPasses() {
-  mlir::PassRegistration<qssc::targets::mock::MockFunctionLocalizationPass>();
-  mlir::PassRegistration<qssc::targets::mock::MockQubitLocalizationPass>();
+  mlir::PassRegistration<mock::MockFunctionLocalizationPass>();
+  mlir::PassRegistration<mock::MockQubitLocalizationPass>();
   mlir::PassRegistration<conversion::MockQUIRToStdPass>(
       []() -> std::unique_ptr<conversion::MockQUIRToStdPass> {
         return std::make_unique<conversion::MockQUIRToStdPass>(false);

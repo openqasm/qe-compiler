@@ -29,7 +29,7 @@
 
 #include <list>
 
-namespace qssc::targets::mock {
+namespace qssc::targets::systems::mock {
 
 struct SymbolTableBuildPass
     : public mlir::PassWrapper<SymbolTableBuildPass,
@@ -69,6 +69,6 @@ private:
   std::list<mlir::Operation *> toWalk;
 }; // struct MockFunctionLocalizationPass
 
-} // namespace qssc::targets::mock
+} // namespace qssc::targets::systems::mock
 
 #endif // MOCK_FUNCTION_LOCALIZATION_H
