@@ -18,8 +18,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SIMULATOR_CONVERSION_OUTPUT_CLASSICAL_REGISTERS_H
-#define SIMULATOR_CONVERSION_OUTPUT_CLASSICAL_REGISTERS_H
+#ifndef SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H
+#define SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H
 
 #include "Simulator.h"
 
@@ -28,7 +28,7 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
-namespace qssc::targets::simulator::conversion {
+namespace qssc::targets::simulator::transforms {
 
 class OutputCRegsPassImpl;
 
@@ -47,6 +47,6 @@ struct OutputCRegsPass
 private:
   std::shared_ptr<OutputCRegsPassImpl> impl;
 };
-} // namespace qssc::targets::simulator::conversion
+} // namespace qssc::targets::simulator::transforms
 
-#endif // SIMULATOR_CONVERSION_OUTPUT_CLASSICAL_REGISTERS_H
+#endif // SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H

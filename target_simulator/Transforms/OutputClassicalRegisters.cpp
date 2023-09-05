@@ -17,8 +17,7 @@
 //  This file implements passes to output classical register values
 //
 //===----------------------------------------------------------------------===//
-#include "Conversion/OutputClassicalRegisters.h"
-#include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
+#include "Transforms/OutputClassicalRegisters.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
@@ -32,7 +31,7 @@
 
 using namespace mlir;
 
-namespace qssc::targets::simulator::conversion {
+namespace qssc::targets::simulator::transforms {
 
 class OutputCRegsPassImpl {
 public:
@@ -42,13 +41,8 @@ public:
     mlir::TypeConverter typeConverter;
     ConversionTarget target(*context);
 
-    RewritePatternSet patterns(context);
-
     prepareConversion(moduleOp);
     insertOutputCRegs(moduleOp);
-
-    if (failed(applyPartialConversion(moduleOp, target, std::move(patterns))))
-      llvm::outs() << "[OutputCRegsPass] Failed applyPartialConversion\n";
   }
 
 private:
@@ -153,4 +147,4 @@ llvm::StringRef OutputCRegsPass::getDescription() const {
   return "Insert output ops for classical registers";
 }
 
-} // namespace qssc::targets::simulator::conversion
+} // namespace qssc::targets::simulator::transforms

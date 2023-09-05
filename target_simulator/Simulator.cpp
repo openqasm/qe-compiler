@@ -16,9 +16,9 @@
 
 #include "Simulator.h"
 
-#include "Conversion/OutputClassicalRegisters.h"
 #include "Conversion/QUIRToAer.h"
 #include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
+#include "Transforms/OutputClassicalRegisters.h"
 
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "HAL/TargetSystemRegistry.h"
@@ -92,9 +92,9 @@ SimulatorSystem::SimulatorSystem(std::unique_ptr<SimulatorConfig> config)
       simulatorConfig(std::move(config)) {} // SimulatorSystem
 
 llvm::Error SimulatorSystem::registerTargetPasses() {
-  mlir::PassRegistration<conversion::OutputCRegsPass>(
-      []() -> std::unique_ptr<conversion::OutputCRegsPass> {
-        return std::make_unique<conversion::OutputCRegsPass>();
+  mlir::PassRegistration<transforms::OutputCRegsPass>(
+      []() -> std::unique_ptr<transforms::OutputCRegsPass> {
+        return std::make_unique<transforms::OutputCRegsPass>();
       });
   mlir::PassRegistration<conversion::QUIRToAERPass>(
       []() -> std::unique_ptr<conversion::QUIRToAERPass> {
@@ -176,7 +176,7 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   // It inserts classical `oq3` instructions for printing the values
   // of classical registers. These instructions will be converted into
   // standard ops by `VariableEliminationPass`.
-  pm.addPass(std::make_unique<conversion::OutputCRegsPass>());
+  pm.addPass(std::make_unique<transforms::OutputCRegsPass>());
   pm.addPass(std::make_unique<quir::VariableEliminationPass>(false));
   pm.addPass(std::make_unique<conversion::QUIRToAERPass>(false));
   pm.addPass(mlir::createCanonicalizerPass());
