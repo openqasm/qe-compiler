@@ -1,5 +1,4 @@
-//===- Target.inc - Simulator target registration --------------------*- C++
-//-*-===//
+//===- Target.inc - Simulator target registration ---------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -25,10 +24,10 @@
 
 #include "AerSimulator.h"
 
-namespace qssc::targets::simulator::aer {
+namespace qssc::targets::simulators::aer {
 
 [[maybe_unused]] int registrar = init();
 
-} // namespace qssc::targets::simulator::aer
+} // namespace qssc::targets::simulators::aer
 
 #endif // HAL_TARGETS_AER_SIMULATOR_TARGET_H

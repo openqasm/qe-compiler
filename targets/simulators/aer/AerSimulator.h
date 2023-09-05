@@ -1,4 +1,4 @@
-//===- Simulator.h - Simulator target info ----------------------*- C++ -*-===//
+//===- AerSimulator.h - Simulator target info -------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -29,7 +29,7 @@
 #include <memory>
 #include <unordered_map>
 
-namespace qssc::targets::simulator::aer {
+namespace qssc::targets::simulators::aer {
 
 // Register the simulator target.
 int init();
@@ -41,7 +41,7 @@ public:
 
 class AerSimulator : public qssc::hal::TargetSystem {
 public:
-  static constexpr auto name = "simulator";
+  static constexpr auto name = "aer-simulator";
   static const std::vector<std::string> childNames;
   explicit AerSimulator(std::unique_ptr<AerSimulatorConfig> config);
   static llvm::Error registerTargetPasses();
@@ -64,6 +64,6 @@ private:
   void buildLLVMPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload);
 }; // class AerSimulatorSystem
 
-} // namespace qssc::targets::simulator::aer
+} // namespace qssc::targets::simulators::aer
 
 #endif // HAL_TARGETS_AER_SIMULATOR_H

@@ -28,7 +28,7 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
-namespace qssc::targets::simulator::aer::conversion {
+namespace qssc::targets::simulators::aer::conversion {
 struct QUIRToAERPass
     : public mlir::PassWrapper<
           QUIRToAERPass,
@@ -41,6 +41,6 @@ struct QUIRToAERPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
 };
-} // namespace qssc::targets::simulator::aer::conversion
+} // namespace qssc::targets::simulators::aer::conversion
 
 #endif // SIMULATOR_AER_CONVERSION_QUIR_TO_AER_H

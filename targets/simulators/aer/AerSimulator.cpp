@@ -1,4 +1,4 @@
-//===- Simulator.cpp ----------------------------------------*- C++ -*-===//
+//===- AerSimulator.cpp -----------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -55,7 +55,7 @@ using namespace mlir;
 using namespace mlir::quir;
 
 using namespace qssc::hal;
-using namespace qssc::targets::simulator::aer;
+using namespace qssc::targets::simulators::aer;
 
 // The space below at the front of the string causes this category to be printed
 // first
@@ -64,11 +64,12 @@ static llvm::cl::OptionCategory simulatorCat(
     "Options that control Simulator-specific behavior of the Simulator QSS "
     "Compiler target");
 
-int qssc::targets::simulator::aer::init() {
+int qssc::targets::simulators::aer::init() {
   bool registered =
       registry::TargetSystemRegistry::registerPlugin<AerSimulator>(
-          "simulator",
-          "Simulator system for testing the targeting infrastructure.",
+          "aer-simulator",
+          "Quantum simulator using qiskit Aer for quantum programs in "
+          "OpenQASM3/QUIR",
           [](llvm::Optional<llvm::StringRef> configurationPath)
               -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
             if (!configurationPath)
@@ -134,7 +135,8 @@ llvm::Error AerSimulator::addPayloadPasses(mlir::PassManager &pm) {
 
 auto AerSimulator::payloadPassesFound(mlir::PassManager &pm) -> bool {
   for (auto &pass : pm.getPasses())
-    if (pass.getName() == "qssc::targets::simulator::conversion::QUIRToStdPass")
+    if (pass.getName() ==
+        "qssc::targets::simulator::aer::conversion::QUIRToAerPass")
       return true;
   return false;
 } // AerSimulator::payloadPassesFound
@@ -248,18 +250,16 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
 
   llvm::SmallString<128> outputPath;
   if (auto EC = llvm::sys::fs::createTemporaryFile("simulatorModule", "out",
-                                                   outputPath)) {
+                                                   outputPath))
     return;
-  }
 
   llvm::SmallVector<llvm::StringRef, 5> lld_argv{"ld", objPath, AERLIB, "-o",
                                                  outputPath};
 
   llvm::SmallString<128> stdErrPath;
   if (auto EC = llvm::sys::fs::createTemporaryFile("simulatorModule", "err",
-                                                   stdErrPath)) {
+                                                   stdErrPath))
     return;
-  }
 
   llvm::Optional<llvm::StringRef> redirects[] = {
       {""}, {""}, llvm::StringRef(stdErrPath)};

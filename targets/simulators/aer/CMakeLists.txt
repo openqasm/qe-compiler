@@ -35,7 +35,7 @@ if ("LLVMAArch64CodeGen" IN_LIST LLVM_AVAILABLE_LIBS)
     message(STATUS "Adding AArch64 libraries to llvm_code_gen_libraries")
 endif ()
 
-qssc_add_plugin(QSSCTargetSimulator QSSC_TARGET_PLUGIN
+qssc_add_plugin(QSSCTargetAerSimulator QSSC_TARGET_PLUGIN
 Conversion/QUIRToAer.cpp
 Conversion/TypeConversion.cpp
 Transforms/OutputClassicalRegisters.cpp

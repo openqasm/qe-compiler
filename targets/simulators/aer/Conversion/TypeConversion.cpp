@@ -22,7 +22,7 @@
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
-namespace qssc::targets::simulator::aer {
+namespace qssc::targets::simulators::aer {
 
 using namespace mlir;
 
@@ -107,4 +107,4 @@ Optional<Value> AerTypeConverter::durationSourceMaterialization(
     return val;
   return llvm::None;
 }
-} // namespace qssc::targets::simulator::aer
+} // namespace qssc::targets::simulators::aer

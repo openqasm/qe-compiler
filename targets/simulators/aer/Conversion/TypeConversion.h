@@ -26,7 +26,7 @@
 
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-namespace qssc::targets::simulator::aer {
+namespace qssc::targets::simulators::aer {
 
 struct AerTypeConverter : public mlir::TypeConverter {
   using mlir::TypeConverter::TypeConverter;
@@ -52,6 +52,6 @@ struct AerTypeConverter : public mlir::TypeConverter {
 
 }; // struct AerTypeConverter
 
-} // namespace qssc::targets::simulator::aer
+} // namespace qssc::targets::simulators::aer
 
 #endif // AERTOSTD_TYPECONVERSION__H

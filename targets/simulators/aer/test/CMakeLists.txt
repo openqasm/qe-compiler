@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-qssc_add_lit_test_suite(check-simulator
+qssc_add_lit_test_suite(check-aer-simulator
         "Simulator Static"
         "${CMAKE_CURRENT_SOURCE_DIR}"
         "${LIT_TEST_EXTRA_ARGS} -v -DTEST_CFG=${CMAKE_CURRENT_SOURCE_DIR}/test.cfg"

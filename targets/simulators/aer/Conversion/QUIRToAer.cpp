@@ -44,7 +44,7 @@ using namespace mlir;
 
 #include <exception>
 
-namespace qssc::targets::simulator::aer::conversion {
+namespace qssc::targets::simulators::aer::conversion {
 
 namespace {
 
@@ -93,9 +93,9 @@ void declareAerFunctions(ModuleOp moduleOp) {
   builder.setInsertionPointToStart(moduleOp.getBody());
   // common types
   const auto voidType = LLVM::LLVMVoidType::get(context);
-  const auto i8Type = IntegerType::get(context, 8);
-  const auto i64Type = IntegerType::get(context, 64);
-  const auto f64Type = Float64Type::get(context);
+  const auto i8Type = builder.getI8Type();
+  const auto i64Type = builder.getI64Type();
+  const auto f64Type = builder.getF64Type();
   const auto aerStateType = LLVM::LLVMPointerType::get(i8Type);
   const auto strType = LLVM::LLVMPointerType::get(i8Type);
   // @aer_state(...) -> i8*
@@ -187,7 +187,7 @@ void insertAerStateInitialize(ModuleOp moduleOp) {
 void prepareArrayForMeas(ModuleOp moduleOp) {
   OpBuilder builder(moduleOp);
 
-  const auto i64Type = builder.getIntegerType(64);
+  const auto i64Type = builder.getI64Type();
   auto mainFunc = mlir::quir::getMainFunction(moduleOp);
   builder.setInsertionPointToStart(&mainFunc->getRegion(0).getBlocks().front());
   const int arraySize = 1; // TODO: Support multi-body measurement in future
@@ -348,8 +348,7 @@ struct MeasureOpConversionPat : public OpConversionPattern<quir::MeasureOp> {
                   ConversionPatternRewriter &rewriter) const override {
     assert(op->getNumOperands() == 1 &&
            "Multi-body measurement have not been supported yet.");
-    auto context = op->getContext();
-    const auto i64Type = IntegerType::get(context, 64);
+    const auto i64Type = rewriter.getI64Type();
     const unsigned arrSize = 1; // TODO
     const IntegerAttr arraySizeAttr = rewriter.getIntegerAttr(i64Type, arrSize);
     const auto qubit = *adaptor.getOperands().begin();
@@ -361,7 +360,7 @@ struct MeasureOpConversionPat : public OpConversionPattern<quir::MeasureOp> {
         op->getLoc(), aerFuncTable.at("aer_apply_measure"),
         ValueRange{state, arrayForMeas.getResult(), arrSizeOp});
     auto casted = rewriter.create<arith::TruncIOp>(
-        op->getLoc(), meas.getResult(0), rewriter.getIntegerType(1));
+        op->getLoc(), meas.getResult(0), rewriter.getI1Type());
     rewriter.replaceOp(op, casted.getResult());
 
     return success();
@@ -484,4 +483,4 @@ llvm::StringRef QUIRToAERPass::getDescription() const {
   return "Convert QUIR ops to aer";
 }
 
-} // namespace qssc::targets::simulator::aer::conversion
+} // namespace qssc::targets::simulators::aer::conversion

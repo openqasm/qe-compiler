@@ -28,7 +28,7 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
-namespace qssc::targets::simulator::aer::transforms {
+namespace qssc::targets::simulators::aer::transforms {
 
 class OutputCRegsPassImpl;
 
@@ -47,6 +47,6 @@ struct OutputCRegsPass
 private:
   std::shared_ptr<OutputCRegsPassImpl> impl;
 };
-} // namespace qssc::targets::simulator::aer::transforms
+} // namespace qssc::targets::simulators::aer::transforms
 
 #endif // SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H
