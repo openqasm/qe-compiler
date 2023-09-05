@@ -31,7 +31,7 @@
 
 using namespace mlir;
 
-namespace qssc::targets::simulator::transforms {
+namespace qssc::targets::simulator::aer::transforms {
 
 class OutputCRegsPassImpl {
 public:
@@ -128,7 +128,7 @@ OutputCRegsPass::OutputCRegsPass() : PassWrapper() {
   impl = std::make_shared<OutputCRegsPassImpl>();
 }
 
-void OutputCRegsPass::runOnOperation(SimulatorSystem &system) {
+void OutputCRegsPass::runOnOperation(AerSimulator &system) {
   auto *context = &getContext();
   auto moduleOp = getOperation();
   impl->runOnOperation(context, moduleOp);
@@ -147,4 +147,4 @@ llvm::StringRef OutputCRegsPass::getDescription() const {
   return "Insert output ops for classical registers";
 }
 
-} // namespace qssc::targets::simulator::transforms
+} // namespace qssc::targets::simulator::aer::transforms

@@ -22,7 +22,9 @@
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
-namespace mlir {
+namespace qssc::targets::simulator::aer {
+
+using namespace mlir;
 
 namespace {
 Optional<Type> convertCBitType(quir::CBitType t) {
@@ -105,4 +107,4 @@ Optional<Value> AerTypeConverter::durationSourceMaterialization(
     return val;
   return llvm::None;
 }
-} // namespace mlir
+} // namespace qssc::targets::simulator::aer

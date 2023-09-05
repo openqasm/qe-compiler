@@ -44,7 +44,7 @@ using namespace mlir;
 
 #include <exception>
 
-namespace qssc::targets::simulator::conversion {
+namespace qssc::targets::simulator::aer::conversion {
 
 namespace {
 
@@ -428,7 +428,7 @@ void conversion::QUIRToAERPass::getDependentDialects(
                   mlir::AffineDialect, arith::ArithmeticDialect>();
 }
 
-void QUIRToAERPass::runOnOperation(SimulatorSystem &system) {
+void QUIRToAERPass::runOnOperation(AerSimulator &system) {
   ModuleOp moduleOp = getOperation();
 
   // First remove all arguments from synchronization ops
@@ -484,4 +484,4 @@ llvm::StringRef QUIRToAERPass::getDescription() const {
   return "Convert QUIR ops to aer";
 }
 
-} // namespace qssc::targets::simulator::conversion
+} // namespace qssc::targets::simulator::aer::conversion

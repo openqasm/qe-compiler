@@ -14,7 +14,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Simulator.h"
+#include "AerSimulator.h"
 
 #include "Conversion/QUIRToAer.h"
 #include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
@@ -55,7 +55,7 @@ using namespace mlir;
 using namespace mlir::quir;
 
 using namespace qssc::hal;
-using namespace qssc::targets::simulator;
+using namespace qssc::targets::simulator::aer;
 
 // The space below at the front of the string causes this category to be printed
 // first
@@ -64,9 +64,9 @@ static llvm::cl::OptionCategory simulatorCat(
     "Options that control Simulator-specific behavior of the Simulator QSS "
     "Compiler target");
 
-int qssc::targets::simulator::init() {
+int qssc::targets::simulator::aer::init() {
   bool registered =
-      registry::TargetSystemRegistry::registerPlugin<SimulatorSystem>(
+      registry::TargetSystemRegistry::registerPlugin<AerSimulator>(
           "simulator",
           "Simulator system for testing the targeting infrastructure.",
           [](llvm::Optional<llvm::StringRef> configurationPath)
@@ -76,22 +76,23 @@ int qssc::targets::simulator::init() {
                   llvm::inconvertibleErrorCode(),
                   "Configuration file must be specified.\n");
 
-            auto config = std::make_unique<SimulatorConfig>(*configurationPath);
-            return std::make_unique<SimulatorSystem>(std::move(config));
+            auto config =
+                std::make_unique<AerSimulatorConfig>(*configurationPath);
+            return std::make_unique<AerSimulator>(std::move(config));
           });
   return registered ? 0 : -1;
 }
 
-const std::vector<std::string> SimulatorSystem::childNames = {};
+const std::vector<std::string> AerSimulator::childNames = {};
 
-SimulatorConfig::SimulatorConfig(llvm::StringRef configurationPath)
+AerSimulatorConfig::AerSimulatorConfig(llvm::StringRef configurationPath)
     : SystemConfiguration() {} // SimulatorConfig
 
-SimulatorSystem::SimulatorSystem(std::unique_ptr<SimulatorConfig> config)
-    : TargetSystem("SimulatorSystem", nullptr),
-      simulatorConfig(std::move(config)) {} // SimulatorSystem
+AerSimulator::AerSimulator(std::unique_ptr<AerSimulatorConfig> config)
+    : TargetSystem("AerSimulator", nullptr),
+      simulatorConfig(std::move(config)) {} // AerSimulator
 
-llvm::Error SimulatorSystem::registerTargetPasses() {
+llvm::Error AerSimulator::registerTargetPasses() {
   mlir::PassRegistration<transforms::OutputCRegsPass>(
       []() -> std::unique_ptr<transforms::OutputCRegsPass> {
         return std::make_unique<transforms::OutputCRegsPass>();
@@ -102,7 +103,7 @@ llvm::Error SimulatorSystem::registerTargetPasses() {
       });
 
   return llvm::Error::success();
-} // SimulatorSystem::registerTargetPasses
+} // AerSimulator::registerTargetPasses
 
 namespace {
 void simulatorPipelineBuilder(mlir::OpPassManager &pm) {
@@ -111,15 +112,15 @@ void simulatorPipelineBuilder(mlir::OpPassManager &pm) {
 } // simulatorPipelineBuilder
 } // anonymous namespace
 
-llvm::Error SimulatorSystem::registerTargetPipelines() {
+llvm::Error AerSimulator::registerTargetPipelines() {
   mlir::PassPipelineRegistration<> pipeline(
       "simulator-conversion", "Run Simulator-specific conversions",
       simulatorPipelineBuilder);
 
   return llvm::Error::success();
-} // SimulatorSystem::registerTargetPipelines
+} // AerSimulator::registerTargetPipelines
 
-llvm::Error SimulatorSystem::addPayloadPasses(mlir::PassManager &pm) {
+llvm::Error AerSimulator::addPayloadPasses(mlir::PassManager &pm) {
   if (payloadPassesFound(pm)) {
     // command line specified payload conversion,
     // let the user handle exactly what to add
@@ -129,32 +130,25 @@ llvm::Error SimulatorSystem::addPayloadPasses(mlir::PassManager &pm) {
   simulatorPipelineBuilder(pm);
 
   return llvm::Error::success();
-} // SimulatorSystem::addPayloadPasses
+} // AerSimulator::addPayloadPasses
 
-auto SimulatorSystem::payloadPassesFound(mlir::PassManager &pm) -> bool {
+auto AerSimulator::payloadPassesFound(mlir::PassManager &pm) -> bool {
   for (auto &pass : pm.getPasses())
     if (pass.getName() == "qssc::targets::simulator::conversion::QUIRToStdPass")
       return true;
   return false;
-} // SimulatorSystem::payloadPassesFound
+} // AerSimulator::payloadPassesFound
 
-llvm::Error SimulatorSystem::addToPayload(mlir::ModuleOp &moduleOp,
-                                          qssc::payload::Payload &payload) {
-  for (auto &child : children)
-    if (auto err = child->addToPayload(moduleOp, payload))
-      return err;
-  for (auto &instrument : instruments)
-    if (auto err = instrument->addToPayload(moduleOp, payload))
-      return err;
-
+llvm::Error AerSimulator::addToPayload(mlir::ModuleOp &moduleOp,
+                                       qssc::payload::Payload &payload) {
   buildLLVMPayload(moduleOp, payload);
 
   // TODO: if buildLLVMPayload failed?
   return llvm::Error::success();
-} // SimulatorSystem::addToPayload
+} // AerSimulator::addToPayload
 
-void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
-                                       payload::Payload &payload) {
+void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
+                                    payload::Payload &payload) {
 
   auto *context = moduleOp.getContext();
   assert(context);
@@ -189,6 +183,7 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   llvm::InitializeAllTargetMCs();
 
   // Setup the machine properties for the target architecture.
+  // TODO: In future, it would be better to make this configurable
   std::string targetTriple = llvm::sys::getDefaultTargetTriple();
   std::string errorMessage;
   const auto *target =
@@ -292,9 +287,9 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
 
   payload.getFile("simulator.bin")->assign(std::move(outputContents));
 
-} // SimulatorSystem::buildLLVMPayload
+} // AerSimulator::buildLLVMPayload
 
-llvm::Error SimulatorSystem::callTool(
+llvm::Error AerSimulator::callTool(
     llvm::StringRef program, llvm::ArrayRef<llvm::StringRef> args,
     llvm::ArrayRef<llvm::Optional<llvm::StringRef>> redirects, bool dumpArgs) {
 

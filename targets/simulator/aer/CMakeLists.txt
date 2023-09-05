@@ -39,7 +39,7 @@ qssc_add_plugin(QSSCTargetSimulator QSSC_TARGET_PLUGIN
 Conversion/QUIRToAer.cpp
 Conversion/TypeConversion.cpp
 Transforms/OutputClassicalRegisters.cpp
-Simulator.cpp
+AerSimulator.cpp
 
 ADDITIONAL_HEADER_DIRS
 ${CMAKE_CURRENT_SOURCE_DIR}

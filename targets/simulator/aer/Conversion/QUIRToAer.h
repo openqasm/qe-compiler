@@ -1,4 +1,4 @@
-//===- OutputClassicalRegisters.h -------------------------------*- C++ -*-===//
+//===- QUIRToAer.h - Convert QUIR to Aer Dialect ----------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,39 +14,36 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file declares the pass to output classical register values
+//  This file declares the pass for converting QUIR to Aer
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H
-#define SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H
+#ifndef SIMULATOR_AER_CONVERSION_QUIR_TO_AER_H
+#define SIMULATOR_AER_CONVERSION_QUIR_TO_AER_H
 
-#include "Simulator.h"
+#include "AerSimulator.h"
 
 #include "HAL/TargetOperationPass.h"
 
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
-namespace qssc::targets::simulator::transforms {
-
-class OutputCRegsPassImpl;
-
-struct OutputCRegsPass
+namespace qssc::targets::simulator::aer::conversion {
+struct QUIRToAERPass
     : public mlir::PassWrapper<
-          OutputCRegsPass,
-          hal::TargetOperationPass<SimulatorSystem, mlir::ModuleOp>> {
-  void runOnOperation(SimulatorSystem &system) override;
+          QUIRToAERPass,
+          hal::TargetOperationPass<AerSimulator, mlir::ModuleOp>> {
+  void runOnOperation(AerSimulator &system) override;
   void getDependentDialects(mlir::DialectRegistry &registry) const override;
 
-  OutputCRegsPass();
+  bool externalizeOutputVariables;
+
+  QUIRToAERPass(bool externalizeOutputVariables)
+      : PassWrapper(), externalizeOutputVariables(externalizeOutputVariables) {}
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
-
-private:
-  std::shared_ptr<OutputCRegsPassImpl> impl;
 };
-} // namespace qssc::targets::simulator::transforms
+} // namespace qssc::targets::simulator::aer::conversion
 
-#endif // SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H
+#endif // SIMULATOR_AER_CONVERSION_QUIR_TO_AER_H

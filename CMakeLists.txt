@@ -154,15 +154,15 @@ if(QSSC_WITH_MOCK_TARGET)
     )
 endif()
 
-option(QSSC_WITH_SIMULATOR_TARGET "Available targets include the built-in simulator target" ON)
-if(QSSC_WITH_SIMULATOR_TARGET)
+option(QSSC_WITH_AER_TARGET "Available targets include the built-in simulator target" ON)
+if(QSSC_WITH_AER_TARGET)
     set(QSSC_TARGET_DIRS
             ${QSSC_TARGET_DIRS}
-            ${CMAKE_CURRENT_SOURCE_DIR}/target_simulator
+            ${CMAKE_CURRENT_SOURCE_DIR}/targets/simulator/aer
     )
     set(QSSC_TARGET_TEST_DIRS
             ${QSSC_TARGET_TEST_DIRS}
-            ${CMAKE_CURRENT_SOURCE_DIR}/target_simulator/test
+            ${CMAKE_CURRENT_SOURCE_DIR}/targets/simulator/aer/test
     )
 endif()
 

@@ -17,8 +17,8 @@
 //  This file declares the classes for the a Simulator target interface
 //
 //===----------------------------------------------------------------------===//
-#ifndef HAL_TARGETS_SIMULATOR_H
-#define HAL_TARGETS_SIMULATOR_H
+#ifndef HAL_TARGETS_AER_SIMULATOR_H
+#define HAL_TARGETS_AER_SIMULATOR_H
 
 #include "HAL/SystemConfiguration.h"
 #include "HAL/TargetSystem.h"
@@ -29,40 +29,41 @@
 #include <memory>
 #include <unordered_map>
 
-namespace qssc::targets::simulator {
+namespace qssc::targets::simulator::aer {
 
 // Register the simulator target.
 int init();
 
-class SimulatorConfig : public qssc::hal::SystemConfiguration {
+class AerSimulatorConfig : public qssc::hal::SystemConfiguration {
 public:
-  explicit SimulatorConfig(llvm::StringRef configurationPath);
-}; // class SimulatorConfig
+  explicit AerSimulatorConfig(llvm::StringRef configurationPath);
+}; // class AerSimulatorConfig
 
-class SimulatorSystem : public qssc::hal::TargetSystem {
+class AerSimulator : public qssc::hal::TargetSystem {
 public:
   static constexpr auto name = "simulator";
   static const std::vector<std::string> childNames;
-  explicit SimulatorSystem(std::unique_ptr<SimulatorConfig> config);
+  explicit AerSimulator(std::unique_ptr<AerSimulatorConfig> config);
   static llvm::Error registerTargetPasses();
   static llvm::Error registerTargetPipelines();
   llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
   auto payloadPassesFound(mlir::PassManager &pm) -> bool;
   llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
-  auto getConfig() -> SimulatorConfig & { return *simulatorConfig; }
+  auto getConfig() -> AerSimulatorConfig & { return *simulatorConfig; }
 
-  static llvm::Error callTool(
-    llvm::StringRef program, llvm::ArrayRef<llvm::StringRef> args,
-    llvm::ArrayRef<llvm::Optional<llvm::StringRef>> redirects, bool dumpArgs);
+  static llvm::Error
+  callTool(llvm::StringRef program, llvm::ArrayRef<llvm::StringRef> args,
+           llvm::ArrayRef<llvm::Optional<llvm::StringRef>> redirects,
+           bool dumpArgs);
 
 private:
-  std::unique_ptr<SimulatorConfig> simulatorConfig;
+  std::unique_ptr<AerSimulatorConfig> simulatorConfig;
 
 private:
   void buildLLVMPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload);
-}; // class SimulatorSystem
+}; // class AerSimulatorSystem
 
-} // namespace qssc::targets::simulator
+} // namespace qssc::targets::simulator::aer
 
-#endif // HAL_TARGETS_SIMULATOR_H
+#endif // HAL_TARGETS_AER_SIMULATOR_H

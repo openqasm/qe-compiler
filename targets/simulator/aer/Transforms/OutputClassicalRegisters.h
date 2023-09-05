@@ -1,4 +1,4 @@
-//===- QUIRToAer.h - Convert QUIR to Aer Dialect ----------------*- C++ -*-===//
+//===- OutputClassicalRegisters.h -------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,36 +14,39 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file declares the pass for converting QUIR to Aer
+//  This file declares the pass to output classical register values
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef SIMULATOR_CONVERSION_QUIRAER_H
-#define SIMULATOR_CONVERSION_QUIRAER_H
+#ifndef SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H
+#define SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H
 
-#include "Simulator.h"
+#include "AerSimulator.h"
 
 #include "HAL/TargetOperationPass.h"
 
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
-namespace qssc::targets::simulator::conversion {
-struct QUIRToAERPass
+namespace qssc::targets::simulator::aer::transforms {
+
+class OutputCRegsPassImpl;
+
+struct OutputCRegsPass
     : public mlir::PassWrapper<
-          QUIRToAERPass,
-          hal::TargetOperationPass<SimulatorSystem, mlir::ModuleOp>> {
-  void runOnOperation(SimulatorSystem &system) override;
+          OutputCRegsPass,
+          hal::TargetOperationPass<AerSimulator, mlir::ModuleOp>> {
+  void runOnOperation(AerSimulator &system) override;
   void getDependentDialects(mlir::DialectRegistry &registry) const override;
 
-  bool externalizeOutputVariables;
-
-  QUIRToAERPass(bool externalizeOutputVariables)
-      : PassWrapper(), externalizeOutputVariables(externalizeOutputVariables) {}
+  OutputCRegsPass();
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
-};
-} // namespace qssc::targets::simulator::conversion
 
-#endif // SIMULATOR_CONVERSION_QUIRAER_H
+private:
+  std::shared_ptr<OutputCRegsPassImpl> impl;
+};
+} // namespace qssc::targets::simulator::aer::transforms
+
+#endif // SIMULATOR_TRANSFORMS_OUTPUT_CLASSICAL_REGISTERS_H
