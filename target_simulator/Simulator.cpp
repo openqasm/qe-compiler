@@ -106,6 +106,8 @@ llvm::Error SimulatorSystem::registerTargetPasses() {
 
 namespace {
 void simulatorPipelineBuilder(mlir::OpPassManager &pm) {
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(std::make_unique<BreakResetPass>());
 } // simulatorPipelineBuilder
 } // anonymous namespace
 
@@ -123,15 +125,9 @@ llvm::Error SimulatorSystem::addPayloadPasses(mlir::PassManager &pm) {
     // let the user handle exactly what to add
     return llvm::Error::success();
   }
-  pm.addPass(mlir::createCanonicalizerPass());
-  pm.addPass(std::make_unique<BreakResetPass>());
+
   simulatorPipelineBuilder(pm);
-  for (auto &child : children)
-    if (auto err = child->addPayloadPasses(pm))
-      return err;
-  for (auto &instrument : instruments)
-    if (auto err = instrument->addPayloadPasses(pm))
-      return err;
+
   return llvm::Error::success();
 } // SimulatorSystem::addPayloadPasses
 
