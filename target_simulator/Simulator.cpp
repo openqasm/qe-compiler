@@ -168,6 +168,10 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   mlir::registerLLVMDialectTranslation(*context);
 
   mlir::PassManager pm(context);
+  // Apply any generic pass manager command line options and run the pipeline.
+  mlir::applyPassManagerCLOptions(pm);
+  mlir::applyDefaultTimingPassManagerCLOptions(pm);
+
   // `OutputCRegsPass` must be applied before `VariableEliminationPass`.
   // It inserts classical `oq3` instructions for printing the values
   // of classical registers. These instructions will be converted into
@@ -282,7 +286,6 @@ void SimulatorSystem::buildLLVMPayload(mlir::ModuleOp &moduleOp,
       {""}, {""}, llvm::StringRef(stdErrPath)};
 
   if (auto err = callTool(LD, lld_argv, redirects, true)) {
-
     auto bufOrError = llvm::MemoryBuffer::getFile(stdErrPath);
     if (!bufOrError) {
       llvm::errs() << "call linker error: " << bufOrError.getError().message()
