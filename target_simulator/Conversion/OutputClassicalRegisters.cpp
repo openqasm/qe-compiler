@@ -32,107 +32,112 @@
 
 using namespace mlir;
 
-namespace {
-
-// Maintain classical register declarations in the declared order.
-std::vector<std::pair<std::string, oq3::DeclareVariableOp>> cbitDecls;
-std::map<std::string, mlir::Value> globalStrs;
-LLVM::LLVMFuncOp printfFuncOp;
-
-// Create definition table that maps classical register names -> defining ops
-void collectCBitDecls(ModuleOp moduleOp) {
-  cbitDecls.clear();
-
-  moduleOp->walk([&](oq3::DeclareVariableOp op) {
-    if (auto ty = op.type().dyn_cast<quir::CBitType>())
-      cbitDecls.emplace_back(op.getName().str(), op);
-  });
-}
-
-void prepareConversion(ModuleOp moduleOp) {
-  collectCBitDecls(moduleOp);
-
-  OpBuilder builder(moduleOp);
-  builder.setInsertionPointToStart(moduleOp.getBody());
-
-  // printf
-  const auto i32Ty = builder.getIntegerType(32);
-  const auto i8PtrTy = LLVM::LLVMPointerType::get(builder.getIntegerType(8));
-  const auto printfTy =
-      LLVM::LLVMFunctionType::get(i32Ty, i8PtrTy, /*isVarArgs=*/true);
-  printfFuncOp =
-      builder.create<LLVM::LLVMFuncOp>(moduleOp->getLoc(), "printf", printfTy);
-}
-
-} // namespace
-
 namespace qssc::targets::simulator::conversion {
 
-// Insert output ops where `qcf.finalize` is called.
-// We do not erase `qcf.finalize` because a subsequent pass may use it
-// for the translation.
-void insertOutputCRegs(ModuleOp moduleOp) {
-  // Assume that `qcf.finalize` is called only once.
-  moduleOp->walk([&](qcs::SystemFinalizeOp op) {
-    OpBuilder builder(op);
+class OutputCRegsPassImpl {
+public:
+  OutputCRegsPassImpl() = default;
 
-    // Define constant strings for printing globally.
-    if (globalStrs.find("\n") == globalStrs.end()) {
-      const auto varName = std::string{"str_endline"};
-      const auto value = std::string{"\n\0", 2};
-      globalStrs["\n"] = LLVM::createGlobalString(
-          op->getLoc(), builder, varName, value, LLVM::Linkage::Private);
-    }
-    if (globalStrs.find("%d") == globalStrs.end()) {
-      const auto varName = std::string{"str_digit"};
-      const auto value = std::string{"%d\0", 3};
-      globalStrs["%d"] = LLVM::createGlobalString(
-          op->getLoc(), builder, varName, value, LLVM::Linkage::Private);
-    }
+  void runOnOperation(MLIRContext *context, ModuleOp moduleOp) {
+    mlir::TypeConverter typeConverter;
+    ConversionTarget target(*context);
 
-    // Print the values of classical registers in the declared order.
-    for (auto &[name, declOp] : cbitDecls) {
-      if (globalStrs.find(name) == globalStrs.end()) {
-        const auto varName = std::string{"str_creg_"} + name;
-        const auto value = std::string{"  "} + name + std::string{" : \0", 4};
-        globalStrs[name] = LLVM::createGlobalString(
+    RewritePatternSet patterns(context);
+
+    prepareConversion(moduleOp);
+    insertOutputCRegs(moduleOp);
+
+    if (failed(applyPartialConversion(moduleOp, target, std::move(patterns))))
+      llvm::outs() << "[OutputCRegsPass] Failed applyPartialConversion\n";
+  }
+
+private:
+  void prepareConversion(ModuleOp moduleOp) {
+    // Create definition table that maps classical register names ->
+    // defining operations.
+    cbitDecls.clear();
+    moduleOp->walk([&](oq3::DeclareVariableOp op) {
+      if (auto ty = op.type().dyn_cast<quir::CBitType>())
+        cbitDecls.emplace_back(op.getName().str(), op);
+    });
+
+    // Declare the printf function.
+    // TODO: In future, the result values should be printed with another way.
+    OpBuilder builder(moduleOp);
+    builder.setInsertionPointToStart(moduleOp.getBody());
+    const auto i32Ty = builder.getI32Type();
+    const auto i8PtrTy = LLVM::LLVMPointerType::get(builder.getI8Type());
+    const auto printfTy =
+        LLVM::LLVMFunctionType::get(i32Ty, i8PtrTy, /*isVarArgs=*/true);
+    printfFuncOp = builder.create<LLVM::LLVMFuncOp>(moduleOp->getLoc(),
+                                                    "printf", printfTy);
+  }
+
+  // Insert output ops where `qcf.finalize` is called.
+  // We do not erase `qcf.finalize` because a subsequent pass may use it
+  // for the translation.
+  void insertOutputCRegs(ModuleOp moduleOp) {
+    // Assume that `qcf.finalize` is called only once.
+    moduleOp->walk([&](qcs::SystemFinalizeOp op) {
+      OpBuilder builder(op);
+
+      // Define constant strings for printing globally.
+      if (globalStrs.find("\n") == globalStrs.end()) {
+        const auto varName = std::string{"str_endline"};
+        const auto value = std::string{"\n\0", 2};
+        globalStrs["\n"] = LLVM::createGlobalString(
+            op->getLoc(), builder, varName, value, LLVM::Linkage::Private);
+      }
+      if (globalStrs.find("%d") == globalStrs.end()) {
+        const auto varName = std::string{"str_digit"};
+        const auto value = std::string{"%d\0", 3};
+        globalStrs["%d"] = LLVM::createGlobalString(
             op->getLoc(), builder, varName, value, LLVM::Linkage::Private);
       }
 
-      builder.create<LLVM::CallOp>(op->getLoc(), printfFuncOp,
-                                   globalStrs[name]);
-      auto cBitTy = declOp.type().dyn_cast<quir::CBitType>();
-      const int width = cBitTy.getWidth();
-      const auto boolTy = builder.getIntegerType(1);
-      auto loaded =
-          builder.create<oq3::VariableLoadOp>(op->getLoc(), cBitTy, name);
-      for (int i = width - 1; i >= 0; --i) {
-        auto indexAttr = builder.getIndexAttr(i);
-        auto bit = builder.create<oq3::CBitExtractBitOp>(op->getLoc(), boolTy,
-                                                         loaded, indexAttr);
+      // Print the values of classical registers in the declared order.
+      for (auto &[name, declOp] : cbitDecls) {
+        if (globalStrs.find(name) == globalStrs.end()) {
+          const auto varName = std::string{"str_creg_"} + name;
+          const auto value = std::string{"  "} + name + std::string{" : \0", 4};
+          globalStrs[name] = LLVM::createGlobalString(
+              op->getLoc(), builder, varName, value, LLVM::Linkage::Private);
+        }
+
         builder.create<LLVM::CallOp>(op->getLoc(), printfFuncOp,
-                                     ValueRange{globalStrs["%d"], bit});
+                                     globalStrs[name]);
+        auto cBitTy = declOp.type().dyn_cast<quir::CBitType>();
+        const int width = cBitTy.getWidth();
+        const auto boolTy = builder.getI1Type();
+        auto loaded =
+            builder.create<oq3::VariableLoadOp>(op->getLoc(), cBitTy, name);
+        for (int i = width - 1; i >= 0; --i) {
+          auto indexAttr = builder.getIndexAttr(i);
+          auto bit = builder.create<oq3::CBitExtractBitOp>(op->getLoc(), boolTy,
+                                                           loaded, indexAttr);
+          builder.create<LLVM::CallOp>(op->getLoc(), printfFuncOp,
+                                       ValueRange{globalStrs["%d"], bit});
+        }
+        builder.create<LLVM::CallOp>(op->getLoc(), printfFuncOp,
+                                     globalStrs["\n"]);
       }
-      builder.create<LLVM::CallOp>(op->getLoc(), printfFuncOp,
-                                   globalStrs["\n"]);
-    }
-  });
+    });
+  }
+
+private:
+  std::vector<std::pair<std::string, oq3::DeclareVariableOp>> cbitDecls;
+  std::map<std::string, mlir::Value> globalStrs;
+  LLVM::LLVMFuncOp printfFuncOp;
+};
+
+OutputCRegsPass::OutputCRegsPass() : PassWrapper() {
+  impl = std::make_shared<OutputCRegsPassImpl>();
 }
 
 void OutputCRegsPass::runOnOperation(SimulatorSystem &system) {
-  ModuleOp moduleOp = getOperation();
-
-  mlir::TypeConverter typeConverter;
   auto *context = &getContext();
-  ConversionTarget target(*context);
-
-  RewritePatternSet patterns(context);
-
-  prepareConversion(moduleOp);
-  insertOutputCRegs(moduleOp);
-
-  if (failed(applyPartialConversion(moduleOp, target, std::move(patterns))))
-    llvm::outs() << "[OutputCRegsPass] Failed applyPartialConversion\n";
+  auto moduleOp = getOperation();
+  impl->runOnOperation(context, moduleOp);
 }
 
 void OutputCRegsPass::getDependentDialects(DialectRegistry &registry) const {

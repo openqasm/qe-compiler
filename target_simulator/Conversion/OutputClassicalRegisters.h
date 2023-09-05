@@ -29,6 +29,9 @@
 #include "mlir/Pass/Pass.h"
 
 namespace qssc::targets::simulator::conversion {
+
+class OutputCRegsPassImpl;
+
 struct OutputCRegsPass
     : public mlir::PassWrapper<
           OutputCRegsPass,
@@ -36,10 +39,13 @@ struct OutputCRegsPass
   void runOnOperation(SimulatorSystem &system) override;
   void getDependentDialects(mlir::DialectRegistry &registry) const override;
 
-  OutputCRegsPass() : PassWrapper() {}
+  OutputCRegsPass();
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+
+private:
+  std::shared_ptr<OutputCRegsPassImpl> impl;
 };
 } // namespace qssc::targets::simulator::conversion
 
