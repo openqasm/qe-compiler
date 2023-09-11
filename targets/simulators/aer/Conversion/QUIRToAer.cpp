@@ -203,8 +203,10 @@ void prepareArrayForMeas(ModuleOp moduleOp) {
 
 // Assume qcs.init is called before all quir.declare_qubit operations
 struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
-  explicit QCSInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
-      : OpConversionPattern(typeConverter, ctx, /* benefit= */ 1) {}
+  explicit QCSInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter,
+                                AerSimulatorConfig const &config)
+      : OpConversionPattern(typeConverter, ctx, /* benefit= */ 1),
+        config(config) {}
 
   LogicalResult
   matchAndRewrite(qcs::SystemInitOp initOp, qcs::SystemInitOp::Adaptor adapter,
@@ -212,8 +214,14 @@ struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
 
     // global string values for aer configuration
     std::map<std::string, mlir::Value> globals;
-    const auto config_strs = {"method", "statevector", "device",
-                              "CPU",    "precision",   "double"};
+    const auto method = config.getMethod();
+    const auto device = config.getDevice();
+    const auto precision = config.getPrecision();
+    const auto methodStr = toStringInAer(method);
+    const auto deviceStr = toStringInAer(device);
+    const auto precisionStr = toStringInAer(precision);
+    const auto config_strs = {"method",  methodStr,   "device",
+                              deviceStr, "precision", precisionStr};
     for (auto config_str : config_strs) {
       const auto var_name = std::string("aer_conf_") + config_str;
       const auto with_null = config_str + std::string("\0", 1);
@@ -222,22 +230,25 @@ struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
                                    with_null, LLVM::Linkage::Private);
     }
     // configure
-    // aer_state_configure(state, "method", "statevector")
-    // aer_state_configure(state, "device", "CPU")
-    // aer_state_configure(state, "precision", "double")
+    // aer_state_configure(state, "method", <given method in .cfg>)
+    // aer_state_configure(state, "device", <given device in .cfg>)
+    // aer_state_configure(state, "precision", <given precision in .cfg>)
     auto state = aerState.access(rewriter);
     rewriter.create<LLVM::CallOp>(
         initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
-        ValueRange{state, globals["method"], globals["statevector"]});
+        ValueRange{state, globals["method"], globals[methodStr]});
     rewriter.create<LLVM::CallOp>(
         initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
-        ValueRange{state, globals["device"], globals["CPU"]});
+        ValueRange{state, globals["device"], globals[deviceStr]});
     rewriter.create<LLVM::CallOp>(
         initOp->getLoc(), aerFuncTable.at("aer_state_configure"),
-        ValueRange{state, globals["precision"], globals["double"]});
+        ValueRange{state, globals["precision"], globals[precisionStr]});
     rewriter.eraseOp(initOp);
     return success();
   }
+
+private:
+  const AerSimulatorConfig config;
 };
 
 // Currently the simulator target does not support shot iterations.
@@ -429,6 +440,7 @@ void conversion::QUIRToAERPass::getDependentDialects(
 
 void QUIRToAERPass::runOnOperation(AerSimulator &system) {
   ModuleOp moduleOp = getOperation();
+  const auto simulatorConfig = system.getConfig();
 
   // First remove all arguments from synchronization ops
   moduleOp->walk([](qcs::SynchronizeOp synchOp) {
@@ -453,14 +465,16 @@ void QUIRToAERPass::runOnOperation(AerSimulator &system) {
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
   oq3::populateOQ3ToStandardConversionPatterns(typeConverter, patterns);
-  patterns.add<
-      RemoveQCSShotInitConversionPat,
-      RemoveConversionPat<quir::DelayOp>,    // TODO: Support noise models
-      RemoveConversionPat<quir::BarrierOp>,  // TODO: Support noise models
-      RemoveConversionPat<quir::CallGateOp>, // TODO: Support custom gates
-      DeclareQubitConversionPat, ConstConversionPat, QCSInitConversionPat,
-      FinalizeConversionPat, BuiltinUopConversionPat, BuiltinCXConversionPat,
-      MeasureOpConversionPat, FunctionConversionPat>(context, typeConverter);
+  patterns
+      .add<RemoveQCSShotInitConversionPat,
+           RemoveConversionPat<quir::DelayOp>,    // TODO: Support noise models
+           RemoveConversionPat<quir::BarrierOp>,  // TODO: Support noise models
+           RemoveConversionPat<quir::CallGateOp>, // TODO: Support custom gates
+           DeclareQubitConversionPat, ConstConversionPat, FinalizeConversionPat,
+           BuiltinUopConversionPat, BuiltinCXConversionPat,
+           MeasureOpConversionPat, FunctionConversionPat>(context,
+                                                          typeConverter);
+  patterns.add<QCSInitConversionPat>(context, typeConverter, simulatorConfig);
 
   // Aer initialization
   declareAerFunctions(moduleOp);

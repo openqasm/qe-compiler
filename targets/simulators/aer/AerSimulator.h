@@ -31,12 +31,48 @@
 
 namespace qssc::targets::simulators::aer {
 
-// Register the simulator target.
+// Register the Aer simulator target.
 int init();
+
+// "method" : <one of the strings in comments>
+enum class SimulationMethod {
+  STATEVECTOR,         // "statevector"
+  DENSITY_MATRIX,      // "density_matrix"
+  MPS,                 // "MPS"
+  STABILIZER,          // "stabilizer"
+  EXTENDED_STABILIZER, // "extended_stabilizer"
+  UNITARY,             // "unitary"
+  SUPEROP,             // "superop"
+};
+
+// "device" : <one of the strings in comments>
+enum class SimulationDevice {
+  CPU,        // "cpu"
+  GPU,        // "gpu"
+  THRUST_CPU, // "thrust_cpu"
+};
+
+// "precision" : <one of the strings in comments>
+enum class SimulationPrecision {
+  DOUBLE, // "double"
+};
+
+const char *toStringInAer(SimulationMethod method);
+const char *toStringInAer(SimulationDevice device);
+const char *toStringInAer(SimulationPrecision precision);
 
 class AerSimulatorConfig : public qssc::hal::SystemConfiguration {
 public:
   explicit AerSimulatorConfig(llvm::StringRef configurationPath);
+
+  SimulationMethod getMethod() const { return method; }
+  SimulationDevice getDevice() const { return device; }
+  SimulationPrecision getPrecision() const { return precision; }
+
+private:
+  SimulationMethod method;
+  SimulationDevice device;
+  SimulationPrecision precision;
 }; // class AerSimulatorConfig
 
 class AerSimulator : public qssc::hal::TargetSystem {
