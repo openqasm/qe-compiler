@@ -57,14 +57,14 @@ public:
   llvm::Expected<ContentBuffer &>
   readMember(llvm::StringRef path, bool markForWriteBack = true) override;
 
-  struct zip *getBackingZip() { // TODO remove after cleanup
+  struct zip *getBackingZip() {
     if (auto err = ensureOpen()) {
       llvm::errs() << err;
       return nullptr;
     }
 
     return zip;
-  } // TODO remove after cleanup
+  }
 
 private:
   struct TrackedFile {
