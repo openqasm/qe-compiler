@@ -106,16 +106,6 @@ llvm::Error PatchableZipPayload::ensureOpen() {
     }
   }
 
-  auto numEntries = zip_get_num_entries(zip, 0);
-  zip_stat_t zs;
-  assert(numEntries >= 0);
-  zip_stat_init(&zs);
-  for (ssize_t i = 0; i < numEntries; i++) {
-    zip_stat_index(zip, i, 0, &zs);
-    llvm::StringRef name(zs.name);
-    llvm::errs() << name << "\n";
-  }
-
   zip_error_fini(&zipError);
   return retVal;
 }
