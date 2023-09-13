@@ -50,35 +50,6 @@ int qssc::payload::init() {
   return registered ? 0 : -1;
 }
 
-char *qssc::payload::read_zip_src_to_buffer(zip_source_t *zip_src,
-                                            zip_int64_t &sz) {
-  //===---- Reopen for copying ----===//
-  // reopen the archive stored in the new_archive_src
-  zip_source_open(zip_src);
-  // seek to the end of the archive
-  zip_source_seek(zip_src, 0, SEEK_END);
-  // get the number of bytes
-  sz = zip_source_tell(zip_src);
-  llvm::outs() << "Zip buffer is of size " << sz << " bytes\n";
-
-  // allocate a new buffer to copy the archive into
-  char *outbuffer = (char *)malloc(sz);
-  if (!outbuffer) {
-    llvm::errs()
-        << "Unable to allocate output buffer for writing zip to stream\n";
-    zip_source_close(zip_src);
-    return nullptr;
-  }
-
-  // seek back to the begining of the archive
-  zip_source_seek(zip_src, 0, SEEK_SET);
-  // copy the entire archive into the output bufffer
-  zip_source_read(zip_src, outbuffer, sz);
-  // all done
-  zip_source_close(zip_src);
-  return outbuffer;
-}
-
 // creates a manifest json file and adds it to the file map
 void ZipPayload::addManifest() {
   std::lock_guard<std::mutex> lock(_mtx);
