@@ -57,7 +57,7 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
                                 toString(std::move(error)));
     }
 
-    auto binaryData = binaryDataOrErr.get();
+    auto &binaryData = binaryDataOrErr.get();
 
     auto binary = std::shared_ptr<BindArgumentsImplementation>(
         factory.create(binaryData, onDiagnostic));
