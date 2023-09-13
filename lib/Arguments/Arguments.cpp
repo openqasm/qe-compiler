@@ -27,7 +27,10 @@
 #include "llvm/Support/FileSystem.h"
 
 #include <llvm/Support/raw_ostream.h>
+
+#include <fstream>
 #include <memory>
+#include <iostream>
 #include <utility>
 
 namespace qssc::arguments {
@@ -108,9 +111,17 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
                                   treatWarningsAsErrors, factory, onDiagnostic))
     return err;
 
-  if (enableInMemoryOutput) {
+  if (enableInMemoryOutput || enableInMemoryInput) {
     if (auto err = payload->writeString(inMemoryOutput))
       return err;
+    if (!enableInMemoryOutput) {
+      auto pathStr = payloadOutputPath.operator std::string();
+      std::ofstream out(pathStr);
+      out << inMemoryOutput;
+      out.close();
+      // clear output string
+      *inMemoryOutput = "";
+    }
   } else if (auto err = payload->writeBack())
     return err;
 
