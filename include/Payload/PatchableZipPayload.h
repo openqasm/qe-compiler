@@ -34,8 +34,10 @@
 namespace qssc::payload {
 class PatchableZipPayload : public PatchablePayload {
 public:
-  PatchableZipPayload(std::string path) : path(std::move(path)), zip(nullptr) {}
-  PatchableZipPayload(llvm::StringRef path) : path(path), zip(nullptr) {}
+  PatchableZipPayload(std::string path, bool enableInMemory)
+      : path(std::move(path)), zip(nullptr), enableInMemory(enableInMemory) {}
+  PatchableZipPayload(llvm::StringRef path, bool enableInMemory)
+      : path(path), zip(nullptr), enableInMemory(enableInMemory) {}
 
   // deny copying and moving (no need for special handling of the resource
   // struct zip *)
@@ -72,6 +74,7 @@ private:
 
   std::string const path;
   struct zip *zip;
+  bool enableInMemory;
 
   std::unordered_map<std::string, TrackedFile> files;
 

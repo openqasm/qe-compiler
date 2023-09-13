@@ -56,7 +56,7 @@ public:
                              llvm::StringRef paramMapFileName,
                              qssc::arguments::Signature &sig) = 0;
   virtual qssc::payload::PatchablePayload *
-  getPayload(llvm::StringRef payloadOutputPath) = 0;
+  getPayload(llvm::StringRef payloadOutputPath, bool enableInMemory) = 0;
   virtual llvm::Expected<Signature>
   parseSignature(qssc::payload::PatchablePayload *payload) = 0;
   void setTreatWarningsAsErrors(bool val) { treatWarningsAsErrors_ = val; }

@@ -77,19 +77,47 @@ llvm::Error PatchableZipPayload::ensureOpen() {
   if (zip) // already open
     return llvm::Error::success();
 
-  int errorCode;
+  llvm::Error retVal = llvm::Error::success();
+
+  int errorCode = 0;
   zip_error_t zipError;
 
   zip_error_init(&zipError);
 
-  if ((zip = zip_open(path.c_str(), 0, &errorCode)) == nullptr) {
-    zip_error_set(&zipError, errorCode, errno);
-    return extractLibZipError(
-        "Failure while opening circuit module (zip) file ", zipError);
+  if (enableInMemory) {
+    zip_source_t *zs;
+    if ((zs = zip_source_buffer_create(path.data(), path.length(), 0,
+                                       &zipError)) == nullptr) {
+      zip_error_set(&zipError, errorCode, errno);
+      retVal = extractLibZipError(
+          "Failure while opening in memory circuit module (zip) ", zipError);
+    }
+
+    if ((zip = zip_open_from_source(zs, 0, &zipError)) == nullptr) {
+      zip_error_set(&zipError, errorCode, errno);
+      retVal = extractLibZipError(
+          "Failure while opening in memory circuit module (zip) ", zipError);
+    }
+  } else {
+    if ((zip = zip_open(path.c_str(), 0, &errorCode)) == nullptr) {
+      zip_error_set(&zipError, errorCode, errno);
+      retVal = extractLibZipError(
+          "Failure while opening circuit module (zip) file ", zipError);
+    }
+  }
+
+  auto numEntries = zip_get_num_entries(zip, 0);
+  zip_stat_t zs;
+  assert(numEntries >= 0);
+  zip_stat_init(&zs);
+  for (ssize_t i = 0; i < numEntries; i++) {
+    zip_stat_index(zip, i, 0, &zs);
+    llvm::StringRef name(zs.name);
+    llvm::errs() << name << "\n";
   }
 
   zip_error_fini(&zipError);
-  return llvm::Error::success();
+  return retVal;
 }
 
 void PatchableZipPayload::discardChanges() {
@@ -229,6 +257,14 @@ PatchableZipPayload::readMember(llvm::StringRef path, bool markForWriteBack) {
 
   if (pos != files.end())
     return pos->second.buf;
+
+  if (enableInMemory &&
+      (zip_name_locate(zip, pathStr.c_str(), ZIP_FL_ENC_UTF_8) == -1)) {
+    // in memory payload does not have leading directory so attempt to remove
+    auto index = path.find("/") + 1;
+    path = path.substr(index);
+    pathStr = path.operator std::string();
+  }
 
   zip_stat_t zs;
 
