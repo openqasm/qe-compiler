@@ -326,11 +326,12 @@ Duration::parseDuration(mlir::quir::ConstantOp &duration) {
   return Duration::parseDuration(durAttr.getValue().str());
 }
 
+std::regex durationRegex("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
+
 llvm::Expected<Duration>
 Duration::parseDuration(const std::string &durationStr) {
-  static std::regex re("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
   std::smatch m;
-  std::regex_match(durationStr, m, re);
+  std::regex_match(durationStr, m, durationRegex);
   if (m.size() != 3)
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
