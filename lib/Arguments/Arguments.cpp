@@ -26,6 +26,7 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 
+#include <llvm/Support/raw_ostream.h>
 #include <memory>
 #include <utility>
 
@@ -70,26 +71,37 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
   return llvm::Error::success();
 }
 
-llvm::Error bindArguments(llvm::StringRef moduleInputPath,
+llvm::Error bindArguments(llvm::StringRef moduleInput,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
-                          bool treatWarningsAsErrors,
+                          bool treatWarningsAsErrors, bool enableInMemoryInput,
+                          std::string *inMemoryOutput,
                           BindArgumentsImplementationFactory &factory,
                           const OptDiagnosticCallback &onDiagnostic) {
 
-  std::error_code copyError =
-      llvm::sys::fs::copy_file(moduleInputPath, payloadOutputPath);
+  llvm::errs() << "payloadOutputPath: " << payloadOutputPath << "\n";
+  llvm::errs() << "moduleInput: " << moduleInput << "\n";
 
-  if (copyError)
-    return llvm::make_error<llvm::StringError>(
-        "Failed to copy circuit module to payload", copyError);
+  bool enableInMemoryOutput = payloadOutputPath == "";
+
+  llvm::StringRef payloadPath =
+      (enableInMemoryOutput) ? moduleInput : payloadOutputPath;
+
+  if (!enableInMemoryOutput) {
+    std::error_code copyError =
+        llvm::sys::fs::copy_file(moduleInput, payloadOutputPath);
+
+    if (copyError)
+      return llvm::make_error<llvm::StringError>(
+          "Failed to copy circuit module to payload", copyError);
+  }
 
   auto binary = std::unique_ptr<BindArgumentsImplementation>(
       factory.create(onDiagnostic));
   binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
   auto payload =
-      std::unique_ptr<PatchablePayload>(binary->getPayload(payloadOutputPath));
+      std::unique_ptr<PatchablePayload>(binary->getPayload(payloadPath));
 
   auto sigOrError = binary->parseSignature(payload.get());
   if (auto err = sigOrError.takeError())
@@ -99,8 +111,13 @@ llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                                   treatWarningsAsErrors, factory, onDiagnostic))
     return err;
 
-  if (auto err = payload->writeBack())
+  if (enableInMemoryOutput) {
+    if (auto err = payload->writeString(inMemoryOutput))
+      return err;
+  } else if (auto err = payload->writeBack())
     return err;
+
+  llvm::errs() << "bindArguments done\n";
 
   return llvm::Error::success();
 }

@@ -138,6 +138,121 @@ llvm::Error PatchableZipPayload::writeBack() {
   return llvm::Error::success();
 }
 
+llvm::Error PatchableZipPayload::writeString(std::string *outputString) {
+  if (outputString == nullptr) // no output buffer
+    return llvm::make_error<llvm::StringError>("outputString buffer is null",
+                                               llvm::inconvertibleErrorCode());
+
+  llvm::outs() << "Setup string stream"
+               << "\n";
+
+  llvm::Optional<llvm::raw_string_ostream> outStringStream;
+  outStringStream.emplace(*outputString);
+  llvm::raw_ostream *ostream = outStringStream.getPointer();
+
+  // load all files in zip if required
+
+  auto numEntries = zip_get_num_entries(zip, 0);
+  zip_stat_t zs;
+  assert(numEntries >= 0);
+  zip_stat_init(&zs);
+  for (ssize_t i = 0; i < numEntries; i++) {
+    zip_stat_index(zip, i, 0, &zs);
+    llvm::StringRef name(zs.name);
+    auto binaryDataOrErr = readMember(name);
+
+    if (!binaryDataOrErr)
+      return binaryDataOrErr.takeError();
+  }
+
+  zip_source_t *new_zip_src;
+  zip_t *new_zip;
+
+  zip_error_t err;
+
+  zip_error_init(&err);
+
+  // open a zip source, buffer is allocated internally to libzip
+  if ((new_zip_src = zip_source_buffer_create(nullptr, 0, 0, &err)) == nullptr)
+    return extractLibZipError("Can't create zip source for new archive", err);
+
+  zip_source_keep(new_zip_src);
+
+  if ((new_zip = zip_open_from_source(new_zip_src, ZIP_TRUNCATE, &err)) ==
+      nullptr) {
+    zip_source_free(new_zip_src);
+    return extractLibZipError(
+        "Can't create/open an archive from the new archive source:", err);
+  }
+
+  llvm::outs() << "Adding files"
+               << "\n";
+
+  for (auto &item : files) {
+    auto &path = item.first;
+    auto &buf = item.second.buf;
+
+    llvm::outs() << "Adding " << path << "\n";
+    llvm::outs() << "   zip_source_buffer_create\n";
+    zip_source_t *src =
+        zip_source_buffer_create(buf.data(), buf.size(), 0, &err);
+
+    if (src == nullptr)
+      return extractLibZipError("Creating zip source from data buffer", err);
+
+    llvm::outs() << "   zip_file_add\n";
+    if (zip_file_add(new_zip, path.c_str(), src, ZIP_FL_OVERWRITE) < 0) {
+      auto *archiveErr = zip_get_error(new_zip);
+      zip_source_free(new_zip_src);
+      return extractLibZipError("Adding or replacing file to zip", *archiveErr);
+    }
+    llvm::outs() << "   done\n";
+  }
+
+  llvm::outs() << "Closing in memory zip"
+               << "\n";
+
+  zip_error_fini(&err);
+
+  if (zip_close(new_zip)) {
+    auto *err = zip_get_error(new_zip);
+    return extractLibZipError("Closing in memory zip", *err);
+  }
+
+  llvm::outs() << "Reopen zip"
+               << "\n";
+
+  //===---- Reopen for copying ----===//
+  zip_source_open(new_zip_src);
+  zip_source_seek(new_zip_src, 0, SEEK_END);
+  zip_int64_t sz = zip_source_tell(new_zip_src);
+
+  // allocate a new buffer to copy the archive into
+  char *outbuffer = (char *)malloc(sz);
+  if (!outbuffer) {
+    zip_source_close(new_zip_src);
+    return llvm::make_error<llvm::StringError>(
+        "Unable to allocate output buffer for writing zip to stream",
+        llvm::inconvertibleErrorCode());
+  }
+
+  // seek back to the beginning of the archive
+  zip_source_seek(new_zip_src, 0, SEEK_SET);
+  zip_source_read(new_zip_src, outbuffer, sz);
+  zip_source_close(new_zip_src);
+
+  llvm::outs() << "Write to stream"
+               << "\n";
+
+  // output the new archive to the stream
+  ostream->write(outbuffer, sz);
+  ostream->flush();
+  free(outbuffer);
+  llvm::outs() << "Write String Done"
+               << "\n";
+  return llvm::Error::success();
+}
+
 llvm::Expected<PatchableZipPayload::ContentBuffer &>
 PatchableZipPayload::readMember(llvm::StringRef path, bool markForWriteBack) {
 

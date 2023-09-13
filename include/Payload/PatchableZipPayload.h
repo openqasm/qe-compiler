@@ -47,6 +47,7 @@ public:
   ~PatchableZipPayload();
 
   llvm::Error writeBack() override;
+  llvm::Error writeString(std::string *outputString) override;
   void discardChanges();
 
   using ContentBuffer = std::vector<char>;

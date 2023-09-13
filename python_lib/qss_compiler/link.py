@@ -19,10 +19,10 @@ package.
 
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib import resources as importlib_resources
 from os import environ as os_environ
-from typing import Mapping, Any, Optional, Callable
+from typing import Mapping, Any, Optional, Callable, Union
 import warnings
 
 from .py_qssc import _link_file, Diagnostic, ErrorCategory
@@ -34,13 +34,15 @@ from . import exceptions
 class LinkOptions:
     """Options to the linker tool."""
 
-    input_file: str
+    input_file: str = None
     """Path to input module."""
-    output_file: str
-    """Path to output payload."""
-    target: str
+    input_bytes: Union[str, None] = None
+    """Input payload as raw bytes"""
+    output_file: Union[str, None] = None
+    """Output file, if not supplied raw bytes will be returned."""
+    target: str = None
     """Hardware target to select."""
-    arguments: Mapping[str, Any]
+    arguments: Mapping[str, Any] = field(default_factory={})
     """Set the specific execution arguments of a pre-compiled program as a mapping of name to value."""
     config_path: str = ""
     """Target configuration path."""
@@ -61,7 +63,7 @@ def _prepare_link_options(
 def link_file(
     link_options: Optional[LinkOptions] = None,
     **kwargs,
-):
+) -> Union[bytes, None]:
     """Link a module and bind arguments to create a payload.
 
     Consume a circuit module in a file and binds the provided circuit
@@ -95,6 +97,17 @@ def link_file(
                 f"Only double arguments are supported, not {type(value)}"
             )
 
+    if link_options.input_file is not None and link_options.input_bytes is not None:
+        raise ValueError("only one of input_file or input_bytes should have a value")
+    
+    enable_in_memory = link_options.input_bytes is not None
+    if enable_in_memory:
+        input_file = link_options.input_bytes
+
+    if output_file is None: 
+        output_file = ""
+
+
     # keep in mind that most of the infrastructure in the compile paths is for
     # taking care of the execution in a separate process. For the linker tool,
     # we aim at avoiding that right from the start!
@@ -107,8 +120,8 @@ def link_file(
     with importlib_resources.path("qss_compiler", "_version.py") as version_py_path:
         resources_path = version_py_path.parent / "resources"
         os_environ["QSSC_RESOURCES"] = str(resources_path)
-        success = _link_file(
-            input_file, output_file, link_options.target, config_path,
+        success, output = _link_file(
+            input_file, enable_in_memory, output_file, link_options.target, config_path,
             link_options.arguments, link_options.treat_warnings_as_errors, link_options.on_diagnostic)
         if not success:
 
@@ -138,4 +151,8 @@ def link_file(
                 for diagnostic in diagnostics:
                     if diagnostic.category in warning_mapping.keys():
                         warnings.warn(diagnostic.message, warning_mapping[diagnostic.category])
+
+        # return in-memory raw bytes if output file is not specified
+        if link_options.output_file is None:
+            return output
 

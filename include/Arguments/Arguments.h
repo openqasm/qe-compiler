@@ -80,10 +80,11 @@ public:
 };
 
 // TODO generalize type of arguments
-llvm::Error bindArguments(llvm::StringRef moduleInputPath,
+llvm::Error bindArguments(llvm::StringRef moduleInput,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
-                          bool treatWarningsAsErrors,
+                          bool treatWarningsAsErrors, bool enableInMemoryInput,
+                          std::string *inMemoryOutput,
                           BindArgumentsImplementationFactory &factory,
                           const OptDiagnosticCallback &onDiagnostic);
 
