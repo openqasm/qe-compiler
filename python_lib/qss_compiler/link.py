@@ -42,7 +42,7 @@ class LinkOptions:
     """Output file, if not supplied raw bytes will be returned."""
     target: str = None
     """Hardware target to select."""
-    arguments: Mapping[str, Any] = field(default_factory={})
+    arguments: Mapping[str, Any] = field(default_factory=lambda: {})
     """Set the specific execution arguments of a pre-compiled program as a mapping of name to value."""
     config_path: str = ""
     """Target configuration path."""
@@ -63,7 +63,7 @@ def _prepare_link_options(
 def link_file(
     link_options: Optional[LinkOptions] = None,
     **kwargs,
-) -> Union[bytes, None]:
+) -> Optional[bytes]:
     """Link a module and bind arguments to create a payload.
 
     Consume a circuit module in a file and binds the provided circuit
