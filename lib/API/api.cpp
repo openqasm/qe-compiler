@@ -754,6 +754,5 @@ int qssc::bindArguments(
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
     return 1;
   }
-  llvm::errs() << "qssc::bindArguments done\n";
   return 0;
 }
