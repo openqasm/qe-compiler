@@ -33,7 +33,6 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
 
-#include <regex>
 #include <tuple>
 #include <utility>
 
@@ -299,12 +298,12 @@ bool isQuantumOp(Operation *op) {
   return false;
 }
 
-llvm::Expected<Duration> Duration::parseDuration(mlir::quir::DelayOp &delayOp) {
+llvm::Expected<Duration> parseDuration(mlir::quir::DelayOp &delayOp) {
   std::string durationStr;
   auto durationDeclare = delayOp.time().getDefiningOp<quir::ConstantOp>();
   if (durationDeclare) {
     auto durAttr = durationDeclare.value().dyn_cast<quir::DurationAttr>();
-    durationStr = durAttr.getValue().str();
+    durationStr = durAttr.getDurationString().str();
   } else {
     auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
     auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
@@ -312,83 +311,17 @@ llvm::Expected<Duration> Duration::parseDuration(mlir::quir::DelayOp &delayOp) {
     assert(circuitOp && "can only handler circuit arguments");
     auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::DurationAttr>(
         argNum, mlir::quir::getDurationAttrName());
-    durationStr = argAttr.getValue().str();
+    durationStr = argAttr.getDurationString().str();
   }
   return Duration::parseDuration(durationStr);
 }
 
-llvm::Expected<Duration>
-Duration::parseDuration(mlir::quir::ConstantOp &duration) {
+llvm::Expected<Duration> parseDuration(mlir::quir::ConstantOp &duration) {
   auto durAttr = duration.value().dyn_cast<DurationAttr>();
   if (!durAttr)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Expected a ConstantOp with a DurationAttr");
-  return Duration::parseDuration(durAttr.getValue().str());
-}
-
-std::regex durationRegex("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
-
-llvm::Expected<Duration>
-Duration::parseDuration(const std::string &durationStr) {
-  std::smatch m;
-  std::regex_match(durationStr, m, durationRegex);
-  if (m.size() != 3)
-    return llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        llvm::Twine("Unable to parse duration from ") + durationStr);
-
-  double parsedDuration = std::stod(m[1]);
-  // Convert all units to lower case.
-  auto unitStr = m[2].str();
-  auto lowerUnitStr = llvm::StringRef(unitStr).lower();
-  DurationUnit parsedUnit;
-  if (lowerUnitStr == "") {
-    // Empty case is SI
-    parsedUnit = DurationUnit::s;
-  } else if (lowerUnitStr == "dt") {
-    parsedUnit = DurationUnit::dt;
-  } else if (lowerUnitStr == "ns") {
-    parsedUnit = DurationUnit::ns;
-  } else if (lowerUnitStr == "us") {
-    parsedUnit = DurationUnit::us;
-  } else if (lowerUnitStr == "ms") {
-    parsedUnit = DurationUnit::ms;
-  } else if (lowerUnitStr == "s") {
-    parsedUnit = DurationUnit::s;
-  } else {
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   llvm::Twine("Unknown duration unit ") +
-                                       unitStr);
-  }
-
-  return (Duration){.duration = parsedDuration, .unit = parsedUnit};
-}
-
-Duration Duration::convertToCycles(double dt) const {
-  double convertedDuration;
-
-  assert(unit == DurationUnit::dt || unit == DurationUnit::ns ||
-         unit == DurationUnit::us || unit == DurationUnit::ms ||
-         unit == DurationUnit::s);
-
-  switch (unit) {
-  case DurationUnit::dt:
-    convertedDuration = duration;
-    break;
-  case DurationUnit::ns:
-    convertedDuration = duration / (1e9 * dt);
-    break;
-  case DurationUnit::us:
-    convertedDuration = duration / (1e6 * dt);
-    break;
-  case DurationUnit::ms:
-    convertedDuration = duration / (1e3 * dt);
-    break;
-  case DurationUnit::s:
-    convertedDuration = duration / dt;
-    break;
-  }
-  return {convertedDuration, DurationUnit::dt};
+  return Duration::parseDuration(durAttr.getDurationString().str());
 }
 
 std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,

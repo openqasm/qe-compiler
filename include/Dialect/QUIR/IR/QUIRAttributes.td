@@ -52,9 +52,15 @@ def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
   }];
 
   let parameters = (ins AttributeSelfTypeParameter<"">:$type,
-                        StringRefParameter<"the duration">:$value);
+                        StringRefParameter<"the duration">:$durationString);
 
-  let assemblyFormat = "`<` $value `:` $type `>`";
+  let assemblyFormat = "`<` $durationString `:` $type `>`";
+
+  let extraClassDeclaration = [{
+        Duration getDuration();
+        double getValue();
+        Duration::DurationUnit getUnits();
+    }];
 }
 
 def QUIR_InputParameterAttr : QUIR_Attr<"InputParameter", "inputParameter"> {
