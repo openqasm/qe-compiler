@@ -76,6 +76,8 @@ private:
   std::unordered_map<std::string, TrackedFile> files;
 
   llvm::Error ensureOpen();
+  llvm::Error addFileToZip(zip_t *zip, const std::string &path,
+                           ContentBuffer &buf, zip_error_t &err);
 };
 
 llvm::Error extractLibZipError(llvm::StringRef info, zip_error_t &zipError);

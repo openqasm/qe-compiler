@@ -734,11 +734,9 @@ _bindArguments(std::string_view target, std::string_view configPath,
   }
   qssc::arguments::BindArgumentsImplementationFactory &factoryRef =
       *factory.getValue();
-  auto ret = qssc::arguments::bindArguments(
+  return qssc::arguments::bindArguments(
       moduleInput, payloadOutputPath, source, treatWarningsAsErrors,
       enableInMemoryInput, inMemoryOutput, factoryRef, onDiagnostic);
-  llvm::errs() << "_bindArguments done\n";
-  return ret;
 }
 
 int qssc::bindArguments(

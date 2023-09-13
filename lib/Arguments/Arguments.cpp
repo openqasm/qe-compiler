@@ -79,9 +79,6 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
                           BindArgumentsImplementationFactory &factory,
                           const OptDiagnosticCallback &onDiagnostic) {
 
-  llvm::errs() << "payloadOutputPath: " << payloadOutputPath << "\n";
-  llvm::errs() << "moduleInput: " << moduleInput << "\n";
-
   bool enableInMemoryOutput = payloadOutputPath == "";
 
   llvm::StringRef payloadPath =
@@ -116,8 +113,6 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
       return err;
   } else if (auto err = payload->writeBack())
     return err;
-
-  llvm::errs() << "bindArguments done\n";
 
   return llvm::Error::success();
 }
