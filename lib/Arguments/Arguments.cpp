@@ -111,6 +111,15 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
                                   treatWarningsAsErrors, factory, onDiagnostic))
     return err;
 
+  // setup linked payload I/O
+  // if enableInMemoryOutput is true:
+  //    write to string
+  // if enableInMemoryInput is true:
+  //    payload is not on disk yet, do not assume payload->writeBack()
+  //    will write the full payload to disk so: write to string,
+  //    dump string to disk and clear string
+  // if enableInMemoryInput is false:
+  //    payload was on disk originally use writeBack
   if (enableInMemoryOutput || enableInMemoryInput) {
     if (auto err = payload->writeString(inMemoryOutput))
       return err;
