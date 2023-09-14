@@ -100,7 +100,7 @@ struct LoadPulseCalsPass
 
   // returns true if all the sequence ops in the input vector has the same
   // duration
-  bool areAllSequenceOpsHasSameDuration(
+  bool doAllSequenceOpsHaveSameDuration(
       std::vector<mlir::pulse::SequenceOp> &sequenceOps);
   // returns true if all the sequence ops in the input vector has attrName
   // attribute and if yes, merges the attributes
