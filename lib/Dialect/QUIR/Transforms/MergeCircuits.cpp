@@ -42,7 +42,7 @@ using namespace mlir::quir;
 
 namespace {
 
-// This pattern matches on two CallCircuitOp back to back
+// This pattern matches on two CallCircuitOps separated by non-quantum ops
 struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
   explicit CircuitAndCircuitPattern(MLIRContext *ctx)
       : OpRewritePattern<CallCircuitOp>(ctx) {}
@@ -50,12 +50,48 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
 
-    Operation *nextOp = callCircuitOp->getNextNode();
-    if (!nextOp)
+    // get next quantum op and check if its a CallCircuitOp
+    llvm::Optional<Operation *> secondOp = nextQuantumOpOrNull(callCircuitOp);
+    if (!secondOp)
       return failure();
 
-    auto nextCallCircuitOp = dyn_cast<CallCircuitOp>(nextOp);
+    auto nextCallCircuitOp = dyn_cast<CallCircuitOp>(*secondOp);
     if (!nextCallCircuitOp)
+      return failure();
+
+    // Move first CallCircuitOp after nodes until a user of the
+    // CallCircuitOp or the second CallCircuitOp is reached
+    Operation *startOp = callCircuitOp->getNextNode();
+    while (startOp != *secondOp) {
+      bool stop = false;
+      for (auto *user : callCircuitOp->getUsers())
+        if (user == startOp) {
+          stop = true;
+          break;
+        }
+      if (stop)
+        break;
+      callCircuitOp->moveAfter(startOp);
+      startOp = callCircuitOp->getNextNode();
+    }
+
+    // Move second CallCircuitOp before nodes until a definition the
+    // second CallCircuitOp uses or the first CallCircuitOp is reached
+    startOp = nextCallCircuitOp->getPrevNode();
+    while (startOp != callCircuitOp) {
+      bool stop = false;
+      for (auto *user : startOp->getUsers())
+        if (user == nextCallCircuitOp) {
+          stop = true;
+          break;
+        }
+      if (stop)
+        break;
+      nextCallCircuitOp->moveBefore(startOp);
+      startOp = nextCallCircuitOp->getPrevNode();
+    }
+
+    if (callCircuitOp->getNextNode() != nextCallCircuitOp)
       return failure();
 
     return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
@@ -63,34 +99,6 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
-
-// This pattern matches on two CallCircuitOp with a CBitAssignBitOp in between
-struct CircuitAssignAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
-  explicit CircuitAssignAndCircuitPattern(MLIRContext *ctx)
-      : OpRewritePattern<CallCircuitOp>(ctx) {}
-
-  LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
-                                PatternRewriter &rewriter) const override {
-
-    Operation *nextOp = callCircuitOp->getNextNode();
-    if (!nextOp)
-      return failure();
-
-    auto secondOp = dyn_cast<oq3::CBitAssignBitOp>(nextOp);
-    if (!secondOp)
-      return failure();
-
-    Operation *thirdOp = secondOp->getNextNode();
-
-    auto nextCallCircuitOp = dyn_cast<CallCircuitOp>(thirdOp);
-    if (!nextCallCircuitOp)
-      return failure();
-
-    return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
-                                                nextCallCircuitOp);
-
-  } // matchAndRewrite
-};  // struct CircuitAssignAndCircuitPattern
 
 } // end anonymous namespace
 
@@ -254,7 +262,6 @@ void MergeCircuitsPass::runOnOperation() {
 
   RewritePatternSet patterns(&getContext());
   patterns.add<CircuitAndCircuitPattern>(&getContext());
-  patterns.add<CircuitAssignAndCircuitPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
