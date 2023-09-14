@@ -178,7 +178,7 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the measurement gate
     addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
-  } else {
+    return;
     // did not find a pulse calibration for the gate
     // check if there exists pulse calibrations for individual qubits, and if
     // yes, merge them and add the merged pulse sequence to the module
