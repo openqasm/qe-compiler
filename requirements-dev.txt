@@ -10,6 +10,6 @@ pytest
 pytest-asyncio
 setuptools_scm
 reno
-Sphinx>=4.0
+Sphinx>=4.0,<7.2
 sphinx-rtd-theme
 sphinx-sitemap

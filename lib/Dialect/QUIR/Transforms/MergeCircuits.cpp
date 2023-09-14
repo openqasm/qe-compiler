@@ -21,6 +21,7 @@
 
 #include "Dialect/QUIR/Transforms/MergeCircuits.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
@@ -62,6 +63,35 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
+
+// This pattern matches on two CallCircuitOp with a CBitAssignBitOp in between
+struct CircuitAssignAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
+  explicit CircuitAssignAndCircuitPattern(MLIRContext *ctx)
+      : OpRewritePattern<CallCircuitOp>(ctx) {}
+
+  LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
+                                PatternRewriter &rewriter) const override {
+
+    Operation *nextOp = callCircuitOp->getNextNode();
+    if (!nextOp)
+      return failure();
+
+    auto secondOp = dyn_cast<oq3::CBitAssignBitOp>(nextOp);
+    if (!secondOp)
+      return failure();
+
+    Operation *thirdOp = secondOp->getNextNode();
+
+    auto nextCallCircuitOp = dyn_cast<CallCircuitOp>(thirdOp);
+    if (!nextCallCircuitOp)
+      return failure();
+
+    return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
+                                                nextCallCircuitOp);
+
+  } // matchAndRewrite
+};  // struct CircuitAssignAndCircuitPattern
+
 } // end anonymous namespace
 
 CircuitOp MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp) {
@@ -186,7 +216,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   callInputValues.append(nextCallCircuitOp->getOperands().begin(),
                          nextCallCircuitOp.getOperands().end());
 
-  // replace or create new based on origina outputType sizes
+  // replace or create new based on original outputType sizes
   if (nextCallCircuitOp->getNumResults() == outputTypes.size()) {
     rewriter.replaceOpWithNewOp<CallCircuitOp>(nextCallCircuitOp, newName,
                                                TypeRange(outputTypes),
@@ -224,6 +254,7 @@ void MergeCircuitsPass::runOnOperation() {
 
   RewritePatternSet patterns(&getContext());
   patterns.add<CircuitAndCircuitPattern>(&getContext());
+  patterns.add<CircuitAssignAndCircuitPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))

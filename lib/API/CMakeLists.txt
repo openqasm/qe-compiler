@@ -26,4 +26,4 @@ target_sources(QSSCAPI
     FILES ${QSSC_INCLUDE_DIR}/API/api.h ${QSSC_INCLUDE_DIR}/API/error.h
     )
 
-add_dependencies(QSSCAPI QSSCError MLIROQ3Dialect MLIRQCSDialect MLIRQUIRDialect)
+add_dependencies(QSSCAPI QSSCError MLIROQ3Dialect MLIRQCSDialect MLIRQUIRDialect mlir-headers)
