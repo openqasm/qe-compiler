@@ -84,8 +84,11 @@ struct LoadPulseCalsPass
 
   void addPulseCalToModule(FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp);
 
-  // parse the pulse cals and add them to pulseCalsNameToSequenceMap
-  llvm::Error parsePulseCalsSequenceOps(std::string &pulseCalsPath);
+  // parse the pulse cals and return the parsed module
+  llvm::Expected<mlir::ModuleOp>
+  parsePulseCalsModuleOp(std::string &pulseCalsPath);
+  mlir::ModuleOp defaultPulseCalsModule;
+  mlir::ModuleOp additionalPulseCalsModule;
   std::map<std::string, SequenceOp> pulseCalsNameToSequenceMap;
 
   mlir::pulse::SequenceOp

@@ -47,9 +47,18 @@ void LoadPulseCalsPass::runOnOperation() {
   // parse the default pulse calibrations
   if (!DEFAULT_PULSE_CALS.empty()) {
     LLVM_DEBUG(llvm::errs() << "parsing default pulse calibrations.\n");
-    if (auto err = parsePulseCalsSequenceOps(DEFAULT_PULSE_CALS)) {
+    llvm::Expected<mlir::ModuleOp> defaultPulseCalsModuleOrError =
+        parsePulseCalsModuleOp(DEFAULT_PULSE_CALS);
+    if (auto err = defaultPulseCalsModuleOrError.takeError()) {
       llvm::errs() << err;
       return signalPassFailure();
+    } else {
+      defaultPulseCalsModule = defaultPulseCalsModuleOrError.get();
+      // add sequence Ops to pulseCalsNameToSequenceMap
+      defaultPulseCalsModule->walk([&](mlir::pulse::SequenceOp sequenceOp) {
+        auto sequenceName = sequenceOp.sym_name().str();
+        pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
+      });
     }
   } else
     LLVM_DEBUG(llvm::errs()
@@ -58,9 +67,18 @@ void LoadPulseCalsPass::runOnOperation() {
   // parse the additional pulse calibrations
   if (!ADDITIONAL_PULSE_CALS.empty()) {
     LLVM_DEBUG(llvm::errs() << "parsing additional pulse calibrations.\n");
-    if (auto err = parsePulseCalsSequenceOps(ADDITIONAL_PULSE_CALS)) {
+    llvm::Expected<mlir::ModuleOp> additionalPulseCalsModuleOrError =
+        parsePulseCalsModuleOp(ADDITIONAL_PULSE_CALS);
+    if (auto err = additionalPulseCalsModuleOrError.takeError()) {
       llvm::errs() << err;
       return signalPassFailure();
+    } else {
+      additionalPulseCalsModule = additionalPulseCalsModuleOrError.get();
+      // add sequence Ops to pulseCalsNameToSequenceMap
+      additionalPulseCalsModule->walk([&](mlir::pulse::SequenceOp sequenceOp) {
+        auto sequenceName = sequenceOp.sym_name().str();
+        pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
+      });
     }
   } else
     LLVM_DEBUG(llvm::errs()
@@ -325,8 +343,8 @@ void LoadPulseCalsPass::addPulseCalToModule(
                             << " is already added to IR.\n");
 }
 
-llvm::Error
-LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
+llvm::Expected<mlir::ModuleOp>
+LoadPulseCalsPass::parsePulseCalsModuleOp(std::string &pulseCalsPath) {
   std::string errorMessage;
   llvm::SourceMgr sourceMgr;
   std::unique_ptr<llvm::MemoryBuffer> pulseCalsFile =
@@ -343,13 +361,7 @@ LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
                                    "Failed to parse pulse calibrations file: " +
                                        pulseCalsPath);
 
-  auto pulseCalsModuleRelease = pulseCalsModule.release();
-  pulseCalsModuleRelease->walk([&](mlir::pulse::SequenceOp sequenceOp) {
-    auto sequenceName = sequenceOp.sym_name().str();
-    pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
-  });
-
-  return llvm::Error::success();
+  return pulseCalsModule.release();
 }
 
 mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
