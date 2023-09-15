@@ -30,6 +30,8 @@
 #include "llvm/ADT/TypeSwitch.h"
 #include "llvm/Support/Error.h"
 
+#include "Dialect/QUIR/IR/QUIREnums.h.inc"
+
 namespace mlir::quir {
 
 static inline llvm::StringRef getInputParameterAttrName() {

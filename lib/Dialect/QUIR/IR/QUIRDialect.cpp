@@ -49,8 +49,17 @@ struct FieldParser<
 } // namespace mlir
 
 //===----------------------------------------------------------------------===//
+// Table generated enum method definitions
+//===----------------------------------------------------------------------===//
+
+
+#define GET_ENUM_CLASSES
+#include "Dialect/QUIR/IR/QUIREnums.cpp.inc"
+
+//===----------------------------------------------------------------------===//
 // Table generated attribute method definitions
 //===----------------------------------------------------------------------===//
+
 
 #define GET_ATTRDEF_CLASSES
 #include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
