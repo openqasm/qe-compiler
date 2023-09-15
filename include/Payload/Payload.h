@@ -93,6 +93,7 @@ public:
   virtual llvm::Expected<ContentBuffer &>
   readMember(llvm::StringRef path, bool markForWriteBack = true) = 0;
   virtual llvm::Error writeBack() = 0;
+  virtual llvm::Error writeString(std::string *outputString) = 0;
 }; // class PatchablePayload
 
 } // namespace qssc::payload

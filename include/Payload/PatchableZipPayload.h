@@ -34,8 +34,10 @@
 namespace qssc::payload {
 class PatchableZipPayload : public PatchablePayload {
 public:
-  PatchableZipPayload(std::string path) : path(std::move(path)), zip(nullptr) {}
-  PatchableZipPayload(llvm::StringRef path) : path(path), zip(nullptr) {}
+  PatchableZipPayload(std::string path, bool enableInMemory)
+      : path(std::move(path)), zip(nullptr), enableInMemory(enableInMemory) {}
+  PatchableZipPayload(llvm::StringRef path, bool enableInMemory)
+      : path(path), zip(nullptr), enableInMemory(enableInMemory) {}
 
   // deny copying and moving (no need for special handling of the resource
   // struct zip *)
@@ -47,6 +49,7 @@ public:
   ~PatchableZipPayload();
 
   llvm::Error writeBack() override;
+  llvm::Error writeString(std::string *outputString) override;
   void discardChanges();
 
   using ContentBuffer = std::vector<char>;
@@ -54,14 +57,14 @@ public:
   llvm::Expected<ContentBuffer &>
   readMember(llvm::StringRef path, bool markForWriteBack = true) override;
 
-  struct zip *getBackingZip() { // TODO remove after cleanup
+  struct zip *getBackingZip() {
     if (auto err = ensureOpen()) {
       llvm::errs() << err;
       return nullptr;
     }
 
     return zip;
-  } // TODO remove after cleanup
+  }
 
 private:
   struct TrackedFile {
@@ -71,10 +74,13 @@ private:
 
   std::string const path;
   struct zip *zip;
+  bool enableInMemory;
 
   std::unordered_map<std::string, TrackedFile> files;
 
   llvm::Error ensureOpen();
+  llvm::Error addFileToZip(zip_t *zip, const std::string &path,
+                           ContentBuffer &buf, zip_error_t &err);
 };
 
 llvm::Error extractLibZipError(llvm::StringRef info, zip_error_t &zipError);
