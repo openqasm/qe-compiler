@@ -52,14 +52,13 @@ void LoadPulseCalsPass::runOnOperation() {
     if (auto err = defaultPulseCalsModuleOrError.takeError()) {
       llvm::errs() << err;
       return signalPassFailure();
-    } else {
-      defaultPulseCalsModule = defaultPulseCalsModuleOrError.get();
+    }       defaultPulseCalsModule = defaultPulseCalsModuleOrError.get();
       // add sequence Ops to pulseCalsNameToSequenceMap
       defaultPulseCalsModule->walk([&](mlir::pulse::SequenceOp sequenceOp) {
         auto sequenceName = sequenceOp.sym_name().str();
         pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
       });
-    }
+   
   } else
     LLVM_DEBUG(llvm::errs()
                << "default pulse calibrations path is not specified.\n");
@@ -72,14 +71,13 @@ void LoadPulseCalsPass::runOnOperation() {
     if (auto err = additionalPulseCalsModuleOrError.takeError()) {
       llvm::errs() << err;
       return signalPassFailure();
-    } else {
-      additionalPulseCalsModule = additionalPulseCalsModuleOrError.get();
+    }       additionalPulseCalsModule = additionalPulseCalsModuleOrError.get();
       // add sequence Ops to pulseCalsNameToSequenceMap
       additionalPulseCalsModule->walk([&](mlir::pulse::SequenceOp sequenceOp) {
         auto sequenceName = sequenceOp.sym_name().str();
         pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
       });
-    }
+   
   } else
     LLVM_DEBUG(llvm::errs()
                << "additional pulse calibrations path is not specified.\n");
