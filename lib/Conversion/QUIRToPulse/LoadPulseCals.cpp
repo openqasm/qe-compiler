@@ -28,8 +28,6 @@
 
 #include "llvm/Support/SourceMgr.h"
 
-#include <iostream>
-
 #define DEBUG_TYPE "LoadPulseCalsDebug"
 
 using namespace mlir;
@@ -48,28 +46,28 @@ void LoadPulseCalsPass::runOnOperation() {
 
   // parse the default pulse calibrations
   if (!DEFAULT_PULSE_CALS.empty()) {
-    LLVM_DEBUG(std::cout << "parsing default pulse calibrations.\n");
+    LLVM_DEBUG(llvm::errs() << "parsing default pulse calibrations.\n");
     if (auto err = parsePulseCalsSequenceOps(DEFAULT_PULSE_CALS)) {
       llvm::errs() << err;
       return signalPassFailure();
     }
   } else
-    LLVM_DEBUG(
-        std::cout << "default pulse calibrations path is not specified.\n");
+    LLVM_DEBUG(llvm::errs()
+               << "default pulse calibrations path is not specified.\n");
 
   // parse the additional pulse calibrations
   if (!ADDITIONAL_PULSE_CALS.empty()) {
-    LLVM_DEBUG(std::cout << "parsing additional pulse calibrations.\n");
+    LLVM_DEBUG(llvm::errs() << "parsing additional pulse calibrations.\n");
     if (auto err = parsePulseCalsSequenceOps(ADDITIONAL_PULSE_CALS)) {
       llvm::errs() << err;
       return signalPassFailure();
     }
   } else
-    LLVM_DEBUG(
-        std::cout << "additional pulse calibrations path is not specified.\n");
+    LLVM_DEBUG(llvm::errs()
+               << "additional pulse calibrations path is not specified.\n");
 
   // parse the user specified pulse calibrations
-  LLVM_DEBUG(std::cout << "parsing user specified pulse calibrations.\n");
+  LLVM_DEBUG(llvm::errs() << "parsing user specified pulse calibrations.\n");
   moduleOp->walk([&](mlir::pulse::SequenceOp sequenceOp) {
     auto sequenceName = sequenceOp.sym_name().str();
     pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
@@ -102,10 +100,11 @@ void LoadPulseCalsPass::loadPulseCals(CallCircuitOp callCircuitOp,
       loadPulseCals(castOp, callCircuitOp, funcOp);
     else if (auto castOp = dyn_cast<mlir::quir::ResetQubitOp>(op))
       loadPulseCals(castOp, callCircuitOp, funcOp);
-    else if (op->hasTrait<mlir::quir::UnitaryOp>() or
-             op->hasTrait<mlir::quir::CPTPOp>()) {
-      llvm::errs() << "op " << op << "unknown\n";
-      assert(false);
+    else {
+      LLVM_DEBUG(llvm::errs() << "no pulse cal loading needed for " << op);
+      assert((!op->hasTrait<mlir::quir::UnitaryOp>() and
+              !op->hasTrait<mlir::quir::CPTPOp>()) &&
+             "unkown operation");
     }
   });
 }
@@ -322,8 +321,8 @@ void LoadPulseCalsPass::addPulseCalToModule(
     clonedPulseCalSequenceOp->moveBefore(funcOp);
     pulseCalsAddedToIR.insert(sequenceOp.sym_name().str());
   } else
-    LLVM_DEBUG(std::cout << "pulse cal " << sequenceOp.sym_name().str()
-                         << " is already added to IR.\n");
+    LLVM_DEBUG(llvm::errs() << "pulse cal " << sequenceOp.sym_name().str()
+                            << " is already added to IR.\n");
 }
 
 llvm::Error
