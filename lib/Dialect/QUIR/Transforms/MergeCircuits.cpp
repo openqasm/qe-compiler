@@ -61,34 +61,24 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
     // Move first CallCircuitOp after nodes until a user of the
     // CallCircuitOp or the second CallCircuitOp is reached
-    Operation *startOp = callCircuitOp->getNextNode();
-    while (startOp != *secondOp) {
-      bool stop = false;
-      for (auto *user : callCircuitOp->getUsers())
-        if (user == startOp) {
-          stop = true;
-          break;
-        }
-      if (stop)
+    Operation *curOp = callCircuitOp->getNextNode();
+    while (curOp != *secondOp) {
+      if (std::find(callCircuitOp->user_begin(), callCircuitOp->user_end(),
+                    curOp) != callCircuitOp->user_end())
         break;
-      callCircuitOp->moveAfter(startOp);
-      startOp = callCircuitOp->getNextNode();
+      callCircuitOp->moveAfter(curOp);
+      curOp = callCircuitOp->getNextNode();
     }
 
     // Move second CallCircuitOp before nodes until a definition the
     // second CallCircuitOp uses or the first CallCircuitOp is reached
-    startOp = nextCallCircuitOp->getPrevNode();
-    while (startOp != callCircuitOp) {
-      bool stop = false;
-      for (auto *user : startOp->getUsers())
-        if (user == nextCallCircuitOp) {
-          stop = true;
-          break;
-        }
-      if (stop)
+    curOp = nextCallCircuitOp->getPrevNode();
+    while (curOp != callCircuitOp) {
+      if (std::find(curOp->user_begin(), curOp->user_end(),
+                    nextCallCircuitOp) != curOp->user_end())
         break;
-      nextCallCircuitOp->moveBefore(startOp);
-      startOp = nextCallCircuitOp->getPrevNode();
+      nextCallCircuitOp->moveBefore(curOp);
+      curOp = nextCallCircuitOp->getPrevNode();
     }
 
     if (callCircuitOp->getNextNode() != nextCallCircuitOp)
