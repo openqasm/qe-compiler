@@ -505,7 +505,9 @@ void LoadPulseCalsPass::removeRedundantDelayArgs(
 
   // erase the redundant args
   std::sort(redundantArgIndicesToRemove.begin(),
-            redundantArgIndicesToRemove.end(), std::greater<uint>());
+            redundantArgIndicesToRemove.end());
+  std::reverse(redundantArgIndicesToRemove.begin(),
+               redundantArgIndicesToRemove.end());
   for (auto argIndex : redundantArgIndicesToRemove) {
     sequenceOp.eraseArgument(argIndex);
     // update the pulse.args and pulse.argPorts vectors
