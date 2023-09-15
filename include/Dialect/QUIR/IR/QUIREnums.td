@@ -22,8 +22,8 @@ include "Dialect/QUIR/IR/QUIRDialect.td"
 
 include "mlir/IR/EnumAttr.td"
 
-def DurationUnit : I32EnumAttr<
-    "DurationUnitEnum", "duration units enum",
+def DurationUnits : I32EnumAttr<
+    "DurationUnits", "duration units enum",
     [
       I32EnumAttrCase<"dt", 0>,
       I32EnumAttrCase<"s", 1>,
@@ -38,7 +38,7 @@ def DurationUnit : I32EnumAttr<
   let cppNamespace = "::mlir::quir";
 }
 
-def QUIR_DurationUnitAttr : EnumAttr<
-  QUIRDialect, DurationUnit, "duration_unit">;
+def QUIR_DurationUnitsAttr : EnumAttr<
+  QUIRDialect, DurationUnits, "duration_units">;
 
 #endif // QUIR_ENUMS
