@@ -20,16 +20,20 @@
 
 #include "Dialect/QUIR/Transforms/ReorderMeasurements.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/Support/LLVM.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
 #include <llvm/Support/Debug.h>
 
+
 #include <algorithm>
+
 
 #define DEBUG_TYPE "QUIRReorderMeasurements"
 
@@ -90,6 +94,32 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
         if (Operation *defOp = operand.getDefiningOp())
           if (defOp->getBlock() == measBlock &&
               measureOp->isBeforeInBlock(defOp)) {
+
+            // if the defining op is a variable load attempt to move it above
+            // the measurement
+            auto variableLoadOp = dyn_cast<oq3::VariableLoadOp>(defOp);
+            if (variableLoadOp) {
+              // assume variableLoad may be move
+              bool moveVariableLoadOp = true;
+
+              // find corresponding variable assign
+              // move variableLoad if the assign is before the measure
+              variableLoadOp->getBlock()->walk(
+                  [&](oq3::VariableAssignOp assignOp) {
+                    if (assignOp.variable_name() ==
+                        variableLoadOp.variable_name()) {
+                      moveVariableLoadOp = assignOp->isBeforeInBlock(measureOp);
+                      return WalkResult::interrupt();
+                    }
+                    return WalkResult::advance();
+                  });
+
+              if (moveVariableLoadOp) {
+                variableLoadOp->moveBefore(measureOp);
+                continue;
+              }
+            }
+
             interveningValue = true;
             break;
           }
