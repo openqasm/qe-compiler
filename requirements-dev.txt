@@ -8,7 +8,7 @@ myst-parser
 ninja>=1.10
 pytest
 pytest-asyncio
-setuptools_scm
+setuptools_scm>=7.0,<8.0
 reno
 Sphinx>=4.0,<7.2
 sphinx-rtd-theme
