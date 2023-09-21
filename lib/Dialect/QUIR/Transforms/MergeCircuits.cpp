@@ -35,6 +35,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 
+#include <llvm/ADT/None.h>
 #include <vector>
 
 using namespace mlir;
@@ -59,25 +60,42 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
     if (!nextCallCircuitOp)
       return failure();
 
+    Operation *insertOp = *secondOp;
+
     // Move first CallCircuitOp after nodes until a user of the
     // CallCircuitOp or the second CallCircuitOp is reached
     Operation *curOp = callCircuitOp->getNextNode();
     while (curOp != *secondOp) {
       if (std::find(callCircuitOp->user_begin(), callCircuitOp->user_end(),
-                    curOp) != callCircuitOp->user_end())
-        break;
-      callCircuitOp->moveAfter(curOp);
+                    curOp) != callCircuitOp->user_end()) {
+        if (std::find(curOp->user_begin(), curOp->user_end(), callCircuitOp) !=
+            callCircuitOp->user_end())
+          break;
+        curOp->moveAfter(insertOp);
+        insertOp = curOp;
+      } else {
+        callCircuitOp->moveAfter(curOp);
+      }
       curOp = callCircuitOp->getNextNode();
     }
+
+    insertOp = nextCallCircuitOp;
 
     // Move second CallCircuitOp before nodes until a definition the
     // second CallCircuitOp uses or the first CallCircuitOp is reached
     curOp = nextCallCircuitOp->getPrevNode();
     while (curOp != callCircuitOp) {
       if (std::find(curOp->user_begin(), curOp->user_end(),
-                    nextCallCircuitOp) != curOp->user_end())
-        break;
-      nextCallCircuitOp->moveBefore(curOp);
+                    nextCallCircuitOp) != curOp->user_end()) {
+        if (std::find(nextCallCircuitOp->user_begin(),
+                      nextCallCircuitOp->user_end(),
+                      curOp) != nextCallCircuitOp->user_end())
+          break;
+        curOp->moveBefore(insertOp);
+        insertOp = curOp;
+      } else {
+        nextCallCircuitOp->moveBefore(curOp);
+      }
       curOp = nextCallCircuitOp->getPrevNode();
     }
 
@@ -89,6 +107,66 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
+
+template <class FirstOp, class SecondOp>
+Optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
+  llvm::Optional<Operation *> secondOp = nextQuantumOpOrNull(firstOp);
+  if (!secondOp)
+    return llvm::None;
+
+  auto secondOpByClass = dyn_cast<SecondOp>(*secondOp);
+  if (!secondOpByClass)
+    return llvm::None;
+
+  // Check for overlap between currQubits and what's operated on by nextOp
+  std::set<uint> firstQubits = QubitOpInterface::getOperatedQubits(firstOp);
+  std::set<uint> secondQubits =
+      QubitOpInterface::getOperatedQubits(secondOpByClass);
+
+  if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
+    return llvm::None;
+  return secondOpByClass;
+}
+
+// This pattern matches on a BarrierOp follows by a CallCircuitOp separated by
+// non-quantum ops
+struct BarrierAndCircuitPattern : public OpRewritePattern<BarrierOp> {
+  explicit BarrierAndCircuitPattern(MLIRContext *ctx)
+      : OpRewritePattern<BarrierOp>(ctx) {}
+
+  LogicalResult matchAndRewrite(BarrierOp barrierOp,
+                                PatternRewriter &rewriter) const override {
+
+    auto callCircuitOp =
+        getNextOpAndCompareOverlap<BarrierOp, CallCircuitOp>(barrierOp);
+    if (!callCircuitOp.hasValue())
+      return failure();
+
+    barrierOp->moveAfter(callCircuitOp.getValue().getOperation());
+
+    return success();
+  } // matchAndRewrite
+};  // struct BarrierAndCircuitPattern
+
+// This pattern matches on a CallCircuitOp followed by a BarrierOp separated by
+// non-quantum ops
+struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
+  explicit CircuitAndBarrierPattern(MLIRContext *ctx)
+      : OpRewritePattern<CallCircuitOp>(ctx) {}
+
+  LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
+                                PatternRewriter &rewriter) const override {
+
+    auto barrierOp =
+        getNextOpAndCompareOverlap<CallCircuitOp, BarrierOp>(callCircuitOp);
+    if (!barrierOp.hasValue())
+      return failure();
+
+    barrierOp.getValue().getOperation()->moveBefore(callCircuitOp);
+
+    return success();
+  } // matchAndRewrite
+};  // struct CircuitAndBarrierPattern
 
 } // end anonymous namespace
 
@@ -252,6 +330,8 @@ void MergeCircuitsPass::runOnOperation() {
 
   RewritePatternSet patterns(&getContext());
   patterns.add<CircuitAndCircuitPattern>(&getContext());
+  patterns.add<BarrierAndCircuitPattern>(&getContext());
+  patterns.add<CircuitAndBarrierPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
