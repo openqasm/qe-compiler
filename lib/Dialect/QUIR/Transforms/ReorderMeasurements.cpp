@@ -31,9 +31,7 @@
 
 #include <llvm/Support/Debug.h>
 
-
 #include <algorithm>
-
 
 #define DEBUG_TYPE "QUIRReorderMeasurements"
 
