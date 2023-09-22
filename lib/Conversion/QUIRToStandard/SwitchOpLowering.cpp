@@ -53,9 +53,6 @@ struct SwitchOpLowering : public OpRewritePattern<SwitchOp> {
 LogicalResult
 SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
                                   PatternRewriter &rewriter) const {
-  assert(switchOp.resultTypes().size() == 0 &&
-         "switch ops with result values are not supported");
-
   auto loc = switchOp.getLoc();
 
   // Start by splitting the block containing the 'quir.switch' into parts.
@@ -63,8 +60,10 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
   // continuation point.
   auto *condBlock = rewriter.getInsertionBlock();
   auto opPosition = rewriter.getInsertionPoint();
-  auto *remainingOpsBlock = rewriter.splitBlock(condBlock, opPosition);
-  Block *continueBlock;
+  // auto *remainingOpsBlock = rewriter.splitBlock(condBlock, opPosition);
+  // FIXME: opPosition vs Block::iterator(switchOp)??
+  Block *continueBlock = rewriter.splitBlock(condBlock, opPosition);
+#if 0  
   if (switchOp.getNumResults() == 0) {
     continueBlock = remainingOpsBlock;
   } else {
@@ -72,7 +71,13 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
         rewriter.createBlock(remainingOpsBlock, switchOp.getResultTypes());
     rewriter.create<BranchOp>(loc, remainingOpsBlock);
   }
-
+#else
+  SmallVector<Value> results;
+  results.reserve(switchOp.getNumResults());
+  for (Type resultType : switchOp.getResultTypes())
+    results.push_back(
+        continueBlock->addArgument(resultType, switchOp.getLoc()));
+#endif
   // Move blocks from the "default" region to the region containing
   // 'quir.switch', place it before the continuation block, and branch to it.
   auto &defaultRegion = switchOp.defaultRegion();
