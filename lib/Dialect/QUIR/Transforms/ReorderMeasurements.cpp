@@ -29,6 +29,7 @@
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/Debug.h>
 
@@ -40,6 +41,37 @@ using namespace mlir;
 using namespace mlir::quir;
 
 namespace {
+
+bool mayMoveVariableLoadOp(MeasureOp measureOp,
+                           oq3::VariableLoadOp variableLoadOp) {
+  // find corresponding variable assign
+  // move variableLoad if the assign is before the measure
+  bool moveVariableLoadOp = true;
+  variableLoadOp->getBlock()->walk([&](oq3::VariableAssignOp assignOp) {
+    if (assignOp.variable_name() == variableLoadOp.variable_name()) {
+      moveVariableLoadOp = assignOp->isBeforeInBlock(measureOp);
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  return moveVariableLoadOp;
+}
+
+bool mayMoveCastOp(MeasureOp measureOp, oq3::CastOp castOp) {
+  bool moveCastOp = true;
+  bool moveCastDefOp = true;
+  auto castDefOp = dyn_cast<oq3::VariableLoadOp>(castOp.arg().getDefiningOp());
+  if (!castDefOp)
+    moveCastDefOp = false;
+
+  if (moveCastOp)
+    castOp->moveBefore(measureOp);
+
+  if (moveCastDefOp)
+    castDefOp->moveBefore(castOp);
+  return moveCastOp;
+}
+
 // This pattern matches on a measure op and a non-measure op and moves the
 // non-measure op to occur earlier lexicographically if that does not change
 // the topological ordering
@@ -99,24 +131,10 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
             auto variableLoadOp = dyn_cast<oq3::VariableLoadOp>(defOp);
             if (variableLoadOp) {
               // assume variableLoad may be move
-              bool moveVariableLoadOp = true;
-              // find corresponding variable assign
-              // move variableLoad if the assign is before the measure
-              variableLoadOp->getBlock()->walk(
-                  [&](oq3::VariableAssignOp assignOp) {
-                    if (assignOp.variable_name() ==
-                        variableLoadOp.variable_name()) {
-                      moveVariableLoadOp = assignOp->isBeforeInBlock(measureOp);
-                      return WalkResult::interrupt();
-                    }
-                    return WalkResult::advance();
-                  });
+              bool moveVariableLoadOp =
+                  mayMoveVariableLoadOp(measureOp, variableLoadOp);
 
               if (moveVariableLoadOp) {
-                // check for a cast of the variableLoadOp
-                for (auto uses : variableLoadOp->getUsers())
-                  uses->moveBefore(measureOp);
-
                 variableLoadOp->moveBefore(measureOp);
                 continue;
               }
@@ -125,18 +143,7 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
             auto castOp = dyn_cast<oq3::CastOp>(defOp);
             if (castOp) {
               // assume variableLoad may be move
-              bool moveCastOp = true;
-              bool moveCastDefOp = true;
-              auto castDefOp =
-                  dyn_cast<oq3::VariableLoadOp>(castOp.arg().getDefiningOp());
-              if (!castDefOp)
-                moveCastDefOp = false;
-
-              if (moveCastOp)
-                castOp->moveBefore(measureOp);
-
-              if (moveCastDefOp)
-                castDefOp->moveBefore(castOp);
+              bool moveCastOp = mayMoveCastOp(measureOp, castOp);
 
               if (moveCastOp)
                 continue;
