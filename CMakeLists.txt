@@ -131,6 +131,7 @@ set(QSSC_RESOURCES_OUTPUT_INTDIR ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/resourc
 set(QSSC_PLUGIN_EXT ${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 option(QSSC_WITH_MOCK_TARGET "Available targets include the built-in mock target" ON)
+option(QSSC_WITH_AER_SIMULATOR_TARGET "Available targets include the built-in aer-simulator target" ON)
 set(QSSC_TARGET_DIRS
         ""
         CACHE STRING
@@ -151,6 +152,17 @@ if(QSSC_WITH_MOCK_TARGET)
     set(QSSC_TARGET_TEST_DIRS
             ${QSSC_TARGET_TEST_DIRS}
             ${CMAKE_CURRENT_SOURCE_DIR}/targets/systems/mock/test
+    )
+endif()
+
+if(QSSC_WITH_AER_SIMULATOR_TARGET)
+    set(QSSC_TARGET_DIRS
+            ${QSSC_TARGET_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/targets/simulators/aer
+    )
+    set(QSSC_TARGET_TEST_DIRS
+            ${QSSC_TARGET_TEST_DIRS}
+            ${CMAKE_CURRENT_SOURCE_DIR}/targets/simulators/aer/test
     )
 endif()
 
