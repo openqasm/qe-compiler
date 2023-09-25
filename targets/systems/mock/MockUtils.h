@@ -27,7 +27,7 @@ namespace mlir {
 class ModuleOp;
 } // end namespace mlir
 
-namespace qssc::targets::mock {
+namespace qssc::targets::systems::mock {
 
 // Looks for and returns the Controller submodule if it exists
 // Returns nullptr otherwise
@@ -36,6 +36,6 @@ auto getControllerModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
 auto getActuatorModules(mlir::ModuleOp topModuleOp)
     -> std::vector<mlir::ModuleOp>;
 
-} // end namespace qssc::targets::mock
+} // namespace qssc::targets::systems::mock
 
 #endif // HAL_MOCKUTILS_H

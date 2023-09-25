@@ -24,10 +24,10 @@
 
 #include "MockTarget.h"
 
-namespace qssc::targets::mock {
+namespace qssc::targets::systems::mock {
 
 [[maybe_unused]] int registrar = init();
 
-} // namespace qssc::targets::mock
+} // namespace qssc::targets::systems::mock
 
 #endif // HAL_TARGETS_MOCK_TARGET_H
