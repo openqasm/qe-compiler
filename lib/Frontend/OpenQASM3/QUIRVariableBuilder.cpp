@@ -132,6 +132,8 @@ QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
 
   assert(false &&
          "Unsupported defining value operation for parameter variable");
+
+  return mlir::Value{};
 }
 
 void QUIRVariableBuilder::generateArrayVariableDeclaration(

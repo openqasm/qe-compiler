@@ -56,7 +56,7 @@ protected:
 
 private:
   unsigned int debugIndentCount{0};
-  unsigned int debugIndentStep{2};
+  [[maybe_unused]] unsigned int debugIndentStep{2};
 };
 
 } // namespace qssc::utils
