@@ -146,11 +146,11 @@ set(QSSC_TARGET_TEST_DIRS
 if(QSSC_WITH_MOCK_TARGET)
     set(QSSC_TARGET_DIRS
             ${QSSC_TARGET_DIRS}
-            ${CMAKE_CURRENT_SOURCE_DIR}/mock_target
+            ${CMAKE_CURRENT_SOURCE_DIR}/targets/systems/mock
     )
     set(QSSC_TARGET_TEST_DIRS
             ${QSSC_TARGET_TEST_DIRS}
-            ${CMAKE_CURRENT_SOURCE_DIR}/mock_target/test
+            ${CMAKE_CURRENT_SOURCE_DIR}/targets/systems/mock/test
     )
 endif()
 
