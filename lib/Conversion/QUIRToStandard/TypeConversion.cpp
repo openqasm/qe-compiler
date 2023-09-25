@@ -63,6 +63,11 @@ Optional<Type> QuirTypeConverter::convertAngleType(Type t) {
     // for function types in func defs and calls
     return intType;
   }
+  if (auto floatType = t.dyn_cast<FloatType>()) {
+    // MUST return the converted type as itself to mark legal
+    // for function types in func defs and calls
+    return floatType;
+  }
   return llvm::None;
 } // convertAngleType
 

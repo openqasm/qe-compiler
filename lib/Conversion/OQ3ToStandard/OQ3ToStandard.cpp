@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Conversion/OQ3ToStandard/OQ3ToStandard.h"
+#include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
@@ -345,6 +346,31 @@ struct RemoveConvertedNilCastsPattern : public OQ3ToStandardConversion<CastOp> {
 
 }; // struct RemoveConvertedNilCastsPattern
 
+struct FloatPattern : public OQ3ToStandardConversion<CastOp> {
+  using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
+
+  LogicalResult
+  matchAndRewrite(CastOp op, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+
+    auto constOp = op.arg().getDefiningOp<mlir::arith::ConstantOp>();
+    if (!constOp)
+      return failure();
+
+    auto floatAttr = constOp.getValue().dyn_cast<mlir::FloatAttr>();
+    if (!floatAttr)
+      return failure();
+
+    rewriter.replaceOp(op, {adaptor.arg()});
+    // rewriter.replaceOpWithNewOp<quir::ConstantOp>(op,
+    //   AngleAttr::get(rewriter.getContext(),
+    //   rewriter.getType<AngleType>(floatAttr.getType().getIntOrFloatBitWidth()),
+    //                  floatAttr.getValue()));
+    return success();
+  } // FloatPattern
+
+}; // struct RemoveConvertedNilCastsPattern
+
 struct RemoveI1ToCBitCastsPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
@@ -419,6 +445,7 @@ void oq3::populateOQ3ToStandardConversionPatterns(
       CastIndexToIntPattern,
       RemoveConvertedNilCastsPattern,
       RemoveI1ToCBitCastsPattern,
+      FloatPattern,
       WideningIntCastsPattern>(patterns.getContext(), typeConverter);
   // clang-format on
 }
