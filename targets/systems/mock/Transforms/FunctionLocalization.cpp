@@ -40,7 +40,7 @@
 
 using namespace mlir;
 using namespace mlir::quir;
-using namespace qssc::targets::mock;
+using namespace qssc::targets::systems::mock;
 
 namespace {
 // This map is from quir.orig_func_name to a list of functions that have that

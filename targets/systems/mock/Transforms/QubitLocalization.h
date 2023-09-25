@@ -37,7 +37,7 @@
 #include <unordered_set>
 #include <vector>
 
-namespace qssc::targets::mock {
+namespace qssc::targets::systems::mock {
 
 struct MockQubitLocalizationPass
     : public mlir::PassWrapper<MockQubitLocalizationPass,
@@ -109,6 +109,6 @@ struct MockQubitLocalizationPass
   llvm::StringRef getDescription() const override;
 }; // struct MockQubitLocalizationPass
 
-} // namespace qssc::targets::mock
+} // namespace qssc::targets::systems::mock
 
 #endif // MOCK_QUBIT_LOCALIZATION_H
