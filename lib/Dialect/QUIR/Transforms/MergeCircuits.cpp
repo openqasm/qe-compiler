@@ -36,12 +36,26 @@
 #include "llvm/ADT/StringRef.h"
 
 #include <llvm/ADT/None.h>
+#include <mlir/Dialect/Complex/IR/Complex.h>
 #include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;
 
 namespace {
+
+using MoveListVec = std::vector<Operation *>;
+bool moveUsers(Operation *curOp, MoveListVec &moveList) {
+  llvm::errs() << "moveUsers start\n";
+  moveList.push_back(curOp);
+  bool okToMoveUsers = true;
+  for (auto user : curOp->getUsers()) {
+    llvm::errs() << "User "; user->dump();
+    okToMoveUsers &= moveUsers(user, moveList);
+  }
+  llvm::errs() << "moveUsers end\n";
+  return okToMoveUsers;
+}
 
 // This pattern matches on two CallCircuitOps separated by non-quantum ops
 struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
@@ -60,42 +74,83 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
     if (!nextCallCircuitOp)
       return failure();
 
+#define RUN_MERGE
+
+#ifdef RUN_MERGE
     Operation *insertOp = *secondOp;
+#endif
+
+    std::vector<Operation *> moveList;
 
     // Move first CallCircuitOp after nodes until a user of the
     // CallCircuitOp or the second CallCircuitOp is reached
     Operation *curOp = callCircuitOp->getNextNode();
     while (curOp != *secondOp) {
+      llvm::errs() << "curOp "; curOp->dump();
+      moveList.clear();
+      bool okToMoveUsers = false;
       if (std::find(callCircuitOp->user_begin(), callCircuitOp->user_end(),
-                    curOp) != callCircuitOp->user_end()) {
+                    curOp) != callCircuitOp->user_end()) 
+#ifndef RUN_MERGE
+        break;
+      callCircuitOp->moveAfter(curOp);
+#else
+                    
+      {
         if (std::find(curOp->user_begin(), curOp->user_end(), callCircuitOp) !=
             callCircuitOp->user_end())
           break;
-        curOp->moveAfter(insertOp);
-        insertOp = curOp;
-      } else {
+        
+        okToMoveUsers = moveUsers(curOp, moveList);
+        if (okToMoveUsers)
+          for(auto op : moveList) {
+            llvm::errs() << "Moving "; op->dump();
+            llvm::errs() << "After "; insertOp->dump();
+
+            op->moveAfter(insertOp);
+            insertOp = op;
+          }
+        
+      } 
+      if (!okToMoveUsers) {
+        llvm::errs() << "Not Moving users\n";
+        llvm::errs() << "Moving "; callCircuitOp->dump();
+        llvm::errs() << "After "; curOp->dump();
         callCircuitOp->moveAfter(curOp);
       }
+#endif
+      
       curOp = callCircuitOp->getNextNode();
     }
 
+#ifdef RUN_MERGE
     insertOp = nextCallCircuitOp;
+#endif
 
     // Move second CallCircuitOp before nodes until a definition the
     // second CallCircuitOp uses or the first CallCircuitOp is reached
     curOp = nextCallCircuitOp->getPrevNode();
     while (curOp != callCircuitOp) {
       if (std::find(curOp->user_begin(), curOp->user_end(),
-                    nextCallCircuitOp) != curOp->user_end()) {
+                    nextCallCircuitOp) != curOp->user_end())
+#ifndef RUN_MERGE
+                    
+        break;
+      nextCallCircuitOp->moveBefore(curOp);
+#else
+      {
         if (std::find(nextCallCircuitOp->user_begin(),
                       nextCallCircuitOp->user_end(),
                       curOp) != nextCallCircuitOp->user_end())
           break;
+        llvm::errs() << "Moving "; curOp->dump();
+        llvm::errs() << "Before "; insertOp->dump();
         curOp->moveBefore(insertOp);
         insertOp = curOp;
       } else {
         nextCallCircuitOp->moveBefore(curOp);
       }
+#endif
       curOp = nextCallCircuitOp->getPrevNode();
     }
 
