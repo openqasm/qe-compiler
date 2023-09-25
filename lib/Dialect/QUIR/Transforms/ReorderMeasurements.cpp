@@ -57,16 +57,16 @@ bool mayMoveVariableLoadOp(MeasureOp measureOp,
                            MoveListVec &moveList) {
   // find corresponding variable assign
   // move variableLoad if the assign is before the measure
-  bool moveVariableLoadOp = false;
+  bool moveVariableLoadOp = true;
   auto currentBlock = variableLoadOp->getBlock();
   currentBlock->walk([&](oq3::VariableAssignOp assignOp) {
     if (assignOp.variable_name() == variableLoadOp.variable_name()) {
-      moveVariableLoadOp = assignOp->isBeforeInBlock(measureOp);
+      moveVariableLoadOp &= (assignOp->getBlock() != currentBlock) || (assignOp->isBeforeInBlock(measureOp));
       if (!moveVariableLoadOp) {
         auto assignCastOp =
             dyn_cast<oq3::CastOp>(assignOp.assigned_value().getDefiningOp());
         if (assignCastOp)
-          moveVariableLoadOp = mayMoveCastOp(measureOp, assignCastOp, moveList);
+          moveVariableLoadOp &= mayMoveCastOp(measureOp, assignCastOp, moveList);
       }
       return WalkResult::interrupt();
     }
