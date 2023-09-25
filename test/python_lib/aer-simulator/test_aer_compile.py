@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 """
-Unit tests for the compiler API using mock targets.
+Unit tests for the compiler API using Aer simulator targets.
 """
 
 import asyncio
@@ -37,10 +37,14 @@ compiler_extra_args = ["--enable-circuits=false"]
 def check_mlir_string(mlir):
     assert isinstance(mlir, str)
     assert "module" in mlir
-    assert "qcs.init" in mlir
+    assert "@aer_state" in mlir
+    assert "@aer_state_configure" in mlir
+    assert "@aer_allocate_qubits" in mlir
+    assert "@aer_state_initialize" in mlir
+    assert "@aer_state_finalize" in mlir
 
 
-def test_compile_file_to_qem(example_qasm3_tmpfile, mock_config_file, check_payload):
+def test_compile_file_to_qem(example_qasm3_tmpfile, simulator_config_file, check_payload):
     """Test that we can compile a file input via the interface compile_file
     to a QEM payload"""
 
@@ -49,8 +53,8 @@ def test_compile_file_to_qem(example_qasm3_tmpfile, mock_config_file, check_payl
         input_type=InputType.QASM3,
         output_type=OutputType.QEM,
         output_file=None,
-        target="mock",
-        config_path=mock_config_file,
+        target="aer-simulator",
+        config_path=simulator_config_file,
         extra_args=compiler_extra_args,
     )
     # QEM payload is returned as byte sequence
@@ -61,7 +65,7 @@ def test_compile_file_to_qem(example_qasm3_tmpfile, mock_config_file, check_payl
     check_payload(payload_filelike)
 
 
-def test_compile_str_to_qem(mock_config_file, example_qasm3_str, check_payload):
+def test_compile_str_to_qem(simulator_config_file, example_qasm3_str, check_payload):
     """Test that we can compile an OpenQASM3 string via the interface
     compile_file to a QEM payload"""
 
@@ -70,8 +74,8 @@ def test_compile_str_to_qem(mock_config_file, example_qasm3_str, check_payload):
         input_type=InputType.QASM3,
         output_type=OutputType.QEM,
         output_file=None,
-        target="mock",
-        config_path=mock_config_file,
+        target="aer-simulator",
+        config_path=simulator_config_file,
         extra_args=compiler_extra_args,
     )
     # QEM payload is returned as byte sequence
@@ -83,7 +87,7 @@ def test_compile_str_to_qem(mock_config_file, example_qasm3_str, check_payload):
 
 
 def test_compile_file_to_qem_file(
-    example_qasm3_tmpfile, mock_config_file, tmp_path, check_payload
+    example_qasm3_tmpfile, simulator_config_file, tmp_path, check_payload
 ):
     """Test that we can compile a file input via the interface compile_file
     to a QEM payload into a file"""
@@ -94,8 +98,8 @@ def test_compile_file_to_qem_file(
         input_type=InputType.QASM3,
         output_type=OutputType.QEM,
         output_file=tmpfile,
-        target="mock",
-        config_path=mock_config_file,
+        target="aer-simulator",
+        config_path=simulator_config_file,
         extra_args=compiler_extra_args,
     )
 
@@ -109,7 +113,7 @@ def test_compile_file_to_qem_file(
 
 
 def test_compile_str_to_qem_file(
-    mock_config_file, tmp_path, example_qasm3_str, check_payload
+    simulator_config_file, tmp_path, example_qasm3_str, check_payload
 ):
     """Test that we can compile an OpenQASM3 string via the interface
     compile_file to a QEM payload in an output file"""
@@ -120,8 +124,8 @@ def test_compile_str_to_qem_file(
         input_type=InputType.QASM3,
         output_type=OutputType.QEM,
         output_file=tmpfile,
-        target="mock",
-        config_path=mock_config_file,
+        target="aer-simulator",
+        config_path=simulator_config_file,
         extra_args=compiler_extra_args,
     )
 
@@ -135,7 +139,7 @@ def test_compile_str_to_qem_file(
 
 
 def test_compile_failing_str_to_qem(
-    mock_config_file, example_unsupported_qasm3_str, example_qasm3_str, check_payload
+    simulator_config_file, example_unsupported_qasm3_str, example_qasm3_str, check_payload
 ):
     """Test that compiling an invalid OpenQASM3 string via the interface
     compile_str to a QEM payload will fail and result in an empty payload."""
@@ -146,14 +150,14 @@ def test_compile_failing_str_to_qem(
             input_type=InputType.QASM3,
             output_type=OutputType.QEM,
             output_file=None,
-            target="mock",
-            config_path=mock_config_file,
+            target="aer-simulator",
+            config_path=simulator_config_file,
             extra_args=compiler_extra_args,
         )
 
 
 def test_compile_failing_file_to_qem(
-    example_unsupported_qasm3_tmpfile, mock_config_file, tmp_path, check_payload
+    example_unsupported_qasm3_tmpfile, simulator_config_file, tmp_path, check_payload
 ):
     """Test that compiling an invalid file input via the interface compile_file
     to a QEM payload will fail and result in an empty payload."""
@@ -164,23 +168,23 @@ def test_compile_failing_file_to_qem(
             input_type=InputType.QASM3,
             output_type=OutputType.QEM,
             output_file=None,
-            target="mock",
-            config_path=mock_config_file,
+            target="aer-simulator",
+            config_path=simulator_config_file,
             extra_args=compiler_extra_args,
         )
 
 
-def test_compile_options(mock_config_file, example_qasm3_str):
+def test_compile_options(simulator_config_file, example_qasm3_str):
     """Test compilation with explicit CompileOptions construction."""
 
     compile_options = CompileOptions(
         input_type=InputType.QASM3,
         output_type=OutputType.MLIR,
-        target="mock",
-        config_path=mock_config_file,
+        target="aer-simulator",
+        config_path=simulator_config_file,
         shot_delay=100,
-        num_shots=10000,
-        extra_args=compiler_extra_args + ["--pass-statistics"],
+        num_shots=1,
+        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
     )
 
     mlir = compile_str(example_qasm3_str, compile_options=compile_options)
@@ -193,15 +197,15 @@ async def sleep_a_little():
 
 
 @pytest.mark.asyncio
-async def test_async_compile_str(mock_config_file, example_qasm3_str, check_payload):
+async def test_async_compile_str(simulator_config_file, example_qasm3_str, check_payload):
     """Test that async wrapper produces correct output and does not block the even loop."""
     async_compile = compile_str_async(
         example_qasm3_str,
         input_type=InputType.QASM3,
         output_type=OutputType.QEM,
         output_file=None,
-        target="mock",
-        config_path=mock_config_file,
+        target="aer-simulator",
+        config_path=simulator_config_file,
         extra_args=compiler_extra_args,
     )
     # Start a task that sleeps shorter than the compilation and then takes a
@@ -229,7 +233,7 @@ async def test_async_compile_str(mock_config_file, example_qasm3_str, check_payl
 
 @pytest.mark.asyncio
 async def test_async_compile_file(
-    example_qasm3_tmpfile, mock_config_file, check_payload
+    example_qasm3_tmpfile, simulator_config_file, check_payload
 ):
     """Test that async wrapper produces correct output and does not block the even loop."""
     async_compile = compile_file_async(
@@ -237,8 +241,8 @@ async def test_async_compile_file(
         input_type=InputType.QASM3,
         output_type=OutputType.QEM,
         output_file=None,
-        target="mock",
-        config_path=mock_config_file,
+        target="aer-simulator",
+        config_path=simulator_config_file,
         extra_args=compiler_extra_args,
     )
     # Start a task that sleeps shorter than the compilation and then takes a

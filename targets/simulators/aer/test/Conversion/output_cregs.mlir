@@ -1,7 +1,5 @@
-// RUN: touch test.cfg
-// Use default configuration values.
-// RUN: echo "{}" >> test.cfg
-// RUN: qss-compiler -X=mlir --emit=mlir --target aer-simulator --config test.cfg %s --simulator-output-cregs | FileCheck %s
+// RUN: echo "{}" > %t
+// RUN: qss-compiler -X=mlir --emit=mlir --target aer-simulator --config %t %s --simulator-output-cregs | FileCheck %s
 
 //
 // This code is part of Qiskit.

@@ -1,6 +1,5 @@
-// RUN: touch test.cfg
-// RUN: echo "{}" >> test.cfg
-// RUN: qss-compiler -X=qasm --emit=mlir --target aer-simulator --config test.cfg %s --num-shots=1 --simulator-output-cregs --quir-eliminate-variables --simulator-quir-to-aer | FileCheck %s
+// RUN: echo "{}" > %t
+// RUN: qss-compiler -X=qasm --emit=mlir --target aer-simulator --config %t %s --num-shots=1 --simulator-output-cregs --quir-eliminate-variables --simulator-quir-to-aer | FileCheck %s
 
 //
 // This code is part of Qiskit.

@@ -213,6 +213,10 @@ namespace {
 void simulatorPipelineBuilder(mlir::OpPassManager &pm) {
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(std::make_unique<BreakResetPass>());
+  // `OutputCRegsPass` must be applied before `VariableEliminationPass`.
+  // It inserts classical `oq3` instructions for printing the values
+  // of classical registers. These instructions will be converted into
+  // standard ops by `VariableEliminationPass`.
   pm.addPass(std::make_unique<transforms::OutputCRegsPass>());
   pm.addPass(std::make_unique<quir::VariableEliminationPass>(false));
   pm.addPass(std::make_unique<conversion::QUIRToAERPass>());
@@ -221,7 +225,7 @@ void simulatorPipelineBuilder(mlir::OpPassManager &pm) {
 
 llvm::Error AerSimulator::registerTargetPipelines() {
   mlir::PassPipelineRegistration<> pipeline(
-      "simulator-conversion", "Run Simulator-specific conversions",
+      "aer-simulator-conversion", "Run Aer simulator specific conversions",
       simulatorPipelineBuilder);
 
   return llvm::Error::success();
@@ -270,14 +274,6 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   mlir::applyPassManagerCLOptions(pm);
   mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
-  // `OutputCRegsPass` must be applied before `VariableEliminationPass`.
-  // It inserts classical `oq3` instructions for printing the values
-  // of classical registers. These instructions will be converted into
-  // standard ops by `VariableEliminationPass`.
-  pm.addPass(std::make_unique<transforms::OutputCRegsPass>());
-  pm.addPass(std::make_unique<quir::VariableEliminationPass>(false));
-  pm.addPass(std::make_unique<conversion::QUIRToAERPass>());
-  pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::createLowerToLLVMPass());
   pm.addPass(mlir::LLVM::createLegalizeForExportPass());
   if (failed(pm.run(moduleOp))) {

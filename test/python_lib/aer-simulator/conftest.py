@@ -66,26 +66,16 @@ def example_invalid_qasm3_tmpfile(tmp_path, example_invalid_qasm3_str):
 
 
 @pytest.fixture
-def example_unsupported_qasm3_str():
-    return """OPENQASM 3.0;
-    int a;
-    int b;
-    int c;
-    c = a + b;
-    """
-
-
-@pytest.fixture
 def example_unsupported_qasm3_tmpfile(tmp_path, example_unsupported_qasm3_str):
     return __create_tmpfile(tmp_path, example_unsupported_qasm3_str)
 
 
 @pytest.fixture
-def mock_config_file():
+def simulator_config_file():
     pytest_dir = pathlib.Path(__file__).parent.resolve()
-    mock_test_cfg = pytest_dir.parent / "test.cfg"
-    assert mock_test_cfg.exists()
-    return str(mock_test_cfg)
+    simulator_test_cfg = pytest_dir.parent / "aer-simulator/test.cfg"
+    assert simulator_test_cfg.exists()
+    return str(simulator_test_cfg)
 
 
 @pytest.fixture
