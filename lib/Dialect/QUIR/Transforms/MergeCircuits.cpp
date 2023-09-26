@@ -209,8 +209,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   auto circuitOp = getCircuitOp(callCircuitOp);
   auto nextCircuitOp = getCircuitOp(nextCallCircuitOp);
 
-  OpBuilder builder(circuitOp);
-  builder.setInsertionPointAfter(nextCircuitOp);
+  rewriter.setInsertionPointAfter(nextCircuitOp);
 
   llvm::SmallVector<Type> inputTypes;
   llvm::SmallVector<Value> inputValues;
@@ -228,7 +227,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
       (circuitOp.sym_name() + "_" + nextCircuitOp.sym_name()).str();
 
   // create new circuit operation by cloning first circuit
-  CircuitOp newCircuitOp = cast<CircuitOp>(builder.clone(*circuitOp));
+  CircuitOp newCircuitOp = cast<CircuitOp>(rewriter.clone(*circuitOp));
   newCircuitOp->setAttr(SymbolTable::getSymbolAttrName(),
                         StringAttr::get(circuitOp->getContext(), newName));
 
@@ -255,11 +254,11 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   // new circuit
   quir::ReturnOp newReturnOp;
   newCircuitOp->walk([&](quir::ReturnOp r) { newReturnOp = r; });
-  builder.setInsertionPointAfter(newReturnOp);
+  rewriter.setInsertionPointAfter(newReturnOp);
 
   for (auto &block : nextCircuitOp.getBody().getBlocks())
     for (auto &op : block.getOperations())
-      builder.clone(op, mapper);
+      rewriter.clone(op, mapper);
 
   // remove any existing return operations from new circuit
   // collect their output types and values into vectors
@@ -267,17 +266,16 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
     outputValues.append(r.getOperands().begin(), r->getOperands().end());
     outputTypes.append(r->getOperandTypes().begin(),
                        r->getOperandTypes().end());
-    r->erase();
+    rewriter.eraseOp(r);
   });
 
   // create a return op in the new circuit with the merged output values
-  OpBuilder newBuilder(&newCircuitOp.back().back());
-  newBuilder.setInsertionPointAfter(&newCircuitOp.back().back());
-  newBuilder.create<quir::ReturnOp>(nextReturnOp->getLoc(), outputValues);
+  rewriter.setInsertionPointToEnd(&newCircuitOp.back());
+  rewriter.create<quir::ReturnOp>(nextReturnOp->getLoc(), outputValues);
 
   // change the input / output types for the quir.circuit
   auto opType = newCircuitOp.getType();
-  newCircuitOp.setType(builder.getFunctionType(
+  newCircuitOp.setType(rewriter.getFunctionType(
       /*inputs=*/opType.getInputs(),
       /*results=*/ArrayRef<Type>(outputTypes)));
 
@@ -304,7 +302,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   }
 
   newCircuitOp->setAttr(mlir::quir::getPhysicalIdsAttrName(),
-                        builder.getI32ArrayAttr(ArrayRef<int>(allIds)));
+                        rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
 
   // merge the call_circuits
   // collect their input values
@@ -314,35 +312,17 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   callInputValues.append(nextCallCircuitOp->getOperands().begin(),
                          nextCallCircuitOp.getOperands().end());
 
-  // replace or create new based on original outputType sizes
-  if (nextCallCircuitOp->getNumResults() == outputTypes.size()) {
-    rewriter.replaceOpWithNewOp<CallCircuitOp>(nextCallCircuitOp, newName,
-                                               TypeRange(outputTypes),
-                                               ValueRange(callInputValues));
-    rewriter.eraseOp(callCircuitOp);
-  } else if (callCircuitOp->getNumResults() == outputTypes.size()) {
-    rewriter.replaceOpWithNewOp<CallCircuitOp>(callCircuitOp, newName,
-                                               TypeRange(outputTypes),
-                                               ValueRange(callInputValues));
-    rewriter.eraseOp(nextCallCircuitOp);
-  } else {
-    // can not directly replace a call circuit since the number of results does
-    // not match
+  rewriter.setInsertionPointAfter(nextCallCircuitOp);
+  auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
+      callCircuitOp->getLoc(), newName, TypeRange(outputTypes),
+      ValueRange(callInputValues));
 
-    auto numCallResults = callCircuitOp->getNumResults();
-
-    auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
-        callCircuitOp->getLoc(), newName, TypeRange(outputTypes),
-        ValueRange(callInputValues));
-    for (const auto &res : llvm::enumerate(callCircuitOp->getResults()))
-      res.value().replaceAllUsesWith(newCallOp.getResult(res.index()));
-    for (const auto &res : llvm::enumerate(nextCallCircuitOp->getResults())) {
-      res.value().replaceAllUsesWith(
-          newCallOp.getResult(res.index() + numCallResults));
-    }
-    callCircuitOp->erase();
-    nextCallCircuitOp->erase();
-  }
+  // dice the output so we can specify which results to replace
+  auto iterSep = newCallOp.result_begin() + callCircuitOp.getNumResults();
+  rewriter.replaceOp(callCircuitOp,
+                     ResultRange(newCallOp.result_begin(), iterSep));
+  rewriter.replaceOp(nextCallCircuitOp,
+                     ResultRange(iterSep, newCallOp.result_end()));
 
   return success();
 }
