@@ -61,12 +61,12 @@ bool mayMoveVariableLoadOp(MeasureOp measureOp,
   auto currentBlock = variableLoadOp->getBlock();
   currentBlock->walk([&](oq3::VariableAssignOp assignOp) {
     if (assignOp.variable_name() == variableLoadOp.variable_name()) {
-      moveVariableLoadOp &= (assignOp->getBlock() != currentBlock) || (assignOp->isBeforeInBlock(measureOp));
+      moveVariableLoadOp = assignOp->isBeforeInBlock(measureOp);
       if (!moveVariableLoadOp) {
         auto assignCastOp =
             dyn_cast<oq3::CastOp>(assignOp.assigned_value().getDefiningOp());
         if (assignCastOp)
-          moveVariableLoadOp &= mayMoveCastOp(measureOp, assignCastOp, moveList);
+          moveVariableLoadOp = mayMoveCastOp(measureOp, assignCastOp, moveList);
       }
       return WalkResult::interrupt();
     }
