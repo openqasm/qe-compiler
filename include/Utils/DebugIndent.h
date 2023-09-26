@@ -57,12 +57,12 @@ protected:
 private:
   unsigned int debugIndentCount{0};
 #ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wattributes"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
 #endif
   [[maybe_unused]] unsigned int debugIndentStep{2};
 #ifdef __GNUC__
-#  pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #endif
 };
 
