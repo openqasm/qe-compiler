@@ -1,4 +1,4 @@
-//===- Target.inc - Mock target registration --------------------*- C++ -*-===//
+//===- MockUtils.h ----------------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,20 +14,28 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file defines static objects that register system targets
-//  with the QSS compiler core.
+// Declaration of utility functions for the Mock Target
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef HAL_TARGETS_MOCK_TARGET_H
-#define HAL_TARGETS_MOCK_TARGET_H
+#ifndef HAL_MOCKUTILS_H
+#define HAL_MOCKUTILS_H
 
-#include "MockTarget.h"
+#include <vector>
 
-namespace qssc::targets::mock {
+namespace mlir {
+class ModuleOp;
+} // end namespace mlir
 
-[[maybe_unused]] int registrar = init();
+namespace qssc::targets::systems::mock {
 
-} // namespace qssc::targets::mock
+// Looks for and returns the Controller submodule if it exists
+// Returns nullptr otherwise
+auto getControllerModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
 
-#endif // HAL_TARGETS_MOCK_TARGET_H
+auto getActuatorModules(mlir::ModuleOp topModuleOp)
+    -> std::vector<mlir::ModuleOp>;
+
+} // namespace qssc::targets::systems::mock
+
+#endif // HAL_MOCKUTILS_H
