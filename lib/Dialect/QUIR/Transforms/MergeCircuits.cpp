@@ -90,7 +90,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
         okToMoveUsers = moveUsers(curOp, moveList);
         if (okToMoveUsers)
-          for (auto op : moveList) {
+          for (auto *op : moveList) {
             op->moveAfter(insertOp);
             insertOp = op;
           }
