@@ -138,8 +138,8 @@ def test_compile_file_to_mlir_file(
     file_stat = os.stat(tmpfile)
     assert file_stat.st_size > 0
     
-    with open(tmpfile) as mlir_str:
-        check_mlir_string(mlir_str)
+    with open(tmpfile) as mlir_file:
+        check_mlir_string(mlir_file.read())
         
 
 def test_compile_str_to_mlir_file(
@@ -164,8 +164,8 @@ def test_compile_str_to_mlir_file(
     file_stat = os.stat(tmpfile)
     assert file_stat.st_size > 0
     
-    with open(tmpfile) as mlir_str:
-        check_mlir_string(mlir_str)
+    with open(tmpfile) as mlir_file:
+        check_mlir_string(mlir_file.read())
 
 
 async def sleep_a_little():
