@@ -97,7 +97,8 @@ private:
   std::unique_ptr<AerSimulatorConfig> simulatorConfig;
 
 private:
-  void buildLLVMPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload);
+  llvm::Error buildLLVMPayload(mlir::ModuleOp &moduleOp,
+                               payload::Payload &payload);
 }; // class AerSimulatorSystem
 
 } // namespace qssc::targets::simulators::aer

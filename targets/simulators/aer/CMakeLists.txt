@@ -39,6 +39,7 @@ qssc_add_plugin(QSSCTargetAerSimulator QSSC_TARGET_PLUGIN
 Conversion/QUIRToAer.cpp
 Conversion/TypeConversion.cpp
 Transforms/OutputClassicalRegisters.cpp
+Errors.cpp
 AerSimulator.cpp
 
 ADDITIONAL_HEADER_DIRS

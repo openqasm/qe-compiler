@@ -20,6 +20,7 @@
 
 #include "Conversion/QUIRToAer.h"
 #include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
+#include "Errors.h"
 #include "Transforms/OutputClassicalRegisters.h"
 
 #include "Dialect/QUIR/Transforms/Passes.h"
@@ -61,8 +62,8 @@ using namespace qssc::targets::simulators::aer;
 
 using json = nlohmann::json;
 
-// The space below at the front of the string causes this category to be printed
-// first
+// The space below at the front of the string causes this category to be
+// printed first
 static llvm::cl::OptionCategory simulatorCat(
     " QSS Compiler Options for the Simulator target",
     "Options that control Simulator-specific behavior of the Simulator QSS "
@@ -253,14 +254,11 @@ auto AerSimulator::payloadPassesFound(mlir::PassManager &pm) -> bool {
 
 llvm::Error AerSimulator::addToPayload(mlir::ModuleOp &moduleOp,
                                        qssc::payload::Payload &payload) {
-  buildLLVMPayload(moduleOp, payload);
-
-  // TODO: if buildLLVMPayload failed?
-  return llvm::Error::success();
+  return buildLLVMPayload(moduleOp, payload);
 } // AerSimulator::addToPayload
 
-void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
-                                    payload::Payload &payload) {
+llvm::Error AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
+                                           payload::Payload &payload) {
 
   auto *context = moduleOp.getContext();
   assert(context);
@@ -278,7 +276,7 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   pm.addPass(mlir::LLVM::createLegalizeForExportPass());
   if (failed(pm.run(moduleOp))) {
     llvm::errs() << "Problems converting `Simulator` module to AER!\n";
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
   }
 
   llvm::InitializeNativeTarget();
@@ -294,7 +292,7 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
       llvm::TargetRegistry::lookupTarget(targetTriple, errorMessage);
   if (!target) {
     llvm::errs() << "Unable to find target: " << errorMessage << "\n";
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
   }
 
   std::string cpu("generic");
@@ -305,7 +303,7 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
 
   if (auto err = quir::translateModuleToLLVMDialect(moduleOp, dataLayout)) {
     llvm::errs() << err;
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
   }
 
   // Build LLVM payload
@@ -315,7 +313,7 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   if (!llvmModule) {
     llvm::errs() << "Error converting LLVM module to LLVM IR!\n";
     llvm::errs() << moduleOp << "\n";
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
   }
 
   llvmModule->setDataLayout(dataLayout);
@@ -325,7 +323,7 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   auto optPipeline = mlir::makeOptimizingTransformer(0, 0, nullptr);
   if (auto err = optPipeline(llvmModule.get())) {
     llvm::errs() << "Failed to optimize LLVM IR " << err << "\n";
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
   }
 
   llvm::SmallString<128> objPath;
@@ -334,14 +332,14 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
                                                     objFd, objPath)) {
     llvm::errs()
         << "Failed to create temporary object file for simulator module.\n";
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
   }
   auto obj = std::make_unique<llvm::ToolOutputFile>(objPath, objFd);
   llvm::legacy::PassManager pass;
   if (machine->addPassesToEmitFile(pass, obj->os(), nullptr,
                                    llvm::CodeGenFileType::CGFT_ObjectFile)) {
     llvm::errs() << "Cannot emit object files with TargetMachine.\n";
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
   }
   pass.run(*llvmModule);
   obj->os().flush();
@@ -353,7 +351,7 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   llvm::SmallString<128> outputPath;
   if (auto EC = llvm::sys::fs::createTemporaryFile("simulatorModule", "out",
                                                    outputPath))
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
 
   llvm::SmallVector<llvm::StringRef, 5> lld_argv{"ld", objPath, AERLIB, "-o",
                                                  outputPath};
@@ -361,7 +359,7 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   llvm::SmallString<128> stdErrPath;
   if (auto EC = llvm::sys::fs::createTemporaryFile("simulatorModule", "err",
                                                    stdErrPath))
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
 
   llvm::Optional<llvm::StringRef> redirects[] = {
       {""}, {""}, llvm::StringRef(stdErrPath)};
@@ -374,14 +372,14 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
     } else {
       llvm::errs() << "call linker error: ret=" << err;
     }
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
   }
 
   std::ifstream output(outputPath.c_str(), std::ios_base::binary);
   if (!output) {
     llvm::errs() << "Failed to open generated simulator object file "
                  << outputPath;
-    return;
+    return llvm::make_error<LLVMBuildFailure>();
   }
 
   std::string outputContents{std::istreambuf_iterator<char>(output),
@@ -389,6 +387,7 @@ void AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
 
   payload.getFile("simulator.bin")->assign(std::move(outputContents));
 
+  return llvm::Error::success();
 } // AerSimulator::buildLLVMPayload
 
 llvm::Error AerSimulator::callTool(
