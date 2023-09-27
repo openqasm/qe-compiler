@@ -648,8 +648,12 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::GenQEM) {
 
-    if (includeSourceInPayload && inputType == InputType::QASM && directInput)
-      payload->addFile("debug/input.qasm", inputSource + "\n");
+    if (includeSourceInPayload && directInput) {
+      if (inputType == InputType::QASM)
+        payload->addFile("manifest/input.qasm", inputSource + "\n");
+      else if (inputType == InputType::MLIR)
+        payload->addFile("manifest/input.mlir", inputSource + "\n");
+    }
 
     if (auto err = generateQEM_(target, std::move(payload), moduleOp, ostream))
       return err;
