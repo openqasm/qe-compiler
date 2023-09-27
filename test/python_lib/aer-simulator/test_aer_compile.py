@@ -31,7 +31,11 @@ from qss_compiler import (
 )
 from qss_compiler.exceptions import QSSCompilationFailure
 
-compiler_extra_args = ["--num-shots=1", "--enable-circuits=false"]
+compiler_extra_args = [
+    "--aer-simulator-conversion",
+    "--num-shots=1",
+    "--enable-circuits=false"
+]
 
 
 def check_mlir_string(mlir):
@@ -42,44 +46,6 @@ def check_mlir_string(mlir):
     assert "@aer_allocate_qubits" in mlir
     assert "@aer_state_initialize" in mlir
     assert "@aer_state_finalize" in mlir
-
-
-def test_compile_file_to_qem(example_qasm3_tmpfile, simulator_config_file):
-    """Test that we can compile a file input via the interface compile_file
-    to a QEM payload"""
-
-    # To generate a QEM payload, $LD_PATH and $LIBAER_PATH has to be specified.
-    # Currently qss-compiler does not have `libaer.so` so this test must be failed.
-    # Also, in future, a single binary file will be generated for the aer-simulator target.
-    with pytest.raises(QSSCompilationFailure):
-        compile_file(
-            example_qasm3_tmpfile,
-            input_type=InputType.QASM3,
-            output_type=OutputType.QEM,
-            output_file=None,
-            target="aer-simulator",
-            config_path=simulator_config_file,
-            extra_args=compiler_extra_args,
-        )
-
-
-def test_compile_str_to_qem(simulator_config_file, example_qasm3_str):
-    """Test that we can compile an OpenQASM3 string via the interface
-    compile_file to a QEM payload"""
-
-    # To generate a QEM payload, $LD_PATH and $LIBAER_PATH has to be specified.
-    # Currently qss-compiler does not have `libaer.so` so this test must be failed.
-    # Also, in future, a single binary file will be generated for the aer-simulator target.
-    with pytest.raises(QSSCompilationFailure):
-        compile_str(
-            example_qasm3_str,
-            input_type=InputType.QASM3,
-            output_type=OutputType.QEM,
-            output_file=None,
-            target="aer-simulator",
-            config_path=simulator_config_file,
-            extra_args=compiler_extra_args,
-        )
 
 
 def test_compile_file_to_mlir(example_qasm3_tmpfile, simulator_config_file):
@@ -93,7 +59,7 @@ def test_compile_file_to_mlir(example_qasm3_tmpfile, simulator_config_file):
             output_file=None,
             target="aer-simulator",
             config_path=simulator_config_file,
-            extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
+            extra_args=compiler_extra_args,
     )
 
     check_mlir_string(mlir)
@@ -110,7 +76,7 @@ def test_compile_str_to_mlir(example_qasm3_str, simulator_config_file):
             output_file=None,
             target="aer-simulator",
             config_path=simulator_config_file,
-            extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
+            extra_args=compiler_extra_args,
     )
 
     check_mlir_string(mlir)
@@ -130,7 +96,7 @@ def test_compile_file_to_mlir_file(
         output_file=tmpfile,
         target="aer-simulator",
         config_path=simulator_config_file,
-        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
+        extra_args=compiler_extra_args,
     )
     
     # no direct return
@@ -156,7 +122,7 @@ def test_compile_str_to_mlir_file(
         output_file=tmpfile,
         target="aer-simulator",
         config_path=simulator_config_file,
-        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
+        extra_args=compiler_extra_args,
     )
     
     # no direct return
@@ -183,7 +149,7 @@ async def test_async_compile_str(simulator_config_file, example_qasm3_str):
         output_file=None,
         target="aer-simulator",
         config_path=simulator_config_file,
-        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
+        extra_args=compiler_extra_args,
     )
     # Start a task that sleeps shorter than the compilation and then takes a
     # timestamp. If the compilation blocks the event loop, then the timestamp
@@ -215,7 +181,7 @@ async def test_async_compile_file(
         output_file=None,
         target="aer-simulator",
         config_path=simulator_config_file,
-        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
+        extra_args=compiler_extra_args,
     )
     # Start a task that sleeps shorter than the compilation and then takes a
     # timestamp. If the compilation blocks the event loop, then the timestamp
