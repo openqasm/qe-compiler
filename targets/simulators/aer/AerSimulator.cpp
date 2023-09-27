@@ -411,10 +411,10 @@ llvm::Error AerSimulator::callTool(
                                    llvm::Twine("Failed to execute ") + program +
                                        " " + executeError);
 
-  if (ret == 0)
-    return llvm::Error::success();
-  else
+  if (ret != 0)
     return llvm::createStringError(
         std::error_code{ret, std::generic_category()},
         "%*s failed with return code %d", program.size(), program.data(), ret);
+
+  return llvm::Error::success();
 } // callTool

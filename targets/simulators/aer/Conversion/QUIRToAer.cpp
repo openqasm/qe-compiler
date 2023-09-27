@@ -89,7 +89,7 @@ void declareAerFunctions(ModuleOp moduleOp) {
     aerFuncTable.insert({name, f});
   };
 
-  auto context = moduleOp->getContext();
+  auto *context = moduleOp->getContext();
   builder.setInsertionPointToStart(moduleOp.getBody());
   // common types
   const auto voidType = LLVM::LLVMVoidType::get(context);
@@ -144,8 +144,8 @@ void createAerState(MLIRContext *ctx, ModuleOp moduleOp) {
       /*alignment=*/8);
   aerState = AerStateWrapper(globalState);
 
-  auto mainFunc = mlir::quir::getMainFunction(moduleOp);
-  auto mainBody = &mainFunc->getRegion(0).getBlocks().front();
+  auto *mainFunc = mlir::quir::getMainFunction(moduleOp);
+  auto *mainBody = &mainFunc->getRegion(0).getBlocks().front();
   builder.setInsertionPointToStart(mainBody);
   auto addr = aerState.getAddr(builder);
   auto call =
@@ -204,9 +204,9 @@ void prepareArrayForMeas(ModuleOp moduleOp) {
 // Assume qcs.init is called before all quir.declare_qubit operations
 struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
   explicit QCSInitConversionPat(MLIRContext *ctx, TypeConverter &typeConverter,
-                                AerSimulatorConfig const &config)
+                                AerSimulatorConfig config)
       : OpConversionPattern(typeConverter, ctx, /* benefit= */ 1),
-        config(config) {}
+        config(std::move(config)) {}
 
   LogicalResult
   matchAndRewrite(qcs::SystemInitOp initOp, qcs::SystemInitOp::Adaptor adapter,
@@ -217,12 +217,12 @@ struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
     const auto method = config.getMethod();
     const auto device = config.getDevice();
     const auto precision = config.getPrecision();
-    const auto methodStr = toStringInAer(method);
-    const auto deviceStr = toStringInAer(device);
-    const auto precisionStr = toStringInAer(precision);
+    const auto *const methodStr = toStringInAer(method);
+    const auto *const deviceStr = toStringInAer(device);
+    const auto *const precisionStr = toStringInAer(precision);
     const auto config_strs = {"method",  methodStr,   "device",
                               deviceStr, "precision", precisionStr};
-    for (auto config_str : config_strs) {
+    for (const auto *config_str : config_strs) {
       const auto var_name = std::string("aer_conf_") + config_str;
       const auto with_null = config_str + std::string("\0", 1);
       globals[config_str] =
