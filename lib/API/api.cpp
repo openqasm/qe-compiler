@@ -106,6 +106,10 @@ static llvm::cl::opt<bool> plaintextPayload(
     "plaintext-payload", llvm::cl::desc("Write the payload in plaintext"),
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
+static llvm::cl::opt<bool> includeSourceInPayload(
+    "include-source", llvm::cl::desc("Write the input source into the payload"),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+
 namespace {
 enum InputType { NONE, QASM, MLIR, QOBJ };
 } // anonymous namespace
@@ -643,6 +647,10 @@ compile_(int argc, char const **argv, std::string *outputString,
   }
 
   if (emitAction == Action::GenQEM) {
+
+    if (includeSourceInPayload && inputType == InputType::QASM && directInput)
+      payload->addFile("debug/input.qasm", inputSource + "\n");
+
     if (auto err = generateQEM_(target, std::move(payload), moduleOp, ostream))
       return err;
   }
