@@ -257,6 +257,7 @@ llvm::Error AerSimulator::addToPayload(mlir::ModuleOp &moduleOp,
   return buildLLVMPayload(moduleOp, payload);
 } // AerSimulator::addToPayload
 
+// FUTURE: Support to lower completely to LLVM-IR and generate a binary file
 llvm::Error AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
                                            payload::Payload &payload) {
 
@@ -328,7 +329,7 @@ llvm::Error AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
 
   llvm::SmallString<128> objPath;
   int objFd;
-  if (auto err = llvm::sys::fs::createTemporaryFile("simulatorModule", "obj",
+  if (auto err = llvm::sys::fs::createTemporaryFile("simulatorModule", "o",
                                                     objFd, objPath)) {
     llvm::errs()
         << "Failed to create temporary object file for simulator module.\n";
@@ -344,77 +345,21 @@ llvm::Error AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
   pass.run(*llvmModule);
   obj->os().flush();
 
-  // Link the generated obj with a dynamic library of qiskit Aer
-  char *LD = getenv("LD_PATH");
-  char *AERLIB = getenv("LIBAER_PATH");
+  // TODO: In future, we need to link the generated object file
+  // with `libaer.{so, dylib}` to create a executable file here.
+  // An external linker (e.g. ld) may have to be called and also
+  // we have to specify the path to the linker and the shared library.
 
-  llvm::SmallString<128> outputPath;
-  if (auto EC = llvm::sys::fs::createTemporaryFile("simulatorModule", "out",
-                                                   outputPath))
-    return llvm::make_error<LLVMBuildFailure>();
-
-  llvm::SmallVector<llvm::StringRef, 5> lld_argv{"ld", objPath, AERLIB, "-o",
-                                                 outputPath};
-
-  llvm::SmallString<128> stdErrPath;
-  if (auto EC = llvm::sys::fs::createTemporaryFile("simulatorModule", "err",
-                                                   stdErrPath))
-    return llvm::make_error<LLVMBuildFailure>();
-
-  llvm::Optional<llvm::StringRef> redirects[] = {
-      {""}, {""}, llvm::StringRef(stdErrPath)};
-
-  if (auto err = callTool(LD, lld_argv, redirects, true)) {
-    auto bufOrError = llvm::MemoryBuffer::getFile(stdErrPath);
-    if (!bufOrError) {
-      llvm::errs() << "call linker error: " << bufOrError.getError().message()
-                   << ", ret=" << err;
-    } else {
-      llvm::errs() << "call linker error: ret=" << err;
-    }
+  std::ifstream binary(objPath.c_str(), std::ios_base::binary);
+  if (!binary) {
+    llvm::errs() << "Failed to open generated object file.";
     return llvm::make_error<LLVMBuildFailure>();
   }
 
-  std::ifstream output(outputPath.c_str(), std::ios_base::binary);
-  if (!output) {
-    llvm::errs() << "Failed to open generated simulator object file "
-                 << outputPath;
-    return llvm::make_error<LLVMBuildFailure>();
-  }
-
-  std::string outputContents{std::istreambuf_iterator<char>(output),
+  std::string binaryContents{std::istreambuf_iterator<char>(binary),
                              std::istreambuf_iterator<char>()};
 
-  payload.getFile("simulator.bin")->assign(std::move(outputContents));
+  payload.getFile("simulator.bin")->assign(std::move(binaryContents));
 
   return llvm::Error::success();
 } // AerSimulator::buildLLVMPayload
-
-llvm::Error AerSimulator::callTool(
-    llvm::StringRef program, llvm::ArrayRef<llvm::StringRef> args,
-    llvm::ArrayRef<llvm::Optional<llvm::StringRef>> redirects, bool dumpArgs) {
-
-  if (dumpArgs) {
-    llvm::errs() << "Calling " << program << " with args";
-    for (auto const &param : args)
-      llvm::errs() << " " << param;
-    llvm::errs() << "\n";
-  }
-
-  std::string executeError;
-  int ret =
-      llvm::sys::ExecuteAndWait(program, args, /* environment */ llvm::None,
-                                redirects, 0, 0, &executeError);
-
-  if (ret < 0 || executeError.size() > 0)
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   llvm::Twine("Failed to execute ") + program +
-                                       " " + executeError);
-
-  if (ret != 0)
-    return llvm::createStringError(
-        std::error_code{ret, std::generic_category()},
-        "%*s failed with return code %d", program.size(), program.data(), ret);
-
-  return llvm::Error::success();
-} // callTool
