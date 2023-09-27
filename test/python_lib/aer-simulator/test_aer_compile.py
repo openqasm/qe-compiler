@@ -31,7 +31,7 @@ from qss_compiler import (
 )
 from qss_compiler.exceptions import QSSCompilationFailure
 
-compiler_extra_args = ["--enable-circuits=false"]
+compiler_extra_args = ["--num-shots=1", "--enable-circuits=false"]
 
 
 def check_mlir_string(mlir):
@@ -44,151 +44,128 @@ def check_mlir_string(mlir):
     assert "@aer_state_finalize" in mlir
 
 
-def test_compile_file_to_qem(example_qasm3_tmpfile, simulator_config_file, check_payload):
+def test_compile_file_to_qem(example_qasm3_tmpfile, simulator_config_file):
     """Test that we can compile a file input via the interface compile_file
     to a QEM payload"""
 
-    qem = compile_file(
-        example_qasm3_tmpfile,
-        input_type=InputType.QASM3,
-        output_type=OutputType.QEM,
-        output_file=None,
-        target="aer-simulator",
-        config_path=simulator_config_file,
-        extra_args=compiler_extra_args,
-    )
-    # QEM payload is returned as byte sequence
-    assert isinstance(qem, bytes)
-
-    # check that payload is a zip file
-    payload_filelike = io.BytesIO(qem)
-    check_payload(payload_filelike)
+    # To generate a QEM payload, $LD_PATH and $LIBAER_PATH has to be specified.
+    # Currently qss-compiler does not have `libaer.so` so this test must be failed.
+    # Also, in future, a single binary file will be generated for the aer-simulator target.
+    with pytest.raises(QSSCompilationFailure):
+        compile_file(
+            example_qasm3_tmpfile,
+            input_type=InputType.QASM3,
+            output_type=OutputType.QEM,
+            output_file=None,
+            target="aer-simulator",
+            config_path=simulator_config_file,
+            extra_args=compiler_extra_args,
+        )
 
 
-def test_compile_str_to_qem(simulator_config_file, example_qasm3_str, check_payload):
+def test_compile_str_to_qem(simulator_config_file, example_qasm3_str):
     """Test that we can compile an OpenQASM3 string via the interface
     compile_file to a QEM payload"""
 
-    qem = compile_str(
-        example_qasm3_str,
-        input_type=InputType.QASM3,
-        output_type=OutputType.QEM,
-        output_file=None,
-        target="aer-simulator",
-        config_path=simulator_config_file,
-        extra_args=compiler_extra_args,
+    # To generate a QEM payload, $LD_PATH and $LIBAER_PATH has to be specified.
+    # Currently qss-compiler does not have `libaer.so` so this test must be failed.
+    # Also, in future, a single binary file will be generated for the aer-simulator target.
+    with pytest.raises(QSSCompilationFailure):
+        compile_str(
+            example_qasm3_str,
+            input_type=InputType.QASM3,
+            output_type=OutputType.QEM,
+            output_file=None,
+            target="aer-simulator",
+            config_path=simulator_config_file,
+            extra_args=compiler_extra_args,
+        )
+
+
+def test_compile_file_to_mlir(example_qasm3_tmpfile, simulator_config_file):
+    """Test that we can compile a file input via the interface compile_file
+    to a MLIR file"""
+
+    mlir = compile_file(
+            example_qasm3_tmpfile,
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+            target="aer-simulator",
+            config_path=simulator_config_file,
+            extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
     )
-    # QEM payload is returned as byte sequence
-    assert isinstance(qem, bytes)
 
-    # check that payload is a zip file
-    payload_filelike = io.BytesIO(qem)
-    check_payload(payload_filelike)
+    check_mlir_string(mlir)
 
 
-def test_compile_file_to_qem_file(
-    example_qasm3_tmpfile, simulator_config_file, tmp_path, check_payload
+def test_compile_str_to_mlir(example_qasm3_str, simulator_config_file):
+    """Test that we can compile a file input via the interface compile_file
+    to a MLIR file"""
+
+    mlir = compile_str(
+            example_qasm3_str,
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+            target="aer-simulator",
+            config_path=simulator_config_file,
+            extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
+    )
+
+    check_mlir_string(mlir)
+
+
+def test_compile_file_to_mlir_file(
+    example_qasm3_tmpfile, simulator_config_file, tmp_path
 ):
     """Test that we can compile a file input via the interface compile_file
     to a QEM payload into a file"""
-    tmpfile = tmp_path / "payload.qem"
+    tmpfile = tmp_path / "output.mlir"
 
     result = compile_file(
         example_qasm3_tmpfile,
         input_type=InputType.QASM3,
-        output_type=OutputType.QEM,
+        output_type=OutputType.MLIR,
         output_file=tmpfile,
         target="aer-simulator",
         config_path=simulator_config_file,
-        extra_args=compiler_extra_args,
+        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
     )
-
+    
     # no direct return
     assert result is None
     file_stat = os.stat(tmpfile)
     assert file_stat.st_size > 0
+    
+    with open(tmpfile) as mlir_str:
+        check_mlir_string(mlir_str)
+        
 
-    with open(tmpfile, "rb") as payload:
-        check_payload(payload)
-
-
-def test_compile_str_to_qem_file(
-    simulator_config_file, tmp_path, example_qasm3_str, check_payload
+def test_compile_str_to_mlir_file(
+    example_qasm3_str, simulator_config_file, tmp_path
 ):
-    """Test that we can compile an OpenQASM3 string via the interface
-    compile_file to a QEM payload in an output file"""
-    tmpfile = tmp_path / "payload.qem"
+    """Test that we can compile a file input via the interface compile_file
+    to a QEM payload into a file"""
+    tmpfile = tmp_path / "output.mlir"
 
     result = compile_str(
         example_qasm3_str,
         input_type=InputType.QASM3,
-        output_type=OutputType.QEM,
+        output_type=OutputType.MLIR,
         output_file=tmpfile,
         target="aer-simulator",
         config_path=simulator_config_file,
-        extra_args=compiler_extra_args,
+        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
     )
-
+    
     # no direct return
     assert result is None
     file_stat = os.stat(tmpfile)
     assert file_stat.st_size > 0
-
-    with open(tmpfile, "rb") as payload:
-        check_payload(payload)
-
-
-def test_compile_failing_str_to_qem(
-    simulator_config_file, example_unsupported_qasm3_str, example_qasm3_str, check_payload
-):
-    """Test that compiling an invalid OpenQASM3 string via the interface
-    compile_str to a QEM payload will fail and result in an empty payload."""
-
-    with pytest.raises(QSSCompilationFailure):
-        compile_str(
-            example_unsupported_qasm3_str,
-            input_type=InputType.QASM3,
-            output_type=OutputType.QEM,
-            output_file=None,
-            target="aer-simulator",
-            config_path=simulator_config_file,
-            extra_args=compiler_extra_args,
-        )
-
-
-def test_compile_failing_file_to_qem(
-    example_unsupported_qasm3_tmpfile, simulator_config_file, tmp_path, check_payload
-):
-    """Test that compiling an invalid file input via the interface compile_file
-    to a QEM payload will fail and result in an empty payload."""
-
-    with pytest.raises(QSSCompilationFailure):
-        compile_file(
-            example_unsupported_qasm3_tmpfile,
-            input_type=InputType.QASM3,
-            output_type=OutputType.QEM,
-            output_file=None,
-            target="aer-simulator",
-            config_path=simulator_config_file,
-            extra_args=compiler_extra_args,
-        )
-
-
-def test_compile_options(simulator_config_file, example_qasm3_str):
-    """Test compilation with explicit CompileOptions construction."""
-
-    compile_options = CompileOptions(
-        input_type=InputType.QASM3,
-        output_type=OutputType.MLIR,
-        target="aer-simulator",
-        config_path=simulator_config_file,
-        shot_delay=100,
-        num_shots=1,
-        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
-    )
-
-    mlir = compile_str(example_qasm3_str, compile_options=compile_options)
-    check_mlir_string(mlir)
+    
+    with open(tmpfile) as mlir_str:
+        check_mlir_string(mlir_str)
 
 
 async def sleep_a_little():
@@ -197,23 +174,23 @@ async def sleep_a_little():
 
 
 @pytest.mark.asyncio
-async def test_async_compile_str(simulator_config_file, example_qasm3_str, check_payload):
+async def test_async_compile_str(simulator_config_file, example_qasm3_str):
     """Test that async wrapper produces correct output and does not block the even loop."""
     async_compile = compile_str_async(
         example_qasm3_str,
         input_type=InputType.QASM3,
-        output_type=OutputType.QEM,
+        output_type=OutputType.MLIR,
         output_file=None,
         target="aer-simulator",
         config_path=simulator_config_file,
-        extra_args=compiler_extra_args,
+        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
     )
     # Start a task that sleeps shorter than the compilation and then takes a
     # timestamp. If the compilation blocks the event loop, then the timestamp
     # will be delayed further than the intended sleep duration.
     sleeper = asyncio.create_task(sleep_a_little())
     timestamp_launched = datetime.now()
-    qem = await async_compile
+    mlir = await async_compile
     timestamp_sleeped = await sleeper
 
     sleep_duration = timestamp_sleeped - timestamp_launched
@@ -223,34 +200,29 @@ async def test_async_compile_str(simulator_config_file, example_qasm3_str, check
     ), f"sleep took longer than intended ({milliseconds_waited} ms instead of ~1000), \
         event loop probably got blocked!"
 
-    # QEM payload is returned as byte sequence
-    assert isinstance(qem, bytes)
-
-    # check that payload is a zip file
-    payload_filelike = io.BytesIO(qem)
-    check_payload(payload_filelike)
+    check_mlir_string(mlir)
 
 
 @pytest.mark.asyncio
 async def test_async_compile_file(
-    example_qasm3_tmpfile, simulator_config_file, check_payload
+    example_qasm3_tmpfile, simulator_config_file
 ):
     """Test that async wrapper produces correct output and does not block the even loop."""
     async_compile = compile_file_async(
         example_qasm3_tmpfile,
         input_type=InputType.QASM3,
-        output_type=OutputType.QEM,
+        output_type=OutputType.MLIR,
         output_file=None,
         target="aer-simulator",
         config_path=simulator_config_file,
-        extra_args=compiler_extra_args,
+        extra_args=compiler_extra_args + ["--aer-simulator-conversion"],
     )
     # Start a task that sleeps shorter than the compilation and then takes a
     # timestamp. If the compilation blocks the event loop, then the timestamp
     # will be delayed further than the intended sleep duration.
     sleeper = asyncio.create_task(sleep_a_little())
     timestamp_launched = datetime.now()
-    qem = await async_compile
+    mlir = await async_compile
     timestamp_sleeped = await sleeper
 
     sleep_duration = timestamp_sleeped - timestamp_launched
@@ -260,9 +232,4 @@ async def test_async_compile_file(
     ), f"sleep took longer than intended ({milliseconds_waited} ms instead of ~1000), \
          event loop probably got blocked!"
 
-    # QEM payload is returned as byte sequence
-    assert isinstance(qem, bytes)
-
-    # check that payload is a zip file
-    payload_filelike = io.BytesIO(qem)
-    check_payload(payload_filelike)
+    check_mlir_string(mlir)

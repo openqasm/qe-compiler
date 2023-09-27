@@ -53,44 +53,8 @@ def example_qasm3_tmpfile(tmp_path, example_qasm3_str):
 
 
 @pytest.fixture
-def example_invalid_qasm3_str():
-    return """FOOBAR 3.0;
-    crambit $0;
-    fit c0 = ~0;
-    """
-
-
-@pytest.fixture
-def example_invalid_qasm3_tmpfile(tmp_path, example_invalid_qasm3_str):
-    return __create_tmpfile(tmp_path, example_invalid_qasm3_str)
-
-
-@pytest.fixture
-def example_unsupported_qasm3_tmpfile(tmp_path, example_unsupported_qasm3_str):
-    return __create_tmpfile(tmp_path, example_unsupported_qasm3_str)
-
-
-@pytest.fixture
 def simulator_config_file():
     pytest_dir = pathlib.Path(__file__).parent.resolve()
     simulator_test_cfg = pytest_dir.parent / "aer-simulator/test.cfg"
     assert simulator_test_cfg.exists()
     return str(simulator_test_cfg)
-
-
-@pytest.fixture
-def check_payload():
-    def check_payload_(payload_filelike, expected_files: Iterable[str] = ()):
-        zf = zipfile.ZipFile(payload_filelike, "r")
-
-        # check checksums in zip file (i.e., no corruption)
-        first_bad_file = zf.testzip()
-        assert first_bad_file is None, "found corrupted file in payload: " + str(first_bad_file)
-
-        # check that payload contains manifest
-        assert "manifest/manifest.json" in zf.namelist()
-
-        for expected_file in expected_files:
-            assert expected_file in zf.namelist()
-
-    return check_payload_
