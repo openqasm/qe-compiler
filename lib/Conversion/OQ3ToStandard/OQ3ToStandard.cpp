@@ -346,7 +346,7 @@ struct RemoveConvertedNilCastsPattern : public OQ3ToStandardConversion<CastOp> {
 
 }; // struct RemoveConvertedNilCastsPattern
 
-struct FloatPattern : public OQ3ToStandardConversion<CastOp> {
+struct CastFromFloatConstPattern : public OQ3ToStandardConversion<CastOp> {
   using OQ3ToStandardConversion<CastOp>::OQ3ToStandardConversion;
 
   LogicalResult
@@ -362,12 +362,8 @@ struct FloatPattern : public OQ3ToStandardConversion<CastOp> {
       return failure();
 
     rewriter.replaceOp(op, {adaptor.arg()});
-    // rewriter.replaceOpWithNewOp<quir::ConstantOp>(op,
-    //   AngleAttr::get(rewriter.getContext(),
-    //   rewriter.getType<AngleType>(floatAttr.getType().getIntOrFloatBitWidth()),
-    //                  floatAttr.getValue()));
     return success();
-  } // FloatPattern
+  } // CastFromFloatConstPattern
 
 }; // struct RemoveConvertedNilCastsPattern
 
@@ -445,7 +441,7 @@ void oq3::populateOQ3ToStandardConversionPatterns(
       CastIndexToIntPattern,
       RemoveConvertedNilCastsPattern,
       RemoveI1ToCBitCastsPattern,
-      FloatPattern,
+      CastFromFloatConstPattern,
       WideningIntCastsPattern>(patterns.getContext(), typeConverter);
   // clang-format on
 }
