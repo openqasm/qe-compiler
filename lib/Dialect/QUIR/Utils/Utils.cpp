@@ -350,7 +350,7 @@ Duration::parseDuration(mlir::quir::ConstantOp &duration) {
 
 llvm::Expected<Duration>
 Duration::parseDuration(const std::string &durationStr) {
-  std::regex re("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
+  static std::regex re("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
   std::smatch m;
   std::regex_match(durationStr, m, re);
   if (m.size() != 3)
