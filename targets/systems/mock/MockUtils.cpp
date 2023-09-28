@@ -22,10 +22,10 @@
 
 #include <mlir/IR/BuiltinOps.h>
 
-using namespace qssc::targets::mock;
+using namespace qssc::targets::systems::mock;
 using namespace mlir;
 
-auto qssc::targets::mock::getControllerModule(ModuleOp topModuleOp)
+auto qssc::targets::systems::mock::getControllerModule(ModuleOp topModuleOp)
     -> ModuleOp {
   ModuleOp retOp = nullptr;
   topModuleOp->walk([&](ModuleOp walkOp) {
@@ -39,7 +39,7 @@ auto qssc::targets::mock::getControllerModule(ModuleOp topModuleOp)
   return retOp;
 }
 
-auto qssc::targets::mock::getActuatorModules(ModuleOp topModuleOp)
+auto qssc::targets::systems::mock::getActuatorModules(ModuleOp topModuleOp)
     -> std::vector<ModuleOp> {
   std::vector<ModuleOp> retVec;
   topModuleOp->walk([&](ModuleOp walkOp) {
