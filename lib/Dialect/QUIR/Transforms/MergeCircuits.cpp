@@ -159,6 +159,12 @@ struct BarrierAndCircuitPattern : public OpRewritePattern<BarrierOp> {
   LogicalResult matchAndRewrite(BarrierOp barrierOp,
                                 PatternRewriter &rewriter) const override {
 
+    // check for circuit op to merge with after moving barrier
+    auto prevCallCircuitOp =
+        prevQuantumOpOrNullOfType<CallCircuitOp>(barrierOp);
+    if (!prevCallCircuitOp)
+      return failure();
+
     auto callCircuitOp =
         getNextOpAndCompareOverlap<BarrierOp, CallCircuitOp>(barrierOp);
     if (!callCircuitOp.hasValue())
@@ -184,7 +190,14 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
     if (!barrierOp.hasValue())
       return failure();
 
-    barrierOp.getValue().getOperation()->moveBefore(callCircuitOp);
+    auto *barrierOperation = barrierOp.getValue().getOperation();
+    // check for circuit op to merge with
+    auto nextCallCircuitOp =
+        nextQuantumOpOrNullOfType<CallCircuitOp>(barrierOperation);
+    if (!nextCallCircuitOp)
+      return failure();
+
+    barrierOperation->moveBefore(callCircuitOp);
 
     return success();
   } // matchAndRewrite
