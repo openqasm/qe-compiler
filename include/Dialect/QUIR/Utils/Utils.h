@@ -96,7 +96,12 @@ llvm::Optional<Operation *> nextQuantumOpOrNull(Operation *op);
 /// it is of type OpType, otherwise return null
 // TODO: Should be replaced by an analysis compatable struct.
 template <class OpType>
-llvm::Optional<OpType> nextQuantumOpOrNullOfType(Operation *op);
+llvm::Optional<OpType> nextQuantumOpOrNullOfType(Operation *op) {
+  auto nextOperation = nextQuantumOpOrNull(op);
+  if (nextOperation && isa<OpType>(*nextOperation))
+    return dyn_cast<OpType>(*nextOperation);
+  return llvm::None;
+}
 
 /// Get the previous Op that has the CPTPOp or UnitaryOp trait, or return null
 /// if none found
@@ -107,7 +112,12 @@ llvm::Optional<Operation *> prevQuantumOpOrNull(Operation *op);
 /// it if it is of type OpType, otherwise return null
 // TODO: Should be replaced by an analysis compatable struct.
 template <class OpType>
-llvm::Optional<OpType> prevQuantumOpOrNullOfType(Operation *op);
+llvm::Optional<OpType> prevQuantumOpOrNullOfType(Operation *op) {
+  auto prevOperation = prevQuantumOpOrNull(op);
+  if (prevOperation && isa<OpType>(*prevOperation))
+    return dyn_cast<OpType>(*prevOperation);
+  return llvm::None;
+}
 
 /// Get the next Op that has the CPTPOp or UnitaryOp trait, or is control flow
 /// (has the RegionBranchOpInterface::Trait), or return null if none found
