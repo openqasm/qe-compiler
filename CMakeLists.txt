@@ -45,8 +45,42 @@ endif()
 
 enable_language(C CXX ASM)
 
+# Find a suitable version of Python3 higher than 3.8.
+set(PYTHON_VERSIONS 3.9;3.10;3.11;3.12;3.13)
+set(GOOD_PYTHON_FOUND FALSE)
+
+foreach(X IN LISTS PYTHON_VERSIONS)
+  message(STATUS "Searching for Python Version ${X} ...")
+
+  set(Python3_REQUIRED_VERSION ${X} EXACT)
+  find_package(Python3 ${X} EXACT QUIET COMPONENTS Interpreter OPTIONAL_COMPONENTS Development)
+
+  if (${Python3_VERSION_MINOR} LESS 9)
+    message(STATUS "Minor Version ${Python3_VERSION_MINOR} not a candidate.")
+    set(GOOD_PYTHON_FOUND FALSE)
+    continue()
+  else()
+    if (NOT ${Python3_Interpreter_FOUND})
+      message(STATUS "Could not find a Python Interpreter for Version ${X}")
+      set(GOOD_PYTHON_FOUND FALSE)
+      continue()
+    else()
+      set(GOOD_PYTHON_FOUND TRUE)
+    endif()
+  endif()
+
+  if (${Python3_FOUND} AND ${Python3_Interpreter_FOUND})
+    message(STATUS "Found Python Version ${Python3_VERSION}.")
+    set(GOOD_PYTHON_FOUND TRUE)
+    break()
+  endif()
+endforeach()
+
+if (NOT ${GOOD_PYTHON_FOUND})
+  message(FATAL_ERROR "Could not find a suitable version of Python.")
+endif()
+
 # Find external packages
-find_package(Python COMPONENTS Interpreter Development)
 find_package(qasm REQUIRED)
 find_package(mpc REQUIRED)
 find_package(mpfr REQUIRED)
