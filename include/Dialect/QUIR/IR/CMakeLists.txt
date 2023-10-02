@@ -17,7 +17,7 @@ set(LLVM_TARGET_DEFINITIONS QUIR.td)
 mlir_tablegen(QUIRAttributes.h.inc -gen-attrdef-decls -attrdefs-dialect=quir)
 mlir_tablegen(QUIRAttributes.cpp.inc -gen-attrdef-defs -attrdefs-dialect=quir)
 
-set(LLVM_TARGET_DEFINITIONS QUIREnums.td)
+set(LLVM_TARGET_DEFINITIONS QUIR.td)
 mlir_tablegen(QUIREnums.h.inc -gen-enum-decls)
 mlir_tablegen(QUIREnums.cpp.inc -gen-enum-defs)
 

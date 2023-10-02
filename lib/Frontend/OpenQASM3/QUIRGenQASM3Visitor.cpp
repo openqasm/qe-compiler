@@ -176,7 +176,7 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
 
   auto ssa = circuitParentBuilder.create<quir::ConstantOp>(
       location,
-      DurationAttr::get(builder.getContext(), builder.getType<DurationType>(),
+      DurationAttr::get(builder.getContext(), builder.getType<DurationType>(TimeUnits::dt),
                         durationString +
                             getDurationUnitShortName(durationUnit).str()));
   ssaOtherValues.push_back(ssa);
@@ -230,7 +230,7 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
     // Add the shot delay to all qubits
     auto duration = builder.create<quir::ConstantOp>(
         initialLocation,
-        DurationAttr::get(builder.getContext(), builder.getType<DurationType>(),
+        DurationAttr::get(builder.getContext(), builder.getType<DurationType>(TimeUnits::dt),
                           shotDelay));
     builder.create<DelayOp>(initialLocation, duration, ValueRange({}));
   }

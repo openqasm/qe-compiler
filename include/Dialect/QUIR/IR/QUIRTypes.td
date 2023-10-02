@@ -17,6 +17,8 @@
 #ifndef QUIR_TYPES
 #define QUIR_TYPES
 
+include "Dialect/QUIR/IR/QUIREnums.td"
+
 include "mlir/IR/BuiltinTypeInterfaces.td"
 include "mlir/IR/OpBase.td"
 
@@ -60,11 +62,17 @@ def QUIR_AngleType : QUIR_Type<"Angle", "angle"> {
     let genVerifyDecl = 1;
 }
 
+
+
 def QUIR_DurationType : QUIR_Type<"Duration", "duration"> {
-    let summary = "represents a duration of time as a string w/ specified units.";
+    let summary = "represents a duration of time.";
     let description = [{
-        A QUIR duration expresses timing.
+        A QUIR duration type.
      }];
+
+    let parameters = (ins "TimeUnits":$units);
+
+    let assemblyFormat = "`<` $units `>`";
 }
 
 def QUIR_StretchType : QUIR_Type<"Stretch", "stretch"> {

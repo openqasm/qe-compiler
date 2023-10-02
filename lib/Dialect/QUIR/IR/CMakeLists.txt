@@ -12,6 +12,7 @@
 
 add_mlir_dialect_library(MLIRQUIRDialect
         QUIRAttributes.cpp
+        QUIREnums.cpp
         QUIRDialect.cpp
         QUIRInterfaces.cpp
         QUIROps.cpp

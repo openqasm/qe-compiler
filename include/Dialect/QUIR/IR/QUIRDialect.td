@@ -57,11 +57,4 @@ class QUIR_Attr<string name, string attrMnemonic, list<Trait> traits = []>
   let mnemonic = attrMnemonic;
 }
 
-include "Dialect/QUIR/IR/QUIREnums.td"
-include "Dialect/QUIR/IR/QUIRTypes.td"
-include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
-include "Dialect/QUIR/IR/QUIRAttributes.td"
-include "Dialect/QUIR/IR/QUIRTraits.td"
-include "Dialect/QUIR/IR/QUIROps.td"
-
 #endif // QUIR_DIALECT

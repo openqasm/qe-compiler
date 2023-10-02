@@ -21,6 +21,7 @@
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
 #include "llvm/ADT/TypeSwitch.h"
@@ -47,14 +48,6 @@ struct FieldParser<
   }
 };
 } // namespace mlir
-
-//===----------------------------------------------------------------------===//
-// Table generated enum method definitions
-//===----------------------------------------------------------------------===//
-
-
-#define GET_ENUM_CLASSES
-#include "Dialect/QUIR/IR/QUIREnums.cpp.inc"
 
 //===----------------------------------------------------------------------===//
 // Table generated attribute method definitions
