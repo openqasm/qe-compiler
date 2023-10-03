@@ -143,10 +143,10 @@ static llvm::cl::opt<enum Action> emitAction(
     llvm::cl::values(clEnumValN(GenQEM, "qem",
                                 "generate a quantum executable module (qem) "
                                 "for execution on hardware")),
-    llvm::cl::values(
-        clEnumValN(GenQEQEM, "qe-qem",
-                   "generate a target-specific quantum executable module (qem) "
-                   "for execution on hardware")));
+    llvm::cl::values(clEnumValN(
+        GenQEQEM, "qe-qem",
+        "generate a target-specific quantum executable module (qeqem) "
+        "for execution on hardware")));
 
 namespace qss {
 enum FileExtension { None, AST, ASTPRETTY, QASM, QOBJ, MLIR, WMEM, QEM, QEQEM };
@@ -555,13 +555,21 @@ compile_(int argc, char const **argv, std::string *outputString,
   auto outputFile = mlir::openOutputFile(outputFilename, &errorMessage);
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
+  if (emitAction == Action::GenQEQEM && !config.targetName.has_value())
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "Unsupported target-specific payload: no target");
   if (emitAction == Action::GenQEM || emitAction == Action::GenQEQEM) {
     const std::filesystem::path payloadPath(outputFilename.c_str());
     const std::string fNamePrefix = payloadPath.stem();
     const auto payloadName =
-        (emitAction == Action::GenQEM) ? "ZIP" : config.targetName.value_or("");
+        (emitAction == Action::GenQEM) ? "ZIP" : config.targetName.value();
     auto payloadInfo =
         qssc::payload::registry::PayloadRegistry::lookupPluginInfo(payloadName);
+    if (payloadInfo == llvm::None)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "Unsupported target-specific payload: " +
+                                         payloadName);
     if (outputFilename == "-") {
       payload = std::move(
           payloadInfo.getValue()->createPluginInstance(llvm::None).get());
