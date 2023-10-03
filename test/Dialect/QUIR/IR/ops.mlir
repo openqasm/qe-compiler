@@ -92,21 +92,21 @@ func @quir_switch (%flag: i32) -> (i32) {
 
 // CHECK-LABEL: func @quir_durations()
 func @quir_durations () {
-    %duration_dt0 = quir.constant #quir.duration<"10dt" : !quir.duration<dt>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<"10dt" : !quir.duration<dt>>
-    %duration_dt1 = quir.constant #quir.duration<"10.0dt" : !quir.duration<dt>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<"10.0dt" : !quir.duration<dt>>
-    %duration_s = quir.constant #quir.duration<"10.0s" : !quir.duration<s>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<"10.0s" : !quir.duration<s>>
-    %duration_ms = quir.constant #quir.duration<"10.0ms" : !quir.duration<ms>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<"10.0ms" : !quir.duration<ms>>
-    %duration_us = quir.constant #quir.duration<"10.0us" : !quir.duration<us>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<"10.0us" : !quir.duration<us>>
-    %duration_ns = quir.constant #quir.duration<"10.0ns" : !quir.duration<ns>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<"10.0ns" : !quir.duration<ns>>
-    %duration_ps = quir.constant #quir.duration<"10.0ps" : !quir.duration<ps>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<"10.0ps" : !quir.duration<ps>>
-    %duration_fs = quir.constant #quir.duration<"10.0fs" : !quir.duration<fs>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<"10.0fs" : !quir.duration<fs>>
+    %duration_dt0 = quir.constant #quir.duration<10 : !quir.duration<dt>>
+    // CHECK: {{.*}} = quir.constant #quir.duration<10 : !quir.duration<dt>>
+    %duration_dt1 = quir.constant #quir.duration<10.0 : !quir.duration<dt>>
+    // CHECK: {{.*}} = quir.constant #quir.duration<10.0 : !quir.duration<dt>>
+    %duration_s = quir.constant #quir.duration<10.0 : !quir.duration<s>>
+    // CHECK: {{.*}} = quir.constant #quir.duration<10.0 : !quir.duration<s>>
+    %duration_ms = quir.constant #quir.duration<10.0 : !quir.duration<ms>>
+    // CHECK: {{.*}} = quir.constant #quir.duration<10.0 : !quir.duration<ms>>
+    %duration_us = quir.constant #quir.duration<10.0 : !quir.duration<us>>
+    // CHECK: {{.*}} = quir.constant #quir.duration<10.0 : !quir.duration<us>>
+    %duration_ns = quir.constant #quir.duration<10.0 : !quir.duration<ns>>
+    // CHECK: {{.*}} = quir.constant #quir.duration<10.0 : !quir.duration<ns>>
+    %duration_ps = quir.constant #quir.duration<10.0 : !quir.duration<ps>>
+    // CHECK: {{.*}} = quir.constant #quir.duration<10.0 : !quir.duration<ps>>
+    %duration_fs = quir.constant #quir.duration<10.0 : !quir.duration<fs>>
+    // CHECK: {{.*}} = quir.constant #quir.duration<10.0 : !quir.duration<fs>>
     return
 }

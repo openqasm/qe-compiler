@@ -46,15 +46,22 @@ def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle"> {
 def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
   let summary = "A duration of time";
   let description = [{
-    Duration attributes represent OpenQASM 3.0 durations, which are lengths of
-    time. They are represented by a string containing a float literal and unit
-    specifiers. Valid units are s, ms, ns, us, and dt.
+    Duration attributes represent a duration of time.
+    These are represented by a floating point value and a duration
+    units type.
+
+    Example:
+      ```mlir
+        // Defaults to units at the scheduling rate (dt)
+        %duration_dt = quir.constant #quir.duration<10 : !quir.duration>
+        %duration_s = quir.constant #quir.duration<3.14 : !quir.duration<s>>
+      ```
   }];
 
   let parameters = (ins AttributeSelfTypeParameter<"">:$type,
-                        StringRefParameter<"the duration">:$durationString);
+                        "double":$duration);
 
-  let assemblyFormat = "`<` $durationString `:` $type `>`";
+  let assemblyFormat = "`<` $duration `:` $type `>`";
 
   let extraClassDeclaration = [{
         Duration getDuration();

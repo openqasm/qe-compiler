@@ -25,6 +25,8 @@ include "mlir/IR/EnumAttr.td"
 def TimeUnits : I32EnumAttr<
     "TimeUnits", "time units enum",
     [
+      // dt is the "scheduling rate" of the target system
+      // ie., the smallest step of time exposed.
       I32EnumAttrCase<"dt", 0>,
       I32EnumAttrCase<"s", 1>,
       I32EnumAttrCase<"ms", 2>,
