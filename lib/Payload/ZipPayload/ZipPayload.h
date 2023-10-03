@@ -49,6 +49,7 @@ public:
   void writeZip(llvm::raw_ostream &stream);
   // write all files in plaintext to the dir named dirName
   void writePlain(const std::string &dirName = ".");
+  void addFile(llvm::StringRef filename, llvm::StringRef str) override;
 
 private:
   // creates a manifest json file

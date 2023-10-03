@@ -62,6 +62,7 @@ public:
   // write all files in plaintext to the stream
   virtual void writePlain(std::ostream &stream) = 0;
   virtual void writePlain(llvm::raw_ostream &stream) = 0;
+  virtual void addFile(llvm::StringRef filename, llvm::StringRef str) = 0;
 
   const std::string &getName() const { return name; }
   const std::string &getPrefix() const { return prefix; }

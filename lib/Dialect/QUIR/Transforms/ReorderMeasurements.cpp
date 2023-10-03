@@ -20,16 +20,22 @@
 
 #include "Dialect/QUIR/Transforms/ReorderMeasurements.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/Support/LLVM.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/Support/Casting.h>
 #include <llvm/Support/Debug.h>
 
 #include <algorithm>
+#include <iterator>
+#include <vector>
 
 #define DEBUG_TYPE "QUIRReorderMeasurements"
 
@@ -37,6 +43,59 @@ using namespace mlir;
 using namespace mlir::quir;
 
 namespace {
+
+using MoveListVec = std::vector<Operation *>;
+
+bool mayMoveVariableLoadOp(MeasureOp measureOp,
+                           oq3::VariableLoadOp variableLoadOp,
+                           MoveListVec &moveList);
+bool mayMoveCastOp(MeasureOp measureOp, oq3::CastOp castOp,
+                   MoveListVec &moveList);
+
+bool mayMoveVariableLoadOp(MeasureOp measureOp,
+                           oq3::VariableLoadOp variableLoadOp,
+                           MoveListVec &moveList) {
+  // find corresponding variable assign
+  // move variableLoad if the assign is before the measure
+  bool moveVariableLoadOp = true;
+  auto *currentBlock = variableLoadOp->getBlock();
+  currentBlock->walk([&](oq3::VariableAssignOp assignOp) {
+    if (assignOp.variable_name() == variableLoadOp.variable_name()) {
+      moveVariableLoadOp = assignOp->isBeforeInBlock(measureOp);
+      if (!moveVariableLoadOp) {
+        auto assignCastOp =
+            dyn_cast<oq3::CastOp>(assignOp.assigned_value().getDefiningOp());
+        if (assignCastOp)
+          moveVariableLoadOp = mayMoveCastOp(measureOp, assignCastOp, moveList);
+      }
+      return WalkResult::interrupt();
+    }
+    return WalkResult::advance();
+  });
+  if (moveVariableLoadOp)
+    moveList.push_back(variableLoadOp);
+  return moveVariableLoadOp;
+}
+
+bool mayMoveCastOp(MeasureOp measureOp, oq3::CastOp castOp,
+                   MoveListVec &moveList) {
+  bool moveCastOp = false;
+  auto variableLoadOp =
+      dyn_cast<oq3::VariableLoadOp>(castOp.arg().getDefiningOp());
+  if (variableLoadOp)
+    moveCastOp = mayMoveVariableLoadOp(measureOp, variableLoadOp, moveList);
+  auto castMeasureOp = dyn_cast<MeasureOp>(castOp.arg().getDefiningOp());
+  if (castMeasureOp)
+    moveCastOp = ((castMeasureOp != measureOp) &&
+                  (castMeasureOp->isBeforeInBlock(measureOp) ||
+                   castMeasureOp->getBlock() != castOp->getBlock()));
+
+  if (moveCastOp)
+    moveList.push_back(castOp);
+
+  return moveCastOp;
+}
+
 // This pattern matches on a measure op and a non-measure op and moves the
 // non-measure op to occur earlier lexicographically if that does not change
 // the topological ordering
@@ -47,6 +106,9 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
   LogicalResult matchAndRewrite(MeasureOp measureOp,
                                 PatternRewriter &rewriter) const override {
     bool anyMove = false;
+
+    MoveListVec moveList;
+
     do {
       // Accumulate qubits in measurement set
       std::set<uint> currQubits = measureOp.getOperatedQubits();
@@ -82,6 +144,8 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
       if (QubitOpInterface::qubitSetsOverlap(currQubits, nextQubits))
         break;
 
+      moveList.clear();
+
       // Make sure that the nextOp doesn't use an SSA value defined between
       // the measureOp and nextOp
       Block *measBlock = measureOp->getBlock();
@@ -90,6 +154,30 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
         if (Operation *defOp = operand.getDefiningOp())
           if (defOp->getBlock() == measBlock &&
               measureOp->isBeforeInBlock(defOp)) {
+
+            bool moveOps = false;
+
+            // if the defining op is a variable load attempt to move it above
+            // the measurement
+            auto variableLoadOp = dyn_cast<oq3::VariableLoadOp>(defOp);
+            if (variableLoadOp) {
+              moveOps =
+                  mayMoveVariableLoadOp(measureOp, variableLoadOp, moveList);
+            }
+
+            auto castOp = dyn_cast<oq3::CastOp>(defOp);
+            if (castOp)
+              moveOps = mayMoveCastOp(measureOp, castOp, moveList);
+
+            if (moveOps) {
+              Operation *mbOp = measureOp.getOperation();
+              for (auto op = moveList.rbegin(); op != moveList.rend(); ++op) {
+                (*op)->moveBefore(mbOp);
+                mbOp = *op;
+              }
+              continue;
+            }
+
             interveningValue = true;
             break;
           }

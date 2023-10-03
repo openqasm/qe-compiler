@@ -250,17 +250,6 @@ llvm::Optional<Operation *> nextQuantumOpOrNull(Operation *op) {
   return llvm::None;
 } // nextQuantumOpOrNull
 
-template <class OpType>
-llvm::Optional<OpType> nextQuantumOpOrNullOfType(Operation *op) {
-  auto nextOperation = nextQuantumOpOrNull(op);
-  if (nextOperation && isa<OpType>(*nextOperation))
-    return dyn_cast<OpType>(*nextOperation);
-  return llvm::None;
-}
-
-// explicit template instantiation
-template llvm::Optional<MeasureOp> nextQuantumOpOrNullOfType(Operation *op);
-
 llvm::Optional<Operation *> prevQuantumOpOrNull(Operation *op) {
   Operation *curOp = op;
   while (Operation *prevOp = curOp->getPrevNode()) {
@@ -274,17 +263,6 @@ llvm::Optional<Operation *> prevQuantumOpOrNull(Operation *op) {
   }
   return llvm::None;
 } // prevQuantumOpOrNull
-
-template <class OpType>
-llvm::Optional<OpType> prevQuantumOpOrNullOfType(Operation *op) {
-  auto prevOperation = prevQuantumOpOrNull(op);
-  if (prevOperation && isa<OpType>(*prevOperation))
-    return dyn_cast<OpType>(*prevOperation);
-  return llvm::None;
-}
-
-// explicit template instantiation
-template llvm::Optional<MeasureOp> prevQuantumOpOrNullOfType(Operation *op);
 
 llvm::Optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op) {
   Operation *curOp = op;
