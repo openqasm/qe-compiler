@@ -91,6 +91,7 @@ message(STATUS "QSS Compiler Version: ${QSSC_VERSION}")
 
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 # Compiler options
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
