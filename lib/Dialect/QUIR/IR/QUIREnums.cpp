@@ -17,25 +17,10 @@
 #include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 
-#include <regex>
-
 using namespace mlir;
 using namespace mlir::quir;
 
-//===----------------------------------------------------------------------===//
-// TimeUnits
-//===----------------------------------------------------------------------===//
-
 namespace mlir::quir {
-    llvm::Optional<TimeUnits> symbolizeTimeUnits(uint32_t val) {
-        switch (val) {
-            case 0:
-        }
-    }
-
-    llvm::StringRef stringifyTimeUnits(TimeUnits units) {
-
-    }
 
 } // namespace mlir::quir
 

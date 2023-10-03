@@ -50,12 +50,4 @@ template <> struct mlir::FieldParser<quir::TimeUnits> {
 } // namespace mlir
 
 
-namespace mlir::quir {
-
-llvm::Optional<TimeUnits> symbolizeTimeUnits(uint32_t);
-llvm::StringRef stringifyTimeUnits(TimeUnits);
-
-
-} // namespace mlir::quir
-
 #endif // QUIR_QUIRENUMS_H
