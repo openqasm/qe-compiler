@@ -70,7 +70,10 @@ def QUIR_DurationType : QUIR_Type<"Duration", "duration"> {
         A QUIR duration type.
      }];
 
-    let parameters = (ins "TimeUnits":$units);
+    // As best I an tell this is undocumented in LLVM 14.
+    // Based on studying the implementation of EnumAttr
+    // https://github.com/llvm/llvm-project/blob/f28c006a5895fc0e329fe15fead81e37457cb1d1/mlir/include/mlir/IR/EnumAttr.td#L86
+    let parameters = (ins EnumParameter<TimeUnits>:$units);
 
     let assemblyFormat = "`<` $units `>`";
 }

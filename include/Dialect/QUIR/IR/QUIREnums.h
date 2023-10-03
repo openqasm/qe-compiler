@@ -29,24 +29,6 @@
 
 namespace mlir {
 
-AsmPrinter &operator<<(AsmPrinter &printer, quir::TimeUnits param) {
-  printer << stringifyEnum(param);
-  return printer;
-}
-
-template <> struct mlir::FieldParser<quir::TimeUnits> {
-  static FailureOr<quir::TimeUnits> parse(AsmParser &parser) {
-    std::string unit;
-    if (parser.parseString(&unit))
-      return failure();
-
-    if (auto unitEnum = quir::symbolizeEnum<quir::TimeUnits>(unit))
-        return unitEnum.getValue();
-    return failure();
-  }
-};
-
-
 } // namespace mlir
 
 
