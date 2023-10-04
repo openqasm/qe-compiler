@@ -298,30 +298,27 @@ bool isQuantumOp(Operation *op) {
   return false;
 }
 
-llvm::Expected<Duration> parseDuration(mlir::quir::DelayOp &delayOp) {
+llvm::Expected<mlir::quir::DurationAttr> getDuration(mlir::quir::DelayOp &delayOp) {
   std::string durationStr;
   auto durationDeclare = delayOp.time().getDefiningOp<quir::ConstantOp>();
   if (durationDeclare) {
-    auto durAttr = durationDeclare.value().dyn_cast<quir::DurationAttr>();
-    durationStr = durAttr.getDurationString().str();
-  } else {
-    auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
-    auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
-        delayOp.time().getParentBlock()->getParentOp());
-    assert(circuitOp && "can only handler circuit arguments");
-    auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::DurationAttr>(
-        argNum, mlir::quir::getDurationAttrName());
-    durationStr = argAttr.getDurationString().str();
+    return durationDeclare.value().dyn_cast<quir::DurationAttr>();
   }
-  return Duration::parseDuration(durationStr);
+  auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
+  auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
+      delayOp.time().getParentBlock()->getParentOp());
+  assert(circuitOp && "can only handler circuit arguments");
+  auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::DurationAttr>(
+      argNum, mlir::quir::getDurationAttrName());
+  return argAttr;
 }
 
-llvm::Expected<Duration> parseDuration(mlir::quir::ConstantOp &duration) {
-  auto durAttr = duration.value().dyn_cast<DurationAttr>();
+llvm::Expected<mlir::quir::DurationAttr> getDuration(mlir::quir::ConstantOp &duration) {
+  auto durAttr = duration.value().dyn_cast<mlir::quir::DurationAttr>();
   if (!durAttr)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Expected a ConstantOp with a DurationAttr");
-  return Duration::parseDuration(durAttr.getDurationString().str());
+  return durAttr;
 }
 
 std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,

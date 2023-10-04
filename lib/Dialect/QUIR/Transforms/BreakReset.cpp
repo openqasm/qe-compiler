@@ -61,7 +61,7 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
     if (numIterations_ > 1 && delayCycles_ > 0) {
       constantDurationOp = rewriter.create<quir::ConstantOp>(
           resetOp.getLoc(), DurationAttr::get(rewriter.getContext(),
-                                              rewriter.getType<DurationType>(TimeUnits::dt), static_cast<double>(delayCycles_)));
+                                              rewriter.getType<DurationType>(TimeUnits::dt), rewriter.getF64FloatAttr(delayCycles_)));
     }
 
     // result of measurement in each iteration is number of qubits * i1

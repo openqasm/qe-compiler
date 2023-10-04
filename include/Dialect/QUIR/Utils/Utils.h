@@ -138,11 +138,11 @@ llvm::Optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op);
 /// \brief Check if the operation is a quantum operation
 bool isQuantumOp(Operation *op);
 
-/// Construct a Duration from a ConstantOp
-llvm::Expected<mlir::quir::Duration>
-parseDuration(mlir::quir::ConstantOp &duration);
-/// Construct a Duration from a DelayOp
-llvm::Expected<mlir::quir::Duration> parseDuration(mlir::quir::DelayOp &delayOp);
+/// Construct a DurationAttr from a ConstantOp
+llvm::Expected<mlir::quir::DurationAttr>
+getDuration(mlir::quir::ConstantOp &duration);
+/// Construct a DurationAttr from a DelayOp
+llvm::Expected<mlir::quir::DurationAttr> getDuration(mlir::quir::DelayOp &delayOp);
 
 
 // get qubit id from the result of a measurement

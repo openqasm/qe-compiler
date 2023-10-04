@@ -54,20 +54,6 @@ static inline llvm::StringRef getDurationAttrName() {
   return "quir.durationValue";
 }
 
-/// Duration representation
-// Question: Can this be represented with MLIR more naturally?
-// TODO: This should be added to the DurationAttr
-struct Duration {
-  enum DurationUnit { dt, ns, us, ms, s };
-  double duration;
-  DurationUnit unit;
-
-  /// Construct a Duration from a string
-  static llvm::Expected<Duration> parseDuration(const std::string &durationStr);
-  /// Convert duration to cycles. dt is in SI (seconds).
-  Duration convertToCycles(double dt) const;
-};
-
 } // namespace mlir::quir
 
 #define GET_ATTRDEF_CLASSES

@@ -18,6 +18,7 @@
 #ifndef QUIR_ATTRIBUTES
 #define QUIR_ATTRIBUTES
 
+include "mlir/IR/BuiltinAttributes.td"
 include "mlir/IR/OpBase.td"
 
 def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle"> {
@@ -49,25 +50,16 @@ def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
     Duration attributes represent a duration of time.
     These are represented by a floating point value and a duration
     units type.
-
-    Example:
-      ```mlir
-        // Defaults to units at the scheduling rate (dt)
-        %duration_dt = quir.constant #quir.duration<10 : !quir.duration>
-        %duration_s = quir.constant #quir.duration<3.14 : !quir.duration<s>>
-      ```
   }];
 
   let parameters = (ins AttributeSelfTypeParameter<"">:$type,
-                        "double":$duration);
-
-  let assemblyFormat = "`<` $duration `:` $type `>`";
+                        "FloatAttr":$duration);
 
   let extraClassDeclaration = [{
-        Duration getDuration();
-        double getValue();
-        Duration::DurationUnit getUnits();
+        double getSchedulingCycles(const double dt);
     }];
+
+  let assemblyFormat = "`<` $duration `:` $type `>`";
 }
 
 def QUIR_InputParameterAttr : QUIR_Attr<"InputParameter", "inputParameter"> {

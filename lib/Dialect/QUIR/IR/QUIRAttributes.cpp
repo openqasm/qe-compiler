@@ -24,93 +24,33 @@
 using namespace mlir;
 using namespace mlir::quir;
 
-//===----------------------------------------------------------------------===//
-// Duration
-//===----------------------------------------------------------------------===//
+double mlir::quir::DurationAttr::getSchedulingCycles(const double dt){
+    double duration = getDuration().getValue().convertToDouble();
 
-std::regex durationRegex("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
+    auto type = getType().dyn_cast<DurationType>();
 
-llvm::Expected<Duration>
-Duration::parseDuration(const std::string &durationStr) {
-  std::smatch m;
-  std::regex_match(durationStr, m, durationRegex);
-  if (m.size() != 3)
-    return llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        llvm::Twine("Unable to parse duration from ") + durationStr);
-
-  double parsedDuration = std::stod(m[1]);
-  // Convert all units to lower case.
-  auto unitStr = m[2].str();
-  auto lowerUnitStr = llvm::StringRef(unitStr).lower();
-  DurationUnit parsedUnit;
-  if (lowerUnitStr == "") {
-    // Empty case is SI
-    parsedUnit = DurationUnit::s;
-  } else if (lowerUnitStr == "dt") {
-    parsedUnit = DurationUnit::dt;
-  } else if (lowerUnitStr == "ns") {
-    parsedUnit = DurationUnit::ns;
-  } else if (lowerUnitStr == "us") {
-    parsedUnit = DurationUnit::us;
-  } else if (lowerUnitStr == "ms") {
-    parsedUnit = DurationUnit::ms;
-  } else if (lowerUnitStr == "s") {
-    parsedUnit = DurationUnit::s;
-  } else {
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   llvm::Twine("Unknown duration unit ") +
-                                       unitStr);
-  }
-
-  return (Duration){.duration = parsedDuration, .unit = parsedUnit};
+    switch (type.getUnits()) {
+    case TimeUnits::dt:
+      return duration;
+      break;
+    case TimeUnits::fs:
+      return duration / (1e15 * dt);
+      break;
+    case TimeUnits::ps:
+      return duration / (1e12 * dt);
+      break;
+    case TimeUnits::ns:
+      return duration / (1e9 * dt);
+      break;
+    case TimeUnits::us:
+      return duration / (1e6 * dt);
+      break;
+    case TimeUnits::ms:
+      return duration / (1e3 * dt);
+      break;
+    case TimeUnits::s:
+      return duration / dt;
+      break;
+    }
 }
 
-Duration Duration::convertToCycles(double dt) const {
-  double convertedDuration;
-
-  assert(unit == DurationUnit::dt || unit == DurationUnit::ns ||
-         unit == DurationUnit::us || unit == DurationUnit::ms ||
-         unit == DurationUnit::s);
-
-  switch (unit) {
-  case DurationUnit::dt:
-    convertedDuration = duration;
-    break;
-  case DurationUnit::ns:
-    convertedDuration = duration / (1e9 * dt);
-    break;
-  case DurationUnit::us:
-    convertedDuration = duration / (1e6 * dt);
-    break;
-  case DurationUnit::ms:
-    convertedDuration = duration / (1e3 * dt);
-    break;
-  case DurationUnit::s:
-    convertedDuration = duration / dt;
-    break;
-  }
-  return {convertedDuration, DurationUnit::dt};
-}
-
-//===----------------------------------------------------------------------===//
-// DurationAttr
-//===----------------------------------------------------------------------===//
-
-
-Duration DurationAttr::getDuration() {
-  // TODO: Should not be unwrapping Expected here
-  auto durString = getDurationString().str();
-  auto result = Duration::parseDuration(durString);
-  if (auto E = result.takeError()) {
-    llvm::errs() << "Error parsing duration " << durString << "\n";
-    assert(false && "Error parsing duration");
-  }
-  return *result;
-}
-double DurationAttr::getValue() {
-  return getDuration().duration;
-}
-Duration::DurationUnit DurationAttr::getUnits() {
-  return getDuration().unit;
-}

@@ -18,6 +18,7 @@
 #define VISITOR_QUIR_GEN_VISITOR_H
 
 #include "Dialect/QUIR/IR/QUIRDialect.h"
+#include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
@@ -109,7 +110,7 @@ public:
                                            "Testing error")),
         varHandler(builder) {}
 
-  void initialize(uint numShots, const std::string &shotDelay);
+  void initialize(uint numShots, const double &shotDelay, const mlir::quir::TimeUnits &shotDelayUnits);
 
   void startCircuit(mlir::Location location);
   void finishCircuit();

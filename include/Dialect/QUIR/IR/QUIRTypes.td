@@ -68,6 +68,14 @@ def QUIR_DurationType : QUIR_Type<"Duration", "duration"> {
     let summary = "represents a duration of time.";
     let description = [{
         A QUIR duration type.
+
+        Example:
+            ```mlir
+                // Defaults to units at the scheduling rate (dt)
+                %duration_dt = quir.constant #quir.duration<10 : !quir.duration>
+                %duration_s = quir.constant #quir.duration<3.14 : !quir.duration<s>>
+            ```
+
      }];
 
     // As best I an tell this is undocumented in LLVM 14.

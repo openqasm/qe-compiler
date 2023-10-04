@@ -40,6 +40,7 @@
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
+#include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
@@ -147,22 +148,22 @@ QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
 }
 
 namespace {
-llvm::StringRef getDurationUnitShortName(const QASM::LengthUnit &durationUnit) {
+mlir::quir::TimeUnits getDurationTimeUnits(const QASM::LengthUnit &durationUnit) {
   switch (durationUnit) {
   case Nanoseconds:
-    return "ns";
+    return mlir::quir::TimeUnits::ns;
   case Microseconds:
-    return "us";
+    return mlir::quir::TimeUnits::us;
   case Milliseconds:
-    return "ms";
+    return mlir::quir::TimeUnits::ms;
   case Seconds:
-    return "s";
+    return mlir::quir::TimeUnits::s;
   case DT:
-    return "dt";
+    return mlir::quir::TimeUnits::dt;
   default:
-    llvm::errs() << "Unable to understand the Duration unit "
+    llvm::errs() << "Unable to understand the duration's time units of "
                  << QASM::PrintLengthUnit(durationUnit) << "\n";
-    llvm_unreachable("unhandled length unit");
+    llvm_unreachable("unhandled time unit");
   }
 }
 }; // anonymous namespace
@@ -171,20 +172,15 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
                                             uint64_t durationValue,
                                             const LengthUnit &durationUnit)
     -> Value {
-  std::string durationString = std::to_string(durationValue);
-  llvm::SmallString<32> buf;
-
   auto ssa = circuitParentBuilder.create<quir::ConstantOp>(
       location,
-      DurationAttr::get(builder.getContext(), builder.getType<DurationType>(TimeUnits::dt),
-                        durationString +
-                            getDurationUnitShortName(durationUnit).str()));
+      DurationAttr::get(builder.getContext(), builder.getType<DurationType>(getDurationTimeUnits(durationUnit)), builder.getF64FloatAttr(durationValue)));
   ssaOtherValues.push_back(ssa);
   return ssa;
 }
 
 void QUIRGenQASM3Visitor::initialize(uint numShots,
-                                     const std::string &shotDelay) {
+                                     const double &shotDelay, const mlir::quir::TimeUnits &shotDelayUnits) {
   Location initialLocation =
       mlir::FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
 
@@ -230,8 +226,8 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
     // Add the shot delay to all qubits
     auto duration = builder.create<quir::ConstantOp>(
         initialLocation,
-        DurationAttr::get(builder.getContext(), builder.getType<DurationType>(TimeUnits::dt),
-                          shotDelay));
+        DurationAttr::get(builder.getContext(), builder.getType<DurationType>(shotDelayUnits),
+                          builder.getF64FloatAttr(shotDelay)));
     builder.create<DelayOp>(initialLocation, duration, ValueRange({}));
   }
   // init shots even when there's no loop, so we always get a sync_trigger
