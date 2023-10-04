@@ -45,9 +45,9 @@ func @main() {
 
 // DELAYITER: quir.measure
 // DELAYITER-COUNT-3: scf.if
-// DELAYITER: quir.delay [[DURATION]], ([[QUBIT0]]) : !quir.duration, (!quir.qubit<1>) -> ()
-// DELAYITER: quir.delay [[DURATION]], ([[QUBIT1]]) : !quir.duration, (!quir.qubit<1>) -> ()
-// DELAYITER: quir.delay [[DURATION]], ([[QUBIT2]]) : !quir.duration, (!quir.qubit<1>) -> ()
+// DELAYITER: quir.delay [[DURATION]], ([[QUBIT0]]) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
+// DELAYITER: quir.delay [[DURATION]], ([[QUBIT1]]) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
+// DELAYITER: quir.delay [[DURATION]], ([[QUBIT2]]) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
 // DELAYITER: quir.measure
 // DELAYITER-COUNT-3: scf.if
 

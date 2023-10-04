@@ -47,9 +47,9 @@ func @test_qubit_op_interface (%cond : i1) -> () {
   quir.builtin_CX %q0, %q1 : !quir.qubit<1>, !quir.qubit<1>
   // CHECK: quir.builtin_CX {quir.operatedQubits = [0 : i32, 1 : i32]} {{.*}}, {{.*}} : !quir.qubit<1>, !quir.qubit<1>
 
-  %duration = quir.constant #quir.duration<20 : !quir.duration<ns>>
-  quir.delay %duration, (%q0) : !quir.duration, (!quir.qubit<1>) -> ()
-  // CHECK: quir.delay {quir.operatedQubits = [0 : i32]} {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
+  %duration = quir.constant #quir.duration<20.0 : !quir.duration<ns>>
+  quir.delay %duration, (%q0) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
+  // CHECK: quir.delay {quir.operatedQubits = [0 : i32]} {{.*}}, ({{.*}}) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
 
   qcs.delay_cycles (%q0) {time = 1 : i64} : (!quir.qubit<1>) -> ()
   // CHECK: qcs.delay_cycles({{.*}}) {quir.operatedQubits = [0 : i32], time = 1 : i64} : (!quir.qubit<1>) -> ()

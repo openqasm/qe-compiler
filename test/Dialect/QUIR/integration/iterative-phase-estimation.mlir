@@ -136,12 +136,12 @@ module {
     "quir.call_gate"(%q1_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     "quir.call_gate"(%q0_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     // duration a, b; // should be resolved to duration by this point
-    %duration_a = quir.constant #quir.duration<10 : !quir.duration<ns>>
-    %duration_b = quir.constant #quir.duration<20 : !quir.duration<ns>>
+    %duration_a = quir.constant #quir.duration<10.0 : !quir.duration<ns>>
+    %duration_b = quir.constant #quir.duration<20.0 : !quir.duration<ns>>
     // delay(a) %0;
     // delay(b) %1;
-    "quir.delay"(%duration_a, %q0_0) : (!quir.duration, !quir.qubit<1>) -> ()
-    "quir.delay"(%duration_b, %q1_0) : (!quir.duration, !quir.qubit<1>) -> ()
+    "quir.delay"(%duration_a, %q0_0) : (!quir.duration<ns>, !quir.qubit<1>) -> ()
+    "quir.delay"(%duration_b, %q1_0) : (!quir.duration<ns>, !quir.qubit<1>) -> ()
     // cx %0, %1;
     "quir.call_gate"(%q0_0, %q1_0) {callee = @gateCX} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     // phase(1.8125*pi) %1;
@@ -172,7 +172,7 @@ module {
     // duration cs;
     // delay(cs) %1;
     %duration_c = quir.constant #quir.duration<5 : !quir.duration<ns>>
-    "quir.delay"(%duration_c, %q1_0) : (!quir.duration, !quir.qubit<1>) -> ()
+    "quir.delay"(%duration_c, %q1_0) : (!quir.duration<ns>, !quir.qubit<1>) -> ()
     // cx %0, %1;
     "quir.call_gate"(%q0_0, %q1_0) {callee = @gateCX} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     // phase(1.625*pi) %1;  // mod 2*pi

@@ -103,10 +103,10 @@ module {
         %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
         // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
         %s2 = oq3.declare_stretch : !quir.stretch
-        // CHECK: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
-        "quir.delay"(%len1, %qb1) : (!quir.duration, !quir.qubit<1>) -> ()
-        // CHECK: quir.delay %{{.*}}, () : !quir.duration, () -> ()
-        "quir.delay"(%len1) : (!quir.duration) -> ()
+        // CHECK: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
+        "quir.delay"(%len1, %qb1) : (!quir.duration<ns>, !quir.qubit<1>) -> ()
+        // CHECK: quir.delay %{{.*}}, () : !quir.duration<ns>, () -> ()
+        "quir.delay"(%len1) : (!quir.duration<ns>) -> ()
         // CHECK: qcs.delay_cycles() {time = 1000 : i64} : () -> ()
         qcs.delay_cycles () {time = 1000 : i64} : () -> ()
         // CHECK: qcs.delay_cycles(%{{.*}}) {time = 1000 : i64} : (!quir.qubit<1>) -> ()
