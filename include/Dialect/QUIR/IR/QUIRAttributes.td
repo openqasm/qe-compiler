@@ -54,7 +54,7 @@ def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
     units type.
   }];
 
-  let parameters = (ins QUIR_DurationType:$type,
+  let parameters = (ins AttributeSelfTypeParameter<"", "DurationType">:$type,
                         "APFloat":$duration);
 
   let extraClassDeclaration = [{

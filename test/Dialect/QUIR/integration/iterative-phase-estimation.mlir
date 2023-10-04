@@ -171,7 +171,7 @@ module {
     "quir.call_gate"(%q0_0) {callee = @gateH} : (!quir.qubit<1>) -> ()
     // duration cs;
     // delay(cs) %1;
-    %duration_c = quir.constant #quir.duration<5 : !quir.duration<ns>>
+    %duration_c = quir.constant #quir.duration<5.0 : !quir.duration<ns>>
     "quir.delay"(%duration_c, %q1_0) : (!quir.duration<ns>, !quir.qubit<1>) -> ()
     // cx %0, %1;
     "quir.call_gate"(%q0_0, %q1_0) {callee = @gateCX} : (!quir.qubit<1>, !quir.qubit<1>) -> ()

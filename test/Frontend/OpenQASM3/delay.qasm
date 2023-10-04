@@ -23,33 +23,33 @@ OPENQASM 3.0;
 qubit $0;
 qubit $1;
 
-// MLIR-CIRCUITS: quir.circuit @circuit_0(%arg0: !quir.duration, %arg1: !quir.qubit<1>, %arg2: !quir.qubit<1>, %arg3: !quir.duration<ns>, %arg4: !quir.duration<us>, %arg5: !quir.duration<ms>, %arg6: !quir.duration<dt>, %arg7: !quir.duration<ns>) {
-// MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.duration<5.000000e-01 : <ns>>
-// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.circuit @circuit_0(%arg0: !quir.duration<ns>, %arg1: !quir.qubit<1>, %arg2: !quir.qubit<1>, %arg3: !quir.duration<ns>, %arg4: !quir.duration<us>, %arg5: !quir.duration<ms>, %arg6: !quir.duration<dt>, %arg7: !quir.duration<ns>) {
+// MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.duration<5.000000e+00 : <ns>>
+// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=5, unit=Nanoseconds, name=t))
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=t, qubit=IdentifierNode(name=$0, bits=1)))
 duration t = 5ns;
 delay[t] $0;
 
 // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <ns>>
-// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=10Nanoseconds, qubit=IdentifierNode(name=$1, bits=1), ))
 delay[10ns] $1;
 // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.duration<2.000000e+01 : <us>>
-// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration<us>, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=20Microseconds, qubit=IdentifierNode(name=$1, bits=1), ))
 delay[20us] $1;
 // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.duration<3.000000e+01 : <ms>>
-// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration<ms>, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=30Milliseconds, qubit=IdentifierNode(name=$1, bits=1), ))
 delay[30ms] $1;
 // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.duration<4.000000e+01 : <dt>>
-// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR: quir.delay {{.*}}, ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=40DT, qubit=IdentifierNode(name=$1, bits=1), ))
 delay[40dt] $1;
 
 // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <ns>>
-// MLIR: quir.delay {{.*}}, ({{.*}}, {{.*}}) : !quir.duration, (!quir.qubit<1>, !quir.qubit<1>) -> ()
+// MLIR: quir.delay {{.*}}, ({{.*}}, {{.*}}) : !quir.duration<ns>, (!quir.qubit<1>, !quir.qubit<1>) -> ()
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=10Nanoseconds, qubit=IdentifierNode(name=$0, bits=1), IdentifierNode(name=$1, bits=1), ))
 delay [10ns] $0, $1;
 // MLIR-CIRCUITS: quir.return
@@ -68,7 +68,7 @@ delay[a] $0, $1;
 
 //MLIR-CIRCUITS: quir.return
 //MLIR-CIRCUITS: func @main() -> i32 {
-// MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<5.000000e-01 : <ns>>
+// MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<5.000000e+00 : <ns>>
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <ns>>
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<2.000000e+01 : <us>>
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<3.000000e+01 : <ms>>
