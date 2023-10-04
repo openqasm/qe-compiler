@@ -54,7 +54,7 @@ uint64_t mlir::quir::DurationAttr::getSchedulingCycles(const double dt){
       converted = duration / dt;
       break;
     default:
-      llvm_unreachable("unhandled TimeUnits conversion.")
+      llvm_unreachable("unhandled TimeUnits conversion.");
     }
 
     return static_cast<uint64_t>(converted);
