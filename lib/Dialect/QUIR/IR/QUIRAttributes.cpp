@@ -24,33 +24,37 @@
 using namespace mlir;
 using namespace mlir::quir;
 
-double mlir::quir::DurationAttr::getSchedulingCycles(const double dt){
+uint64_t mlir::quir::DurationAttr::getSchedulingCycles(const double dt){
     double duration = getDuration().getValue().convertToDouble();
 
+    // Convert through int64_t first to handle platform dependence
+    int64_t converted;
     auto type = getType().dyn_cast<DurationType>();
 
     switch (type.getUnits()) {
     case TimeUnits::dt:
-      return duration;
+      converted = duration;
       break;
     case TimeUnits::fs:
-      return duration / (1e15 * dt);
+      converted = duration / (1e15 * dt);
       break;
     case TimeUnits::ps:
-      return duration / (1e12 * dt);
+      converted = duration / (1e12 * dt);
       break;
     case TimeUnits::ns:
-      return duration / (1e9 * dt);
+      converted = duration / (1e9 * dt);
       break;
     case TimeUnits::us:
-      return duration / (1e6 * dt);
+      converted = duration / (1e6 * dt);
       break;
     case TimeUnits::ms:
-      return duration / (1e3 * dt);
+      converted = duration / (1e3 * dt);
       break;
     case TimeUnits::s:
-      return duration / dt;
+      converted = duration / dt;
       break;
     }
+
+    return static_cast<uint64_t>(converted);
 }
 

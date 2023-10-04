@@ -18,6 +18,8 @@
 #ifndef QUIR_ATTRIBUTES
 #define QUIR_ATTRIBUTES
 
+include "Dialect/QUIR/IR/QUIRTypes.td"
+
 include "mlir/IR/BuiltinAttributes.td"
 include "mlir/IR/OpBase.td"
 
@@ -52,11 +54,11 @@ def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
     units type.
   }];
 
-  let parameters = (ins AttributeSelfTypeParameter<"">:$type,
+  let parameters = (ins QUIR_DurationType:$type,
                         "FloatAttr":$duration);
 
   let extraClassDeclaration = [{
-        double getSchedulingCycles(const double dt);
+        uint64_t getSchedulingCycles(const double dt);
     }];
 
   let assemblyFormat = "`<` $duration `:` $type `>`";
