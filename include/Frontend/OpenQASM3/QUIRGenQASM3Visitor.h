@@ -110,7 +110,8 @@ public:
                                            "Testing error")),
         varHandler(builder) {}
 
-  void initialize(uint numShots, const double &shotDelay, const mlir::quir::TimeUnits &shotDelayUnits);
+  void initialize(uint numShots, const double &shotDelay,
+                  const mlir::quir::TimeUnits &shotDelayUnits);
 
   void startCircuit(mlir::Location location);
   void finishCircuit();

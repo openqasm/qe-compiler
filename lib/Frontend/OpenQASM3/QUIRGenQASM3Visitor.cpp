@@ -148,7 +148,8 @@ QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
 }
 
 namespace {
-mlir::quir::TimeUnits getDurationTimeUnits(const QASM::LengthUnit &durationUnit) {
+mlir::quir::TimeUnits
+getDurationTimeUnits(const QASM::LengthUnit &durationUnit) {
   switch (durationUnit) {
   case Nanoseconds:
     return mlir::quir::TimeUnits::ns;
@@ -173,14 +174,20 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
                                             const LengthUnit &durationUnit)
     -> Value {
   auto ssa = circuitParentBuilder.create<quir::ConstantOp>(
-      location,
-      DurationAttr::get(builder.getContext(), builder.getType<DurationType>(getDurationTimeUnits(durationUnit)), /* cast to int first to address ambiguity in uint cast across platforms */ llvm::APFloat(static_cast<double>(static_cast<int64_t>(durationValue)))));
+      location, DurationAttr::get(builder.getContext(),
+                                  builder.getType<DurationType>(
+                                      getDurationTimeUnits(durationUnit)),
+                                  /* cast to int first to address ambiguity in
+                                     uint cast across platforms */
+                                  llvm::APFloat(static_cast<double>(
+                                      static_cast<int64_t>(durationValue)))));
   ssaOtherValues.push_back(ssa);
   return ssa;
 }
 
-void QUIRGenQASM3Visitor::initialize(uint numShots,
-                                     const double &shotDelay, const mlir::quir::TimeUnits &shotDelayUnits) {
+void QUIRGenQASM3Visitor::initialize(
+    uint numShots, const double &shotDelay,
+    const mlir::quir::TimeUnits &shotDelayUnits) {
   Location initialLocation =
       mlir::FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
 
@@ -226,7 +233,8 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
     // Add the shot delay to all qubits
     auto duration = builder.create<quir::ConstantOp>(
         initialLocation,
-        DurationAttr::get(builder.getContext(), builder.getType<DurationType>(shotDelayUnits),
+        DurationAttr::get(builder.getContext(),
+                          builder.getType<DurationType>(shotDelayUnits),
                           llvm::APFloat(shotDelay)));
     builder.create<DelayOp>(initialLocation, duration, ValueRange({}));
   }

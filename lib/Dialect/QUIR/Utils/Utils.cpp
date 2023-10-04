@@ -298,12 +298,12 @@ bool isQuantumOp(Operation *op) {
   return false;
 }
 
-llvm::Expected<mlir::quir::DurationAttr> getDuration(mlir::quir::DelayOp &delayOp) {
+llvm::Expected<mlir::quir::DurationAttr>
+getDuration(mlir::quir::DelayOp &delayOp) {
   std::string durationStr;
   auto durationDeclare = delayOp.time().getDefiningOp<quir::ConstantOp>();
-  if (durationDeclare) {
+  if (durationDeclare)
     return durationDeclare.value().dyn_cast<quir::DurationAttr>();
-  }
   auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
   auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
       delayOp.time().getParentBlock()->getParentOp());
@@ -313,7 +313,8 @@ llvm::Expected<mlir::quir::DurationAttr> getDuration(mlir::quir::DelayOp &delayO
   return argAttr;
 }
 
-llvm::Expected<mlir::quir::DurationAttr> getDuration(mlir::quir::ConstantOp &duration) {
+llvm::Expected<mlir::quir::DurationAttr>
+getDuration(mlir::quir::ConstantOp &duration) {
   auto durAttr = duration.value().dyn_cast<mlir::quir::DurationAttr>();
   if (!durAttr)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),

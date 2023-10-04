@@ -17,7 +17,6 @@
 #ifndef QUIR_QUIRENUMS_H
 #define QUIR_QUIRENUMS_H
 
-
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/DialectImplementation.h"
@@ -26,10 +25,6 @@
 #define GET_ENUM_CLASSES
 #include "Dialect/QUIR/IR/QUIREnums.h.inc"
 
-
-namespace mlir {
-
-} // namespace mlir
-
+namespace mlir {} // namespace mlir
 
 #endif // QUIR_QUIRENUMS_H

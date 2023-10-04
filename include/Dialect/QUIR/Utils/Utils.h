@@ -142,8 +142,8 @@ bool isQuantumOp(Operation *op);
 llvm::Expected<mlir::quir::DurationAttr>
 getDuration(mlir::quir::ConstantOp &duration);
 /// Construct a DurationAttr from a DelayOp
-llvm::Expected<mlir::quir::DurationAttr> getDuration(mlir::quir::DelayOp &delayOp);
-
+llvm::Expected<mlir::quir::DurationAttr>
+getDuration(mlir::quir::DelayOp &delayOp);
 
 // get qubit id from the result of a measurement
 std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,

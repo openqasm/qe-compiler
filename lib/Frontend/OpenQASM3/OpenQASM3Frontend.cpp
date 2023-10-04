@@ -68,35 +68,34 @@ static llvm::SourceMgr *sourceMgr_;
 static std::mutex qasmParserLock;
 
 namespace {
-  static std::regex durationRe("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
+static std::regex durationRe("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
 
-  llvm::Expected<std::pair<double, mlir::quir::TimeUnits>> parseDurationStr(const std::string &durationStr) {
-    std::smatch m;
-    std::regex_match(durationStr, m, durationRe);
-    if (m.size() != 3)
-      return llvm::createStringError(
-          llvm::inconvertibleErrorCode(),
-          llvm::Twine("Unable to parse duration from ") + durationStr);
+llvm::Expected<std::pair<double, mlir::quir::TimeUnits>>
+parseDurationStr(const std::string &durationStr) {
+  std::smatch m;
+  std::regex_match(durationStr, m, durationRe);
+  if (m.size() != 3)
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        llvm::Twine("Unable to parse duration from ") + durationStr);
 
-    double parsedDuration = std::stod(m[1]);
-    // Convert all units to lower case.
-    auto unitStr = m[2].str();
-    auto lowerUnitStr = llvm::StringRef(unitStr).lower();
-    if (lowerUnitStr == "")
-      // Empty case is SI
-      lowerUnitStr = "s";
+  double parsedDuration = std::stod(m[1]);
+  // Convert all units to lower case.
+  auto unitStr = m[2].str();
+  auto lowerUnitStr = llvm::StringRef(unitStr).lower();
+  if (lowerUnitStr == "")
+    // Empty case is SI
+    lowerUnitStr = "s";
 
-    if(auto parsedUnits = mlir::quir::symbolizeTimeUnits(lowerUnitStr)) {
-      return std::make_pair(parsedDuration, parsedUnits.getValue());
-    }
+  if (auto parsedUnits = mlir::quir::symbolizeTimeUnits(lowerUnitStr))
+    return std::make_pair(parsedDuration, parsedUnits.getValue());
 
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                  llvm::Twine("Unknown duration unit ") +
-                                      unitStr);
-  }
+  return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                 llvm::Twine("Unknown duration unit ") +
+                                     unitStr);
+}
 
 } // anonymous namespace
-
 
 llvm::Error qssc::frontend::openqasm3::parse(
     std::string const &source, bool sourceIsFilename, bool emitRawAST,
