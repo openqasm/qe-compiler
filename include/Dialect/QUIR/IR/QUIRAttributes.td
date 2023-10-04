@@ -55,7 +55,7 @@ def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
   }];
 
   let parameters = (ins QUIR_DurationType:$type,
-                        "FloatAttr":$duration);
+                        "APFloat":$duration);
 
   let extraClassDeclaration = [{
         uint64_t getSchedulingCycles(const double dt);

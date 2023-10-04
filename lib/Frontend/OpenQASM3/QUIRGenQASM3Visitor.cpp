@@ -174,7 +174,7 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
     -> Value {
   auto ssa = circuitParentBuilder.create<quir::ConstantOp>(
       location,
-      DurationAttr::get(builder.getContext(), builder.getType<DurationType>(getDurationTimeUnits(durationUnit)), builder.getF64FloatAttr(durationValue)));
+      DurationAttr::get(builder.getContext(), builder.getType<DurationType>(getDurationTimeUnits(durationUnit)), /* cast to int first to address ambiguity in uint cast across platforms */ llvm::APFloat(static_cast<double>(static_cast<int64_t>(durationValue)))));
   ssaOtherValues.push_back(ssa);
   return ssa;
 }
@@ -227,7 +227,7 @@ void QUIRGenQASM3Visitor::initialize(uint numShots,
     auto duration = builder.create<quir::ConstantOp>(
         initialLocation,
         DurationAttr::get(builder.getContext(), builder.getType<DurationType>(shotDelayUnits),
-                          builder.getF64FloatAttr(shotDelay)));
+                          llvm::APFloat(shotDelay)));
     builder.create<DelayOp>(initialLocation, duration, ValueRange({}));
   }
   // init shots even when there's no loop, so we always get a sync_trigger

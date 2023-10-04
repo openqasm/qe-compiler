@@ -25,7 +25,7 @@ using namespace mlir;
 using namespace mlir::quir;
 
 uint64_t mlir::quir::DurationAttr::getSchedulingCycles(const double dt){
-    double duration = getDuration().getValue().convertToDouble();
+    double duration = getDuration().convertToDouble();
 
     // Convert through int64_t first to handle platform dependence
     int64_t converted;
