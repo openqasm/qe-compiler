@@ -28,7 +28,7 @@ uint64_t mlir::quir::DurationAttr::getSchedulingCycles(const double dt){
     double duration = getDuration().convertToDouble();
 
     // Convert through int64_t first to handle platform dependence
-    int64_t converted;
+    int64_t converted = 0;
     auto type = getType().dyn_cast<DurationType>();
 
     switch (type.getUnits()) {
@@ -53,6 +53,8 @@ uint64_t mlir::quir::DurationAttr::getSchedulingCycles(const double dt){
     case TimeUnits::s:
       converted = duration / dt;
       break;
+    default:
+      llvm_unreachable("unhandled TimeUnits conversion.")
     }
 
     return static_cast<uint64_t>(converted);
