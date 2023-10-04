@@ -27,36 +27,32 @@ using namespace mlir::quir;
 uint64_t mlir::quir::DurationAttr::getSchedulingCycles(const double dt){
     double duration = getDuration().convertToDouble();
 
-    // Convert through int64_t first to handle platform dependence
-    int64_t converted = 0;
     auto type = getType().dyn_cast<DurationType>();
 
+    // Convert through int64_t first to handle platform dependence
     switch (type.getUnits()) {
     case TimeUnits::dt:
-      converted = duration;
+      return static_cast<int64_t>(duration);
       break;
     case TimeUnits::fs:
-      converted = duration / (1e15 * dt);
+      return static_cast<int64_t>(duration / (1e15 * dt));
       break;
     case TimeUnits::ps:
-      converted = duration / (1e12 * dt);
+      return static_cast<int64_t>(duration / (1e12 * dt));
       break;
     case TimeUnits::ns:
-      converted = duration / (1e9 * dt);
+      return static_cast<int64_t>(duration / (1e9 * dt));
       break;
     case TimeUnits::us:
-      converted = duration / (1e6 * dt);
+      return static_cast<int64_t>(duration / (1e6 * dt));
       break;
     case TimeUnits::ms:
-      converted = duration / (1e3 * dt);
+      return static_cast<int64_t>(duration / (1e3 * dt));
       break;
     case TimeUnits::s:
-      converted = duration / dt;
+      return static_cast<int64_t>(duration / dt);
       break;
-    default:
-      llvm_unreachable("unhandled TimeUnits conversion.");
     }
-
-    return static_cast<uint64_t>(converted);
+    llvm_unreachable("unhandled TimeUnits conversion.");
 }
 
