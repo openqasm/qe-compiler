@@ -19,8 +19,6 @@
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include <regex>
-
 using namespace mlir;
 using namespace mlir::quir;
 

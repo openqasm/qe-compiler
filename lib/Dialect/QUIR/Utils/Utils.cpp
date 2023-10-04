@@ -307,7 +307,7 @@ llvm::Expected<mlir::quir::DurationAttr> getDuration(mlir::quir::DelayOp &delayO
   auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
   auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
       delayOp.time().getParentBlock()->getParentOp());
-  assert(circuitOp && "can only handler circuit arguments");
+  assert(circuitOp && "can only handle circuit arguments");
   auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::DurationAttr>(
       argNum, mlir::quir::getDurationAttrName());
   return argAttr;
