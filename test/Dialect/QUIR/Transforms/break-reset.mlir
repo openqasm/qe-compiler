@@ -22,14 +22,14 @@ func @t1 (%inq : !quir.qubit<1>) {
 // CHECK:       quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // CHECK:     }
 
-// DELAY:     [[DURATION:%.*]] = quir.constant #quir.duration<500 : !quir.duration<dt>>
+// DELAY:     [[DURATION:%.*]] = quir.constant #quir.duration<5.000000e+02 : !quir.duration<dt>>
 // DELAY-COUNT-2: quir.delay [[DURATION]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
 
 // ITER:       quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // ITER:       quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // ITER-NOT:   quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 
-// DELAYITER:     %dur = quir.constant #quir.duration<500 : !quir.duration<dt>>
+// DELAYITER:     %dur = quir.constant #quir.duration<5.000000e+02 : !quir.duration<dt>>
 // DELAYITER:       quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // DELAYITER:       quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // DELAYITER-NOT:   quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()

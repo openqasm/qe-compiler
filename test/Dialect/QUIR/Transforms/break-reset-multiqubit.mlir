@@ -18,7 +18,7 @@ func @main() {
 // CHECK: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // CHECK: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
 // CHECK: [[QUBIT2:%.*]] = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
-// DELAYITER: [[DURATION:%.*]] = quir.constant #quir.duration<500 : !quir.duration<dt>>
+// DELAYITER: [[DURATION:%.*]] = quir.constant #quir.duration<5.000000e+02 : !quir.duration<dt>>
 // DELAYITER: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // DELAYITER: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
 // DELAYITER: [[QUBIT2:%.*]] = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>

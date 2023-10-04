@@ -46,14 +46,14 @@ bit c;
 c = 0;
 // MLIR: scf.if %{{.*}} {
 if (c == 0) {
-// MLIR:             %{{.*}} = quir.constant #quir.duration<16 : !quir.duration<dt>>
+// MLIR:             %{{.*}} = quir.constant #quir.duration<1.600000e+01 : <dt>>
 // MLIR-NO-CIRCUITS: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:    quir.call_circuit @circuit_0(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.duration) -> ()
   delay[16dt] $0;
   x $0;
 // MLIR: } else {
 } else {
-// MLIR:             %{{.*}} = quir.constant #quir.duration<96 : !quir.duration<dt>>
+// MLIR:             %{{.*}} = quir.constant #quir.duration<9.600000e+01 : <dt>>
 // MLIR-NO-CIRCUITS: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:    quir.call_circuit @circuit_1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.duration) -> ()
   delay[96dt] $0;
@@ -62,7 +62,7 @@ if (c == 0) {
 
 // MLIR: scf.for %{{.*}} = %{{.*}} to %{{.*}} step %c{{.*}}1_3 {
 for ii in [0 : 4] {
-// MLIR:             %{{.*}} = quir.constant #quir.duration<32 : !quir.duration<dt>>
+// MLIR:             %{{.*}} = quir.constant #quir.duration<32 : <dt>>
 // MLIR-NO-CIRCUITS: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:    quir.call_circuit @circuit_2(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.duration) -> ()
   delay[32dt] $0;
@@ -72,7 +72,7 @@ for ii in [0 : 4] {
 // MLIR: scf.while : () -> () {
 int nn = 1;
 while (nn != 0) {
-// MLIR:             %{{.*}} = quir.constant #quir.duration<48 : !quir.duration<dt>>
+// MLIR:             %{{.*}} = quir.constant #quir.duration<4.800000e+01 : <dt>>
 // MLIR-NO-CIRCUITS: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:    quir.call_circuit @circuit_3(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.duration) -> ()
   delay[48dt] $0;
@@ -85,7 +85,7 @@ int ii = 15;
 switch (ii) {
 
 // default case gets printed first
-// MLIR:             %{{.*}} = quir.constant #quir.duration<80 : !quir.duration<dt>>
+// MLIR:             %{{.*}} = quir.constant #quir.duration<8.000000e+01 : <dt>>
 // MLIR-NO-CIRCUITS: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:    quir.call_circuit @circuit_4(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.duration) -> ()
 
@@ -93,7 +93,7 @@ switch (ii) {
 // MLIR:       }[1 : {
       case 1: {
       delay[64dt] $0;
-// MLIR:             %{{.*}} = quir.constant #quir.duration<64 : !quir.duration<dt>>
+// MLIR:             %{{.*}} = quir.constant #quir.duration<6.400000e+01 : <dt>>
 // MLIR-NO-CIRCUITS: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:    quir.call_circuit @circuit_5(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.duration) -> ()
       x $0;
