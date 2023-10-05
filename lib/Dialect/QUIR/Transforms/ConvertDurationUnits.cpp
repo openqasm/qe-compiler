@@ -34,27 +34,14 @@ using namespace mlir::quir;
 namespace {
     // This pattern matches on a BarrierOp follows by a CallCircuitOp separated by
     // non-quantum ops
-    struct ConstantDurationPattern : public OpRewritePattern<BarrierOp> {
+    struct ConstantDurationPattern : public OpRewritePattern<ConstantOp> {
     explicit ConstantDurationPattern(MLIRContext *ctx)
-        : OpRewritePattern<BarrierOp>(ctx) {}
+        : OpRewritePattern<ConstantOp>(ctx) {}
 
-    LogicalResult matchAndRewrite(BarrierOp barrierOp,
+    LogicalResult matchAndRewrite(ConstantOp constantOp,
                                     PatternRewriter &rewriter) const override {
 
-        // check for circuit op to merge with after moving barrier
-        auto prevCallCircuitOp =
-            prevQuantumOpOrNullOfType<CallCircuitOp>(barrierOp);
-        if (!prevCallCircuitOp)
         return failure();
-
-        auto callCircuitOp =
-            getNextOpAndCompareOverlap<BarrierOp, CallCircuitOp>(barrierOp);
-        if (!callCircuitOp.hasValue())
-        return failure();
-
-        barrierOp->moveAfter(callCircuitOp.getValue().getOperation());
-
-        return success();
     } // matchAndRewrite
     };  // struct ConstantDurationPattern
 
@@ -73,6 +60,19 @@ void QUIRConvertDurationUnitsPass::runOnOperation() {
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
     signalPassFailure();
 
+}
+
+TimeUnits QUIRConvertDurationUnitsPass::getTargetConvertUnits() const {
+
+}
+
+double QUIRConvertDurationUnitsPass::getDTDuration() {
+    if (dtDuration < 0.) {
+        llvm::errs() << "Supplied duration of " << dtDuration << "s is invalid \n";
+        signalPassFailure();
+
+    }
+    return dtDuration;
 }
 
 llvm::StringRef QUIRConvertDurationUnitsPass::getArgument() const {

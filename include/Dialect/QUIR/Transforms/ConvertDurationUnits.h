@@ -26,19 +26,36 @@
 #include "llvm/ADT/StringRef.h"
 
 
-<<<<<<< Updated upstream
-=======
 namespace {
 
 } // anonymous namespace
 
 
->>>>>>> Stashed changes
 namespace mlir::quir {
 struct QUIRConvertDurationUnitsPass
     : public PassWrapper<QUIRConvertDurationUnitsPass, OperationPass<>> {
+
+  Option<TimeUnits> units{*this, "units",
+                        llvm::cl::desc("Target units to convert to"),
+                        llvm::cl::values(
+                          llvm::cl::clEnumValue(TimeUnits::dt, "dt", "Scheduling sample rate"),
+                          llvm::cl::clEnumValue(TimeUnits::s, "s", "seconds"),
+                          llvm::cl::clEnumValue(TimeUnits::ms, "ms", "milliseconds"),
+                          llvm::cl::clEnumValue(TimeUnits::us, "us", "microseconds"),
+                          llvm::cl::clEnumValue(TimeUnits::ns, "ns", "nanoseconds"),
+                          llvm::cl::clEnumValue(TimeUnits::ps, "ps", "picoseconds"),
+                          llvm::cl::clEnumValue(TimeUnits::fs, "fs", "femtoseconds")),
+                        llvm::cl::value_desc("enum"), llvm::cl::init(TimeUnits::dt)};
+
+  Option<double> dtDuration{*this, "dt-duration",
+                        llvm::cl::desc("Duration of dt (scheduling cycle) in seconds."),
+                        llvm::cl::value_desc("num"), llvm::cl::init(-1)};
+
+
   void runOnOperation() override;
 
+  TimeUnits getTargetConvertUnits() const;
+  double getDTDuration();
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
 
