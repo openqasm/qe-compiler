@@ -267,6 +267,7 @@ void registerQuirPasses() {
   PassRegistration<quir::LoadEliminationPass>();
   PassRegistration<quir::DumpVariableDominanceInfoPass>();
   PassRegistration<quir::VariableEliminationPass>();
+  PassRegistration<quir::ConvertDurationUnitsPass>();
 
   //===----------------------------------------------------------------------===//
   // Test Passes

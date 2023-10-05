@@ -20,6 +20,7 @@
 #include "AddShotLoop.h"
 #include "AngleConversion.h"
 #include "BreakReset.h"
+#include "ConvertDurationUnits.h"
 #include "FunctionArgumentSpecialization.h"
 #include "LoadElimination.h"
 #include "MergeCircuits.h"

@@ -50,7 +50,7 @@ namespace {
 
 
 // Entry point for the pass.
-void QUIRConvertDurationUnitsPass::runOnOperation() {
+void ConvertDurationUnitsPass::runOnOperation() {
     Operation *moduleOperation = getOperation();
 
     RewritePatternSet patterns(&getContext());
@@ -62,11 +62,11 @@ void QUIRConvertDurationUnitsPass::runOnOperation() {
 
 }
 
-TimeUnits QUIRConvertDurationUnitsPass::getTargetConvertUnits() const {
-
+TimeUnits ConvertDurationUnitsPass::getTargetConvertUnits() const {
+    return units;
 }
 
-double QUIRConvertDurationUnitsPass::getDTDuration() {
+double ConvertDurationUnitsPass::getDtDuration() {
     if (dtDuration < 0.) {
         llvm::errs() << "Supplied duration of " << dtDuration << "s is invalid \n";
         signalPassFailure();
@@ -75,9 +75,9 @@ double QUIRConvertDurationUnitsPass::getDTDuration() {
     return dtDuration;
 }
 
-llvm::StringRef QUIRConvertDurationUnitsPass::getArgument() const {
+llvm::StringRef ConvertDurationUnitsPass::getArgument() const {
   return "convert-quir-duration-units";
 }
-llvm::StringRef QUIRConvertDurationUnitsPass::getDescription() const {
+llvm::StringRef ConvertDurationUnitsPass::getDescription() const {
   return "Convert the units of durations (and associated constant values) to the desired units";
 }
