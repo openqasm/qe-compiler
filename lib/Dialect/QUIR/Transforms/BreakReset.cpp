@@ -59,11 +59,14 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
     }
 
     if (numIterations_ > 1 && delayCycles_ > 0) {
-      std::string durationString = std::to_string(delayCycles_) + "dt";
       constantDurationOp = rewriter.create<quir::ConstantOp>(
-          resetOp.getLoc(), DurationAttr::get(rewriter.getContext(),
-                                              rewriter.getType<DurationType>(),
-                                              StringRef(durationString)));
+          resetOp.getLoc(),
+          DurationAttr::get(rewriter.getContext(),
+                            rewriter.getType<DurationType>(TimeUnits::dt),
+                            /* cast to int first to address ambiguity in uint
+                               cast across platforms */
+                            llvm::APFloat(static_cast<double>(
+                                static_cast<int64_t>(delayCycles_)))));
     }
 
     // result of measurement in each iteration is number of qubits * i1

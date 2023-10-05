@@ -33,7 +33,6 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
 
-#include <regex>
 #include <tuple>
 #include <utility>
 
@@ -299,95 +298,28 @@ bool isQuantumOp(Operation *op) {
   return false;
 }
 
-llvm::Expected<Duration> Duration::parseDuration(mlir::quir::DelayOp &delayOp) {
+llvm::Expected<mlir::quir::DurationAttr>
+getDuration(mlir::quir::DelayOp &delayOp) {
   std::string durationStr;
   auto durationDeclare = delayOp.time().getDefiningOp<quir::ConstantOp>();
-  if (durationDeclare) {
-    auto durAttr = durationDeclare.value().dyn_cast<quir::DurationAttr>();
-    durationStr = durAttr.getValue().str();
-  } else {
-    auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
-    auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
-        delayOp.time().getParentBlock()->getParentOp());
-    assert(circuitOp && "can only handler circuit arguments");
-    auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::DurationAttr>(
-        argNum, mlir::quir::getDurationAttrName());
-    durationStr = argAttr.getValue().str();
-  }
-  return Duration::parseDuration(durationStr);
+  if (durationDeclare)
+    return durationDeclare.value().dyn_cast<quir::DurationAttr>();
+  auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
+  auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
+      delayOp.time().getParentBlock()->getParentOp());
+  assert(circuitOp && "can only handle circuit arguments");
+  auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::DurationAttr>(
+      argNum, mlir::quir::getDurationAttrName());
+  return argAttr;
 }
 
-llvm::Expected<Duration>
-Duration::parseDuration(mlir::quir::ConstantOp &duration) {
-  auto durAttr = duration.value().dyn_cast<DurationAttr>();
+llvm::Expected<mlir::quir::DurationAttr>
+getDuration(mlir::quir::ConstantOp &duration) {
+  auto durAttr = duration.value().dyn_cast<mlir::quir::DurationAttr>();
   if (!durAttr)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Expected a ConstantOp with a DurationAttr");
-  return Duration::parseDuration(durAttr.getValue().str());
-}
-
-llvm::Expected<Duration>
-Duration::parseDuration(const std::string &durationStr) {
-  static std::regex re("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
-  std::smatch m;
-  std::regex_match(durationStr, m, re);
-  if (m.size() != 3)
-    return llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        llvm::Twine("Unable to parse duration from ") + durationStr);
-
-  double parsedDuration = std::stod(m[1]);
-  // Convert all units to lower case.
-  auto unitStr = m[2].str();
-  auto lowerUnitStr = llvm::StringRef(unitStr).lower();
-  DurationUnit parsedUnit;
-  if (lowerUnitStr == "") {
-    // Empty case is SI
-    parsedUnit = DurationUnit::s;
-  } else if (lowerUnitStr == "dt") {
-    parsedUnit = DurationUnit::dt;
-  } else if (lowerUnitStr == "ns") {
-    parsedUnit = DurationUnit::ns;
-  } else if (lowerUnitStr == "us") {
-    parsedUnit = DurationUnit::us;
-  } else if (lowerUnitStr == "ms") {
-    parsedUnit = DurationUnit::ms;
-  } else if (lowerUnitStr == "s") {
-    parsedUnit = DurationUnit::s;
-  } else {
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   llvm::Twine("Unknown duration unit ") +
-                                       unitStr);
-  }
-
-  return (Duration){.duration = parsedDuration, .unit = parsedUnit};
-}
-
-Duration Duration::convertToCycles(double dt) const {
-  double convertedDuration;
-
-  assert(unit == DurationUnit::dt || unit == DurationUnit::ns ||
-         unit == DurationUnit::us || unit == DurationUnit::ms ||
-         unit == DurationUnit::s);
-
-  switch (unit) {
-  case DurationUnit::dt:
-    convertedDuration = duration;
-    break;
-  case DurationUnit::ns:
-    convertedDuration = duration / (1e9 * dt);
-    break;
-  case DurationUnit::us:
-    convertedDuration = duration / (1e6 * dt);
-    break;
-  case DurationUnit::ms:
-    convertedDuration = duration / (1e3 * dt);
-    break;
-  case DurationUnit::s:
-    convertedDuration = duration / dt;
-    break;
-  }
-  return {convertedDuration, DurationUnit::dt};
+  return durAttr;
 }
 
 std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,

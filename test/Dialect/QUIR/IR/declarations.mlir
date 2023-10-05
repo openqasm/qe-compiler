@@ -27,8 +27,8 @@ module {
         %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
         // CHECK: %{{.*}} = quir.constant #quir.angle<2.000000e-01  : !quir.angle>
         %mu = quir.constant #quir.angle<0.2 : !quir.angle>
-        // CHECK %{{.*}} = quir.constant #quir.duration<"10ns" : !quir.duration>
-        %len1 = quir.constant #quir.duration<"10ns" : !quir.duration>
+        // CHECK %{{.*}} = quir.constant #quir.duration<1.000000e+00 : !quir.duration<ns>>
+        %len1 = quir.constant #quir.duration<10.0 : !quir.duration<ns>>
         // CHECK %{{.*}} = oq3.declare_stretch : !quir.stretch
         %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
         // CHECK %{{.*}} = oq3.declare_stretch : !quir.stretch
