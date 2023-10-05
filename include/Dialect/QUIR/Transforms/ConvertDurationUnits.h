@@ -26,6 +26,14 @@
 #include "llvm/ADT/StringRef.h"
 
 
+<<<<<<< Updated upstream
+=======
+namespace {
+
+} // anonymous namespace
+
+
+>>>>>>> Stashed changes
 namespace mlir::quir {
 struct QUIRConvertDurationUnitsPass
     : public PassWrapper<QUIRConvertDurationUnitsPass, OperationPass<>> {
