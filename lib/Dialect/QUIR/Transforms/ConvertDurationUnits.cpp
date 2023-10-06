@@ -169,34 +169,6 @@ namespace {
     }; // struct DurationUnitsCircuitOpConversionPattern
 
 
-    class DurationConversionTarget : public ConversionTarget {
-        public:
-            DurationConversionTarget(MLIRContext &ctx, TimeUnits convertUnits) : ConversionTarget(ctx), convertUnits(convertUnits)  {
-            }
-
-            template <class OpT>
-            void addDynamicallyLegalDurationOp<OpT>() {
-                addDynamicallyLegalOp([&](OpT op) {
-                    for (auto type : op.getOperands().getTypes()) {
-                        if (!type.isa<quir::DurationType>())
-                            continue;
-                        auto durationType = type.cast<quir::DurationType>();
-
-                        auto opUnits = durationType.getUnits();
-                        if (opUnits != convertUnits)
-                            return false;
-                    }
-                    return true;
-                });
-            }
-
-        private:
-            TimeUnits convertUnits;
-
-    }; // class DurationConversionTarget
-
-
-
 } // anonymous namespace
 
 
@@ -204,69 +176,52 @@ void ConvertDurationUnitsPass::runOnOperation() {
     Operation *moduleOperation = getOperation();
 
     // Extract conversion units
-    auto units = getTargetConvertUnits();
+    auto targetConvertUnits = getTargetConvertUnits();
 
     // Extract dt conversion factor if necessary
     llvm::Optional<double> dtConversion;
-    if (units == TimeUnits::dt)
+    if (targetConvertUnits  == TimeUnits::dt)
         dtConversion = getDtDuration();
 
     auto &context = getContext();
-    DurationConversionTarget target(context, units);
+    ConversionTarget target(context);
 
     // Type converter to ensure only durations of target units exist
     // after cnoversion
-    DurationTypeConverter typeConverter(units);
+    DurationTypeConverter typeConverter(targetConvertUnits );
 
     RewritePatternSet patterns(&context);
 
-    // Only constant declared durations if their type is not
-    // the target output duration type.
+
     target.addDynamicallyLegalOp<quir::ConstantOp>([&](quir::ConstantOp op) {
         auto type = op.getType().cast<DurationType>();
         if (!type)
             return true;
 
         auto convertUnits = type.getUnits();
-        if (convertUnits == getTargetConvertUnits())
+        if (convertUnits == targetConvertUnits)
             return true;
         return false;
     });
 
-    target.addDynamicallyLegalOp<quir::DelayOp>([&](quir::DelayOp op) {
-        auto type = op.time().getType().cast<DurationType>();
+    // Only constant declared durations if their type is not
+    // the target output duration type.
+    target.addDynamicallyLegalOp<
+            quir::DelayOp,
+            quir::CircuitOp,
+            quir::ReturnOp
+        >([&](mlir::Operation *op) {
+            for (auto type : op->getOperandTypes()) {
+                if (!type.isa<DurationType>())
+                    continue;
 
-        auto convertUnits = type.getUnits();
-        if (convertUnits == getTargetConvertUnits())
+                auto durationType = type.cast<DurationType>();
+
+                auto convertUnits = durationType.getUnits();
+                if (convertUnits != targetConvertUnits )
+                    return false;
+            }
             return true;
-        return false;
-    });
-
-    target.addDynamicallyLegalOp<quir::ReturnOp>([&](quir::ReturnOp op) {
-        for (auto type : op.getOperands().getTypes()) {
-            if (!type.isa<DurationType>())
-                continue;
-            auto durationType = type.cast<DurationType>();
-
-            auto convertUnits = durationType.getUnits();
-            if (convertUnits != getTargetConvertUnits())
-                return false;
-        }
-        return true;
-    });
-
-
-    target.addDynamicallyLegalOp<quir::CircuitOp>([&](quir::CircuitOp op) {
-        for (auto type : op.getArgumentTypes()) {
-            if (!type.isa<DurationType>())
-                continue;
-            auto durationType = type.cast<DurationType>();
-
-            auto convertUnits = durationType.getUnits();
-            if (convertUnits != getTargetConvertUnits())
-                return false;
-        }
-        return true;
     });
 
 

@@ -49,10 +49,10 @@ func @quir_durations () {
 }
 
 
-quir.circuit @circuit0 (%q: !quir.qubit<1>, %duration_dt0: !quir.duration<dt>, %duration_s: !quir.duration<s>, %duration_ms: !quir.duration<ms>) -> (!quir.duration<ms>) {
+quir.circuit @circuit0 (%q: !quir.qubit<1>, %duration_dt0: !quir.duration<dt>, %duration_s: !quir.duration<s>, %duration_ms: !quir.duration<ms>) {
     quir.delay %duration_dt0, (%q) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
     quir.delay %duration_s, (%q) : !quir.duration<s>, (!quir.qubit<1>) -> ()
     quir.delay %duration_ms, (%q) : !quir.duration<ms>, (!quir.qubit<1>) -> ()
-    quir.return %duration_ms : !quir.duration<ms>
+    quir.return
 }
 
