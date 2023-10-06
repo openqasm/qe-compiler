@@ -18,6 +18,9 @@
 #ifndef QUIR_ATTRIBUTES
 #define QUIR_ATTRIBUTES
 
+include "Dialect/QUIR/IR/QUIRTypes.td"
+
+include "mlir/IR/BuiltinAttributes.td"
 include "mlir/IR/OpBase.td"
 
 def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle"> {
@@ -46,15 +49,20 @@ def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle"> {
 def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
   let summary = "A duration of time";
   let description = [{
-    Duration attributes represent OpenQASM 3.0 durations, which are lengths of
-    time. They are represented by a string containing a float literal and unit
-    specifiers. Valid units are s, ms, ns, us, and dt.
+    Duration attributes represent a duration of time.
+    These are represented by a floating point value and a duration
+    units type.
   }];
 
-  let parameters = (ins AttributeSelfTypeParameter<"">:$type,
-                        StringRefParameter<"the duration">:$value);
+  let parameters = (ins AttributeSelfTypeParameter<"", "DurationType">:$type,
+                        "APFloat":$duration);
 
-  let assemblyFormat = "`<` $value `:` $type `>`";
+  let extraClassDeclaration = [{
+        uint64_t getSchedulingCycles(const double dt);
+    }];
+
+  let assemblyFormat = "`<` $duration `:` $type `>`";
+
 }
 
 def QUIR_InputParameterAttr : QUIR_Attr<"InputParameter", "inputParameter"> {

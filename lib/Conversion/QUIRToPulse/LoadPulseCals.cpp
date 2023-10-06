@@ -533,8 +533,8 @@ bool LoadPulseCalsPass::doAllSequenceOpsHaveSameDuration(
     if (!sequenceOp->hasAttrOfType<IntegerAttr>("pulse.duration"))
       return false;
 
-    uint sequenceDuration =
-        sequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getUInt();
+    uint sequenceDuration = static_cast<uint64_t>(
+        sequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
     if (!prevSequenceEncountered) {
       prevSequenceEncountered = true;
       prevSequencePulseDuration = sequenceDuration;

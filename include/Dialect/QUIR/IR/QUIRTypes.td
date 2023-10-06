@@ -17,6 +17,8 @@
 #ifndef QUIR_TYPES
 #define QUIR_TYPES
 
+include "Dialect/QUIR/IR/QUIREnums.td"
+
 include "mlir/IR/BuiltinTypeInterfaces.td"
 include "mlir/IR/OpBase.td"
 
@@ -60,11 +62,28 @@ def QUIR_AngleType : QUIR_Type<"Angle", "angle"> {
     let genVerifyDecl = 1;
 }
 
+
+
 def QUIR_DurationType : QUIR_Type<"Duration", "duration"> {
-    let summary = "represents a duration of time as a string w/ specified units.";
+    let summary = "represents a duration of time.";
     let description = [{
-        A QUIR duration expresses timing.
+        A QUIR duration type.
+
+        Example:
+            ```mlir
+                // Defaults to units at the scheduling rate (dt)
+                %duration_dt = quir.constant #quir.duration<10.0 : !quir.duration>
+                %duration_s = quir.constant #quir.duration<3.14 : !quir.duration<s>>
+            ```
+
      }];
+
+    // As best I an tell this is undocumented in LLVM 14.
+    // Based on studying the implementation of EnumAttr
+    // https://github.com/llvm/llvm-project/blob/f28c006a5895fc0e329fe15fead81e37457cb1d1/mlir/include/mlir/IR/EnumAttr.td#L86
+    let parameters = (ins EnumParameter<TimeUnits>:$units);
+
+    let assemblyFormat = "`<` $units `>`";
 }
 
 def QUIR_StretchType : QUIR_Type<"Stretch", "stretch"> {
