@@ -41,15 +41,11 @@ func @quir_durations () {
     %duration_fs = quir.constant #quir.duration<10.0 : !quir.duration<fs>>
     // DT: {{.*}} = quir.constant #quir.duration<1.000000e+016 : <dt>>
 
-    quir.call_circuit @circuit0(%q0, %duration_dt0,  %duration_s, %duration_ms) : (!quir.qubit<1>, !quir.duration<dt>, !quir.duration<s>, !quir.duration<ms>) -> ()
+    quir.delay %duration_s, (%q0) : !quir.duration<s>, (!quir.qubit<1>) -> ()
+    quir.delay %duration_ms, (%q0) : !quir.duration<ms>, (!quir.qubit<1>) -> ()
+
+    //quir.call_circuit @circuit0(%q0, %duration_dt0,  %duration_s, %duration_ms) : (!quir.qubit<1>, !quir.duration<dt>, !quir.duration<s>, !quir.duration<ms>) -> ()
     return
 }
 
-
-quir.circuit @circuit0 (%q: !quir.qubit<1>, %delay_dt0: !quir.duration<dt>, %delay_s: !quir.duration<s>, %delay_ms: !quir.duration<ms>) {
-    quir.delay %delay_dt0, (%q) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
-    quir.delay %delay_s, (%q) : !quir.duration<s>, (!quir.qubit<1>) -> ()
-    quir.delay %delay_ms, (%q) : !quir.duration<ms>, (!quir.qubit<1>) -> ()
-    quir.return
-}
 

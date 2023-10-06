@@ -34,32 +34,111 @@ using namespace mlir::quir;
 
 namespace {
 
-    /// Materialize quir.constant durations with an incorrect
+
+    template <typename T>
+    Optional<Type> legalizeType(T t) {
+        return t;
+    }
+
+
+    class DurationTypeConverter : public TypeConverter {
+
+        public:
+            DurationTypeConverter(TimeUnits convertUnits) {
+                // Convert durations to the appropriate type
+                addConversion([&](quir::DurationType t) -> Optional<Type> {
+                    if (t.getUnits() == convertUnits)
+                        return t;
+                    return DurationType::get(t.getContext(), convertUnits);
+                });
+                addConversion(legalizeType<QubitType>);
+            }
+    }; // DurationTypeConverter
+
+    /// Convert quir.constant durations with an incorrect
     /// type to the specified type.
-    struct MaterializeDurationUnitsConversionPattern
+    struct DurationUnitsConstantOpConversionPattern
         : public OpConversionPattern<quir::ConstantOp> {
-    explicit MaterializeDurationUnitsConversionPattern(MLIRContext *ctx,
-                                                mlir::TypeConverter &typeConverter, TimeUnits convertUnits, llvm::Optional<double> dtDuration)
-        : OpConversionPattern(typeConverter, ctx, /*benefit=*/1), convertUnits(convertUnits), dtDuration(dtDuration) {}
+    explicit DurationUnitsConstantOpConversionPattern(MLIRContext *ctx,
+                                                DurationTypeConverter &typeConverter, llvm::Optional<double> dtDuration)
+        : OpConversionPattern(typeConverter, ctx, /*benefit=*/1), dtDuration(dtDuration) {}
 
         LogicalResult
         matchAndRewrite(quir::ConstantOp op, OpAdaptor adaptor,
                         ConversionPatternRewriter &rewriter) const override {
 
-            auto duration = DurationAttr::get(getContext(),
-                          rewriter.getType<DurationType>(convertUnits),
-                          llvm::APFloat(1.0));
+            auto dstType = this->typeConverter->convertType(op.getType());
+            if (!dstType)
+                return failure();
+
+            auto duration = DurationAttr::get(getContext(), dstType.cast<DurationType>(), llvm::APFloat(1.0));
             rewriter.replaceOpWithNewOp<quir::ConstantOp>(op, duration);
 
             return success();
         } // matchAndRewrite
 
         private:
-            TimeUnits convertUnits;
             llvm::Optional<double> dtDuration;
 
 
-    };  // struct MaterializeDurationUnitsConversionPattern
+    };  // struct DurationUnitsConstantOpConversionPattern
+
+
+    /// Convert quir.delay duration with an incorrect
+    /// type to the specified type.
+    struct DurationUnitsDelayOpConversionPattern
+        : public OpConversionPattern<quir::DelayOp> {
+    explicit DurationUnitsDelayOpConversionPattern(MLIRContext *ctx,
+                                                DurationTypeConverter &typeConverter)
+        : OpConversionPattern(typeConverter, ctx, /*benefit=*/1) {}
+
+        LogicalResult
+        matchAndRewrite(quir::DelayOp op, OpAdaptor adaptor,
+                        ConversionPatternRewriter &rewriter) const override {
+
+            rewriter.updateRootInPlace(
+                op, [&]() { op->setOperands(adaptor.getOperands());
+            });
+
+            return success();
+        } // matchAndRewrite
+
+    };  // struct DurationUnitsDelayOpConversionPattern
+
+
+    struct DurationUnitsCircuitOpConversionPattern : public OpConversionPattern<quir::CircuitOp> {
+        explicit DurationUnitsCircuitOpConversionPattern(MLIRContext *ctx, DurationTypeConverter &typeConverter)
+            : OpConversionPattern(typeConverter, ctx, /*benefit=*/1), typeConverter(typeConverter) {}
+
+        LogicalResult
+        matchAndRewrite(quir::CircuitOp op, OpAdaptor adaptor,
+                        ConversionPatternRewriter &rewriter) const override {
+
+            auto funcLikeType = op.getType();
+            DurationTypeConverter::SignatureConversion signatureConverter(
+                funcLikeType.getNumInputs());
+            auto newFuncLikeType = funcLikeType;
+            if (!newFuncLikeType)
+            return failure();
+
+            // Create a new `CircuitOp`
+            Location loc = op.getLoc();
+            StringRef name = op.getName();
+            auto newFuncLikeOp = rewriter.create<quir::CircuitOp>(loc, name, newFuncLikeType);
+
+            rewriter.inlineRegionBefore(op.getBody(), newFuncLikeOp.getBody(),
+                                        newFuncLikeOp.end());
+            if (failed(rewriter.convertRegionTypes(&newFuncLikeOp.getBody(), typeConverter,
+                                                &signatureConverter))) {
+            return failure();
+            }
+            rewriter.eraseOp(op);
+            return success();
+        }
+
+        DurationTypeConverter &typeConverter;
+
+    }; // struct DurationUnitsCircuitOpConversionPattern
 
 } // anonymous namespace
 
@@ -80,13 +159,7 @@ void ConvertDurationUnitsPass::runOnOperation() {
 
     // Type converter to ensure only durations of target units exist
     // after cnoversion
-    TypeConverter typeConverter;
-
-    typeConverter.addConversion([&](quir::DurationType t) -> Optional<Type> {
-                    if (t.getUnits() == units)
-                        return t;
-                    return DurationType::get(t.getContext(), units);
-                });
+    DurationTypeConverter typeConverter(units);
 
     RewritePatternSet patterns(&context);
 
@@ -103,8 +176,35 @@ void ConvertDurationUnitsPass::runOnOperation() {
         return false;
     });
 
+    target.addDynamicallyLegalOp<quir::DelayOp>([&](quir::DelayOp op) {
+        auto type = op.time().getType().cast<DurationType>();
 
-    patterns.add<MaterializeDurationUnitsConversionPattern>(&getContext(), typeConverter, getTargetConvertUnits(), dtConversion);
+        auto convertUnits = type.getUnits();
+        if (convertUnits == getTargetConvertUnits())
+            return true;
+        return false;
+    });
+
+
+    target.addDynamicallyLegalOp<quir::CircuitOp>([&](quir::CircuitOp op) {
+        for (auto type : op.getArgumentTypes()) {
+            if (!type.isa<DurationType>())
+                continue;
+            auto durationType = type.cast<DurationType>();
+
+            auto convertUnits = durationType.getUnits();
+            if (convertUnits != getTargetConvertUnits())
+                return false;
+        }
+        return true;
+    });
+
+
+    patterns.add<DurationUnitsConstantOpConversionPattern>(&getContext(), typeConverter, dtConversion);
+    patterns.add<
+        DurationUnitsDelayOpConversionPattern,
+        DurationUnitsCircuitOpConversionPattern
+    >(&getContext(), typeConverter);
 
 
     if(failed(applyPartialConversion(moduleOperation, target, std::move(patterns))))
