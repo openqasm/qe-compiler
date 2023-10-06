@@ -573,6 +573,24 @@ compile_(int argc, char const **argv, std::string *outputString,
     auto error = qssc::emitDiagnostic(
         diagnosticCb, qssc_severity, qssc::ErrorCategory::QSSCompilationFailure,
         diagnostic.str());
+
+    // emit to llvm::errs as well to mimic default handler
+    diagnostic.getLocation().print(llvm::errs());
+    llvm::errs() << ": ";
+    switch (severity) {
+    case mlir::DiagnosticSeverity::Error:
+      llvm::errs() << "error: ";
+      break;
+    case mlir::DiagnosticSeverity::Warning:
+      llvm::errs() << "warning: ";
+      break;
+    case mlir::DiagnosticSeverity::Note:
+      llvm::errs() << "note: ";
+      break;
+    case mlir::DiagnosticSeverity::Remark:
+      llvm::errs() << "remark: ";
+    }
+    llvm::errs() << diagnostic << "\n";
     return;
   });
 
