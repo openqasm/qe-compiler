@@ -25,6 +25,7 @@
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
 using namespace mlir;
@@ -32,34 +33,90 @@ using namespace mlir::quir;
 
 
 namespace {
-    // This pattern matches on a BarrierOp follows by a CallCircuitOp separated by
-    // non-quantum ops
-    struct ConstantDurationPattern : public OpRewritePattern<ConstantOp> {
-    explicit ConstantDurationPattern(MLIRContext *ctx)
-        : OpRewritePattern<ConstantOp>(ctx) {}
 
-    LogicalResult matchAndRewrite(ConstantOp constantOp,
-                                    PatternRewriter &rewriter) const override {
 
-        return failure();
-    } // matchAndRewrite
-    };  // struct ConstantDurationPattern
+    class DurationTypeConverter : public TypeConverter {
+
+        public:
+            DurationTypeConverter(TimeUnits convertUnits) {
+                // Convert durations to the appropriate type
+                addConversion([&](quir::DurationType t) -> Optional<Type> {
+                    if (t.getUnits() == convertUnits)
+                        return t;
+                    return DurationType::get(t.getContext(), convertUnits);
+                });
+            }
+    };
+
+    /// Materialize quir.constant durations with an incorrect
+    /// type to the specified type.
+    struct MaterializeDurationUnitsConversionPattern
+        : public OpConversionPattern<quir::ConstantOp> {
+    explicit MaterializeDurationUnitsConversionPattern(MLIRContext *ctx,
+                                                mlir::TypeConverter &typeConverter, TimeUnits convertUnits, llvm::Optional<double> dtDuration)
+        : OpConversionPattern(typeConverter, ctx, /*benefit=*/1), convertUnits(convertUnits), dtDuration(dtDuration) {}
+
+        LogicalResult
+        matchAndRewrite(quir::ConstantOp op, OpAdaptor adaptor,
+                        ConversionPatternRewriter &rewriter) const override {
+
+            // ensure is a duration
+            //auto value = op.value();
+
+            llvm::errs() << (int)convertUnits << "\n";
+
+            return success();
+        } // matchAndRewrite
+
+        private:
+            TimeUnits convertUnits;
+            llvm::Optional<double> dtDuration;
+
+
+    };  // struct MaterializeDurationUnitsConversionPattern
 
 } // anonymous namespace
 
 
-
-// Entry point for the pass.
 void ConvertDurationUnitsPass::runOnOperation() {
     Operation *moduleOperation = getOperation();
 
-    RewritePatternSet patterns(&getContext());
-    patterns.add<ConstantDurationPattern>(&getContext());
+    // Extract conversion units
+    auto units = getTargetConvertUnits();
 
-    if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
-    signalPassFailure();
+    // Extract dt conversion factor if necessary
+    llvm::Optional<double> dtConversion;
+    if (units == TimeUnits::dt)
+        dtConversion = getDtDuration();
 
+    auto &context = getContext();
+    ConversionTarget target(context);
+
+    // Type converter to ensure only durations of target units exist
+    // after cnoversion
+    DurationTypeConverter typeConverter(units);
+
+    RewritePatternSet patterns(&context);
+
+    // Only constant declared durations if their type is not
+    // the target output duration type.
+    target.addDynamicallyLegalOp<quir::ConstantOp>([&](quir::ConstantOp op) {
+        auto type = op.getType().cast<DurationType>();
+        if (!type)
+            return true;
+
+        auto convertUnits = type.getUnits();
+        if (convertUnits == getTargetConvertUnits())
+            return true;
+        return false;
+    });
+
+
+    patterns.add<MaterializeDurationUnitsConversionPattern>(&getContext(), typeConverter, getTargetConvertUnits(), dtConversion);
+
+
+    if(failed(applyPartialConversion(moduleOperation, target, std::move(patterns))))
+        return signalPassFailure();
 }
 
 TimeUnits ConvertDurationUnitsPass::getTargetConvertUnits() const {
