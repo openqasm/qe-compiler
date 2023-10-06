@@ -24,6 +24,7 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
+#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
@@ -138,12 +139,13 @@ namespace {
     };  // struct DurationUnitsConversionPattern
 
 
-    struct DurationUnitsCircuitOpConversionPattern : public OpConversionPattern<quir::CircuitOp> {
-        explicit DurationUnitsCircuitOpConversionPattern(MLIRContext *ctx, DurationTypeConverter &typeConverter)
-            : OpConversionPattern(typeConverter, ctx, /*benefit=*/1), typeConverter(typeConverter) {}
+    template <typename FunctionType>
+    struct DurationUnitsFunctionOpConversionPattern : public OpConversionPattern<FunctionType> {
+        explicit DurationUnitsFunctionOpConversionPattern(MLIRContext *ctx, DurationTypeConverter &typeConverter)
+            : OpConversionPattern<FunctionType>(typeConverter, ctx, /*benefit=*/1), typeConverter(typeConverter) {}
 
         LogicalResult
-        matchAndRewrite(quir::CircuitOp funcLikeOp, OpAdaptor adaptor,
+        matchAndRewrite(FunctionType funcLikeOp, typename FunctionType::Adaptor adaptor,
                         ConversionPatternRewriter &rewriter) const override {
 
             auto funcLikeType = funcLikeOp.getType();
@@ -153,10 +155,10 @@ namespace {
             if (!newFuncLikeType)
                 return failure();
 
-            // Create a new `CircuitOp`
+            // Create a new function operation
             Location loc = funcLikeOp.getLoc();
             StringRef name = funcLikeOp.getName();
-            auto newFuncLikeOp = rewriter.create<quir::CircuitOp>(loc, name, newFuncLikeType);
+            auto newFuncLikeOp = rewriter.create<FunctionType>(loc, name, newFuncLikeType);
 
             rewriter.inlineRegionBefore(funcLikeOp.getBody(), newFuncLikeOp.getBody(),
                                         newFuncLikeOp.end());
@@ -174,7 +176,7 @@ namespace {
             DurationTypeConverter &typeConverter;
 
 
-    }; // struct DurationUnitsCircuitOpConversionPattern
+    }; // struct DurationUnitsFunctionOpConversionPattern
 
 
     bool checkTypeNeedConversion(mlir::Type type, TimeUnits targetConvertUnits) {
@@ -218,7 +220,7 @@ void ConvertDurationUnitsPass::runOnOperation() {
         return !checkTypeNeedConversion(type, targetConvertUnits);
     });
 
-    target.addDynamicallyLegalOp<quir::CircuitOp>([&](quir::CircuitOp op) {
+    target.addDynamicallyLegalOp<quir::CircuitOp, mlir::FuncOp>([&](mlir::FunctionOpInterface op) {
         for (auto type : op.getArgumentTypes()) {
             if(checkTypeNeedConversion(type, targetConvertUnits))
                 return false;
@@ -235,7 +237,8 @@ void ConvertDurationUnitsPass::runOnOperation() {
     // the target output duration type.
     target.addDynamicallyLegalOp<
             quir::DelayOp,
-            quir::ReturnOp
+            quir::ReturnOp,
+            mlir::ReturnOp
         >([&](mlir::Operation *op) {
             for (auto type : op->getOperandTypes()) {
                 if(checkTypeNeedConversion(type, targetConvertUnits))
@@ -249,7 +252,9 @@ void ConvertDurationUnitsPass::runOnOperation() {
     patterns.add<
         DurationUnitsConversionPattern<quir::DelayOp>,
         DurationUnitsConversionPattern<quir::ReturnOp>,
-        DurationUnitsCircuitOpConversionPattern
+        DurationUnitsFunctionOpConversionPattern<quir::CircuitOp>,
+        DurationUnitsConversionPattern<mlir::ReturnOp>,
+        DurationUnitsFunctionOpConversionPattern<mlir::FuncOp>
     >(&getContext(), typeConverter);
 
 
