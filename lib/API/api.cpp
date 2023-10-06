@@ -15,11 +15,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
+#include "API/error.h"
 #include "Config/CLIConfig.h"
 #include "Config/EnvVarConfig.h"
 
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/InitAllPasses.h"
@@ -32,6 +34,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/SourceMgr.h"
@@ -553,6 +556,26 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   determineOutputType();
 
+  context.getDiagEngine().registerHandler([&](Diagnostic &diagnostic) {
+    auto severity = diagnostic.getSeverity();
+    qssc::Severity qssc_severity = qssc::Severity::Error;
+    switch (severity) {
+    case mlir::DiagnosticSeverity::Error:
+      qssc_severity = qssc::Severity::Error;
+      break;
+    case mlir::DiagnosticSeverity::Warning:
+      qssc_severity = qssc::Severity::Warning;
+      break;
+    case mlir::DiagnosticSeverity::Note:
+    case mlir::DiagnosticSeverity::Remark:
+      qssc_severity = qssc::Severity::Info;
+    }
+    auto error = qssc::emitDiagnostic(
+        diagnosticCb, qssc_severity, qssc::ErrorCategory::QSSCompilationFailure,
+        diagnostic.str());
+    return;
+  });
+
   // Set up the output.
   llvm::raw_ostream *ostream;
   llvm::Optional<llvm::raw_string_ostream> outStringStream;
@@ -607,7 +630,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     if (auto frontendError = qssc::frontend::openqasm3::parse(
             inputSource, !directInput, emitAction == Action::DumpAST,
             emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
-            moduleOp, std::move(diagnosticCb)))
+            moduleOp, diagnosticCb))
       return frontendError;
 
     if (emitAction < Action::DumpMLIR)
@@ -645,6 +668,9 @@ compile_(int argc, char const **argv, std::string *outputString,
   } // if input == MLIR
 
   auto errorHandler = [&](const Twine &msg) {
+    auto error = qssc::emitDiagnostic(
+        diagnosticCb, qssc::Severity::Error,
+        qssc::ErrorCategory::QSSCompilationFailure, msg.str());
     emitError(UnknownLoc::get(&context)) << msg;
     return failure();
   };
