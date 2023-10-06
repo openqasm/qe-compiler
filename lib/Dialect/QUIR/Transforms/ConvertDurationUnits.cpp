@@ -67,12 +67,20 @@ namespace {
                     result.addInputs(en.index(), converted);
                 }
 
+                // Convert signature for block arguments
                 SmallVector<Type, 8> argTypes;
                 argTypes.reserve(llvm::size(result.getConvertedTypes()));
                 for (Type type : result.getConvertedTypes())
                     argTypes.push_back(type);
 
-                auto resultTypes = funcTy.getResults();
+                // Convert tyes for results as well
+                SmallVector<Type, 1> resultTypes;
+                for (auto type : funcTy.getResults()) {
+                    auto convertedType = convertType(type);
+                    if (!convertedType)
+                        convertedType = type;
+                    resultTypes.push_back(convertedType);
+                }
 
                 return mlir::FunctionType::get(funcTy.getContext(), argTypes, resultTypes);
             } // convertFunctionSignature
@@ -169,6 +177,18 @@ namespace {
     }; // struct DurationUnitsCircuitOpConversionPattern
 
 
+    bool checkTypeNeedConversion(mlir::Type type, TimeUnits targetConvertUnits) {
+        if (!type.isa<DurationType>())
+            return false;
+        auto durationType = type.cast<DurationType>();
+
+        auto convertUnits = durationType.getUnits();
+        if (convertUnits != targetConvertUnits)
+            return true;
+        return false;
+    } // checkTypeNeedConversion
+
+
 } // anonymous namespace
 
 
@@ -195,30 +215,30 @@ void ConvertDurationUnitsPass::runOnOperation() {
 
     target.addDynamicallyLegalOp<quir::ConstantOp>([&](quir::ConstantOp op) {
         auto type = op.getType().cast<DurationType>();
-        if (!type)
-            return true;
+        return !checkTypeNeedConversion(type, targetConvertUnits);
+    });
 
-        auto convertUnits = type.getUnits();
-        if (convertUnits == targetConvertUnits)
-            return true;
-        return false;
+    target.addDynamicallyLegalOp<quir::CircuitOp>([&](quir::CircuitOp op) {
+        for (auto type : op.getArgumentTypes()) {
+            if(checkTypeNeedConversion(type, targetConvertUnits))
+                return false;
+        }
+        for (auto type : op.getResultTypes()) {
+            if(checkTypeNeedConversion(type, targetConvertUnits))
+                return false;
+        }
+
+        return true;
     });
 
     // Only constant declared durations if their type is not
     // the target output duration type.
     target.addDynamicallyLegalOp<
             quir::DelayOp,
-            quir::CircuitOp,
             quir::ReturnOp
         >([&](mlir::Operation *op) {
             for (auto type : op->getOperandTypes()) {
-                if (!type.isa<DurationType>())
-                    continue;
-
-                auto durationType = type.cast<DurationType>();
-
-                auto convertUnits = durationType.getUnits();
-                if (convertUnits != targetConvertUnits )
+                if(checkTypeNeedConversion(type, targetConvertUnits))
                     return false;
             }
             return true;
@@ -254,5 +274,5 @@ llvm::StringRef ConvertDurationUnitsPass::getArgument() const {
   return "convert-quir-duration-units";
 }
 llvm::StringRef ConvertDurationUnitsPass::getDescription() const {
-  return "Convert the units of durations (and associated constant values) to the desired units";
+  return "Convert the units of all duration types within the module to the specified units";
 }
