@@ -34,20 +34,6 @@ using namespace mlir::quir;
 
 namespace {
 
-
-    class DurationTypeConverter : public TypeConverter {
-
-        public:
-            DurationTypeConverter(TimeUnits convertUnits) {
-                // Convert durations to the appropriate type
-                addConversion([&](quir::DurationType t) -> Optional<Type> {
-                    if (t.getUnits() == convertUnits)
-                        return t;
-                    return DurationType::get(t.getContext(), convertUnits);
-                });
-            }
-    };
-
     /// Materialize quir.constant durations with an incorrect
     /// type to the specified type.
     struct MaterializeDurationUnitsConversionPattern
@@ -60,10 +46,10 @@ namespace {
         matchAndRewrite(quir::ConstantOp op, OpAdaptor adaptor,
                         ConversionPatternRewriter &rewriter) const override {
 
-            // ensure is a duration
-            //auto value = op.value();
-
-            llvm::errs() << (int)convertUnits << "\n";
+            auto duration = DurationAttr::get(getContext(),
+                          rewriter.getType<DurationType>(convertUnits),
+                          llvm::APFloat(1.0));
+            rewriter.replaceOpWithNewOp<quir::ConstantOp>(op, duration);
 
             return success();
         } // matchAndRewrite
@@ -94,7 +80,13 @@ void ConvertDurationUnitsPass::runOnOperation() {
 
     // Type converter to ensure only durations of target units exist
     // after cnoversion
-    DurationTypeConverter typeConverter(units);
+    TypeConverter typeConverter;
+
+    typeConverter.addConversion([&](quir::DurationType t) -> Optional<Type> {
+                    if (t.getUnits() == units)
+                        return t;
+                    return DurationType::get(t.getContext(), units);
+                });
 
     RewritePatternSet patterns(&context);
 
