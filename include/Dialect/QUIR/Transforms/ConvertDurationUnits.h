@@ -41,7 +41,7 @@ struct ConvertDurationUnitsPass
 
   ConvertDurationUnitsPass() = default;
   ConvertDurationUnitsPass(const ConvertDurationUnitsPass &pass) : PassWrapper(pass) {}
-  ConvertDurationUnitsPass(const TimeUnits inUnits, const double inDtTimestep) {
+  ConvertDurationUnitsPass(const TimeUnits inUnits, const double inDtTimestep = 1.) {
     units = inUnits;
     dtTimestep = inDtTimestep;
   }
@@ -60,7 +60,7 @@ struct ConvertDurationUnitsPass
                         llvm::cl::value_desc("enum"), llvm::cl::init(TimeUnits::dt)};
 
   Option<double> dtTimestep{*this, "dt-timestep",
-                        llvm::cl::desc("Duration of dt (the scheduling timestep) in seconds."),
+                        llvm::cl::desc("Duration of dt (the scheduling timestep) in seconds. Defaults to 1s."),
                         llvm::cl::value_desc("num"), llvm::cl::init(1.)};
 
   void runOnOperation() override;

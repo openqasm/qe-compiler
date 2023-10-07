@@ -98,6 +98,9 @@ double DurationAttr::getSchedulingRateFromDt(const double dt) {
 }
 
 double DurationAttr::convertUnitsToUnits(double value, TimeUnits inputUnits, TimeUnits outputUnits, const double dt) {
+  // Check if we can avoid the conversion.
+  if (inputUnits == outputUnits)
+    return value;
   double seconds = convertToSeconds(value, inputUnits, dt);
   return convertFromSeconds(seconds, outputUnits, dt);
 }

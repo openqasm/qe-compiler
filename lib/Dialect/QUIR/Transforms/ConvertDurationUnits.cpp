@@ -41,7 +41,7 @@ namespace {
     class DurationTypeConverter : public TypeConverter {
 
         public:
-            DurationTypeConverter(TimeUnits convertUnits) {
+            DurationTypeConverter(const TimeUnits convertUnits) : convertUnits_(convertUnits) {
                 // Convert durations to the appropriate type
                 addConversion([&](mlir::Type t) -> Optional<Type> {
 
@@ -50,9 +50,10 @@ namespace {
                         return t;
 
                     auto duration = t.dyn_cast<DurationType>();
-                    if (duration.getUnits() == convertUnits)
+                    if (duration.getUnits() == convertUnits_)
                         return t;
-                    return DurationType::get(duration.getContext(), convertUnits);
+
+                    return DurationType::get(duration.getContext(), convertUnits_);
                 });
             }
 
@@ -85,6 +86,9 @@ namespace {
                 return mlir::FunctionType::get(funcTy.getContext(), result.getConvertedTypes(), resultTypes);
             } // convertFunctionSignature
 
+            private:
+                TimeUnits convertUnits_;
+
     }; // DurationTypeConverter
 
     /// Convert quir.constant durations with an incorrect
@@ -105,6 +109,7 @@ namespace {
                 return failure();
 
             auto dstType = this->typeConverter->convertType(op.getType());
+
             if (!dstType)
                 return failure();
 
@@ -182,7 +187,7 @@ namespace {
     /// Update the types of operations that implement the callable interface.
     /// Care must be taken to properly map the types of containing regions
     /// using the SignatureConversion inteface. These are not well documented
-    /// but this implementation follows the SPIRVToLLVM approach.
+    /// but this implementation follows the SPIRVToLLVM implementation.
     template <typename FunctionType>
     struct DurationUnitsFunctionOpConversionPattern : public OpConversionPattern<FunctionType> {
         explicit DurationUnitsFunctionOpConversionPattern(MLIRContext *ctx, DurationTypeConverter &typeConverter)
