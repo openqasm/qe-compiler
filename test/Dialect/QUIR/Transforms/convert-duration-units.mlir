@@ -1,4 +1,5 @@
 // RUN: qss-compiler -X=mlir --convert-quir-duration-units='units=dt dt-duration=0.1' %s | FileCheck %s --check-prefix=DT
+// RUN: qss-compiler -X=mlir --convert-quir-duration-units='units=us dt-duration=0.1' %s | FileCheck %s --check-prefix=US
 
 
 //
@@ -14,10 +15,8 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// This test verifies store-forwarding and the removal of invisible stores. All
-// variable loads must be replaced by forwarded stored values. Then, any
-// remaining stores are invisible as the variables have no lifetime beyond this
-// program and are to be removed, together with the allocation of variables.
+// This test verifies that the pass --convert-quir-duration-units
+// is able to globally convert duration units throughout the IR.
 
 // CHECK-LABEL: func @quir_durations()
 func @quir_durations (%arg : i32) {

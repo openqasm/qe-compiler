@@ -93,7 +93,7 @@ namespace {
     struct DurationUnitsConstantOpConversionPattern
         : public OpConversionPattern<quir::ConstantOp> {
     explicit DurationUnitsConstantOpConversionPattern(MLIRContext *ctx,
-                                                DurationTypeConverter &typeConverter, llvm::Optional<double> dtDuration)
+                                                DurationTypeConverter &typeConverter, double dtDuration)
         : OpConversionPattern(typeConverter, ctx, /*benefit=*/1), dtDuration(dtDuration) {}
 
         LogicalResult
@@ -110,14 +110,14 @@ namespace {
 
             auto units = dstType.cast<DurationType>().getUnits();
 
-            DurationAttr newDuration = duration.getConvertedDurationAttr(units, duration.getDuration().convertToDouble());
+            DurationAttr newDuration = duration.getConvertedDurationAttr(units, dtDuration);
             rewriter.replaceOpWithNewOp<quir::ConstantOp>(op, newDuration);
 
             return success();
         } // matchAndRewrite
 
         private:
-            llvm::Optional<double> dtDuration;
+            double dtDuration;
 
 
     };  // struct DurationUnitsConstantOpConversionPattern
@@ -252,10 +252,7 @@ void ConvertDurationUnitsPass::runOnOperation() {
     // Extract conversion units
     auto targetConvertUnits = getTargetConvertUnits();
 
-    // Extract dt conversion factor if necessary
-    llvm::Optional<double> dtConversion;
-    if (targetConvertUnits  == TimeUnits::dt)
-        dtConversion = getDtDuration();
+    double dtConversion = getDtDuration();
 
     auto &context = getContext();
     ConversionTarget target(context);
