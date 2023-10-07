@@ -100,12 +100,18 @@ namespace {
         matchAndRewrite(quir::ConstantOp op, OpAdaptor adaptor,
                         ConversionPatternRewriter &rewriter) const override {
 
+            auto duration = op.value().dyn_cast<quir::DurationAttr>();
+            if (!duration)
+                return failure();
+
             auto dstType = this->typeConverter->convertType(op.getType());
             if (!dstType)
                 return failure();
 
-            auto duration = DurationAttr::get(getContext(), dstType.cast<DurationType>(), llvm::APFloat(1.0));
-            rewriter.replaceOpWithNewOp<quir::ConstantOp>(op, duration);
+            auto units = dstType.cast<DurationType>().getUnits();
+
+            DurationAttr newDuration = duration.getConvertedDurationAttr(units, duration.getDuration().convertToDouble());
+            rewriter.replaceOpWithNewOp<quir::ConstantOp>(op, newDuration);
 
             return success();
         } // matchAndRewrite
@@ -322,11 +328,6 @@ TimeUnits ConvertDurationUnitsPass::getTargetConvertUnits() const {
 }
 
 double ConvertDurationUnitsPass::getDtDuration() {
-    if (dtDuration < 0.) {
-        llvm::errs() << "Supplied duration of " << dtDuration << "s is invalid \n";
-        signalPassFailure();
-
-    }
     return dtDuration;
 }
 

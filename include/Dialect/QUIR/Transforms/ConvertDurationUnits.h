@@ -56,7 +56,7 @@ struct ConvertDurationUnitsPass
 
   Option<double> dtDuration{*this, "dt-duration",
                         llvm::cl::desc("Duration of dt (scheduling cycle) in seconds."),
-                        llvm::cl::value_desc("num"), llvm::cl::init(-1)};
+                        llvm::cl::value_desc("num"), llvm::cl::init(1.)};
 
   void runOnOperation() override;
 

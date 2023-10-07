@@ -58,7 +58,24 @@ def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
                         "APFloat":$duration);
 
   let extraClassDeclaration = [{
+
+        /// Get the scheduling timestep length (in seconds) from the input scheduling rate (in seconds).
+        static double getDtFromSchedulingRate(const double schedulingRate);
+        /// Get the scheduling rate (in seconds) from the input scheduling timestep length (in seconds).
+        static double getSchedulingRateFromDt(const double dt);
+
+        /// Convert duration of inputUnits to outputUnits
+        static double convertUnitsToUnits(double value, TimeUnits inputUnits, TimeUnits outputUnits, const double dt);
+
+        /// Convert the duration attribute to an integer number
+        /// of scheduling samples based on the input scheduling
+        /// timestep length, dt.
         uint64_t getSchedulingCycles(const double dt);
+        /// Convert this duration attribute's value to the target units.
+        double convertUnits(const TimeUnits targetUnits, const double dt);
+        /// Convert this duration attribute to a new duration attribute
+        /// with the target units.
+        DurationAttr getConvertedDurationAttr(const TimeUnits targetUnits, const double dt);
     }];
 
   let assemblyFormat = "`<` $duration `:` $type `>`";
