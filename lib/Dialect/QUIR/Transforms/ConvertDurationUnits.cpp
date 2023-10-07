@@ -35,26 +35,30 @@ using namespace mlir::quir;
 
 namespace {
 
-
-    template <typename T>
-    Optional<Type> legalizeType(T t) {
-        return t;
-    }
-
-
+    /// @brief  A custom unit type converter which marks
+    /// duration types that are not of the target unit as
+    /// illegal (to ensure they are converted) and all other types legal.
     class DurationTypeConverter : public TypeConverter {
 
         public:
             DurationTypeConverter(TimeUnits convertUnits) {
                 // Convert durations to the appropriate type
-                addConversion([&](quir::DurationType t) -> Optional<Type> {
-                    if (t.getUnits() == convertUnits)
+                addConversion([&](mlir::Type t) -> Optional<Type> {
+
+                    // All non-durations are legal in the conversion.
+                    if (!t.isa<DurationType>())
                         return t;
-                    return DurationType::get(t.getContext(), convertUnits);
+
+                    auto duration = t.dyn_cast<DurationType>();
+                    if (duration.getUnits() == convertUnits)
+                        return t;
+                    return DurationType::get(duration.getContext(), convertUnits);
                 });
-                addConversion(legalizeType<QubitType>);
             }
 
+            /// Convert duration types for an input function signature returning a new
+            /// function type signature as well as populating the SignatureConversion
+            /// object for block region argument type mapping.
             mlir::FunctionType convertFunctionSignature(FunctionType funcTy, DurationTypeConverter::SignatureConversion &result) {
                 // Convert argument types one by one and check for errors.
                 for (auto &en : llvm::enumerate(funcTy.getInputs())) {
@@ -65,16 +69,11 @@ namespace {
                         convertedType = type;
 
                     converted.push_back(convertedType);
+                    // Load the signature indicies and what they have been converted to.
                     result.addInputs(en.index(), converted);
                 }
 
-                // Convert signature for block arguments
-                SmallVector<Type, 8> argTypes;
-                argTypes.reserve(llvm::size(result.getConvertedTypes()));
-                for (Type type : result.getConvertedTypes())
-                    argTypes.push_back(type);
-
-                // Convert tyes for results as well
+                // Convert types for results as well
                 SmallVector<Type, 1> resultTypes;
                 for (auto type : funcTy.getResults()) {
                     auto convertedType = convertType(type);
@@ -83,13 +82,14 @@ namespace {
                     resultTypes.push_back(convertedType);
                 }
 
-                return mlir::FunctionType::get(funcTy.getContext(), argTypes, resultTypes);
+                return mlir::FunctionType::get(funcTy.getContext(), result.getConvertedTypes(), resultTypes);
             } // convertFunctionSignature
 
     }; // DurationTypeConverter
 
     /// Convert quir.constant durations with an incorrect
-    /// type to the specified type.
+    /// type to the specified type. This is the pattern
+    /// that actually computes the unit conversion.
     struct DurationUnitsConstantOpConversionPattern
         : public OpConversionPattern<quir::ConstantOp> {
     explicit DurationUnitsConstantOpConversionPattern(MLIRContext *ctx,
@@ -129,16 +129,54 @@ namespace {
         matchAndRewrite(OperationType op, typename OperationType::Adaptor adaptor,
                         ConversionPatternRewriter &rewriter) const override {
 
+            // Update the operand input types using the adaptor
             rewriter.updateRootInPlace(
                 op, [&]() { op->setOperands(adaptor.getOperands());
             });
+
 
             return success();
         } // matchAndRewrite
 
     };  // struct DurationUnitsConversionPattern
 
+    /// Convert duration unit types via the adaptor
+    /// for operations that return types.
+    template <typename ReturnsTypeOp>
+    struct DurationUnitsReturnsTypeOpConversionPattern
+        : public OpConversionPattern<ReturnsTypeOp> {
+    explicit DurationUnitsReturnsTypeOpConversionPattern(MLIRContext *ctx,
+                                                DurationTypeConverter &typeConverter)
+        : OpConversionPattern<ReturnsTypeOp>(typeConverter, ctx, /*benefit=*/1) {}
 
+        LogicalResult
+        matchAndRewrite(ReturnsTypeOp op, typename ReturnsTypeOp::Adaptor adaptor,
+                        ConversionPatternRewriter &rewriter) const override {
+
+
+            const auto numResults = op.getNumResults();
+            SmallVector<Type, 1> resultTypes;
+            for (uint i = 0; i < numResults; ++i) {
+                auto type = op.getType(i);
+                auto convertedType = this->typeConverter->convertType(type);
+                if (!convertedType)
+                    convertedType = type;
+                resultTypes.push_back(convertedType);
+            }
+            rewriter.replaceOpWithNewOp<ReturnsTypeOp>(
+                op, resultTypes, adaptor.getOperands(), op->getAttrs());
+
+
+            return success();
+        } // matchAndRewrite
+
+    };  // struct DurationUnitsReturnsTypeOpConversionPattern
+
+
+    /// Update the types of operations that implement the callable interface.
+    /// Care must be taken to properly map the types of containing regions
+    /// using the SignatureConversion inteface. These are not well documented
+    /// but this implementation follows the SPIRVToLLVM approach.
     template <typename FunctionType>
     struct DurationUnitsFunctionOpConversionPattern : public OpConversionPattern<FunctionType> {
         explicit DurationUnitsFunctionOpConversionPattern(MLIRContext *ctx, DurationTypeConverter &typeConverter)
@@ -149,17 +187,24 @@ namespace {
                         ConversionPatternRewriter &rewriter) const override {
 
             auto funcLikeType = funcLikeOp.getType();
+            // Create a signature converter for our interface
             DurationTypeConverter::SignatureConversion signatureConverter(
                 funcLikeType.getNumInputs());
+
+            // Generate the updated function signature type.
+            // The signatureConverter is built up which will then be
+            // used below to map region types in the rewriter.
             auto newFuncLikeType = typeConverter.convertFunctionSignature(funcLikeOp.getType(), signatureConverter);
             if (!newFuncLikeType)
                 return failure();
 
-            // Create a new function operation
+            // Create a new function operation with the update signature type.
             Location loc = funcLikeOp.getLoc();
             StringRef name = funcLikeOp.getName();
             auto newFuncLikeOp = rewriter.create<FunctionType>(loc, name, newFuncLikeType);
 
+            // Update the internal Regions/Blocks while ensuring the updated types are
+            // appropriately propagated using the SignatureConverter we built up.
             rewriter.inlineRegionBefore(funcLikeOp.getBody(), newFuncLikeOp.getBody(),
                                         newFuncLikeOp.end());
             if (failed(rewriter.convertRegionTypes(&newFuncLikeOp.getBody(), typeConverter,
@@ -179,7 +224,8 @@ namespace {
     }; // struct DurationUnitsFunctionOpConversionPattern
 
 
-    bool checkTypeNeedConversion(mlir::Type type, TimeUnits targetConvertUnits) {
+    /// Helper method to check that the duration units need to be converted.
+    bool checkTypeNeedsConversion(mlir::Type type, TimeUnits targetConvertUnits) {
         if (!type.isa<DurationType>())
             return false;
         auto durationType = type.cast<DurationType>();
@@ -188,7 +234,7 @@ namespace {
         if (convertUnits != targetConvertUnits)
             return true;
         return false;
-    } // checkTypeNeedConversion
+    } // checkTypeNeedsConversion
 
 
 } // anonymous namespace
@@ -209,24 +255,25 @@ void ConvertDurationUnitsPass::runOnOperation() {
     ConversionTarget target(context);
 
     // Type converter to ensure only durations of target units exist
-    // after cnoversion
-    DurationTypeConverter typeConverter(targetConvertUnits );
+    // after conversion
+    DurationTypeConverter typeConverter(targetConvertUnits);
 
     RewritePatternSet patterns(&context);
 
-
+    // Patterns below ensure that all operations that might have
+    // durations are marked for potential unit conversion.
     target.addDynamicallyLegalOp<quir::ConstantOp>([&](quir::ConstantOp op) {
         auto type = op.getType().cast<DurationType>();
-        return !checkTypeNeedConversion(type, targetConvertUnits);
+        return !checkTypeNeedsConversion(type, targetConvertUnits);
     });
 
     target.addDynamicallyLegalOp<quir::CircuitOp, mlir::FuncOp>([&](mlir::FunctionOpInterface op) {
         for (auto type : op.getArgumentTypes()) {
-            if(checkTypeNeedConversion(type, targetConvertUnits))
+            if(checkTypeNeedsConversion(type, targetConvertUnits))
                 return false;
         }
         for (auto type : op.getResultTypes()) {
-            if(checkTypeNeedConversion(type, targetConvertUnits))
+            if(checkTypeNeedsConversion(type, targetConvertUnits))
                 return false;
         }
 
@@ -238,22 +285,30 @@ void ConvertDurationUnitsPass::runOnOperation() {
     target.addDynamicallyLegalOp<
             quir::DelayOp,
             quir::ReturnOp,
-            mlir::ReturnOp
+            quir::CallCircuitOp,
+            mlir::ReturnOp,
+            mlir::CallOp
         >([&](mlir::Operation *op) {
             for (auto type : op->getOperandTypes()) {
-                if(checkTypeNeedConversion(type, targetConvertUnits))
+                if(checkTypeNeedsConversion(type, targetConvertUnits))
+                    return false;
+            }
+            for (auto type : op->getResultTypes()) {
+                if(checkTypeNeedsConversion(type, targetConvertUnits))
                     return false;
             }
             return true;
     });
 
-
+    // Patterns to convert operations who's types might contain invalid duration units.
     patterns.add<DurationUnitsConstantOpConversionPattern>(&getContext(), typeConverter, dtConversion);
     patterns.add<
         DurationUnitsConversionPattern<quir::DelayOp>,
         DurationUnitsConversionPattern<quir::ReturnOp>,
+        DurationUnitsReturnsTypeOpConversionPattern<quir::CallCircuitOp>,
         DurationUnitsFunctionOpConversionPattern<quir::CircuitOp>,
         DurationUnitsConversionPattern<mlir::ReturnOp>,
+        DurationUnitsReturnsTypeOpConversionPattern<mlir::CallOp>,
         DurationUnitsFunctionOpConversionPattern<mlir::FuncOp>
     >(&getContext(), typeConverter);
 
