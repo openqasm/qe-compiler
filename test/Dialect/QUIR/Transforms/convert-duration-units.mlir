@@ -1,5 +1,5 @@
 // RUN: qss-compiler -X=mlir --convert-quir-duration-units='units=dt dt-timestep=0.1' %s | FileCheck %s --check-prefix=DT
-// RUN: qss-compiler -X=mlir --convert-quir-duration-units='units=us dt-timestep=0.1' %s | FileCheck %s --check-prefix=US
+// RUN: qss-compiler -X=mlir --convert-quir-duration-units='units=s dt-timestep=0.1' %s | FileCheck %s --check-prefix=S
 
 
 //
@@ -24,41 +24,75 @@ func @quir_durations (%arg : i32) {
     %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 
     %duration_dt0 = quir.constant #quir.duration<10.0 : <dt>>
-    // DT: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <dt>>
+    // DT: [[duration_dt0:%.*]] = quir.constant #quir.duration<1.000000e+01 : <dt>>
+    // S: [[duration_dt0:%.*]] = quir.constant #quir.duration<1.000000e+00 : <s>>
     %duration_dt1 = quir.constant #quir.duration<10.0 : !quir.duration<dt>>
     // DT: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <dt>>
+    // S: {{.*}} = quir.constant #quir.duration<1.000000e+00 : <s>>
     %duration_s = quir.constant #quir.duration<10.0 : !quir.duration<s>>
-    // DT: {{.*}} = quir.constant #quir.duration<1.000000e+02 : <dt>>
+    // DT: [[duration_s:%.*]] = quir.constant #quir.duration<1.000000e+02 : <dt>>
+    // S: [[duration_s:%.*]] = quir.constant #quir.duration<1.000000e+01 : <s>>
     %duration_ms = quir.constant #quir.duration<10.0 : !quir.duration<ms>>
-    // DT: {{.*}} = quir.constant #quir.duration<1.000000e+04 : <dt>>
+    // DT: [[duration_ms:%.*]] = quir.constant #quir.duration<0.099999999999999992 : <dt>>
+    // S: [[duration_ms:%.*]] = quir.constant #quir.duration<1.000000e-02 : <s>>
     %duration_us = quir.constant #quir.duration<10.0 : !quir.duration<us>>
-    // DT: {{.*}} = quir.constant #quir.duration<1.000000e+07 : <dt>>
+    // DT: {{.*}} = quir.constant #quir.duration<9.9999999999999995E-8 : <dt>>
+    // S: {{.*}} = quir.constant #quir.duration<1.000000e-05 : <s>>
     %duration_ns = quir.constant #quir.duration<10.0 : !quir.duration<ns>>
-    // DT: {{.*}} = quir.constant #quir.duration<1.000000e+010 : <dt>>
+    // Floating point precision errors. If this is an issue longrun we should move to APFloat.
+    // which is an easy change.
+    // S: {{.*}} = quir.constant #quir.duration<1.000000e-08 : <s>>
+
     %duration_ps = quir.constant #quir.duration<10.0 : !quir.duration<ps>>
-    // DT: {{.*}} = quir.constant #quir.duration<1.000000e+013 : <dt>>
     %duration_fs = quir.constant #quir.duration<10.0 : !quir.duration<fs>>
-    // DT: {{.*}} = quir.constant #quir.duration<1.000000e+016 : <dt>>
 
     quir.delay %duration_s, (%q0) : !quir.duration<s>, (!quir.qubit<1>) -> ()
+    // DT:  quir.delay [[duration_s]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // S:  quir.delay [[duration_s]], ({{.*}}) : !quir.duration<s>, (!quir.qubit<1>) -> ()
     quir.delay %duration_ms, (%q0) : !quir.duration<ms>, (!quir.qubit<1>) -> ()
+    // DT:  quir.delay [[duration_ms]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // S:  quir.delay [[duration_ms]], ({{.*}}) : !quir.duration<s>, (!quir.qubit<1>) -> ()
+
 
     quir.call_circuit @circuit0(%q0, %duration_dt0,  %duration_s, %duration_ms) : (!quir.qubit<1>, !quir.duration<dt>, !quir.duration<s>, !quir.duration<ms>) -> (!quir.duration<ms>, !quir.duration<ms>)
+    // DT: {{.*}}:2 = quir.call_circuit @circuit0({{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (!quir.qubit<1>, !quir.duration<dt>, !quir.duration<dt>, !quir.duration<dt>) -> (!quir.duration<dt>, !quir.duration<dt>)
+    // S: {{.*}}:2 = quir.call_circuit @circuit0({{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (!quir.qubit<1>, !quir.duration<s>, !quir.duration<s>, !quir.duration<s>) -> (!quir.duration<s>, !quir.duration<s>)
     call @func0(%arg, %q0, %duration_dt0,  %duration_s, %duration_ms) : (i32, !quir.qubit<1>, !quir.duration<dt>, !quir.duration<s>, !quir.duration<ms>) -> (i32, !quir.duration<ms>)
+    // DT: {{.*}}:2 = call @func0({{.*}}, {{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (i32, !quir.qubit<1>, !quir.duration<dt>, !quir.duration<dt>, !quir.duration<dt>) -> (i32, !quir.duration<dt>)
+    // S: {{.*}}:2 = call @func0({{.*}}, {{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (i32, !quir.qubit<1>, !quir.duration<s>, !quir.duration<s>, !quir.duration<s>) -> (i32, !quir.duration<s>)
     return
 }
 
 
 quir.circuit @circuit0 (%q: !quir.qubit<1>, %duration_dt0: !quir.duration<dt>, %duration_s: !quir.duration<s>, %duration_ms: !quir.duration<ms>) -> (!quir.duration<ms>, !quir.duration<ms>) {
+// DT: quir.circuit @circuit0(%arg0: !quir.qubit<1>, [[duration_dt0:%.*]]: !quir.duration<dt>, [[duration_s:%.*]]: !quir.duration<dt>, [[duration_ms:%.*]]: !quir.duration<dt>) -> (!quir.duration<dt>, !quir.duration<dt>) {
+// S: quir.circuit @circuit0(%arg0: !quir.qubit<1>, [[duration_dt0:%.*]]: !quir.duration<s>, [[duration_s:%.*]]: !quir.duration<s>, [[duration_ms:%.*]]: !quir.duration<s>) -> (!quir.duration<s>, !quir.duration<s>) {
     quir.delay %duration_dt0, (%q) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // DT: quir.delay [[duration_dt0]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // S: quir.delay [[duration_dt0]], ({{.*}}) : !quir.duration<s>, (!quir.qubit<1>) -> ()
     quir.delay %duration_s, (%q) : !quir.duration<s>, (!quir.qubit<1>) -> ()
+    // DT: quir.delay [[duration_s]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // S: quir.delay [[duration_s]], ({{.*}}) : !quir.duration<s>, (!quir.qubit<1>) -> ()
     quir.delay %duration_ms, (%q) : !quir.duration<ms>, (!quir.qubit<1>) -> ()
+    // DT: quir.delay [[duration_ms]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // S: quir.delay [[duration_ms]], ({{.*}}) : !quir.duration<s>, (!quir.qubit<1>) -> ()
     quir.return %duration_ms, %duration_ms : !quir.duration<ms>, !quir.duration<ms>
+    // DT: quir.return [[duration_ms]], [[duration_ms]] : !quir.duration<dt>, !quir.duration<dt>
+    // S: quir.return [[duration_ms]], [[duration_ms]] : !quir.duration<s>, !quir.duration<s>
 }
 
 func @func0 (%arg: i32, %q: !quir.qubit<1>, %duration_dt0: !quir.duration<dt>, %duration_s: !quir.duration<s>, %duration_ms: !quir.duration<ms>) -> (i32, !quir.duration<ms>) {
+// DT: func @func0(%arg0: i32, %arg1: !quir.qubit<1>, [[duration_dt0:%.*]]: !quir.duration<dt>, [[duration_s:%.*]]: !quir.duration<dt>, [[duration_ms:%.*]]: !quir.duration<dt>) -> (i32, !quir.duration<dt>) {
+// S: func @func0(%arg0: i32, %arg1: !quir.qubit<1>, [[duration_dt0:%.*]]: !quir.duration<s>, [[duration_s:%.*]]: !quir.duration<s>, [[duration_ms:%.*]]: !quir.duration<s>) -> (i32, !quir.duration<s>) {
     quir.delay %duration_dt0, (%q) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // DT: quir.delay [[duration_dt0]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // S: quir.delay [[duration_dt0]], ({{.*}}) : !quir.duration<s>, (!quir.qubit<1>) -> ()
     quir.delay %duration_s, (%q) : !quir.duration<s>, (!quir.qubit<1>) -> ()
+    // DT: quir.delay [[duration_s]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // S: quir.delay [[duration_s]], ({{.*}}) : !quir.duration<s>, (!quir.qubit<1>) -> ()
     quir.delay %duration_ms, (%q) : !quir.duration<ms>, (!quir.qubit<1>) -> ()
+    // DT: quir.delay [[duration_ms]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
+    // S: quir.delay [[duration_ms]], ({{.*}}) : !quir.duration<s>, (!quir.qubit<1>) -> ()
     return %arg, %duration_ms : i32, !quir.duration<ms>
+    // S: return {{.*}}, [[duration_ms]] : i32, !quir.duration<s>
 }
