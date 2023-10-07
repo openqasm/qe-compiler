@@ -93,8 +93,8 @@ namespace {
     struct DurationUnitsConstantOpConversionPattern
         : public OpConversionPattern<quir::ConstantOp> {
     explicit DurationUnitsConstantOpConversionPattern(MLIRContext *ctx,
-                                                DurationTypeConverter &typeConverter, double dtDuration)
-        : OpConversionPattern(typeConverter, ctx, /*benefit=*/1), dtDuration(dtDuration) {}
+                                                DurationTypeConverter &typeConverter, double dtTimestep)
+        : OpConversionPattern(typeConverter, ctx, /*benefit=*/1), dtTimestep(dtTimestep) {}
 
         LogicalResult
         matchAndRewrite(quir::ConstantOp op, OpAdaptor adaptor,
@@ -110,14 +110,14 @@ namespace {
 
             auto units = dstType.cast<DurationType>().getUnits();
 
-            DurationAttr newDuration = duration.getConvertedDurationAttr(units, dtDuration);
+            DurationAttr newDuration = duration.getConvertedDurationAttr(units, dtTimestep);
             rewriter.replaceOpWithNewOp<quir::ConstantOp>(op, newDuration);
 
             return success();
         } // matchAndRewrite
 
         private:
-            double dtDuration;
+            double dtTimestep;
 
 
     };  // struct DurationUnitsConstantOpConversionPattern
@@ -252,7 +252,7 @@ void ConvertDurationUnitsPass::runOnOperation() {
     // Extract conversion units
     auto targetConvertUnits = getTargetConvertUnits();
 
-    double dtConversion = getDtDuration();
+    double dtConversion = getDtTimestep();
 
     auto &context = getContext();
     ConversionTarget target(context);
@@ -324,13 +324,13 @@ TimeUnits ConvertDurationUnitsPass::getTargetConvertUnits() const {
     return units;
 }
 
-double ConvertDurationUnitsPass::getDtDuration() {
-    return dtDuration;
+double ConvertDurationUnitsPass::getDtTimestep() {
+    return dtTimestep;
 }
 
 llvm::StringRef ConvertDurationUnitsPass::getArgument() const {
   return "convert-quir-duration-units";
 }
 llvm::StringRef ConvertDurationUnitsPass::getDescription() const {
-  return "Convert the units of all duration types within the module to the specified units";
+  return "Convert the units of all duration types within the module to the specified units.";
 }

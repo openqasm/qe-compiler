@@ -31,14 +31,19 @@
 
 
 namespace mlir::quir {
+
+/// @brief This pass will convert all standard usage of durations
+/// within QUIR to the input target units. It is useful for canonicalizing
+/// durations within a program to uniform base unit such as the target
+/// timestep "dt".
 struct ConvertDurationUnitsPass
     : public PassWrapper<ConvertDurationUnitsPass, OperationPass<>> {
 
   ConvertDurationUnitsPass() = default;
   ConvertDurationUnitsPass(const ConvertDurationUnitsPass &pass) : PassWrapper(pass) {}
-  ConvertDurationUnitsPass(TimeUnits inUnits, double inDtDuration) {
+  ConvertDurationUnitsPass(const TimeUnits inUnits, const double inDtTimestep) {
     units = inUnits;
-    dtDuration = inDtDuration;
+    dtTimestep = inDtTimestep;
   }
 
 
@@ -54,14 +59,14 @@ struct ConvertDurationUnitsPass
                           clEnumValN(TimeUnits::fs, "fs", "femtoseconds")),
                         llvm::cl::value_desc("enum"), llvm::cl::init(TimeUnits::dt)};
 
-  Option<double> dtDuration{*this, "dt-duration",
-                        llvm::cl::desc("Duration of dt (scheduling cycle) in seconds."),
+  Option<double> dtTimestep{*this, "dt-timestep",
+                        llvm::cl::desc("Duration of dt (the scheduling timestep) in seconds."),
                         llvm::cl::value_desc("num"), llvm::cl::init(1.)};
 
   void runOnOperation() override;
 
   TimeUnits getTargetConvertUnits() const;
-  double getDtDuration();
+  double getDtTimestep();
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
 
