@@ -21,14 +21,12 @@
 #ifndef QUIR_CONVERT_DURATION_UNITS_H
 #define QUIR_CONVERT_DURATION_UNITS_H
 
-
 #include "Dialect/QUIR/IR/QUIREnums.h"
 
 #include "mlir/Pass/Pass.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
-
 
 namespace mlir::quir {
 
@@ -40,28 +38,34 @@ struct ConvertDurationUnitsPass
     : public PassWrapper<ConvertDurationUnitsPass, OperationPass<>> {
 
   ConvertDurationUnitsPass() = default;
-  ConvertDurationUnitsPass(const ConvertDurationUnitsPass &pass) : PassWrapper(pass) {}
-  ConvertDurationUnitsPass(const TimeUnits inUnits, const double inDtTimestep = 1.) {
+  ConvertDurationUnitsPass(const ConvertDurationUnitsPass &pass)
+      : PassWrapper(pass) {}
+  ConvertDurationUnitsPass(const TimeUnits inUnits,
+                           const double inDtTimestep = 1.) {
     units = inUnits;
     dtTimestep = inDtTimestep;
   }
 
+  Option<TimeUnits> units{
+      *this,
+      "units",
+      llvm::cl::desc("Target units to convert to"),
+      llvm::cl::values(
+          clEnumValN(TimeUnits::dt, "dt", "Scheduling sample rate"),
+          clEnumValN(TimeUnits::s, "s", "seconds"),
+          clEnumValN(TimeUnits::ms, "ms", "milliseconds"),
+          clEnumValN(TimeUnits::us, "us", "microseconds"),
+          clEnumValN(TimeUnits::ns, "ns", "nanoseconds"),
+          clEnumValN(TimeUnits::ps, "ps", "picoseconds"),
+          clEnumValN(TimeUnits::fs, "fs", "femtoseconds")),
+      llvm::cl::value_desc("enum"),
+      llvm::cl::init(TimeUnits::dt)};
 
-  Option<TimeUnits> units{*this, "units",
-                        llvm::cl::desc("Target units to convert to"),
-                        llvm::cl::values(
-                          clEnumValN(TimeUnits::dt, "dt", "Scheduling sample rate"),
-                          clEnumValN(TimeUnits::s, "s", "seconds"),
-                          clEnumValN(TimeUnits::ms, "ms", "milliseconds"),
-                          clEnumValN(TimeUnits::us, "us", "microseconds"),
-                          clEnumValN(TimeUnits::ns, "ns", "nanoseconds"),
-                          clEnumValN(TimeUnits::ps, "ps", "picoseconds"),
-                          clEnumValN(TimeUnits::fs, "fs", "femtoseconds")),
-                        llvm::cl::value_desc("enum"), llvm::cl::init(TimeUnits::dt)};
-
-  Option<double> dtTimestep{*this, "dt-timestep",
-                        llvm::cl::desc("Duration of dt (the scheduling timestep) in seconds. Defaults to 1s."),
-                        llvm::cl::value_desc("num"), llvm::cl::init(1.)};
+  Option<double> dtTimestep{
+      *this, "dt-timestep",
+      llvm::cl::desc("Duration of dt (the scheduling timestep) in seconds. "
+                     "Defaults to 1s."),
+      llvm::cl::value_desc("num"), llvm::cl::init(1.)};
 
   void runOnOperation() override;
 
