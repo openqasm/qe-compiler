@@ -20,23 +20,19 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/MergeCircuits.h"
-
-#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BlockAndValueMapping.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/Support/LogicalResult.h"
-#include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/None.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 
-#include <llvm/ADT/None.h>
-#include <mlir/Dialect/Complex/IR/Complex.h>
+#include <algorithm>
 #include <vector>
 
 using namespace mlir;
@@ -61,14 +57,33 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
 
-    // get next quantum op and check if its a CallCircuitOp
-    llvm::Optional<Operation *> secondOp = nextQuantumOpOrNull(callCircuitOp);
-    if (!secondOp)
-      return failure();
+    // find next CallCircuitOp or fail
+    Operation *searchOp = callCircuitOp.getOperation();
+    llvm::Optional<Operation *> secondOp;
+    CallCircuitOp nextCallCircuitOp;
+    while (true) {
+      secondOp = nextQuantumOpOrNull(searchOp);
+      if (!secondOp)
+        return failure();
 
-    auto nextCallCircuitOp = dyn_cast<CallCircuitOp>(*secondOp);
-    if (!nextCallCircuitOp)
-      return failure();
+      nextCallCircuitOp = dyn_cast<CallCircuitOp>(*secondOp);
+      if (nextCallCircuitOp)
+        break;
+
+      // check for overlapping BarrierOp and fail if found
+      auto barrierOp = dyn_cast<BarrierOp>(*secondOp);
+      if (barrierOp) {
+        std::set<uint> firstQubits =
+            QubitOpInterface::getOperatedQubits(callCircuitOp);
+        std::set<uint> secondQubits =
+            QubitOpInterface::getOperatedQubits(barrierOp);
+
+        if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
+          return failure();
+      }
+
+      searchOp = *secondOp;
+    }
 
     Operation *insertOp = *secondOp;
 
@@ -126,7 +141,6 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
     return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
                                                 nextCallCircuitOp);
-
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
 
@@ -214,6 +228,53 @@ CircuitOp MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp) {
   assert(circuitOp && "matching circuit not found");
   return circuitOp;
 }
+
+// This pattern matches a Barrier following a Barrier and will merge the
+// two barriers together
+struct BarrierAndBarrierPattern : public OpRewritePattern<BarrierOp> {
+  explicit BarrierAndBarrierPattern(MLIRContext *ctx)
+      : OpRewritePattern<BarrierOp>(ctx) {}
+
+  LogicalResult matchAndRewrite(BarrierOp barrierOp,
+                                PatternRewriter &rewriter) const override {
+
+    // check for circuit op to merge with after moving barrier
+    auto nextBarrierOp = dyn_cast<BarrierOp>(barrierOp->getNextNode());
+    if (!nextBarrierOp)
+      return failure();
+
+    // merge barrier ops
+    llvm::SmallVector<Type> inputTypes;
+    llvm::SmallVector<Value> inputValues;
+
+    // copy first barrier operands
+
+    inputTypes.append(barrierOp->getOperandTypes().begin(),
+                      barrierOp->getOperandTypes().end());
+
+    inputValues.append(barrierOp->getOperands().begin(),
+                       barrierOp->getOperands().end());
+
+    // loop through second barrier and add operand if not in inputValues
+    auto qubitType = barrierOp->getOperandTypes()[0];
+    for (auto operand : nextBarrierOp.getOperands()) {
+      if (std::find(inputValues.begin(), inputValues.end(), operand) ==
+          inputValues.end()) {
+        inputValues.push_back(operand);
+        inputTypes.push_back(qubitType);
+      }
+    }
+
+    rewriter.create<mlir::quir::BarrierOp>(barrierOp->getLoc(),
+                                           ValueRange(inputValues));
+
+    rewriter.eraseOp(barrierOp);
+
+    rewriter.eraseOp(nextBarrierOp);
+
+    return success();
+  } // matchAndRewrite
+};  // struct BarrierAndCircuitPattern
 
 LogicalResult
 MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
@@ -347,6 +408,7 @@ void MergeCircuitsPass::runOnOperation() {
   patterns.add<CircuitAndCircuitPattern>(&getContext());
   patterns.add<BarrierAndCircuitPattern>(&getContext());
   patterns.add<CircuitAndBarrierPattern>(&getContext());
+  // patterns.add<BarrierAndBarrierPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
