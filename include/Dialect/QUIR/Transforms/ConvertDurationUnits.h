@@ -69,8 +69,8 @@ struct ConvertDurationUnitsPass
 
   void runOnOperation() override;
 
-  TimeUnits getTargetConvertUnits() const;
-  double getDtTimestep();
+  virtual TimeUnits getTargetConvertUnits() const;
+  virtual double getDtTimestep();
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
 

@@ -1,4 +1,4 @@
-//===- ConvertDurationUnits.cpp - Convert Duration Unis  --------*- C++ -*-===//
+//===- ConvertDurationUnits.cpp - Convert Duration Units  -------*- C++ -*-===//
 //
 //
 // (C) Copyright IBM 2023.
