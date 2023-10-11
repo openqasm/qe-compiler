@@ -28,7 +28,7 @@ class LLVMBuildFailure : public llvm::ErrorInfo<LLVMBuildFailure> {
 public:
   static char ID;
 
-  LLVMBuildFailure() {}
+  LLVMBuildFailure() = default;
 
   void log(llvm::raw_ostream &os) const override {
     os << "Failed to generate a binary file for Aer simulator";
