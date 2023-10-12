@@ -23,6 +23,10 @@ func @quir_durations (%arg : i32) {
 
     %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 
+    // Test a non-duration constant
+    %angle = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+    // DT: {{.*}} = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+
     %duration_dt0 = quir.constant #quir.duration<10.0 : <dt>>
     // DT: [[duration_dt0:%.*]] = quir.constant #quir.duration<1.000000e+01 : <dt>>
     // S: [[duration_dt0:%.*]] = quir.constant #quir.duration<1.000000e+00 : <s>>
