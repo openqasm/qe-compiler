@@ -229,53 +229,6 @@ CircuitOp MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp) {
   return circuitOp;
 }
 
-// This pattern matches a Barrier following a Barrier and will merge the
-// two barriers together
-struct BarrierAndBarrierPattern : public OpRewritePattern<BarrierOp> {
-  explicit BarrierAndBarrierPattern(MLIRContext *ctx)
-      : OpRewritePattern<BarrierOp>(ctx) {}
-
-  LogicalResult matchAndRewrite(BarrierOp barrierOp,
-                                PatternRewriter &rewriter) const override {
-
-    // check for circuit op to merge with after moving barrier
-    auto nextBarrierOp = dyn_cast<BarrierOp>(barrierOp->getNextNode());
-    if (!nextBarrierOp)
-      return failure();
-
-    // merge barrier ops
-    llvm::SmallVector<Type> inputTypes;
-    llvm::SmallVector<Value> inputValues;
-
-    // copy first barrier operands
-
-    inputTypes.append(barrierOp->getOperandTypes().begin(),
-                      barrierOp->getOperandTypes().end());
-
-    inputValues.append(barrierOp->getOperands().begin(),
-                       barrierOp->getOperands().end());
-
-    // loop through second barrier and add operand if not in inputValues
-    auto qubitType = barrierOp->getOperandTypes()[0];
-    for (auto operand : nextBarrierOp.getOperands()) {
-      if (std::find(inputValues.begin(), inputValues.end(), operand) ==
-          inputValues.end()) {
-        inputValues.push_back(operand);
-        inputTypes.push_back(qubitType);
-      }
-    }
-
-    rewriter.create<mlir::quir::BarrierOp>(barrierOp->getLoc(),
-                                           ValueRange(inputValues));
-
-    rewriter.eraseOp(barrierOp);
-
-    rewriter.eraseOp(nextBarrierOp);
-
-    return success();
-  } // matchAndRewrite
-};  // struct BarrierAndCircuitPattern
-
 LogicalResult
 MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
                                      CallCircuitOp callCircuitOp,
@@ -408,7 +361,6 @@ void MergeCircuitsPass::runOnOperation() {
   patterns.add<CircuitAndCircuitPattern>(&getContext());
   patterns.add<BarrierAndCircuitPattern>(&getContext());
   patterns.add<CircuitAndBarrierPattern>(&getContext());
-  // patterns.add<BarrierAndBarrierPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
