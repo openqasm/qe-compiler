@@ -270,13 +270,11 @@ void ConvertDurationUnitsPass::runOnOperation() {
   // Patterns below ensure that all operations that might have
   // durations are marked for potential unit conversion.
   target.addDynamicallyLegalOp<quir::ConstantOp>([&](quir::ConstantOp op) {
-
     auto type = op.getType();
-    if(type.isa<DurationType>())
+    if (type.isa<DurationType>())
       return !checkTypeNeedsConversion(type, targetConvertUnits);
 
     return true;
-
   });
 
   target.addDynamicallyLegalOp<quir::CircuitOp, mlir::FuncOp>(
