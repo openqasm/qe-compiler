@@ -1,4 +1,4 @@
-//===- QUIRTypes.h - QUIR dialect types -------------------------*- C++ -*-===//
+//===- QUIREnums.h - QUIR dialect enums -------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,26 +14,17 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef QUIR_QUIRTYPES_H
-#define QUIR_QUIRTYPES_H
-
-#include "Dialect/QUIR/IR/QUIREnums.h"
+#ifndef QUIR_QUIRENUMS_H
+#define QUIR_QUIRENUMS_H
 
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Dialect.h"
+#include "mlir/IR/DialectImplementation.h"
 #include "mlir/IR/OpDefinition.h"
-#include "mlir/IR/Types.h"
-#include "mlir/Interfaces/InferTypeOpInterface.h"
-#include "mlir/Interfaces/SideEffectInterfaces.h"
 
-#define GET_TYPEDEF_CLASSES
-#include "Dialect/QUIR/IR/QUIRTypes.h.inc"
+#define GET_ENUM_CLASSES
+#include "Dialect/QUIR/IR/QUIREnums.h.inc"
 
-namespace mlir::quir {
+namespace mlir {} // namespace mlir
 
-/// Check whether a type is a bool (i1)
-inline bool isBoolType(mlir::Type type) { return type.isInteger(1); }
-
-} // namespace mlir::quir
-
-#endif // QUIR_QUIRTYPES_H
+#endif // QUIR_QUIRENUMS_H

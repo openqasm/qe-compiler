@@ -63,9 +63,9 @@ gate cx control, target { }
 
 // MLIR-CIRCUITS: quir.circuit @circuit_3(%arg0: !quir.{{.*}}, %arg1: !quir.{{.*}}, %arg2: !quir.{{.*}}, %arg3: !quir.{{.*}}, %arg4: !quir.{{.*}}, %arg5: !quir.{{.*}}) {
 // NOTE can not enforce parameter ordering on the builtin_U because the order of the quir.circuit parameters changes when tested with github actions
-// MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
+// MLIR-CIRCUITS: quir.delay {{.*}}, ({{.*}}) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
 
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // MLIR: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
@@ -93,9 +93,9 @@ cx $1, $2;
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=30, unit=Nanoseconds, name=for_0))
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=40, unit=Nanoseconds, name=for_1))
 // AST-PRETTY: DeclarationNode(type=ASTTypeDuration, DurationNode(duration=50, unit=Nanoseconds, name=for_2))
-// MLIR: [[DURATION0:%.*]] = quir.constant #quir.duration<"30ns" : !quir.duration>
-// MLIR: [[DURATION1:%.*]] = quir.constant #quir.duration<"40ns" : !quir.duration>
-// MLIR: [[DURATION2:%.*]] = quir.constant #quir.duration<"50ns" : !quir.duration>
+// MLIR: [[DURATION0:%.*]] = quir.constant #quir.duration<3.000000e+01 : <ns>>
+// MLIR: [[DURATION1:%.*]] = quir.constant #quir.duration<4.000000e+01 : <ns>>
+// MLIR: [[DURATION2:%.*]] = quir.constant #quir.duration<5.000000e+01 : <ns>>
 duration for_0 = 30ns;
 duration for_1 = 40ns;
 duration for_2 = 50ns;
@@ -115,9 +115,9 @@ duration for_2 = 50ns;
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=for_0, qubit=IdentifierNode(name=$0, bits=1)))
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=for_1, qubit=IdentifierNode(name=$1, bits=1)))
 // AST-PRETTY: DelayStatementNode(DelayNode(duration=for_2, qubit=IdentifierNode(name=$2, bits=1)))
-// MLIR-NO-CIRCUITS: quir.delay [[DURATION0]], ([[QUBIT0]]) : !quir.duration, (!quir.qubit<1>) -> ()
-// MLIR-NO-CIRCUITS: quir.delay [[DURATION1]], ([[QUBIT1]]) : !quir.duration, (!quir.qubit<1>) -> ()
-// MLIR-NO-CIRCUITS: quir.delay [[DURATION2]], ([[QUBIT2]]) : !quir.duration, (!quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.delay [[DURATION0]], ([[QUBIT0]]) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.delay [[DURATION1]], ([[QUBIT1]]) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
+// MLIR-NO-CIRCUITS: quir.delay [[DURATION2]], ([[QUBIT2]]) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
 delay [for_0] $0;
 delay [for_1] $1;
 delay [for_2] $2;

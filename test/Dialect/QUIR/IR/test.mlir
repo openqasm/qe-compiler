@@ -97,16 +97,16 @@ module {
         %ca3 = quir.call_defcal_measure @defcalMeas1(%qa1) : (!quir.qubit<1>) -> i1
         // CHECK: %{{.*}} = "oq3.cast"(%{{.*}}) : (i1) -> !quir.angle<20>
         %ang = "oq3.cast"(%ca3) : (i1) -> !quir.angle<20>
-        // CHECK: %{{.*}} = quir.constant #quir.duration<"10ns" : !quir.duration>
-        %len1 = quir.constant #quir.duration<"10ns" : !quir.duration>
+        // CHECK: %{{.*}} = quir.constant #quir.duration<1.000000e+01 : <ns>>
+        %len1 = quir.constant #quir.duration<10.0 : !quir.duration<ns>>
         // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
         %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
         // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
         %s2 = oq3.declare_stretch : !quir.stretch
-        // CHECK: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration, (!quir.qubit<1>) -> ()
-        "quir.delay"(%len1, %qb1) : (!quir.duration, !quir.qubit<1>) -> ()
-        // CHECK: quir.delay %{{.*}}, () : !quir.duration, () -> ()
-        "quir.delay"(%len1) : (!quir.duration) -> ()
+        // CHECK: quir.delay %{{.*}}, (%{{.*}}) : !quir.duration<ns>, (!quir.qubit<1>) -> ()
+        "quir.delay"(%len1, %qb1) : (!quir.duration<ns>, !quir.qubit<1>) -> ()
+        // CHECK: quir.delay %{{.*}}, () : !quir.duration<ns>, () -> ()
+        "quir.delay"(%len1) : (!quir.duration<ns>) -> ()
         // CHECK: qcs.delay_cycles() {time = 1000 : i64} : () -> ()
         qcs.delay_cycles () {time = 1000 : i64} : () -> ()
         // CHECK: qcs.delay_cycles(%{{.*}}) {time = 1000 : i64} : (!quir.qubit<1>) -> ()

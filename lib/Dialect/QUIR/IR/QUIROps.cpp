@@ -681,3 +681,6 @@ static LogicalResult verify(quir::YieldOp op) {
 
 #define GET_OP_CLASSES
 #include "Dialect/QUIR/IR/QUIR.cpp.inc"
+
+#define GET_ENUM_CLASSES
+#include "Dialect/QUIR/IR/QUIREnums.cpp.inc"
