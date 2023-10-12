@@ -56,6 +56,7 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <fstream>
 #include <string_view>
 #include <utility>
 
@@ -677,11 +678,28 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::GenQEM) {
 
-    if (includeSourceInPayload && directInput) {
-      if (inputType == InputType::QASM)
-        payload->addFile("manifest/input.qasm", inputSource + "\n");
-      else if (inputType == InputType::MLIR)
-        payload->addFile("manifest/input.mlir", inputSource + "\n");
+    if (includeSourceInPayload) {
+      if (directInput) {
+        if (inputType == InputType::QASM)
+          payload->addFile("manifest/input.qasm", inputSource + "\n");
+        else if (inputType == InputType::MLIR)
+          payload->addFile("manifest/input.mlir", inputSource + "\n");
+        else
+          llvm_unreachable("Unhandled input file type");
+      } else { // just copy the input file
+        std::ifstream fileStream(inputSource);
+        std::stringstream fileSS;
+        fileSS << fileStream.rdbuf();
+
+        if (inputType == InputType::QASM)
+          payload->addFile("manifest/input.qasm", fileSS.str());
+        else if (inputType == InputType::MLIR)
+          payload->addFile("manifest/input.mlir", fileSS.str());
+        else
+          llvm_unreachable("Unhandled input file type");
+
+        fileStream.close();
+      }
     }
 
     if (auto err = generateQEM_(target, std::move(payload), moduleOp, ostream))
