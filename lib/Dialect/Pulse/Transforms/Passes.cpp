@@ -38,6 +38,7 @@ namespace mlir::pulse {
 void pulsePassPipelineBuilder(OpPassManager &pm) {}
 
 void registerPulsePasses() {
+  PassRegistration<LoadPulseCalsPass>();
   PassRegistration<MergeDelayPass>();
   PassRegistration<RemoveUnusedArgumentsPass>();
   PassRegistration<SchedulePortPass>();

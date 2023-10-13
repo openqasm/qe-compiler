@@ -29,7 +29,7 @@
 #include <memory>
 #include <unordered_map>
 
-namespace qssc::targets::mock {
+namespace qssc::targets::systems::mock {
 
 // Register the mock target.
 int init();
@@ -121,6 +121,6 @@ private:
   auto getModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
 }; // class MockDrive
 
-} // namespace qssc::targets::mock
+} // namespace qssc::targets::systems::mock
 
 #endif // HAL_TARGETS_MOCK_MOCKTARGET_H

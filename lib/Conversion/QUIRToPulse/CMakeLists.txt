@@ -12,6 +12,8 @@
 
 add_mlir_conversion_library(QUIRToPulse
 
+LoadPulseCals.cpp
+
 detail/TypeConversion.cpp
 
 ADDITIONAL_HEADER_DIRS

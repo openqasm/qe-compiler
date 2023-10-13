@@ -99,22 +99,26 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
   return pybind11::make_tuple(success, pybind11::bytes(outputStr));
 }
 
-bool
-py_link_file(const std::string &inputPath, const std::string &outputPath,
+pybind11::tuple
+py_link_file(const std::string &input, const bool enableInMemoryInput,
+             const std::string &outputPath,
              const std::string &target, const std::string &configPath,
              const std::unordered_map<std::string, double> &arguments,
              bool treatWarningsAsErrors,
              qssc::DiagnosticCallback onDiagnostic) {
 
-  int status = qssc::bindArguments(target, configPath, inputPath, outputPath, arguments,
-                                   treatWarningsAsErrors,
+  std::string inMemoryOutput("");
+
+  int status = qssc::bindArguments(target, configPath, input, outputPath, arguments,
+                                   treatWarningsAsErrors, enableInMemoryInput,
+                                   &inMemoryOutput,
                                    std::move(onDiagnostic));
 
   bool success = status == 0;
 #ifndef NDEBUG
   std::cerr << "Link " << (success ? "successful" : "failed") << std::endl;
 #endif
-  return success;
+  return pybind11::make_tuple(success, pybind11::bytes(inMemoryOutput));
 }
 
 

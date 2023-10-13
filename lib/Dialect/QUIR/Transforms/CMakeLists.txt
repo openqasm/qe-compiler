@@ -15,6 +15,7 @@ add_mlir_dialect_library(MLIRQUIRTransforms
     AddShotLoop.cpp
     AngleConversion.cpp
     BreakReset.cpp
+    ConvertDurationUnits.cpp
     FunctionArgumentSpecialization.cpp
     LoadElimination.cpp
     MergeCircuits.cpp

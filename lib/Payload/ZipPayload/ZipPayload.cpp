@@ -30,6 +30,7 @@
 
 #include "Config.h"
 #include "ZipPayload.h"
+#include "ZipUtil.h"
 
 #include "Payload/PayloadRegistry.h"
 
@@ -57,6 +58,11 @@ void ZipPayload::addManifest() {
   manifest["version"] = QSSC_VERSION;
   manifest["contents_path"] = prefix;
   files[manifest_fname] = manifest.dump() + "\n";
+}
+
+void ZipPayload::addFile(llvm::StringRef filename, llvm::StringRef str) {
+  std::lock_guard<std::mutex> lock(_mtx);
+  files[filename.str()] = str;
 }
 
 void ZipPayload::writePlain(const std::string &dirName) {
@@ -205,34 +211,14 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   }
 
   //===---- Reopen for copying ----===//
-  // reopen the archive stored in the new_archive_src
-  zip_source_open(new_archive_src);
-  // seek to the end of the archive
-  zip_source_seek(new_archive_src, 0, SEEK_END);
-  // get the number of bytes
-  zip_int64_t sz = zip_source_tell(new_archive_src);
-  llvm::outs() << "Zip buffer is of size " << sz << " bytes\n";
-
-  // allocate a new buffer to copy the archive into
-  char *outbuffer = (char *)malloc(sz);
-  if (!outbuffer) {
-    llvm::errs()
-        << "Unable to allocate output buffer for writing zip to stream\n";
-    zip_source_close(new_archive_src);
-    return;
+  zip_int64_t sz;
+  char *outbuffer = read_zip_src_to_buffer(new_archive_src, sz);
+  if (outbuffer) {
+    // output the new archive to the stream
+    stream.write(outbuffer, sz);
+    stream.flush();
+    free(outbuffer);
   }
-
-  // seek back to the begining of the archive
-  zip_source_seek(new_archive_src, 0, SEEK_SET);
-  // copy the entire archive into the output bufffer
-  zip_source_read(new_archive_src, outbuffer, sz);
-  // all done
-  zip_source_close(new_archive_src);
-
-  // output the new archive to the stream
-  stream.write(outbuffer, sz);
-  stream.flush();
-  free(outbuffer);
 }
 
 void ZipPayload::writeZip(std::ostream &stream) {

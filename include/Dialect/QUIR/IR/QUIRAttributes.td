@@ -18,6 +18,9 @@
 #ifndef QUIR_ATTRIBUTES
 #define QUIR_ATTRIBUTES
 
+include "Dialect/QUIR/IR/QUIRTypes.td"
+
+include "mlir/IR/BuiltinAttributes.td"
 include "mlir/IR/OpBase.td"
 
 def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle"> {
@@ -46,15 +49,37 @@ def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle"> {
 def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
   let summary = "A duration of time";
   let description = [{
-    Duration attributes represent OpenQASM 3.0 durations, which are lengths of
-    time. They are represented by a string containing a float literal and unit
-    specifiers. Valid units are s, ms, ns, us, and dt.
+    Duration attributes represent a duration of time.
+    These are represented by a floating point value and a duration
+    units type.
   }];
 
-  let parameters = (ins AttributeSelfTypeParameter<"">:$type,
-                        StringRefParameter<"the duration">:$value);
+  let parameters = (ins AttributeSelfTypeParameter<"", "DurationType">:$type,
+                        "APFloat":$duration);
 
-  let assemblyFormat = "`<` $value `:` $type `>`";
+  let extraClassDeclaration = [{
+
+        /// Get the scheduling timestep length (in seconds) from the input scheduling rate (in seconds).
+        static double getDtFromSchedulingRate(const double schedulingRate);
+        /// Get the scheduling rate (in seconds) from the input scheduling timestep length (in seconds).
+        static double getSchedulingRateFromDt(const double dt);
+
+        /// Convert duration of inputUnits to outputUnits
+        static double convertUnitsToUnits(double value, TimeUnits inputUnits, TimeUnits outputUnits, const double dt);
+
+        /// Convert the duration attribute to an integer number
+        /// of scheduling samples based on the input scheduling
+        /// timestep length, dt.
+        uint64_t getSchedulingCycles(const double dt);
+        /// Convert this duration attribute's value to the target units.
+        double convertUnits(const TimeUnits targetUnits, const double dt);
+        /// Convert this duration attribute to a new duration attribute
+        /// with the target units.
+        DurationAttr getConvertedDurationAttr(const TimeUnits targetUnits, const double dt);
+    }];
+
+  let assemblyFormat = "`<` $duration `:` $type `>`";
+
 }
 
 def QUIR_InputParameterAttr : QUIR_Attr<"InputParameter", "inputParameter"> {

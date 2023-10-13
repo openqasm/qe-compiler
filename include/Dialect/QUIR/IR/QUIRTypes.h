@@ -17,6 +17,8 @@
 #ifndef QUIR_QUIRTYPES_H
 #define QUIR_QUIRTYPES_H
 
+#include "Dialect/QUIR/IR/QUIREnums.h"
+
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/OpDefinition.h"

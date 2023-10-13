@@ -21,6 +21,7 @@
 #ifndef PULSE_PULSEPASSES_H
 #define PULSE_PULSEPASSES_H
 
+#include "Conversion/QUIRToPulse/LoadPulseCals.h"
 #include "Conversion/QUIRToPulse/QUIRToPulse.h"
 #include "Dialect/Pulse/Transforms/ClassicalOnlyDetection.h"
 #include "Dialect/Pulse/Transforms/MergeDelays.h"

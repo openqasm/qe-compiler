@@ -1,4 +1,4 @@
-//===- MockUtils.h ----------------------------------------------*- C++ -*-===//
+//===- ZipUtil.h ------------------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -13,29 +13,21 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-// Declaration of utility functions for the Mock Target
-//
+///
+/// Declares the Zip Utilities
+///
 //===----------------------------------------------------------------------===//
 
-#ifndef HAL_MOCKUTILS_H
-#define HAL_MOCKUTILS_H
+#ifndef PAYLOAD_ZIPUTIL_H
+#define PAYLOAD_ZIPUTIL_H
 
-#include <vector>
+#include <zip.h>
 
-namespace mlir {
-class ModuleOp;
-} // end namespace mlir
+namespace qssc::payload {
 
-namespace qssc::targets::mock {
+// read zip into buffer - buffer allocated in function
+char *read_zip_src_to_buffer(zip_source_t *zip_src, zip_int64_t &sz);
 
-// Looks for and returns the Controller submodule if it exists
-// Returns nullptr otherwise
-auto getControllerModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
+} // namespace qssc::payload
 
-auto getActuatorModules(mlir::ModuleOp topModuleOp)
-    -> std::vector<mlir::ModuleOp>;
-
-} // end namespace qssc::targets::mock
-
-#endif // HAL_MOCKUTILS_H
+#endif // PAYLOAD_ZIPUTIL_H

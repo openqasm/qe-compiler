@@ -1,4 +1,4 @@
-//===- Target.inc - Mock target registration --------------------*- C++ -*-===//
+//===- QUIREnums.h - QUIR dialect enums -------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -13,21 +13,18 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file defines static objects that register system targets
-//  with the QSS compiler core.
-//
-//===----------------------------------------------------------------------===//
 
-#ifndef HAL_TARGETS_MOCK_TARGET_H
-#define HAL_TARGETS_MOCK_TARGET_H
+#ifndef QUIR_QUIRENUMS_H
+#define QUIR_QUIRENUMS_H
 
-#include "MockTarget.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Dialect.h"
+#include "mlir/IR/DialectImplementation.h"
+#include "mlir/IR/OpDefinition.h"
 
-namespace qssc::targets::mock {
+#define GET_ENUM_CLASSES
+#include "Dialect/QUIR/IR/QUIREnums.h.inc"
 
-[[maybe_unused]] int registrar = init();
+namespace mlir {} // namespace mlir
 
-} // namespace qssc::targets::mock
-
-#endif // HAL_TARGETS_MOCK_TARGET_H
+#endif // QUIR_QUIRENUMS_H
