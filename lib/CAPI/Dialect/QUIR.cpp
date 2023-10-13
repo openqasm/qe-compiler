@@ -40,8 +40,9 @@ bool quirTypeIsADurationType(MlirType type) {
   return unwrap(type).isa<quir::DurationType>();
 }
 
+// TODO: NEED TO ADD TIME UNIT TO THIS SIGNATURE
 MlirType quirDurationTypeGet(MlirContext ctx) {
 
   // TODO: NEED TO ADD WIDTH PARAMETER
-  return wrap(quir::DurationType::get(unwrap(ctx)));
+  return wrap(quir::DurationType::get(unwrap(ctx), mlir::quir::TimeUnits::dt));
 }
