@@ -111,6 +111,11 @@ static llvm::cl::opt<bool> includeSourceInPayload(
     "include-source", llvm::cl::desc("Write the input source into the payload"),
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
+static llvm::cl::opt<bool>
+    bypassPipeline("bypass-pipeline", llvm::cl::desc("Bypass the pipeline"),
+                   llvm::cl::init(false),
+                   llvm::cl::cat(qssc::config::getQSSCCategory()));
+
 namespace {
 enum InputType { NONE, QASM, MLIR, QOBJ };
 } // anonymous namespace
@@ -449,8 +454,9 @@ static llvm::Error generateQEM_(qssc::hal::TargetSystem &target,
                                 std::unique_ptr<qssc::payload::Payload> payload,
                                 mlir::ModuleOp moduleOp,
                                 llvm::raw_ostream *ostream) {
-  if (auto err = target.addToPayload(moduleOp, *payload))
-    return err;
+  if (!bypassPipeline)
+    if (auto err = target.addToPayload(moduleOp, *payload))
+      return err;
 
   if (plaintextPayload)
     payload->writePlain(*ostream);
@@ -667,7 +673,7 @@ compile_(int argc, char const **argv, std::string *outputString,
           std::move(err));
 
   // Run the pipeline.
-  if (failed(pm.run(moduleOp)))
+  if (!bypassPipeline && failed(pm.run(moduleOp)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problems running the compiler pipeline!");
 
