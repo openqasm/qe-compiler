@@ -759,10 +759,10 @@ private:
 
 llvm::Error
 _bindArguments(std::string_view target, std::string_view configPath,
-               std::string_view moduleInput, std::string_view payloadOutputPath,
+               std::string_view moduleInputPath,
+               std::string_view payloadOutputPath,
                std::unordered_map<std::string, double> const &arguments,
-               bool treatWarningsAsErrors, bool enableInMemoryInput,
-               std::string *inMemoryOutput,
+               bool treatWarningsAsErrors,
                const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
 
   MLIRContext context{};
@@ -788,6 +788,16 @@ _bindArguments(std::string_view target, std::string_view configPath,
         std::move(err));
   }
 
+  // ZipPayloads are implemented with libzip, which only supports updating a zip
+  // archive in-place. Thus, copy module to payload first, then update payload
+  // (instead of read module, update, write payload)
+  std::error_code copyError =
+      llvm::sys::fs::copy_file(moduleInputPath, payloadOutputPath);
+
+  if (copyError)
+    return llvm::make_error<llvm::StringError>(
+        "Failed to copy circuit module to payload", copyError);
+
   MapAngleArgumentSource source(arguments);
 
   auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
@@ -799,23 +809,21 @@ _bindArguments(std::string_view target, std::string_view configPath,
   }
   qssc::arguments::BindArgumentsImplementationFactory &factoryRef =
       *factory.getValue();
-  return qssc::arguments::bindArguments(
-      moduleInput, payloadOutputPath, source, treatWarningsAsErrors,
-      enableInMemoryInput, inMemoryOutput, factoryRef, onDiagnostic);
+  return qssc::arguments::bindArguments(moduleInputPath, payloadOutputPath,
+                                        source, treatWarningsAsErrors,
+                                        factoryRef, onDiagnostic);
 }
 
 int qssc::bindArguments(
     std::string_view target, std::string_view configPath,
-    std::string_view moduleInput, std::string_view payloadOutputPath,
+    std::string_view moduleInputPath, std::string_view payloadOutputPath,
     std::unordered_map<std::string, double> const &arguments,
-    bool treatWarningsAsErrors, bool enableInMemoryInput,
-    std::string *inMemoryOutput,
+    bool treatWarningsAsErrors,
     const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
 
   if (auto err =
-          _bindArguments(target, configPath, moduleInput, payloadOutputPath,
-                         arguments, treatWarningsAsErrors, enableInMemoryInput,
-                         inMemoryOutput, onDiagnostic)) {
+          _bindArguments(target, configPath, moduleInputPath, payloadOutputPath,
+                         arguments, treatWarningsAsErrors, onDiagnostic)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
     return 1;
   }

@@ -26,10 +26,6 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
 
-#include <llvm/Support/raw_ostream.h>
-
-#include <fstream>
-#include <iostream>
 #include <memory>
 #include <utility>
 
@@ -74,34 +70,26 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
   return llvm::Error::success();
 }
 
-llvm::Error bindArguments(llvm::StringRef moduleInput,
+llvm::Error bindArguments(llvm::StringRef moduleInputPath,
                           llvm::StringRef payloadOutputPath,
                           ArgumentSource const &arguments,
-                          bool treatWarningsAsErrors, bool enableInMemoryInput,
-                          std::string *inMemoryOutput,
+                          bool treatWarningsAsErrors,
                           BindArgumentsImplementationFactory &factory,
                           const OptDiagnosticCallback &onDiagnostic) {
 
-  bool enableInMemoryOutput = payloadOutputPath == "";
+  std::error_code copyError =
+      llvm::sys::fs::copy_file(moduleInputPath, payloadOutputPath);
 
-  llvm::StringRef payloadData =
-      (enableInMemoryOutput) ? moduleInput : payloadOutputPath;
-
-  if (!enableInMemoryOutput) {
-    std::error_code copyError =
-        llvm::sys::fs::copy_file(moduleInput, payloadOutputPath);
-
-    if (copyError)
-      return llvm::make_error<llvm::StringError>(
-          "Failed to copy circuit module to payload", copyError);
-  }
+  if (copyError)
+    return llvm::make_error<llvm::StringError>(
+        "Failed to copy circuit module to payload", copyError);
 
   auto binary = std::unique_ptr<BindArgumentsImplementation>(
       factory.create(onDiagnostic));
   binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
-  auto payload = std::unique_ptr<PatchablePayload>(
-      binary->getPayload(payloadData, enableInMemoryInput));
+  auto payload =
+      std::unique_ptr<PatchablePayload>(binary->getPayload(payloadOutputPath));
 
   auto sigOrError = binary->parseSignature(payload.get());
   if (auto err = sigOrError.takeError())
@@ -111,27 +99,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
                                   treatWarningsAsErrors, factory, onDiagnostic))
     return err;
 
-  // setup linked payload I/O
-  // if enableInMemoryOutput is true:
-  //    write to string
-  // if enableInMemoryInput is true:
-  //    payload is not on disk yet, do not assume payload->writeBack()
-  //    will write the full payload to disk so: write to string,
-  //    dump string to disk and clear string
-  // if enableInMemoryInput is false:
-  //    payload was on disk originally use writeBack
-  if (enableInMemoryOutput || enableInMemoryInput) {
-    if (auto err = payload->writeString(inMemoryOutput))
-      return err;
-    if (!enableInMemoryOutput) {
-      auto pathStr = payloadOutputPath.operator std::string();
-      std::ofstream out(pathStr);
-      out << inMemoryOutput;
-      out.close();
-      // clear output string
-      *inMemoryOutput = "";
-    }
-  } else if (auto err = payload->writeBack())
+  if (auto err = payload->writeBack())
     return err;
 
   return llvm::Error::success();

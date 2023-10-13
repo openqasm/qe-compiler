@@ -45,11 +45,10 @@ int compile(int argc, char const **argv, std::string *outputString,
 /// diagnostics
 /// @return 0 on success
 int bindArguments(std::string_view target, std::string_view configPath,
-                  std::string_view moduleInput,
+                  std::string_view moduleInputPath,
                   std::string_view payloadOutputPath,
                   std::unordered_map<std::string, double> const &arguments,
-                  bool treatWarningsAsErrors, bool enableInMemoryInput,
-                  std::string *inMemoryOutput,
+                  bool treatWarningsAsErrors,
                   const std::optional<DiagnosticCallback> &onDiagnostic);
 
 } // namespace qssc
