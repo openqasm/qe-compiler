@@ -43,5 +43,5 @@ bool quirTypeIsADurationType(MlirType type) {
 MlirType quirDurationTypeGet(MlirContext ctx) {
 
   // TODO: NEED TO ADD WIDTH PARAMETER
-  return wrap(quir::DurationType::get(unwrap(ctx)));
+  return wrap(quir::DurationType::get(unwrap(ctx), mlir::quir::TimeUnits::dt));
 }
