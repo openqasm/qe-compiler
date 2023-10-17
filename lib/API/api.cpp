@@ -15,7 +15,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
-#include "API/error.h"
+#include "API/errors.h"
 #include "Config/CLIConfig.h"
 #include "Config/EnvVarConfig.h"
 
