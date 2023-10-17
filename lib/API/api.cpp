@@ -59,6 +59,7 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <fstream>
 #include <string_view>
 #include <utility>
 
@@ -112,6 +113,11 @@ static llvm::cl::opt<bool> plaintextPayload(
 static llvm::cl::opt<bool> includeSourceInPayload(
     "include-source", llvm::cl::desc("Write the input source into the payload"),
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+
+static llvm::cl::opt<bool>
+    bypassPipeline("bypass-pipeline", llvm::cl::desc("Bypass the pipeline"),
+                   llvm::cl::init(false),
+                   llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 namespace {
 enum InputType { NONE, QASM, MLIR, QOBJ };
@@ -451,8 +457,9 @@ static llvm::Error generateQEM_(qssc::hal::TargetSystem &target,
                                 std::unique_ptr<qssc::payload::Payload> payload,
                                 mlir::ModuleOp moduleOp,
                                 llvm::raw_ostream *ostream) {
-  if (auto err = target.addToPayload(moduleOp, *payload))
-    return err;
+  if (!bypassPipeline)
+    if (auto err = target.addToPayload(moduleOp, *payload))
+      return err;
 
   if (plaintextPayload)
     payload->writePlain(*ostream);
@@ -728,7 +735,7 @@ compile_(int argc, char const **argv, std::string *outputString,
           std::move(err));
 
   // Run the pipeline.
-  if (failed(pm.run(moduleOp)))
+  if (!bypassPipeline && failed(pm.run(moduleOp)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problems running the compiler pipeline!");
 
@@ -739,11 +746,28 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::GenQEM) {
 
-    if (includeSourceInPayload && directInput) {
-      if (inputType == InputType::QASM)
-        payload->addFile("manifest/input.qasm", inputSource + "\n");
-      else if (inputType == InputType::MLIR)
-        payload->addFile("manifest/input.mlir", inputSource + "\n");
+    if (includeSourceInPayload) {
+      if (directInput) {
+        if (inputType == InputType::QASM)
+          payload->addFile("manifest/input.qasm", inputSource + "\n");
+        else if (inputType == InputType::MLIR)
+          payload->addFile("manifest/input.mlir", inputSource + "\n");
+        else
+          llvm_unreachable("Unhandled input file type");
+      } else { // just copy the input file
+        std::ifstream fileStream(inputSource);
+        std::stringstream fileSS;
+        fileSS << fileStream.rdbuf();
+
+        if (inputType == InputType::QASM)
+          payload->addFile("manifest/input.qasm", fileSS.str());
+        else if (inputType == InputType::MLIR)
+          payload->addFile("manifest/input.mlir", fileSS.str());
+        else
+          llvm_unreachable("Unhandled input file type");
+
+        fileStream.close();
+      }
     }
 
     if (auto err = generateQEM_(target, std::move(payload), moduleOp, ostream))
