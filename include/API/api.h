@@ -17,7 +17,7 @@
 #ifndef QSS_COMPILER_LIB_H
 #define QSS_COMPILER_LIB_H
 
-#include "API/error.h"
+#include "API/errors.h"
 
 #include <optional>
 #include <string>

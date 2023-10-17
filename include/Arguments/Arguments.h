@@ -23,7 +23,7 @@
 #ifndef ARGUMENTS_H
 #define ARGUMENTS_H
 
-#include "API/error.h"
+#include "API/errors.h"
 #include "Dialect/QCS/IR/QCSTypes.h"
 
 #include "Arguments/Signature.h"
