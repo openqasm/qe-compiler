@@ -84,8 +84,11 @@ struct LoadPulseCalsPass
 
   void addPulseCalToModule(FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp);
 
-  // parse the pulse cals and add them to pulseCalsNameToSequenceMap
-  llvm::Error parsePulseCalsSequenceOps(std::string &pulseCalsPath);
+  // parse the pulse cals and return the parsed module
+  llvm::Error parsePulseCalsModuleOp(std::string &pulseCalsPath,
+                                     mlir::OwningOpRef<ModuleOp> &owningOpRef);
+  mlir::OwningOpRef<ModuleOp> defaultPulseCalsModule;
+  mlir::OwningOpRef<ModuleOp> additionalPulseCalsModule;
   std::map<std::string, SequenceOp> pulseCalsNameToSequenceMap;
 
   mlir::pulse::SequenceOp
@@ -100,7 +103,7 @@ struct LoadPulseCalsPass
 
   // returns true if all the sequence ops in the input vector has the same
   // duration
-  bool areAllSequenceOpsHasSameDuration(
+  bool doAllSequenceOpsHaveSameDuration(
       std::vector<mlir::pulse::SequenceOp> &sequenceOps);
   // returns true if all the sequence ops in the input vector has attrName
   // attribute and if yes, merges the attributes

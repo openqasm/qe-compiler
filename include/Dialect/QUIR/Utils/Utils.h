@@ -18,6 +18,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#ifndef QUIR_QUIRUTILS_H
+#define QUIR_QUIRUTILS_H
+
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 #include "mlir/IR/BuiltinTypes.h"
@@ -26,6 +30,8 @@
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/BitVector.h"
+
+#include <set>
 
 namespace mlir {
 class Operation;
@@ -96,7 +102,12 @@ llvm::Optional<Operation *> nextQuantumOpOrNull(Operation *op);
 /// it is of type OpType, otherwise return null
 // TODO: Should be replaced by an analysis compatable struct.
 template <class OpType>
-llvm::Optional<OpType> nextQuantumOpOrNullOfType(Operation *op);
+llvm::Optional<OpType> nextQuantumOpOrNullOfType(Operation *op) {
+  auto nextOperation = nextQuantumOpOrNull(op);
+  if (nextOperation && isa<OpType>(*nextOperation))
+    return dyn_cast<OpType>(*nextOperation);
+  return llvm::None;
+}
 
 /// Get the previous Op that has the CPTPOp or UnitaryOp trait, or return null
 /// if none found
@@ -107,7 +118,12 @@ llvm::Optional<Operation *> prevQuantumOpOrNull(Operation *op);
 /// it if it is of type OpType, otherwise return null
 // TODO: Should be replaced by an analysis compatable struct.
 template <class OpType>
-llvm::Optional<OpType> prevQuantumOpOrNullOfType(Operation *op);
+llvm::Optional<OpType> prevQuantumOpOrNullOfType(Operation *op) {
+  auto prevOperation = prevQuantumOpOrNull(op);
+  if (prevOperation && isa<OpType>(*prevOperation))
+    return dyn_cast<OpType>(*prevOperation);
+  return llvm::None;
+}
 
 /// Get the next Op that has the CPTPOp or UnitaryOp trait, or is control flow
 /// (has the RegionBranchOpInterface::Trait), or return null if none found
@@ -122,25 +138,12 @@ llvm::Optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op);
 /// \brief Check if the operation is a quantum operation
 bool isQuantumOp(Operation *op);
 
-/// Duration representation
-// Question: Can this be represented with MLIR more naturally?
-// TODO: This should be added to the DurationAttr
-struct Duration {
-  enum DurationUnit { dt, ns, us, ms, s };
-  double duration;
-  DurationUnit unit;
-
-  /// Construct a Duration from a string
-  static llvm::Expected<Duration> parseDuration(const std::string &durationStr);
-  /// Construct a Duration from a ConstantOp
-  static llvm::Expected<Duration>
-  parseDuration(mlir::quir::ConstantOp &duration);
-  /// Construct a Duration from a DelayOp
-  static llvm::Expected<Duration> parseDuration(mlir::quir::DelayOp &delayOp);
-  /// Convert duration to cycles. dt is in SI (seconds).
-  Duration convertToCycles(double dt) const;
-};
-/// Extract the Duration from a ConstantOp
+/// Construct a DurationAttr from a ConstantOp
+llvm::Expected<mlir::quir::DurationAttr>
+getDuration(mlir::quir::ConstantOp &duration);
+/// Construct a DurationAttr from a DelayOp
+llvm::Expected<mlir::quir::DurationAttr>
+getDuration(mlir::quir::DelayOp &delayOp);
 
 // get qubit id from the result of a measurement
 std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,
@@ -149,3 +152,5 @@ std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
                                                  Value result);
 
 } // end namespace mlir::quir
+
+#endif // QUIR_QUIRUTILS_H

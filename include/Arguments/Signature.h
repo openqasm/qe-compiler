@@ -23,7 +23,7 @@
 #ifndef ARGUMENTS_SIGNATURE_H
 #define ARGUMENTS_SIGNATURE_H
 
-#include "API/error.h"
+#include "API/errors.h"
 
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"

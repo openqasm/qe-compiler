@@ -62,6 +62,7 @@ public:
   // write all files in plaintext to the stream
   virtual void writePlain(std::ostream &stream) = 0;
   virtual void writePlain(llvm::raw_ostream &stream) = 0;
+  virtual void addFile(llvm::StringRef filename, llvm::StringRef str) = 0;
 
   const std::string &getName() const { return name; }
   const std::string &getPrefix() const { return prefix; }
@@ -93,6 +94,7 @@ public:
   virtual llvm::Expected<ContentBuffer &>
   readMember(llvm::StringRef path, bool markForWriteBack = true) = 0;
   virtual llvm::Error writeBack() = 0;
+  virtual llvm::Error writeString(std::string *outputString) = 0;
 }; // class PatchablePayload
 
 } // namespace qssc::payload

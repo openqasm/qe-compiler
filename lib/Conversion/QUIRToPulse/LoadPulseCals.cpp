@@ -28,8 +28,6 @@
 
 #include "llvm/Support/SourceMgr.h"
 
-#include <iostream>
-
 #define DEBUG_TYPE "LoadPulseCalsDebug"
 
 using namespace mlir;
@@ -48,28 +46,40 @@ void LoadPulseCalsPass::runOnOperation() {
 
   // parse the default pulse calibrations
   if (!DEFAULT_PULSE_CALS.empty()) {
-    LLVM_DEBUG(std::cout << "parsing default pulse calibrations.\n");
-    if (auto err = parsePulseCalsSequenceOps(DEFAULT_PULSE_CALS)) {
+    LLVM_DEBUG(llvm::errs() << "parsing default pulse calibrations.\n");
+    if (auto err = parsePulseCalsModuleOp(DEFAULT_PULSE_CALS,
+                                          defaultPulseCalsModule)) {
       llvm::errs() << err;
       return signalPassFailure();
     }
+    // add sequence Ops to pulseCalsNameToSequenceMap
+    defaultPulseCalsModule->walk([&](mlir::pulse::SequenceOp sequenceOp) {
+      auto sequenceName = sequenceOp.sym_name().str();
+      pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
+    });
   } else
-    LLVM_DEBUG(
-        std::cout << "default pulse calibrations path is not specified.\n");
+    LLVM_DEBUG(llvm::errs()
+               << "default pulse calibrations path is not specified.\n");
 
   // parse the additional pulse calibrations
   if (!ADDITIONAL_PULSE_CALS.empty()) {
-    LLVM_DEBUG(std::cout << "parsing additional pulse calibrations.\n");
-    if (auto err = parsePulseCalsSequenceOps(ADDITIONAL_PULSE_CALS)) {
+    LLVM_DEBUG(llvm::errs() << "parsing additional pulse calibrations.\n");
+    if (auto err = parsePulseCalsModuleOp(ADDITIONAL_PULSE_CALS,
+                                          additionalPulseCalsModule)) {
       llvm::errs() << err;
       return signalPassFailure();
     }
+    // add sequence Ops to pulseCalsNameToSequenceMap
+    additionalPulseCalsModule->walk([&](mlir::pulse::SequenceOp sequenceOp) {
+      auto sequenceName = sequenceOp.sym_name().str();
+      pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
+    });
   } else
-    LLVM_DEBUG(
-        std::cout << "additional pulse calibrations path is not specified.\n");
+    LLVM_DEBUG(llvm::errs()
+               << "additional pulse calibrations path is not specified.\n");
 
   // parse the user specified pulse calibrations
-  LLVM_DEBUG(std::cout << "parsing user specified pulse calibrations.\n");
+  LLVM_DEBUG(llvm::errs() << "parsing user specified pulse calibrations.\n");
   moduleOp->walk([&](mlir::pulse::SequenceOp sequenceOp) {
     auto sequenceName = sequenceOp.sym_name().str();
     pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
@@ -102,6 +112,12 @@ void LoadPulseCalsPass::loadPulseCals(CallCircuitOp callCircuitOp,
       loadPulseCals(castOp, callCircuitOp, funcOp);
     else if (auto castOp = dyn_cast<mlir::quir::ResetQubitOp>(op))
       loadPulseCals(castOp, callCircuitOp, funcOp);
+    else {
+      LLVM_DEBUG(llvm::errs() << "no pulse cal loading needed for " << op);
+      assert((!op->hasTrait<mlir::quir::UnitaryOp>() and
+              !op->hasTrait<mlir::quir::CPTPOp>()) &&
+             "unkown operation");
+    }
   });
 }
 
@@ -178,24 +194,24 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the measurement gate
     addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
-  } else {
-    // did not find a pulse calibration for the gate
-    // check if there exists pulse calibrations for individual qubits, and if
-    // yes, merge them and add the merged pulse sequence to the module
-    std::vector<SequenceOp> sequenceOps;
-    for (auto &qubit : qubits) {
-      std::string individualGateMangledName = getMangledName(gateName, qubit);
-      assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
-                 pulseCalsNameToSequenceMap.end() &&
-             "could not find pulse calibrations for the measurement gate");
-      sequenceOps.push_back(
-          pulseCalsNameToSequenceMap[individualGateMangledName]);
-    }
-    SequenceOp mergedPulseSequenceOp =
-        mergePulseSequenceOps(sequenceOps, gateMangledName);
-    pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
-    addPulseCalToModule(funcOp, mergedPulseSequenceOp);
+    return;
   }
+  // did not find a pulse calibration for the gate
+  // check if there exists pulse calibrations for individual qubits, and if
+  // yes, merge them and add the merged pulse sequence to the module
+  std::vector<SequenceOp> sequenceOps;
+  for (auto &qubit : qubits) {
+    std::string individualGateMangledName = getMangledName(gateName, qubit);
+    assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
+               pulseCalsNameToSequenceMap.end() &&
+           "could not find pulse calibrations for the measurement gate");
+    sequenceOps.push_back(
+        pulseCalsNameToSequenceMap[individualGateMangledName]);
+  }
+  SequenceOp mergedPulseSequenceOp =
+      mergePulseSequenceOps(sequenceOps, gateMangledName);
+  pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
+  addPulseCalToModule(funcOp, mergedPulseSequenceOp);
 }
 
 void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
@@ -214,24 +230,24 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the barrier gate
     addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
-  } else {
-    // did not find a pulse calibration for the gate
-    // check if there exists pulse calibrations for individual qubits, and if
-    // yes, merge them and add the merged pulse sequence to the module
-    std::vector<SequenceOp> sequenceOps;
-    for (auto &qubit : qubits) {
-      std::string individualGateMangledName = getMangledName(gateName, qubit);
-      assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
-                 pulseCalsNameToSequenceMap.end() &&
-             "could not find pulse calibrations for the barrier gate");
-      sequenceOps.push_back(
-          pulseCalsNameToSequenceMap[individualGateMangledName]);
-    }
-    SequenceOp mergedPulseSequenceOp =
-        mergePulseSequenceOps(sequenceOps, gateMangledName);
-    pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
-    addPulseCalToModule(funcOp, mergedPulseSequenceOp);
+    return;
   }
+  // did not find a pulse calibration for the gate
+  // check if there exists pulse calibrations for individual qubits, and if
+  // yes, merge them and add the merged pulse sequence to the module
+  std::vector<SequenceOp> sequenceOps;
+  for (auto &qubit : qubits) {
+    std::string individualGateMangledName = getMangledName(gateName, qubit);
+    assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
+               pulseCalsNameToSequenceMap.end() &&
+           "could not find pulse calibrations for the barrier gate");
+    sequenceOps.push_back(
+        pulseCalsNameToSequenceMap[individualGateMangledName]);
+  }
+  SequenceOp mergedPulseSequenceOp =
+      mergePulseSequenceOps(sequenceOps, gateMangledName);
+  pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
+  addPulseCalToModule(funcOp, mergedPulseSequenceOp);
 }
 
 void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
@@ -250,25 +266,25 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the barrier gate
     addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
-  } else {
-    // did not find a pulse calibration for the gate
-    // check if there exists pulse calibrations for individual qubits, and if
-    // yes, merge them and add the merged pulse sequence to the module
-    std::vector<SequenceOp> sequenceOps;
-    for (auto &qubit : qubits) {
-      std::string individualGateMangledName = getMangledName(gateName, qubit);
-      assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
-                 pulseCalsNameToSequenceMap.end() &&
-             "could not find pulse calibrations for the delay gate");
-      sequenceOps.push_back(
-          pulseCalsNameToSequenceMap[individualGateMangledName]);
-    }
-    SequenceOp mergedPulseSequenceOp =
-        mergePulseSequenceOps(sequenceOps, gateMangledName);
-    removeRedundantDelayArgs(mergedPulseSequenceOp, builder);
-    pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
-    addPulseCalToModule(funcOp, mergedPulseSequenceOp);
+    return;
   }
+  // did not find a pulse calibration for the gate
+  // check if there exists pulse calibrations for individual qubits, and if
+  // yes, merge them and add the merged pulse sequence to the module
+  std::vector<SequenceOp> sequenceOps;
+  for (auto &qubit : qubits) {
+    std::string individualGateMangledName = getMangledName(gateName, qubit);
+    assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
+               pulseCalsNameToSequenceMap.end() &&
+           "could not find pulse calibrations for the delay gate");
+    sequenceOps.push_back(
+        pulseCalsNameToSequenceMap[individualGateMangledName]);
+  }
+  SequenceOp mergedPulseSequenceOp =
+      mergePulseSequenceOps(sequenceOps, gateMangledName);
+  removeRedundantDelayArgs(mergedPulseSequenceOp, builder);
+  pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
+  addPulseCalToModule(funcOp, mergedPulseSequenceOp);
 }
 
 void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
@@ -287,24 +303,24 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
       pulseCalsNameToSequenceMap.end()) {
     // found a pulse calibration for the gate
     addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
-  } else {
-    // did not find a pulse calibration for the gate
-    // check if there exists pulse calibrations for individual qubits, and if
-    // yes, merge them and add the merged pulse sequence to the module
-    std::vector<SequenceOp> sequenceOps;
-    for (auto &qubit : qubits) {
-      std::string individualGateMangledName = getMangledName(gateName, qubit);
-      assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
-                 pulseCalsNameToSequenceMap.end() &&
-             "could not find pulse calibrations for the reset gate");
-      sequenceOps.push_back(
-          pulseCalsNameToSequenceMap[individualGateMangledName]);
-    }
-    SequenceOp mergedPulseSequenceOp =
-        mergePulseSequenceOps(sequenceOps, gateMangledName);
-    pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
-    addPulseCalToModule(funcOp, mergedPulseSequenceOp);
+    return;
   }
+  // did not find a pulse calibration for the gate
+  // check if there exists pulse calibrations for individual qubits, and if
+  // yes, merge them and add the merged pulse sequence to the module
+  std::vector<SequenceOp> sequenceOps;
+  for (auto &qubit : qubits) {
+    std::string individualGateMangledName = getMangledName(gateName, qubit);
+    assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
+               pulseCalsNameToSequenceMap.end() &&
+           "could not find pulse calibrations for the reset gate");
+    sequenceOps.push_back(
+        pulseCalsNameToSequenceMap[individualGateMangledName]);
+  }
+  SequenceOp mergedPulseSequenceOp =
+      mergePulseSequenceOps(sequenceOps, gateMangledName);
+  pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
+  addPulseCalToModule(funcOp, mergedPulseSequenceOp);
 }
 
 void LoadPulseCalsPass::addPulseCalToModule(
@@ -316,11 +332,13 @@ void LoadPulseCalsPass::addPulseCalToModule(
     auto clonedPulseCalSequenceOp = dyn_cast<SequenceOp>(clonedPulseCalOp);
     clonedPulseCalSequenceOp->moveBefore(funcOp);
     pulseCalsAddedToIR.insert(sequenceOp.sym_name().str());
-  }
+  } else
+    LLVM_DEBUG(llvm::errs() << "pulse cal " << sequenceOp.sym_name().str()
+                            << " is already added to IR.\n");
 }
 
-llvm::Error
-LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
+llvm::Error LoadPulseCalsPass::parsePulseCalsModuleOp(
+    std::string &pulseCalsPath, mlir::OwningOpRef<ModuleOp> &owningOpRef) {
   std::string errorMessage;
   llvm::SourceMgr sourceMgr;
   std::unique_ptr<llvm::MemoryBuffer> pulseCalsFile =
@@ -330,18 +348,11 @@ LoadPulseCalsPass::parsePulseCalsSequenceOps(std::string &pulseCalsPath) {
                                    "Failed to open pulse calibrations file: " +
                                        errorMessage);
   sourceMgr.AddNewSourceBuffer(std::move(pulseCalsFile), llvm::SMLoc());
-  mlir::OwningOpRef<ModuleOp> pulseCalsModule(
-      mlir::parseSourceFile(sourceMgr, &getContext()));
-  if (!pulseCalsModule)
+  owningOpRef = mlir::parseSourceFile(sourceMgr, &getContext());
+  if (!owningOpRef)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Failed to parse pulse calibrations file: " +
                                        pulseCalsPath);
-  auto pulseCalsModuleRelease = pulseCalsModule.release();
-  pulseCalsModuleRelease->walk([&](mlir::pulse::SequenceOp sequenceOp) {
-    auto sequenceName = sequenceOp.sym_name().str();
-    pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
-  });
-
   return llvm::Error::success();
 }
 
@@ -388,8 +399,8 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
   }
 
   // clone the body of the original sequence ops
+  builder.setInsertionPointAfter(&mergedSequenceOp.back().back());
   for (std::size_t seqNum = 1; seqNum < sequenceOps.size(); seqNum++) {
-    builder.setInsertionPointAfter(&mergedSequenceOp.back().back());
     for (auto &block : sequenceOps[seqNum].getBody().getBlocks())
       for (auto &op : block.getOperations())
         builder.clone(op, mapper);
@@ -422,7 +433,7 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
   // If yes, no further action is required because the duration is already
   // cloned when we clone the first sequence
   bool allSequenceOpsHasSameDuration =
-      areAllSequenceOpsHasSameDuration(sequenceOps);
+      doAllSequenceOpsHaveSameDuration(sequenceOps);
   if (!allSequenceOpsHasSameDuration and
       mergedSequenceOp->hasAttr("pulse.duration"))
     mergedSequenceOp->removeAttr("pulse.duration");
@@ -494,7 +505,9 @@ void LoadPulseCalsPass::removeRedundantDelayArgs(
 
   // erase the redundant args
   std::sort(redundantArgIndicesToRemove.begin(),
-            redundantArgIndicesToRemove.end(), std::greater<uint>());
+            redundantArgIndicesToRemove.end());
+  std::reverse(redundantArgIndicesToRemove.begin(),
+               redundantArgIndicesToRemove.end());
   for (auto argIndex : redundantArgIndicesToRemove) {
     sequenceOp.eraseArgument(argIndex);
     // update the pulse.args and pulse.argPorts vectors
@@ -512,7 +525,7 @@ void LoadPulseCalsPass::removeRedundantDelayArgs(
     sequenceOp->setAttr("pulse.args", builder.getArrayAttr(argAttrVec));
 }
 
-bool LoadPulseCalsPass::areAllSequenceOpsHasSameDuration(
+bool LoadPulseCalsPass::doAllSequenceOpsHaveSameDuration(
     std::vector<mlir::pulse::SequenceOp> &sequenceOps) {
   bool prevSequenceEncountered = false;
   uint prevSequencePulseDuration = 0;
@@ -520,8 +533,8 @@ bool LoadPulseCalsPass::areAllSequenceOpsHasSameDuration(
     if (!sequenceOp->hasAttrOfType<IntegerAttr>("pulse.duration"))
       return false;
 
-    uint sequenceDuration =
-        sequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getUInt();
+    uint sequenceDuration = static_cast<uint64_t>(
+        sequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
     if (!prevSequenceEncountered) {
       prevSequenceEncountered = true;
       prevSequencePulseDuration = sequenceDuration;

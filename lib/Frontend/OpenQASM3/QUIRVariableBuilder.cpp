@@ -130,8 +130,8 @@ QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
     return loadOp;
   }
 
-  assert(false &&
-         "Unsupported defining value operation for parameter variable");
+  llvm_unreachable(
+      "Unsupported defining value operation for parameter variable");
 }
 
 void QUIRVariableBuilder::generateArrayVariableDeclaration(

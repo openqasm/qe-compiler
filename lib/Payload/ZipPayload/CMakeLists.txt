@@ -18,6 +18,7 @@ set(QSSC_PAYLOAD_PATHS
 qssc_add_plugin(QSSCPayloadZip QSSC_PAYLOAD_PLUGIN
         PatchableZipPayload.cpp
         ZipPayload.cpp
+        ZipUtil.cpp
 
         ADDITIONAL_HEADER_DIRS
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -30,3 +31,5 @@ qssc_add_plugin(QSSCPayloadZip QSSC_PAYLOAD_PLUGIN
         PLUGIN_REGISTRATION_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/Payload.inc
         )
+
+add_dependencies(QSSCPayloadZip mlir-headers)

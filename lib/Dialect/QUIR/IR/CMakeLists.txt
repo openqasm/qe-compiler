@@ -11,6 +11,7 @@
 # that they have been altered from the originals.
 
 add_mlir_dialect_library(MLIRQUIRDialect
+        QUIRAttributes.cpp
         QUIRDialect.cpp
         QUIRInterfaces.cpp
         QUIROps.cpp

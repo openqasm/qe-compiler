@@ -162,9 +162,9 @@ class _CompilerExecution:
     def prepare_compiler_args(self) -> List[str]:
         args = self.options.prepare_compiler_option_args()
 
-        if self.input_file:
+        if self.input_file is not None:
             args.append(str(self.input_file))
-        elif self.input_str:
+        elif self.input_str is not None:
             args.append("--direct")
             args.append(str(self.input_str))
         else:
@@ -221,7 +221,7 @@ def _compile_child_runner(conn: connection.Connection) -> None:
 
 def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
     assert (
-        execution.input_file or execution.input_str
+        execution.input_file is not None or execution.input_str is not None
     ), "one of the compile options input_file or input_str must be set"
 
     options = execution.options

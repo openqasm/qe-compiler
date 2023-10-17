@@ -91,6 +91,7 @@ message(STATUS "QSS Compiler Version: ${QSSC_VERSION}")
 
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 # Compiler options
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -146,11 +147,11 @@ set(QSSC_TARGET_TEST_DIRS
 if(QSSC_WITH_MOCK_TARGET)
     set(QSSC_TARGET_DIRS
             ${QSSC_TARGET_DIRS}
-            ${CMAKE_CURRENT_SOURCE_DIR}/mock_target
+            ${CMAKE_CURRENT_SOURCE_DIR}/targets/systems/mock
     )
     set(QSSC_TARGET_TEST_DIRS
             ${QSSC_TARGET_TEST_DIRS}
-            ${CMAKE_CURRENT_SOURCE_DIR}/mock_target/test
+            ${CMAKE_CURRENT_SOURCE_DIR}/targets/systems/mock/test
     )
 endif()
 
@@ -382,6 +383,7 @@ endforeach()
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE_FILES})
 
 add_library(qss-compiler-opt ${SOURCE_FILES})
+add_dependencies(qss-compiler-opt mlir-headers)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

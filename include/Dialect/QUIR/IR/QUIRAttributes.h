@@ -28,11 +28,10 @@
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/TypeSwitch.h"
-
-#define GET_ATTRDEF_CLASSES
-#include "Dialect/QUIR/IR/QUIRAttributes.h.inc"
+#include "llvm/Support/Error.h"
 
 namespace mlir::quir {
+
 static inline llvm::StringRef getInputParameterAttrName() {
   return "quir.inputParameter";
 }
@@ -56,5 +55,8 @@ static inline llvm::StringRef getDurationAttrName() {
 }
 
 } // namespace mlir::quir
+
+#define GET_ATTRDEF_CLASSES
+#include "Dialect/QUIR/IR/QUIRAttributes.h.inc"
 
 #endif // QUIR_QUIRATTRIBUTES_H

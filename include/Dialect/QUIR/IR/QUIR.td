@@ -18,5 +18,11 @@
 #define QUIR_TD
 
 include "Dialect/QUIR/IR/QUIRDialect.td"
+include "Dialect/QUIR/IR/QUIREnums.td"
+include "Dialect/QUIR/IR/QUIRTypes.td"
+include "Dialect/QUIR/IR/QUIRTypeConstraints.td"
+include "Dialect/QUIR/IR/QUIRAttributes.td"
+include "Dialect/QUIR/IR/QUIRTraits.td"
+include "Dialect/QUIR/IR/QUIROps.td"
 
 #endif // QUIR_TD

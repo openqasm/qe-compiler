@@ -108,3 +108,12 @@ if (bit_two != bit_one){
 if (bit_one != bitstring[0]) {
     U(0, 0, 0) $0;
 }
+
+// MLIR-DAG: [[BIG_BITS:%.*]] = oq3.variable_load @big_bits : !quir.cbit<33>
+// MLIR-DAG: [[ZERO_32:%.*]] = arith.constant 0 : i32
+// MLIR-DAG: [[LHS:%.*]] = "oq3.cast"([[BIG_BITS]]) : (!quir.cbit<33>) -> i33
+// MLIR-DAG: [[RHS:%.*]] = "oq3.cast"([[ZERO_32]]) : (i32) -> i33
+// MLIR: [[CMP:%.*]] = arith.cmpi eq, [[LHS]], [[RHS]] : i33
+// MLIR: scf.if [[CMP]] {
+bit[33] big_bits;
+if (big_bits == 0) {}
