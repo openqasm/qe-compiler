@@ -56,6 +56,7 @@
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
 #include <filesystem>
+#include <fstream>
 #include <string_view>
 #include <utility>
 
@@ -106,6 +107,15 @@ static llvm::cl::opt<bool> plaintextPayload(
     "plaintext-payload", llvm::cl::desc("Write the payload in plaintext"),
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
+static llvm::cl::opt<bool> includeSourceInPayload(
+    "include-source", llvm::cl::desc("Write the input source into the payload"),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+
+static llvm::cl::opt<bool>
+    bypassPipeline("bypass-pipeline", llvm::cl::desc("Bypass the pipeline"),
+                   llvm::cl::init(false),
+                   llvm::cl::cat(qssc::config::getQSSCCategory()));
+
 namespace {
 enum InputType { NONE, QASM, MLIR, QOBJ };
 } // anonymous namespace
@@ -121,7 +131,15 @@ static llvm::cl::opt<enum InputType> inputType(
                                 "load the input file as a QOBJ file")));
 
 namespace {
-enum Action { None, DumpAST, DumpASTPretty, DumpMLIR, DumpWaveMem, GenQEM };
+enum Action {
+  None,
+  DumpAST,
+  DumpASTPretty,
+  DumpMLIR,
+  DumpWaveMem,
+  GenQEM,
+  GenQEQEM
+};
 } // anonymous namespace
 static llvm::cl::opt<enum Action> emitAction(
     "emit", llvm::cl::init(Action::None),
@@ -134,10 +152,14 @@ static llvm::cl::opt<enum Action> emitAction(
                                 "output the waveform memory")),
     llvm::cl::values(clEnumValN(GenQEM, "qem",
                                 "generate a quantum executable module (qem) "
-                                "for execution on hardware")));
+                                "for execution on hardware")),
+    llvm::cl::values(clEnumValN(
+        GenQEQEM, "qe-qem",
+        "generate a target-specific quantum executable module (qeqem) "
+        "for execution on hardware")));
 
 namespace qss {
-enum FileExtension { None, AST, ASTPRETTY, QASM, QOBJ, MLIR, WMEM, QEM };
+enum FileExtension { None, AST, ASTPRETTY, QASM, QOBJ, MLIR, WMEM, QEM, QEQEM };
 } // namespace qss
 
 auto fileExtensionToStr(const qss::FileExtension &inExt) -> std::string {
@@ -162,6 +184,9 @@ auto fileExtensionToStr(const qss::FileExtension &inExt) -> std::string {
     break;
   case qss::FileExtension::QEM:
     return "qem";
+    break;
+  case qss::FileExtension::QEQEM:
+    return "qeqem";
     break;
   default:
     return "none";
@@ -204,6 +229,9 @@ auto fileExtensionToAction(const qss::FileExtension &inExt) -> Action {
   case qss::FileExtension::QEM:
     return Action::GenQEM;
     break;
+  case qss::FileExtension::QEQEM:
+    return Action::GenQEQEM;
+    break;
   default:
     break;
   }
@@ -225,6 +253,8 @@ auto strToFileExtension(const std::string &extStr) -> qss::FileExtension {
     return qss::FileExtension::WMEM;
   if (extStr == "qem" || extStr == "QEM")
     return qss::FileExtension::QEM;
+  if (extStr == "qeqem" || extStr == "QEQEM")
+    return qss::FileExtension::QEQEM;
   return qss::FileExtension::None;
 }
 
@@ -424,8 +454,9 @@ static llvm::Error generateQEM_(qssc::hal::TargetSystem &target,
                                 std::unique_ptr<qssc::payload::Payload> payload,
                                 mlir::ModuleOp moduleOp,
                                 llvm::raw_ostream *ostream) {
-  if (auto err = target.addToPayload(moduleOp, *payload))
-    return err;
+  if (!bypassPipeline)
+    if (auto err = target.addToPayload(moduleOp, *payload))
+      return err;
 
   if (plaintextPayload)
     payload->writePlain(*ostream);
@@ -535,20 +566,29 @@ compile_(int argc, char const **argv, std::string *outputString,
   auto outputFile = mlir::openOutputFile(outputFilename, &errorMessage);
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
-  if (emitAction == Action::GenQEM) {
+  if (emitAction == Action::GenQEQEM && !config.targetName.has_value())
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "Unsupported target-specific payload: no target");
+  if (emitAction == Action::GenQEM || emitAction == Action::GenQEQEM) {
+    const std::filesystem::path payloadPath(outputFilename.c_str());
+    const std::string fNamePrefix = payloadPath.stem();
+    const auto payloadName =
+        (emitAction == Action::GenQEM) ? "ZIP" : config.targetName.value();
+    auto payloadInfo =
+        qssc::payload::registry::PayloadRegistry::lookupPluginInfo(payloadName);
+    if (payloadInfo == llvm::None)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "Unsupported target-specific payload: " +
+                                         payloadName);
     if (outputFilename == "-") {
-      auto payloadInfo =
-          qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
       payload = std::move(
           payloadInfo.getValue()->createPluginInstance(llvm::None).get());
     } else {
-      const std::filesystem::path payloadPath(outputFilename.c_str());
-      const std::string fNamePrefix = payloadPath.stem();
-      const qssc::payload::PayloadConfig config{fNamePrefix, fNamePrefix};
-      auto payloadInfo =
-          qssc::payload::registry::PayloadRegistry::lookupPluginInfo("ZIP");
-      payload =
-          std::move(payloadInfo.getValue()->createPluginInstance(config).get());
+      const qssc::payload::PayloadConfig payloadConfig{fNamePrefix,
+                                                       fNamePrefix};
+      payload = std::move(
+          payloadInfo.getValue()->createPluginInstance(payloadConfig).get());
     }
   }
 
@@ -633,7 +673,7 @@ compile_(int argc, char const **argv, std::string *outputString,
           std::move(err));
 
   // Run the pipeline.
-  if (failed(pm.run(moduleOp)))
+  if (!bypassPipeline && failed(pm.run(moduleOp)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problems running the compiler pipeline!");
 
@@ -643,6 +683,31 @@ compile_(int argc, char const **argv, std::string *outputString,
   }
 
   if (emitAction == Action::GenQEM) {
+
+    if (includeSourceInPayload) {
+      if (directInput) {
+        if (inputType == InputType::QASM)
+          payload->addFile("manifest/input.qasm", inputSource + "\n");
+        else if (inputType == InputType::MLIR)
+          payload->addFile("manifest/input.mlir", inputSource + "\n");
+        else
+          llvm_unreachable("Unhandled input file type");
+      } else { // just copy the input file
+        std::ifstream fileStream(inputSource);
+        std::stringstream fileSS;
+        fileSS << fileStream.rdbuf();
+
+        if (inputType == InputType::QASM)
+          payload->addFile("manifest/input.qasm", fileSS.str());
+        else if (inputType == InputType::MLIR)
+          payload->addFile("manifest/input.mlir", fileSS.str());
+        else
+          llvm_unreachable("Unhandled input file type");
+
+        fileStream.close();
+      }
+    }
+
     if (auto err = generateQEM_(target, std::move(payload), moduleOp, ostream))
       return err;
   }

@@ -60,6 +60,11 @@ void ZipPayload::addManifest() {
   files[manifest_fname] = manifest.dump() + "\n";
 }
 
+void ZipPayload::addFile(llvm::StringRef filename, llvm::StringRef str) {
+  std::lock_guard<std::mutex> lock(_mtx);
+  files[filename.str()] = str;
+}
+
 void ZipPayload::writePlain(const std::string &dirName) {
   std::lock_guard<std::mutex> lock(_mtx);
   for (const auto &filePair : files) {

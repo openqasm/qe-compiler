@@ -17,6 +17,14 @@ jobs:
     env:
       CONAN_USER_HOME: ${{ github.workspace }}
     steps:
+      - name: free-up-space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet   
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0

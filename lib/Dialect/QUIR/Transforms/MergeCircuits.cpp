@@ -20,27 +20,34 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/MergeCircuits.h"
-
-#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BlockAndValueMapping.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/Support/LogicalResult.h"
-#include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/None.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 
+#include <algorithm>
 #include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;
 
 namespace {
+
+using MoveListVec = std::vector<Operation *>;
+bool moveUsers(Operation *curOp, MoveListVec &moveList) {
+  moveList.push_back(curOp);
+  for (auto *user : curOp->getUsers())
+    if (!moveUsers(user, moveList))
+      return false;
+  return true;
+}
 
 // This pattern matches on two CallCircuitOps separated by non-quantum ops
 struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
@@ -50,34 +57,82 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
 
-    // get next quantum op and check if its a CallCircuitOp
-    llvm::Optional<Operation *> secondOp = nextQuantumOpOrNull(callCircuitOp);
-    if (!secondOp)
-      return failure();
+    // find next CallCircuitOp or fail
+    Operation *searchOp = callCircuitOp.getOperation();
+    llvm::Optional<Operation *> secondOp;
+    CallCircuitOp nextCallCircuitOp;
+    while (true) {
+      secondOp = nextQuantumOpOrNull(searchOp);
+      if (!secondOp)
+        return failure();
 
-    auto nextCallCircuitOp = dyn_cast<CallCircuitOp>(*secondOp);
-    if (!nextCallCircuitOp)
-      return failure();
+      nextCallCircuitOp = dyn_cast<CallCircuitOp>(*secondOp);
+      if (nextCallCircuitOp)
+        break;
+
+      // check for overlapping BarrierOp and fail if found
+      auto barrierOp = dyn_cast<BarrierOp>(*secondOp);
+      if (barrierOp) {
+        std::set<uint> firstQubits =
+            QubitOpInterface::getOperatedQubits(callCircuitOp);
+        std::set<uint> secondQubits =
+            QubitOpInterface::getOperatedQubits(barrierOp);
+
+        if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
+          return failure();
+      }
+
+      searchOp = *secondOp;
+    }
+
+    Operation *insertOp = *secondOp;
+
+    MoveListVec moveList;
 
     // Move first CallCircuitOp after nodes until a user of the
     // CallCircuitOp or the second CallCircuitOp is reached
     Operation *curOp = callCircuitOp->getNextNode();
     while (curOp != *secondOp) {
+      moveList.clear();
+      bool okToMoveUsers = false;
       if (std::find(callCircuitOp->user_begin(), callCircuitOp->user_end(),
                     curOp) != callCircuitOp->user_end())
-        break;
-      callCircuitOp->moveAfter(curOp);
+
+      {
+        if (std::find(curOp->user_begin(), curOp->user_end(), callCircuitOp) !=
+            callCircuitOp->user_end())
+          break;
+
+        okToMoveUsers = moveUsers(curOp, moveList);
+        if (okToMoveUsers)
+          for (auto *op : moveList) {
+            op->moveAfter(insertOp);
+            insertOp = op;
+          }
+      }
+      if (!okToMoveUsers)
+        callCircuitOp->moveAfter(curOp);
+
       curOp = callCircuitOp->getNextNode();
     }
+
+    insertOp = nextCallCircuitOp;
 
     // Move second CallCircuitOp before nodes until a definition the
     // second CallCircuitOp uses or the first CallCircuitOp is reached
     curOp = nextCallCircuitOp->getPrevNode();
     while (curOp != callCircuitOp) {
       if (std::find(curOp->user_begin(), curOp->user_end(),
-                    nextCallCircuitOp) != curOp->user_end())
-        break;
-      nextCallCircuitOp->moveBefore(curOp);
+                    nextCallCircuitOp) != curOp->user_end()) {
+        if (std::find(nextCallCircuitOp->user_begin(),
+                      nextCallCircuitOp->user_end(),
+                      curOp) != nextCallCircuitOp->user_end())
+          break;
+        curOp->moveBefore(insertOp);
+        insertOp = curOp;
+      } else {
+        nextCallCircuitOp->moveBefore(curOp);
+      }
       curOp = nextCallCircuitOp->getPrevNode();
     }
 
@@ -86,9 +141,81 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
     return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
                                                 nextCallCircuitOp);
-
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
+
+template <class FirstOp, class SecondOp>
+Optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
+  llvm::Optional<Operation *> secondOp = nextQuantumOpOrNull(firstOp);
+  if (!secondOp)
+    return llvm::None;
+
+  auto secondOpByClass = dyn_cast<SecondOp>(*secondOp);
+  if (!secondOpByClass)
+    return llvm::None;
+
+  // Check for overlap between currQubits and what's operated on by nextOp
+  std::set<uint> firstQubits = QubitOpInterface::getOperatedQubits(firstOp);
+  std::set<uint> secondQubits =
+      QubitOpInterface::getOperatedQubits(secondOpByClass);
+
+  if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
+    return llvm::None;
+  return secondOpByClass;
+}
+
+// This pattern matches on a BarrierOp follows by a CallCircuitOp separated by
+// non-quantum ops
+struct BarrierAndCircuitPattern : public OpRewritePattern<BarrierOp> {
+  explicit BarrierAndCircuitPattern(MLIRContext *ctx)
+      : OpRewritePattern<BarrierOp>(ctx) {}
+
+  LogicalResult matchAndRewrite(BarrierOp barrierOp,
+                                PatternRewriter &rewriter) const override {
+
+    // check for circuit op to merge with after moving barrier
+    auto prevCallCircuitOp =
+        prevQuantumOpOrNullOfType<CallCircuitOp>(barrierOp);
+    if (!prevCallCircuitOp)
+      return failure();
+
+    auto callCircuitOp =
+        getNextOpAndCompareOverlap<BarrierOp, CallCircuitOp>(barrierOp);
+    if (!callCircuitOp.hasValue())
+      return failure();
+
+    barrierOp->moveAfter(callCircuitOp.getValue().getOperation());
+
+    return success();
+  } // matchAndRewrite
+};  // struct BarrierAndCircuitPattern
+
+// This pattern matches on a CallCircuitOp followed by a BarrierOp separated by
+// non-quantum ops
+struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
+  explicit CircuitAndBarrierPattern(MLIRContext *ctx)
+      : OpRewritePattern<CallCircuitOp>(ctx) {}
+
+  LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
+                                PatternRewriter &rewriter) const override {
+
+    auto barrierOp =
+        getNextOpAndCompareOverlap<CallCircuitOp, BarrierOp>(callCircuitOp);
+    if (!barrierOp.hasValue())
+      return failure();
+
+    auto *barrierOperation = barrierOp.getValue().getOperation();
+    // check for circuit op to merge with
+    auto nextCallCircuitOp =
+        nextQuantumOpOrNullOfType<CallCircuitOp>(barrierOperation);
+    if (!nextCallCircuitOp)
+      return failure();
+
+    barrierOperation->moveBefore(callCircuitOp);
+
+    return success();
+  } // matchAndRewrite
+};  // struct CircuitAndBarrierPattern
 
 } // end anonymous namespace
 
@@ -109,8 +236,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   auto circuitOp = getCircuitOp(callCircuitOp);
   auto nextCircuitOp = getCircuitOp(nextCallCircuitOp);
 
-  OpBuilder builder(circuitOp);
-  builder.setInsertionPointAfter(nextCircuitOp);
+  rewriter.setInsertionPointAfter(nextCircuitOp);
 
   llvm::SmallVector<Type> inputTypes;
   llvm::SmallVector<Value> inputValues;
@@ -128,7 +254,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
       (circuitOp.sym_name() + "_" + nextCircuitOp.sym_name()).str();
 
   // create new circuit operation by cloning first circuit
-  CircuitOp newCircuitOp = cast<CircuitOp>(builder.clone(*circuitOp));
+  CircuitOp newCircuitOp = cast<CircuitOp>(rewriter.clone(*circuitOp));
   newCircuitOp->setAttr(SymbolTable::getSymbolAttrName(),
                         StringAttr::get(circuitOp->getContext(), newName));
 
@@ -155,11 +281,11 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   // new circuit
   quir::ReturnOp newReturnOp;
   newCircuitOp->walk([&](quir::ReturnOp r) { newReturnOp = r; });
-  builder.setInsertionPointAfter(newReturnOp);
+  rewriter.setInsertionPointAfter(newReturnOp);
 
   for (auto &block : nextCircuitOp.getBody().getBlocks())
     for (auto &op : block.getOperations())
-      builder.clone(op, mapper);
+      rewriter.clone(op, mapper);
 
   // remove any existing return operations from new circuit
   // collect their output types and values into vectors
@@ -167,17 +293,16 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
     outputValues.append(r.getOperands().begin(), r->getOperands().end());
     outputTypes.append(r->getOperandTypes().begin(),
                        r->getOperandTypes().end());
-    r->erase();
+    rewriter.eraseOp(r);
   });
 
   // create a return op in the new circuit with the merged output values
-  OpBuilder newBuilder(&newCircuitOp.back().back());
-  newBuilder.setInsertionPointAfter(&newCircuitOp.back().back());
-  newBuilder.create<quir::ReturnOp>(nextReturnOp->getLoc(), outputValues);
+  rewriter.setInsertionPointToEnd(&newCircuitOp.back());
+  rewriter.create<quir::ReturnOp>(nextReturnOp->getLoc(), outputValues);
 
   // change the input / output types for the quir.circuit
   auto opType = newCircuitOp.getType();
-  newCircuitOp.setType(builder.getFunctionType(
+  newCircuitOp.setType(rewriter.getFunctionType(
       /*inputs=*/opType.getInputs(),
       /*results=*/ArrayRef<Type>(outputTypes)));
 
@@ -204,7 +329,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   }
 
   newCircuitOp->setAttr(mlir::quir::getPhysicalIdsAttrName(),
-                        builder.getI32ArrayAttr(ArrayRef<int>(allIds)));
+                        rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
 
   // merge the call_circuits
   // collect their input values
@@ -214,35 +339,17 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   callInputValues.append(nextCallCircuitOp->getOperands().begin(),
                          nextCallCircuitOp.getOperands().end());
 
-  // replace or create new based on original outputType sizes
-  if (nextCallCircuitOp->getNumResults() == outputTypes.size()) {
-    rewriter.replaceOpWithNewOp<CallCircuitOp>(nextCallCircuitOp, newName,
-                                               TypeRange(outputTypes),
-                                               ValueRange(callInputValues));
-    rewriter.eraseOp(callCircuitOp);
-  } else if (callCircuitOp->getNumResults() == outputTypes.size()) {
-    rewriter.replaceOpWithNewOp<CallCircuitOp>(callCircuitOp, newName,
-                                               TypeRange(outputTypes),
-                                               ValueRange(callInputValues));
-    rewriter.eraseOp(nextCallCircuitOp);
-  } else {
-    // can not directly replace a call circuit since the number of results does
-    // not match
+  rewriter.setInsertionPointAfter(nextCallCircuitOp);
+  auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
+      callCircuitOp->getLoc(), newName, TypeRange(outputTypes),
+      ValueRange(callInputValues));
 
-    auto numCallResults = callCircuitOp->getNumResults();
-
-    auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
-        callCircuitOp->getLoc(), newName, TypeRange(outputTypes),
-        ValueRange(callInputValues));
-    for (const auto &res : llvm::enumerate(callCircuitOp->getResults()))
-      res.value().replaceAllUsesWith(newCallOp.getResult(res.index()));
-    for (const auto &res : llvm::enumerate(nextCallCircuitOp->getResults())) {
-      res.value().replaceAllUsesWith(
-          newCallOp.getResult(res.index() + numCallResults));
-    }
-    callCircuitOp->erase();
-    nextCallCircuitOp->erase();
-  }
+  // dice the output so we can specify which results to replace
+  auto iterSep = newCallOp.result_begin() + callCircuitOp.getNumResults();
+  rewriter.replaceOp(callCircuitOp,
+                     ResultRange(newCallOp.result_begin(), iterSep));
+  rewriter.replaceOp(nextCallCircuitOp,
+                     ResultRange(iterSep, newCallOp.result_end()));
 
   return success();
 }
@@ -252,6 +359,8 @@ void MergeCircuitsPass::runOnOperation() {
 
   RewritePatternSet patterns(&getContext());
   patterns.add<CircuitAndCircuitPattern>(&getContext());
+  patterns.add<BarrierAndCircuitPattern>(&getContext());
+  patterns.add<CircuitAndBarrierPattern>(&getContext());
 
   if (failed(
           applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
