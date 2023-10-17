@@ -1,4 +1,4 @@
-//===- errors.cpp  - Error reporting API -------------------------*- C++ -*-===//
+//===- errors.cpp  - Error reporting API ------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
