@@ -1,4 +1,4 @@
-//===- error.cpp  - Error reporting API -------------------------*- C++ -*-===//
+//===- errors.cpp  - Error reporting API -------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -18,7 +18,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "API/error.h"
+#include "API/errors.h"
 
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
