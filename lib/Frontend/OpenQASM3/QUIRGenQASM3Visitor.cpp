@@ -1564,10 +1564,12 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
     if (leftType.isa<quir::CBitType>()) {
       leftRef = builder.create<CastOp>(getLocation(left),
                                        builder.getIntegerType(bits), leftRef);
+      leftType = leftRef.getType();
     }
     if (rightType.isa<quir::CBitType>()) {
       rightRef = builder.create<CastOp>(getLocation(right),
                                         builder.getIntegerType(bits), rightRef);
+      rightType = rightRef.getType();
     }
     // integer types of different sizes
     if (leftType != rightType && leftType.isIntOrIndex() &&
