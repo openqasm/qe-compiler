@@ -437,13 +437,14 @@ void QUIRToPulsePass::processDurationArg(
         nextDurationOperand.getDefiningOp<mlir::quir::ConstantOp>();
     std::string durLocHash =
         std::to_string(mlir::hash_value(nextDurationOperand.getLoc()));
-    auto parsedDur = quir::Duration::parseDuration(durationOp);
-    if (parsedDur->unit != quir::Duration::DurationUnit::dt)
+    auto durVal =
+        quir::getDuration(durationOp).get().getDuration().convertToDouble();
+    auto durUnit = durationOp.getType().dyn_cast<DurationType>().getUnits();
+    if (durUnit != TimeUnits::dt)
       assert(false && "this pass only accepts durations with dt unit");
 
     if (classicalQUIROpLocToConvertedPulseOpMap.find(durLocHash) ==
         classicalQUIROpLocToConvertedPulseOpMap.end()) {
-      double durVal = parsedDur->duration;
       auto dur64 = entryBuilder.create<mlir::arith::ConstantOp>(
           durationOp.getLoc(),
           entryBuilder.getIntegerAttr(entryBuilder.getI64Type(),
@@ -501,11 +502,12 @@ mlir::Value QUIRToPulsePass::convertDurationToI64(
     if (auto castOp = dyn_cast<quir::ConstantOp>(durationOp)) {
       addCircuitOperandToEraseList(
           callCircuitOp.getOperand(cnt).getDefiningOp());
-      auto parsedDur = quir::Duration::parseDuration(castOp);
-      if (parsedDur->unit != quir::Duration::DurationUnit::dt)
+      auto durVal =
+          quir::getDuration(castOp).get().getDuration().convertToDouble();
+      auto durUnit = castOp.getType().dyn_cast<DurationType>().getUnits();
+      if (durUnit != TimeUnits::dt)
         assert(false && "this pass only accepts durations with dt unit");
 
-      double durVal = parsedDur->duration;
       auto I64Dur = builder.create<mlir::arith::ConstantOp>(
           castOp->getLoc(),
           builder.getIntegerAttr(builder.getI64Type(), uint64_t(durVal)));
