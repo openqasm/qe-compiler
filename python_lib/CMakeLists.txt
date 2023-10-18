@@ -25,6 +25,27 @@ macro(python_pkg_add_file file lib)
     LIST(APPEND ${lib} ${dest_file})
 endmacro()
 
+
+macro(python_pkg_add_target_file file lib)
+    set(src_file ${file})
+    get_filename_component(barename ${file} NAME)
+    set(dest_file ${CMAKE_CURRENT_BINARY_DIR}/qss_compiler/${barename})
+    add_custom_command(OUTPUT ${dest_file}
+      COMMAND ${CMAKE_COMMAND} -E copy
+        ${src_file}
+        ${dest_file}
+      DEPENDS ${src_file}
+    )
+    LIST(APPEND ${lib} ${dest_file})
+endmacro()
+
+
+macro(python_pkg_add_target_files)
+    foreach(file ${ARGN})
+        python_pkg_add_target_file(${file} PY_LIB_FILES)
+    endforeach()
+endmacro()
+
 # collect python package files from this directory
 # into a variable PY_LIB_FILES
 macro(python_pkg_add_files)
@@ -43,6 +64,16 @@ python_pkg_add_files(
                 setup.cfg
                 setup.py
 )
+
+foreach(dir ${QSSC_TARGET_PYTHON_DIRS})
+    message(STATUS "Adding Python target directory: ${dir}")
+    file(GLOB_RECURSE
+            dir_files
+            "${dir}/*py"
+            )
+    python_pkg_add_target_files("${dir_files}")
+    unset(dir_files)
+endforeach()
 
 configure_file(pyproject.toml.in ${CMAKE_CURRENT_BINARY_DIR}/pyproject.toml)
 
