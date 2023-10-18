@@ -22,7 +22,7 @@
 #ifndef OPENQASM3_FRONTEND_H
 #define OPENQASM3_FRONTEND_H
 
-#include "API/error.h"
+#include "API/errors.h"
 
 #include "mlir/IR/BuiltinOps.h"
 

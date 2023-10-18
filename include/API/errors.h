@@ -1,4 +1,4 @@
-//===- Error.h - Error Reporting API ----------------------------*- C++ -*-===//
+//===- errors.h - Error Reporting API ---------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
