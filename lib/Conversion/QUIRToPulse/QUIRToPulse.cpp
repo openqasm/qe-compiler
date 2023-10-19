@@ -320,7 +320,7 @@ void QUIRToPulsePass::processMixFrameOpArg(
     SmallVector<Value> &pulseCalSequenceArgs, Value argumentValue,
     FuncOp &mainFunc, mlir::OpBuilder &builder) {
   auto mixedFrameOp =
-      addMixFrameOpToIR(mixFrameName, std::move(portName), mainFunc, builder);
+      addMixFrameOpToIR(mixFrameName, portName, mainFunc, builder);
   auto it = std::find(convertedPulseCallSequenceOpOperandNames.begin(),
                       convertedPulseCallSequenceOpOperandNames.end(),
                       builder.getStringAttr(mixFrameName));
@@ -536,7 +536,7 @@ QUIRToPulsePass::addMixFrameOpToIR(std::string const &mixFrameName,
                                    std::string const &portName,
                                    FuncOp &mainFunc, mlir::OpBuilder &builder) {
   if (openedMixFrames.find(mixFrameName) == openedMixFrames.end()) {
-    auto portOp = addPortOpToIR(std::move(portName), mainFunc, builder);
+    auto portOp = addPortOpToIR(portName, mainFunc, builder);
     auto mixedFrameOp = builder.create<MixFrameOp>(
         portOp->getLoc(), portOp, builder.getStringAttr(mixFrameName),
         mlir::Value{}, mlir::Value{}, mlir::Value{});
