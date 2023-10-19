@@ -87,17 +87,19 @@ struct QUIRToPulsePass
   void getQUIROpClassicalOperands(mlir::Operation *quirOp,
                                   std::queue<Value> &angleOperands,
                                   std::queue<Value> &durationOperands);
-  void processMixFrameOpArg(std::string mixFrameName, std::string portName,
+  void processMixFrameOpArg(std::string const &mixFrameName,
+                            std::string const &portName,
                             SequenceOp convertedPulseSequenceOp,
                             SmallVector<Value> &quirOpPulseCalSeqArgs,
                             Value argumentValue, FuncOp &mainFunc,
                             mlir::OpBuilder &builder);
-  void processPortOpArg(std::string portName,
+  void processPortOpArg(std::string const &portName,
                         SequenceOp convertedPulseSequenceOp,
                         SmallVector<Value> &quirOpPulseCalSeqArgs,
                         Value argumentValue, FuncOp &mainFunc,
                         mlir::OpBuilder &builder);
-  void processWfrOpArg(std::string wfrName, SequenceOp convertedPulseSequenceOp,
+  void processWfrOpArg(std::string const &wfrName,
+                       SequenceOp convertedPulseSequenceOp,
                        SmallVector<Value> &quirOpPulseCalSeqArgs,
                        Value argumentValue, FuncOp &mainFunc,
                        mlir::OpBuilder &builder);
@@ -127,18 +129,19 @@ struct QUIRToPulsePass
   // waveform name to Waveform_CreateOp map
   std::map<std::string, mlir::pulse::Waveform_CreateOp> openedWfrs;
   // add a port to IR if it's not already added and return the Port_CreateOp
-  mlir::pulse::Port_CreateOp addPortOpToIR(std::string portName,
+  mlir::pulse::Port_CreateOp addPortOpToIR(std::string const &portName,
                                            FuncOp &mainFunc,
                                            mlir::OpBuilder &builder);
   // add a mixframe to IR if it's not already added and return the MixFrameOp
-  mlir::pulse::MixFrameOp addMixFrameOpToIR(std::string mixFrameName,
-                                            std::string portName,
+  mlir::pulse::MixFrameOp addMixFrameOpToIR(std::string const &mixFrameName,
+                                            std::string const &portName,
                                             FuncOp &mainFunc,
                                             mlir::OpBuilder &builder);
   // add a waveform to IR if it's not already added and return the
   // Waveform_CreateOp
-  mlir::pulse::Waveform_CreateOp
-  addWfrOpToIR(std::string wfrName, FuncOp &mainFunc, mlir::OpBuilder &builder);
+  mlir::pulse::Waveform_CreateOp addWfrOpToIR(std::string const &wfrName,
+                                              FuncOp &mainFunc,
+                                              mlir::OpBuilder &builder);
 
   void addCircuitToEraseList(mlir::Operation *op);
   void addCallCircuitToEraseList(mlir::Operation *op);
