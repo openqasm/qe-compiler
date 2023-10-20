@@ -443,8 +443,8 @@ void QUIRToPulsePass::processDurationArg(
         std::to_string(mlir::hash_value(nextDurationOperand.getLoc()));
     auto durVal =
         quir::getDuration(durationOp).get().getDuration().convertToDouble();
-    auto durUnit = durationOp.getType().dyn_cast<DurationType>().getUnits();
-    assert(durUnit == TimeUnits::dt &&
+    assert(durationOp.getType().dyn_cast<DurationType>().getUnits() ==
+               TimeUnits::dt &&
            "this pass only accepts durations with dt unit");
 
     if (classicalQUIROpLocToConvertedPulseOpMap.find(durLocHash) ==
@@ -509,8 +509,8 @@ mlir::Value QUIRToPulsePass::convertDurationToI64(
       addCircuitOperandToEraseList(durationOp);
       auto durVal =
           quir::getDuration(castOp).get().getDuration().convertToDouble();
-      auto durUnit = castOp.getType().dyn_cast<DurationType>().getUnits();
-      assert(durUnit == TimeUnits::dt &&
+      assert(castOp.getType().dyn_cast<DurationType>().getUnits() ==
+                 TimeUnits::dt &&
              "this pass only accepts durations with dt unit");
 
       auto I64Dur = builder.create<mlir::arith::ConstantOp>(
