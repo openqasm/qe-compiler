@@ -186,7 +186,6 @@ void QUIRToPulsePass::processCircuitArgs(
     mlir::Type argumentType = arg.getType();
     if (argumentType.isa<mlir::quir::AngleType>()) {
       auto *angleOp = callCircuitOp.getOperand(cnt).getDefiningOp();
-      assert(angleOp && "angle op is null");
       LLVM_DEBUG(llvm::dbgs() << "angle argument ");
       LLVM_DEBUG(angleOp->dump());
       convertedPulseSequenceOp.insertArgument(convertedSequenceOpArgIndex,
@@ -200,7 +199,6 @@ void QUIRToPulsePass::processCircuitArgs(
       convertedPulseSequenceOpArgs.push_back(convertedAngleToF64);
     } else if (argumentType.isa<mlir::quir::DurationType>()) {
       auto *durationOp = callCircuitOp.getOperand(cnt).getDefiningOp();
-      assert(durationOp && "duration op is null");
       LLVM_DEBUG(llvm::dbgs() << "duration argument ");
       LLVM_DEBUG(durationOp->dump());
       convertedPulseSequenceOp.insertArgument(convertedSequenceOpArgIndex,
@@ -215,7 +213,6 @@ void QUIRToPulsePass::processCircuitArgs(
       convertedPulseSequenceOpArgs.push_back(convertedDurationToI64);
     } else if (argumentType.isa<mlir::quir::QubitType>()) {
       auto *qubitOp = callCircuitOp.getOperand(cnt).getDefiningOp();
-      assert(qubitOp && "qubit op is null");
       addCircuitOperandToEraseList(qubitOp);
     }
 
@@ -465,6 +462,7 @@ void QUIRToPulsePass::processDurationArg(
 
 mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
                                                mlir::OpBuilder &builder) {
+  assert(angleOp && "angle op is null");
   std::string angleLocHash =
       std::to_string(mlir::hash_value(angleOp->getLoc()));
   if (classicalQUIROpLocToConvertedPulseOpMap.find(angleLocHash) ==
@@ -502,6 +500,7 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
 mlir::Value QUIRToPulsePass::convertDurationToI64(
     mlir::quir::CallCircuitOp callCircuitOp, Operation *durationOp, uint &cnt,
     mlir::OpBuilder &builder, FuncOp &mainFunc) {
+  assert(durationOp && "duration op is null");
   std::string durLocHash =
       std::to_string(mlir::hash_value(durationOp->getLoc()));
   if (classicalQUIROpLocToConvertedPulseOpMap.find(durLocHash) ==
@@ -565,12 +564,14 @@ QUIRToPulsePass::addWfrOpToIR(std::string const &wfrName, FuncOp &mainFunc,
 }
 
 void QUIRToPulsePass::addCircuitToEraseList(mlir::Operation *op) {
+  assert(op && "caller requested adding a null op to erase list");
   if (std::find(quirCircuitEraseList.begin(), quirCircuitEraseList.end(), op) ==
       quirCircuitEraseList.end())
     quirCircuitEraseList.push_back(op);
 }
 
 void QUIRToPulsePass::addCallCircuitToEraseList(mlir::Operation *op) {
+  assert(op && "caller requested adding a null op to erase list");
   if (std::find(quirCallCircuitEraseList.begin(),
                 quirCallCircuitEraseList.end(),
                 op) == quirCallCircuitEraseList.end())
@@ -578,6 +579,7 @@ void QUIRToPulsePass::addCallCircuitToEraseList(mlir::Operation *op) {
 }
 
 void QUIRToPulsePass::addCircuitOperandToEraseList(mlir::Operation *op) {
+  assert(op && "caller requested adding a null op to erase list");
   if (std::find(quirCircuitOperandEraseList.begin(),
                 quirCircuitOperandEraseList.end(),
                 op) == quirCircuitOperandEraseList.end())
