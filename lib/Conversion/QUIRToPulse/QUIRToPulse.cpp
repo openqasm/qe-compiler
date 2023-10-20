@@ -88,6 +88,8 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   auto circuitOp = getCircuitOp(callCircuitOp);
   std::string circName = circuitOp.sym_name().str();
   LLVM_DEBUG(llvm::dbgs() << "\nConverting QUIR circuit " << circName << ":\n");
+  assert(callCircuitOp && "callCircuit op is null");
+  assert(circuitOp && "circuit op is null");
   addCallCircuitToEraseList(callCircuitOp);
   addCircuitToEraseList(circuitOp);
 
@@ -184,6 +186,7 @@ void QUIRToPulsePass::processCircuitArgs(
     mlir::Type argumentType = arg.getType();
     if (argumentType.isa<mlir::quir::AngleType>()) {
       auto *angleOp = callCircuitOp.getOperand(cnt).getDefiningOp();
+      assert(angleOp && "angle op is null");
       LLVM_DEBUG(llvm::dbgs() << "angle argument ");
       LLVM_DEBUG(angleOp->dump());
       convertedPulseSequenceOp.insertArgument(convertedSequenceOpArgIndex,
@@ -197,6 +200,7 @@ void QUIRToPulsePass::processCircuitArgs(
       convertedPulseSequenceOpArgs.push_back(convertedAngleToF64);
     } else if (argumentType.isa<mlir::quir::DurationType>()) {
       auto *durationOp = callCircuitOp.getOperand(cnt).getDefiningOp();
+      assert(durationOp && "duration op is null");
       LLVM_DEBUG(llvm::dbgs() << "duration argument ");
       LLVM_DEBUG(durationOp->dump());
       convertedPulseSequenceOp.insertArgument(convertedSequenceOpArgIndex,
@@ -209,9 +213,12 @@ void QUIRToPulsePass::processCircuitArgs(
       convertedPulseCallSequenceOpOperandNames.push_back(
           builder.getStringAttr("duration"));
       convertedPulseSequenceOpArgs.push_back(convertedDurationToI64);
-    } else if (argumentType.isa<mlir::quir::QubitType>())
-      addCircuitOperandToEraseList(
-          callCircuitOp.getOperand(cnt).getDefiningOp());
+    } else if (argumentType.isa<mlir::quir::QubitType>()) {
+      auto *qubitOp = callCircuitOp.getOperand(cnt).getDefiningOp();
+      assert(qubitOp && "qubit op is null");
+      addCircuitOperandToEraseList(qubitOp);
+    }
+
     else
       llvm_unreachable("unkown circuit argument.");
   }
@@ -500,8 +507,7 @@ mlir::Value QUIRToPulsePass::convertDurationToI64(
   if (classicalQUIROpLocToConvertedPulseOpMap.find(durLocHash) ==
       classicalQUIROpLocToConvertedPulseOpMap.end()) {
     if (auto castOp = dyn_cast<quir::ConstantOp>(durationOp)) {
-      addCircuitOperandToEraseList(
-          callCircuitOp.getOperand(cnt).getDefiningOp());
+      addCircuitOperandToEraseList(durationOp);
       auto durVal =
           quir::getDuration(castOp).get().getDuration().convertToDouble();
       auto durUnit = castOp.getType().dyn_cast<DurationType>().getUnits();
