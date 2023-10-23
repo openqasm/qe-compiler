@@ -15,11 +15,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
+#include "API/errors.h"
 #include "Config/CLIConfig.h"
 #include "Config/EnvVarConfig.h"
 
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/InitAllPasses.h"
@@ -32,6 +34,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/SourceMgr.h"
@@ -474,6 +477,59 @@ static void dumpMLIR_(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
   *ostream << '\n';
 }
 
+/// @brief Handler for the Diagnostic Engine.
+///
+///        Uses qssc::emitDiagnostic to forward diagnostic to the python
+///        diagnostic callback.
+///        Prints diagnostic to llvm::errs to mimic default handler.
+///  @param diagnostic MLIR diagnostic from the Diagnostic Engine
+///  @param diagnosticCb Handle to python diagnostic callback
+static void
+diagEngineHandler(Diagnostic &diagnostic,
+                  std::optional<qssc::DiagnosticCallback> diagnosticCb) {
+
+  // map diagnostic severity to qssc severity
+  auto severity = diagnostic.getSeverity();
+  qssc::Severity qssc_severity = qssc::Severity::Error;
+  switch (severity) {
+  case mlir::DiagnosticSeverity::Error:
+    qssc_severity = qssc::Severity::Error;
+    break;
+  case mlir::DiagnosticSeverity::Warning:
+    qssc_severity = qssc::Severity::Warning;
+    break;
+  case mlir::DiagnosticSeverity::Note:
+  case mlir::DiagnosticSeverity::Remark:
+    qssc_severity = qssc::Severity::Info;
+  }
+  // emit diagnostic cast to void to discard result as it is not needed here
+  if (qssc_severity == qssc::Severity::Error) {
+    (void)qssc::emitDiagnostic(std::move(diagnosticCb), qssc_severity,
+                               qssc::ErrorCategory::QSSCompilationFailure,
+                               diagnostic.str());
+  }
+
+  // emit to llvm::errs as well to mimic default handler
+  diagnostic.getLocation().print(llvm::errs());
+  llvm::errs() << ": ";
+  // based on mlir's Diagnostic.cpp:getDiagKindStr which is static
+  switch (severity) {
+  case mlir::DiagnosticSeverity::Note:
+    llvm::errs() << "note: ";
+    break;
+  case mlir::DiagnosticSeverity::Warning:
+    llvm::errs() << "warning: ";
+    break;
+  case mlir::DiagnosticSeverity::Error:
+    llvm::errs() << "error: ";
+    break;
+  case mlir::DiagnosticSeverity::Remark:
+    llvm::errs() << "remark: ";
+  }
+  llvm::errs() << diagnostic << "\n";
+  return;
+}
+
 static llvm::Error
 compile_(int argc, char const **argv, std::string *outputString,
          std::optional<qssc::DiagnosticCallback> diagnosticCb) {
@@ -560,6 +616,10 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   determineOutputType();
 
+  context.getDiagEngine().registerHandler([&](Diagnostic &diagnostic) {
+    diagEngineHandler(diagnostic, diagnosticCb);
+  });
+
   // Set up the output.
   llvm::raw_ostream *ostream;
   llvm::Optional<llvm::raw_string_ostream> outStringStream;
@@ -614,7 +674,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     if (auto frontendError = qssc::frontend::openqasm3::parse(
             inputSource, !directInput, emitAction == Action::DumpAST,
             emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
-            moduleOp, std::move(diagnosticCb)))
+            moduleOp, diagnosticCb))
       return frontendError;
 
     if (emitAction < Action::DumpMLIR)
@@ -652,6 +712,10 @@ compile_(int argc, char const **argv, std::string *outputString,
   } // if input == MLIR
 
   auto errorHandler = [&](const Twine &msg) {
+    // format msg to python handler as a compilation failure
+    (void)qssc::emitDiagnostic(diagnosticCb, qssc::Severity::Error,
+                               qssc::ErrorCategory::QSSCompilationFailure,
+                               msg.str());
     emitError(UnknownLoc::get(&context)) << msg;
     return failure();
   };
