@@ -20,7 +20,14 @@
 
 #include "API/api.h"
 
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace py = pybind11;
 
