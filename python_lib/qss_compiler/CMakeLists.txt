@@ -12,7 +12,7 @@
 
 set(SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/lib.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/exceptions_enum.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/python_interface.cpp
 )
 
 pybind11_add_module(py_qssc SHARED ${SOURCES})

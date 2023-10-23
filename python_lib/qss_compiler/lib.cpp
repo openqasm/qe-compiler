@@ -1,4 +1,4 @@
-//===- lib.cpp --------------------------------------------------*- C++ -*-===//
+//===- exceptions_enum.cpp --------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,52 +14,15 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file generates python bindings for the QSS Compiler API using pybind11
+//  This file binds the error categories from C++ to Python
 //
-//  Developer notes:
-//  Pybind11 is a lightweight, easy-to-use package for creating python bindings
-//  for C++ code with minimal overhead. It requires C++11 compatible compilers.
-//  (Compare against Boost.Python which supports all compilers, but is slower
-//  and produces larger binaries.)
-//
-//  This file is primarily responsible for generating the binding code, which is
-//  handled by the PYBIND11_MODULE macro. It also contains the implementation
-//  `py_compile`. It's common to separate these, and would be a good idea if the
-//  complexity of this file grows.
-//
-//  The pybind macro accepts two arguments: the module name (`py_qssc`) and a
-//  name (`m`) for a new `py::module_` object -- this is the main interface for
-//  creating bindings. For instance, `m.def` creates the bindings for a new
-//  function.
-//
-//     Note: `py_qssc` is the name of the shared library being built. Reference
-//           it with this name in CMakeLists.
-//
-//  The first argument to `def` is the name of the new _python_ function, and
-//  the second argument is a pointer to the function to bind. We don't point
-//  directly to the `compile` function because we want to decouple the function
-//  signatures. Besides, the `api.compile` method is optimized for the command
-//  line, whereas our function should be pythonic.
-
-//  There is another level of indirection in `qss_compiler/` which is the actual
-//  python package! The `_compile` function is used by the user facing
-//  `qss_compiler.compile` function. More developer notes can be found in
-//  `qss_compiler/__init__.py`.
-
-//  The documentation for pybind11 is quite comprehensive and helpful as a guide
-//  to more complicated usage
-//  https://pybind11.readthedocs.io/en/stable/
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
 
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
-
-#include "llvm/ADT/Optional.h"
-#include <llvm/Support/Error.h>
 
 #include <iostream>
 #include <string>
@@ -68,57 +31,74 @@
 
 namespace py = pybind11;
 
-/// Call into the qss-compiler via an interface to qss-compile's command line
-/// argument.
-py::tuple py_compile_by_args(const std::vector<std::string> &args,
-                             bool outputAsStr,
-                             qssc::DiagnosticCallback onDiagnostic) {
-  std::string outputStr("");
-
-#ifndef NDEBUG
-  std::cout << "params passed from python to C++:\n";
-  for (auto &str : args)
-    std::cout << str << std::endl;
-#endif
-
-  // TODO: need a C++ interface into the compiler with fewer detours. the python
-  // api (inspired by IREE's python bindings) can be a start.
-  std::vector<char const *> argv;
-  argv.reserve(args.size() + 1);
-  for (auto &str : args)
-    argv.push_back(str.c_str());
-  argv.push_back(nullptr);
-
-  int status = qssc::compile(args.size(), argv.data(),
-                             outputAsStr ? &outputStr : nullptr,
-                             std::move(onDiagnostic));
-  bool success = status == 0;
-
-#ifndef NDEBUG
-  std::cerr << "Compile " << (success ? "successful" : "failed") << std::endl;
-#endif
-
-  return py::make_tuple(success, py::bytes(outputStr));
-}
+// Forward the declaration of the functions
+py::tuple py_compile_by_args(const std::vector<std::string> &,
+                             bool,
+                             qssc::DiagnosticCallback);
 
 py::tuple
-py_link_file(const std::string &input, const bool enableInMemoryInput,
-             const std::string &outputPath,
-             const std::string &target, const std::string &configPath,
-             const std::unordered_map<std::string, double> &arguments,
-             bool treatWarningsAsErrors,
-             qssc::DiagnosticCallback onDiagnostic) {
+py_link_file(const std::string &, const bool,
+             const std::string &,
+             const std::string &, const std::string &,
+             const std::unordered_map<std::string, double> &,
+             bool,
+             qssc::DiagnosticCallback);
 
-  std::string inMemoryOutput("");
+// Pybind module
+PYBIND11_MODULE(py_qssc, m) {
+  m.doc() = "Python bindings for the QSS Compiler.";
 
-  int status = qssc::bindArguments(target, configPath, input, outputPath, arguments,
-                                   treatWarningsAsErrors, enableInMemoryInput,
-                                   &inMemoryOutput,
-                                   std::move(onDiagnostic));
+  m.def("_compile_with_args", &py_compile_by_args,
+        "Call compiler via cli qss-compile");
+  m.def("_link_file", &py_link_file, "Call the linker tool");
 
-  bool success = status == 0;
-#ifndef NDEBUG
-  std::cerr << "Link " << (success ? "successful" : "failed") << std::endl;
-#endif
-  return py::make_tuple(success, py::bytes(inMemoryOutput));
+  py::enum_<qssc::ErrorCategory>(m, "ErrorCategory",
+                                       py::arithmetic())
+      .value("OpenQASM3ParseFailure",
+             qssc::ErrorCategory::OpenQASM3ParseFailure)
+      .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
+      .value("QSSCompilerNoInputError", qssc::ErrorCategory::QSSCompilerNoInputError)
+      .value("QSSCompilerCommunicationFailure", qssc::ErrorCategory::QSSCompilerCommunicationFailure)
+      .value("QSSCompilerEOFFailure", qssc::ErrorCategory::QSSCompilerEOFFailure)
+      .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
+      .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
+      .value("QSSLinkerNotImplemented", qssc::ErrorCategory::QSSLinkerNotImplemented)
+      .value("QSSLinkSignatureWarning", qssc::ErrorCategory::QSSLinkSignatureWarning)
+      .value("QSSLinkSignatureError", qssc::ErrorCategory::QSSLinkSignatureError)
+      .value("QSSLinkAddressError", qssc::ErrorCategory::QSSLinkAddressError)
+      .value("QSSLinkSignatureNotFound", qssc::ErrorCategory::QSSLinkSignatureNotFound)
+      .value("QSSLinkArgumentNotFoundWarning", qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
+      .value("QSSLinkInvalidPatchTypeError", qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
+      .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
+      .export_values();
+
+  py::enum_<qssc::Severity>(m, "Severity")
+      .value("Info", qssc::Severity::Info)
+      .value("Warning", qssc::Severity::Warning)
+      .value("Error", qssc::Severity::Error)
+      .value("Fatal", qssc::Severity::Fatal)
+      .export_values();
+
+  py::class_<qssc::Diagnostic>(m, "Diagnostic")
+      .def_readonly("severity", &qssc::Diagnostic::severity)
+      .def_readonly("category", &qssc::Diagnostic::category)
+      .def_readonly("message", &qssc::Diagnostic::message)
+      .def("__str__", &qssc::Diagnostic::toString)
+      .def(py::pickle(
+          [](const qssc::Diagnostic &d) {
+            // __getstate__ serializes the C++ object into a tuple
+            return py::make_tuple(d.severity, d.category, d.message);
+          },
+          [](py::tuple const &t) {
+            // __setstate__ restores the C++ object from a tuple
+            if (t.size() != 3)
+              throw std::runtime_error("invalid state for unpickling");
+
+            auto severity = t[0].cast<qssc::Severity>();
+            auto category = t[1].cast<qssc::ErrorCategory>();
+            auto message = t[2].cast<std::string>();
+
+            return qssc::Diagnostic(severity, category, std::move(message));
+          }));
 }
+
