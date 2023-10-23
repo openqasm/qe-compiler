@@ -1,4 +1,4 @@
-//===- lib.cpp --------------------------------------------------*- C++ -*-===//
+//===- python_interfaces.cpp ------------------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,41 +14,9 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file generates python bindings for the QSS Compiler API using pybind11
+//  This file contains the functions that act as an interface between the
+//  python and c++ functionalities.
 //
-//  Developer notes:
-//  Pybind11 is a lightweight, easy-to-use package for creating python bindings
-//  for C++ code with minimal overhead. It requires C++11 compatible compilers.
-//  (Compare against Boost.Python which supports all compilers, but is slower
-//  and produces larger binaries.)
-//
-//  This file is primarily responsible for generating the binding code, which is
-//  handled by the PYBIND11_MODULE macro. It also contains the implementation
-//  `py_compile`. It's common to separate these, and would be a good idea if the
-//  complexity of this file grows.
-//
-//  The pybind macro accepts two arguments: the module name (`py_qssc`) and a
-//  name (`m`) for a new `py::module_` object -- this is the main interface for
-//  creating bindings. For instance, `m.def` creates the bindings for a new
-//  function.
-//
-//     Note: `py_qssc` is the name of the shared library being built. Reference
-//           it with this name in CMakeLists.
-//
-//  The first argument to `def` is the name of the new _python_ function, and
-//  the second argument is a pointer to the function to bind. We don't point
-//  directly to the `compile` function because we want to decouple the function
-//  signatures. Besides, the `api.compile` method is optimized for the command
-//  line, whereas our function should be pythonic.
-
-//  There is another level of indirection in `qss_compiler/` which is the actual
-//  python package! The `_compile` function is used by the user facing
-//  `qss_compiler.compile` function. More developer notes can be found in
-//  `qss_compiler/__init__.py`.
-
-//  The documentation for pybind11 is quite comprehensive and helpful as a guide
-//  to more complicated usage
-//  https://pybind11.readthedocs.io/en/stable/
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
