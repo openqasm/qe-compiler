@@ -23,7 +23,7 @@ from qss_compiler import (
     OutputType,
     Severity,
 )
-from qss_compiler.exceptions import QSSCompilerEOFFailure
+from qss_compiler.exceptions import QSSCompilationFailure
 
 
 def check_mlir_string(mlir):
@@ -98,7 +98,7 @@ def test_compile_invalid_file(example_invalid_qasm3_tmpfile):
     """Test that we can attempt to compile invalid OpenQASM 3 and receive an
     error"""
 
-    with pytest.raises(QSSCompilerEOFFailure):
+    with pytest.raises(QSSCompilationFailure):
         compile_file(
             example_invalid_qasm3_tmpfile,
             input_type=InputType.QASM3,
@@ -111,7 +111,7 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     """Test that we can attempt to compile invalid OpenQASM 3 and receive an
     error"""
 
-    with pytest.raises(QSSCompilerEOFFailure) as compfail:
+    with pytest.raises(QSSCompilationFailure) as compfail:
         compile_str(
             example_invalid_qasm3_str,
             input_type=InputType.QASM3,
