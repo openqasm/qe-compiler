@@ -52,6 +52,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
+// #include "exceptions_enum.cpp"
 
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
@@ -66,9 +67,11 @@
 #include <unordered_map>
 #include <vector>
 
+namespace py = pybind11;
+
 /// Call into the qss-compiler via an interface to qss-compile's command line
 /// argument.
-pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
+py::tuple py_compile_by_args(const std::vector<std::string> &args,
                                    bool outputAsStr,
                                    qssc::DiagnosticCallback onDiagnostic) {
   std::string outputStr("");
@@ -96,10 +99,10 @@ pybind11::tuple py_compile_by_args(const std::vector<std::string> &args,
   std::cerr << "Compile " << (success ? "successful" : "failed") << std::endl;
 #endif
 
-  return pybind11::make_tuple(success, pybind11::bytes(outputStr));
+  return py::make_tuple(success, py::bytes(outputStr));
 }
 
-pybind11::tuple
+py::tuple
 py_link_file(const std::string &input, const bool enableInMemoryInput,
              const std::string &outputPath,
              const std::string &target, const std::string &configPath,
@@ -118,63 +121,5 @@ py_link_file(const std::string &input, const bool enableInMemoryInput,
 #ifndef NDEBUG
   std::cerr << "Link " << (success ? "successful" : "failed") << std::endl;
 #endif
-  return pybind11::make_tuple(success, pybind11::bytes(inMemoryOutput));
-}
-
-
-PYBIND11_MODULE(py_qssc, m) {
-  m.doc() = "Python bindings for the QSS Compiler.";
-
-  m.def("_compile_with_args", &py_compile_by_args,
-        "Call compiler via cli qss-compile");
-  m.def("_link_file", &py_link_file, "Call the linker tool");
-
-  pybind11::enum_<qssc::ErrorCategory>(m, "ErrorCategory",
-                                       pybind11::arithmetic())
-      .value("OpenQASM3ParseFailure",
-             qssc::ErrorCategory::OpenQASM3ParseFailure)
-      .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
-      .value("QSSCompilerNoInputError", qssc::ErrorCategory::QSSCompilerNoInputError)
-      .value("QSSCompilerCommunicationFailure", qssc::ErrorCategory::QSSCompilerCommunicationFailure)
-      .value("QSSCompilerEOFFailure", qssc::ErrorCategory::QSSCompilerEOFFailure)
-      .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
-      .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
-      .value("QSSLinkerNotImplemented", qssc::ErrorCategory::QSSLinkerNotImplemented)
-      .value("QSSLinkSignatureWarning", qssc::ErrorCategory::QSSLinkSignatureWarning)
-      .value("QSSLinkSignatureError", qssc::ErrorCategory::QSSLinkSignatureError)
-      .value("QSSLinkAddressError", qssc::ErrorCategory::QSSLinkAddressError)
-      .value("QSSLinkSignatureNotFound", qssc::ErrorCategory::QSSLinkSignatureNotFound)
-      .value("QSSLinkArgumentNotFoundWarning", qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
-      .value("QSSLinkInvalidPatchTypeError", qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
-      .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
-      .export_values();
-
-  pybind11::enum_<qssc::Severity>(m, "Severity")
-      .value("Info", qssc::Severity::Info)
-      .value("Warning", qssc::Severity::Warning)
-      .value("Error", qssc::Severity::Error)
-      .value("Fatal", qssc::Severity::Fatal)
-      .export_values();
-
-  pybind11::class_<qssc::Diagnostic>(m, "Diagnostic")
-      .def_readonly("severity", &qssc::Diagnostic::severity)
-      .def_readonly("category", &qssc::Diagnostic::category)
-      .def_readonly("message", &qssc::Diagnostic::message)
-      .def("__str__", &qssc::Diagnostic::toString)
-      .def(pybind11::pickle(
-          [](const qssc::Diagnostic &d) {
-            // __getstate__ serializes the C++ object into a tuple
-            return pybind11::make_tuple(d.severity, d.category, d.message);
-          },
-          [](pybind11::tuple const &t) {
-            // __setstate__ restores the C++ object from a tuple
-            if (t.size() != 3)
-              throw std::runtime_error("invalid state for unpickling");
-
-            auto severity = t[0].cast<qssc::Severity>();
-            auto category = t[1].cast<qssc::ErrorCategory>();
-            auto message = t[2].cast<std::string>();
-
-            return qssc::Diagnostic(severity, category, std::move(message));
-          }));
+  return py::make_tuple(success, py::bytes(inMemoryOutput));
 }

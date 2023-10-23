@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 set(SOURCES
-  ${CMAKE_CURRENT_SOURCE_DIR}/lib.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/exceptions_enum.cpp
 )
 
 pybind11_add_module(py_qssc SHARED ${SOURCES})
