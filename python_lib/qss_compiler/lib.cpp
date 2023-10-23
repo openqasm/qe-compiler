@@ -52,7 +52,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
-// #include "exceptions_enum.cpp"
 
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
@@ -72,8 +71,8 @@ namespace py = pybind11;
 /// Call into the qss-compiler via an interface to qss-compile's command line
 /// argument.
 py::tuple py_compile_by_args(const std::vector<std::string> &args,
-                                   bool outputAsStr,
-                                   qssc::DiagnosticCallback onDiagnostic) {
+                             bool outputAsStr,
+                             qssc::DiagnosticCallback onDiagnostic) {
   std::string outputStr("");
 
 #ifndef NDEBUG

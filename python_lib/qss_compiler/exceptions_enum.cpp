@@ -19,12 +19,25 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
-#include "lib.cpp"
 
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 
+// Forward the declaration of the functions
+py::tuple py_compile_by_args(const std::vector<std::string> &,
+                             bool,
+                             qssc::DiagnosticCallback);
+
+py::tuple
+py_link_file(const std::string &, const bool,
+             const std::string &,
+             const std::string &, const std::string &,
+             const std::unordered_map<std::string, double> &,
+             bool,
+             qssc::DiagnosticCallback);
+
+// Pybind module
 PYBIND11_MODULE(py_qssc, m) {
   m.doc() = "Python bindings for the QSS Compiler.";
 
