@@ -36,6 +36,15 @@ int compile(int argc, char const **argv, std::string *outputString,
             std::optional<DiagnosticCallback> diagnosticCb);
 
 /// @brief Call the parameter binder
+/// @param argc the number of argument strings
+/// @param argv array of argument strings
+/// @param outputString an optional buffer for the compilation result
+/// @param diagnosticCb an optional callback that will receive emitted
+/// diagnostics
+int bind(int argc, char const **argv, std::string *outputString,
+         std::optional<DiagnosticCallback> diagnosticCb);
+
+/// @brief Call the parameter binder
 /// @param target name of the target to employ
 /// @param moduleInputPath path of the module to use as input
 /// @param payloadOutputPath path of the payload to generate as output

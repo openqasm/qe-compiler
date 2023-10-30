@@ -10,6 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-add_subdirectory(qss-compiler)
-add_subdirectory(qss-opt)
-add_subdirectory(qss-bind)
+add_llvm_executable(qss-bind qss-bind.cpp)
+llvm_update_compile_flags(qss-bind)
+target_link_libraries(qss-bind PRIVATE QSSCLib)
+mlir_check_all_link_libraries(qss-bind)
