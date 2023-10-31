@@ -1,12 +1,8 @@
-#include "API/api.h"
-
-#include <pybind11/functional.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include "lib_enums.h"
 
 namespace py = pybind11;
 
-void addEnumValues(py::module &m) {
+void addErrorCategory(py::module &m) {
     py::enum_<qssc::ErrorCategory>(m, "ErrorCategory", py::arithmetic())
         .value("OpenQASM3ParseFailure",
                 qssc::ErrorCategory::OpenQASM3ParseFailure)
@@ -25,4 +21,37 @@ void addEnumValues(py::module &m) {
         .value("QSSLinkInvalidPatchTypeError", qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
         .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
         .export_values();
+}
+
+void addSeverity(py::module &m) {
+    py::enum_<qssc::Severity>(m, "Severity")
+        .value("Info", qssc::Severity::Info)
+        .value("Warning", qssc::Severity::Warning)
+        .value("Error", qssc::Severity::Error)
+        .value("Fatal", qssc::Severity::Fatal)
+        .export_values();
+}
+
+void addDiagnostic(py::module &m) {
+    py::class_<qssc::Diagnostic>(m, "Diagnostic")
+        .def_readonly("severity", &qssc::Diagnostic::severity)
+        .def_readonly("category", &qssc::Diagnostic::category)
+        .def_readonly("message", &qssc::Diagnostic::message)
+        .def("__str__", &qssc::Diagnostic::toString)
+        .def(py::pickle(
+            [](const qssc::Diagnostic &d) {
+                // __getstate__ serializes the C++ object into a tuple
+                return py::make_tuple(d.severity, d.category, d.message);
+            },
+            [](py::tuple const &t) {
+                // __setstate__ restores the C++ object from a tuple
+                if (t.size() != 3)
+                throw std::runtime_error("invalid state for unpickling");
+
+                auto severity = t[0].cast<qssc::Severity>();
+                auto category = t[1].cast<qssc::ErrorCategory>();
+                auto message = t[2].cast<std::string>();
+
+                return qssc::Diagnostic(severity, category, std::move(message));
+            }));
 }
