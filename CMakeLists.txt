@@ -45,6 +45,9 @@ endif()
 
 enable_language(C CXX ASM)
 
+execute_process(COMMAND cmake --version OUTPUT_VARIABLE TEST_CMAKE_VERSION)
+message(STATUS "---> CMAKE VERSION: ${CMAKE_VERSION}")
+
 # Find a suitable version of Python3 higher than 3.8.
 set(PYTHON_VERSIONS 3.9;3.10;3.11;3.12;3.13)
 set(GOOD_PYTHON_FOUND FALSE)
