@@ -52,6 +52,10 @@ message(STATUS "Using CMake Version: ${TEST_CMAKE_VERSION}")
 set(PYTHON_VERSIONS 3.9;3.10;3.11;3.12;3.13)
 set(GOOD_PYTHON_FOUND FALSE)
 
+message(STATUS: "Python Before Loop:")
+message(STATUS: "Python3_FOUND: ${Python3_FOUND")
+message(STATUS: "Python3_Interpreter_FOUND: ${Python3_Interpreter_FOUND}")
+
 foreach(X IN LISTS PYTHON_VERSIONS)
   message(STATUS "Searching for Python Version ${X} ...")
 
@@ -96,6 +100,10 @@ endforeach()
 if (NOT ${GOOD_PYTHON_FOUND})
   message(FATAL_ERROR "Could not find a suitable version of Python.")
 endif()
+
+message(STATUS: "Python After Loop:")
+message(STATUS: "Python3_FOUND: ${Python3_FOUND")
+message(STATUS: "Python3_Interpreter_FOUND: ${Python3_Interpreter_FOUND}")
 
 # Find external packages
 find_package(qasm REQUIRED)
