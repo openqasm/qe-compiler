@@ -53,7 +53,7 @@ set(PYTHON_VERSIONS 3.9;3.10;3.11;3.12;3.13)
 set(GOOD_PYTHON_FOUND FALSE)
 
 message(STATUS: "Python Before Loop:")
-message(STATUS: "Python3_FOUND: ${Python3_FOUND")
+message(STATUS: "Python3_FOUND: ${Python3_FOUND}")
 message(STATUS: "Python3_Interpreter_FOUND: ${Python3_Interpreter_FOUND}")
 
 foreach(X IN LISTS PYTHON_VERSIONS)
