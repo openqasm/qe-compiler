@@ -46,7 +46,7 @@ endif()
 enable_language(C CXX ASM)
 
 execute_process(COMMAND cmake --version OUTPUT_VARIABLE TEST_CMAKE_VERSION)
-message(STATUS "---> CMAKE VERSION: ${CMAKE_VERSION}")
+message(STATUS "Using CMake Version: ${TEST_CMAKE_VERSION}")
 
 # Find a suitable version of Python3 higher than 3.8.
 set(PYTHON_VERSIONS 3.9;3.10;3.11;3.12;3.13)
@@ -58,7 +58,21 @@ foreach(X IN LISTS PYTHON_VERSIONS)
   set(Python3_REQUIRED_VERSION ${X} EXACT)
   find_package(Python3 ${X} EXACT QUIET COMPONENTS Interpreter OPTIONAL_COMPONENTS Development)
 
-  if (${Python3_VERSION_MINOR} LESS 9)
+  if (NOT ${Python3_FOUND})
+    message(STATUS "PYTHON VERSION ${X} NOT FOUND.")
+    set(GOOD_PYTHON_FOUND FALSE)
+    continue()
+  endif()
+
+  if (NOT ${Python3_Interpreter_FOUND})
+    message(STATUS "PYTHON INTERPRETER VERSION ${X} NOT FOUND.")
+    set(GOOD_PYTHON_FOUND FALSE)
+    continue()
+  else()
+    set(GOOD_PYTHON_FOUND TRUE)
+  endif()
+
+  if (${Python3_VERSION_MINOR} LESS "9")
     message(STATUS "Minor Version ${Python3_VERSION_MINOR} not a candidate.")
     set(GOOD_PYTHON_FOUND FALSE)
     continue()
