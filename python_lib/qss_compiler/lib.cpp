@@ -51,16 +51,7 @@
 //  https://pybind11.readthedocs.io/en/stable/
 //===----------------------------------------------------------------------===//
 
-#include "API/api.h"
-
-#include <pybind11/functional.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
-#include <iostream>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "lib.h"
 
 namespace py = pybind11;
 
@@ -85,25 +76,7 @@ PYBIND11_MODULE(py_qssc, m) {
         "Call compiler via cli qss-compile");
   m.def("_link_file", &py_link_file, "Call the linker tool");
 
-  py::enum_<qssc::ErrorCategory>(m, "ErrorCategory",
-                                       py::arithmetic())
-      .value("OpenQASM3ParseFailure",
-             qssc::ErrorCategory::OpenQASM3ParseFailure)
-      .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
-      .value("QSSCompilerNoInputError", qssc::ErrorCategory::QSSCompilerNoInputError)
-      .value("QSSCompilerCommunicationFailure", qssc::ErrorCategory::QSSCompilerCommunicationFailure)
-      .value("QSSCompilerEOFFailure", qssc::ErrorCategory::QSSCompilerEOFFailure)
-      .value("QSSCompilerNonZeroStatus", qssc::ErrorCategory::QSSCompilerNonZeroStatus)
-      .value("QSSCompilationFailure", qssc::ErrorCategory::QSSCompilationFailure)
-      .value("QSSLinkerNotImplemented", qssc::ErrorCategory::QSSLinkerNotImplemented)
-      .value("QSSLinkSignatureWarning", qssc::ErrorCategory::QSSLinkSignatureWarning)
-      .value("QSSLinkSignatureError", qssc::ErrorCategory::QSSLinkSignatureError)
-      .value("QSSLinkAddressError", qssc::ErrorCategory::QSSLinkAddressError)
-      .value("QSSLinkSignatureNotFound", qssc::ErrorCategory::QSSLinkSignatureNotFound)
-      .value("QSSLinkArgumentNotFoundWarning", qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
-      .value("QSSLinkInvalidPatchTypeError", qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
-      .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
-      .export_values();
+  addEnumValues(m);
 
   py::enum_<qssc::Severity>(m, "Severity")
       .value("Info", qssc::Severity::Info)
