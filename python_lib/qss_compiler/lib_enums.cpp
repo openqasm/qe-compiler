@@ -1,3 +1,4 @@
+#include "API/api.h"
 #include "lib_enums.h"
 
 namespace py = pybind11;

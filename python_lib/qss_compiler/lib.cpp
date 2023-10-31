@@ -51,6 +51,7 @@
 //  https://pybind11.readthedocs.io/en/stable/
 //===----------------------------------------------------------------------===//
 
+#include "API/api.h"
 #include "lib_enums.h"
 
 #include <pybind11/functional.h>
@@ -67,19 +68,6 @@
 #include <vector>
 
 namespace py = pybind11;
-
-// Forward the declaration of the functions
-// py::tuple py_compile_by_args(const std::vector<std::string> &,
-//                              bool,
-//                              qssc::DiagnosticCallback);
-
-// py::tuple
-// py_link_file(const std::string &, const bool,
-//              const std::string &,
-//              const std::string &, const std::string &,
-//              const std::unordered_map<std::string, double> &,
-//              bool,
-//              qssc::DiagnosticCallback);
 
 /// Call into the qss-compiler via an interface to qss-compile's command line
 /// argument.
