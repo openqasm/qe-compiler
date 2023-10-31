@@ -102,7 +102,7 @@ if (NOT ${GOOD_PYTHON_FOUND})
 endif()
 
 message(STATUS: "Python After Loop:")
-message(STATUS: "Python3_FOUND: ${Python3_FOUND")
+message(STATUS: "Python3_FOUND: ${Python3_FOUND}")
 message(STATUS: "Python3_Interpreter_FOUND: ${Python3_Interpreter_FOUND}")
 
 # Find external packages
