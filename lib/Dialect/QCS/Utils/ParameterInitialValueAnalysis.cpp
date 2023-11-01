@@ -27,8 +27,7 @@
 using namespace mlir::qcs;
 
 ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
-    mlir::Operation *moduleOp)
-     {
+    mlir::Operation *moduleOp) {
 
   if (not invalid_)
     return;
