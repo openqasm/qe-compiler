@@ -43,24 +43,14 @@ using json = nlohmann::json;
 static llvm::cl::OptionCategory qsscBindCat_(" Options for parameter binding",
                                              "Options that binds parameters");
 
-namespace {
-enum GenAction { None, GenQEM, GenQEQEM };
-} // anonymous namespace
-
-static llvm::cl::opt<enum GenAction> emitGenAction(
-    "emit", llvm::cl::init(GenAction::None),
-    llvm::cl::desc("Select method used to generate input"),
-    // llvm::cl::values(clEnumValN(DumpAST, "ast", "output the AST dump")),
-    // llvm::cl::values(clEnumValN(DumpASTPretty, "ast-pretty",
-    //                             "pretty print the AST")),
-    // llvm::cl::values(clEnumValN(DumpMLIR, "mlir", "output the MLIR dump")),
-    // llvm::cl::values(clEnumValN(DumpWaveMem, "wavemem",
-    //                             "output the waveform memory")),
-    llvm::cl::values(clEnumValN(GenAction::GenQEM, "qem",
-                                "a quantum executable module (qem) "
-                                "for execution on hardware")),
-    llvm::cl::values(
-        clEnumValN(GenAction::GenQEQEM, "qe-qem",
+static llvm::cl::opt<enum Action>
+    emitAction("emit", llvm::cl::init(Action::None),
+               llvm::cl::desc("Select method used to generate input"),
+               llvm::cl::values(clEnumValN(Action::GenQEM, "qem",
+                                           "a quantum executable module (qem) "
+                                           "for execution on hardware")),
+               llvm::cl::values(clEnumValN(
+                   Action::GenQEQEM, "qe-qem",
                    "a target-specific quantum executable module (qeqem) "
                    "for execution on hardware")));
 
@@ -85,8 +75,7 @@ static llvm::cl::opt<std::string>
               llvm::cl::cat(qsscBindCat_));
 
 static llvm::cl::opt<std::string>
-    configPathStr("config",
-                  llvm::cl::desc("configuration path for target."),
+    configPathStr("config", llvm::cl::desc("configuration path for target."),
                   llvm::cl::value_desc("configPath"), llvm::cl::init("-"),
                   llvm::cl::cat(qsscBindCat_));
 
@@ -123,8 +112,9 @@ private:
 };
 
 llvm::Error
-_bindArguments(std::string_view target, std::string_view configPath,
-               std::string_view moduleInput, std::string_view payloadOutputPath,
+_bindArguments(std::string_view target, Action action,
+               std::string_view configPath, std::string_view moduleInput,
+               std::string_view payloadOutputPath,
                std::unordered_map<std::string, double> const &arguments,
                bool treatWarningsAsErrors, bool enableInMemoryInput,
                std::string *inMemoryOutput,
@@ -155,7 +145,8 @@ _bindArguments(std::string_view target, std::string_view configPath,
 
   MapAngleArgumentSource source(arguments);
 
-  auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
+  auto factory =
+      targetInst.get()->getBindArgumentsImplementationFactory(action);
   if ((!factory.hasValue()) || (factory.getValue() == nullptr)) {
     return qssc::emitDiagnostic(
         onDiagnostic, qssc::Severity::Error,
@@ -178,9 +169,9 @@ int qssc::bindArguments(
     const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
 
   if (auto err =
-          _bindArguments(target, configPath, moduleInput, payloadOutputPath,
-                         arguments, treatWarningsAsErrors, enableInMemoryInput,
-                         inMemoryOutput, onDiagnostic)) {
+          _bindArguments(target, Action::GenQEM, configPath, moduleInput,
+                         payloadOutputPath, arguments, treatWarningsAsErrors,
+                         enableInMemoryInput, inMemoryOutput, onDiagnostic)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
     return 1;
   }
@@ -210,7 +201,7 @@ llvm::Error bind_(int argc, char const **argv, std::string *outputString,
   for (auto &[paramName, paramValue] : inputArgs.items())
     argsMap[paramName] = (double)paramValue;
 
-  if (emitGenAction == GenAction::None) {
+  if (emitAction == Action::None) {
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Unable to detect an emit option! Please specify the "
@@ -247,9 +238,9 @@ llvm::Error bind_(int argc, char const **argv, std::string *outputString,
   bool treatWarningsAsErrors = false;
   bool enableInMemoryInput = false;
 
-  return _bindArguments(targetStr, configPathStr, inputQemFile, outputQemFile,
-                        argsMap, treatWarningsAsErrors, enableInMemoryInput,
-                        nullptr, std::nullopt);
+  return _bindArguments(targetStr, emitAction, configPathStr, inputQemFile,
+                        outputQemFile, argsMap, treatWarningsAsErrors,
+                        enableInMemoryInput, nullptr, std::nullopt);
 }
 
 int qssc::bind(int argc, char const **argv, std::string *outputString,

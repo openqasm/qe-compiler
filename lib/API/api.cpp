@@ -133,17 +133,6 @@ static llvm::cl::opt<enum InputType> inputType(
     llvm::cl::values(clEnumValN(QOBJ, "qobj",
                                 "load the input file as a QOBJ file")));
 
-namespace {
-enum Action {
-  None,
-  DumpAST,
-  DumpASTPretty,
-  DumpMLIR,
-  DumpWaveMem,
-  GenQEM,
-  GenQEQEM
-};
-} // anonymous namespace
 static llvm::cl::opt<enum Action> emitAction(
     "emit", llvm::cl::init(Action::None),
     llvm::cl::desc("Select the kind of output desired"),

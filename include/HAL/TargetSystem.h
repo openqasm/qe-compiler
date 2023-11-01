@@ -20,6 +20,7 @@
 #ifndef TARGETSYSTEM_H
 #define TARGETSYSTEM_H
 
+#include "API/api.h"
 #include "Arguments/Arguments.h"
 
 #include "llvm/ADT/Optional.h"
@@ -92,7 +93,7 @@ public:
                                    payload::Payload &payload) = 0;
 
   virtual llvm::Optional<qssc::arguments::BindArgumentsImplementationFactory *>
-  getBindArgumentsImplementationFactory() {
+  getBindArgumentsImplementationFactory(Action action) {
     return llvm::None;
   };
 
