@@ -33,6 +33,7 @@
 #include "llvm/ADT/StringRef.h"
 
 #include <algorithm>
+#include <unordered_map>
 #include <vector>
 
 using namespace mlir;
@@ -238,16 +239,29 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
 
   rewriter.setInsertionPointAfter(nextCircuitOp);
 
-  llvm::SmallVector<Type> inputTypes;
-  llvm::SmallVector<Value> inputValues;
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Value> outputValues;
 
-  // merge input type into single SmallVector
-  inputTypes.append(circuitOp->getOperandTypes().begin(),
-                    circuitOp->getOperandTypes().end());
-  inputTypes.append(nextCircuitOp->getOperandTypes().begin(),
-                    nextCircuitOp->getOperandTypes().end());
+  // merge the call_circuits
+  // collect their input values
+  llvm::SmallVector<Value> callInputValues;
+  callInputValues.append(callCircuitOp->getOperands().begin(),
+                         callCircuitOp.getOperands().end());
+
+  llvm::SmallVector<int> insertedArguments;
+  std::unordered_map<int, int> reusedArguments;
+  int index = 0;
+  for (auto inputValue : nextCallCircuitOp->getOperands()) {
+    auto *search = find(callInputValues, inputValue);
+    if (search == callInputValues.end()) {
+      callInputValues.push_back(inputValue);
+      insertedArguments.push_back(index);
+    } else {
+      int originalIndex = search - callInputValues.begin();
+      reusedArguments[index] = originalIndex;
+    }
+    index++;
+  }
 
   // merge circuit names
   std::string newName =
@@ -269,12 +283,20 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   // argument numbers
   BlockAndValueMapping mapper;
   auto baseArgNum = newCircuitOp.getNumArguments();
+  int insertedCount = 0;
   for (uint cnt = 0; cnt < nextCircuitOp.getNumArguments(); cnt++) {
     auto arg = nextCircuitOp.getArgument(cnt);
-    auto dictArg = nextCircuitOp.getArgAttrDict(cnt);
-    newCircuitOp.insertArgument(baseArgNum + cnt, arg.getType(), dictArg,
-                                arg.getLoc());
-    mapper.map(arg, newCircuitOp.getArgument(baseArgNum + cnt));
+    int argumentIndex = 0;
+    if (find(insertedArguments, cnt) != insertedArguments.end()) {
+      auto dictArg = nextCircuitOp.getArgAttrDict(cnt);
+      newCircuitOp.insertArgument(baseArgNum + insertedCount, arg.getType(),
+                                  dictArg, arg.getLoc());
+      argumentIndex = baseArgNum + insertedCount;
+      insertedCount++;
+    } else {
+      argumentIndex = reusedArguments[cnt];
+    }
+    mapper.map(arg, newCircuitOp.getArgument(argumentIndex));
   }
 
   // find return op in new circuit and copy second circuit into the
@@ -330,14 +352,6 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
 
   newCircuitOp->setAttr(mlir::quir::getPhysicalIdsAttrName(),
                         rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
-
-  // merge the call_circuits
-  // collect their input values
-  llvm::SmallVector<Value> callInputValues;
-  callInputValues.append(callCircuitOp->getOperands().begin(),
-                         callCircuitOp.getOperands().end());
-  callInputValues.append(nextCallCircuitOp->getOperands().begin(),
-                         nextCallCircuitOp.getOperands().end());
 
   rewriter.setInsertionPointAfter(nextCallCircuitOp);
   auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(

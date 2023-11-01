@@ -110,7 +110,7 @@ module {
     %12:2 = quir.call_circuit @circuit_6(%0) : (!quir.qubit<1>) -> (i1, i1)
     quir.barrier %200 : (!quir.qubit<1>) -> ()
     %13:2 = quir.call_circuit @circuit_6(%0) : (!quir.qubit<1>) -> (i1, i1)
-    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_6_q0_circuit_6_q0(%0, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_6_q0_circuit_6_q0(%0) : (!quir.qubit<1>) -> (i1, i1, i1, i1)
 
 
     quir.barrier %0, %1, %200, %201, %202 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
@@ -118,13 +118,13 @@ module {
     quir.barrier %200, %201 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     quir.barrier %200, %202 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     %15:2 = quir.call_circuit @circuit_7(%0) : (!quir.qubit<1>) -> (i1, i1)
-    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_7_q0_circuit_7_q0(%0, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_7_q0_circuit_7_q0(%0) : (!quir.qubit<1>) -> (i1, i1, i1, i1)
 
     quir.barrier %0, %1, %200, %201, %202 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
     %16:2 = quir.call_circuit @circuit_8(%0) : (!quir.qubit<1>) -> (i1, i1)
     quir.barrier %0 : (!quir.qubit<1>) -> ()
     %17:2 = quir.call_circuit @circuit_8(%0) : (!quir.qubit<1>) -> (i1, i1)
-    // CHECK-NOT: %{{.*}}:4 = quir.call_circuit @circuit_8_q0_circuit_8_q0(%0, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+    // CHECK-NOT: %{{.*}}:4 = quir.call_circuit @circuit_8_q0_circuit_8_q0(%0) : (!quir.qubit<1>) -> (i1, i1, i1, i1)
 
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32
