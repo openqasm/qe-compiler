@@ -120,6 +120,8 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
   //    dump string to disk and clear string
   // if enableInMemoryInput is false:
   //    payload was on disk originally use writeBack
+  if (auto err = payload->writeBack())
+    return err;
   if (enableInMemoryOutput || enableInMemoryInput) {
     if (auto err = payload->writeString(inMemoryOutput))
       return err;
@@ -131,8 +133,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
       // clear output string
       *inMemoryOutput = "";
     }
-  } else if (auto err = payload->writeBack())
-    return err;
+  }
 
   return llvm::Error::success();
 }
