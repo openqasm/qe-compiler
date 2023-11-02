@@ -27,27 +27,43 @@
 using namespace mlir::qcs;
 
 ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
-    mlir::Operation *op) {
-  op->walk([&](DeclareParameterOp declareParameterOp) {
-    double initial_value = 0.0;
-    if (declareParameterOp.initial_value().hasValue()) {
-      auto angleAttr = declareParameterOp.initial_value()
-                           .getValue()
-                           .dyn_cast<mlir::quir::AngleAttr>();
-      auto floatAttr =
-          declareParameterOp.initial_value().getValue().dyn_cast<FloatAttr>();
-      if (!(angleAttr || floatAttr))
-        op->emitError(
-            "Parameters are currently limited to angles or float[64] only.");
+    mlir::Operation *moduleOp) {
 
-      if (angleAttr)
-        initial_value = angleAttr.getValue().convertToDouble();
+  if (not invalid_)
+    return;
 
-      if (floatAttr)
-        initial_value = floatAttr.getValue().convertToDouble();
-    }
-    initial_values_[declareParameterOp.sym_name().str()] = initial_value;
-  });
+  // process the module top level to cache declareParameterOp initial_values
+  // this does not use a walk method so that submodule (if present) are not
+  // processed in order to limit processing time
+
+  for (auto &region : moduleOp->getRegions())
+    for (auto &block : region.getBlocks())
+      for (auto &op : block.getOperations()) {
+        auto declareParameterOp = dyn_cast<DeclareParameterOp>(op);
+        if (!declareParameterOp)
+          continue;
+
+        // moduleOp->walk([&](DeclareParameterOp declareParameterOp) {
+        double initial_value = 0.0;
+        if (declareParameterOp.initial_value().hasValue()) {
+          auto angleAttr = declareParameterOp.initial_value()
+                               .getValue()
+                               .dyn_cast<mlir::quir::AngleAttr>();
+          auto floatAttr = declareParameterOp.initial_value()
+                               .getValue()
+                               .dyn_cast<FloatAttr>();
+          if (!(angleAttr || floatAttr))
+            declareParameterOp.emitError("Parameters are currently limited to "
+                                         "angles or float[64] only.");
+
+          if (angleAttr)
+            initial_value = angleAttr.getValue().convertToDouble();
+
+          if (floatAttr)
+            initial_value = floatAttr.getValue().convertToDouble();
+        }
+        initial_values_[declareParameterOp.sym_name()] = initial_value;
+      }
   invalid_ = false;
 }
 
@@ -60,7 +76,7 @@ llvm::StringRef ParameterInitialValueAnalysisPass::getArgument() const {
 }
 
 llvm::StringRef ParameterInitialValueAnalysisPass::getDescription() const {
-  return "Run ParameterIntialValueAnalysis";
+  return "Run ParameterInitialValueAnalysis";
 }
 
 // TODO: move registerQCSPasses to separate source file if additional passes
