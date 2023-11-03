@@ -25,6 +25,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <fstream>
 #include <string_view>
 #include <zip.h>
 
@@ -98,21 +99,15 @@ llvm::Error PatchableZipPayload::ensureOpen() {
       retVal = extractLibZipError(
           "Failure while opening in memory circuit module (zip) ", zipError);
     }
+    inMemoryZipSource = zs;
   } else {
     if ((zip = zip_open(path.c_str(), 0, &errorCode)) == nullptr) {
       zip_error_set(&zipError, errorCode, errno);
       retVal = extractLibZipError(
           "Failure while opening circuit module (zip) file ", zipError);
     }
-    if ((zs = zip_source_file(zip, path.c_str(), 0, -1)) == nullptr) {
-      zip_error_set(&zipError, errorCode, errno);
-      retVal = extractLibZipError(
-          "Failure while opening in circuit module (zip) ", zipError);
-    }
+    inMemoryZipSource = nullptr;
   }
-
-  // save zip source for potential in memory return
-  inMemoryZipSource = zs;
 
   zip_error_fini(&zipError);
   return retVal;
@@ -164,8 +159,8 @@ llvm::Error PatchableZipPayload::writeBack() {
 
   zip_error_fini(&err);
 
-  zip_source_keep(inMemoryZipSource);
-  freeZipSource = true;
+  if (inMemoryZipSource)
+    zip_source_keep(inMemoryZipSource);
 
   if (zip_close(zip)) {
     auto *err = zip_get_error(zip);
@@ -185,16 +180,25 @@ llvm::Error PatchableZipPayload::writeString(std::string *outputString) {
   outStringStream.emplace(*outputString);
   llvm::raw_ostream *ostream = outStringStream.getPointer();
 
-  // read from in memory source
-  zip_int64_t sz;
-  char *outbuffer =
-      qssc::payload::read_zip_src_to_buffer(inMemoryZipSource, sz);
-  if (outbuffer) {
-    // output the new archive to the stream
-    ostream->write(outbuffer, sz);
-    ostream->flush();
-    free(outbuffer);
+  if (inMemoryZipSource) {
+    // read from in memory source
+    zip_int64_t sz;
+    char *outbuffer =
+        qssc::payload::read_zip_src_to_buffer(inMemoryZipSource, sz);
+    if (outbuffer) {
+      ostream->write(outbuffer, sz);
+      free(outbuffer);
+    }
+    zip_source_free(inMemoryZipSource);
+    inMemoryZipSource = nullptr;
+  } else {
+    // re-read file from disk
+    std::ostringstream buf;
+    std::ifstream input(path.c_str());
+    buf << input.rdbuf();
+    ostream->write(buf.str().c_str(), buf.str().length());
   }
+  ostream->flush();
   return llvm::Error::success();
 }
 
@@ -262,10 +266,6 @@ PatchableZipPayload::~PatchableZipPayload() {
   // discard any leftover changes that have not been written back
   if (zip)
     zip_discard(zip);
-
-  // free inMemoryZip source following zip_source_keep in write_back
-  if (inMemoryZipSource && freeZipSource)
-    zip_source_free(inMemoryZipSource);
 }
 
 } // namespace qssc::payload
