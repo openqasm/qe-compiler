@@ -25,6 +25,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <fstream>
 #include <string_view>
 #include <zip.h>
 
@@ -98,12 +99,14 @@ llvm::Error PatchableZipPayload::ensureOpen() {
       retVal = extractLibZipError(
           "Failure while opening in memory circuit module (zip) ", zipError);
     }
+    inMemoryZipSource = zs;
   } else {
     if ((zip = zip_open(path.c_str(), 0, &errorCode)) == nullptr) {
       zip_error_set(&zipError, errorCode, errno);
       retVal = extractLibZipError(
           "Failure while opening circuit module (zip) file ", zipError);
     }
+    inMemoryZipSource = nullptr;
   }
 
   zip_error_fini(&zipError);
@@ -156,6 +159,9 @@ llvm::Error PatchableZipPayload::writeBack() {
 
   zip_error_fini(&err);
 
+  if (inMemoryZipSource)
+    zip_source_keep(inMemoryZipSource);
+
   if (zip_close(zip)) {
     auto *err = zip_get_error(zip);
     return extractLibZipError("writing payload file", *err);
@@ -174,68 +180,25 @@ llvm::Error PatchableZipPayload::writeString(std::string *outputString) {
   outStringStream.emplace(*outputString);
   llvm::raw_ostream *ostream = outStringStream.getPointer();
 
-  // load all files in zip if required
-
-  auto numEntries = zip_get_num_entries(zip, 0);
-  zip_stat_t zs;
-  assert(numEntries >= 0);
-  zip_stat_init(&zs);
-  for (ssize_t i = 0; i < numEntries; i++) {
-    zip_stat_index(zip, i, 0, &zs);
-    llvm::StringRef name(zs.name);
-    auto binaryDataOrErr = readMember(name);
-
-    if (!binaryDataOrErr)
-      return binaryDataOrErr.takeError();
-  }
-
-  zip_source_t *new_zip_src;
-  zip_t *new_zip;
-
-  zip_error_t err;
-
-  zip_error_init(&err);
-
-  // open a zip source, buffer is allocated internally to libzip
-  if ((new_zip_src = zip_source_buffer_create(nullptr, 0, 0, &err)) == nullptr)
-    return extractLibZipError("Can't create zip source for new archive", err);
-
-  zip_source_keep(new_zip_src);
-
-  if ((new_zip = zip_open_from_source(new_zip_src, ZIP_TRUNCATE, &err)) ==
-      nullptr) {
-    zip_source_free(new_zip_src);
-    return extractLibZipError(
-        "Can't create/open an archive from the new archive source:", err);
-  }
-
-  for (auto &item : files) {
-    auto &path = item.first;
-    auto &buf = item.second.buf;
-
-    auto error = addFileToZip(new_zip, path, buf, err);
-    if (error) {
-      zip_source_free(new_zip_src);
-      return error;
+  if (inMemoryZipSource) {
+    // read from in memory source
+    zip_int64_t sz;
+    char *outbuffer =
+        qssc::payload::read_zip_src_to_buffer(inMemoryZipSource, sz);
+    if (outbuffer) {
+      ostream->write(outbuffer, sz);
+      free(outbuffer);
     }
+    zip_source_free(inMemoryZipSource);
+    inMemoryZipSource = nullptr;
+  } else {
+    // re-read file from disk
+    std::ostringstream buf;
+    std::ifstream input(path.c_str());
+    buf << input.rdbuf();
+    ostream->write(buf.str().c_str(), buf.str().length());
   }
-
-  zip_error_fini(&err);
-
-  if (zip_close(new_zip)) {
-    auto *err = zip_get_error(new_zip);
-    return extractLibZipError("Closing in memory zip", *err);
-  }
-
-  //===---- Reopen for copying ----===//
-  zip_int64_t sz;
-  char *outbuffer = qssc::payload::read_zip_src_to_buffer(new_zip_src, sz);
-  if (outbuffer) {
-    // output the new archive to the stream
-    ostream->write(outbuffer, sz);
-    ostream->flush();
-    free(outbuffer);
-  }
+  ostream->flush();
   return llvm::Error::success();
 }
 
