@@ -85,8 +85,8 @@ llvm::Error PatchableZipPayload::ensureOpen() {
 
   zip_error_init(&zipError);
 
-  zip_source_t *zs;
   if (enableInMemory) {
+    zip_source_t *zs;
     if ((zs = zip_source_buffer_create(path.data(), path.length(), 0,
                                        &zipError)) == nullptr) {
       zip_error_set(&zipError, errorCode, errno);
