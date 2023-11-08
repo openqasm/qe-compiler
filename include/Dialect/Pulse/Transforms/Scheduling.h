@@ -1,4 +1,4 @@
-//===- Scheduling.h - Add absolute timing to defcal calls. ------*- C++ -*-===//
+//===- scheduling.h --- scheduling pulse sequences --------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,72 +14,55 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file declares the pass for adding absolute timing to defcal calls.
+///  This file implements the pass for scheduling the pulse sequences of quantum
+///  gates inside a circuit, based on the availability of involved ports
 ///
 //===----------------------------------------------------------------------===//
 
-//#ifndef PULSE_SCHEDULING_H
-//#define PULSE_SCHEDULING_H
+#ifndef SCHEDULING_PULSE_SEQUENCES_H
+#define SCHEDULING_PULSE_SEQUENCES_H
 
-//#include <unordered_map>
-//#include <unordered_set>
+#include "Dialect/Pulse/IR/PulseOps.h"
 
-//#include "Dialect/Pulse/IR/PulseOps.h"
-//#include "mlir/Pass/Pass.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/Pass/Pass.h"
 
-// namespace mlir::pulse {
+namespace mlir::pulse {
 
-//// This pass applies absolute timing to each relevant Pulse IR instruction.
-//// Timing is calculated on a per frame basis.
-///*** Steps:
-// * 1. Identify each defcal gate call.
-// * 2. Find associated defcal body.
-// * 3. Compute and store duration of each waveform and initialze time on each
-// *frame. 4. For each play/delay instruction, increment the frame timing. Add
-// *time attribute to instruction. For each barrier instruction, resolve to
-// delays *on push forward basis (frames will be delayed to maximum time amongst
-// all *frames).
-// ***/
-// struct SchedulingPass : public PassWrapper<SchedulingPass, OperationPass<>> {
+struct SchedulingPulseSequencesPass
+    : public PassWrapper<SchedulingPulseSequencesPass,
+                         OperationPass<ModuleOp>> {
+  std::string SCHEDULING_METHOD = "alap";
 
-//  std::unordered_set<uint>
-//      scheduledDefCals; // hashes of defcal's that have already been scheduled
-//  std::unordered_map<uint, uint>
-//      pulseDurations; // mapping of waveform hashes to durations
-//  std::unordered_map<uint, uint>
-//      frameTimes; // mapping of frame hashes to time on that frame
+  // this pass can optionally receive an string specifying the scheduling
+  // method; default method is alap scheduling
+  SchedulingPulseSequencesPass() = default;
+  SchedulingPulseSequencesPass(const SchedulingPulseSequencesPass &pass)
+      : PassWrapper(pass) {}
+  SchedulingPulseSequencesPass(std::string inSchedulingMethod) {
+    SCHEDULING_METHOD = std::move(inSchedulingMethod);
+  }
 
-//  // Hash an operation based on the result.
-//  auto getResultHash(Operation *op) -> uint;
+  void runOnOperation() override;
 
-//  // Check if the pulse hash is cached in pulse durations.
-//  // If it is cached, the hash will be found in pulseDurations.
-//  auto pulseCached(llvm::hash_code hash) -> bool;
+  llvm::StringRef getArgument() const override;
+  llvm::StringRef getDescription() const override;
 
-//  // Get hash and time of a frame as a std::pair
-//  auto getFrameHashAndTime(mlir::Value &frame) -> std::pair<uint, uint>;
+  // optionally, one can override the scheduling method with this option
+  Option<std::string> schedulingMethod{
+      *this, "scheduling-method",
+      llvm::cl::desc("an string to specify scheduling method"),
+      llvm::cl::value_desc("filename"), llvm::cl::init("")};
 
-//  // Get the maximum time among a set of frames
-//  auto getMaxTime(mlir::OperandRange &frames) -> uint;
+  // port based alap scheduling
+  void scheduleAlap(mlir::pulse::CallSequenceOp mainFuncCallSequenceOp,
+                    ModuleOp moduleOp);
+  // map to keep track of next availability of ports
+  std::map<std::string, int> portNameToNextAvailabilityMap;
 
-//  // Process each operation in the defcal
-//  template <class WaveformOp>
-//  void processOp(WaveformOp &wfrOp);
+  static mlir::pulse::SequenceOp
+  getSequenceOp(mlir::pulse::CallSequenceOp callSequenceOp);
+};
+} // namespace mlir::pulse
 
-//  void processOp(Frame_CreateOp &frameOp);
-
-//  void processOp(DelayOp &delayOp);
-//  void processOp(BarrierOp &barrierOp);
-//  void processOp(PlayOp &playOp);
-//  void processOp(CaptureOp &captureOp);
-
-//  // Schedule the defcal
-//  void schedule(Operation *defCalOp);
-
-//  // Entry point for the pass
-//  void runOnOperation() override;
-
-//}; // end struct SchedulingPass
-//} // namespace mlir::pulse
-
-//#endif // PULSE_SCHEDULING_H
+#endif // SCHEDULING_PULSE_SEQUENCES_H
