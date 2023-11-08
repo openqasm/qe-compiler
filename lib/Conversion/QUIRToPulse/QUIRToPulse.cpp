@@ -88,6 +88,8 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   auto circuitOp = getCircuitOp(callCircuitOp);
   std::string circName = circuitOp.sym_name().str();
   LLVM_DEBUG(llvm::dbgs() << "\nConverting QUIR circuit " << circName << ":\n");
+  assert(callCircuitOp && "callCircuit op is null");
+  assert(circuitOp && "circuit op is null");
   addCallCircuitToEraseList(callCircuitOp);
   addCircuitToEraseList(circuitOp);
 
@@ -164,7 +166,6 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
         PulseOpSchedulingInterface::setDuration(pulseCalCallSequenceOp,
                                                 durValue);
       }
-
     } else
       assert(((isa<quir::ConstantOp>(quirOp) or isa<quir::ReturnOp>(quirOp) or
                isa<quir::CircuitOp>(quirOp))) &&
@@ -231,9 +232,11 @@ void QUIRToPulsePass::processCircuitArgs(
       convertedPulseCallSequenceOpOperandNames.push_back(
           builder.getStringAttr("duration"));
       convertedPulseSequenceOpArgs.push_back(convertedDurationToI64);
-    } else if (argumentType.isa<mlir::quir::QubitType>())
-      addCircuitOperandToEraseList(
-          callCircuitOp.getOperand(cnt).getDefiningOp());
+    } else if (argumentType.isa<mlir::quir::QubitType>()) {
+      auto *qubitOp = callCircuitOp.getOperand(cnt).getDefiningOp();
+      addCircuitOperandToEraseList(qubitOp);
+    }
+
     else
       llvm_unreachable("unkown circuit argument.");
   }
@@ -461,8 +464,8 @@ void QUIRToPulsePass::processDurationArg(
         std::to_string(mlir::hash_value(nextDurationOperand.getLoc()));
     auto durVal =
         quir::getDuration(durationOp).get().getDuration().convertToDouble();
-    auto durUnit = durationOp.getType().dyn_cast<DurationType>().getUnits();
-    assert(durUnit == TimeUnits::dt &&
+    assert(durationOp.getType().dyn_cast<DurationType>().getUnits() ==
+               TimeUnits::dt &&
            "this pass only accepts durations with dt unit");
 
     if (classicalQUIROpLocToConvertedPulseOpMap.find(durLocHash) ==
@@ -480,6 +483,7 @@ void QUIRToPulsePass::processDurationArg(
 
 mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
                                                mlir::OpBuilder &builder) {
+  assert(angleOp && "angle op is null");
   std::string angleLocHash =
       std::to_string(mlir::hash_value(angleOp->getLoc()));
   if (classicalQUIROpLocToConvertedPulseOpMap.find(angleLocHash) ==
@@ -517,17 +521,17 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
 mlir::Value QUIRToPulsePass::convertDurationToI64(
     mlir::quir::CallCircuitOp callCircuitOp, Operation *durationOp, uint &cnt,
     mlir::OpBuilder &builder, FuncOp &mainFunc) {
+  assert(durationOp && "duration op is null");
   std::string durLocHash =
       std::to_string(mlir::hash_value(durationOp->getLoc()));
   if (classicalQUIROpLocToConvertedPulseOpMap.find(durLocHash) ==
       classicalQUIROpLocToConvertedPulseOpMap.end()) {
     if (auto castOp = dyn_cast<quir::ConstantOp>(durationOp)) {
-      addCircuitOperandToEraseList(
-          callCircuitOp.getOperand(cnt).getDefiningOp());
+      addCircuitOperandToEraseList(durationOp);
       auto durVal =
           quir::getDuration(castOp).get().getDuration().convertToDouble();
-      auto durUnit = castOp.getType().dyn_cast<DurationType>().getUnits();
-      assert(durUnit == TimeUnits::dt &&
+      assert(castOp.getType().dyn_cast<DurationType>().getUnits() ==
+                 TimeUnits::dt &&
              "this pass only accepts durations with dt unit");
 
       auto I64Dur = builder.create<mlir::arith::ConstantOp>(
@@ -581,12 +585,14 @@ QUIRToPulsePass::addWfrOpToIR(std::string const &wfrName, FuncOp &mainFunc,
 }
 
 void QUIRToPulsePass::addCircuitToEraseList(mlir::Operation *op) {
+  assert(op && "caller requested adding a null op to erase list");
   if (std::find(quirCircuitEraseList.begin(), quirCircuitEraseList.end(), op) ==
       quirCircuitEraseList.end())
     quirCircuitEraseList.push_back(op);
 }
 
 void QUIRToPulsePass::addCallCircuitToEraseList(mlir::Operation *op) {
+  assert(op && "caller requested adding a null op to erase list");
   if (std::find(quirCallCircuitEraseList.begin(),
                 quirCallCircuitEraseList.end(),
                 op) == quirCallCircuitEraseList.end())
@@ -594,6 +600,7 @@ void QUIRToPulsePass::addCallCircuitToEraseList(mlir::Operation *op) {
 }
 
 void QUIRToPulsePass::addCircuitOperandToEraseList(mlir::Operation *op) {
+  assert(op && "caller requested adding a null op to erase list");
   if (std::find(quirCircuitOperandEraseList.begin(),
                 quirCircuitOperandEraseList.end(),
                 op) == quirCircuitOperandEraseList.end())

@@ -29,6 +29,8 @@
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/SymbolTable.h"
+#include "llvm/ADT/StringMap.h"
+#include "llvm/ADT/StringRef.h"
 
 using namespace mlir;
 using namespace mlir::qcs;
@@ -140,15 +142,15 @@ ParameterType ParameterLoadOp::getInitialValue() {
 }
 
 // Returns the float value from the initial value of this parameter
-// this version uses a precomputed map of parrameter_name to the intial_value
+// this version uses a precomputed map of parameter_name to the initial_value
 // in order to avoid slow SymbolTable lookups
 ParameterType ParameterLoadOp::getInitialValue(
-    std::unordered_map<std::string, ParameterType> &declareParametersMap) {
+    llvm::StringMap<ParameterType> &declareParametersMap) {
   auto *op = getOperation();
   auto paramRefAttr =
       op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
 
-  auto paramOpEntry = declareParametersMap.find(paramRefAttr.getValue().str());
+  auto paramOpEntry = declareParametersMap.find(paramRefAttr.getValue());
 
   if (paramOpEntry == declareParametersMap.end()) {
     op->emitError("Could not find declare parameter op" +
