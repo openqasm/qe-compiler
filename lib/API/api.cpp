@@ -503,9 +503,11 @@ diagEngineHandler(Diagnostic &diagnostic,
     qssc_severity = qssc::Severity::Info;
   }
   // emit diagnostic cast to void to discard result as it is not needed here
-  (void)qssc::emitDiagnostic(std::move(diagnosticCb), qssc_severity,
-                             qssc::ErrorCategory::QSSCompilationFailure,
-                             diagnostic.str());
+  if (qssc_severity == qssc::Severity::Error) {
+    (void)qssc::emitDiagnostic(std::move(diagnosticCb), qssc_severity,
+                               qssc::ErrorCategory::QSSCompilationFailure,
+                               diagnostic.str());
+  }
 
   // emit to llvm::errs as well to mimic default handler
   diagnostic.getLocation().print(llvm::errs());
