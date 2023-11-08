@@ -1,6 +1,6 @@
 requirements:
   - gtest/1.11.0
-  - libzip/1.8.0
+  - libzip/1.10.1
   - zlib/1.2.13
   - nlohmann_json/3.9.1
   - pybind11/2.10.1
