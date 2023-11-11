@@ -561,6 +561,9 @@ compile_(int argc, char const **argv, std::string *outputString,
   mlir::applyPassManagerCLOptions(pm);
   mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
+  // Enable verifier (default: true)
+  pm.enableVerifier(verifyPasses);
+
   // Build the configuration for this compilation event.
   auto configResult = buildConfig_(&context);
   if (auto err = configResult.takeError())
