@@ -91,11 +91,14 @@ def link_file(
     if link_options.on_diagnostic is None:
         link_options.on_diagnostic = on_diagnostic
 
-    for _, value in link_options.arguments.items():
+    for key, value in link_options.arguments.items():
         if not isinstance(value, float):
-            raise exceptions.QSSArgumentInputTypeError(
-                f"Only double arguments are supported, not {type(value)}"
-            )
+            if isinstance(value, int):
+                link_options.arguments[key] = float(value)
+            else:
+                raise exceptions.QSSArgumentInputTypeError(
+                    f"Only int & double arguments are supported, not {type(value)}"
+                )
 
     if link_options.input_file is not None and link_options.input_bytes is not None:
         raise ValueError("only one of input_file or input_bytes should have a value")
