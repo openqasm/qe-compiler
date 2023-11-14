@@ -124,12 +124,8 @@ void SchedulingPulseSequencesPass::scheduleAlap(
   // multiply by -1 so that duration becomes positive
   duration = -duration;
   LLVM_DEBUG(llvm::dbgs() << "\ttotal circuit duration " << duration << "\n");
-  // at this point all the innerCallSequenceOps are scheduled and negative
-  // timepoints are added; we add a time offset to the parent SequenceOp to be
-  // added to the negative timepoints in later passes before applying the
-  // pulses.
-  mainFuncSequenceOp->setAttr("pulse.timeOffset",
-                              builder.getI64IntegerAttr(duration));
+  // setting timepoint and duration for mainFuncSequenceOp
+  PulseOpSchedulingInterface::setTimepoint(mainFuncSequenceOp, duration);
   PulseOpSchedulingInterface::setDuration(mainFuncSequenceOp, duration);
 }
 
