@@ -749,7 +749,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     dumpMLIR_(ostream, moduleOp);
   }
 
-  if (emitAction == Action::GenQEM) {
+  if (emitAction == Action::GenQEM || emitAction == Action::GenQEQEM) {
 
     if (includeSourceInPayload) {
       if (directInput) {
