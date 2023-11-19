@@ -46,6 +46,10 @@ class QSSCompilerConan(ConanFile):
         if self.settings.os == "Macos":
             self.options["qasm"].shared = True
 
+        # LLVM prefers ZSTD shared libraries by default now so we force building
+        # https://github.com/llvm/llvm-project/commit/fc1da043f4f9198303abd6f643cf23439115ce73
+        self.options["zstd"].shared = True
+
     def build_requirements(self):
         tool_pkgs = ["llvm", "clang-tools-extra"]
         # Add packages necessary for build.
