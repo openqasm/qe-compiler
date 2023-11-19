@@ -16,6 +16,7 @@
 #ifndef OQ3_BASE_H
 #define OQ3_BASE_H
 
+include "mlir/IR/AttrTypeBase.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
 //===----------------------------------------------------------------------===//

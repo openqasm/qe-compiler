@@ -19,6 +19,7 @@
 
 include "Dialect/QUIR/IR/QUIREnums.td"
 
+include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinTypeInterfaces.td"
 include "mlir/IR/OpBase.td"
 
