@@ -72,8 +72,6 @@ def OQ3_AssignArrayElementOp : OQ3_Op<"assign_array_element",
     let assemblyFormat = [{
         attr-dict $variable_name `[` $index `]` `:` type($assigned_value) `=` $assigned_value
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 // -----
@@ -103,8 +101,6 @@ def OQ3_UseArrayElementOp : OQ3_Op<"use_array_element",
     let assemblyFormat = [{
         $variable_name `[` $index `]` `:` type($res) attr-dict
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 #endif // OQ3_ARRAY_OPS

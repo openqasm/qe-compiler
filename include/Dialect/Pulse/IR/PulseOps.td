@@ -167,9 +167,6 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [Pure, SequenceAllowed
     let assemblyFormat = [{
         attr-dict $samples `->` type($wfr)
     }];
-
-    // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-    let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
 def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [Pure, NoTerminator]> {
@@ -193,8 +190,6 @@ def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [Pure, NoTerminat
     let assemblyFormat = [{
         attr-dict $body
     }];
-
-    let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
 def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [Pure, SequenceAllowed, SameVariadicOperandSize]> {
@@ -839,8 +834,6 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
   }];
   let parser = [{ return ::mlir::pulse::parseSequenceOp(parser, result); }];
   let printer = [{ return ::mlir::pulse::print(*this, p); }];
-  // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-  let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
 def Pulse_ReturnOp : Pulse_Op<"return", [Pure, Terminator, ReturnLike, SequenceRequired]>,
@@ -861,8 +854,6 @@ def Pulse_ReturnOp : Pulse_Op<"return", [Pure, Terminator, ReturnLike, SequenceR
             }];
         let builders = [OpBuilder<(ins), [{ build($_builder, $_state, llvm::None); }]>];
         let assemblyFormat = "attr-dict ($operands^ `:` type($operands))?";
-        // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-        let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
 //===----------------------------------------------------------------------===//

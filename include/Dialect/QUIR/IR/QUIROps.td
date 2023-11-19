@@ -678,8 +678,6 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
   }];
   let parser = [{ return ::parseCircuitOp(parser, result); }];
   let printer = [{ return ::print(*this, p); }];
-  // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-  let verifier = [{ return ::verify(*this); }];
 }
 
 def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, Pure, Terminator, ReturnLike]>,
@@ -700,8 +698,6 @@ def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, Pure, Terminator,
             }];
         let builders = [OpBuilder<(ins), [{ build($_builder, $_state, llvm::None); }]>];
         let assemblyFormat = "attr-dict ($operands^ `:` type($operands))?";
-        // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-        let verifier = [{ return ::verify(*this); }];
 }
 
 def QUIR_SwitchOp : QUIR_Op<"switch",
@@ -754,8 +750,6 @@ def QUIR_SwitchOp : QUIR_Op<"switch",
     let regions = (region SizedRegion<1>:$defaultRegion,
                     VariadicRegion<SizedRegion<1>>:$caseRegions);
 
-    // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-    let verifier = [{ return ::verify(*this); }];
     let parser = [{ return ::parseSwitchOp(parser, result); }];
     let printer = [{ return ::print(p, *this); }];
 
@@ -782,8 +776,6 @@ def YieldOp : QUIR_Op<"yield", [Pure, ReturnLike, Terminator, ParentOneOf<["Swit
 
     let arguments = (ins Variadic<AnyType>:$results);
     let builders = [OpBuilder<(ins), [{ /* nothing to do */ }]>];
-    // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-    let verifier = [{ return ::verify(*this); }];
     let assemblyFormat = "attr-dict ($results^ `:` type($results))?";
 }
 

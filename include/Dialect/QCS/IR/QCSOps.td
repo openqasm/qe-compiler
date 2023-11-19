@@ -298,8 +298,6 @@ def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
     let assemblyFormat = [{
         $parameter_name `:` type($res) attr-dict
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 

@@ -91,8 +91,6 @@ def OQ3_VariableAssignOp : OQ3_Op<"variable_assign",
     let assemblyFormat = [{
         attr-dict $variable_name `:` type($assigned_value) `=` $assigned_value
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 // -----
@@ -121,8 +119,6 @@ def OQ3_VariableLoadOp : OQ3_Op<"variable_load",
     let assemblyFormat = [{
         $variable_name `:` type($res) attr-dict
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 #endif // OQ3_VARIABLE_OPS
