@@ -33,7 +33,7 @@ include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 
-def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed]> {
+def Pulse_GaussianOp : Pulse_Op<"gaussian", [Pure, SequenceAllowed]> {
     let summary = "Create a Gaussian waveform.";
     let description = [{
         The `pulse.gaussian` operation creates a Gaussian waveform.
@@ -60,7 +60,7 @@ def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed]> {
 }
 
 
-def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, SequenceAllowed]> {
+def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [Pure, SequenceAllowed]> {
     let summary = "Create a Gaussian Square waveform.";
     let description = [{
         The `pulse.gaussian_square` operation creates a Gaussian Square waveform. It is a Gaussian
@@ -89,7 +89,7 @@ def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, Sequence
     }];
 }
 
-def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed]> {
+def Pulse_DragOp : Pulse_Op<"drag", [Pure, SequenceAllowed]> {
     let summary = "Create a Drag waveform.";
     let description = [{
         The `pulse.drag` operation creates a DRAG waveform. The DRAG waveform is composed of a
@@ -119,7 +119,7 @@ def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed]> {
     }];
 }
 
-def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed]> {
+def Pulse_ConstOp : Pulse_Op<"const_waveform", [Pure, SequenceAllowed]> {
     let summary = "Create a Constant waveform.";
     let description = [{
         The `pulse.const_waveform` operation creates a constant waveform. This is a flat top waveform
@@ -147,7 +147,7 @@ def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed]> 
     }];
 }
 
-def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, SequenceAllowed,
+def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [Pure, SequenceAllowed,
     DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getDuration"]>]> {
     let summary = "Creates a pulse waveform from a list of complex numbers.";
     let description = [{
@@ -172,7 +172,7 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, Sequenc
     let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
-def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [NoSideEffect, NoTerminator]> {
+def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [Pure, NoTerminator]> {
     let summary = "Creates a container for pulse waveforms.";
     let description = [{
         The `pulse.waveform_container` is a container for `pulse.create_waveform` operations. All the `pulse.create_waveform`
@@ -197,7 +197,7 @@ def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [NoSideEffect, No
     let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
-def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllowed, SameVariadicOperandSize]> {
+def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [Pure, SequenceAllowed, SameVariadicOperandSize]> {
     let summary = "Creates a frame with a frequency and a phase.";
     let description = [{
         The `pulse.frame` operation creates a frame with optional arguments to initialize amplitude, frequency, and phase. One can also
@@ -214,7 +214,7 @@ def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllow
     let results = (outs Pulse_FrameType:$out);
 }
 
-def Pulse_Port_CreateOp : Pulse_Op<"create_port", [NoSideEffect]> {
+def Pulse_Port_CreateOp : Pulse_Op<"create_port", [Pure]> {
     let summary = "Creates a port for stimulus pulses or acquiring measurement output.";
     let description = [{
         The `pulse.create_port` operation creates a port which acts as a host for
@@ -235,7 +235,7 @@ def Pulse_Port_CreateOp : Pulse_Op<"create_port", [NoSideEffect]> {
     let results = (outs Pulse_PortType:$out);
 }
 
-def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed, SameVariadicOperandSize]> {
+def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [Pure, SequenceAllowed, SameVariadicOperandSize]> {
     let summary = "Mixes a frame with a port.";
     let description = [{
         The `pulse.mix_frame` operation creates a frame mixed with a port, with optional arguments to initialize amplitude, frequency, and phase. One can also
@@ -256,7 +256,7 @@ def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed, Sam
     let results = (outs Pulse_MixedFrameType:$out);
 }
 
-def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAllowed]> {
+def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [Pure, SequenceAllowed]> {
     let summary = "Creates a kernel which defines the integration window.";
     let description = [{
         The `pulse.create_kernel` operation creates  a kernel which defines
@@ -575,7 +575,7 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
     }];
 }
 
-def Pulse_BarrierOp : Pulse_Op<"barrier", [NoSideEffect, SequenceAllowed]> {
+def Pulse_BarrierOp : Pulse_Op<"barrier", [Pure, SequenceAllowed]> {
     let summary = "Add a barrier operation on a set of pulse frames.";
     let description =   [{
         The `pulse.barrier` operation synchronizes the timing of all frames. It does this by inserting
@@ -843,7 +843,7 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
   let verifier = [{ return ::mlir::pulse::verify(*this); }];
 }
 
-def Pulse_ReturnOp : Pulse_Op<"return", [NoSideEffect, Terminator, ReturnLike, SequenceRequired]>,
+def Pulse_ReturnOp : Pulse_Op<"return", [Pure, Terminator, ReturnLike, SequenceRequired]>,
     Arguments<(ins Variadic<AnyClassical>:$operands)>, Results<(outs)> {
         let summary = "Terminator for pulse.sequence.";
         let description = [{

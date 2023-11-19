@@ -42,7 +42,7 @@ include "mlir/Dialect/LLVMIR/LLVMOpBase.td"
 def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
 
 def QUIR_ConstantOp : QUIR_Op<"constant",
-    [ConstantLike, NoSideEffect,
+    [ConstantLike, Pure,
      DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
      TypesMatchWith<
     "result and attribute have the same type",
@@ -682,7 +682,7 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
   let verifier = [{ return ::verify(*this); }];
 }
 
-def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, NoSideEffect, Terminator, ReturnLike]>,
+def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, Pure, Terminator, ReturnLike]>,
     Arguments<(ins Variadic<AnyClassical>:$operands)>, Results<(outs)> {
         let summary = "Terminator for quir.circuit.";
         let description = [{
@@ -761,7 +761,7 @@ def QUIR_SwitchOp : QUIR_Op<"switch",
 
 }
 
-def YieldOp : QUIR_Op<"yield", [NoSideEffect, ReturnLike, Terminator, ParentOneOf<["SwitchOp"]>]>{
+def YieldOp : QUIR_Op<"yield", [Pure, ReturnLike, Terminator, ParentOneOf<["SwitchOp"]>]>{
     let summary = "yield and termination operation";
     let description = [{
         Duplication of "scf.yield" at https://github.com/llvm/llvm-project/blob

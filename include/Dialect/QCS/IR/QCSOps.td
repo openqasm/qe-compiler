@@ -204,7 +204,7 @@ def QCS_ParallelControlFlowOp : QCS_Op<"parallel_control_flow", [
 }
 
 def QCS_ParallelEndOp : QCS_Op<"parallel_control_flow_end", [
-    Terminator, HasParent<"ParallelControlFlowOp">, NoSideEffect]> {
+    Terminator, HasParent<"ParallelControlFlowOp">, Pure]> {
   let summary = "A pseudo-op that marks the end of a `qcs.parallel_control_flow` op.";
   let description = [{
     This op terminates the only block inside the only region of a
@@ -230,7 +230,7 @@ def QCS_DeclareParameterOp : QCS_Op<"declare_parameter", [Symbol]> {
     let summary = "system input parameter subject to post compilation updates";
     let description = [{
         The `qcs.declare_parameter` operation adds a symbol defining an input parameter
-        which may be modified after compilation before/during program invocation. 
+        which may be modified after compilation before/during program invocation.
         The value of the input parameter
         may be obtained using the qcs.use_input_parameter operation.
 

@@ -19,7 +19,7 @@
 // Stretch ops
 //===----------------------------------------------------------------------===//
 
-def OQ3_DeclareStretchOp : OQ3_Op<"declare_stretch", [NoSideEffect]> {
+def OQ3_DeclareStretchOp : OQ3_Op<"declare_stretch", [Pure]> {
     let summary = "Declare a new stretch.";
     let description = [{
         The `oq3.declare_stretch` operation creates a new QUIR `Stretch` type, representing an unknown duration of time.

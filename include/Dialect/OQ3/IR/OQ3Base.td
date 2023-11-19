@@ -44,7 +44,7 @@ class OQ3_Op<string mnemonic, list<Trait> traits = []> :
     Op<OQ3_Dialect, mnemonic, traits>;
 
 class OQ3_UnaryOp<string mnemonic, list<Trait> traits = []> :
-      OQ3_Op<mnemonic, !listconcat(traits, [NoSideEffect])> {
+      OQ3_Op<mnemonic, !listconcat(traits, [Pure])> {
   let arguments = (ins AnyClassical:$operand);
   let results = (outs AnyClassical:$result);
   let verifier = [{ return success(); }];
@@ -53,7 +53,7 @@ class OQ3_UnaryOp<string mnemonic, list<Trait> traits = []> :
 }
 
 class OQ3_BinaryOp<string mnemonic, list<Trait> traits = []> :
-    OQ3_Op<mnemonic, !listconcat(traits, [NoSideEffect])> {
+    OQ3_Op<mnemonic, !listconcat(traits, [Pure])> {
   let arguments = (ins AnyClassical:$operand1, AnyClassical:$operand2);
   let results = (outs AnyClassical:$result);
   let assemblyFormat = [{
