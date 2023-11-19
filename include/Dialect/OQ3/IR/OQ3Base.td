@@ -48,9 +48,6 @@ class OQ3_UnaryOp<string mnemonic, list<Trait> traits = []> :
       OQ3_Op<mnemonic, !listconcat(traits, [Pure])> {
   let arguments = (ins AnyClassical:$operand);
   let results = (outs AnyClassical:$result);
-  let verifier = [{ return success(); }];
-  // In LLVM 15+,
-  // let hasVerifier = 0;
 }
 
 class OQ3_BinaryOp<string mnemonic, list<Trait> traits = []> :
@@ -60,9 +57,6 @@ class OQ3_BinaryOp<string mnemonic, list<Trait> traits = []> :
   let assemblyFormat = [{
         attr-dict $lhs `,` $rhs `:` `(` type($lhs) `,` type($rhs) `)` `->` type($result)
   }];
-  let verifier = [{ return success(); }];
-  // In LLVM 15+,
-  // let hasVerifier = 0;
 }
 
 //===----------------------------------------------------------------------===//

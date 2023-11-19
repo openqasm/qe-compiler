@@ -53,17 +53,7 @@ def OQ3_DeclareVariableOp : OQ3_Op<"declare_variable", [Symbol]> {
         }]>
     ];
 
-    let verifier = [{
-        auto t = (*this).type();
-
-        if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat() || t.isa<ComplexType>())
-            return success();
-        std::string str;
-        llvm::raw_string_ostream os(str);
-        t.print(os);
-
-        return emitOpError("MLIR type " + str + " not supported for declarations.");
-    }];
+    let hasVerifier = 1;
 
     let extraClassDeclaration = [{
         bool isInputVariable() { return input(); }

@@ -217,6 +217,26 @@ auto CallDefcalMeasureOp::getCalleeType() -> FunctionType {
                            getOperation()->getResultTypes());
 }
 
+LogicalResult CallDefcalMeasureOp::verify() {
+  bool qubitFound = false;
+  for (auto arg : (*this)->getOperands()) {
+      if(qubitFound) {
+          if(arg.getType().isa<QubitType>()) {
+              return emitOpError("requires exactly one qubit argument");
+          }
+      } else {
+          if(arg.getType().isa<QubitType>()) {
+              qubitFound = true;
+          }
+      }
+  }
+  if (qubitFound) {
+      return success();
+  } else {
+      return emitOpError("requires exactly one qubit");
+  }
+}
+
 /// Return the callee of the call_gate operation, this is
 /// required by the call interface.
 auto CallSubroutineOp::getCallableForCallee() -> CallInterfaceCallable {

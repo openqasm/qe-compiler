@@ -51,12 +51,7 @@ def Pulse_GaussianOp : Pulse_Op<"gaussian", [Pure, SequenceAllowed]> {
         attr-dict `(` $dur `,` $amp `,` $sigma `)` `:` `(` type($dur) `,` type($amp) `,` type($sigma) `)` `->` type($wfr)
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 
@@ -81,12 +76,8 @@ def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [Pure, SequenceAllowed]
         attr-dict `(` $dur `,` $amp `,` $sigma `,` $width `)` `:` `(` type($dur) `,` type($amp) `,` type($sigma) `,` type($width) `)` `->` type($wfr)
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-        return success();
-    }];
+    let hasVerifier = 1;
+
 }
 
 def Pulse_DragOp : Pulse_Op<"drag", [Pure, SequenceAllowed]> {
@@ -111,12 +102,7 @@ def Pulse_DragOp : Pulse_Op<"drag", [Pure, SequenceAllowed]> {
         attr-dict `(` $dur `,` $amp `,` $sigma `,` $beta `)` `:` `(` type($dur) `,` type($amp) `,` type($sigma) `,` type($beta) `)` `->` type($wfr)
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_ConstOp : Pulse_Op<"const_waveform", [Pure, SequenceAllowed]> {
@@ -139,12 +125,7 @@ def Pulse_ConstOp : Pulse_Op<"const_waveform", [Pure, SequenceAllowed]> {
         attr-dict `(` $dur `,` $amp `)` `:` `(` type($dur) `,` type($amp) `)` `->` type($wfr)
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [Pure, SequenceAllowed,
@@ -310,11 +291,7 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame,
         llvm::Expected<std::string> getWaveformHash(CallSequenceOp callOp);
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTargetFrame]> {
@@ -348,11 +325,7 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTarge
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasTargetFrame]> {
@@ -386,11 +359,7 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasT
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]> {
@@ -424,11 +393,7 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]>
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFrame]> {
@@ -462,11 +427,7 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFra
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_SetAmplitudeOp : Pulse_Op<"set_amplitude", [SequenceRequired, HasTargetFrame]> {
@@ -497,11 +458,7 @@ let summary = "Set a scaling factor for pulses of a frame.";
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
@@ -528,11 +485,7 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
         attr-dict `(` $target `)` `:` `(` type($target) `)` `->` type($out)
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
@@ -558,16 +511,7 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
         attr-dict `(` $target `,` $dur `)` `:` `(` type($target) `,` type($dur) `)`
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_BarrierOp : Pulse_Op<"barrier", [Pure, SequenceAllowed]> {

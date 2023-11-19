@@ -312,25 +312,7 @@ def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
 
     }];
 
-    let verifier = [{
-        bool qubitFound = false;
-        for (auto arg : (*this)->getOperands()) {
-            if(qubitFound) {
-                if(arg.getType().isa<QubitType>()) {
-                    return emitOpError("requires exactly one qubit argument");
-                }
-            } else {
-                if(arg.getType().isa<QubitType>()) {
-                    qubitFound = true;
-                }
-            }
-        }
-        if (qubitFound) {
-            return success();
-        } else {
-            return emitOpError("requires exactly one qubit");
-        }
-    }];
+    let hasVerifier = 1;
 }
 
 def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [DeclareOpInterfaceMethods<CallOpInterface>]> {

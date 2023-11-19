@@ -19,7 +19,7 @@
 using namespace mlir;
 using namespace mlir::oq3;
 
-static LogicalResult
+static mlir::LogicalResult
 verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
                               mlir::Operation *op,
                               bool operandMustMatchSymbolType = false) {
@@ -61,6 +61,7 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
   return success();
 }
 
+
 //===----------------------------------------------------------------------===//
 // CBit ops
 //===----------------------------------------------------------------------===//
@@ -100,7 +101,7 @@ CBitExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
   return nullptr;
 }
 
-static LogicalResult verify(CBitExtractBitOp op) {
+static mlir::LogicalResult verify(CBitExtractBitOp op) {
 
   auto t = op.getOperand().getType();
 
@@ -114,7 +115,7 @@ static LogicalResult verify(CBitExtractBitOp op) {
   return op.emitOpError("index must be less than the width of the operand.");
 }
 
-LogicalResult
+mlir::LogicalResult
 CBitAssignBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
@@ -124,13 +125,25 @@ CBitAssignBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 // Variable ops
 //===----------------------------------------------------------------------===//
 
-LogicalResult
+mlir::LogicalResult DeclareVariableOp::verify() {
+    auto t = (*this).type();
+
+    if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat() || t.isa<ComplexType>())
+        return success();
+    std::string str;
+    llvm::raw_string_ostream os(str);
+    t.print(os);
+
+    return emitOpError("MLIR type " + str + " not supported for declarations.");
+}
+
+mlir::LogicalResult
 VariableAssignOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation(), true);
 }
 
-LogicalResult
+mlir::LogicalResult
 VariableLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
   return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
@@ -140,14 +153,35 @@ VariableLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 // Array ops
 //===----------------------------------------------------------------------===//
 
-LogicalResult
+mlir::LogicalResult DeclareArrayOp::verify() {
+  auto t = (*this).type();
+
+  if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat())
+      return success();
+  return failure();
+}
+
+mlir::LogicalResult
 AssignArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
 }
 
-LogicalResult
+mlir::LogicalResult
 UseArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
   return verifyOQ3VariableOpSymbolUses(symbolTable, getOperation());
+}
+
+//===----------------------------------------------------------------------===//
+// Binary / Unary Ops
+//===----------------------------------------------------------------------===//
+
+mlir::LogicalResult BinaryCmpOp::verify() {
+  std::vector predicates = { "eq", "ne", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge" };
+
+  if (std::find(predicates.begin(), predicates.end(), this->predicate()) != predicates.end())
+      return success();
+  else
+      return emitOpError("requires predicate \"eq\", \"ne\", \"slt\", \"sle\", \"sgt\", \"sge\", \"ult\", \"ule\", \"ugt\", \"uge\"");
 }
 
 #define GET_OP_CLASSES

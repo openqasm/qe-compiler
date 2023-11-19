@@ -32,6 +32,96 @@
 namespace mlir::pulse {
 
 //===----------------------------------------------------------------------===//
+// Waveform Ops
+//===----------------------------------------------------------------------===//
+
+mlir::LogicalResult GaussianOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+      return emitOpError("duration must be >= 0.");
+  return success();
+}
+
+mlir::LogicalResult GaussianSquareOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+      return emitOpError("duration must be >= 0.");
+  return success();
+}
+
+mlir::LogicalResult GaussianSquareOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+      return emitOpError("duration must be >= 0.");
+  return success();
+}
+
+mlir::LogicalResult DragOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+      return emitOpError("duration must be >= 0.");
+  return success();
+}
+
+mlir::LogicalResult ConstOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+      return emitOpError("duration must be >= 0.");
+  return success();
+}
+
+//===----------------------------------------------------------------------===//
+// Waveform Ops
+//===----------------------------------------------------------------------===//
+
+mlir::LogicalResult SetFrequencyOp::verify() {
+  if (!(*this).target().isa<BlockArgument>())
+      return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult ShiftFrequencyOp::verify() {
+  if (!(*this).target().isa<BlockArgument>())
+      return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult SetPhaseOp::verify() {
+  if (!(*this).target().isa<BlockArgument>())
+      return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult ShiftPhaseOp::verify() {
+  if (!(*this).target().isa<BlockArgument>())
+      return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult SetAmplitudeOp::verify() {
+  if (!(*this).target().isa<BlockArgument>())
+      return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult CaptureOp::verify() {
+  if (!(*this).target().isa<BlockArgument>())
+      return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult DelayOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+      return emitOpError("duration must be >= 0.");
+
+  if (!(*this).target().isa<BlockArgument>())
+      return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+
+  return success();
+}
+
+//===----------------------------------------------------------------------===//
 // Waveform_CreateOp
 //===----------------------------------------------------------------------===//
 
@@ -426,6 +516,14 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
       "Failed to hash waveform name from play operation");
 }
 
+mlir::LogicalResult PlayOp::verify() {
+  if (!(*this).target().isa<BlockArgument>())
+      return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
+  return success();
+}
+
+
+
 //===----------------------------------------------------------------------===//
 //
 // end PlayOp
@@ -436,6 +534,7 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
 // end Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+
 
 } // namespace mlir::pulse
 
