@@ -518,7 +518,7 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
   AutomaticAllocationScope, CallableOpInterface,
   FunctionOpInterface, IsolatedFromAbove, Symbol,
   DeclareOpInterfaceMethods<QubitOpInterface>,
-  RecursiveSideEffects
+  RecursiveMemoryEffects
 ]> {
   let summary = "An operation with a name containing a single `SSACFG` region corresponding to a quantum circuit(block) execution";
   let description = [{
@@ -684,7 +684,7 @@ def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, Pure, Terminator,
 
 def QUIR_SwitchOp : QUIR_Op<"switch",
     [DeclareOpInterfaceMethods<RegionBranchOpInterface>,
-     RecursiveSideEffects,
+     RecursiveMemoryEffects,
      SingleBlockImplicitTerminator<"quir::YieldOp">,
      NoRegionArguments
      ]> {

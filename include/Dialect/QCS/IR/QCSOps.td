@@ -178,7 +178,7 @@ def QCS_RecvOp : QCS_Op<"recv", [NonInterferingNonDeadSideEffect]> {
 
 def QCS_ParallelControlFlowOp : QCS_Op<"parallel_control_flow", [
                         SingleBlockImplicitTerminator<"ParallelEndOp">,
-                        RecursiveSideEffects]> {
+                        RecursiveMemoryEffects]> {
     let summary = "Contain a group of control flow ops that can run in parallel";
     let description = [{
         The `qcs.parallel_control_flow` operation has a single region and block
