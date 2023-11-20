@@ -56,8 +56,8 @@ def OQ3_DeclareVariableOp : OQ3_Op<"declare_variable", [Symbol]> {
     let hasVerifier = 1;
 
     let extraClassDeclaration = [{
-        bool isInputVariable() { return input(); }
-        bool isOutputVariable() { return output(); }
+        bool isInputVariable() { return getInput(); }
+        bool isOutputVariable() { return getOutput(); }
     }];
 }
 
