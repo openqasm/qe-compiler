@@ -93,7 +93,7 @@ struct EqEqOnePat : public OpRewritePattern<mlir::arith::CmpIOp> {
     auto extendedI1OrNone =
         getI1InputFromExtensionOp(cmpOp.getLhs().getDefiningOp());
 
-    if (!extendedI1OrNone.hasValue())
+    if (!extendedI1OrNone.has_value())
       return failure();
 
     rewriter.replaceOp(cmpOp, {extendedI1OrNone.getValue()});

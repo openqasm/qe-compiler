@@ -45,7 +45,7 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
 
         // moduleOp->walk([&](DeclareParameterOp declareParameterOp) {
         double initial_value = 0.0;
-        if (declareParameterOp.initial_value().hasValue()) {
+        if (declareParameterOp.initial_value().has_value()) {
           auto angleAttr = declareParameterOp.initial_value()
                                .getValue()
                                .dyn_cast<mlir::quir::AngleAttr>();

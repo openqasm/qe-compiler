@@ -43,7 +43,7 @@ int qssc::payload::init() {
       name, name, "Payload that generates zip file with .qem extension.",
       [](std::optional<PayloadConfig> config)
           -> llvm::Expected<std::unique_ptr<payload::Payload>> {
-        if (config.hasValue())
+        if (config.has_value())
           return std::make_unique<ZipPayload>(config.getValue());
         return std::make_unique<ZipPayload>();
       });

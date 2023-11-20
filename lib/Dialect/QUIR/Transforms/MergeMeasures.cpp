@@ -139,7 +139,7 @@ struct MeasureAndMeasureTopologicalPattern
     // topological path if it exists
     auto [nextMeasureOpt, observedQubits] =
         QubitOpInterface::getNextQubitOpOfTypeWithQubits<MeasureOp>(measureOp);
-    if (!nextMeasureOpt.hasValue())
+    if (!nextMeasureOpt.has_value())
       return failure();
 
     // If any qubit along path touches the same qubits we cannot merge the next

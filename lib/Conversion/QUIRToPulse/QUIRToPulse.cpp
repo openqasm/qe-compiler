@@ -40,7 +40,7 @@ using namespace mlir::pulse;
 void QUIRToPulsePass::runOnOperation() {
 
   // check for command line override of the path to waveform container
-  if (waveformContainer.hasValue())
+  if (waveformContainer.has_value())
     WAVEFORM_CONTAINER = waveformContainer.getValue();
 
   // parse the waveform container ops

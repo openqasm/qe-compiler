@@ -154,7 +154,7 @@ def QubitOpInterface : OpInterface<"QubitOpInterface"> {
         template <typename OpClass>
         static std::optional<OpClass> getNextQubitOpIsType(Operation *op) {
             auto nextOp = getNextQubitOp(op);
-            if (auto nextOpValue = nextOp.hasValue())
+            if (auto nextOpValue = nextOp.has_value())
                 if (OpClass castOp = dyn_cast<OpClass>(nextOpValue))
                     return castOp;
             return std::nullopt;

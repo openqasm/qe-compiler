@@ -50,7 +50,7 @@ Optional<Type> QuirTypeConverter::convertAngleType(Type t) {
   if (auto angleType = t.dyn_cast<quir::AngleType>()) {
     auto width = angleType.getWidth();
 
-    if (!width.hasValue()) {
+    if (!width.has_value()) {
       llvm::errs() << "Cannot lower an angle with no width!\n";
       return {};
     }

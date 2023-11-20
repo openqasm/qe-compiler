@@ -182,7 +182,7 @@ struct BarrierAndCircuitPattern : public OpRewritePattern<BarrierOp> {
 
     auto callCircuitOp =
         getNextOpAndCompareOverlap<BarrierOp, CallCircuitOp>(barrierOp);
-    if (!callCircuitOp.hasValue())
+    if (!callCircuitOp.has_value())
       return failure();
 
     barrierOp->moveAfter(callCircuitOp.getValue().getOperation());
@@ -202,7 +202,7 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
 
     auto barrierOp =
         getNextOpAndCompareOverlap<CallCircuitOp, BarrierOp>(callCircuitOp);
-    if (!barrierOp.hasValue())
+    if (!barrierOp.has_value())
       return failure();
 
     auto *barrierOperation = barrierOp.getValue().getOperation();

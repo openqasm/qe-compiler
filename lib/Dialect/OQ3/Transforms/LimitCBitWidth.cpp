@@ -193,7 +193,7 @@ void LimitCBitWidthPass::runOnOperation() {
   eraseList_.clear();
 
   // check for command line override of MAX_CBIT_WIDTH
-  if (maxCBitWidthOption.hasValue())
+  if (maxCBitWidthOption.has_value())
     MAX_CBIT_WIDTH = maxCBitWidthOption.getValue();
 
   Operation *module = getOperation();

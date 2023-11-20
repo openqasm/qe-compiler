@@ -131,7 +131,7 @@ LogicalResult QubitType::verify(function_ref<InFlightDiagnostic()> emitError,
 
 LogicalResult AngleType::verify(function_ref<InFlightDiagnostic()> emitError,
                                 std::optional<int> width) {
-  if (width.hasValue() && width.getValue() <= 0)
+  if (width.has_value() && width.getValue() <= 0)
     return emitError() << "width must be > 0";
   return success();
 }

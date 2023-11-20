@@ -38,7 +38,7 @@ using namespace mlir::quir;
 
 static uint lookupQubitIdHandleError_(const Value &val) {
   auto id = lookupQubitId(val);
-  if (!id.hasValue()) {
+  if (!id.has_value()) {
     auto &diagEngine = val.getContext()->getDiagEngine();
     diagEngine.emit(val.getLoc(), mlir::DiagnosticSeverity::Error)
         << "Qubit does not have a valid ID.";
@@ -574,7 +574,7 @@ mlir::ParseResult SwitchOp::parse(mlir::OpAsmParser &parser,
     uint32_t caseVal;
     OptionalParseResult integerParseResult =
         parser.parseOptionalInteger(caseVal);
-    if (!integerParseResult.hasValue() || integerParseResult.getValue())
+    if (!integerParseResult.has_value() || integerParseResult.getValue())
       // getValue() returns the success() or failure()
       return failure();
     caseValues.push_back(caseVal);
@@ -615,7 +615,7 @@ void quir::SwitchOp::getSuccessorRegions(
     Optional<unsigned> index, ArrayRef<Attribute> operands,
     SmallVectorImpl<RegionSuccessor> &regions) {
   // regions branch back to parent operation
-  if (index.hasValue()) {
+  if (index.has_value()) {
     regions.push_back(RegionSuccessor(getResults()));
     return;
   }

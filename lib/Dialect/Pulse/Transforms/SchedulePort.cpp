@@ -209,14 +209,14 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
 
             std::optional<int64_t> currentTimepoint =
                 PulseOpSchedulingInterface::getTimepoint(&op1);
-            if (!currentTimepoint.hasValue()) {
+            if (!currentTimepoint.has_value()) {
               op1.emitError()
                   << "Operation does not have a pulse.timepoint attribute.";
               signalPassFailure();
             }
             std::optional<int64_t> nextTimepoint =
                 PulseOpSchedulingInterface::getTimepoint(&op2);
-            if (!nextTimepoint.hasValue()) {
+            if (!nextTimepoint.has_value()) {
               op2.emitError()
                   << "Operation does not have a pulse.timepoint attribute.";
               signalPassFailure();

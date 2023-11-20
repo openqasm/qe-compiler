@@ -730,7 +730,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
   mainFunc->walk([&](DeclareQubitOp qubitOp) {
     llvm::outs() << qubitOp.getOperation()->getName() << " id: " << qubitOp.id()
                  << "\n";
-    if (!qubitOp.id().hasValue() ||
+    if (!qubitOp.id().has_value() ||
         qubitOp.id().getValue() > config->getNumQubits()) {
       qubitOp->emitOpError()
           << "Error! Found a qubit without an ID or with ID > "

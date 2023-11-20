@@ -41,7 +41,7 @@ void LoadPulseCalsPass::runOnOperation() {
   assert(mainFunc && "could not find the main func");
 
   // check for command line override of the path to default pulse cals
-  if (defaultPulseCals.hasValue())
+  if (defaultPulseCals.has_value())
     DEFAULT_PULSE_CALS = defaultPulseCals.getValue();
 
   // parse the default pulse calibrations

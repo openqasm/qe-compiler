@@ -117,7 +117,7 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
       LLVM_DEBUG(llvm::dbgs() << "\n");
 
       auto nextOpt = nextQuantumOrControlFlowOrNull(measureOp);
-      if (!nextOpt.hasValue())
+      if (!nextOpt.has_value())
         break;
 
       Operation *nextOp = nextOpt.getValue();
@@ -128,7 +128,7 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
 
         // now find the next next op
         auto nextNextOpt = nextQuantumOrControlFlowOrNull(nextOp);
-        if (!nextNextOpt.hasValue()) // only move non-control-flow ops
+        if (!nextNextOpt.has_value()) // only move non-control-flow ops
           break;
 
         nextOp = nextNextOpt.getValue();

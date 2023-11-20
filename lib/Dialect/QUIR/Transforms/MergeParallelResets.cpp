@@ -125,7 +125,7 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     // topological path if it exists
     auto [nextResetOpt, observedQubits] =
         QubitOpInterface::getNextQubitOpOfTypeWithQubits<ResetQubitOp>(resetOp);
-    if (!nextResetOpt.hasValue())
+    if (!nextResetOpt.has_value())
       return failure();
 
     ResetQubitOp nextResetOp = nextResetOpt.getValue();

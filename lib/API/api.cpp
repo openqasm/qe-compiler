@@ -858,7 +858,7 @@ _bindArguments(std::string_view target, std::string_view configPath,
   MapAngleArgumentSource source(arguments);
 
   auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
-  if ((!factory.hasValue()) || (factory.getValue() == nullptr)) {
+  if ((!factory.has_value()) || (factory.getValue() == nullptr)) {
     return qssc::emitDiagnostic(
         onDiagnostic, qssc::Severity::Error,
         qssc::ErrorCategory::QSSLinkerNotImplemented,

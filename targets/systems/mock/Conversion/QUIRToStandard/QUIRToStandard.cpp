@@ -72,7 +72,7 @@ struct ConstantOpConversionPat : public OpConversionPattern<quir::ConstantOp> {
       auto angleWidth = constOp.getType().cast<quir::AngleType>().getWidth();
 
       // cannot handle non-parameterized angle types
-      if (!angleWidth.hasValue())
+      if (!angleWidth.has_value())
         return failure();
 
       int64_t multiplier = (int64_t)1 << (int64_t)angleWidth.getValue();
@@ -110,7 +110,7 @@ struct AngleBinOpConversionPat : public OpConversionPattern<QuirOp> {
         binOp.lhs().getType().template dyn_cast<quir::AngleType>().getWidth();
 
     // cannot handle non-parameterized angle types
-    if (!angleWidth.hasValue())
+    if (!angleWidth.has_value())
       return failure();
 
     int64_t maskVal = ((int64_t)1 << (int64_t)angleWidth.getValue()) - 1;

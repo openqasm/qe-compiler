@@ -28,7 +28,7 @@ TEST(PayloadRegistry, LookupZipPayload) {
 
   auto payloadInfoOpt =
       qssc::payload::registry::PayloadRegistry::lookupPluginInfo(zipName);
-  EXPECT_TRUE(payloadInfoOpt.hasValue());
+  EXPECT_TRUE(payloadInfoOpt.has_value());
 
   auto *payloadInfo = payloadInfoOpt.getValue();
 
