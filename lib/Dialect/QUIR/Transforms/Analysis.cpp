@@ -22,7 +22,7 @@
 
 #include "Dialect/QUIR/IR/QUIROps.h"
 
-#include "mlir/Dialect/SCF/SCF.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
 
 namespace mlir::quir {
 

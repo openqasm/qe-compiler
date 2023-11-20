@@ -25,7 +25,7 @@
 #include "Dialect/Pulse/IR/PulseTypes.h"
 
 #include "Dialect/QUIR/IR/QUIRTypes.h"
-#include "mlir/Dialect/SCF/SCF.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
 #include <llvm/Support/Casting.h>
 
 using namespace mlir;
