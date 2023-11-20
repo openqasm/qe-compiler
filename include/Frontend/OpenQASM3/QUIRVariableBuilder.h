@@ -30,7 +30,6 @@
 #include <qasm/AST/ASTTypes.h>
 
 #include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/Optional.h>
 #include <llvm/ADT/StringRef.h>
 
 #include <unordered_map>
