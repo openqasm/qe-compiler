@@ -416,7 +416,7 @@ def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormal
         StringRef getCallee() { return callee(); }
         FunctionType getCalleeType();
 
-        operand_range getArgOperands() {
+        mlir::OperandRange getArgOperands() {
             return {arg_operand_begin(), arg_operand_end()};
         }
 
