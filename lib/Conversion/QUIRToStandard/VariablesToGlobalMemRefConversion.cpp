@@ -189,7 +189,7 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
   // walking all the GlobalMemref's symbol uses.
   if (auto rangeOrNone = mlir::SymbolTable::getSymbolUses(
           /* symbol */ globalMemrefOp, /* inside */ surroundingFunction))
-    for (auto &use : rangeOrNone.getValue())
+    for (auto &use : rangeOrNone.value())
       if (llvm::isa<mlir::memref::GetGlobalOp>(use.getUser()))
         return llvm::cast<mlir::memref::GetGlobalOp>(use.getUser());
 

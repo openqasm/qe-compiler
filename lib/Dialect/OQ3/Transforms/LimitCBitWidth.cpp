@@ -194,7 +194,7 @@ void LimitCBitWidthPass::runOnOperation() {
 
   // check for command line override of MAX_CBIT_WIDTH
   if (maxCBitWidthOption.has_value())
-    MAX_CBIT_WIDTH = maxCBitWidthOption.getValue();
+    MAX_CBIT_WIDTH = maxCBitWidthOption.value();
 
   Operation *module = getOperation();
 
@@ -215,7 +215,7 @@ void LimitCBitWidthPass::runOnOperation() {
                              newRegisters, symbolTableCol);
 
     if (auto rangeOrNone = SymbolTable::getSymbolUses(op, module))
-      for (auto &use : rangeOrNone.getValue()) {
+      for (auto &use : rangeOrNone.value()) {
         auto *user = use.getUser();
         if (auto variableAssignOp = dyn_cast<VariableAssignOp>(user))
           processOp(variableAssignOp, orgWidth, numRegistersRequired,
