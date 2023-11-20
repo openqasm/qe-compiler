@@ -38,7 +38,7 @@ namespace {
 /// Include the patterns defined in the Declarative Rewrite framework.
 #include "Dialect/OQ3/IR/OQ3Patterns.inc"
 
-static llvm::Optional<mlir::Value>
+static std::optional<mlir::Value>
 getI1InputFromExtensionOp(mlir::Operation *op) {
   if (!op)
     return llvm::None;

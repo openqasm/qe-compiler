@@ -30,7 +30,6 @@
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Support/Timing.h"
 
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
@@ -60,6 +59,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -432,7 +432,7 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
            .getValueOr(qssc::hal::registry::TargetSystemRegistry::
                            nullTargetSystemInfo());
 
-  llvm::Optional<llvm::StringRef> conf{};
+  std::optional<llvm::StringRef> conf{};
   if (targetConfigPath.has_value())
     conf.emplace(*targetConfigPath);
 
@@ -625,7 +625,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   // Set up the output.
   llvm::raw_ostream *ostream;
-  llvm::Optional<llvm::raw_string_ostream> outStringStream;
+  std::optional<llvm::raw_string_ostream> outStringStream;
   auto outputFile = mlir::openOutputFile(outputFilename, &errorMessage);
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 

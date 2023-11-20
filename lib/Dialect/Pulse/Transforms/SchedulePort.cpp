@@ -207,14 +207,14 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
                 !op2.hasTrait<mlir::pulse::HasTargetFrame>())
               return false;
 
-            llvm::Optional<int64_t> currentTimepoint =
+            std::optional<int64_t> currentTimepoint =
                 PulseOpSchedulingInterface::getTimepoint(&op1);
             if (!currentTimepoint.hasValue()) {
               op1.emitError()
                   << "Operation does not have a pulse.timepoint attribute.";
               signalPassFailure();
             }
-            llvm::Optional<int64_t> nextTimepoint =
+            std::optional<int64_t> nextTimepoint =
                 PulseOpSchedulingInterface::getTimepoint(&op2);
             if (!nextTimepoint.hasValue()) {
               op2.emitError()

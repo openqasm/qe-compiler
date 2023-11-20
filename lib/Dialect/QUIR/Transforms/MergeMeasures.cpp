@@ -72,7 +72,7 @@ struct MeasureAndMeasureLexographicalPattern
 
   LogicalResult matchAndRewrite(MeasureOp measureOp,
                                 PatternRewriter &rewriter) const override {
-    llvm::Optional<Operation *> nextQuantumOp = nextQuantumOpOrNull(measureOp);
+    std::optional<Operation *> nextQuantumOp = nextQuantumOpOrNull(measureOp);
     if (!nextQuantumOp)
       return failure();
 
@@ -84,13 +84,13 @@ struct MeasureAndMeasureLexographicalPattern
     // same qubit and that we can resolve them both
     std::unordered_set<uint> measureIds;
     for (auto qubit : measureOp.qubits()) {
-      llvm::Optional<uint> id = lookupQubitId(qubit);
+      std::optional<uint> id = lookupQubitId(qubit);
       if (!id)
         return failure();
       measureIds.emplace(*id);
     }
     for (auto qubit : nextMeasureOp.qubits()) {
-      llvm::Optional<uint> id = lookupQubitId(qubit);
+      std::optional<uint> id = lookupQubitId(qubit);
       if (!id || measureIds.count(*id))
         return failure();
     }

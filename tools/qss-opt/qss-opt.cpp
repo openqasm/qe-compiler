@@ -170,7 +170,7 @@ auto main(int argc, char **argv) -> int {
       return 1;
     }
 
-    llvm::Optional<llvm::StringRef> conf{};
+    std::optional<llvm::StringRef> conf{};
     if (!configurationPath.empty())
       conf.emplace(configurationPath);
 

@@ -49,7 +49,7 @@ std::set<uint32_t> interfaces_impl::getOperatedQubits(mlir::Operation *op,
   return opQubits;
 }
 
-llvm::Optional<mlir::Operation *>
+std::optional<mlir::Operation *>
 interfaces_impl::getNextQubitOp(mlir::Operation *op) {
   mlir::Operation *curOp = op;
   while (mlir::Operation *nextOp = curOp->getNextNode()) {

@@ -176,7 +176,7 @@ llvm::Error PatchableZipPayload::writeString(std::string *outputString) {
     return llvm::make_error<llvm::StringError>("outputString buffer is null",
                                                llvm::inconvertibleErrorCode());
 
-  llvm::Optional<llvm::raw_string_ostream> outStringStream;
+  std::optional<llvm::raw_string_ostream> outStringStream;
   outStringStream.emplace(*outputString);
   llvm::raw_ostream *ostream = outStringStream.getPointer();
 

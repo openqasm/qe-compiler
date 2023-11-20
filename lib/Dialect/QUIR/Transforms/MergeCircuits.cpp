@@ -60,7 +60,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
     // find next CallCircuitOp or fail
     Operation *searchOp = callCircuitOp.getOperation();
-    llvm::Optional<Operation *> secondOp;
+    std::optional<Operation *> secondOp;
     CallCircuitOp nextCallCircuitOp;
     while (true) {
       secondOp = nextQuantumOpOrNull(searchOp);
@@ -147,7 +147,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
 template <class FirstOp, class SecondOp>
 Optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
-  llvm::Optional<Operation *> secondOp = nextQuantumOpOrNull(firstOp);
+  std::optional<Operation *> secondOp = nextQuantumOpOrNull(firstOp);
   if (!secondOp)
     return llvm::None;
 

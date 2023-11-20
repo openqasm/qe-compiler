@@ -58,7 +58,7 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
     // be merged
     auto resetQubitOperands = resetOp.qubitsMutable();
 
-    llvm::Optional<Operation *> nextQuantumOp = nextQuantumOpOrNull(resetOp);
+    std::optional<Operation *> nextQuantumOp = nextQuantumOpOrNull(resetOp);
     if (!nextQuantumOp)
       return failure();
 

@@ -34,7 +34,7 @@
 
 namespace qssc::arguments {
 
-using ArgumentType = std::variant<llvm::Optional<double>>;
+using ArgumentType = std::variant<std::optional<double>>;
 using OptDiagnosticCallback = std::optional<qssc::DiagnosticCallback>;
 
 class ArgumentSource {

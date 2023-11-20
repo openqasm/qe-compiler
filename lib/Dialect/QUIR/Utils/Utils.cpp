@@ -210,7 +210,7 @@ template void qubitArgIndices<CallSubroutineOp>(CallSubroutineOp &,
 
 // TODO: Determine a better way of tracing qubit identities
 // other than decorating blocks and functions.
-llvm::Optional<uint> lookupQubitId(const Value &val) {
+std::optional<uint> lookupQubitId(const Value &val) {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
   if (!declOp) { // Must be an argument to a function
     // see if we can find an attribute with the info
@@ -235,7 +235,7 @@ llvm::Optional<uint> lookupQubitId(const Value &val) {
   return static_cast<uint>(id);
 } // lookupQubitId
 
-llvm::Optional<Operation *> nextQuantumOpOrNull(Operation *op) {
+std::optional<Operation *> nextQuantumOpOrNull(Operation *op) {
   Operation *curOp = op;
   while (Operation *nextOp = curOp->getNextNode()) {
     if (isQuantumOp(nextOp))
@@ -249,7 +249,7 @@ llvm::Optional<Operation *> nextQuantumOpOrNull(Operation *op) {
   return llvm::None;
 } // nextQuantumOpOrNull
 
-llvm::Optional<Operation *> prevQuantumOpOrNull(Operation *op) {
+std::optional<Operation *> prevQuantumOpOrNull(Operation *op) {
   Operation *curOp = op;
   while (Operation *prevOp = curOp->getPrevNode()) {
     if (isQuantumOp(prevOp))
@@ -263,7 +263,7 @@ llvm::Optional<Operation *> prevQuantumOpOrNull(Operation *op) {
   return llvm::None;
 } // prevQuantumOpOrNull
 
-llvm::Optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op) {
+std::optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op) {
   Operation *curOp = op;
   while (Operation *nextOp = curOp->getNextNode()) {
     if (isQuantumOp(nextOp))
@@ -277,7 +277,7 @@ llvm::Optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op) {
   return llvm::None;
 } // nextQuantumOrControlFlowOrNull
 
-llvm::Optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op) {
+std::optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op) {
   Operation *curOp = op;
   while (Operation *prevOp = curOp->getPrevNode()) {
     if (isQuantumOp(prevOp))

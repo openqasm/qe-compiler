@@ -38,7 +38,7 @@ TargetSystemInfo *TargetSystemRegistry::nullTargetSystemInfo() {
   static auto nullTarget = std::make_unique<TargetSystemInfo>(
       "NullTarget",
       "A no-op target used by default unless a real target is specified.",
-      [](llvm::Optional<llvm::StringRef> config) {
+      [](std::optional<llvm::StringRef> config) {
         return std::make_unique<NullTarget>();
       },
       []() { return llvm::Error::success(); },

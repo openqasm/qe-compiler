@@ -59,10 +59,10 @@
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 
-#include "llvm/ADT/Optional.h"
 #include <llvm/Support/Error.h>
 
 #include <iostream>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>

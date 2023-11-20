@@ -67,7 +67,7 @@ static llvm::cl::OptionCategory
 int qssc::targets::systems::mock::init() {
   bool registered = registry::TargetSystemRegistry::registerPlugin<MockSystem>(
       "mock", "Mock system for testing the targeting infrastructure.",
-      [](llvm::Optional<llvm::StringRef> configurationPath)
+      [](std::optional<llvm::StringRef> configurationPath)
           -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
         if (!configurationPath)
           return llvm::createStringError(

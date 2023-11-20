@@ -41,7 +41,7 @@ int qssc::payload::init() {
   const char *name = "ZIP";
   bool registered = registry::PayloadRegistry::registerPlugin(
       name, name, "Payload that generates zip file with .qem extension.",
-      [](llvm::Optional<PayloadConfig> config)
+      [](std::optional<PayloadConfig> config)
           -> llvm::Expected<std::unique_ptr<payload::Payload>> {
         if (config.hasValue())
           return std::make_unique<ZipPayload>(config.getValue());

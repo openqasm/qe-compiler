@@ -36,7 +36,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
     let methods = [
         InterfaceMethod<
         /*desc=*/"Get the timpoint that a pulse operation becomes effective",
-        /*retTy=*/"::llvm::Optional<int64_t>",
+        /*retTy=*/"::std::optional<int64_t>",
         /*methodName=*/"getTimepoint",
         /*args=*/(ins),
         /*methodBody=*/[{}],
@@ -58,7 +58,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
         >,
         InterfaceMethod<
         /*desc=*/"Get the setup latency of a pulse operation",
-        /*retTy=*/"::llvm::Optional<uint64_t>",
+        /*retTy=*/"::std::optional<uint64_t>",
         /*methodName=*/"getSetupLatency",
         /*args=*/(ins),
         /*methodBody=*/[{}],
@@ -103,7 +103,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
     ];
 
     let extraSharedClassDeclaration = [{
-        static llvm::Optional<int64_t> getTimepoint(mlir::Operation *op) {
+        static std::optional<int64_t> getTimepoint(mlir::Operation *op) {
             return interfaces_impl::getTimepoint(op);
         }
 
@@ -111,7 +111,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
             return interfaces_impl::setTimepoint(op, timepoint);
         }
 
-        static llvm::Optional<uint64_t> getSetupLatency(mlir::Operation *op) {
+        static std::optional<uint64_t> getSetupLatency(mlir::Operation *op) {
             return interfaces_impl::getSetupLatency(op);
         }
 

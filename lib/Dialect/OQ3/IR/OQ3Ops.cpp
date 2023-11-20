@@ -66,7 +66,7 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
 // CBit ops
 //===----------------------------------------------------------------------===//
 
-static llvm::Optional<mlir::Value>
+static std::optional<mlir::Value>
 findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
 
   // for single-bit registers, CBitExtractBitOp is the identity.

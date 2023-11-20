@@ -41,7 +41,7 @@ using namespace mlir::oq3;
 using namespace mlir::quir;
 
 namespace {
-llvm::Optional<mlir::memref::GlobalOp>
+std::optional<mlir::memref::GlobalOp>
 createGlobalMemrefOp(mlir::OpBuilder &builder, mlir::Location loc,
                      mlir::Operation *insertionAnchor, mlir::MemRefType type,
                      llvm::StringRef name) {
@@ -162,7 +162,7 @@ struct ArrayDeclarationConversionPattern
 /// GetGlobalMemrefOp for
 /// @return a GetGlobalMemrefOp for the given variable op
 template <class QUIRVariableOp>
-llvm::Optional<mlir::memref::GetGlobalOp>
+std::optional<mlir::memref::GetGlobalOp>
 findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
                             ConversionPatternRewriter &builder) {
   mlir::OpBuilder::InsertionGuard g(builder);

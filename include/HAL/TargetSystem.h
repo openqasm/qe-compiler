@@ -22,12 +22,12 @@
 
 #include "Arguments/Arguments.h"
 
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallString.h"
 
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -91,7 +91,7 @@ public:
   virtual llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                                    payload::Payload &payload) = 0;
 
-  virtual llvm::Optional<qssc::arguments::BindArgumentsImplementationFactory *>
+  virtual std::optional<qssc::arguments::BindArgumentsImplementationFactory *>
   getBindArgumentsImplementationFactory() {
     return llvm::None;
   };
