@@ -211,8 +211,7 @@ def QCS_ParallelEndOp : QCS_Op<"parallel_control_flow_end", [
     `qcs.parallel_control_flow` op.
   }];
 
-  let parser = "return success();";
-  let printer = "p << getOperationName();";
+  let hasCustomAssemblyFormat = 1;
 }
 
 def QCS_ShotInitOp : QCS_Op<"shot_init", [IsolatedFromAbove]> {

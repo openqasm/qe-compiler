@@ -776,8 +776,8 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
 
     bool isDeclaration() { return isExternal(); }
   }];
-  let parser = [{ return ::mlir::pulse::parseSequenceOp(parser, result); }];
-  let printer = [{ return ::mlir::pulse::print(*this, p); }];
+  let hasCustomAssemblyFormat = 1;
+
 }
 
 def Pulse_ReturnOp : Pulse_Op<"return", [Pure, Terminator, ReturnLike, SequenceRequired]>,

@@ -658,8 +658,8 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
 
     bool isDeclaration() { return isExternal(); }
   }];
-  let parser = [{ return ::parseCircuitOp(parser, result); }];
-  let printer = [{ return ::print(*this, p); }];
+
+  let hasCustomAssemblyFormat = 1;
 }
 
 def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, Pure, Terminator, ReturnLike]>,
@@ -732,9 +732,7 @@ def QUIR_SwitchOp : QUIR_Op<"switch",
     let regions = (region SizedRegion<1>:$defaultRegion,
                     VariadicRegion<SizedRegion<1>>:$caseRegions);
 
-    let parser = [{ return ::parseSwitchOp(parser, result); }];
-    let printer = [{ return ::print(p, *this); }];
-
+    let hasCustomAssemblyFormat = 1;
 }
 
 def YieldOp : QUIR_Op<"yield", [Pure, ReturnLike, Terminator, ParentOneOf<["SwitchOp"]>]>{

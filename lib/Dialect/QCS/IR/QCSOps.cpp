@@ -164,3 +164,16 @@ ParameterType ParameterLoadOp::getInitialValue(
 //===----------------------------------------------------------------------===//
 // End ParameterLoadOp
 //===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// ParallelEndOp
+//===----------------------------------------------------------------------===//
+
+mlir::ParseResult SequenceOp::parse(mlir::OpAsmParser &parser,
+                                 mlir::OperationState &result) {
+  return success();
+}
+
+void SequenceOp::print(mlir::OpAsmPrinter &printer) {
+  printer << getOperationName();
+}

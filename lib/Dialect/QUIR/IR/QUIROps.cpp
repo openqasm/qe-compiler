@@ -333,7 +333,8 @@ std::set<uint32_t> CallCircuitOp::getOperatedQubits() {
 //
 //===----------------------------------------------------------------------===//
 
-static ParseResult parseCircuitOp(OpAsmParser &parser, OperationState &result) {
+mlir::ParseResult SequenceOp::parse(mlir::OpAsmParser &parser,
+                                 mlir::OperationState &result) {
   auto buildCircuitType =
       [](Builder &builder, ArrayRef<Type> argTypes, ArrayRef<Type> results,
          function_interface_impl::VariadicFlag,
@@ -342,10 +343,10 @@ static ParseResult parseCircuitOp(OpAsmParser &parser, OperationState &result) {
       parser, result, /*allowVariadic=*/false, buildCircuitType);
 }
 
-static void print(CircuitOp op, OpAsmPrinter &p) {
-  FunctionType fnType = op.getType();
+void SequenceOp::print(mlir::OpAsmPrinter &printer) {
+  FunctionType fnType = getType();
   function_interface_impl::printFunctionOp(
-      p, op, fnType.getInputs(), /*isVariadic=*/false, fnType.getResults());
+      printer, *this, fnType.getInputs(), /*isVariadic=*/false, fnType.getResults());
 }
 
 /// Verify the argument list and entry block are in agreement.
@@ -543,9 +544,8 @@ static LogicalResult verify(mlir::quir::ReturnOp op) {
 //===----------------------------------------------------------------------===//
 // SwitchOp
 //===----------------------------------------------------------------------===//
-
-static ParseResult parseSwitchOp(OpAsmParser &parser, OperationState &result) {
-
+mlir::ParseResult SwitchOp::parse(mlir::OpAsmParser &parser,
+                                 mlir::OperationState &result) {
   Builder &builder = parser.getBuilder();
   OpAsmParser::OperandType flag;
   Region *defaultRegion;
@@ -600,6 +600,11 @@ static ParseResult parseSwitchOp(OpAsmParser &parser, OperationState &result) {
     return failure();
   return success();
 }
+
+void SwitchOp::print(mlir::OpAsmPrinter &printer) {
+  print(printer, *this);
+}
+
 
 /// Given the region at `index`, or the parent operation if `index` is None,
 /// return the successor regions. These are the regions that may be selected

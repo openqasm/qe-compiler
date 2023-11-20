@@ -274,8 +274,8 @@ CallSequenceOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 //
 //===----------------------------------------------------------------------===//
 
-static ParseResult parseSequenceOp(OpAsmParser &parser,
-                                   OperationState &result) {
+mlir::ParseResult SequenceOp::parse(mlir::OpAsmParser &parser,
+                                 mlir::OperationState &result) {
   auto buildSequenceType =
       [](Builder &builder, ArrayRef<Type> argTypes, ArrayRef<Type> results,
          function_interface_impl::VariadicFlag,
@@ -284,10 +284,10 @@ static ParseResult parseSequenceOp(OpAsmParser &parser,
       parser, result, /*allowVariadic=*/false, buildSequenceType);
 }
 
-static void print(SequenceOp op, OpAsmPrinter &p) {
-  FunctionType fnType = op.getType();
+void SequenceOp::print(mlir::OpAsmPrinter &printer) {
+  FunctionType fnType = getType();
   function_interface_impl::printFunctionOp(
-      p, op, fnType.getInputs(), /*isVariadic=*/false, fnType.getResults());
+      printer, *this, fnType.getInputs(), /*isVariadic=*/false, fnType.getResults());
 }
 
 /// Verify the argument list and entry block are in agreement.
