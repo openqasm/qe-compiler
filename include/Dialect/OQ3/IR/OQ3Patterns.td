@@ -17,6 +17,7 @@
 #define OQ3_PATTERNS
 
 include "mlir/IR/BuiltinOps.td"
+include "mlir/IR/PatternBase.td"
 include "Dialect/OQ3/IR/OQ3Ops.td"
 
 def CBitNotNotPat : Pat<
