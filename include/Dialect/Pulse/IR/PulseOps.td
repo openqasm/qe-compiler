@@ -796,7 +796,7 @@ def Pulse_ReturnOp : Pulse_Op<"return", [Pure, Terminator, ReturnLike, SequenceR
                     pulse.return %0, %1: i1, i1
                 }
             }];
-        let builders = [OpBuilder<(ins), [{ build($_builder, $_state, llvm::None); }]>];
+        let builders = [OpBuilder<(ins), [{ build($_builder, $_state, std::nullopt); }]>];
         let assemblyFormat = "attr-dict ($operands^ `:` type($operands))?";
 }
 

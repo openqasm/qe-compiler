@@ -88,7 +88,7 @@ findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
   if (op && op->getResult(0).getType().isInteger(1))
     return op->getResult(0);
 
-  return llvm::None;
+  return std::nullopt;
 }
 
 ::mlir::OpFoldResult

@@ -30,7 +30,7 @@ Optional<Type> convertCBitType(quir::CBitType t) {
   if (t.getWidth() <= 64)
     return IntegerType::get(t.getContext(), t.getWidth());
 
-  return llvm::None;
+  return std::nullopt;
 }
 
 Optional<Type> legalizeIndexType(mlir::IndexType t) { return t; }
@@ -68,7 +68,7 @@ Optional<Type> QuirTypeConverter::convertAngleType(Type t) {
     // for function types in func defs and calls
     return floatType;
   }
-  return llvm::None;
+  return std::nullopt;
 } // convertAngleType
 
 Optional<Value> QuirTypeConverter::angleSourceMaterialization(
@@ -78,6 +78,6 @@ Optional<Value> QuirTypeConverter::angleSourceMaterialization(
     auto castOp = builder.create<oq3::CastOp>(loc, aType, val);
     return castOp.out();
   } // for val : valRange
-  return llvm::None;
+  return std::nullopt;
 } // angleSourceMaterialization
 } // namespace mlir

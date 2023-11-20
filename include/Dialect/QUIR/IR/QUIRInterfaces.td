@@ -122,7 +122,7 @@ def QubitOpInterface : OpInterface<"QubitOpInterface"> {
                 operatedQubits.insert(nextOpQubits.begin(), nextOpQubits.end());
                 curOp = nextOp;
             }
-            return {llvm::None, operatedQubits};
+            return {std::nullopt, operatedQubits};
         }
 
         /// Get the next (lexicographically) operation (not necessarily of Qubit
@@ -139,7 +139,7 @@ def QubitOpInterface : OpInterface<"QubitOpInterface"> {
                 operatedQubits.insert(nextOpQubits.begin(), nextOpQubits.end());
                 curOp = nextOp;
             }
-            return {llvm::None, operatedQubits};
+            return {std::nullopt, operatedQubits};
         }
 
         /// Get the next (lexicographically) Qubit operation implementing this interface
@@ -157,7 +157,7 @@ def QubitOpInterface : OpInterface<"QubitOpInterface"> {
             if (auto nextOpValue = nextOp.hasValue())
                 if (OpClass castOp = dyn_cast<OpClass>(nextOpValue))
                     return castOp;
-            return llvm::None;
+            return std::nullopt;
         }
     }];
 }

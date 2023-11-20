@@ -93,7 +93,7 @@ public:
 
   virtual std::optional<qssc::arguments::BindArgumentsImplementationFactory *>
   getBindArgumentsImplementationFactory() {
-    return llvm::None;
+    return std::nullopt;
   };
 
   virtual ~TargetSystem() = default;

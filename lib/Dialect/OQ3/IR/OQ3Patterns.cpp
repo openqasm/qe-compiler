@@ -41,10 +41,10 @@ namespace {
 static std::optional<mlir::Value>
 getI1InputFromExtensionOp(mlir::Operation *op) {
   if (!op)
-    return llvm::None;
+    return std::nullopt;
 
   if (!mlir::isa<mlir::arith::ExtUIOp>(op) && !mlir::isa<CastOp>(op))
-    return llvm::None;
+    return std::nullopt;
 
   assert(op->getNumOperands() == 1 &&
          "Cannot extract I1 operand from operations that don't have exactly 1 "
@@ -54,7 +54,7 @@ getI1InputFromExtensionOp(mlir::Operation *op) {
   if (operand.getType().isSignlessInteger(1))
     return operand;
 
-  return llvm::None;
+  return std::nullopt;
 }
 
 // This pattern detects DAGs that result from qasm `bit x; bool y = (x==1);`

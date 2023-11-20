@@ -53,7 +53,7 @@ Optional<Type> convertCBitType(quir::CBitType t) {
   if (t.getWidth() <= 64)
     return IntegerType::get(t.getContext(), t.getWidth());
 
-  return llvm::None;
+  return std::nullopt;
 }
 
 template <typename T>

@@ -149,11 +149,11 @@ template <class FirstOp, class SecondOp>
 Optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
   std::optional<Operation *> secondOp = nextQuantumOpOrNull(firstOp);
   if (!secondOp)
-    return llvm::None;
+    return std::nullopt;
 
   auto secondOpByClass = dyn_cast<SecondOp>(*secondOp);
   if (!secondOpByClass)
-    return llvm::None;
+    return std::nullopt;
 
   // Check for overlap between currQubits and what's operated on by nextOp
   std::set<uint> firstQubits = QubitOpInterface::getOperatedQubits(firstOp);
@@ -161,7 +161,7 @@ Optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
       QubitOpInterface::getOperatedQubits(secondOpByClass);
 
   if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
-    return llvm::None;
+    return std::nullopt;
   return secondOpByClass;
 }
 

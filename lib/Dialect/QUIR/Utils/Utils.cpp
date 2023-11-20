@@ -228,7 +228,7 @@ std::optional<uint> lookupQubitId(const Value &val) {
         }
       } // if parentOp is funcOp
     }   // if val is blockArg
-    return llvm::None;
+    return std::nullopt;
   } // if !declOp
   int id = declOp.id().getValue();
   assert(id >= 0 && "Declared ID of qubit is < 0");
@@ -242,11 +242,11 @@ std::optional<Operation *> nextQuantumOpOrNull(Operation *op) {
       return nextOp;
     if (nextOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
       // control flow found, no next quantum op
-      return llvm::None;
+      return std::nullopt;
     }
     curOp = nextOp;
   }
-  return llvm::None;
+  return std::nullopt;
 } // nextQuantumOpOrNull
 
 std::optional<Operation *> prevQuantumOpOrNull(Operation *op) {
@@ -256,11 +256,11 @@ std::optional<Operation *> prevQuantumOpOrNull(Operation *op) {
       return prevOp;
     if (prevOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
       // control flow found, no prev quantum op
-      return llvm::None;
+      return std::nullopt;
     }
     curOp = prevOp;
   }
-  return llvm::None;
+  return std::nullopt;
 } // prevQuantumOpOrNull
 
 std::optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op) {
@@ -274,7 +274,7 @@ std::optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op) {
     }
     curOp = nextOp;
   }
-  return llvm::None;
+  return std::nullopt;
 } // nextQuantumOrControlFlowOrNull
 
 std::optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op) {
@@ -288,7 +288,7 @@ std::optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op) {
     }
     curOp = prevOp;
   }
-  return llvm::None;
+  return std::nullopt;
 } // prevQuantumOrControlFlowOrNull
 
 bool isQuantumOp(Operation *op) {

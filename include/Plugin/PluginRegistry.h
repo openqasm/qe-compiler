@@ -41,7 +41,7 @@ public:
     PluginRegistry &pluginRegistry = instance();
     auto it = pluginRegistry.registry.find(pluginName);
     if (it == pluginRegistry.registry.end())
-      return llvm::None;
+      return std::nullopt;
     return &it->second;
   }
 

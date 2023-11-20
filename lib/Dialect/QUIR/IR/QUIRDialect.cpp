@@ -108,7 +108,7 @@ mlir::Type parseOptionalWidth(mlir::AsmParser &parser) {
 
   // non-parameterized Qubit type?
   if (parser.parseOptionalLess())
-    return QUIRType::get(parser.getContext(), llvm::None);
+    return QUIRType::get(parser.getContext(), std::nullopt);
 
   // incorrect syntax
   if (parser.parseInteger(width) || parser.parseGreater())

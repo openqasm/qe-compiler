@@ -106,7 +106,7 @@ std::optional<OpType> nextQuantumOpOrNullOfType(Operation *op) {
   auto nextOperation = nextQuantumOpOrNull(op);
   if (nextOperation && isa<OpType>(*nextOperation))
     return dyn_cast<OpType>(*nextOperation);
-  return llvm::None;
+  return std::nullopt;
 }
 
 /// Get the previous Op that has the CPTPOp or UnitaryOp trait, or return null
@@ -122,7 +122,7 @@ std::optional<OpType> prevQuantumOpOrNullOfType(Operation *op) {
   auto prevOperation = prevQuantumOpOrNull(op);
   if (prevOperation && isa<OpType>(*prevOperation))
     return dyn_cast<OpType>(*prevOperation);
-  return llvm::None;
+  return std::nullopt;
 }
 
 /// Get the next Op that has the CPTPOp or UnitaryOp trait, or is control flow

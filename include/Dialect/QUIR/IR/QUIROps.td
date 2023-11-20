@@ -678,7 +678,7 @@ def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, Pure, Terminator,
                     quir.return %0, %1: i1, i1
                 }
             }];
-        let builders = [OpBuilder<(ins), [{ build($_builder, $_state, llvm::None); }]>];
+        let builders = [OpBuilder<(ins), [{ build($_builder, $_state, std::nullopt); }]>];
         let assemblyFormat = "attr-dict ($operands^ `:` type($operands))?";
 }
 

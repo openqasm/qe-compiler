@@ -53,7 +53,7 @@ createGlobalMemrefOp(mlir::OpBuilder &builder, mlir::Location loc,
 
   if (!containingModule) {
     insertionAnchor->emitOpError("Missing a global ModuleOp container.");
-    return llvm::None;
+    return std::nullopt;
   }
 
   builder.setInsertionPoint(&containingModule.front());
@@ -174,7 +174,7 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
   if (!globalMemrefOp) {
     variableOp.emitOpError("Cannot lookup a variable declaration for " +
                            variableOp.variable_name());
-    return llvm::None;
+    return std::nullopt;
   }
 
   auto surroundingFunction =
@@ -182,7 +182,7 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
   if (!surroundingFunction) {
     variableOp.emitOpError("Variable use of " + variableOp.variable_name() +
                            " outside functions not supported");
-    return llvm::None;
+    return std::nullopt;
   }
 
   // Search for an existing memref::GetGlobalOp in the surrounding function by

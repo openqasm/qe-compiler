@@ -57,7 +57,7 @@ interfaces_impl::getNextQubitOp(mlir::Operation *op) {
       return nextOp;
     curOp = nextOp;
   }
-  return llvm::None;
+  return std::nullopt;
 }
 
 std::set<uint32_t>

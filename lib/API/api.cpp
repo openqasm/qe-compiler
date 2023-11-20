@@ -640,13 +640,13 @@ compile_(int argc, char const **argv, std::string *outputString,
         (emitAction == Action::GenQEM) ? "ZIP" : config.targetName.value();
     auto payloadInfo =
         qssc::payload::registry::PayloadRegistry::lookupPluginInfo(payloadName);
-    if (payloadInfo == llvm::None)
+    if (payloadInfo == std::nullopt)
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                      "Unsupported target-specific payload: " +
                                          payloadName);
     if (outputFilename == "-") {
       payload = std::move(
-          payloadInfo.getValue()->createPluginInstance(llvm::None).get());
+          payloadInfo.getValue()->createPluginInstance(std::nullopt).get());
     } else {
       const qssc::payload::PayloadConfig payloadConfig{fNamePrefix,
                                                        fNamePrefix};
@@ -816,7 +816,7 @@ public:
     auto pos = parameterMap.find(name_);
 
     if (pos == parameterMap.end())
-      return llvm::None;
+      return std::nullopt;
     return pos->second;
   }
 

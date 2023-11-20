@@ -37,7 +37,7 @@ using namespace mlir::pulse;
 std::optional<int64_t> interfaces_impl::getTimepoint(mlir::Operation *op) {
   if (op->hasAttr("pulse.timepoint"))
     return op->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
-  return llvm::None;
+  return std::nullopt;
 }
 
 void interfaces_impl::setTimepoint(mlir::Operation *op, int64_t timepoint) {
@@ -51,7 +51,7 @@ std::optional<uint64_t> interfaces_impl::getSetupLatency(Operation *op) {
   if (op->hasAttr("pulse.setupLatency"))
     return static_cast<uint64_t>(
         op->getAttrOfType<IntegerAttr>("pulse.setupLatency").getInt());
-  return llvm::None;
+  return std::nullopt;
 }
 
 void interfaces_impl::setSetupLatency(Operation *op, uint64_t setupLatency) {
