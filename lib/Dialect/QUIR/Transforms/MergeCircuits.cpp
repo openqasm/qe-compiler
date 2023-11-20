@@ -228,13 +228,6 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
 CircuitOp
 MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
                                 llvm::StringMap<Operation *> *symbolMap) {
-  // auto circuitAttr =
-  // callCircuitOp->getAttrOfType<FlatSymbolRefAttr>("callee");
-  // assert(circuitAttr && "Requires a 'callee' symbol reference attribute");
-
-  // auto circuitOp = SymbolTable::lookupNearestSymbolFrom<CircuitOp>(
-  //     callCircuitOp, circuitAttr);
-
   // look for func def match
   auto search = symbolMap->find(callCircuitOp.callee());
 
