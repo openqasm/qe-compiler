@@ -107,9 +107,7 @@ void SubroutineCloningPass::processCallOp(Operation *op,
                     FlatSymbolRefAttr::get(&getContext(), mangledName));
 
     // does the mangled function already exist?
-    Operation *mangledOp =
-        SymbolTable::lookupSymbolIn(moduleOperation, mangledName);
-    if (mangledOp) // nothing to do
+    if (symbolOps.find(mangledName) != symbolOps.end())
       return;
 
     // clone the func def with the new name
@@ -134,6 +132,8 @@ void SubroutineCloningPass::processCallOp(Operation *op,
 
     // add calls within the new func def to the callWorkList
     newFunc->walk([&](CallLikeOp op) { callWorkList.push_back(op); });
+
+    symbolOps[mangledName] = newFunc.getOperation();
 
   } else { // matching function not found
     callOp->emitOpError() << "No matching function def found for "
