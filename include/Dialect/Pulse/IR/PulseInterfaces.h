@@ -21,7 +21,7 @@
 #ifndef PULSE_INTERFACES_H
 #define PULSE_INTERFACES_H
 
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/OpDefinition.h"
 
 #include "llvm/Support/Error.h"

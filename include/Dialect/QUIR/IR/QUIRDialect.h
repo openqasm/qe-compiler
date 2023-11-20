@@ -24,7 +24,7 @@
 #include "Dialect/OQ3/IR/OQ3Dialect.h"
 #include "Dialect/QCS/IR/QCSDialect.h"
 
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/SCF/SCF.h"
 #include "mlir/IR/BuiltinOps.h"

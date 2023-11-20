@@ -24,7 +24,7 @@
 #include "Dialect/OQ3/IR/OQ3Types.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/SCF/SCF.h"
 #include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/BlockAndValueMapping.h"
