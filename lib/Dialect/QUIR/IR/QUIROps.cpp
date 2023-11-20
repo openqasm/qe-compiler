@@ -30,6 +30,7 @@
 #include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
+#include "mlir/IR/ValueRange.h"
 #include "mlir/Interfaces/CallInterfaces.h"
 #include "llvm/ADT/MapVector.h"
 
@@ -185,7 +186,7 @@ auto CallGateOp::getCallableForCallee() -> CallInterfaceCallable {
 
 /// Get the argument operands to the called function, this is required by the
 /// call interface.
-auto CallGateOp::getArgOperands() -> Operation::operand_range {
+auto CallGateOp::getArgOperands() -> mlir::OperandRange {
   return operands();
 }
 
@@ -201,10 +202,10 @@ auto CallDefcalMeasureOp::getCallableForCallee() -> CallInterfaceCallable {
   return (*this)->getAttrOfType<SymbolRefAttr>("callee");
 }
 
-auto CallDefCalGateOp::getArgOperands() -> Operation::operand_range {
+auto CallDefCalGateOp::getArgOperands() -> mlir::OperandRange {
   return operands();
 }
-auto CallDefcalMeasureOp::getArgOperands() -> Operation::operand_range {
+auto CallDefcalMeasureOp::getArgOperands() -> mlir::OperandRange {
   return operands();
 }
 
@@ -245,7 +246,7 @@ auto CallSubroutineOp::getCallableForCallee() -> CallInterfaceCallable {
 
 /// Get the argument operands to the called function, this is required by the
 /// call interface.
-auto CallSubroutineOp::getArgOperands() -> Operation::operand_range {
+auto CallSubroutineOp::getArgOperands() -> mlir::OperandRange {
   return operands();
 }
 
