@@ -169,7 +169,7 @@ def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [Pure, NoTerminat
     let regions = (region AnyRegion:$body);
 
     let assemblyFormat = [{
-        attr-dict $body
+        attr-dict-with-keyword $body
     }];
 }
 
