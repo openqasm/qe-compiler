@@ -229,6 +229,7 @@ CircuitOp
 MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
                                 llvm::StringMap<Operation *> *symbolMap) {
   // look for func def match
+  assert(symbolMap && "a valid symbolMap pointer must be provided");
   auto search = symbolMap->find(callCircuitOp.callee());
 
   assert(search != symbolMap->end() && "matching circuit not found");
