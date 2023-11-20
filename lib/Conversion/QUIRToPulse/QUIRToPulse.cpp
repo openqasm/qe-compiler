@@ -24,7 +24,7 @@
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BlockAndValueMapping.h"
-#include "mlir/Parser.h"
+#include "mlir/Parser/Parser.h"
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
