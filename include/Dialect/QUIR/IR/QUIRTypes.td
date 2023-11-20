@@ -58,8 +58,9 @@ def QUIR_AngleType : QUIR_Type<"Angle", "angle"> {
     }];
 
     let parameters = (ins "Optional<int>":$width);
-    // TODO in LLVM 15+, the optional width could be handled with assembly declarative syntax.
-    // let assemblyFormat = "(`<` $width^ `>`)?";
+
+    let assemblyFormat = "(`<` $width^ `>`)?";
+
     let genVerifyDecl = 1;
 }
 

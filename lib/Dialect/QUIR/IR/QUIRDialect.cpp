@@ -122,23 +122,6 @@ mlir::Type parseOptionalWidth(mlir::AsmParser &parser) {
   return QUIRType::get(parser.getContext(), width);
 }
 
-mlir::Type AngleType::parse(mlir::AsmParser &parser) {
-  return parseOptionalWidth<AngleType>(parser);
-}
-
-static void printOptionalWidth(llvm::Optional<int> width,
-                               mlir::AsmPrinter &printer) {
-  if (width.hasValue()) {
-    printer << "<";
-    printer.printStrippedAttrOrType(width);
-    printer << ">";
-  }
-}
-
-void AngleType::print(mlir::AsmPrinter &printer) const {
-  printOptionalWidth(getImpl()->width, printer);
-}
-
 LogicalResult QubitType::verify(function_ref<InFlightDiagnostic()> emitError,
                                 int width) {
   if (width <= 0)
