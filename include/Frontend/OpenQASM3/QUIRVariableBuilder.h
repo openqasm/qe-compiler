@@ -22,7 +22,7 @@
 #ifndef OPENQASM3_QUIR_VARIABLE_BUILDER_H
 #define OPENQASM3_QUIR_VARIABLE_BUILDER_H
 
-#include <mlir/Dialect/StandardOps/IR/Ops.h>
+#include "mlir/IR/BuiltinOps.h"
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinOps.h>
 
