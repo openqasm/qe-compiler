@@ -23,6 +23,7 @@
 #ifndef QSSC_H
 #define QSSC_H
 
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
