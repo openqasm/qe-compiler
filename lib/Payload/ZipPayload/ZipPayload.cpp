@@ -44,7 +44,7 @@ int qssc::payload::init() {
       [](std::optional<PayloadConfig> config)
           -> llvm::Expected<std::unique_ptr<payload::Payload>> {
         if (config.has_value())
-          return std::make_unique<ZipPayload>(config.getValue());
+          return std::make_unique<ZipPayload>(config.value());
         return std::make_unique<ZipPayload>();
       });
   return registered ? 0 : -1;
