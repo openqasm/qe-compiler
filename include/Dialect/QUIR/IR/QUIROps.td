@@ -167,7 +167,7 @@ def QUIR_Builtin_UOp : QUIR_Op<"builtin_U", [
     }];
 }
 
-def QUIR_CallGateOp : QUIR_Op<"call_gate", [DeclareOpInterfaceMethods<CallOpInterface>,
+def QUIR_CallGateOp : QUIR_Op<"call_gate", [CallOpInterface,
         UnitaryOp,
         DeclareOpInterfaceMethods<QubitOpInterface, ["getOperatedQubits"]>,
         NonInterferingNonDeadSideEffect]> {
@@ -216,7 +216,7 @@ def QUIR_CallGateOp : QUIR_Op<"call_gate", [DeclareOpInterfaceMethods<CallOpInte
 }
 
 def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [
-            DeclareOpInterfaceMethods<CallOpInterface>,
+            CallOpInterface,
             UnitaryOp,
             NonInterferingNonDeadSideEffect]> {
     let summary = "A call to a user-defined defcal quantum gate that needs to be specialized for input operands";
@@ -264,7 +264,7 @@ def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [
 }
 
 def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
-            DeclareOpInterfaceMethods<CallOpInterface>,
+            CallOpInterface,
             CPTPOp,
             NonInterferingNonDeadSideEffect]> {
     let summary = "A call to a user-defined defcal qubit measurement that needs to be specialized for input operands";
@@ -315,7 +315,7 @@ def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
     let hasVerifier = 1;
 }
 
-def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [DeclareOpInterfaceMethods<CallOpInterface>]> {
+def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [CallOpInterface]> {
     let summary = "A call to a user-defined subroutine function that needs to be specialized for input operands";
     let description = [{
         The `quir.call_subroutine` operation represents calls to user-defined subroutine functions
