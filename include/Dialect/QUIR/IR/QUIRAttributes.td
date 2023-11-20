@@ -78,7 +78,7 @@ def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
         DurationAttr getConvertedDurationAttr(const TimeUnits targetUnits, const double dt);
     }];
 
-  let assemblyFormat = "`<` $duration `:` $type `>`";
+  let assemblyFormat = "`<` $duration `>`";
 
 }
 
