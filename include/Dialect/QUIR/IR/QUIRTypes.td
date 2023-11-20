@@ -57,7 +57,8 @@ def QUIR_AngleType : QUIR_Type<"Angle", "angle"> {
         A QUIR Angle represents a classical angle as a fixed-point number.
     }];
 
-    let parameters = (ins "Optional<int>":$width);
+    let parameters = (ins OptionalParameter<"Optional<int>">:$width);
+
 
     let assemblyFormat = "(`<` $width^ `>`)?";
 
