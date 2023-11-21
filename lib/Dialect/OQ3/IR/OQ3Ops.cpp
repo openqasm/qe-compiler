@@ -97,7 +97,7 @@ CBitExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
   auto foundDefiningBitOrNone = findDefiningBitInBitmap(operand(), indexAttr());
 
   if (foundDefiningBitOrNone)
-    return foundDefiningBitOrNone.getValue();
+    return foundDefiningBitOrNone.value();
   return nullptr;
 }
 

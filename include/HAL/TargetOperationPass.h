@@ -61,14 +61,14 @@ protected:
       return nullptr;
     }
 
-    auto target = targetInfo.getValue()->getTarget(
+    auto target = targetInfo.value()->getTarget(
         &mlir::OperationPass<OpT>::getContext());
     if (!target) {
       // look for a child target that matches
       for (const auto &childName : TargetT::childNames)
         if ((targetInfo =
                  registry::TargetSystemRegistry::lookupPluginInfo(childName)) &&
-            (target = targetInfo.getValue()->getTarget(
+            (target = targetInfo.value()->getTarget(
                  &mlir::OperationPass<OpT>::getContext())))
           break;
       if (!target) {

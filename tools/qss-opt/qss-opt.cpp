@@ -179,7 +179,7 @@ auto main(int argc, char **argv) -> int {
     // TargetInfo::getTarget.
     // We do this only because MlirOptMain does not expose the MLIRContext
     // it creates for us.
-    if (!targetInfo.getValue()->createTarget(nullptr, conf)) {
+    if (!targetInfo.value()->createTarget(nullptr, conf)) {
       llvm::errs() << "Error: Target " + targetStr + " could not be created.\n";
       return 1;
     }

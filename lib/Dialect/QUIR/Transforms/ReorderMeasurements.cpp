@@ -60,7 +60,7 @@ bool mayMoveVariableLoadOp(MeasureOp measureOp,
   bool moveVariableLoadOp = true;
   auto *currentBlock = variableLoadOp->getBlock();
   currentBlock->walk([&](oq3::VariableAssignOp assignOp) {
-    if (assignOp.variable_name() == variableLoadOp.variable_name()) {
+    if (assignOp.getVariableName() == variableLoadOp.getVariableName()) {
       moveVariableLoadOp = assignOp->isBeforeInBlock(measureOp);
       if (!moveVariableLoadOp) {
         auto assignCastOp =

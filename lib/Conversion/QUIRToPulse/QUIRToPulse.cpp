@@ -41,7 +41,7 @@ void QUIRToPulsePass::runOnOperation() {
 
   // check for command line override of the path to waveform container
   if (waveformContainer.has_value())
-    WAVEFORM_CONTAINER = waveformContainer.getValue();
+    WAVEFORM_CONTAINER = waveformContainer.value();
 
   // parse the waveform container ops
   if (!WAVEFORM_CONTAINER.empty())

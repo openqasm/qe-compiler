@@ -102,7 +102,7 @@ struct VariableDeclarationConversionPattern
     if (!gmoOrNone)
       return failure();
 
-    auto gmo = gmoOrNone.getValue();
+    auto gmo = gmoOrNone.value();
 
     if (externalizeOutputVariables && declareOp.isOutputVariable()) {
       // for generating defined symbols, global memrefs need an initializer
@@ -173,14 +173,14 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
 
   if (!globalMemrefOp) {
     variableOp.emitOpError("Cannot lookup a variable declaration for " +
-                           variableOp.variable_name());
+                           variableOp.getVariableName());
     return std::nullopt;
   }
 
   auto surroundingFunction =
       variableOp->template getParentOfType<mlir::func::FuncOp>();
   if (!surroundingFunction) {
-    variableOp.emitOpError("Variable use of " + variableOp.variable_name() +
+    variableOp.emitOpError("Variable use of " + variableOp.getVariableName() +
                            " outside functions not supported");
     return std::nullopt;
   }
@@ -215,7 +215,7 @@ struct VariableUseConversionPattern
     if (!varRefOrNone)
       return failure();
 
-    auto varRef = varRefOrNone.getValue();
+    auto varRef = varRefOrNone.value();
     auto loadOp =
         rewriter.create<mlir::affine::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
 
@@ -238,7 +238,7 @@ struct ArrayElementUseConversionPattern
     auto varRefOrNone = findOrCreateGetGlobalMemref(useOp, rewriter);
     if (!varRefOrNone)
       return failure();
-    auto varRef = varRefOrNone.getValue();
+    auto varRef = varRefOrNone.value();
 
     auto indexOp = rewriter.create<mlir::arith::ConstantOp>(
         useOp.getLoc(), rewriter.getIndexType(), useOp.indexAttr());
@@ -263,7 +263,7 @@ struct VariableAssignConversionPattern
     auto varRefOrNone = findOrCreateGetGlobalMemref(assignOp, rewriter);
     if (!varRefOrNone)
       return failure();
-    auto varRef = varRefOrNone.getValue();
+    auto varRef = varRefOrNone.value();
 
     rewriter.create<mlir::affine::AffineStoreOp>(
         assignOp.getLoc(), adaptor.assigned_value(), varRef.getResult(),
@@ -288,7 +288,7 @@ struct ArrayElementAssignConversionPattern
 
     if (!varRefOrNone)
       return failure();
-    auto varRef = varRefOrNone.getValue();
+    auto varRef = varRefOrNone.value();
 
     auto indexOp = rewriter.create<mlir::arith::ConstantOp>(
         assignOp.getLoc(), rewriter.getIndexType(), assignOp.indexAttr());
