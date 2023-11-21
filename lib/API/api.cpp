@@ -429,7 +429,7 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
   qssc::hal::registry::TargetSystemInfo &targetInfo =
       *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(
            targetName.value_or(""))
-           .getValueOr(qssc::hal::registry::TargetSystemRegistry::
+           .value_or(qssc::hal::registry::TargetSystemRegistry::
                            nullTargetSystemInfo());
 
   std::optional<llvm::StringRef> conf{};
@@ -648,12 +648,12 @@ compile_(int argc, char const **argv, std::string *outputString,
                                          payloadName);
     if (outputFilename == "-") {
       payload = std::move(
-          payloadInfo.getValue()->createPluginInstance(std::nullopt).get());
+          payloadInfo.value()->createPluginInstance(std::nullopt).get());
     } else {
       const qssc::payload::PayloadConfig payloadConfig{fNamePrefix,
                                                        fNamePrefix};
       payload = std::move(
-          payloadInfo.getValue()->createPluginInstance(payloadConfig).get());
+          payloadInfo.value()->createPluginInstance(payloadConfig).get());
     }
   }
 
@@ -785,7 +785,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   // Keep the output if no errors have occurred so far
   if (outputString) {
-    outStringStream.getValue().str();
+    outStringStream.value().str();
     if (outputFile && outputFilename != "-")
       outputFile->os() << *outputString;
   }
@@ -838,7 +838,7 @@ _bindArguments(std::string_view target, std::string_view configPath,
 
   qssc::hal::registry::TargetSystemInfo &targetInfo =
       *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(target)
-           .getValueOr(qssc::hal::registry::TargetSystemRegistry::
+           .value_or(qssc::hal::registry::TargetSystemRegistry::
                            nullTargetSystemInfo());
 
   auto created = targetInfo.createTarget(&context, llvm::StringRef(configPath));
