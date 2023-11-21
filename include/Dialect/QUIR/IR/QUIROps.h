@@ -22,6 +22,7 @@
 #include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
