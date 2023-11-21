@@ -43,7 +43,7 @@ public:
   DurationTypeConverter(const TimeUnits convertUnits)
       : convertUnits_(convertUnits) {
     // Convert durations to the appropriate type
-    addConversion([&](mlir::Type t) -> Optional<Type> {
+    addConversion([&](mlir::Type t) -> std::optional<Type> {
       // All non-durations are legal in the conversion.
       if (!t.isa<DurationType>())
         return t;

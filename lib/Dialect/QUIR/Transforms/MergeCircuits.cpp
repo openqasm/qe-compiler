@@ -145,7 +145,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 };  // struct CircuitAndCircuitPattern
 
 template <class FirstOp, class SecondOp>
-Optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
+std::optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
   std::optional<Operation *> secondOp = nextQuantumOpOrNull(firstOp);
   if (!secondOp)
     return std::nullopt;

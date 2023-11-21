@@ -25,7 +25,7 @@
 namespace mlir {
 
 namespace {
-Optional<Type> convertCBitType(quir::CBitType t) {
+std::optional<Type> convertCBitType(quir::CBitType t) {
 
   if (t.getWidth() <= 64)
     return IntegerType::get(t.getContext(), t.getWidth());
@@ -33,7 +33,7 @@ Optional<Type> convertCBitType(quir::CBitType t) {
   return std::nullopt;
 }
 
-Optional<Type> legalizeIndexType(mlir::IndexType t) { return t; }
+std::optional<Type> legalizeIndexType(mlir::IndexType t) { return t; }
 } // anonymous namespace
 
 QuirTypeConverter::QuirTypeConverter() {
@@ -44,7 +44,7 @@ QuirTypeConverter::QuirTypeConverter() {
   addConversion(legalizeIndexType);
 }
 
-Optional<Type> QuirTypeConverter::convertAngleType(Type t) {
+std::optional<Type> QuirTypeConverter::convertAngleType(Type t) {
 
   auto *context = t.getContext();
   if (auto angleType = t.dyn_cast<quir::AngleType>()) {
@@ -71,7 +71,7 @@ Optional<Type> QuirTypeConverter::convertAngleType(Type t) {
   return std::nullopt;
 } // convertAngleType
 
-Optional<Value> QuirTypeConverter::angleSourceMaterialization(
+std::optional<Value> QuirTypeConverter::angleSourceMaterialization(
     OpBuilder &builder, quir::AngleType aType, ValueRange valRange,
     Location loc) {
   for (Value val : valRange) {

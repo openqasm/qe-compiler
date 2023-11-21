@@ -48,7 +48,7 @@ void affineScalarReplaceCopy(mlir::func::FuncOp f, DominanceInfo &domInfo,
 namespace mlir::quir {
 
 namespace {
-Optional<Type> convertCBitType(quir::CBitType t) {
+std::optional<Type> convertCBitType(quir::CBitType t) {
 
   if (t.getWidth() <= 64)
     return IntegerType::get(t.getContext(), t.getWidth());
@@ -57,7 +57,7 @@ Optional<Type> convertCBitType(quir::CBitType t) {
 }
 
 template <typename T>
-Optional<Type> legalizeType(T t) {
+std::optional<Type> legalizeType(T t) {
   return t;
 }
 

@@ -613,7 +613,7 @@ void SwitchOp::print(mlir::OpAsmPrinter &printer) {
 /// correspond to a constant value for each operand, or null if that operand is
 /// not a constant.
 void quir::SwitchOp::getSuccessorRegions(
-    Optional<unsigned> index, ArrayRef<Attribute> operands,
+    std::optional<unsigned> index, ArrayRef<Attribute> operands,
     SmallVectorImpl<RegionSuccessor> &regions) {
   // regions branch back to parent operation
   if (index.has_value()) {
