@@ -56,7 +56,7 @@ void InlineRegionPass::runOnOperation() {
     // Build the inliner interface.
     DialectAgnosticInlinerInterface interface(&getContext());
 
-    for (auto caller : llvm::make_early_inc_range(function.getOps<CallOp>())) {
+    for (auto caller : llvm::make_early_inc_range(function.getOps<func::CallOp>())) {
       auto callee =
           dyn_cast_or_null<mlir::func::FuncOp>(module.lookupSymbol(caller.getCallee()));
       if (!callee)

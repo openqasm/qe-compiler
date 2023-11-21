@@ -295,7 +295,7 @@ void ConvertDurationUnitsPass::runOnOperation() {
   // the target output duration type.
   target
       .addDynamicallyLegalOp<quir::DelayOp, quir::ReturnOp, quir::CallCircuitOp,
-                             mlir::ReturnOp, mlir::CallOp>(
+                             mlir::func::ReturnOp, mlir::func::CallOp>(
           [&](mlir::Operation *op) {
             for (auto type : op->getOperandTypes()) {
               if (checkTypeNeedsConversion(type, targetConvertUnits))
@@ -316,8 +316,8 @@ void ConvertDurationUnitsPass::runOnOperation() {
                DurationUnitsConversionPattern<quir::ReturnOp>,
                DurationUnitsReturnsTypeOpConversionPattern<quir::CallCircuitOp>,
                DurationUnitsFunctionOpConversionPattern<quir::CircuitOp>,
-               DurationUnitsConversionPattern<mlir::ReturnOp>,
-               DurationUnitsReturnsTypeOpConversionPattern<mlir::CallOp>,
+               DurationUnitsConversionPattern<mlir::func::ReturnOp>,
+               DurationUnitsReturnsTypeOpConversionPattern<mlir::func::CallOp>,
                DurationUnitsFunctionOpConversionPattern<mlir::func::FuncOp>>(
       &getContext(), typeConverter);
 

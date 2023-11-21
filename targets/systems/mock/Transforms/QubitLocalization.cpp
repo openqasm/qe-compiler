@@ -529,7 +529,7 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
     (*mockBuilders)[nodeId]->clone(*op, mockMapping[nodeId]);
 } // processOp DelayOp
 
-void mock::MockQubitLocalizationPass::processOp(mlir::ReturnOp &returnOp) {
+void mock::MockQubitLocalizationPass::processOp(mlir::func::ReturnOp &returnOp) {
   Operation *op = returnOp.getOperation();
   controllerBuilder->clone(*op, controllerMapping);
   FlatSymbolRefAttr symbolRef = SymbolRefAttr::get(op->getParentOp());
@@ -835,7 +835,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         processOp(delayOp);
       } else if (auto delayOp = dyn_cast<DelayCyclesOp>(op)) {
         processOp(delayOp);
-      } else if (auto returnOp = dyn_cast<mlir::ReturnOp>(op)) {
+      } else if (auto returnOp = dyn_cast<mlir::func::ReturnOp>(op)) {
         processOp(returnOp);
       } else if (auto yieldOp = dyn_cast<scf::YieldOp>(op)) {
         processOp(yieldOp);

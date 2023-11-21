@@ -78,7 +78,7 @@ void AddShotLoopPass::runOnOperation() {
   for (Operation &op : mainFunc.body().getOps()) {
     if (dyn_cast<SystemInitOp>(&op))
       continue;
-    if (dyn_cast<SystemFinalizeOp>(&op) || dyn_cast<mlir::ReturnOp>(&op)) {
+    if (dyn_cast<SystemFinalizeOp>(&op) || dyn_cast<mlir::func::ReturnOp>(&op)) {
       lastOp = &op;
       break;
     }

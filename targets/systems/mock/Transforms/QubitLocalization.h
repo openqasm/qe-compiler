@@ -61,7 +61,7 @@ struct MockQubitLocalizationPass
   void processOp(mlir::quir::CallDefcalMeasureOp &callOp);
   template <class DelayOpType>
   void processOp(DelayOpType &delayOp);
-  void processOp(mlir::ReturnOp &returnOp);
+  void processOp(mlir::func::ReturnOp &returnOp);
   void processOp(mlir::scf::YieldOp &yieldOp);
   void
   processOp(mlir::scf::IfOp &ifOp,

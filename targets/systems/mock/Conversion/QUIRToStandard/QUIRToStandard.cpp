@@ -43,15 +43,15 @@
 using namespace mlir;
 
 namespace qssc::targets::systems::mock::conversion {
-struct ReturnConversionPat : public OpConversionPattern<mlir::ReturnOp> {
+struct ReturnConversionPat : public OpConversionPattern<mlir::func::ReturnOp> {
 
   explicit ReturnConversionPat(MLIRContext *ctx, TypeConverter &typeConverter)
       : OpConversionPattern(typeConverter, ctx, /*benefit=*/1) {}
 
   LogicalResult
-  matchAndRewrite(mlir::ReturnOp retOp, OpAdaptor adaptor,
+  matchAndRewrite(mlir::func::ReturnOp retOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    rewriter.create<mlir::ReturnOp>(retOp->getLoc(), adaptor.getOperands());
+    rewriter.create<mlir::func::ReturnOp>(retOp->getLoc(), adaptor.getOperands());
     rewriter.replaceOp(retOp, {});
     return success();
   } // matchAndRewrite
@@ -202,10 +202,10 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
   target.addDynamicallyLegalOp<mlir::func::FuncOp>(
       [&](mlir::func::FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
-  target.addDynamicallyLegalOp<CallOp>([&](CallOp op) {
+  target.addDynamicallyLegalOp<func::CallOp>([&](func::CallOp op) {
     return typeConverter.isSignatureLegal(op.getCalleeType());
   });
-  target.addDynamicallyLegalOp<mlir::ReturnOp>([&](mlir::ReturnOp op) {
+  target.addDynamicallyLegalOp<mlir::func::ReturnOp>([&](mlir::func::ReturnOp op) {
     return typeConverter.isLegal(op.getOperandTypes());
   });
   // We mark `ConstantOp` legal so we don't err when attempting to convert a

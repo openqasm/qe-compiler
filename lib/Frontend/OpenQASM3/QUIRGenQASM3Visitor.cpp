@@ -252,7 +252,7 @@ void QUIRGenQASM3Visitor::initialize(
   Value intRef = builder.create<mlir::arith::ConstantOp>(
       initialLocation, builder.getIntegerAttr(builder.getIntegerType(32), 0));
   auto returnValueRange = ValueRange(intRef);
-  builder.create<mlir::ReturnOp>(initialLocation, returnValueRange);
+  builder.create<mlir::func::ReturnOp>(initialLocation, returnValueRange);
 
   // Set the builder to add circuit operations inside the for loop
   builder.setInsertionPointAfter(shotInit);
@@ -634,7 +634,7 @@ void QUIRGenQASM3Visitor::visit(const ASTFunctionCallNode *node) {
         varHandler.resolveQUIRVariableType(node->GetResult()));
   TypeRange resultRange(resultTypes.data(), resultTypes.size());
 
-  auto callOp = builder.create<CallOp>(getLocation(node), node->GetCallName(),
+  auto callOp = builder.create<func::CallOp>(getLocation(node), node->GetCallName(),
                                        resultRange, operandRange);
 
   // fill the expression in case the call result is assigned to something
@@ -696,7 +696,7 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
   if (buildingInCircuit)
     finishCircuit();
 
-  builder.create<mlir::ReturnOp>(getLocation(node));
+  builder.create<mlir::func::ReturnOp>(getLocation(node));
 
   // Restore SSA Values and OpBuilder as we exit the function
   builder = prevBuilder;
