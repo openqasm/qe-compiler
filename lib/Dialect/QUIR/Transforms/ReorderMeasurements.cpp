@@ -81,10 +81,10 @@ bool mayMoveCastOp(MeasureOp measureOp, oq3::CastOp castOp,
                    MoveListVec &moveList) {
   bool moveCastOp = false;
   auto variableLoadOp =
-      dyn_cast<oq3::VariableLoadOp>(castOp.arg().getDefiningOp());
+      dyn_cast<oq3::VariableLoadOp>(castOp.getArg().getDefiningOp());
   if (variableLoadOp)
     moveCastOp = mayMoveVariableLoadOp(measureOp, variableLoadOp, moveList);
-  auto castMeasureOp = dyn_cast<MeasureOp>(castOp.arg().getDefiningOp());
+  auto castMeasureOp = dyn_cast<MeasureOp>(castOp.getArg().getDefiningOp());
   if (castMeasureOp)
     moveCastOp = ((castMeasureOp != measureOp) &&
                   (castMeasureOp->isBeforeInBlock(measureOp) ||

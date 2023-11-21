@@ -108,10 +108,10 @@ struct CastToSameType : public OpRewritePattern<CastOp> {
       : OpRewritePattern<CastOp>(context, /*benefit=*/1) {}
   auto matchAndRewrite(CastOp castOp, mlir::PatternRewriter &rewriter) const
       -> LogicalResult override {
-    if (castOp.arg().getType() != castOp.out().getType())
+    if (castOp.getArg().getType() != castOp.getOut().getType())
       return failure();
 
-    rewriter.replaceOp(castOp, castOp.arg());
+    rewriter.replaceOp(castOp, castOp.getArg());
     return success();
   } // matchAndRewrite
 };  // struct CastToSameType

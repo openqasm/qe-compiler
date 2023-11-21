@@ -482,7 +482,7 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
       classicalQUIROpLocToConvertedPulseOpMap[angleLocHash] = angleCastedOp;
     } else if (auto castOp = dyn_cast<oq3::CastOp>(angleOp)) {
       addCircuitOperandToEraseList(angleOp);
-      auto castOpArg = castOp.arg();
+      auto castOpArg = castOp.getArg();
       if (auto paramCastOp =
               dyn_cast<qcs::ParameterLoadOp>(castOpArg.getDefiningOp())) {
         auto angleCastedOp = builder.create<oq3::CastOp>(

@@ -98,7 +98,7 @@ void LimitCBitWidthPass::processOp(
         "expect assigned_value() to be defined by a CastOp");
     signalPassFailure();
   }
-  auto constantOp = dyn_cast<arith::ConstantOp>(castOp.arg().getDefiningOp());
+  auto constantOp = dyn_cast<arith::ConstantOp>(castOp.getArg().getDefiningOp());
   if (!constantOp) {
     castOp.emitError("expect cast arg() to be a constant op");
     signalPassFailure();

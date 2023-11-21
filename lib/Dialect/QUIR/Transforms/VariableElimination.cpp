@@ -96,12 +96,12 @@ struct MaterializeIntToAngleCastPattern
   matchAndRewrite(oq3::CastOp castOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    if (!adaptor.arg().getType().isIntOrIndexOrFloat() ||
-        !castOp.out().getType().isa<mlir::quir::AngleType>())
+    if (!adaptor.getArg().getType().isIntOrIndexOrFloat() ||
+        !castOp.getOut().getType().isa<mlir::quir::AngleType>())
       return failure();
 
-    rewriter.replaceOpWithNewOp<oq3::CastOp>(castOp, castOp.out().getType(),
-                                             adaptor.arg());
+    rewriter.replaceOpWithNewOp<oq3::CastOp>(castOp, castOp.getOut().getType(),
+                                             adaptor.getArg());
 
     return success();
   } // matchAndRewrite
@@ -172,7 +172,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   // clang-format on
   target.addDynamicallyLegalOp<oq3::CastOp>([](oq3::CastOp op) {
     if (op.getType().isa<mlir::quir::CBitType>() ||
-        op.arg().getType().isa<mlir::quir::CBitType>())
+        op.getArg().getType().isa<mlir::quir::CBitType>())
       return false;
     return true;
   });

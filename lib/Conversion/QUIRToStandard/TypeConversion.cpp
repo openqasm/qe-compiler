@@ -76,7 +76,7 @@ std::optional<Value> QuirTypeConverter::angleSourceMaterialization(
     Location loc) {
   for (Value val : valRange) {
     auto castOp = builder.create<oq3::CastOp>(loc, aType, val);
-    return castOp.out();
+    return castOp.getOut();
   } // for val : valRange
   return std::nullopt;
 } // angleSourceMaterialization
