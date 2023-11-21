@@ -206,9 +206,6 @@ def QUIR_CallGateOp : QUIR_Op<"call_gate", [CallOpInterface,
         }]>];
 
     let extraClassDeclaration = [{
-        StringRef getCallee() { return callee(); }
-        FunctionType getCalleeType();
-
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
 
@@ -254,9 +251,6 @@ def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [
         }]>];
 
     let extraClassDeclaration = [{
-        StringRef getCallee() { return callee(); }
-        FunctionType getCalleeType();
-
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
 
@@ -304,9 +298,6 @@ def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
         }]>];
 
     let extraClassDeclaration = [{
-        StringRef getCallee() { return callee(); }
-        FunctionType getCalleeType();
-
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
 
@@ -358,9 +349,6 @@ def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [CallOpInterface]> {
         }]>];
 
     let extraClassDeclaration = [{
-        StringRef getCallee() { return callee(); }
-        FunctionType getCalleeType();
-
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
 
@@ -413,9 +401,6 @@ def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormal
         }]>];
 
     let extraClassDeclaration = [{
-        StringRef getCallee() { return callee(); }
-        FunctionType getCalleeType();
-
         mlir::OperandRange getArgOperands() {
             return {arg_operand_begin(), arg_operand_end()};
         }
