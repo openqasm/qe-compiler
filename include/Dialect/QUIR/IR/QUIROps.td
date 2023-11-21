@@ -612,14 +612,14 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
     /// included in the new circuit. Replaces references to cloned sub-values
     /// with the corresponding value that is copied, and adds those mappings to
     /// the mapper.
-    CircuitOp clone(BlockAndValueMapping &mapper);
+    CircuitOp clone(IRMapping &mapper);
     CircuitOp clone();
 
     /// Clone the internal blocks and attributes from this circuit into dest.
     /// Any cloned blocks are appended to the back of dest. This circuit
     /// asserts that the attributes of the current circuit and dest are
     /// compatible.
-    void cloneInto(CircuitOp dest, BlockAndValueMapping &mapper);
+    void cloneInto(CircuitOp dest, IRMapping &mapper);
 
     FunctionType getType() {
         return getTypeAttr().getValue().cast<FunctionType>();

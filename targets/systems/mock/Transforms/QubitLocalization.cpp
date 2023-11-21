@@ -30,7 +30,7 @@
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
@@ -105,7 +105,7 @@ void mock::MockQubitLocalizationPass::broadcastAndReceiveValue(
 } // broadcastValue
 
 void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
-    Region *from, Region *dest, BlockAndValueMapping &mapper) {
+    Region *from, Region *dest, IRMapping &mapper) {
   assert(dest && "expected valid region to clone into");
   cloneRegionWithoutOps(from, dest, dest->end(), mapper);
 } // cloneRegionWithoutOps
@@ -113,7 +113,7 @@ void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
 // clone region (from) into region (dest) before the given position
 void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
     Region *from, Region *dest, Region::iterator destPos,
-    BlockAndValueMapping &mapper) {
+    IRMapping &mapper) {
   assert(dest && "expected valid region to clone into");
   assert(from != dest && "cannot clone region into itself");
 

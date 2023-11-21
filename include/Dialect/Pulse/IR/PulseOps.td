@@ -734,14 +734,14 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
     /// included in the new sequence. Replaces references to cloned sub-values
     /// with the corresponding value that is copied, and adds those mappings to
     /// the mapper.
-    SequenceOp clone(BlockAndValueMapping &mapper);
+    SequenceOp clone(IRMapping &mapper);
     SequenceOp clone();
 
     /// Clone the internal blocks and attributes from this sequence into dest.
     /// Any cloned blocks are appended to the back of dest. This sequence
     /// asserts that the attributes of the current sequence and dest are
     /// compatible.
-    void cloneInto(SequenceOp dest, BlockAndValueMapping &mapper);
+    void cloneInto(SequenceOp dest, IRMapping &mapper);
 
     FunctionType getType() {
         return getTypeAttr().getValue().cast<FunctionType>();

@@ -22,7 +22,7 @@
 
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/Parser/Parser.h"
 #include "mlir/Support/FileUtilities.h"
 
@@ -385,7 +385,7 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
 
   // map original arguments for new sequence based on original sequences'
   // argument numbers
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
   auto baseArgNum = mergedSequenceOp.getNumArguments();
   for (std::size_t seqNum = 1; seqNum < sequenceOps.size(); seqNum++) {
     for (uint cnt = 0; cnt < sequenceOps[seqNum].getNumArguments(); cnt++) {

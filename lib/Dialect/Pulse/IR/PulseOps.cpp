@@ -18,7 +18,7 @@
 #include "Dialect/Pulse/IR/PulseDialect.h"
 
 #include "mlir/Dialect/Complex/IR/Complex.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/FunctionImplementation.h"
 #include "mlir/IR/OpImplementation.h"
@@ -342,7 +342,7 @@ static LogicalResult verify(SequenceOp op) {
 
 /// Clone the internal blocks and attributes from this sequence to the
 /// destination sequence.
-void SequenceOp::cloneInto(SequenceOp dest, BlockAndValueMapping &mapper) {
+void SequenceOp::cloneInto(SequenceOp dest, IRMapping &mapper) {
   // Add the attributes of this function to dest.
   llvm::MapVector<StringAttr, Attribute> newAttrMap;
   for (const auto &attr : dest->getAttrs())
@@ -365,7 +365,7 @@ void SequenceOp::cloneInto(SequenceOp dest, BlockAndValueMapping &mapper) {
 /// Using the provider mapper. Replace references to
 /// cloned sub-values with the corresponding copied value and
 /// add to the mapper
-SequenceOp SequenceOp::clone(BlockAndValueMapping &mapper) {
+SequenceOp SequenceOp::clone(IRMapping &mapper) {
   FunctionType newType = getType();
 
   // If the function contains a body, then its possible arguments
@@ -391,7 +391,7 @@ SequenceOp SequenceOp::clone(BlockAndValueMapping &mapper) {
 }
 
 SequenceOp SequenceOp::clone() {
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
   return clone(mapper);
 }
 

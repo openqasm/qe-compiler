@@ -88,7 +88,7 @@ parseDurationStr(const std::string &durationStr) {
     lowerUnitStr = "s";
 
   if (auto parsedUnits = mlir::quir::symbolizeTimeUnits(lowerUnitStr))
-    return std::make_pair(parsedDuration, parsedUnits.getValue());
+    return std::make_pair(parsedDuration, parsedUnits.value());
 
   return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                  llvm::Twine("Unknown duration unit ") +

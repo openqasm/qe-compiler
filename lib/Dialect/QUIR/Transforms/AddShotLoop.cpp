@@ -33,7 +33,7 @@
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/PassManager.h"
 
@@ -72,7 +72,7 @@ void AddShotLoopPass::runOnOperation() {
   shotInit->setAttr(getNumShotsAttrName(), build.getI32IntegerAttr(numShots));
 
   std::list<Operation *> toErase;
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
 
   Operation *lastOp = nullptr;
   for (Operation &op : mainFunc.getBody().getOps()) {

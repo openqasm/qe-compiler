@@ -46,7 +46,7 @@ struct OQ3InlinerInterface : public DialectInlinerInterface {
   // the given region. For OQ3, this hook can simply return true, as all OQ3
   // operations are currently inlinable.
   auto isLegalToInline(Operation *, Region *, bool,
-                       BlockAndValueMapping &) const -> bool final {
+                       IRMapping &) const -> bool final {
     return true;
   }
 };

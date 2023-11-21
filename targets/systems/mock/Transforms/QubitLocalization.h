@@ -29,7 +29,7 @@
 
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/Pass/Pass.h"
 
 #include <deque>
@@ -82,17 +82,17 @@ struct MockQubitLocalizationPass
                                 const mlir::Location &loc,
                                 const std::unordered_set<uint> &toNodeIds);
   void cloneRegionWithoutOps(mlir::Region *from, mlir::Region *dest,
-                             mlir::BlockAndValueMapping &mapper);
+                             mlir::IRMapping &mapper);
   void cloneRegionWithoutOps(mlir::Region *from, mlir::Region *dest,
                              mlir::Region::iterator destPos,
-                             mlir::BlockAndValueMapping &mapper);
+                             mlir::IRMapping &mapper);
   auto addMainFunction(mlir::Operation *moduleOperation,
                        const mlir::Location &loc) -> mlir::func::FuncOp;
   void cloneVariableDeclarations(mlir::ModuleOp topModuleOp);
 
   MockConfig *config;
   mlir::ModuleOp controllerModule;
-  mlir::BlockAndValueMapping controllerMapping;
+  mlir::IRMapping controllerMapping;
   mlir::OpBuilder *controllerBuilder;
   std::unordered_set<uint> seenNodeIds;
   std::unordered_set<uint> seenQubitIds;
@@ -102,7 +102,7 @@ struct MockQubitLocalizationPass
   mlir::DenseSet<mlir::Value> alreadyBroadcastValues;
   std::unordered_map<uint, mlir::Operation *> mockModules;   // one per nodeId
   std::unordered_map<uint, mlir::OpBuilder *> *mockBuilders; // one per nodeId
-  std::unordered_map<uint, mlir::BlockAndValueMapping>
+  std::unordered_map<uint, mlir::IRMapping>
       mockMapping; // one per nodeId
 
   llvm::StringRef getArgument() const override;

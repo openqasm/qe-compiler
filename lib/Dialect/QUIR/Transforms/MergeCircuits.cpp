@@ -23,7 +23,7 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
@@ -280,7 +280,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
 
   // map original arguments for new circuit based on original circuit
   // argument numbers
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
   auto baseArgNum = newCircuitOp.getNumArguments();
   int insertedCount = 0;
   for (uint cnt = 0; cnt < nextCircuitOp.getNumArguments(); cnt++) {

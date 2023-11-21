@@ -23,7 +23,7 @@
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/FunctionImplementation.h"
@@ -438,7 +438,7 @@ void CircuitOp::build(OpBuilder &builder, OperationState &state, StringRef name,
 
 /// Clone the internal blocks and attributes from this circuit to the
 /// destination circuit.
-void CircuitOp::cloneInto(CircuitOp dest, BlockAndValueMapping &mapper) {
+void CircuitOp::cloneInto(CircuitOp dest, IRMapping &mapper) {
   // Add the attributes of this function to dest.
   llvm::MapVector<StringAttr, Attribute> newAttrMap;
   for (const auto &attr : dest->getAttrs())
@@ -461,7 +461,7 @@ void CircuitOp::cloneInto(CircuitOp dest, BlockAndValueMapping &mapper) {
 /// Using the provider mapper. Replace references to
 /// cloned sub-values with the corresponding copied value and
 /// add to the mapper
-CircuitOp CircuitOp::clone(BlockAndValueMapping &mapper) {
+CircuitOp CircuitOp::clone(IRMapping &mapper) {
   FunctionType newType = getType();
 
   // If the function contains a body, then its possible arguments
@@ -487,7 +487,7 @@ CircuitOp CircuitOp::clone(BlockAndValueMapping &mapper) {
 }
 
 CircuitOp CircuitOp::clone() {
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
   return clone(mapper);
 }
 

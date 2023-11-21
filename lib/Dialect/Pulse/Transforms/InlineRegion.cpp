@@ -21,7 +21,7 @@
 #include "Dialect/Pulse/Transforms/InlineRegion.h"
 
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/Visitors.h"
 #include "mlir/Transforms/InliningUtils.h"
 
@@ -37,12 +37,12 @@ class DialectAgnosticInlinerInterface : public InlinerInterface {
   }
 
   bool isLegalToInline(Region *dest, Region *src, bool wouldBeCloned,
-                       BlockAndValueMapping &) const final {
+                       IRMapping &) const final {
     return true;
   }
 
   bool isLegalToInline(Operation *op, Region *dest, bool wouldBeCloned,
-                       BlockAndValueMapping &) const final {
+                       IRMapping &) const final {
     return true;
   }
 };
