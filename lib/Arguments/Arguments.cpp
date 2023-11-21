@@ -151,7 +151,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
     if (auto err = payload->writeString(inMemoryOutput))
       return err;
     if (!enableInMemoryOutput) {
-      auto pathStr = payloadOutputPath.operator std::string();
+      auto pathStr = payloadOutputPath.str();
       std::ofstream out(pathStr);
       out << inMemoryOutput;
       out.close();

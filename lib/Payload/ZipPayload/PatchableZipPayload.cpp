@@ -205,7 +205,7 @@ llvm::Error PatchableZipPayload::writeString(std::string *outputString) {
 llvm::Expected<PatchableZipPayload::ContentBuffer &>
 PatchableZipPayload::readMember(llvm::StringRef path, bool markForWriteBack) {
 
-  auto pathStr = path.operator std::string();
+  std::string pathStr = path.str();
   auto pos = files.find(pathStr);
 
   if (pos != files.end())
@@ -216,7 +216,7 @@ PatchableZipPayload::readMember(llvm::StringRef path, bool markForWriteBack) {
     // in memory payload does not have leading directory so attempt to remove
     auto index = path.find("/") + 1;
     path = path.substr(index);
-    pathStr = path.operator std::string();
+    pathStr = path.str();
   }
 
   zip_stat_t zs;
