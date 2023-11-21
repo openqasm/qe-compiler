@@ -41,7 +41,7 @@ struct FunctionArgumentSpecializationPass
   void processCallOp(Operation *op, std::deque<Operation *> &callWorkList);
 
   template <class CallOpTy>
-  void copyFuncAndSpecialize(FuncOp inFunc, CallOpTy callOp,
+  void copyFuncAndSpecialize(mlir::func::FuncOp inFunc, CallOpTy callOp,
                              std::deque<Operation *> &callWorkList);
 
   void runOnOperation() override;

@@ -52,7 +52,7 @@ void FunctionArgumentSpecializationPass::processCallOp(
   // look for func def match
   Operation *findOp = SymbolTable::lookupSymbolIn(moduleOp, callOp.callee());
   if (findOp) {
-    FuncOp funcOp = dyn_cast<FuncOp>(findOp);
+    mlir::func::FuncOp funcOp = dyn_cast<mlir::func::FuncOp>(findOp);
     if (!funcOp)
       return;
     // check arguments for width match
@@ -77,7 +77,7 @@ void FunctionArgumentSpecializationPass::processCallOp(
                      << "\n";
       }
     }      // else callable region found
-  } else { // callee not matched by FuncOp
+  } else { // callee not matched by mlir::func::FuncOp
     LLVM_DEBUG(llvm::dbgs()
                << "Found call to " << callOp.callee()
                << " with no matching function definition or prototype\n");
@@ -95,7 +95,7 @@ void FunctionArgumentSpecializationPass::processCallOp(
 
 template <class CallOpTy>
 void FunctionArgumentSpecializationPass::copyFuncAndSpecialize(
-    FuncOp inFunc, CallOpTy callOp, std::deque<Operation *> &callWorkList) {
+    mlir::func::FuncOp inFunc, CallOpTy callOp, std::deque<Operation *> &callWorkList) {
   OpBuilder b(inFunc);
 
   std::string newName = SymbolRefAttr::get(inFunc).getLeafReference().str();
@@ -113,7 +113,7 @@ void FunctionArgumentSpecializationPass::copyFuncAndSpecialize(
     return;
   }
 
-  FuncOp newFunc = cast<FuncOp>(b.clone(*inFunc));
+  mlir::func::FuncOp newFunc = cast<mlir::func::FuncOp>(b.clone(*inFunc));
   newFunc->moveBefore(inFunc);
   newFunc->setAttr(SymbolTable::getSymbolAttrName(),
                    StringAttr::get(newFunc.getContext(), newName));

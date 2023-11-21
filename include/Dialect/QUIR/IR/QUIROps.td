@@ -191,7 +191,7 @@ def QUIR_CallGateOp : QUIR_Op<"call_gate", [CallOpInterface,
     }];
 
     let builders = [
-        OpBuilder<(ins "func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
+        OpBuilder<(ins "mlir::func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
             $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
         }]>,
@@ -236,7 +236,7 @@ def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [
     }];
 
     let builders = [
-        OpBuilder<(ins "func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
+        OpBuilder<(ins "mlir::func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
             $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
         }]>,
@@ -280,7 +280,7 @@ def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
     }];
 
     let builders = [
-        OpBuilder<(ins "func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
+        OpBuilder<(ins "mlir::func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
             $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
             $_state.addTypes(callee.getType().getResults());
@@ -331,7 +331,7 @@ def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [CallOpInterface]> {
     }];
 
     let builders = [
-        OpBuilder<(ins "func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
+        OpBuilder<(ins "mlir::func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
             $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
             $_state.addTypes(callee.getType().getResults());

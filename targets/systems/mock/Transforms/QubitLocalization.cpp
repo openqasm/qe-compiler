@@ -61,7 +61,7 @@ auto mock::MockQubitLocalizationPass::lookupQubitId(const Value &val) -> int {
     // see if we can find an attribute with the info
     if (auto blockArg = val.dyn_cast<BlockArgument>()) {
       unsigned argIdx = blockArg.getArgNumber();
-      auto funcOp = dyn_cast<FuncOp>(blockArg.getOwner()->getParentOp());
+      auto funcOp = dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
       if (funcOp) {
         auto argAttr =
             funcOp.getArgAttrOfType<IntegerAttr>(argIdx, "quir.physicalId");
@@ -151,10 +151,10 @@ void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
 } // cloneRegionWithoutOps
 
 auto mock::MockQubitLocalizationPass::addMainFunction(
-    Operation *moduleOperation, const Location &loc) -> FuncOp {
+    Operation *moduleOperation, const Location &loc) -> mlir::func::FuncOp {
   OpBuilder b(moduleOperation->getRegion(0));
   auto funcOp =
-      b.create<FuncOp>(loc, "main",
+      b.create<mlir::func::FuncOp>(loc, "main",
                        b.getFunctionType(
                            /*inputs=*/ArrayRef<Type>(),
                            /*results=*/ArrayRef<Type>(b.getI32Type())));
@@ -195,7 +195,7 @@ void mock::MockQubitLocalizationPass::processOp(ResetQubitOp &resetOp) {
       *op, mockMapping[config->acquireNode(qubitId)]);
 } // processOp ResetQubitOp
 
-void mock::MockQubitLocalizationPass::processOp(FuncOp &funcOp) {
+void mock::MockQubitLocalizationPass::processOp(mlir::func::FuncOp &funcOp) {
   Operation *op = funcOp.getOperation();
   OpBuilder fBuild(funcOp);
   llvm::outs() << "Cloning FuncOp " << SymbolRefAttr::get(funcOp)
@@ -282,7 +282,7 @@ void mock::MockQubitLocalizationPass::processOp(
                           << callOp.callee() << "\n";
     return;
   }
-  auto funcOp = dyn_cast<FuncOp>(funcOperation);
+  auto funcOp = dyn_cast<mlir::func::FuncOp>(funcOperation);
 
   bool onlyToController = classicalOnlyCheck(funcOperation);
 
@@ -313,7 +313,7 @@ void mock::MockQubitLocalizationPass::processOp(
   controllerBuilder->setInsertionPointToStart(controllerModule.getBody());
   Operation *clonedFuncOperation =
       controllerBuilder->cloneWithoutRegions(*funcOperation, controllerMapping);
-  auto clonedFuncOp = dyn_cast<FuncOp>(clonedFuncOperation);
+  auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedFuncOperation);
   if (funcOp.getCallableRegion()) {
     cloneRegionWithoutOps(&funcOp.getBody(), &clonedFuncOp.getBody(),
                           controllerMapping);
@@ -327,7 +327,7 @@ void mock::MockQubitLocalizationPass::processOp(
       Operation *clonedFuncOperation =
           (*mockBuilders)[nodeId]->cloneWithoutRegions(*funcOperation,
                                                        mockMapping[nodeId]);
-      auto clonedFuncOp = dyn_cast<FuncOp>(clonedFuncOperation);
+      auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedFuncOperation);
       if (funcOp.getCallableRegion()) {
         cloneRegionWithoutOps(&funcOp.getBody(), &clonedFuncOp.getBody(),
                               mockMapping[nodeId]);
@@ -714,7 +714,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
   controllerModule = dyn_cast<ModuleOp>(
       b.create<ModuleOp>(b.getUnknownLoc(), llvm::StringRef("controller"))
           .getOperation());
-  FuncOp controllerMainOp =
+  mlir::func::FuncOp controllerMainOp =
       addMainFunction(controllerModule.getOperation(), mainFunc->getLoc());
   controllerBuilder = new OpBuilder(controllerMainOp.getBody());
   controllerModule->setAttr(
@@ -757,7 +757,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
           llvm::StringRef("quir.physicalId"),
           controllerBuilder->getI32IntegerAttr(qubitId));
       mockModules[config->driveNode(qubitId)] = driveMod.getOperation();
-      FuncOp mockMainOp =
+      mlir::func::FuncOp mockMainOp =
           addMainFunction(driveMod.getOperation(), mainFunc->getLoc());
       newBuilders->emplace(config->driveNode(qubitId),
                            new OpBuilder(mockMainOp.getBody()));
@@ -779,7 +779,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
           controllerBuilder->getI32ArrayAttr(
               ArrayRef<int>(config->multiplexedQubits(qubitId))));
       mockModules[config->acquireNode(qubitId)] = acquireMod.getOperation();
-      FuncOp mockMainOp =
+      mlir::func::FuncOp mockMainOp =
           addMainFunction(acquireMod.getOperation(), mainFunc->getLoc());
       newBuilders->emplace(config->acquireNode(qubitId),
                            new OpBuilder(mockMainOp.getBody()));
@@ -843,7 +843,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         processOp(ifOp, blockAndBuilderWorkList);
       } else if (auto forOp = dyn_cast<scf::ForOp>(op)) {
         processOp(forOp, blockAndBuilderWorkList);
-      } else if (dyn_cast<FuncOp>(op) || dyn_cast<ModuleOp>(op)) {
+      } else if (dyn_cast<mlir::func::FuncOp>(op) || dyn_cast<ModuleOp>(op)) {
         // do nothing
       }      // moduleOp
       else { // some classical op, should go to Controller

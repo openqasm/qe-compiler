@@ -37,7 +37,7 @@ auto RemoveQubitOperandsPass::lookupQubitId(const Value val) -> int {
   // see if we can find an attribute with the info
   if (auto blockArg = val.dyn_cast<BlockArgument>()) {
     unsigned argIdx = blockArg.getArgNumber();
-    auto funcOp = dyn_cast<FuncOp>(blockArg.getOwner()->getParentOp());
+    auto funcOp = dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
     if (funcOp) {
       auto argAttr = funcOp.getArgAttrOfType<IntegerAttr>(
           argIdx, quir::getPhysicalIdAttrName());
@@ -59,7 +59,7 @@ auto RemoveQubitOperandsPass::lookupQubitId(const Value val) -> int {
   return -1;
 } // lookupQubitId
 
-void RemoveQubitOperandsPass::addQubitDeclarations(FuncOp funcOp) {
+void RemoveQubitOperandsPass::addQubitDeclarations(mlir::func::FuncOp funcOp) {
   // build inside the func def body
   OpBuilder build(funcOp.getBody());
 
@@ -89,7 +89,7 @@ void RemoveQubitOperandsPass::processCallOp(Operation *op) {
   // look for func def match
   Operation *findOp =
       SymbolTable::lookupSymbolIn(moduleOperation, callOp.callee());
-  auto funcOp = dyn_cast<FuncOp>(findOp);
+  auto funcOp = dyn_cast<mlir::func::FuncOp>(findOp);
 
   if (!qIndicesBV.empty()) // some qubit args
     callOp->eraseOperands(qIndicesBV);

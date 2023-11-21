@@ -37,7 +37,7 @@ using namespace mlir::pulse;
 void LoadPulseCalsPass::runOnOperation() {
 
   ModuleOp moduleOp = getOperation();
-  FuncOp mainFunc = dyn_cast<FuncOp>(quir::getMainFunction(moduleOp));
+  mlir::func::FuncOp mainFunc = dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
   assert(mainFunc && "could not find the main func");
 
   // check for command line override of the path to default pulse cals
@@ -91,7 +91,7 @@ void LoadPulseCalsPass::runOnOperation() {
 }
 
 void LoadPulseCalsPass::loadPulseCals(CallCircuitOp callCircuitOp,
-                                      FuncOp funcOp) {
+                                      mlir::func::FuncOp funcOp) {
 
   auto circuitOp = getCircuitOp(callCircuitOp);
   circuitOp->walk([&](Operation *op) {
@@ -123,7 +123,7 @@ void LoadPulseCalsPass::loadPulseCals(CallCircuitOp callCircuitOp,
 
 void LoadPulseCalsPass::loadPulseCals(CallGateOp callGateOp,
                                       CallCircuitOp callCircuitOp,
-                                      FuncOp funcOp) {
+                                      mlir::func::FuncOp funcOp) {
   std::vector<Value> qubitOperands;
   qubitCallOperands(callGateOp, qubitOperands);
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
@@ -140,7 +140,7 @@ void LoadPulseCalsPass::loadPulseCals(CallGateOp callGateOp,
 
 void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
                                       CallCircuitOp callCircuitOp,
-                                      FuncOp funcOp) {
+                                      mlir::func::FuncOp funcOp) {
 
   std::vector<Value> qubitOperands;
   qubitOperands.push_back(CXOp.control());
@@ -159,7 +159,7 @@ void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
 
 void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
                                       CallCircuitOp callCircuitOp,
-                                      FuncOp funcOp) {
+                                      mlir::func::FuncOp funcOp) {
 
   std::vector<Value> qubitOperands;
   qubitOperands.push_back(UOp.target());
@@ -177,7 +177,7 @@ void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
 
 void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
                                       CallCircuitOp callCircuitOp,
-                                      FuncOp funcOp) {
+                                      mlir::func::FuncOp funcOp) {
 
   OpBuilder builder(funcOp.body());
 
@@ -216,7 +216,7 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
 
 void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
                                       CallCircuitOp callCircuitOp,
-                                      FuncOp funcOp) {
+                                      mlir::func::FuncOp funcOp) {
 
   OpBuilder builder(funcOp.body());
 
@@ -252,7 +252,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
 
 void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
                                       CallCircuitOp callCircuitOp,
-                                      FuncOp funcOp) {
+                                      mlir::func::FuncOp funcOp) {
 
   OpBuilder builder(funcOp.body());
 
@@ -289,7 +289,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
 
 void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
                                       CallCircuitOp callCircuitOp,
-                                      FuncOp funcOp) {
+                                      mlir::func::FuncOp funcOp) {
 
   OpBuilder builder(funcOp.body());
 
@@ -324,7 +324,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
 }
 
 void LoadPulseCalsPass::addPulseCalToModule(
-    FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp) {
+    mlir::func::FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp) {
   if (pulseCalsAddedToIR.find(sequenceOp.sym_name().str()) ==
       pulseCalsAddedToIR.end()) {
     OpBuilder builder(funcOp.body());

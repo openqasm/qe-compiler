@@ -45,7 +45,7 @@ using namespace mlir::qcs;
 void AddShotLoopPass::runOnOperation() {
   // This pass is only called on module Ops
   ModuleOp moduleOp = getOperation();
-  FuncOp mainFunc = dyn_cast<FuncOp>(getMainFunction(moduleOp));
+  mlir::func::FuncOp mainFunc = dyn_cast<mlir::func::FuncOp>(getMainFunction(moduleOp));
 
   if (!mainFunc) {
     signalPassFailure();

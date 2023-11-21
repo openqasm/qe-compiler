@@ -201,7 +201,7 @@ void QUIRGenQASM3Visitor::initialize(
   }
 
   // create the "main" function
-  auto func = topLevelBuilder.create<FuncOp>(
+  auto func = topLevelBuilder.create<mlir::func::FuncOp>(
       initialLocation, "main",
       topLevelBuilder.getFunctionType(
           /*inputs=*/ArrayRef<Type>(),
@@ -659,7 +659,7 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
   auto inputsRef = ArrayRef<Type>(inputs.data(), inputs.size());
 
   auto func =
-      topLevelBuilder.create<FuncOp>(getLocation(node), gateNode->GetName(),
+      topLevelBuilder.create<mlir::func::FuncOp>(getLocation(node), gateNode->GetName(),
                                      builder.getFunctionType(
                                          /*inputs=*/inputsRef,
                                          /*results=*/ArrayRef<Type>()));
@@ -1156,7 +1156,7 @@ void QUIRGenQASM3Visitor::visit(const ASTKernelNode *node) {
       builder.getStringAttr("private"));
   ArrayRef<NamedAttribute> funcAttrs(attrs.data(), attrs.size());
 
-  topLevelBuilder.create<FuncOp>(
+  topLevelBuilder.create<mlir::func::FuncOp>(
       getLocation(node), node->GetName(),
       builder.getFunctionType(/*inputs=*/inputsRef, /*results=*/outputsRef),
       /*attrs=*/funcAttrs);

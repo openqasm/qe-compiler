@@ -78,7 +78,7 @@ auto quirFunctionTypeMatch(FunctionType &ft1, FunctionType &ft2) -> bool {
 auto getMainFunction(Operation *moduleOperation) -> Operation * {
   OpBuilder b(moduleOperation);
   Operation *mainFunc = nullptr;
-  moduleOperation->walk([&](FuncOp funcOp) {
+  moduleOperation->walk([&](mlir::func::FuncOp funcOp) {
     if (SymbolRefAttr::get(funcOp).getLeafReference() == "main") {
       mainFunc = funcOp.getOperation();
       return WalkResult::interrupt();

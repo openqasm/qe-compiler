@@ -45,7 +45,7 @@ struct MockQubitLocalizationPass
 
   void processOp(mlir::quir::DeclareQubitOp &qubitOp);
   void processOp(mlir::quir::ResetQubitOp &resetOp);
-  void processOp(mlir::FuncOp &funcOp);
+  void processOp(mlir::func::FuncOp &funcOp);
   void processOp(mlir::quir::Builtin_UOp &uOp);
   void processOp(mlir::quir::BuiltinCXOp &cxOp);
   void processOp(mlir::quir::MeasureOp &measureOp);
@@ -87,7 +87,7 @@ struct MockQubitLocalizationPass
                              mlir::Region::iterator destPos,
                              mlir::BlockAndValueMapping &mapper);
   auto addMainFunction(mlir::Operation *moduleOperation,
-                       const mlir::Location &loc) -> mlir::FuncOp;
+                       const mlir::Location &loc) -> mlir::func::FuncOp;
   void cloneVariableDeclarations(mlir::ModuleOp topModuleOp);
 
   MockConfig *config;

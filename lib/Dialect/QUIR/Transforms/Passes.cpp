@@ -155,7 +155,7 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
         dyn_cast<quir::CircuitOp>(op))
       op->setAttr(llvm::StringRef("quir.classicalOnly"),
                   b.getBoolAttr(hasQuantumSubOps(op)));
-    if (auto funcOp = dyn_cast<FuncOp>(op)) {
+    if (auto funcOp = dyn_cast<mlir::func::FuncOp>(op)) {
       // just check the arguments for qubitType values
       FunctionType fType = funcOp.getType();
       bool isMain = SymbolRefAttr::get(funcOp).getLeafReference() == "main";

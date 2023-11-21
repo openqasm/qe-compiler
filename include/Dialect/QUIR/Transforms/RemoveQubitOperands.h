@@ -38,7 +38,7 @@ namespace mlir::quir {
 struct RemoveQubitOperandsPass
     : public PassWrapper<RemoveQubitOperandsPass, OperationPass<>> {
   auto lookupQubitId(const Value val) -> int;
-  void addQubitDeclarations(FuncOp funcOp);
+  void addQubitDeclarations(mlir::func::FuncOp funcOp);
   void processCallOp(Operation *op);
   void runOnOperation() override;
 

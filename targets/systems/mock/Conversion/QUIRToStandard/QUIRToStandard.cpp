@@ -200,8 +200,8 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   target
       .addIllegalDialect<quir::QUIRDialect, qcs::QCSDialect, oq3::OQ3Dialect>();
   target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
-  target.addDynamicallyLegalOp<FuncOp>(
-      [&](FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
+  target.addDynamicallyLegalOp<mlir::func::FuncOp>(
+      [&](mlir::func::FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
   target.addDynamicallyLegalOp<CallOp>([&](CallOp op) {
     return typeConverter.isSignatureLegal(op.getCalleeType());
   });
@@ -224,7 +224,7 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   target.addLegalOp<quir::YieldOp>();
 
   RewritePatternSet patterns(context);
-  populateFunctionOpInterfaceTypeConversionPattern<FuncOp>(patterns,
+  populateFunctionOpInterfaceTypeConversionPattern<mlir::func::FuncOp>(patterns,
                                                            typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
   // clang-format off

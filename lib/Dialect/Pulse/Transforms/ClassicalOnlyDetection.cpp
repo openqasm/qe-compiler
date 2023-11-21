@@ -55,7 +55,7 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
   moduleOperation->walk([&](Operation *op) {
     if (dyn_cast<scf::IfOp>(op) || dyn_cast<scf::ForOp>(op) ||
         dyn_cast<quir::SwitchOp>(op) || dyn_cast<SequenceOp>(op) ||
-        dyn_cast<FuncOp>(op)) {
+        dyn_cast<mlir::func::FuncOp>(op)) {
       // check for a pre-existing classicalOnly attribute
       // only update if the attribute does not exist or it is true
       // indicating that no quantum ops have been identified yet

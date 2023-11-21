@@ -38,7 +38,7 @@ auto SubroutineCloningPass::lookupQubitId(const Value val) -> int {
   // see if we can find an attribute with the info
   if (auto blockArg = val.dyn_cast<BlockArgument>()) {
     unsigned argIdx = blockArg.getArgNumber();
-    auto funcOp = dyn_cast<FuncOp>(blockArg.getOwner()->getParentOp());
+    auto funcOp = dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
     if (funcOp) {
       auto argAttr = funcOp.getArgAttrOfType<IntegerAttr>(
           argIdx, mlir::quir::getPhysicalIdAttrName());
@@ -151,7 +151,7 @@ void SubroutineCloningPass::runOnOperation() {
   while (!callWorkList.empty()) {
     Operation *op = callWorkList.front();
     callWorkList.pop_front();
-    processCallOp<CallSubroutineOp, FuncOp>(op);
+    processCallOp<CallSubroutineOp, mlir::func::FuncOp>(op);
   }
 
   mainFunc->walk([&](CallCircuitOp op) { callWorkList.push_back(op); });

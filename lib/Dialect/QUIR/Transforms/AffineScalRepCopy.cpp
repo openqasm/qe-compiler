@@ -409,7 +409,7 @@ namespace mlir {
 // currently only eliminates the stores only if no other loads/uses (other
 // than dealloc) remain.
 //
-void affineScalarReplaceCopy(FuncOp f, DominanceInfo &domInfo,
+void affineScalarReplaceCopy(mlir::func::FuncOp f, DominanceInfo &domInfo,
                              PostDominanceInfo &postDomInfo) {
   // Load op's whose results were replaced by those forwarded from stores.
   SmallVector<Operation *, 8> opsToErase;

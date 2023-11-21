@@ -41,7 +41,7 @@
 #include <llvm/ADT/SmallVector.h>
 
 namespace mlir {
-void affineScalarReplaceCopy(FuncOp f, DominanceInfo &domInfo,
+void affineScalarReplaceCopy(mlir::func::FuncOp f, DominanceInfo &domInfo,
                              PostDominanceInfo &postDomInfo);
 } // namespace mlir
 
@@ -320,7 +320,7 @@ void VariableEliminationPass::runOnOperation() {
   auto &domInfo = getAnalysis<DominanceInfo>();
   auto &postDomInfo = getAnalysis<PostDominanceInfo>();
 
-  WalkResult result = getOperation()->walk([&](mlir::FuncOp func) {
+  WalkResult result = getOperation()->walk([&](mlir::func::FuncOp func) {
     // TODO LLVM 15+: Use MLIR's builtin affineScalarReplace, which is fixed
     // there
     mlir::affineScalarReplaceCopy(func, domInfo, postDomInfo);

@@ -178,7 +178,7 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
   }
 
   auto surroundingFunction =
-      variableOp->template getParentOfType<mlir::FuncOp>();
+      variableOp->template getParentOfType<mlir::func::FuncOp>();
   if (!surroundingFunction) {
     variableOp.emitOpError("Variable use of " + variableOp.variable_name() +
                            " outside functions not supported");

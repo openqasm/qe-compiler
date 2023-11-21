@@ -38,23 +38,23 @@ namespace {
 
 struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
   explicit AngleConversion(MLIRContext *ctx,
-                           std::unordered_map<std::string, FuncOp> &functionOps)
+                           std::unordered_map<std::string, mlir::func::FuncOp> &functionOps)
       : OpRewritePattern<quir::CallGateOp>(ctx), functionOps_(functionOps) {}
   LogicalResult matchAndRewrite(quir::CallGateOp callGateOp,
                                 PatternRewriter &rewriter) const override {
-    // find the corresponding FuncOp
+    // find the corresponding mlir::func::FuncOp
     auto findOp = functionOps_.find(callGateOp.calleeAttr().getValue().str());
     if (findOp == functionOps_.end())
       return failure();
 
-    FuncOp funcOp = findOp->second;
+    mlir::func::FuncOp funcOp = findOp->second;
     FunctionType fType = funcOp.getType();
 
     for (auto &pair : llvm::enumerate(callGateOp.getArgOperands())) {
       auto value = pair.value();
       auto index = pair.index();
       if (auto declOp = value.getDefiningOp<quir::ConstantOp>()) {
-        // compare the angle type in FuncOp and callGateOp
+        // compare the angle type in mlir::func::FuncOp and callGateOp
         // and change the angle type in callGateOp if the types are different
         Type funcType = fType.getInput(index);
         if (value.getType() != funcType) {
@@ -69,7 +69,7 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
   }
 
 private:
-  std::unordered_map<std::string, FuncOp> &functionOps_;
+  std::unordered_map<std::string, mlir::func::FuncOp> &functionOps_;
 }; // struct AngleConversion
 
 } // end anonymous namespace
@@ -79,7 +79,7 @@ void QUIRAngleConversionPass::runOnOperation() {
 
   auto *op = getOperation();
   op->walk(
-      [&](FuncOp funcOp) { functionOps[funcOp.sym_name().str()] = funcOp; });
+      [&](mlir::func::FuncOp funcOp) { functionOps[funcOp.sym_name().str()] = funcOp; });
 
   RewritePatternSet patterns(&getContext());
   patterns.add<AngleConversion>(&getContext(), functionOps);
@@ -96,5 +96,5 @@ llvm::StringRef QUIRAngleConversionPass::getArgument() const {
 }
 llvm::StringRef QUIRAngleConversionPass::getDescription() const {
   return "Convert the angle types in CallGateOp "
-         "based on the corresponding FuncOp args";
+         "based on the corresponding mlir::func::FuncOp args";
 }
