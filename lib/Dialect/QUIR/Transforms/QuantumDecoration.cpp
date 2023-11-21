@@ -78,7 +78,7 @@ void QuantumDecorationPass::processOp(BuiltinCXOp builtinCXOp,
 
 void QuantumDecorationPass::processOp(MeasureOp measureOp,
                                       std::unordered_set<int> &retSet) {
-  for (auto qubit : measureOp.qubits())
+  for (auto qubit : measureOp.getQubits())
     retSet.emplace(lookupOrMinus1(qubit));
 } // processOp MeasureOp
 
@@ -93,13 +93,13 @@ void QuantumDecorationPass::processOp(CallDefcalMeasureOp measureOp,
 
 void QuantumDecorationPass::processOp(DelayOp delayOp,
                                       std::unordered_set<int> &retSet) {
-  for (auto qubit_operand : delayOp.qubits())
+  for (auto qubit_operand : delayOp.getQubits())
     retSet.emplace(lookupOrMinus1(qubit_operand));
 } // processOp MeasureOp
 
 void QuantumDecorationPass::processOp(ResetQubitOp resetOp,
                                       std::unordered_set<int> &retSet) {
-  for (auto qubit : resetOp.qubits())
+  for (auto qubit : resetOp.getQubits())
     retSet.emplace(lookupOrMinus1(qubit));
 } // processOp MeasureOp
 

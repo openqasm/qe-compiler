@@ -326,7 +326,7 @@ std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,
                                                  Value result) {
   auto opRes = result.cast<OpResult>();
   uint resNum = opRes.getResultNumber();
-  return std::make_tuple(measureOp.qubits()[resNum], measureOp);
+  return std::make_tuple(measureOp.getQubits()[resNum], measureOp);
 }
 
 std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
@@ -343,7 +343,7 @@ std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
   auto circuitResult = returnOp->getOperand(resNum).cast<OpResult>();
   auto measureOp = dyn_cast<MeasureOp>(circuitResult.getDefiningOp());
 
-  return std::make_tuple(measureOp.qubits()[circuitResult.getResultNumber()],
+  return std::make_tuple(measureOp.getQubits()[circuitResult.getResultNumber()],
                          measureOp);
 }
 

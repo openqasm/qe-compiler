@@ -45,9 +45,9 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
   LogicalResult matchAndRewrite(ResetQubitOp resetOp,
                                 PatternRewriter &rewriter) const override {
     std::unordered_set<uint> qubitIds;
-    qubitIds.reserve(resetOp.qubits().size());
+    qubitIds.reserve(resetOp.getQubits().size());
 
-    for (auto qubit : resetOp.qubits()) {
+    for (auto qubit : resetOp.getQubits()) {
       auto id = lookupQubitId(qubit);
       if (!id)
         return failure();
@@ -67,7 +67,7 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
       return failure();
 
     // check if we can add this reset
-    if (!std::all_of(nextResetOp.qubits().begin(), nextResetOp.qubits().end(),
+    if (!std::all_of(nextResetOp.getQubits().begin(), nextResetOp.getQubits().end(),
                      [&](auto qubit) {
                        // can merge this adjacent qubit reset op when we can
                        // lookup all of its qubits' ids and these are not
@@ -79,7 +79,7 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
       return failure();
 
     // good to merge
-    for (auto qubit : nextResetOp.qubits())
+    for (auto qubit : nextResetOp.getQubits())
       resetQubitOperands.append(qubit);
     rewriter.eraseOp(nextResetOp);
     return success();
@@ -171,7 +171,7 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     if (mergeFwdIntersection.empty()) {
       // Hoist the next reset into this one
       auto resetQubitOperands = resetOp.qubitsMutable();
-      for (auto qubit : nextResetOp.qubits())
+      for (auto qubit : nextResetOp.getQubits())
         resetQubitOperands.append(qubit);
       rewriter.eraseOp(nextResetOp);
     } else {

@@ -70,21 +70,21 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
     }
 
     // result of measurement in each iteration is number of qubits * i1
-    std::vector<mlir::Type> typeVec(resetOp.qubits().size(),
+    std::vector<mlir::Type> typeVec(resetOp.getQubits().size(),
                                     rewriter.getI1Type());
 
     for (uint iteration = 0; iteration < numIterations_; iteration++) {
       if (delayCycles_ > 0 && iteration > 0)
-        for (auto qubit : resetOp.qubits())
+        for (auto qubit : resetOp.getQubits())
           rewriter.create<DelayOp>(resetOp.getLoc(),
                                    constantDurationOp.result(), qubit);
 
       auto measureOp = rewriter.create<MeasureOp>(
-          resetOp.getLoc(), TypeRange(typeVec), resetOp.qubits());
+          resetOp.getLoc(), TypeRange(typeVec), resetOp.getQubits());
       measureOp->setAttr(getNoReportRuntimeAttrName(), rewriter.getUnitAttr());
 
       size_t i = 0;
-      for (auto qubit : resetOp.qubits()) {
+      for (auto qubit : resetOp.getQubits()) {
         auto ifOp = rewriter.create<scf::IfOp>(resetOp.getLoc(),
                                                measureOp.getResult(i), false);
         auto savedInsertionPoint = rewriter.saveInsertionPoint();

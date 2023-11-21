@@ -50,10 +50,10 @@ static void mergeMeasurements(PatternRewriter &rewriter, MeasureOp measureOp,
                  measureOp.result_type_end());
   typeVec.insert(typeVec.end(), nextMeasureOp.result_type_begin(),
                  nextMeasureOp.result_type_end());
-  valVec.insert(valVec.end(), measureOp.qubits().begin(),
-                measureOp.qubits().end());
-  valVec.insert(valVec.end(), nextMeasureOp.qubits().begin(),
-                nextMeasureOp.qubits().end());
+  valVec.insert(valVec.end(), measureOp.getQubits().begin(),
+                measureOp.getQubits().end());
+  valVec.insert(valVec.end(), nextMeasureOp.getQubits().begin(),
+                nextMeasureOp.getQubits().end());
 
   auto mergedOp = rewriter.create<MeasureOp>(
       measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
@@ -83,13 +83,13 @@ struct MeasureAndMeasureLexographicalPattern
     // found a measure and a measure, now make sure they aren't working on the
     // same qubit and that we can resolve them both
     std::unordered_set<uint> measureIds;
-    for (auto qubit : measureOp.qubits()) {
+    for (auto qubit : measureOp.getQubits()) {
       std::optional<uint> id = lookupQubitId(qubit);
       if (!id)
         return failure();
       measureIds.emplace(*id);
     }
-    for (auto qubit : nextMeasureOp.qubits()) {
+    for (auto qubit : nextMeasureOp.getQubits()) {
       std::optional<uint> id = lookupQubitId(qubit);
       if (!id || measureIds.count(*id))
         return failure();

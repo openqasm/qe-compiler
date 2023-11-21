@@ -177,14 +177,14 @@ void mock::MockQubitLocalizationPass::processOp(DeclareQubitOp &qubitOp) {
 } // processOp DeclareQubitOp
 
 void mock::MockQubitLocalizationPass::processOp(ResetQubitOp &resetOp) {
-  if (resetOp.qubits().size() != 1) {
+  if (resetOp.getQubits().size() != 1) {
     signalPassFailure(); // only support single-qubit resets"
     return;
   }
 
   Operation *op = resetOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
-  int qubitId = lookupQubitId(resetOp.qubits().front());
+  int qubitId = lookupQubitId(resetOp.getQubits().front());
   if (qubitId < 0) {
     resetOp->emitOpError() << "Can't resolve qubit ID for resetOp\n";
     return signalPassFailure();
@@ -244,7 +244,7 @@ void mock::MockQubitLocalizationPass::processOp(MeasureOp &measureOp) {
   Operation *op = measureOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
   // figure out which qubit this gate operates on
-  int qubitId = lookupQubitId(measureOp.qubits().front());
+  int qubitId = lookupQubitId(measureOp.getQubits().front());
   // clone the measure call to the drive and acquire mocks
   (*mockBuilders)[config->driveNode(qubitId)]->clone(
       *op, mockMapping[config->driveNode(qubitId)]);
@@ -496,7 +496,7 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
   Operation *op = delayOp.getOperation();
   std::vector<int> qInd;
   bool qubitIdsResolved = true;
-  for (auto operand : delayOp.qubits()) {
+  for (auto operand : delayOp.getQubits()) {
     qInd.emplace_back(lookupQubitId(operand));
     if (qInd.back() < 0)
       qubitIdsResolved = false;
@@ -505,7 +505,7 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
     delayOp->emitOpError() << "Unable to resolve all qubit IDs for delay\n";
     return signalPassFailure();
   }
-  if (delayOp.qubits().empty()) // no qubit args means all qubits
+  if (delayOp.getQubits().empty()) // no qubit args means all qubits
     for (uint qId : seenQubitIds)
       qInd.emplace_back((int)qId);
 
@@ -522,7 +522,7 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
       (*mockBuilders)[id]->clone(*durationDeclare, mockMapping[id]);
   }
 
-  if (delayOp.qubits().empty())
+  if (delayOp.getQubits().empty())
     controllerBuilder->clone(*op, controllerMapping);
   // clone the delay op to the involved nodes
   for (uint nodeId : involvedNodes)
@@ -581,7 +581,7 @@ void mock::MockQubitLocalizationPass::processOp(
   int savedQubitId = -1;
   if (measureOp) { // remove the drive node from seenNodeIds temporarily
     // only if it can be resolved
-    savedQubitId = lookupQubitId(measureOp.qubits().front());
+    savedQubitId = lookupQubitId(measureOp.getQubits().front());
     if (savedQubitId >= 0) {
       seenNodeIds.erase(config->driveNode(savedQubitId));
 
