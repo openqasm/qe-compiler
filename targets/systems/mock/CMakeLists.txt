@@ -53,7 +53,7 @@ MLIRExecutionEngine
 MLIROptLib
 MLIRLLVMIR
 MLIRLLVMToLLVMIRTranslation
-MLIRStandardOpsTransforms
+MLIRFuncTransformOps
 ${llvm_code_gen_libraries}
 PLUGIN_REGISTRATION_HEADERS
 ${CMAKE_CURRENT_SOURCE_DIR}/Target.inc

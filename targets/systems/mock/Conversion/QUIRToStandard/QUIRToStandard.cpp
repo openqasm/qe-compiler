@@ -35,7 +35,7 @@
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/Dialect/StandardOps/Transforms/FuncConversions.h"
+#include "mlir/Dialect/Func/Transforms/FuncConversions.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
@@ -192,7 +192,7 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
 
   target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
                          mlir::AffineDialect, memref::MemRefDialect,
-                         scf::SCFDialect, StandardOpsDialect,
+                         scf::SCFDialect, mlir::func::FuncDialect,
                          mlir::pulse::PulseDialect>();
   // Since we are converting QUIR -> STD/LLVM, make QUIR illegal.
   // Further, because OQ3 and QCS ops are migrated from QUIR, make them also

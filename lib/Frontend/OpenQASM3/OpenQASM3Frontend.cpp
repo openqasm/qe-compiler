@@ -239,7 +239,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
 
     context->loadDialect<mlir::quir::QUIRDialect>();
     context->loadDialect<mlir::complex::ComplexDialect>();
-    context->loadDialect<mlir::StandardOpsDialect>();
+    context->loadDialect<mlir::func::FuncDialect>();
 
     mlir::OpBuilder builder(newModule.getBodyRegion());
 
