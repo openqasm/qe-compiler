@@ -373,10 +373,9 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   rewriter.replaceOp(nextCallCircuitOp,
                      ResultRange(iterSep, newCallOp.result_end()));
 
-  // update map of circuits
+  // add new name to symbolMap
+  // do not remove old in case the are multiple calls
   (*symbolMap)[newName] = newCircuitOp.getOperation();
-  symbolMap->erase(circuitOp.sym_name());
-  symbolMap->erase(nextCircuitOp.sym_name());
 
   return success();
 }
