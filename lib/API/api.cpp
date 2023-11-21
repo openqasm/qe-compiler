@@ -657,7 +657,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (outputString) {
     outStringStream.emplace(*outputString);
-    ostream = outStringStream.getPointer();
+    ostream = std::addressof(outStringStream.value());
   } else {
     if (!outputFile)
       return llvm::createStringError(llvm::inconvertibleErrorCode(),

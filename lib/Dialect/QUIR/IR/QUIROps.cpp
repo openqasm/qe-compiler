@@ -187,7 +187,7 @@ auto CallGateOp::getCallableForCallee() -> CallInterfaceCallable {
 /// Get the argument operands to the called function, this is required by the
 /// call interface.
 auto CallGateOp::getArgOperands() -> mlir::OperandRange {
-  return operands();
+  return getOperands();
 }
 
 auto CallGateOp::getCalleeType() -> FunctionType {
@@ -203,10 +203,10 @@ auto CallDefcalMeasureOp::getCallableForCallee() -> CallInterfaceCallable {
 }
 
 auto CallDefCalGateOp::getArgOperands() -> mlir::OperandRange {
-  return operands();
+  return getOperands();
 }
 auto CallDefcalMeasureOp::getArgOperands() -> mlir::OperandRange {
-  return operands();
+  return getOperands();
 }
 
 auto CallDefCalGateOp::getCalleeType() -> FunctionType {
@@ -247,7 +247,7 @@ auto CallSubroutineOp::getCallableForCallee() -> CallInterfaceCallable {
 /// Get the argument operands to the called function, this is required by the
 /// call interface.
 auto CallSubroutineOp::getArgOperands() -> mlir::OperandRange {
-  return operands();
+  return getOperands();
 }
 
 auto CallSubroutineOp::getCalleeType() -> FunctionType {
@@ -511,7 +511,7 @@ static LogicalResult verify(mlir::quir::ReturnOp op) {
 
   auto numResults = circuitType.getNumResults();
   // Verify number of operands match type signature
-  if (numResults != op.operands().size()) {
+  if (numResults != op.getOperands().size()) {
     return op.emitError()
         .append("expected ", numResults, " result operands")
         .attachNote(circuit.getLoc())
@@ -520,7 +520,7 @@ static LogicalResult verify(mlir::quir::ReturnOp op) {
 
   int i = 0;
   for (const auto [type, operand] :
-       llvm::zip(circuitType.getResults(), op.operands())) {
+       llvm::zip(circuitType.getResults(), op.getOperands())) {
     auto opType = operand.getType();
     if (type != opType) {
       return op.emitOpError()

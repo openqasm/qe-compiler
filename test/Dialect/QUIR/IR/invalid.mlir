@@ -31,7 +31,7 @@ quir.circuit @circuit_1(%arg1: !quir.angle<32>) {
 	quir.return
 }
 
-func @call_circuit_call_does_not_match_operands(){
+func @call_circuit_call_does_not_match_getOperands(){
 	// expected-error@+1 {{'quir.call_circuit' op incorrect number of operands for the callee circuit}}
 	quir.call_circuit @circuit_1 () : () -> ()
 	return

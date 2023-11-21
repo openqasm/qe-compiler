@@ -123,9 +123,9 @@ auto MockFunctionLocalizationPass::lookupQubitId(const Value val) -> int {
 template <class CallOpTy>
 auto MockFunctionLocalizationPass::getCallArgIndex(CallOpTy &callOp) -> int {
   int callArgIndex = -1;
-  for (uint ii = 0; ii < callOp.operands().size(); ++ii) {
-    if (callOp.operands()[ii].getType().template isa<QubitType>()) {
-      int qId = lookupQubitId(callOp.operands()[ii]);
+  for (uint ii = 0; ii < callOp.getOperands().size(); ++ii) {
+    if (callOp.getOperands()[ii].getType().template isa<QubitType>()) {
+      int qId = lookupQubitId(callOp.getOperands()[ii]);
       if (qId == theseIds[0]) {
         callArgIndex = ii;
         break;
@@ -170,9 +170,9 @@ template <class CallOpTy>
 auto MockFunctionLocalizationPass::getMangledName(CallOpTy &callOp)
     -> std::string {
   std::string newName = callOp.callee().str();
-  for (uint ii = 0; ii < callOp.operands().size(); ++ii) {
-    if (callOp.operands()[ii].getType().template isa<QubitType>()) {
-      int qId = lookupQubitId(callOp.operands()[ii]);
+  for (uint ii = 0; ii < callOp.getOperands().size(); ++ii) {
+    if (callOp.getOperands()[ii].getType().template isa<QubitType>()) {
+      int qId = lookupQubitId(callOp.getOperands()[ii]);
       newName += "_q" + std::to_string(qId);
     }
   }
@@ -196,10 +196,10 @@ void MockFunctionLocalizationPass::cloneMatchedOp(CallOpTy &callOp,
     auto newFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
     newFuncOp->setAttr(SymbolTable::getSymbolAttrName(),
                        StringAttr::get(newFuncOp.getContext(), newName));
-    for (uint ii = 0; ii < callOp.operands().size(); ++ii) {
-      if (callOp.operands()[ii].getType().template isa<QubitType>()) {
+    for (uint ii = 0; ii < callOp.getOperands().size(); ++ii) {
+      if (callOp.getOperands()[ii].getType().template isa<QubitType>()) {
         int qId =
-            lookupQubitId(callOp.operands()[ii]); // copy qubitId from call
+            lookupQubitId(callOp.getOperands()[ii]); // copy qubitId from call
         newFuncOp.setArgAttrs(
             ii, ArrayRef({NamedAttribute(
                     StringAttr::get(newFuncOp.getContext(), "quir.physicalId"),
@@ -342,7 +342,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
   auto walkDefcalMeasureCalls = [&](CallDefcalMeasureOp callOp) {
     std::string calleeName = callOp.callee().str();
 
-    int qId = lookupQubitId(callOp.operands()[0]);
+    int qId = lookupQubitId(callOp.getOperands()[0]);
     int thisIdIndex = -1;
     for (uint ii = 0; ii < theseIds.size(); ++ii) {
       if (qId == theseIds[ii]) {

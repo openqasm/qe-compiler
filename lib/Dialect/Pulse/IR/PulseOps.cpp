@@ -413,7 +413,7 @@ static LogicalResult verify(ReturnOp op) {
 
   auto numResults = sequenceType.getNumResults();
   // Verify number of operands match type signature
-  if (numResults != op.operands().size()) {
+  if (numResults != op.getOperands().size()) {
     return op.emitError()
         .append("expected ", numResults, " result operands")
         .attachNote(sequence.getLoc())
@@ -422,7 +422,7 @@ static LogicalResult verify(ReturnOp op) {
 
   int i = 0;
   for (const auto [type, operand] :
-       llvm::zip(sequenceType.getResults(), op.operands())) {
+       llvm::zip(sequenceType.getResults(), op.getOperands())) {
     auto opType = operand.getType();
     if (type != opType) {
       return op.emitOpError()

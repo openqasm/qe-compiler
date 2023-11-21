@@ -112,10 +112,10 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
                      StringAttr::get(&getContext(), mangledName));
 
     // add qubit ID attributes to all the arguments
-    for (uint ii = 0; ii < callOp.operands().size(); ++ii) {
-      if (callOp.operands()[ii].getType().template isa<QubitType>()) {
+    for (uint ii = 0; ii < callOp.getOperands().size(); ++ii) {
+      if (callOp.getOperands()[ii].getType().template isa<QubitType>()) {
         int qId =
-            lookupQubitId(callOp.operands()[ii]); // copy qubitId from call
+            lookupQubitId(callOp.getOperands()[ii]); // copy qubitId from call
         newFunc.setArgAttrs(
             ii, ArrayRef({NamedAttribute(
                     StringAttr::get(&getContext(),

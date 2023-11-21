@@ -534,7 +534,7 @@ void mock::MockQubitLocalizationPass::processOp(mlir::func::ReturnOp &returnOp) 
   controllerBuilder->clone(*op, controllerMapping);
   FlatSymbolRefAttr symbolRef = SymbolRefAttr::get(op->getParentOp());
   if (symbolRef && symbolRef.getLeafReference() == "main")
-    for (auto arg : returnOp.operands())
+    for (auto arg : returnOp.getOperands())
       broadcastAndReceiveValue(arg, op->getLoc(), seenNodeIds);
   if (!classicalOnlyCheck(op->getParentOp()))
     for (uint nodeId : seenNodeIds)

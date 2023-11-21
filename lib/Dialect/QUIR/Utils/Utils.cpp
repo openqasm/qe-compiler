@@ -140,7 +140,7 @@ void addQubitIdsFromAttr(Operation *operation, std::set<uint> &theseIds) {
 // returns a vector of all of the classical arguments for a callOp
 template <class CallOpTy>
 void classicalCallOperands(CallOpTy &callOp, std::vector<Value> &vec) {
-  for (auto arg : callOp.operands())
+  for (auto arg : callOp.getOperands())
     if (!arg.getType().template isa<QubitType>())
       vec.emplace_back(arg);
 } // classicalCallOperands
@@ -189,7 +189,7 @@ template <class CallOpTy>
 void qubitArgIndices(CallOpTy &callOp, llvm::BitVector &bv) {
   uint ii = 0;
 
-  for (auto arg : callOp.operands()) {
+  for (auto arg : callOp.getOperands()) {
     if (arg.getType().template isa<QubitType>()) {
       if (bv.size() <= ii)
         bv.resize(ii + 1);
