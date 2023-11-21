@@ -743,10 +743,6 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
     /// compatible.
     void cloneInto(SequenceOp dest, IRMapping &mapper);
 
-    FunctionType getType() {
-        return getTypeAttr().getValue().cast<FunctionType>();
-    }
-
     //===------------------------------------------------------------------===//
     // CallableOpInterface
     //===------------------------------------------------------------------===//
@@ -756,19 +752,15 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
     /// function.
     ::mlir::Region *getCallableRegion() { return isExternal() ? nullptr : &getBody(); }
 
-    /// Returns the results types that the callable region produces when
-    /// executed.
-    ArrayRef<Type> getCallableResults() { return getType().cast<::mlir::FunctionType>().getResults(); }
-
     //===------------------------------------------------------------------===//
     // FunctionOpInterface Methods
     //===------------------------------------------------------------------===//
 
     /// Returns the argument types of this function.
-    ArrayRef<Type> getArgumentTypes() { return getType().getInputs(); }
+    ArrayRef<Type> getArgumentTypes() { return getFunctionType().getInputs(); }
 
     /// Returns the result types of this function.
-    ArrayRef<Type> getResultTypes() { return getType().getResults(); }
+    ArrayRef<Type> getResultTypes() { return getFunctionType().getResults(); }
 
     /// Verify the type attribute of this function. Returns failure and emits
     /// an error if the attribute is invalid.

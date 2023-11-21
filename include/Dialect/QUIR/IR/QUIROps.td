@@ -621,10 +621,6 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
     /// compatible.
     void cloneInto(CircuitOp dest, IRMapping &mapper);
 
-    FunctionType getType() {
-        return getTypeAttr().getValue().cast<FunctionType>();
-    }
-
     //===------------------------------------------------------------------===//
     // CallableOpInterface
     //===------------------------------------------------------------------===//
@@ -634,19 +630,15 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
     /// function.
     ::mlir::Region *getCallableRegion() { return isExternal() ? nullptr : &getBody(); }
 
-    /// Returns the results types that the callable region produces when
-    /// executed.
-    ArrayRef<Type> getCallableResults() { return getType().getResults(); }
-
     //===------------------------------------------------------------------===//
     // FunctionOpInterface Methods
     //===------------------------------------------------------------------===//
 
     /// Returns the argument types of this function.
-    ArrayRef<Type> getArgumentTypes() { return getType().getInputs(); }
+    ArrayRef<Type> getArgumentTypes() { return getFunctionType().getInputs(); }
 
     /// Returns the result types of this function.
-    ArrayRef<Type> getResultTypes() { return getType().getResults(); }
+    ArrayRef<Type> getResultTypes() { return getFunctionType().getResults(); }
 
     /// Verify the type attribute of this function. Returns failure and emits
     /// an error if the attribute is invalid.
