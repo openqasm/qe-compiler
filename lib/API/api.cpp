@@ -85,7 +85,7 @@ static llvm::cl::opt<bool> verifyDiagnostics(
                    "expected-* lines on the corresponding line"),
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-#ifndef NDEBUG
+#ifndef NOVERIFY
 #define VERIFY_PASSES_DEFAULT true
 #else
 #define VERIFY_PASSES_DEFAULT false
