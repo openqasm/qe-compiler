@@ -74,7 +74,7 @@ void LimitCBitWidthPass::processOp(
   uint64_t index;
   uint64_t reg;
   std::tie(reg, index) = remapBit(cbitAssignOp.index());
-  auto width = newRegisters[reg].type().dyn_cast<quir::CBitType>().getWidth();
+  auto width = newRegisters[reg].getType().dyn_cast<quir::CBitType>().getWidth();
   auto value = cbitAssignOp.assigned_bit();
 
   OpBuilder builder(cbitAssignOp);
@@ -202,7 +202,7 @@ void LimitCBitWidthPass::runOnOperation() {
 
   module->walk([&](DeclareVariableOp op) {
     // look for declare variables of CBitType and Width > 64
-    auto cbitType = op.type().dyn_cast<quir::CBitType>();
+    auto cbitType = op.getType().dyn_cast<quir::CBitType>();
     if (!cbitType || cbitType.getWidth() <= MAX_CBIT_WIDTH)
       return;
 

@@ -185,7 +185,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   target.addDynamicallyLegalOp<mlir::oq3::CBitExtractBitOp>(
       [](mlir::oq3::CBitExtractBitOp op) {
         if (op.getType().isa<mlir::quir::CBitType>() ||
-            op.operand().getType().isa<mlir::quir::CBitType>())
+            op.getOperand().getType().isa<mlir::quir::CBitType>())
           return false;
 
         return true;
@@ -193,7 +193,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   target.addDynamicallyLegalOp<mlir::oq3::CBitInsertBitOp>(
       [](mlir::oq3::CBitInsertBitOp op) {
         if (op.getType().isa<mlir::quir::CBitType>() ||
-            op.operand().getType().isa<mlir::quir::CBitType>())
+            op.getOperand().getType().isa<mlir::quir::CBitType>())
           return false;
 
         return true;

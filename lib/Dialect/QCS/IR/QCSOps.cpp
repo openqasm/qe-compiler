@@ -73,7 +73,7 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
 
   // Check that type of variables matches result type of this Op
   if (op->getNumResults() == 1) {
-    if (op->getResult(0).getType() != declOp.type())
+    if (op->getResult(0).getType() != declOp.getType())
       return op->emitOpError(
           "type mismatch between variable declaration and variable use");
   }
@@ -81,7 +81,7 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
   if (op->getNumOperands() > 0 && operandMustMatchSymbolType) {
     assert(op->getNumOperands() == 1 &&
            "type check only supported for a single operand");
-    if (op->getOperand(0).getType() != declOp.type())
+    if (op->getOperand(0).getType() != declOp.getType())
       return op->emitOpError(
           "type mismatch between variable declaration and variable assignment");
   }

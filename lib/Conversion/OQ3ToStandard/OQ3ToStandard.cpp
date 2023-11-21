@@ -129,7 +129,7 @@ struct CBitInsertBitOpConversionPattern
                   ConversionPatternRewriter &rewriter) const override {
 
     auto const loc = op.getLoc();
-    auto cbitWidth = getCBitOrIntBitWidth(adaptor.operand().getType());
+    auto cbitWidth = getCBitOrIntBitWidth(adaptor.getOperand().getType());
 
     // just a single bit? then replace whole bitmap
     if (cbitWidth == 1) {
@@ -145,7 +145,7 @@ struct CBitInsertBitOpConversionPattern
         rewriter.create<mlir::arith::ConstantIntOp>(loc, mask, cbitWidth);
 
     auto maskedBitmap = rewriter.create<mlir::LLVM::AndOp>(
-        loc, maskOp.getType(), adaptor.operand(), maskOp);
+        loc, maskOp.getType(), adaptor.getOperand(), maskOp);
 
     mlir::Value extendedBit = rewriter.create<mlir::LLVM::ZExtOp>(
         loc, maskOp.getType(), adaptor.assigned_bit());
@@ -175,14 +175,14 @@ struct CBitExtractBitOpConversionPattern
   matchAndRewrite(CBitExtractBitOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto const location = op.getLoc();
-    auto convertedOperand = adaptor.operand();
+    auto convertedOperand = adaptor.getOperand();
 
-    assert((op.operand().getType().isa<quir::CBitType>() ||
-            op.operand().getType().isSignlessInteger()) &&
+    assert((op.getOperand().getType().isa<quir::CBitType>() ||
+            op.getOperand().getType().isSignlessInteger()) &&
 
            "expect operand of CBitType for oq3.cbit_extractbit");
 
-    auto bitWidth = getCBitOrIntBitWidth(op.operand().getType());
+    auto bitWidth = getCBitOrIntBitWidth(op.getOperand().getType());
 
     if (bitWidth == 1) {
       // just pass-through single bit values

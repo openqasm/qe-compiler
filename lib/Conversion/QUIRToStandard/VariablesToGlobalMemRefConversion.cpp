@@ -85,8 +85,8 @@ struct VariableDeclarationConversionPattern
   matchAndRewrite(DeclareVariableOp declareOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto declarationType = declareOp.type();
-    auto convertedType = typeConverter->convertType(declareOp.type());
+    auto declarationType = declareOp.getType();
+    auto convertedType = typeConverter->convertType(declareOp.getType());
     if (convertedType)
       declarationType = convertedType;
 
@@ -133,14 +133,14 @@ struct ArrayDeclarationConversionPattern
   matchAndRewrite(DeclareArrayOp declareOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto declarationType = declareOp.type();
-    auto convertedType = typeConverter->convertType(declareOp.type());
+    auto declarationType = declareOp.getType();
+    auto convertedType = typeConverter->convertType(declareOp.getType());
     if (convertedType)
       declarationType = convertedType;
 
     uint64_t num_elements = declareOp.num_elements().getZExtValue();
     auto const memRefType = mlir::MemRefType::get(
-        llvm::ArrayRef<int64_t>{(int64_t)num_elements}, declareOp.type());
+        llvm::ArrayRef<int64_t>{(int64_t)num_elements}, declareOp.getType());
     assert(memRefType && "failed to instantiate a MemRefType, likely trying "
                          "with invalid element type");
 
@@ -197,7 +197,7 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
   builder.setInsertionPointToStart(&surroundingFunction.getBody().front());
 
   return builder.create<mlir::memref::GetGlobalOp>(
-      variableOp.getLoc(), globalMemrefOp.type(), globalMemrefOp.getSymName());
+      variableOp.getLoc(), globalMemrefOp.getType(), globalMemrefOp.getSymName());
 }
 
 struct VariableUseConversionPattern

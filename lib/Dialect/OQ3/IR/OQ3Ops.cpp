@@ -42,7 +42,7 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
 
   // Check that type of variables matches result type of this Op
   if (op->getNumResults() == 1) {
-    if (op->getResult(0).getType() != declOp.type())
+    if (op->getResult(0).getType() != declOp.getType())
       return op->emitOpError(
           "type mismatch between variable declaration and variable use");
   }
@@ -50,7 +50,7 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
   if (op->getNumOperands() > 0 && operandMustMatchSymbolType) {
     assert(op->getNumOperands() == 1 &&
            "type check only supported for a single operand");
-    if (op->getOperand(0).getType() != declOp.type())
+    if (op->getOperand(0).getType() != declOp.getType())
       return op->emitOpError(
           "type mismatch between variable declaration and variable assignment");
   }
@@ -81,7 +81,7 @@ findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
     if (insertBitOp.indexAttr() == bitIndex)
       return insertBitOp.assigned_bit();
 
-    op = insertBitOp.operand().getDefiningOp();
+    op = insertBitOp.getOperand().getDefiningOp();
   }
 
   // did we identify an op that provides the single bit?
@@ -126,7 +126,7 @@ CBitAssignBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 //===----------------------------------------------------------------------===//
 
 mlir::LogicalResult DeclareVariableOp::verify() {
-    auto t = (*this).type();
+    auto t = (*this).getType();
 
     if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat() || t.isa<ComplexType>())
         return success();
@@ -154,7 +154,7 @@ VariableLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 //===----------------------------------------------------------------------===//
 
 mlir::LogicalResult DeclareArrayOp::verify() {
-  auto t = (*this).type();
+  auto t = (*this).getType();
 
   if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat())
       return success();
