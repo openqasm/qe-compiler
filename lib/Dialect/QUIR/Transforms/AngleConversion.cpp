@@ -48,7 +48,7 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
       return failure();
 
     mlir::func::FuncOp funcOp = findOp->second;
-    FunctionType fType = funcOp.getType();
+    FunctionType fType = funcOp.getFunctionType();
 
     for (auto &pair : llvm::enumerate(callGateOp.getArgOperands())) {
       auto value = pair.value();

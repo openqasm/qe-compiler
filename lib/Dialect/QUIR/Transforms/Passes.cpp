@@ -157,7 +157,7 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
                   b.getBoolAttr(hasQuantumSubOps(op)));
     if (auto funcOp = dyn_cast<mlir::func::FuncOp>(op)) {
       // just check the arguments for qubitType values
-      FunctionType fType = funcOp.getType();
+      FunctionType fType = funcOp.getFunctionType();
       bool isMain = SymbolRefAttr::get(funcOp).getLeafReference() == "main";
       bool quantumOperands = false;
       for (auto argType : fType.getInputs()) {

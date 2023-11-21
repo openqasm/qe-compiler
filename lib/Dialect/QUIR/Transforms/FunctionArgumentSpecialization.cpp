@@ -60,7 +60,7 @@ void FunctionArgumentSpecializationPass::processCallOp(
       // no callable region found (just a prototype)
     } else {
       FunctionType callType = callOp.getCalleeType();
-      FunctionType funcType = funcOp.getType();
+      FunctionType funcType = funcOp.getFunctionType();
       if (callType == funcType) {
         // add calls inside this func def to the work list
         findOp->walk([&](Operation *op) {

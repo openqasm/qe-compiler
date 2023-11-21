@@ -26,6 +26,7 @@
 #include "mlir/Parser/Parser.h"
 #include "mlir/Support/FileUtilities.h"
 
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/SourceMgr.h"
 
 #define DEBUG_TYPE "LoadPulseCalsDebug"

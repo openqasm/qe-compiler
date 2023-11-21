@@ -152,7 +152,7 @@ auto MockFunctionLocalizationPass::getMatchedOp(CallOpTy &callOp,
   // with some sort of ranking system
   for (auto *op : funcMap[calleeName]) {
     auto funcOp = dyn_cast<mlir::func::FuncOp>(op);
-    FunctionType fType = funcOp.getType();
+    FunctionType fType = funcOp.getFunctionType();
     if (quirFunctionTypeMatch(fType, cType)) { // types match
       auto argIdAttr =
           funcOp.getArgAttrOfType<IntegerAttr>(callArgIndex, "quir.physicalId");

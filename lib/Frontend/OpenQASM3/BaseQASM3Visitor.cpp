@@ -57,6 +57,8 @@
 #include "Frontend/OpenQASM3/BaseQASM3Visitor.h"
 
 #include "llvm/Support/Error.h"
+#include "llvm/Support/ErrorHandling.h"
+
 
 using namespace QASM;
 
