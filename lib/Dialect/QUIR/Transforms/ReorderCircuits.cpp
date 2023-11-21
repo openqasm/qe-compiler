@@ -55,7 +55,7 @@ struct ReorderCircuitsAndNonCircuitPat
     LLVM_DEBUG(llvm::dbgs() << "\n");
 
     auto nextAffineStoreOpp =
-        dyn_cast<mlir::AffineStoreOp>(callCircuitOp->getNextNode());
+        dyn_cast<mlir::affine::AffineStoreOp>(callCircuitOp->getNextNode());
     if (nextAffineStoreOpp) {
       bool moveAffine = true;
       for (auto operand : nextAffineStoreOpp->getOperands())

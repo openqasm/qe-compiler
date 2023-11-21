@@ -281,7 +281,7 @@ LogicalResult RemoveAllocaWithIsolatedStoresPattern::matchAndRewrite(
   // push to small vector for erasing
   for (auto *user : op.getResult().getUsers()) {
     usersToErase.push_back(user);
-    if (!mlir::isa<mlir::AffineStoreOp>(user))
+    if (!mlir::isa<mlir::affine::AffineStoreOp>(user))
       return failure();
   }
 

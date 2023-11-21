@@ -170,7 +170,7 @@ struct CommOpConversionPat : public OpConversionPattern<CommOp> {
 void conversion::MockQUIRToStdPass::getDependentDialects(
     DialectRegistry &registry) const {
   registry.insert<LLVM::LLVMDialect, mlir::memref::MemRefDialect,
-                  mlir::AffineDialect, arith::ArithmeticDialect>();
+                  mlir::affine::AffineDialect, arith::ArithmeticDialect>();
 }
 
 void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
@@ -191,7 +191,7 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   ConversionTarget target(*context);
 
   target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
-                         mlir::AffineDialect, memref::MemRefDialect,
+                         mlir::affine::AffineDialect, memref::MemRefDialect,
                          scf::SCFDialect, mlir::func::FuncDialect,
                          mlir::pulse::PulseDialect>();
   // Since we are converting QUIR -> STD/LLVM, make QUIR illegal.

@@ -217,7 +217,7 @@ struct VariableUseConversionPattern
 
     auto varRef = varRefOrNone.getValue();
     auto loadOp =
-        rewriter.create<mlir::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
+        rewriter.create<mlir::affine::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
 
     rewriter.replaceOp(useOp, {loadOp});
     return success();
@@ -265,7 +265,7 @@ struct VariableAssignConversionPattern
       return failure();
     auto varRef = varRefOrNone.getValue();
 
-    rewriter.create<mlir::AffineStoreOp>(
+    rewriter.create<mlir::affine::AffineStoreOp>(
         assignOp.getLoc(), adaptor.assigned_value(), varRef.getResult(),
         mlir::ValueRange{});
 

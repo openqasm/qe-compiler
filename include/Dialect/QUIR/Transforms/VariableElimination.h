@@ -42,7 +42,7 @@ struct VariableEliminationPass
 
   void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<mlir::memref::MemRefDialect>();
-    registry.insert<mlir::AffineDialect>();
+    registry.insert<mlir::affine::AffineDialect>();
   }
 }; // struct VariableEliminationPass
 
