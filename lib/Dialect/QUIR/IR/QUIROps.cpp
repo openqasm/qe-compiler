@@ -369,7 +369,7 @@ static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
 static LogicalResult verifyClassical_(CircuitOp op) {
   mlir::Operation *classicalOp = nullptr;
   WalkResult result = op->walk([&](Operation *subOp) {
-    if (isa<mlir::ConstantOp>(subOp) || isa<mlir::arith::ConstantOp>(subOp) ||
+    if (isa<mlir::arith::ConstantOp>(subOp) || isa<mlir::arith::ConstantOp>(subOp) ||
         isa<quir::ConstantOp>(subOp) || isa<CallCircuitOp>(subOp) ||
         isa<quir::ReturnOp>(subOp) || isa<CircuitOp>(subOp) ||
         subOp->hasTrait<mlir::quir::UnitaryOp>() ||
