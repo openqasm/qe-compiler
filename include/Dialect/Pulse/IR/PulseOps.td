@@ -421,7 +421,7 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFra
     let extraClassDeclaration = [{
         double getPhaseFromDefiningOpOffset() {
             // get op that defines phase offset and return its value
-            auto phaseOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phaseOffset().getDefiningOp());
+            auto phaseOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getPhaseOffset().getDefiningOp());
             assert (phaseOffsetConstOp && "assume phase offset to be defined by ConstantFloatOp");
             return phaseOffsetConstOp.value().convertToDouble();
         }
