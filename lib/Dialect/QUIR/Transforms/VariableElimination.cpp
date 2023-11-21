@@ -144,7 +144,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   CBitTypeConverter typeConverter;
 
   // Only convert QUIR variable operations
-  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
+  target.addLegalDialect<arith::ArithDialect, LLVM::LLVMDialect,
                          memref::MemRefDialect, scf::SCFDialect,
                          mlir::func::FuncDialect, AffineDialect>();
   target.addIllegalOp<oq3::DeclareVariableOp, oq3::VariableAssignOp,

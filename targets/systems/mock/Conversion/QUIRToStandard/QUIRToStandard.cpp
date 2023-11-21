@@ -170,7 +170,7 @@ struct CommOpConversionPat : public OpConversionPattern<CommOp> {
 void conversion::MockQUIRToStdPass::getDependentDialects(
     DialectRegistry &registry) const {
   registry.insert<LLVM::LLVMDialect, mlir::memref::MemRefDialect,
-                  mlir::affine::AffineDialect, arith::ArithmeticDialect>();
+                  mlir::affine::AffineDialect, arith::ArithDialect>();
 }
 
 void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
@@ -190,7 +190,7 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   auto *context = &getContext();
   ConversionTarget target(*context);
 
-  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
+  target.addLegalDialect<arith::ArithDialect, LLVM::LLVMDialect,
                          mlir::affine::AffineDialect, memref::MemRefDialect,
                          scf::SCFDialect, mlir::func::FuncDialect,
                          mlir::pulse::PulseDialect>();

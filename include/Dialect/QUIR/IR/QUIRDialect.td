@@ -35,7 +35,7 @@ def QUIRDialect : Dialect {
     let dependentDialects = [
         "mlir::oq3::OQ3Dialect",
         "mlir::qcs::QCSDialect",
-        "mlir::arith::ArithmeticDialect",
+        "mlir::arith::ArithDialect",
         "mlir::scf::SCFDialect",
         "mlir::LLVM::LLVMDialect"
     ];
