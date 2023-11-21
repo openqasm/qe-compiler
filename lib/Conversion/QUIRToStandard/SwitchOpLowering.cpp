@@ -68,7 +68,7 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
         continueBlock->addArgument(resultType, switchOp.getLoc()));
   // Move blocks from the "default" region to the region containing
   // 'quir.switch', place it before the continuation block, and branch to it.
-  auto &defaultRegion = switchOp.defaultRegion();
+  auto &defaultRegion = switchOp.getDefaultRegion();
   auto *defaultBlock = &defaultRegion.front();
   Operation *defaultTerminator = defaultRegion.back().getTerminator();
   ValueRange defaultTerminatorOperands = defaultTerminator->getOperands();

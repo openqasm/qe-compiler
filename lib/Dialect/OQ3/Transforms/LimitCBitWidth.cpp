@@ -39,7 +39,7 @@ void LimitCBitWidthPass::addNewDeclareVariableOps(
     uint numRemainingBits,
     llvm::SmallVector<mlir::oq3::DeclareVariableOp> &newRegisters,
     mlir::SymbolTableCollection &symbolTableCol) {
-  auto variableName = op.sym_name();
+  auto variableName = op.getSymName();
 
   // create new registers with _# added to end
   // add additional "_" if symbol name is found
@@ -81,7 +81,7 @@ void LimitCBitWidthPass::processOp(
   builder.create<CBitAssignBitOp>(
       cbitAssignOp->getLoc(),
       mlir::SymbolRefAttr::get(
-          builder.getStringAttr(newRegisters[reg].sym_name())),
+          builder.getStringAttr(newRegisters[reg].getSymName())),
       builder.getIndexAttr(index), builder.getIndexAttr(width), value);
 
   eraseList_.push_back(cbitAssignOp);
@@ -131,7 +131,7 @@ void LimitCBitWidthPass::processOp(
         initializerVal);
 
     builder.create<VariableAssignOp>(
-        variableAssignOp->getLoc(), newRegisters[regNum].sym_name(), newCastOp);
+        variableAssignOp->getLoc(), newRegisters[regNum].getSymName(), newCastOp);
   }
   eraseList_.push_back(variableAssignOp);
 }
@@ -149,7 +149,7 @@ void LimitCBitWidthPass::processOp(
     newVariableLoads.push_back(builder.create<VariableLoadOp>(
         variableLoadOp.getLoc(),
         builder.getType<mlir::quir::CBitType>(bitWidth),
-        newRegisters[regNum].sym_name()));
+        newRegisters[regNum].getSymName()));
   }
 
   for (auto *loadUse : variableLoadOp->getUsers()) {

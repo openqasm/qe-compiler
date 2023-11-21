@@ -197,7 +197,7 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
   builder.setInsertionPointToStart(&surroundingFunction.getBody().front());
 
   return builder.create<mlir::memref::GetGlobalOp>(
-      variableOp.getLoc(), globalMemrefOp.type(), globalMemrefOp.sym_name());
+      variableOp.getLoc(), globalMemrefOp.type(), globalMemrefOp.getSymName());
 }
 
 struct VariableUseConversionPattern

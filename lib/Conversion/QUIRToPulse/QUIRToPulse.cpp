@@ -51,7 +51,7 @@ void QUIRToPulsePass::runOnOperation() {
   mlir::func::FuncOp mainFunc = dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
   assert(mainFunc && "could not find the main func");
 
-  mainFuncFirstOp = &mainFunc.body().front().front();
+  mainFuncFirstOp = &mainFunc.getBody().front().front();
 
   // convert all QUIR circuits to Pulse sequences
   moduleOp->walk([&](CallCircuitOp callCircOp) {
@@ -86,7 +86,7 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   mlir::OpBuilder builder(mainFunc);
 
   auto circuitOp = getCircuitOp(callCircuitOp);
-  std::string circName = circuitOp.sym_name().str();
+  std::string circName = circuitOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nConverting QUIR circuit " << circName << ":\n");
   assert(callCircuitOp && "callCircuit op is null");
   assert(circuitOp && "circuit op is null");

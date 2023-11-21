@@ -54,7 +54,7 @@ void LoadPulseCalsPass::runOnOperation() {
     }
     // add sequence Ops to pulseCalsNameToSequenceMap
     defaultPulseCalsModule->walk([&](mlir::pulse::SequenceOp sequenceOp) {
-      auto sequenceName = sequenceOp.sym_name().str();
+      auto sequenceName = sequenceOp.getSymName().str();
       pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
     });
   } else
@@ -71,7 +71,7 @@ void LoadPulseCalsPass::runOnOperation() {
     }
     // add sequence Ops to pulseCalsNameToSequenceMap
     additionalPulseCalsModule->walk([&](mlir::pulse::SequenceOp sequenceOp) {
-      auto sequenceName = sequenceOp.sym_name().str();
+      auto sequenceName = sequenceOp.getSymName().str();
       pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
     });
   } else
@@ -81,7 +81,7 @@ void LoadPulseCalsPass::runOnOperation() {
   // parse the user specified pulse calibrations
   LLVM_DEBUG(llvm::dbgs() << "parsing user specified pulse calibrations.\n");
   moduleOp->walk([&](mlir::pulse::SequenceOp sequenceOp) {
-    auto sequenceName = sequenceOp.sym_name().str();
+    auto sequenceName = sequenceOp.getSymName().str();
     pulseCalsNameToSequenceMap[sequenceName] = sequenceOp;
     pulseCalsAddedToIR.insert(sequenceName);
   });
@@ -133,7 +133,7 @@ void LoadPulseCalsPass::loadPulseCals(CallGateOp callGateOp,
              pulseCalsNameToSequenceMap.end() &&
          "could not find any pulse calibration for call gate");
 
-  OpBuilder builder(funcOp.body());
+  OpBuilder builder(funcOp.getBody());
   callGateOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
@@ -152,7 +152,7 @@ void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
              pulseCalsNameToSequenceMap.end() &&
          "could not find any pulse calibration for the CX gate");
 
-  OpBuilder builder(funcOp.body());
+  OpBuilder builder(funcOp.getBody());
   CXOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
@@ -170,7 +170,7 @@ void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
              pulseCalsNameToSequenceMap.end() &&
          "could not find any pulse calibration for the U gate");
 
-  OpBuilder builder(funcOp.body());
+  OpBuilder builder(funcOp.getBody());
   UOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
@@ -179,7 +179,7 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder(funcOp.body());
+  OpBuilder builder(funcOp.getBody());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<MeasureOp>(measureOp, qubitOperands);
@@ -218,7 +218,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder(funcOp.body());
+  OpBuilder builder(funcOp.getBody());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::BarrierOp>(barrierOp, qubitOperands);
@@ -254,7 +254,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder(funcOp.body());
+  OpBuilder builder(funcOp.getBody());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::DelayOp>(delayOp, qubitOperands);
@@ -291,7 +291,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder(funcOp.body());
+  OpBuilder builder(funcOp.getBody());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::ResetQubitOp>(resetOp, qubitOperands);
@@ -325,15 +325,15 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
 
 void LoadPulseCalsPass::addPulseCalToModule(
     mlir::func::FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp) {
-  if (pulseCalsAddedToIR.find(sequenceOp.sym_name().str()) ==
+  if (pulseCalsAddedToIR.find(sequenceOp.getSymName().str()) ==
       pulseCalsAddedToIR.end()) {
-    OpBuilder builder(funcOp.body());
+    OpBuilder builder(funcOp.getBody());
     auto *clonedPulseCalOp = builder.clone(*sequenceOp);
     auto clonedPulseCalSequenceOp = static_cast<SequenceOp>(clonedPulseCalOp);
     clonedPulseCalSequenceOp->moveBefore(funcOp);
-    pulseCalsAddedToIR.insert(sequenceOp.sym_name().str());
+    pulseCalsAddedToIR.insert(sequenceOp.getSymName().str());
   } else
-    LLVM_DEBUG(llvm::dbgs() << "pulse cal " << sequenceOp.sym_name().str()
+    LLVM_DEBUG(llvm::dbgs() << "pulse cal " << sequenceOp.getSymName().str()
                             << " is already added to IR.\n");
 }
 

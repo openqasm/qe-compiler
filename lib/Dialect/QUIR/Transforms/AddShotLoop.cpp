@@ -55,7 +55,7 @@ void AddShotLoopPass::runOnOperation() {
 
   // start the builder outside the main function so we aren't cloning or
   // building into the same region that we are copying from
-  OpBuilder build(moduleOp.body());
+  OpBuilder build(moduleOp.getBody());
   Location opLoc = mainFunc.getLoc();
 
   auto startOp = build.create<mlir::arith::ConstantOp>(
@@ -75,7 +75,7 @@ void AddShotLoopPass::runOnOperation() {
   BlockAndValueMapping mapper;
 
   Operation *lastOp = nullptr;
-  for (Operation &op : mainFunc.body().getOps()) {
+  for (Operation &op : mainFunc.getBody().getOps()) {
     if (dyn_cast<SystemInitOp>(&op))
       continue;
     if (dyn_cast<SystemFinalizeOp>(&op) || dyn_cast<mlir::func::ReturnOp>(&op)) {
@@ -93,7 +93,7 @@ void AddShotLoopPass::runOnOperation() {
   if (!lastOp) {
     // if last op wasn't detected while iterating
     // set it to the last op in the one block of the mainFunc body region
-    lastOp = &mainFunc.body().front().back();
+    lastOp = &mainFunc.getBody().front().back();
   }
 
   startOp->moveBefore(lastOp);

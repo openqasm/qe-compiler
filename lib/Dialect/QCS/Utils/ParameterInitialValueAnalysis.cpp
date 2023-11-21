@@ -62,7 +62,7 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
           if (floatAttr)
             initial_value = floatAttr.getValue().convertToDouble();
         }
-        initial_values_[declareParameterOp.sym_name()] = initial_value;
+        initial_values_[declareParameterOp.getSymName()] = initial_value;
       }
   invalid_ = false;
 }

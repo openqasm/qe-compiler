@@ -171,7 +171,7 @@ static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
 /// Verifier for pulse.waveform_container operation.
 static auto verify(WaveformContainerOp &wfrContainerOp) -> mlir::LogicalResult {
 
-  for (Block &block : wfrContainerOp.body().getBlocks()) {
+  for (Block &block : wfrContainerOp.getBody().getBlocks()) {
     for (Operation &op : block.getOperations()) {
       // Check that all the operations in the body of the waveform_container are
       // of type Waveform_CreateOp

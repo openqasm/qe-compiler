@@ -79,7 +79,7 @@ void QUIRAngleConversionPass::runOnOperation() {
 
   auto *op = getOperation();
   op->walk(
-      [&](mlir::func::FuncOp funcOp) { functionOps[funcOp.sym_name().str()] = funcOp; });
+      [&](mlir::func::FuncOp funcOp) { functionOps[funcOp.getSymName().str()] = funcOp; });
 
   RewritePatternSet patterns(&getContext());
   patterns.add<AngleConversion>(&getContext(), functionOps);

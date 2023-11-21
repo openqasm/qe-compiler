@@ -622,7 +622,7 @@ void quir::SwitchOp::getSuccessorRegions(
   }
 
   // all regions are possible to be the successor
-  regions.push_back(RegionSuccessor(&defaultRegion()));
+  regions.push_back(RegionSuccessor(&getDefaultRegion()));
   for (auto *region = caseRegions().begin(); region != caseRegions().end();
        region++)
     regions.push_back(region);
@@ -637,7 +637,7 @@ static void print(OpAsmPrinter &p, quir::SwitchOp op) {
     // Print yield explicitly if the op defines values.
     printBlockTerminators = true;
   }
-  p.printRegion(op.defaultRegion(),
+  p.printRegion(op.getDefaultRegion(),
                 /*printEntryBlockOperands=*/false,
                 /*printBlockTerminators=*/printBlockTerminators);
 

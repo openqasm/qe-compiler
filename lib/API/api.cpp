@@ -558,7 +558,9 @@ compile_(int argc, char const **argv, std::string *outputString,
   llvm::cl::ParseCommandLineOptions(
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
 
-  mlir::applyPassManagerCLOptions(pm);
+  if (mlir::failed(mlir::applyPassManagerCLOptions(pm)))
+    return llvm::createStringError(llvm::inconvertibleErrorCode(), "Unable to apply pass manager command line options");
+
   mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
   // Enable verifier (default: true)

@@ -514,7 +514,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   OpBuilder prevBuilder = builder;
 
   // Parse the default region.
-  Region &defaultRegion = switchOp.defaultRegion();
+  Region &defaultRegion = switchOp.getDefaultRegion();
   defaultRegion.emplaceBlock();
   OpBuilder defaultRegionBuilder(defaultRegion);
   builder = defaultRegionBuilder;
@@ -2084,7 +2084,7 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
   auto *block = currentCircuitOp.addEntryBlock();
 
   if (debugCircuits)
-    llvm::errs() << "Start Circuit " << currentCircuitOp.sym_name() << "\n";
+    llvm::errs() << "Start Circuit " << currentCircuitOp.getSymName() << "\n";
 
   OpBuilder circuitBuilder(currentCircuitOp.getBody());
   circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
@@ -2105,7 +2105,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
     return;
 
   if (debugCircuits)
-    llvm::errs() << "Finish Circuit " << currentCircuitOp.sym_name() << "\n";
+    llvm::errs() << "Finish Circuit " << currentCircuitOp.getSymName() << "\n";
 
   // check if the first Op in the circuit is a ReturnOp
   // if so - no ops were added - erase circuit and return
@@ -2145,7 +2145,7 @@ void QUIRGenQASM3Visitor::finishCircuit() {
       return;
     for (auto *user : value.getUsers()) {
       if (currentCircuitOp->isAncestor(user)) {
-        auto arg = currentCircuitOp.body().front().addArgument(value.getType(),
+        auto arg = currentCircuitOp.getBody().front().addArgument(value.getType(),
                                                                value.getLoc());
         value.replaceUsesWithIf(arg, [&](OpOperand &operand) {
           return (operand.getOwner()->getParentOp() == currentCircuitOp);

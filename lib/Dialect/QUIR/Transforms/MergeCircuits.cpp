@@ -264,7 +264,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
 
   // merge circuit names
   std::string newName =
-      (circuitOp.sym_name() + "_" + nextCircuitOp.sym_name()).str();
+      (circuitOp.getSymName() + "_" + nextCircuitOp.getSymName()).str();
 
   // create new circuit operation by cloning first circuit
   CircuitOp newCircuitOp = cast<CircuitOp>(rewriter.clone(*circuitOp));
