@@ -206,8 +206,29 @@ def QUIR_CallGateOp : QUIR_Op<"call_gate", [CallOpInterface,
         }]>];
 
     let extraClassDeclaration = [{
+        FunctionType getCalleeType();
+
+        /// Get the argument operands to the called function.
+        operand_range getArgOperands() {
+            return {arg_operand_begin(), arg_operand_end()};
+        }
+
+        MutableOperandRange getArgOperandsMutable() {
+            return getOperandsMutable();
+        }
+
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
+
+        /// Return the callee of this operation.
+        CallInterfaceCallable getCallableForCallee() {
+            return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+        }
+
+        /// Set the callee for this operation.
+        void setCalleeFromCallable(CallInterfaceCallable callee) {
+            (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
+        }
 
     }];
 }
