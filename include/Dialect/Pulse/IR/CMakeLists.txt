@@ -11,6 +11,6 @@
 # that they have been altered from the originals.
 
 add_mlir_dialect(Pulse pulse)
-add_mlir_doc(Pulse PulseDialect generated/Dialect/Pulse/ -gen-dialect-doc)
+add_mlir_doc(Pulse PulseDialect generated/Dialect/Pulse/ -gen-dialect-doc -dialect=pulse)
 
 add_mlir_interface(PulseInterfaces)

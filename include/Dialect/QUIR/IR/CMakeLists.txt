@@ -11,7 +11,7 @@
 # that they have been altered from the originals.
 
 add_mlir_dialect(QUIR quir)
-add_mlir_doc(QUIR QUIRDialect generated/Dialect/QUIR/ -gen-dialect-doc)
+add_mlir_doc(QUIR QUIRDialect generated/Dialect/QUIR/ -gen-dialect-doc -dialect=quir)
 
 set(LLVM_TARGET_DEFINITIONS QUIR.td)
 mlir_tablegen(QUIRAttributes.h.inc -gen-attrdef-decls -attrdefs-dialect=quir)
