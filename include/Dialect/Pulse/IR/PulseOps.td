@@ -317,9 +317,9 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTarge
     }];
 
     let extraClassDeclaration = [{
-        double getFreq() {
+        double getFreqFromDefiningOp() {
             // get op that defines frequency and return its value
-            auto freqConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequency().getDefiningOp());
+            auto freqConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getFrequency().getDefiningOp());
             assert (freqConstOp && "assume frequency to be defined by ConstantFloatOp");
             return freqConstOp.value().convertToDouble();
         }
@@ -351,9 +351,9 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasT
     }];
 
     let extraClassDeclaration = [{
-        double getFreqOffset() {
+        double getFreqOffsetFromDefiningOp() {
             // get op that defines frequency offset and return its value
-            auto freqOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequencyOffset().getDefiningOp());
+            auto freqOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getFrequencyOffset().getDefiningOp());
             assert (freqOffsetConstOp && "assume frequency offset to be defined by ConstantFloatOp");
             return freqOffsetConstOp.value().convertToDouble();
         }
@@ -385,9 +385,9 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]>
     }];
 
     let extraClassDeclaration = [{
-        double getPhase() {
+        double getPhaseFromDefiningOp() {
             // get op that defines phase and return its value
-            auto phaseConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phase().getDefiningOp());
+            auto phaseConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getPhase().getDefiningOp());
             assert (phaseConstOp && "assume phase to be defined by ConstantFloatOp");
             return phaseConstOp.value().convertToDouble();
         }
@@ -419,7 +419,7 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFra
     }];
 
     let extraClassDeclaration = [{
-        double getPhaseOffset() {
+        double getPhaseFromDefiningOpOffset() {
             // get op that defines phase offset and return its value
             auto phaseOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phaseOffset().getDefiningOp());
             assert (phaseOffsetConstOp && "assume phase offset to be defined by ConstantFloatOp");
@@ -450,9 +450,9 @@ let summary = "Set a scaling factor for pulses of a frame.";
     }];
 
     let extraClassDeclaration = [{
-        double getAmp() {
+        double getAmpFromDefiningOp() {
             // get op that defines amp and return its value
-            auto ampConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).amp().getDefiningOp());
+            auto ampConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getAmp().getDefiningOp());
             assert (ampConstOp && "assume amplitude to be defined by ConstantFloatOp");
             return ampConstOp.value().convertToDouble();
         }
