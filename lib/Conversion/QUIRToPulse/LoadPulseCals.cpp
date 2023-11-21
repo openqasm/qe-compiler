@@ -22,7 +22,7 @@
 
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/IRMapping.h"
+#include "mlir/IR/BlockAndValueMapping.h"
 #include "mlir/Parser/Parser.h"
 #include "mlir/Support/FileUtilities.h"
 
@@ -133,7 +133,7 @@ void LoadPulseCalsPass::loadPulseCals(CallGateOp callGateOp,
              pulseCalsNameToSequenceMap.end() &&
          "could not find any pulse calibration for call gate");
 
-  OpBuilder builder(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
   callGateOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
@@ -152,7 +152,7 @@ void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
              pulseCalsNameToSequenceMap.end() &&
          "could not find any pulse calibration for the CX gate");
 
-  OpBuilder builder(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
   CXOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
@@ -170,7 +170,7 @@ void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
              pulseCalsNameToSequenceMap.end() &&
          "could not find any pulse calibration for the U gate");
 
-  OpBuilder builder(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
   UOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
@@ -179,7 +179,7 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<MeasureOp>(measureOp, qubitOperands);
@@ -218,7 +218,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::BarrierOp>(barrierOp, qubitOperands);
@@ -254,7 +254,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::DelayOp>(delayOp, qubitOperands);
@@ -291,7 +291,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::ResetQubitOp>(resetOp, qubitOperands);
@@ -327,7 +327,7 @@ void LoadPulseCalsPass::addPulseCalToModule(
     mlir::func::FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp) {
   if (pulseCalsAddedToIR.find(sequenceOp.getSymName().str()) ==
       pulseCalsAddedToIR.end()) {
-    OpBuilder builder(funcOp.getBody());
+    OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
     auto *clonedPulseCalOp = builder.clone(*sequenceOp);
     auto clonedPulseCalSequenceOp = static_cast<SequenceOp>(clonedPulseCalOp);
     clonedPulseCalSequenceOp->moveBefore(funcOp);
@@ -385,7 +385,7 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
 
   // map original arguments for new sequence based on original sequences'
   // argument numbers
-  IRMapping mapper;
+  BlockAndValueMapping mapper;
   auto baseArgNum = mergedSequenceOp.getNumArguments();
   for (std::size_t seqNum = 1; seqNum < sequenceOps.size(); seqNum++) {
     for (uint cnt = 0; cnt < sequenceOps[seqNum].getNumArguments(); cnt++) {

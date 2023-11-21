@@ -209,7 +209,7 @@ void QUIRGenQASM3Visitor::initialize(
 
   // set up the builders to point to the proper places
   func.addEntryBlock();
-  OpBuilder b(func.getBody());
+  OpBuilder b = OpBuilder::atBlockBegin(func.getBody());
   builder = b;
   topLevelBuilder.setInsertionPointToStart(topLevelBuilder.getBlock());
 
@@ -2086,7 +2086,7 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
   if (debugCircuits)
     llvm::errs() << "Start Circuit " << currentCircuitOp.getSymName() << "\n";
 
-  OpBuilder circuitBuilder(currentCircuitOp.getBody());
+  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(currentCircuitOp.getBody());
   circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
   circuitBuilder.setInsertionPointToStart(block);
 

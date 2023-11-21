@@ -55,7 +55,7 @@ void AddShotLoopPass::runOnOperation() {
 
   // start the builder outside the main function so we aren't cloning or
   // building into the same region that we are copying from
-  OpBuilder build(moduleOp.getBody());
+  OpBuilder build = OpBuilder::atBlockBegin(moduleOp.getBody());
   Location opLoc = mainFunc.getLoc();
 
   auto startOp = build.create<mlir::arith::ConstantOp>(
