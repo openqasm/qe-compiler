@@ -123,8 +123,8 @@ ParameterType ParameterLoadOp::getInitialValue() {
   double retVal;
 
   auto angleAttr =
-      declOp.initial_value().getValue().dyn_cast<mlir::quir::AngleAttr>();
-  auto floatAttr = declOp.initial_value().getValue().dyn_cast<FloatAttr>();
+      declOp.getInitialValue().value().dyn_cast<mlir::quir::AngleAttr>();
+  auto floatAttr = declOp.getInitialValue().value().dyn_cast<FloatAttr>();
 
   if (!(angleAttr || floatAttr)) {
     op->emitError(
@@ -168,12 +168,3 @@ ParameterType ParameterLoadOp::getInitialValue(
 //===----------------------------------------------------------------------===//
 // ParallelEndOp
 //===----------------------------------------------------------------------===//
-
-mlir::ParseResult SequenceOp::parse(mlir::OpAsmParser &parser,
-                                 mlir::OperationState &result) {
-  return success();
-}
-
-void SequenceOp::print(mlir::OpAsmPrinter &printer) {
-  printer << getOperationName();
-}

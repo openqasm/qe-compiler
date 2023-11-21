@@ -45,11 +45,11 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
 
         // moduleOp->walk([&](DeclareParameterOp declareParameterOp) {
         double initial_value = 0.0;
-        if (declareParameterOp.initial_value().has_value()) {
-          auto angleAttr = declareParameterOp.initial_value()
+        if (declareParameterOp.getInitialValue().has_value()) {
+          auto angleAttr = declareParameterOp.getInitialValue()
                                .getValue()
                                .dyn_cast<mlir::quir::AngleAttr>();
-          auto floatAttr = declareParameterOp.initial_value()
+          auto floatAttr = declareParameterOp.getInitialValue()
                                .getValue()
                                .dyn_cast<FloatAttr>();
           if (!(angleAttr || floatAttr))
