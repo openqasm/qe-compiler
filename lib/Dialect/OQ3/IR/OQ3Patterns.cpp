@@ -96,7 +96,7 @@ struct EqEqOnePat : public OpRewritePattern<mlir::arith::CmpIOp> {
     if (!extendedI1OrNone.has_value())
       return failure();
 
-    rewriter.replaceOp(cmpOp, {extendedI1OrNone.getValue()});
+    rewriter.replaceOp(cmpOp, {extendedI1OrNone.value()});
     return success();
   } // matchAndRewrite
 };  // EqEqOnePat
@@ -128,15 +128,15 @@ struct AssignSingleCBitToAssignVariablePattern
   matchAndRewrite(oq3::CBitAssignBitOp op,
                   mlir::PatternRewriter &rewriter) const override {
 
-    if (op.cbit_width() != 1)
+    if (op.getCbitWidth() != 1)
       return failure();
 
     auto *context = rewriter.getContext();
     auto castOp = rewriter.create<CastOp>(
-        op.getLoc(), quir::CBitType::get(context, 1), op.assigned_bit());
+        op.getLoc(), quir::CBitType::get(context, 1), op.getAssignedBit());
 
     rewriter.replaceOpWithNewOp<oq3::VariableAssignOp>(
-        op, op.variable_nameAttr(), castOp.getResult());
+        op, op.getVariableNameAttr(), castOp.getResult());
 
     return success();
   }

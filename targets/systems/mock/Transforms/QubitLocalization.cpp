@@ -206,7 +206,7 @@ void mock::MockQubitLocalizationPass::processOp(mlir::func::FuncOp &funcOp) {
 void mock::MockQubitLocalizationPass::processOp(Builtin_UOp &uOp) {
   Operation *op = uOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
-  int qubitId = lookupQubitId(uOp.target());
+  int qubitId = lookupQubitId(uOp.getTarget());
 
   // broadcast all classical values from Controller to all Mockss
   // recv all classical values on all Mockss
@@ -226,8 +226,8 @@ void mock::MockQubitLocalizationPass::processOp(Builtin_UOp &uOp) {
 void mock::MockQubitLocalizationPass::processOp(BuiltinCXOp &cxOp) {
   Operation *op = cxOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
-  int qubitId1 = lookupQubitId(cxOp.control());
-  int qubitId2 = lookupQubitId(cxOp.target());
+  int qubitId1 = lookupQubitId(cxOp.getControl());
+  int qubitId2 = lookupQubitId(cxOp.getTarget());
 
   if (qubitId1 < 0 || qubitId2 < 0) {
     cxOp->emitOpError() << "Can't resolve qubit ID for cxOp\n";

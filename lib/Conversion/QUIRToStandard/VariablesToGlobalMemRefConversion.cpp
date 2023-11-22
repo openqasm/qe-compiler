@@ -169,7 +169,7 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
 
   auto globalMemrefOp =
       SymbolTable::lookupNearestSymbolFrom<mlir::memref::GlobalOp>(
-          variableOp, variableOp.variable_nameAttr());
+          variableOp, variableOp.getVariableNameAttr());
 
   if (!globalMemrefOp) {
     variableOp.emitOpError("Cannot lookup a variable declaration for " +
@@ -241,7 +241,7 @@ struct ArrayElementUseConversionPattern
     auto varRef = varRefOrNone.value();
 
     auto indexOp = rewriter.create<mlir::arith::ConstantOp>(
-        useOp.getLoc(), rewriter.getIndexType(), useOp.indexAttr());
+        useOp.getLoc(), rewriter.getIndexType(), useOp.getIndexAttr());
     auto loadOp = rewriter.create<mlir::memref::LoadOp>(
         useOp.getLoc(), varRef.getResult(), mlir::ValueRange{indexOp});
 
@@ -291,7 +291,7 @@ struct ArrayElementAssignConversionPattern
     auto varRef = varRefOrNone.value();
 
     auto indexOp = rewriter.create<mlir::arith::ConstantOp>(
-        assignOp.getLoc(), rewriter.getIndexType(), assignOp.indexAttr());
+        assignOp.getLoc(), rewriter.getIndexType(), assignOp.getIndexAttr());
 
     rewriter.create<mlir::memref::StoreOp>(
         assignOp.getLoc(), adaptor.assigned_value(), varRef.getResult(),

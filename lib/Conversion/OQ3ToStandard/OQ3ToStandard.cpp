@@ -77,13 +77,13 @@ struct CBitAssignBitOpConversionPattern
                   ConversionPatternRewriter &rewriter) const override {
 
     auto const loc = op.getLoc();
-    auto cbitWidth = op.cbit_width();
+    auto cbitWidth = op.getCbitWidth();
 
     // just a single bit? then generate a value assign
     if (cbitWidth == 1) {
 
-      rewriter.create<mlir::oq3::VariableAssignOp>(loc, op.variable_nameAttr(),
-                                                   adaptor.assigned_bit());
+      rewriter.create<mlir::oq3::VariableAssignOp>(loc, op.getVariableNameAttr(),
+                                                   adaptor.getAssignedBit());
 
       rewriter.replaceOp(op, mlir::ValueRange({}));
       return success();
@@ -98,9 +98,9 @@ struct CBitAssignBitOpConversionPattern
 
     auto registerWithInsertedBit = rewriter.create<mlir::oq3::CBitInsertBitOp>(
         loc, oldRegisterValue.getType(), oldRegisterValue,
-        adaptor.assigned_bit(), adaptor.indexAttr());
+        adaptor.getAssignedBit(), adaptor.getIndexAttr());
 
-    rewriter.create<mlir::oq3::VariableAssignOp>(loc, op.variable_nameAttr(),
+    rewriter.create<mlir::oq3::VariableAssignOp>(loc, op.getVariableNameAttr(),
                                                  registerWithInsertedBit);
     rewriter.replaceOp(op, mlir::ValueRange({}));
     return success();
@@ -133,14 +133,14 @@ struct CBitInsertBitOpConversionPattern
 
     // just a single bit? then replace whole bitmap
     if (cbitWidth == 1) {
-      rewriter.replaceOp(op, mlir::ValueRange({adaptor.assigned_bit()}));
+      rewriter.replaceOp(op, mlir::ValueRange({adaptor.getAssignedBit()}));
       return success();
     }
 
     if (cbitWidth > 64)
       return failure();
 
-    uint64_t mask = ~((1ull) << op.index().getZExtValue());
+    uint64_t mask = ~((1ull) << op.getIndex().getZExtValue());
     auto maskOp =
         rewriter.create<mlir::arith::ConstantIntOp>(loc, mask, cbitWidth);
 
@@ -148,10 +148,10 @@ struct CBitInsertBitOpConversionPattern
         loc, maskOp.getType(), adaptor.getOperand(), maskOp);
 
     mlir::Value extendedBit = rewriter.create<mlir::LLVM::ZExtOp>(
-        loc, maskOp.getType(), adaptor.assigned_bit());
+        loc, maskOp.getType(), adaptor.getAssignedBit());
 
-    if (!op.index().isNonPositive()) {
-      APInt truncated = op.index();
+    if (!op.getIndex().isNonPositive()) {
+      APInt truncated = op.getIndex();
       if (static_cast<uint>(cbitWidth) < truncated.getBitWidth())
         truncated = truncated.trunc(cbitWidth);
       auto shiftAmount = rewriter.create<mlir::arith::ConstantOp>(
@@ -190,7 +190,7 @@ struct CBitExtractBitOpConversionPattern
       return success();
     }
 
-    APInt truncated = op.index();
+    APInt truncated = op.getIndex();
     if (static_cast<uint>(bitWidth) < truncated.getBitWidth())
       truncated = truncated.trunc(bitWidth);
     auto shiftAmount = rewriter.create<mlir::arith::ConstantOp>(

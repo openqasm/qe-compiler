@@ -40,6 +40,8 @@ def QUIRDialect : Dialect {
         "mlir::LLVM::LLVMDialect"
     ];
     let hasConstantMaterializer = 1;
+    let useDefaultAttributePrinterParser = 1;
+    let useDefaultTypePrinterParser = 1;
 }
 
 //===----------------------------------------------------------------------===//

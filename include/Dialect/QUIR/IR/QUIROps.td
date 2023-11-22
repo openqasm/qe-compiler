@@ -44,9 +44,7 @@ def NonInterferingNonDeadSideEffect : MemoryEffects<[MemFree<DefaultResource>]>;
 def QUIR_ConstantOp : QUIR_Op<"constant",
     [ConstantLike, Pure,
      DeclareOpInterfaceMethods<OpAsmOpInterface, ["getAsmResultNames"]>,
-     TypesMatchWith<
-    "result and attribute have the same type",
-    "value", "result", "$_self">]> {
+     AllTypesMatch<["value", "result"]>]> {
   let summary = "QUIR-specific (angle or duration) constants";
   let description = [{
     The `quir.constant` operation produces an SSA value equal to some constant
@@ -61,15 +59,9 @@ def QUIR_ConstantOp : QUIR_Op<"constant",
     ```
   }];
 
-  let arguments = (ins AnyAttr:$value);
+  let arguments = (ins TypedAttrInterface:$value);
   let results = (outs AnyType:$result);
 
-  let builders = [
-    OpBuilder<(ins "Attribute":$value),
-    [{ build($_builder, $_state, value.getType(), value); }]>,
-    OpBuilder<(ins "Attribute":$value, "Type":$type),
-    [{ build($_builder, $_state, type, value); }]>,
-  ];
 
   let extraClassDeclaration = [{
     /// Whether the constant op can be constructed with a particular value and
@@ -78,6 +70,11 @@ def QUIR_ConstantOp : QUIR_Op<"constant",
 
     // Return the angle value from the value attribute
     APFloat getAngleValueFromConstant();
+
+    /// Build the constant op with `value` and `type` if possible, otherwise
+    /// returns null.
+    static ConstantOp materialize(OpBuilder &builder, Attribute value,
+                                  Type type, Location loc);
   }];
 
   let hasFolder = 1;
@@ -272,8 +269,23 @@ def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [
         }]>];
 
     let extraClassDeclaration = [{
+        /// Get the argument operands to the called function.
+        operand_range getArgOperands() {
+            return {arg_operand_begin(), arg_operand_end()};
+        }
+
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
+
+        /// Return the callee of this operation.
+        CallInterfaceCallable getCallableForCallee() {
+            return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+        }
+
+        /// Set the callee for this operation.
+        void setCalleeFromCallable(CallInterfaceCallable callee) {
+            (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
+        }
 
     }];
 }
@@ -304,7 +316,7 @@ def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
         OpBuilder<(ins "mlir::func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
             $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
-            $_state.addTypes(callee.getType().getResults());
+            $_state.addTypes(callee.getFunctionType().getResults());
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
         CArg<"ValueRange", "{}">:$operands), [{
@@ -319,8 +331,23 @@ def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
         }]>];
 
     let extraClassDeclaration = [{
+        /// Get the argument operands to the called function.
+        operand_range getArgOperands() {
+            return {arg_operand_begin(), arg_operand_end()};
+        }
+
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
+
+        /// Return the callee of this operation.
+        CallInterfaceCallable getCallableForCallee() {
+            return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+        }
+
+        /// Set the callee for this operation.
+        void setCalleeFromCallable(CallInterfaceCallable callee) {
+            (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
+        }
 
     }];
 
@@ -355,7 +382,7 @@ def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [CallOpInterface]> {
         OpBuilder<(ins "mlir::func::FuncOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
             $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
-            $_state.addTypes(callee.getType().getResults());
+            $_state.addTypes(callee.getFunctionType().getResults());
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
         CArg<"ValueRange", "{}">:$operands), [{
@@ -370,8 +397,24 @@ def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [CallOpInterface]> {
         }]>];
 
     let extraClassDeclaration = [{
+
+        /// Get the argument operands to the called function.
+        operand_range getArgOperands() {
+            return {arg_operand_begin(), arg_operand_end()};
+        }
+
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
+
+        /// Return the callee of this operation.
+        CallInterfaceCallable getCallableForCallee() {
+            return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+        }
+
+        /// Set the callee for this operation.
+        void setCalleeFromCallable(CallInterfaceCallable callee) {
+            (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
+        }
 
     }];
 }
@@ -407,7 +450,7 @@ def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormal
         OpBuilder<(ins "CircuitOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
             $_state.addOperands(operands);
             $_state.addAttribute("callee", SymbolRefAttr::get(callee));
-            $_state.addTypes(callee.getType().getResults());
+            $_state.addTypes(callee.getFunctionType().getResults());
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
         CArg<"ValueRange", "{}">:$operands), [{
@@ -422,15 +465,28 @@ def QUIR_CallCircuitOp : QUIR_Op<"call_circuit", [CallOpInterface, MemRefsNormal
         }]>];
 
     let extraClassDeclaration = [{
-        mlir::OperandRange getArgOperands() {
+        FunctionType getCalleeType();
+
+        /// Get the argument operands to the called function.
+        operand_range getArgOperands() {
             return {arg_operand_begin(), arg_operand_end()};
+        }
+
+        MutableOperandRange getArgOperandsMutable() {
+            return getOperandsMutable();
         }
 
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
 
+        /// Return the callee of this operation.
         CallInterfaceCallable getCallableForCallee() {
             return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+        }
+
+        /// Set the callee for this operation.
+        void setCalleeFromCallable(CallInterfaceCallable callee) {
+            (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
         }
     }];
 }
@@ -587,15 +643,17 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name,
-                       TypeAttr:$type,
-                       OptionalAttr<StrAttr>:$sym_visibility);
+                       TypeAttrOf<FunctionType>:$function_type,
+                       OptionalAttr<StrAttr>:$sym_visibility,
+                       OptionalAttr<DictArrayAttr>:$arg_attrs,
+                       OptionalAttr<DictArrayAttr>:$res_attrs);
   let regions = (region AnyRegion:$body);
 
   let builders = [OpBuilder<(ins
     "StringRef":$name, "FunctionType":$type,
     CArg<"ArrayRef<NamedAttribute>", "{}">:$attrs,
-    CArg<"ArrayRef<DictionaryAttr>", "{}">:$argAttrs
-    )>];
+    CArg<"ArrayRef<DictionaryAttr>", "{}">:$argAttrs)
+    >];
   let extraClassDeclaration = [{
     static CircuitOp create(Location location, StringRef name, FunctionType type,
                          ArrayRef<NamedAttribute> attrs = {});
@@ -630,6 +688,22 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
     /// function.
     ::mlir::Region *getCallableRegion() { return isExternal() ? nullptr : &getBody(); }
 
+    /// Returns the results types that the callable region produces when
+    /// executed.
+    ArrayRef<Type> getCallableResults() { return getFunctionType().getResults(); }
+
+    /// Returns the argument attributes for all callable region arguments or
+    /// null if there are none.
+    ::mlir::ArrayAttr getCallableArgAttrs() {
+      return getArgAttrs().value_or(nullptr);
+    }
+
+    /// Returns the result attributes for all callable region results or
+    /// null if there are none.
+    ::mlir::ArrayAttr getCallableResAttrs() {
+      return getResAttrs().value_or(nullptr);
+    }
+
     //===------------------------------------------------------------------===//
     // FunctionOpInterface Methods
     //===------------------------------------------------------------------===//
@@ -640,16 +714,6 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
     /// Returns the result types of this function.
     ArrayRef<Type> getResultTypes() { return getFunctionType().getResults(); }
 
-    /// Verify the type attribute of this function. Returns failure and emits
-    /// an error if the attribute is invalid.
-    LogicalResult verifyType() {
-      auto type = getTypeAttr().getValue();
-      if (!type.isa<FunctionType>())
-        return emitOpError("requires '" + getTypeAttrName() +
-                           "' attribute of function type");
-      return success();
-    }
-
     //===------------------------------------------------------------------===//
     // SymbolOpInterface Methods
     //===------------------------------------------------------------------===//
@@ -658,6 +722,7 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
   }];
 
   let hasCustomAssemblyFormat = 1;
+  let hasVerifier = 1;
 }
 
 def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, Pure, Terminator, ReturnLike]>,
@@ -678,6 +743,7 @@ def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, Pure, Terminator,
             }];
         let builders = [OpBuilder<(ins), [{ build($_builder, $_state, std::nullopt); }]>];
         let assemblyFormat = "attr-dict ($operands^ `:` type($operands))?";
+        let hasVerifier = 1;
 }
 
 def QUIR_SwitchOp : QUIR_Op<"switch",
@@ -730,6 +796,7 @@ def QUIR_SwitchOp : QUIR_Op<"switch",
     let regions = (region SizedRegion<1>:$defaultRegion,
                     VariadicRegion<SizedRegion<1>>:$caseRegions);
 
+    let hasVerifier = 1;
     let hasCustomAssemblyFormat = 1;
 }
 
@@ -755,6 +822,7 @@ def YieldOp : QUIR_Op<"yield", [Pure, ReturnLike, Terminator, ParentOneOf<["Swit
     let arguments = (ins Variadic<AnyType>:$results);
     let builders = [OpBuilder<(ins), [{ /* nothing to do */ }]>];
     let assemblyFormat = "attr-dict ($results^ `:` type($results))?";
+    let hasVerifier = 1;
 }
 
 

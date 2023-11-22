@@ -67,13 +67,13 @@ void QuantumDecorationPass::processOp(Operation *op,
 
 void QuantumDecorationPass::processOp(Builtin_UOp builtinUOp,
                                       std::unordered_set<int> &retSet) {
-  retSet.emplace(lookupOrMinus1(builtinUOp.target()));
+  retSet.emplace(lookupOrMinus1(builtinUOp.getTarget()));
 } // processOp Builtin_UOp
 
 void QuantumDecorationPass::processOp(BuiltinCXOp builtinCXOp,
                                       std::unordered_set<int> &retSet) {
-  retSet.emplace(lookupOrMinus1(builtinCXOp.control()));
-  retSet.emplace(lookupOrMinus1(builtinCXOp.target()));
+  retSet.emplace(lookupOrMinus1(builtinCXOp.getControl()));
+  retSet.emplace(lookupOrMinus1(builtinCXOp.getTarget()));
 } // processOp BuiltinCXOp
 
 void QuantumDecorationPass::processOp(MeasureOp measureOp,

@@ -32,6 +32,9 @@ def PulseDialect : Dialect {
         representation of QUIR gates.
     }];
     let cppNamespace = "::mlir::pulse";
+
+    let useDefaultAttributePrinterParser = 1;
+    let useDefaultTypePrinterParser = 1;
 }
 
 //===----------------------------------------------------------------------===//

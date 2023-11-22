@@ -202,6 +202,8 @@ def OQ3_CBitExtractBitOp : OQ3_Op<"cbit_extractbit", [Pure]> {
     }];
 
     let hasFolder = 1;
+
+    let hasVerifier = 1;
 }
 
 // -----

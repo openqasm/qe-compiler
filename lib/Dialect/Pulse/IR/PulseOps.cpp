@@ -75,37 +75,37 @@ mlir::LogicalResult ConstOp::verify() {
 //===----------------------------------------------------------------------===//
 
 mlir::LogicalResult SetFrequencyOp::verify() {
-  if (!(*this).target().isa<BlockArgument>())
+  if (!(*this).getTarget().isa<BlockArgument>())
       return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
   return success();
 }
 
 mlir::LogicalResult ShiftFrequencyOp::verify() {
-  if (!(*this).target().isa<BlockArgument>())
+  if (!(*this).getTarget().isa<BlockArgument>())
       return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
   return success();
 }
 
 mlir::LogicalResult SetPhaseOp::verify() {
-  if (!(*this).target().isa<BlockArgument>())
+  if (!(*this).getTarget().isa<BlockArgument>())
       return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
   return success();
 }
 
 mlir::LogicalResult ShiftPhaseOp::verify() {
-  if (!(*this).target().isa<BlockArgument>())
+  if (!(*this).getTarget().isa<BlockArgument>())
       return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
   return success();
 }
 
 mlir::LogicalResult SetAmplitudeOp::verify() {
-  if (!(*this).target().isa<BlockArgument>())
+  if (!(*this).getTarget().isa<BlockArgument>())
       return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
   return success();
 }
 
 mlir::LogicalResult CaptureOp::verify() {
-  if (!(*this).target().isa<BlockArgument>())
+  if (!(*this).getTarget().isa<BlockArgument>())
       return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
   return success();
 }
@@ -115,7 +115,7 @@ mlir::LogicalResult DelayOp::verify() {
   if (durDeclOp && durDeclOp.value() < 0)
       return emitOpError("duration must be >= 0.");
 
-  if (!(*this).target().isa<BlockArgument>())
+  if (!(*this).getTarget().isa<BlockArgument>())
       return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
 
   return success();
@@ -276,18 +276,22 @@ CallSequenceOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
 mlir::ParseResult SequenceOp::parse(mlir::OpAsmParser &parser,
                                  mlir::OperationState &result) {
-  auto buildSequenceType =
+  auto buildFuncType =
       [](Builder &builder, ArrayRef<Type> argTypes, ArrayRef<Type> results,
          function_interface_impl::VariadicFlag,
          std::string &) { return builder.getFunctionType(argTypes, results); };
+
   return function_interface_impl::parseFunctionOp(
-      parser, result, /*allowVariadic=*/false, buildSequenceType);
+      parser, result, /*allowVariadic=*/false,
+      getFunctionTypeAttrName(result.name), buildFuncType,
+      getArgAttrsAttrName(result.name), getResAttrsAttrName(result.name));
 }
 
 void SequenceOp::print(mlir::OpAsmPrinter &printer) {
   FunctionType fnType = getType();
   function_interface_impl::printFunctionOp(
-      printer, *this, fnType.getInputs(), /*isVariadic=*/false, fnType.getResults());
+      printer, *this, /*isVariadic=*/false, getFunctionTypeAttrName(),
+      getArgAttrsAttrName(), getResAttrsAttrName());
 }
 
 /// Verify the argument list and entry block are in agreement.
@@ -494,13 +498,13 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
   Operation *wfrOp;
   Operation *targetOp;
   wfrOp = dyn_cast_or_null<Waveform_CreateOp>(wfr().getDefiningOp());
-  targetOp = dyn_cast_or_null<MixFrameOp>(target().getDefiningOp());
+  targetOp = dyn_cast_or_null<MixFrameOp>(getTarget().getDefiningOp());
 
   if (!wfrOp && !targetOp) {
     auto wfrArgIndex = wfr().dyn_cast<BlockArgument>().getArgNumber();
     wfrOp = callOp.getOperand(wfrArgIndex)
                 .getDefiningOp<mlir::pulse::Waveform_CreateOp>();
-    auto mixFrameArgIndex = target().dyn_cast<BlockArgument>().getArgNumber();
+    auto mixFrameArgIndex = getTarget().dyn_cast<BlockArgument>().getArgNumber();
     targetOp = callOp.getOperand(mixFrameArgIndex)
                    .getDefiningOp<mlir::pulse::MixFrameOp>();
   }
@@ -517,7 +521,7 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
 }
 
 mlir::LogicalResult PlayOp::verify() {
-  if (!(*this).target().isa<BlockArgument>())
+  if (!(*this).getTarget().isa<BlockArgument>())
       return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
   return success();
 }

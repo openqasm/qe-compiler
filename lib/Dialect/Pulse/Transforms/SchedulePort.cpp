@@ -121,21 +121,21 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
           Value target;
           // get mixed_frames
           if (auto castOp = dyn_cast<DelayOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<PlayOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<CaptureOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<SetFrequencyOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<SetPhaseOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<ShiftFrequencyOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<ShiftPhaseOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<SetAmplitudeOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
 
           auto blockArg = target.cast<BlockArgument>();
           auto index = blockArg.getArgNumber();

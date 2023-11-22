@@ -47,6 +47,7 @@ struct FieldParser<
     return APFloat(value);
   }
 };
+
 } // namespace mlir
 
 //===----------------------------------------------------------------------===//
@@ -131,15 +132,15 @@ LogicalResult QubitType::verify(function_ref<InFlightDiagnostic()> emitError,
 
 LogicalResult AngleType::verify(function_ref<InFlightDiagnostic()> emitError,
                                 std::optional<int> width) {
-  if (width.has_value() && width.getValue() <= 0)
+  if (width.has_value() && width.value() <= 0)
     return emitError() << "width must be > 0";
   return success();
 }
 
 /// Materialize a constant, can be any buildable type, used by canonicalization
-Operation *QUIRDialect::materializeConstant(OpBuilder &builder, Attribute value,
+ConstantOp ConstantOp::materialize(OpBuilder &builder, Attribute value,
                                             Type type, Location loc) {
-  return builder.create<quir::ConstantOp>(loc, value, type);
+  return builder.create<quir::ConstantOp>(loc, cast<TypedAttr>(value));
 }
 
 } // namespace mlir::quir

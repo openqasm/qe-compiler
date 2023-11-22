@@ -144,8 +144,8 @@ void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
                                       mlir::func::FuncOp funcOp) {
 
   std::vector<Value> qubitOperands;
-  qubitOperands.push_back(CXOp.control());
-  qubitOperands.push_back(CXOp.target());
+  qubitOperands.push_back(CXOp.getControl());
+  qubitOperands.push_back(CXOp.getTarget());
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "cx";
   std::string gateMangledName = getMangledName(gateName, qubits);
@@ -163,7 +163,7 @@ void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
                                       mlir::func::FuncOp funcOp) {
 
   std::vector<Value> qubitOperands;
-  qubitOperands.push_back(UOp.target());
+  qubitOperands.push_back(UOp.getTarget());
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "u3";
   std::string gateMangledName = getMangledName(gateName, qubits);

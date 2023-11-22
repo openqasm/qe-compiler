@@ -78,8 +78,8 @@ findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
   // follow chains of CBit_InsertBit operations and try to find one matching the
   // requested bit
   while (auto insertBitOp = mlir::dyn_cast_or_null<CBitInsertBitOp>(op)) {
-    if (insertBitOp.indexAttr() == bitIndex)
-      return insertBitOp.assigned_bit();
+    if (insertBitOp.getIndexAttr() == bitIndex)
+      return insertBitOp.getAssignedBit();
 
     op = insertBitOp.getOperand().getDefiningOp();
   }
@@ -92,27 +92,27 @@ findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
 }
 
 ::mlir::OpFoldResult
-CBitExtractBitOp::fold(::llvm::ArrayRef<::mlir::Attribute> operands) {
+CBitExtractBitOp::fold(FoldAdaptor adaptor) {
 
-  auto foundDefiningBitOrNone = findDefiningBitInBitmap(operand(), indexAttr());
+  auto foundDefiningBitOrNone = findDefiningBitInBitmap(getOperand(), getIndexAttr());
 
   if (foundDefiningBitOrNone)
     return foundDefiningBitOrNone.value();
   return nullptr;
 }
 
-static mlir::LogicalResult verify(CBitExtractBitOp op) {
+mlir::LogicalResult CBitExtractBitOp::verify() {
 
-  auto t = op.getOperand().getType();
+  auto t = getOperand().getType();
 
   if (auto cbitType = t.dyn_cast<mlir::quir::CBitType>();
-      cbitType && op.index().ult(cbitType.getWidth()))
+      cbitType && getIndex().ult(cbitType.getWidth()))
     return success();
 
-  if (t.isIntOrIndex() && op.index().ult(t.getIntOrFloatBitWidth()))
+  if (t.isIntOrIndex() && getIndex().ult(t.getIntOrFloatBitWidth()))
     return success();
 
-  return op.emitOpError("index must be less than the width of the operand.");
+  return emitOpError("index must be less than the width of the operand.");
 }
 
 mlir::LogicalResult
@@ -175,10 +175,10 @@ UseArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 // Binary / Unary Ops
 //===----------------------------------------------------------------------===//
 
-mlir::LogicalResult BinaryCmpOp::verify() {
+mlir::LogicalResult AngleCmpOp::verify() {
   std::vector predicates = { "eq", "ne", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge" };
 
-  if (std::find(predicates.begin(), predicates.end(), this->predicate()) != predicates.end())
+  if (std::find(predicates.begin(), predicates.end(), getPredicate()) != predicates.end())
       return success();
   else
       return emitOpError("requires predicate \"eq\", \"ne\", \"slt\", \"sle\", \"sgt\", \"sge\", \"ult\", \"ule\", \"ugt\", \"uge\"");

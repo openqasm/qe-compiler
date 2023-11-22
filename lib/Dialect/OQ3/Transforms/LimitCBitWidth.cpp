@@ -75,7 +75,7 @@ void LimitCBitWidthPass::processOp(
   uint64_t reg;
   std::tie(reg, index) = remapBit(cbitAssignOp.index());
   auto width = newRegisters[reg].getType().dyn_cast<quir::CBitType>().getWidth();
-  auto value = cbitAssignOp.assigned_bit();
+  auto value = cbitAssignOp.getAssignedBit();
 
   OpBuilder builder(cbitAssignOp);
   builder.create<CBitAssignBitOp>(

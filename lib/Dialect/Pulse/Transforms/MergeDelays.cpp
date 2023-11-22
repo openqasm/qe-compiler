@@ -59,8 +59,8 @@ struct DelayAndDelayPattern : public OpRewritePattern<DelayOp> {
     // found a delay and a delay
     // verify port | frame (second operand) is the same
     // this verification will be ignored if ignoreTarget is set to true
-    auto firstDelayPortOrFrame = delayOp.target();
-    auto secondDelayPortOrFrame = nextDelayOp.target();
+    auto firstDelayPortOrFrame = delayOp.getTarget();
+    auto secondDelayPortOrFrame = nextDelayOp.getTarget();
 
     if (!ignoreTarget && (firstDelayPortOrFrame != secondDelayPortOrFrame))
       return failure();
