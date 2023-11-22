@@ -113,7 +113,7 @@ struct VariableDeclarationConversionPattern
           rankedTensorType,
           llvm::ArrayRef<mlir::Attribute>{elementInitializerAttr});
 
-      gmo.initial_valueAttr(initializerAttr);
+      gmo.setInitialValueAttr(initializerAttr);
       gmo.setPublic();
     }
 
@@ -138,9 +138,9 @@ struct ArrayDeclarationConversionPattern
     if (convertedType)
       declarationType = convertedType;
 
-    uint64_t num_elements = declareOp.num_elements().getZExtValue();
+    uint64_t numElements = declareOp.getNumElements().getZExtValue();
     auto const memRefType = mlir::MemRefType::get(
-        llvm::ArrayRef<int64_t>{(int64_t)num_elements}, declareOp.getType());
+        llvm::ArrayRef<int64_t>{(int64_t)numElements}, declareOp.getType());
     assert(memRefType && "failed to instantiate a MemRefType, likely trying "
                          "with invalid element type");
 
@@ -219,7 +219,7 @@ struct VariableUseConversionPattern
     auto loadOp =
         rewriter.create<mlir::affine::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
 
-    rewriter.replaceOp(useOp, {loadOp});
+    rewriter.replaceOp(useOp, loadOp);
     return success();
   }
 };
@@ -245,7 +245,7 @@ struct ArrayElementUseConversionPattern
     auto loadOp = rewriter.create<mlir::memref::LoadOp>(
         useOp.getLoc(), varRef.getResult(), mlir::ValueRange{indexOp});
 
-    rewriter.replaceOp(useOp, {loadOp});
+    rewriter.replaceOp(useOp, loadOp);
     return success();
   }
 };
@@ -266,7 +266,7 @@ struct VariableAssignConversionPattern
     auto varRef = varRefOrNone.value();
 
     rewriter.create<mlir::affine::AffineStoreOp>(
-        assignOp.getLoc(), adaptor.assigned_value(), varRef.getResult(),
+        assignOp.getLoc(), adaptor.getAssignedValue(), varRef.getResult(),
         mlir::ValueRange{});
 
     rewriter.eraseOp(assignOp);
@@ -294,7 +294,7 @@ struct ArrayElementAssignConversionPattern
         assignOp.getLoc(), rewriter.getIndexType(), assignOp.getIndexAttr());
 
     rewriter.create<mlir::memref::StoreOp>(
-        assignOp.getLoc(), adaptor.assigned_value(), varRef.getResult(),
+        assignOp.getLoc(), adaptor.getAssignedValue(), varRef.getResult(),
         mlir::ValueRange{indexOp});
 
     rewriter.replaceOp(assignOp, mlir::ValueRange{});

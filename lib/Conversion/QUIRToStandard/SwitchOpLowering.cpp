@@ -20,6 +20,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIROps.h"
+
+#include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Transforms/DialectConversion.h"
@@ -63,9 +65,9 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
   Block *continueBlock = rewriter.splitBlock(condBlock, opPosition);
   SmallVector<Value> results;
   results.reserve(switchOp.getNumResults());
-  for (Type resultType : switchOp.getResultTypes())
+  for (auto resultType : switchOp.getResultTypes())
     results.push_back(
-        continueBlock->addArgument(resultType, switchOp.getLoc()));
+        continueBlock->addArgument(resultType.getType(), switchOp.getLoc()));
   // Move blocks from the "default" region to the region containing
   // 'quir.switch', place it before the continuation block, and branch to it.
   auto &defaultRegion = switchOp.getDefaultRegion();
@@ -73,7 +75,7 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
   Operation *defaultTerminator = defaultRegion.back().getTerminator();
   ValueRange defaultTerminatorOperands = defaultTerminator->getOperands();
   rewriter.setInsertionPointToEnd(&defaultRegion.back());
-  rewriter.create<BranchOp>(loc, continueBlock, defaultTerminatorOperands);
+  rewriter.create<cf::BranchOp>(loc, continueBlock, defaultTerminatorOperands);
   rewriter.eraseOp(defaultTerminator);
   rewriter.inlineRegionBefore(defaultRegion, continueBlock);
 
@@ -91,16 +93,15 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
       Operation *caseTerminator = region.back().getTerminator();
       ValueRange caseTerminatorOperands = caseTerminator->getOperands();
       rewriter.setInsertionPointToEnd(&region.back());
-      rewriter.create<BranchOp>(loc, continueBlock, caseTerminatorOperands);
+      rewriter.create<cf::BranchOp>(loc, continueBlock, caseTerminatorOperands);
       rewriter.eraseOp(caseTerminator);
       rewriter.inlineRegionBefore(region, continueBlock);
     }
 
   rewriter.setInsertionPointToEnd(condBlock);
   rewriter.create<LLVM::SwitchOp>(
-      loc, switchOp.flag(), /*defaultOperands=*/ValueRange(),
-      /*caseOperands=*/caseOperands, switchOp.caseValues(),
-      /*branchWeights=*/ElementsAttr(), defaultBlock, caseBlocks);
+      loc, /*flag=*/switchOp.getFlag(), /*defaultDestination=*/defaultBlock, /*defaultOperands=*/ValueRange(),
+      /*caseValues=*/switchOp.getCaseValues(), /*caseDestinations=*/caseBlocks, /*caseOperands=*/caseOperands);
 
   // Ok, we're done!
   rewriter.replaceOp(switchOp, continueBlock->getArguments());
