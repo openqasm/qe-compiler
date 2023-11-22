@@ -80,7 +80,7 @@ if(INSTALL_BUNDLED_STATIC_LIB)
             QSSCPayload
             QSSCPayloadZip
             QSSCCore
-            Utils
+            QSSCUtils
             ${mlir_dialect_libs}
             ${mlir_conversion_libs}
     )
