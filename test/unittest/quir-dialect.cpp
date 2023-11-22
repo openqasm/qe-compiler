@@ -83,7 +83,7 @@ TEST_F(QUIRDialect, MeasureSideEffects) {
       builder.getIntegerAttr(builder.getI32Type(), 0));
 
   auto measureOp = builder.create<mlir::quir::MeasureOp>(
-      unkownLoc, builder.getI1Type(), qubitDecl.res());
+      unkownLoc, builder.getI1Type(), qubitDecl.getRes());
 
   EXPECT_TRUE(measureOp);
 

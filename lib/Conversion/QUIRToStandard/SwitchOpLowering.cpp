@@ -83,7 +83,7 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
   auto caseBlocks = std::vector<Block *>();
   auto *currBlock = continueBlock;
   auto caseOperands = std::vector<mlir::ValueRange>();
-  for (auto &region : switchOp.caseRegions())
+  for (auto &region : switchOp.getCaseRegions())
     if (!region.empty()) {
       caseOperands.emplace_back(ValueRange());
       currBlock = &region.front();

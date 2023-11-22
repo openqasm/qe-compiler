@@ -134,7 +134,7 @@ void LoadPulseCalsPass::loadPulseCals(CallGateOp callGateOp,
              pulseCalsNameToSequenceMap.end() &&
          "could not find any pulse calibration for call gate");
 
-  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(&funcOp.getBody().front());
   callGateOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
@@ -145,7 +145,7 @@ void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
 
   std::vector<Value> qubitOperands;
   qubitOperands.push_back(CXOp.getControl());
-  qubitOperands.push_back(CXOp.getTarget());
+  qubitOperands.push_back(CXOp.target());
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "cx";
   std::string gateMangledName = getMangledName(gateName, qubits);
@@ -153,7 +153,7 @@ void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
              pulseCalsNameToSequenceMap.end() &&
          "could not find any pulse calibration for the CX gate");
 
-  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(&funcOp.getBody().front());
   CXOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
@@ -163,7 +163,7 @@ void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
                                       mlir::func::FuncOp funcOp) {
 
   std::vector<Value> qubitOperands;
-  qubitOperands.push_back(UOp.getTarget());
+  qubitOperands.push_back(UOp.target());
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "u3";
   std::string gateMangledName = getMangledName(gateName, qubits);
@@ -171,7 +171,7 @@ void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
              pulseCalsNameToSequenceMap.end() &&
          "could not find any pulse calibration for the U gate");
 
-  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(&funcOp.getBody().front());
   UOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
 }
@@ -180,7 +180,7 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(&funcOp.getBody().front());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<MeasureOp>(measureOp, qubitOperands);
@@ -219,7 +219,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(&funcOp.getBody().front());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::BarrierOp>(barrierOp, qubitOperands);
@@ -255,7 +255,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(&funcOp.getBody().front());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::DelayOp>(delayOp, qubitOperands);
@@ -292,7 +292,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
                                       CallCircuitOp callCircuitOp,
                                       mlir::func::FuncOp funcOp) {
 
-  OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
+  OpBuilder builder = OpBuilder::atBlockBegin(&funcOp.getBody().front());
 
   std::vector<Value> qubitOperands;
   qubitCallOperands<mlir::quir::ResetQubitOp>(resetOp, qubitOperands);
@@ -328,7 +328,7 @@ void LoadPulseCalsPass::addPulseCalToModule(
     mlir::func::FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp) {
   if (pulseCalsAddedToIR.find(sequenceOp.getSymName().str()) ==
       pulseCalsAddedToIR.end()) {
-    OpBuilder builder = OpBuilder::atBlockBegin(funcOp.getBody());
+    OpBuilder builder = OpBuilder::atBlockBegin(&funcOp.getBody().front());
     auto *clonedPulseCalOp = builder.clone(*sequenceOp);
     auto clonedPulseCalSequenceOp = static_cast<SequenceOp>(clonedPulseCalOp);
     clonedPulseCalSequenceOp->moveBefore(funcOp);

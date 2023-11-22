@@ -61,7 +61,7 @@ auto RemoveQubitOperandsPass::lookupQubitId(const Value val) -> int {
 
 void RemoveQubitOperandsPass::addQubitDeclarations(mlir::func::FuncOp funcOp) {
   // build inside the func def body
-  OpBuilder build = OpBuilder::atBlockBegin(funcOp.getBody());
+  OpBuilder build = OpBuilder::atBlockBegin(&funcOp.getBody().front());
 
   for (auto arg : funcOp.getArguments()) {
     if (arg.getType().isa<QubitType>()) {
@@ -75,7 +75,7 @@ void RemoveQubitOperandsPass::addQubitDeclarations(mlir::func::FuncOp funcOp) {
       auto newDeclOp = build.create<DeclareQubitOp>(
           funcOp->getLoc(), build.getType<QubitType>(1),
           build.getI32IntegerAttr(qId));
-      arg.replaceAllUsesWith(newDeclOp.res());
+      arg.replaceAllUsesWith(newDeclOp.getRes());
     }
   }
 } // addQubitDeclarations

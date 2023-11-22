@@ -24,8 +24,9 @@
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
-
 #include "Dialect/QUIR/IR/QUIRTypes.h"
+
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -66,9 +67,9 @@ void QUIRVariableBuilder::generateVariableDeclaration(
   lastDeclaration[surroundingModuleOp] = declareOp; // save this to insert after
 
   if (isInputVariable)
-    declareOp.inputAttr(builder.getUnitAttr());
+    declareOp.setInputAttr(builder.getUnitAttr());
   if (isOutputVariable)
-    declareOp.outputAttr(builder.getUnitAttr());
+    declareOp.setOutputAttr(builder.getUnitAttr());
   variables.emplace(variableName.str(), type);
 }
 
@@ -93,7 +94,7 @@ void QUIRVariableBuilder::generateParameterDeclaration(
     declareParameterOp =
         getClassicalBuilder().create<mlir::qcs::DeclareParameterOp>(
             location, variableName.str(),
-            builder.getType<mlir::quir::AngleType>(64), constantOp.value());
+            builder.getType<mlir::quir::AngleType>(64), constantOp.getValue());
   }
 
   // if the source is a arith::ConstantOp cast to angle

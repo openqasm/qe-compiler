@@ -59,10 +59,10 @@ static void mergeMeasurements(PatternRewriter &rewriter, MeasureOp measureOp,
       measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
 
   // dice the output so we can specify which results to replace
-  auto iterSep = mergedOp.outs().begin() + measureOp.getNumResults();
-  rewriter.replaceOp(measureOp, ResultRange(mergedOp.outs().begin(), iterSep));
+  auto iterSep = mergedOp.getOuts().begin() + measureOp.getNumResults();
+  rewriter.replaceOp(measureOp, ResultRange(mergedOp.getOuts().begin(), iterSep));
   rewriter.replaceOp(nextMeasureOp,
-                     ResultRange(iterSep, mergedOp.outs().end()));
+                     ResultRange(iterSep, mergedOp.getOuts().end()));
 }
 
 struct MeasureAndMeasureLexographicalPattern

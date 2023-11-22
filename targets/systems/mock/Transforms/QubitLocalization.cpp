@@ -171,8 +171,8 @@ void mock::MockQubitLocalizationPass::processOp(DeclareQubitOp &qubitOp) {
   // declare every qubit on each mock for multi-qubit gates purposes
   for (auto nodeId : seenNodeIds) {
     auto *clonedOp = (*mockBuilders)[nodeId]->clone(*op);
-    mockMapping[nodeId].map(qubitOp.res(),
-                            dyn_cast<DeclareQubitOp>(clonedOp).res());
+    mockMapping[nodeId].map(qubitOp.getRes(),
+                            dyn_cast<DeclareQubitOp>(clonedOp).getRes());
   }
 } // processOp DeclareQubitOp
 
@@ -254,13 +254,13 @@ void mock::MockQubitLocalizationPass::processOp(MeasureOp &measureOp) {
 
   // send the results from the acquire mock and recv on Controller
   (*mockBuilders)[config->acquireNode(qubitId)]->create<SendOp>(
-      op->getLoc(), clonedMeasureOp.outs().front(),
+      op->getLoc(), clonedMeasureOp.getOuts().front(),
       controllerBuilder->getIndexAttr(config->controllerNode()));
   auto recvOp = controllerBuilder->create<RecvOp>(
-      op->getLoc(), TypeRange(clonedMeasureOp.outs().front().getType()),
+      op->getLoc(), TypeRange(clonedMeasureOp.getOuts().front().getType()),
       controllerBuilder->getIndexArrayAttr(qubitId));
   // map the result on Controller
-  controllerMapping.map(measureOp.outs().front(), recvOp.vals().front());
+  controllerMapping.map(measureOp.getOuts().front(), recvOp.vals().front());
 } // processOp MeasureOp
 
 void mock::MockQubitLocalizationPass::processOp(
@@ -482,12 +482,12 @@ void mock::MockQubitLocalizationPass::processOp(CallDefcalMeasureOp &callOp) {
 
     // Send the measured value back to Controller and receive it on Controller
     (*mockBuilders)[config->acquireNode(qubitId)]->create<SendOp>(
-        op->getLoc(), acquireOp.res(),
+        op->getLoc(), acquireOp.getRes(),
         controllerBuilder->getIndexAttr(config->controllerNode()));
     auto recvOp = controllerBuilder->create<RecvOp>(
-        op->getLoc(), TypeRange(acquireOp.res().getType()),
+        op->getLoc(), TypeRange(acquireOp.getRes().getType()),
         controllerBuilder->getIndexArrayAttr(qubitId));
-    controllerMapping.map(callOp.res(), recvOp.vals().front());
+    controllerMapping.map(callOp.getRes(), recvOp.vals().front());
   }
 } // processOp CallDefcalMeasureOp
 

@@ -144,7 +144,7 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
           pulseCalSequenceOp->getAttrOfType<ArrayAttr>("pulse.args"));
       for (auto type : pulseCalCallSequenceOp.getResultTypes())
         convertedPulseSequenceOpReturnTypes.push_back(type);
-      for (auto val : pulseCalCallSequenceOp.res())
+      for (auto val : pulseCalCallSequenceOp.getRes())
         convertedPulseSequenceOpReturnValues.push_back(val);
     } else
       assert(((isa<quir::ConstantOp>(quirOp) or isa<quir::ReturnOp>(quirOp) or
@@ -478,7 +478,7 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
       classicalQUIROpLocToConvertedPulseOpMap[angleLocHash] = f64Angle;
     } else if (auto castOp = dyn_cast<qcs::ParameterLoadOp>(angleOp)) {
       auto angleCastedOp = builder.create<oq3::CastOp>(
-          castOp->getLoc(), builder.getF64Type(), castOp.res());
+          castOp->getLoc(), builder.getF64Type(), castOp.getRes());
       angleCastedOp->moveAfter(castOp);
       classicalQUIROpLocToConvertedPulseOpMap[angleLocHash] = angleCastedOp;
     } else if (auto castOp = dyn_cast<oq3::CastOp>(angleOp)) {
@@ -487,7 +487,7 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
       if (auto paramCastOp =
               dyn_cast<qcs::ParameterLoadOp>(castOpArg.getDefiningOp())) {
         auto angleCastedOp = builder.create<oq3::CastOp>(
-            paramCastOp->getLoc(), builder.getF64Type(), paramCastOp.res());
+            paramCastOp->getLoc(), builder.getF64Type(), paramCastOp.getRes());
         angleCastedOp->moveAfter(paramCastOp);
         classicalQUIROpLocToConvertedPulseOpMap[angleLocHash] = angleCastedOp;
       } else

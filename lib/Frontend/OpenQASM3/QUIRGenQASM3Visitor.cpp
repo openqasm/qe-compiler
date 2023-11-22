@@ -209,7 +209,7 @@ void QUIRGenQASM3Visitor::initialize(
 
   // set up the builders to point to the proper places
   func.addEntryBlock();
-  OpBuilder b = OpBuilder::atBlockBegin(func.getBody());
+  OpBuilder b = OpBuilder::atBlockBegin(&func.getBody().front());
   builder = b;
   topLevelBuilder.setInsertionPointToStart(topLevelBuilder.getBlock());
 
@@ -533,7 +533,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   // adding case regions
   int i = 0;
   for (auto const &[key, caseValue] : node->GetCaseStatementsMap()) {
-    Region &caseRegion = switchOp.caseRegions()[i];
+    Region &caseRegion = switchOp.getCaseRegions()[i];
     caseRegion.emplaceBlock();
     OpBuilder caseRegionBuilder(caseRegion);
     i++;
@@ -962,10 +962,10 @@ mlir::Value QUIRGenQASM3Visitor::createMeasurement(const ASTMeasureNode *node,
     }
 
     varHandler.generateCBitSingleBitAssignment(
-        getLocation(node), identifier->GetName(), measureOp.outs().front(),
+        getLocation(node), identifier->GetName(), measureOp.getOuts().front(),
         resultIndex, identifier->GetBits());
   }
-  return measureOp.outs().front();
+  return measureOp.getOuts().front();
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTMeasureNode *node) {
@@ -1196,7 +1196,7 @@ QUIRGenQASM3Visitor::visit_(const ASTQubitContainerNode *node) {
                        .create<DeclareQubitOp>(
                            getLocation(node), builder.getType<QubitType>(size),
                            builder.getIntegerAttr(builder.getI32Type(), id))
-                       .res();
+                       .getRes();
   ssaValues[qId] = qubitRef;
   return qubitRef;
 }
@@ -2064,7 +2064,7 @@ QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(mlir::Location location) {
-  return builder.create<mlir::arith::ConstantOp>(location, builder.getUnitAttr());
+  return builder.create<mlir::arith::ConstantOp>(location, builder.getTypedAttr());
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
@@ -2086,7 +2086,8 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
   if (debugCircuits)
     llvm::errs() << "Start Circuit " << currentCircuitOp.getSymName() << "\n";
 
-  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(currentCircuitOp.getBody());
+  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&currentCircuitOp.getBody().front());
+
   circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
   circuitBuilder.setInsertionPointToStart(block);
 

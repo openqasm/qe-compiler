@@ -26,7 +26,7 @@ private:
   std::ostream &vStream; // visitor output stream
 
 public:
-  printqasm3visitor(QASM::ASTStatementList *sList, std::ostream &os)
+  PrintQASM3Visitor(QASM::ASTStatementList *sList, std::ostream &os)
       : BaseQASM3Visitor(sList), vStream(os) {}
 
   PrintQASM3Visitor(std::ostream &os) : BaseQASM3Visitor(), vStream(os) {}

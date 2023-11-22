@@ -23,7 +23,7 @@ include "Dialect/QUIR/IR/QUIRTypes.td"
 include "mlir/IR/BuiltinAttributes.td"
 include "mlir/IR/OpBase.td"
 
-def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle"> {
+def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle", [TypedAttrInterface]> {
   let summary = "A floating point value in the range (0,2*pi]";
   let description = [{
     Angle attributes represent constant known floating point values within the
@@ -46,7 +46,7 @@ def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle"> {
   let skipDefaultBuilders = 1;
 }
 
-def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
+def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration", [TypedAttrInterface]> {
   let summary = "A duration of time";
   let description = [{
     Duration attributes represent a duration of time.
@@ -78,7 +78,19 @@ def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration"> {
         DurationAttr getConvertedDurationAttr(const TimeUnits targetUnits, const double dt);
     }];
 
+    let builders = [
+    AttrBuilderWithInferredContext<(ins "DurationType":$type,
+                                        "const APFloat &":$duration), [{
+      return $_get(type.getContext(), type, duration);
+    }]>,
+    AttrBuilder<(ins "DurationType":$type, "const APFloat &":$duration), [{
+      return $_get(context, type, duration);
+    }]>
+  ];
+
   let assemblyFormat = "`<` $duration `>`";
+  let skipDefaultBuilders = 1;
+
 
 }
 
