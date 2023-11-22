@@ -55,7 +55,7 @@ struct CBitBinaryOpConversionPattern : public OQ3ToStandardConversion<OQ3Op> {
       if (!operand.getType().isSignlessInteger())
         return failure();
 
-    Type operandType = op.lhs().getType();
+    Type operandType = op.getLhs().getType();
     if (auto cbitType = operandType.dyn_cast<quir::CBitType>())
       if (cbitType.getWidth() > 64)
         return failure();
@@ -200,7 +200,7 @@ struct CBitExtractBitOpConversionPattern
         location, convertedOperand.getType(), convertedOperand, shiftAmount);
     auto extractedBit = rewriter.create<mlir::LLVM::TruncOp>(
         location, op.getType(), shiftedRegister);
-    rewriter.replaceOp(op, {extractedBit});
+    rewriter.replaceOp(op, extractedBit);
 
     return success();
   }
