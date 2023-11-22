@@ -2064,7 +2064,7 @@ QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(mlir::Location location) {
-  return builder.create<mlir::arith::ConstantOp>(location, builder.getTypedAttr());
+  return builder.create<mlir::arith::ConstantOp>(location, builder.getZeroAttr(builder.getNoneType()));
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
