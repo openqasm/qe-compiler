@@ -82,13 +82,21 @@ auto SubroutineCloningPass::getMangledName(Operation *op) -> std::string {
 } // getMangledName
 
 template <class CallLikeOp, class FuncLikeOp>
-void SubroutineCloningPass::processCallOp(Operation *op) {
+void SubroutineCloningPass::processCallOp(Operation *op,
+                                          SymbolOpMap &symbolOps) {
   auto callOp = dyn_cast<CallLikeOp>(op);
   OpBuilder build(moduleOperation->getRegion(0));
 
   // look for func def match
-  Operation *findOp =
-      SymbolTable::lookupSymbolIn(moduleOperation, callOp.callee());
+  auto search = symbolOps.find(callOp.callee());
+
+  if (search == symbolOps.end()) {
+    callOp->emitOpError() << "No matching function def found for "
+                          << callOp.callee() << "\n";
+    return signalPassFailure();
+  }
+
+  Operation *findOp = search->second;
   if (findOp) {
     std::vector<Value> qOperands;
     qubitCallOperands(callOp, qOperands);
@@ -99,9 +107,7 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
                     FlatSymbolRefAttr::get(&getContext(), mangledName));
 
     // does the mangled function already exist?
-    Operation *mangledOp =
-        SymbolTable::lookupSymbolIn(moduleOperation, mangledName);
-    if (mangledOp) // nothing to do
+    if (symbolOps.find(mangledName) != symbolOps.end())
       return;
 
     // clone the func def with the new name
@@ -127,6 +133,8 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
     // add calls within the new func def to the callWorkList
     newFunc->walk([&](CallLikeOp op) { callWorkList.push_back(op); });
 
+    symbolOps[mangledName] = newFunc.getOperation();
+
   } else { // matching function not found
     callOp->emitOpError() << "No matching function def found for "
                           << callOp.callee() << "\n";
@@ -148,18 +156,33 @@ void SubroutineCloningPass::runOnOperation() {
 
   mainFunc->walk([&](CallSubroutineOp op) { callWorkList.push_back(op); });
 
+  SymbolOpMap symbolOps;
+
+  if (!callWorkList.empty()) {
+    moduleOperation->walk([&](FuncOp functionOp) {
+      symbolOps[functionOp.sym_name()] = functionOp.getOperation();
+    });
+  }
+
   while (!callWorkList.empty()) {
     Operation *op = callWorkList.front();
     callWorkList.pop_front();
-    processCallOp<CallSubroutineOp, FuncOp>(op);
+    processCallOp<CallSubroutineOp, FuncOp>(op, symbolOps);
   }
 
   mainFunc->walk([&](CallCircuitOp op) { callWorkList.push_back(op); });
 
+  if (!callWorkList.empty()) {
+    symbolOps.clear();
+    moduleOperation->walk([&](CircuitOp circuitOp) {
+      symbolOps[circuitOp.sym_name()] = circuitOp.getOperation();
+    });
+  }
+
   while (!callWorkList.empty()) {
     Operation *op = callWorkList.front();
     callWorkList.pop_front();
-    processCallOp<CallCircuitOp, CircuitOp>(op);
+    processCallOp<CallCircuitOp, CircuitOp>(op, symbolOps);
   }
 
   // All subroutine defs that have been cloned are no longer needed
