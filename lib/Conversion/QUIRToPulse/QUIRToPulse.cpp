@@ -41,8 +41,8 @@ using namespace mlir::pulse;
 void QUIRToPulsePass::runOnOperation() {
 
   // check for command line override of the path to waveform container
-  if (waveformContainer.has_value())
-    WAVEFORM_CONTAINER = waveformContainer.value();
+  if (waveformContainer.hasValue())
+    WAVEFORM_CONTAINER = waveformContainer.getValue();
 
   // parse the waveform container ops
   if (!WAVEFORM_CONTAINER.empty())
@@ -97,12 +97,11 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   // build an empty pulse sequence
   SmallVector<Value> arguments;
   auto argumentsValueRange = ValueRange(arguments.data(), arguments.size());
-  auto funcType = builder.getFunctionType(TypeRange(argumentsValueRange), {});
+  mlir::FunctionType funcType = builder.getFunctionType(TypeRange(argumentsValueRange), {});
   llvm::SmallVector<mlir::Type> convertedPulseSequenceOpReturnTypes;
   llvm::SmallVector<mlir::Value> convertedPulseSequenceOpReturnValues;
   auto convertedPulseSequenceOp = builder.create<mlir::pulse::SequenceOp>(
-      circuitOp.getLoc(), StringRef(circName + "_sequence"), funcType,
-      mlir::StringAttr{});
+      circuitOp.getLoc(), StringRef(circName + "_sequence"), funcType);
   auto *entryBlock = convertedPulseSequenceOp.addEntryBlock();
   auto entryBuilder = builder.atBlockBegin(entryBlock);
 
@@ -303,11 +302,11 @@ void QUIRToPulsePass::getQUIROpClassicalOperands(
   if (auto castOp = dyn_cast<CallGateOp>(quirOp))
     classicalCallOperands(castOp, classicalOperands);
   else if (auto castOp = dyn_cast<mlir::quir::DelayOp>(quirOp))
-    classicalOperands.push_back(castOp.time());
+    classicalOperands.push_back(castOp.getTime());
   else if (auto castOp = dyn_cast<Builtin_UOp>(quirOp)) {
-    classicalOperands.push_back(castOp.theta());
-    classicalOperands.push_back(castOp.phi());
-    classicalOperands.push_back(castOp.lambda());
+    classicalOperands.push_back(castOp.getTheta());
+    classicalOperands.push_back(castOp.getPhi());
+    classicalOperands.push_back(castOp.getLambda());
   }
 
   for (auto operand : classicalOperands)
@@ -594,10 +593,11 @@ void QUIRToPulsePass::parsePulseWaveformContainerOps(
   std::unique_ptr<llvm::MemoryBuffer> waveformContainerFile =
       mlir::openInputFile(waveformContainerPath, &errorMessage);
   sourceMgr.AddNewSourceBuffer(std::move(waveformContainerFile), llvm::SMLoc());
-  mlir::OwningOpRef<ModuleOp> waveformContainerFileModule(
-      mlir::parseSourceFile(sourceMgr, &getContext()));
+
+  mlir::OwningOpRef<mlir::ModuleOp> waveformContainerFileModule = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, &getContext());
   assert(waveformContainerFileModule and
          "problem parsing waveform container file");
+
   auto waveformContainerFileModuleRelease =
       waveformContainerFileModule.release();
   waveformContainerFileModuleRelease->walk([&](mlir::pulse::Waveform_CreateOp

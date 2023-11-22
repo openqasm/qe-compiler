@@ -22,7 +22,7 @@
 
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/Parser/Parser.h"
 #include "mlir/Support/FileUtilities.h"
 
@@ -37,12 +37,12 @@ using namespace mlir::pulse;
 
 void LoadPulseCalsPass::runOnOperation() {
 
-  ModuleOp moduleOp = getOperation();
+  mlir::ModuleOp moduleOp = getOperation();
   mlir::func::FuncOp mainFunc = dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
   assert(mainFunc && "could not find the main func");
 
   // check for command line override of the path to default pulse cals
-  if (defaultPulseCals.has_value())
+  if (defaultPulseCals.hasValue())
     DEFAULT_PULSE_CALS = defaultPulseCals.getValue();
 
   // parse the default pulse calibrations
@@ -128,7 +128,7 @@ void LoadPulseCalsPass::loadPulseCals(CallGateOp callGateOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(callGateOp, qubitOperands);
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
-  std::string gateName = callGateOp.calleeAttr().getValue().str();
+  std::string gateName = callGateOp.getCalleeAttr().getValue().str();
   std::string gateMangledName = getMangledName(gateName, qubits);
   assert(pulseCalsNameToSequenceMap.find(gateMangledName) !=
              pulseCalsNameToSequenceMap.end() &&
@@ -145,7 +145,7 @@ void LoadPulseCalsPass::loadPulseCals(BuiltinCXOp CXOp,
 
   std::vector<Value> qubitOperands;
   qubitOperands.push_back(CXOp.getControl());
-  qubitOperands.push_back(CXOp.target());
+  qubitOperands.push_back(CXOp.getTarget());
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "cx";
   std::string gateMangledName = getMangledName(gateName, qubits);
@@ -163,7 +163,7 @@ void LoadPulseCalsPass::loadPulseCals(Builtin_UOp UOp,
                                       mlir::func::FuncOp funcOp) {
 
   std::vector<Value> qubitOperands;
-  qubitOperands.push_back(UOp.target());
+  qubitOperands.push_back(UOp.getTarget());
   std::vector<uint32_t> qubits = getQubitOperands(qubitOperands, callCircuitOp);
   std::string gateName = "u3";
   std::string gateMangledName = getMangledName(gateName, qubits);
@@ -339,7 +339,7 @@ void LoadPulseCalsPass::addPulseCalToModule(
 }
 
 llvm::Error LoadPulseCalsPass::parsePulseCalsModuleOp(
-    std::string &pulseCalsPath, mlir::OwningOpRef<ModuleOp> &owningOpRef) {
+    std::string &pulseCalsPath, mlir::OwningOpRef<mlir::ModuleOp> &owningOpRef) {
   std::string errorMessage;
   llvm::SourceMgr sourceMgr;
   std::unique_ptr<llvm::MemoryBuffer> pulseCalsFile =
@@ -349,7 +349,7 @@ llvm::Error LoadPulseCalsPass::parsePulseCalsModuleOp(
                                    "Failed to open pulse calibrations file: " +
                                        errorMessage);
   sourceMgr.AddNewSourceBuffer(std::move(pulseCalsFile), llvm::SMLoc());
-  owningOpRef = mlir::parseSourceFile(sourceMgr, &getContext());
+  owningOpRef = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, &getContext());
   if (!owningOpRef)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Failed to parse pulse calibrations file: " +
@@ -386,7 +386,7 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
 
   // map original arguments for new sequence based on original sequences'
   // argument numbers
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
   auto baseArgNum = mergedSequenceOp.getNumArguments();
   for (std::size_t seqNum = 1; seqNum < sequenceOps.size(); seqNum++) {
     for (uint cnt = 0; cnt < sequenceOps[seqNum].getNumArguments(); cnt++) {
@@ -422,7 +422,7 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
                                   outputValues);
 
   // change the input / output types for the merged sequence op
-  auto opType = mergedSequenceOp.getType();
+  auto opType = mergedSequenceOp.getFunctionType();
   mergedSequenceOp.setType(builder.getFunctionType(
       /*inputs=*/opType.getInputs(),
       /*results=*/ArrayRef<Type>(outputTypes)));
