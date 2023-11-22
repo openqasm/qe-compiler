@@ -148,6 +148,8 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [Pure, SequenceAllowed
     let assemblyFormat = [{
         attr-dict $samples `->` type($wfr)
     }];
+
+    let hasVerifier = 1;
 }
 
 def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [Pure, NoTerminator]> {
@@ -171,6 +173,8 @@ def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [Pure, NoTerminat
     let assemblyFormat = [{
         attr-dict-with-keyword $body
     }];
+
+    let hasVerifier = 1;
 }
 
 def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [Pure, SequenceAllowed, SameVariadicOperandSize]> {
@@ -608,7 +612,7 @@ def Pulse_CallSequenceOp : Pulse_Op<"call_sequence", [CallOpInterface, MemRefsNo
         OpBuilder<(ins "SequenceOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
             $_state.addOperands(operands);
             $_state.addAttribute("callee",SymbolRefAttr::get(callee));
-            $_state.addTypes(callee.getType().getResults());
+            $_state.addTypes(callee.getFunctionType().getResults());
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
         CArg<"ValueRange", "{}">:$operands), [{
@@ -647,6 +651,8 @@ def Pulse_CallSequenceOp : Pulse_Op<"call_sequence", [CallOpInterface, MemRefsNo
             (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
         }
     }];
+
+    let hasVerifier = 1;
 }
 
 //===----------------------------------------------------------------------===//
@@ -795,6 +801,7 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
     bool isDeclaration() { return isExternal(); }
   }];
   let hasCustomAssemblyFormat = 1;
+  let hasVerifier = 1;
 
 }
 
@@ -816,6 +823,7 @@ def Pulse_ReturnOp : Pulse_Op<"return", [Pure, Terminator, ReturnLike, SequenceR
             }];
         let builders = [OpBuilder<(ins), [{ build($_builder, $_state, std::nullopt); }]>];
         let assemblyFormat = "attr-dict ($operands^ `:` type($operands))?";
+        let hasVerifier = 1;
 }
 
 //===----------------------------------------------------------------------===//

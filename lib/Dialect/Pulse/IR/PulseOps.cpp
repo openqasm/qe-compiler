@@ -36,35 +36,28 @@ namespace mlir::pulse {
 //===----------------------------------------------------------------------===//
 
 mlir::LogicalResult GaussianOp::verify() {
-  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).getDur().getDefiningOp());
   if (durDeclOp && durDeclOp.value() < 0)
       return emitOpError("duration must be >= 0.");
   return success();
 }
 
 mlir::LogicalResult GaussianSquareOp::verify() {
-  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-  if (durDeclOp && durDeclOp.value() < 0)
-      return emitOpError("duration must be >= 0.");
-  return success();
-}
-
-mlir::LogicalResult GaussianSquareOp::verify() {
-  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).getDur().getDefiningOp());
   if (durDeclOp && durDeclOp.value() < 0)
       return emitOpError("duration must be >= 0.");
   return success();
 }
 
 mlir::LogicalResult DragOp::verify() {
-  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).getDur().getDefiningOp());
   if (durDeclOp && durDeclOp.value() < 0)
       return emitOpError("duration must be >= 0.");
   return success();
 }
 
 mlir::LogicalResult ConstOp::verify() {
-  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).getDur().getDefiningOp());
   if (durDeclOp && durDeclOp.value() < 0)
       return emitOpError("duration must be >= 0.");
   return success();
@@ -111,7 +104,7 @@ mlir::LogicalResult CaptureOp::verify() {
 }
 
 mlir::LogicalResult DelayOp::verify() {
-  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).getDur().getDefiningOp());
   if (durDeclOp && durDeclOp.value() < 0)
       return emitOpError("duration must be >= 0.");
 
@@ -127,7 +120,7 @@ mlir::LogicalResult DelayOp::verify() {
 
 llvm::Expected<uint64_t>
 Waveform_CreateOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
-  auto shape = (*this).samples().getType().getShape();
+  auto shape = (*this).getSamples().getType().getShape();
   if (shape[0] < 0)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "duration must be >= 0.");
@@ -135,25 +128,25 @@ Waveform_CreateOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
 }
 
 /// Verifier for pulse.waveform operation.
-static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
+mlir::LogicalResult Waveform_CreateOp::verify() {
   // Check that samples has two dimensions: outer is the number of
   // samples, inner is complex numbers with two elements [real, imag]
-  auto attrType = op.samples().getType().cast<mlir::ShapedType>();
+  auto attrType = getSamples().getType().cast<mlir::ShapedType>();
   auto attrShape = attrType.getShape();
   if (attrShape.size() != 2) {
-    return op.emitOpError() << ", which declares a sample waveform, must be "
+    return emitOpError() << ", which declares a sample waveform, must be "
                                "composed of a two dimensional tensor.";
   }
   if (attrShape[1] != 2) {
-    return op.emitOpError()
+    return emitOpError()
            << ", which declares a sample waveform, must have inner dimension "
               "two corresponding to complex elements of the form [real, imag].";
   }
 
   // Check duration
-  auto durOrError = op.getDuration(nullptr /*callSequenceOp*/);
+  auto durOrError = getDuration(nullptr /*callSequenceOp*/);
   if (auto err = durOrError.takeError())
-    return op.emitOpError(toString(std::move(err)));
+    return emitOpError(toString(std::move(err)));
 
   return mlir::success();
 }
@@ -169,9 +162,9 @@ static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
 //===----------------------------------------------------------------------===//
 
 /// Verifier for pulse.waveform_container operation.
-static auto verify(WaveformContainerOp &wfrContainerOp) -> mlir::LogicalResult {
+LogicalResult WaveformContainerOp::verify() {
 
-  for (Block &block : wfrContainerOp.getBody().getBlocks()) {
+  for (Block &block : getBody().getBlocks()) {
     for (Operation &op : block.getOperations()) {
       // Check that all the operations in the body of the waveform_container are
       // of type Waveform_CreateOp
@@ -219,7 +212,7 @@ CallSequenceOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
                          << "' does not reference a valid sequence";
 
   // Verify the types match
-  auto sequenceType = sequence.getType();
+  auto sequenceType = sequence.getFunctionType();
 
   if (sequenceType.getNumInputs() != getNumOperands())
     return emitOpError("incorrect number of operands for the callee sequence");
@@ -288,7 +281,6 @@ mlir::ParseResult SequenceOp::parse(mlir::OpAsmParser &parser,
 }
 
 void SequenceOp::print(mlir::OpAsmPrinter &printer) {
-  FunctionType fnType = getType();
   function_interface_impl::printFunctionOp(
       printer, *this, /*isVariadic=*/false, getFunctionTypeAttrName(),
       getArgAttrsAttrName(), getResAttrsAttrName());
@@ -296,7 +288,7 @@ void SequenceOp::print(mlir::OpAsmPrinter &printer) {
 
 /// Verify the argument list and entry block are in agreement.
 static LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
-  auto fnInputTypes = op.getType().getInputs();
+  auto fnInputTypes = op.getFunctionType().getInputs();
   Block &entryBlock = op.front();
   for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i) {
     if (fnInputTypes[i] != entryBlock.getArgument(i).getType())
@@ -330,15 +322,15 @@ static LogicalResult verifyClassical_(SequenceOp op) {
   return success();
 }
 
-static LogicalResult verify(SequenceOp op) {
+LogicalResult SequenceOp::verify() {
   // If external will be linked in later and nothing to do
-  if (op.isExternal())
+  if (isExternal())
     return success();
 
-  if (failed(verifyArgumentAndEntry_(op)))
+  if (failed(verifyArgumentAndEntry_(*this)))
     return mlir::failure();
 
-  if (failed(verifyClassical_(op)))
+  if (failed(verifyClassical_(*this)))
     return mlir::failure();
 
   return success();
@@ -370,7 +362,7 @@ void SequenceOp::cloneInto(SequenceOp dest, IRMapping &mapper) {
 /// cloned sub-values with the corresponding copied value and
 /// add to the mapper
 SequenceOp SequenceOp::clone(IRMapping &mapper) {
-  FunctionType newType = getType();
+  FunctionType newType = getFunctionType();
 
   // If the function contains a body, then its possible arguments
   // may be deleted in the mapper. Verify this so they aren't
@@ -411,14 +403,14 @@ SequenceOp SequenceOp::clone() {
 //
 //===----------------------------------------------------------------------===//
 
-static LogicalResult verify(ReturnOp op) {
-  auto sequence = op->getParentOfType<SequenceOp>();
-  FunctionType sequenceType = sequence.getType();
+LogicalResult ReturnOp::verify() {
+  auto sequence = (*this)->getParentOfType<SequenceOp>();
+  FunctionType sequenceType = sequence.getFunctionType();
 
   auto numResults = sequenceType.getNumResults();
   // Verify number of operands match type signature
-  if (numResults != op.getOperands().size()) {
-    return op.emitError()
+  if (numResults != getOperands().size()) {
+    return emitError()
         .append("expected ", numResults, " result operands")
         .attachNote(sequence.getLoc())
         .append("return type declared here");
@@ -426,10 +418,10 @@ static LogicalResult verify(ReturnOp op) {
 
   int i = 0;
   for (const auto [type, operand] :
-       llvm::zip(sequenceType.getResults(), op.getOperands())) {
+       llvm::zip(sequenceType.getResults(), getOperands())) {
     auto opType = operand.getType();
     if (type != opType) {
-      return op.emitOpError()
+      return emitOpError()
              << "unexpected type `" << opType << "' for operand #" << i;
     }
     i++;
@@ -467,7 +459,7 @@ PlayOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
   // defined in the same block as playOp e.g., if both are defined inside a
   // sequenceOp
   if (auto castOp =
-          dyn_cast_or_null<Waveform_CreateOp>((*this).wfr().getDefiningOp())) {
+          dyn_cast_or_null<Waveform_CreateOp>((*this).getWfr().getDefiningOp())) {
     llvm::Expected<uint64_t> durOrError =
         castOp.getDuration(nullptr /*callSequenceOp*/);
     if (auto err = durOrError.takeError())
@@ -476,7 +468,7 @@ PlayOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
     return durOrError.get();
   }
 
-  auto argIndex = (*this).wfr().cast<BlockArgument>().getArgNumber();
+  auto argIndex = (*this).getWfr().cast<BlockArgument>().getArgNumber();
   auto *argOp = callOp->getOperand(argIndex).getDefiningOp();
   auto wfrOp = dyn_cast_or_null<Waveform_CreateOp>(argOp);
   if (wfrOp) {
@@ -497,11 +489,11 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
 
   Operation *wfrOp;
   Operation *targetOp;
-  wfrOp = dyn_cast_or_null<Waveform_CreateOp>(wfr().getDefiningOp());
+  wfrOp = dyn_cast_or_null<Waveform_CreateOp>(getWfr().getDefiningOp());
   targetOp = dyn_cast_or_null<MixFrameOp>(getTarget().getDefiningOp());
 
   if (!wfrOp && !targetOp) {
-    auto wfrArgIndex = wfr().dyn_cast<BlockArgument>().getArgNumber();
+    auto wfrArgIndex = getWfr().dyn_cast<BlockArgument>().getArgNumber();
     wfrOp = callOp.getOperand(wfrArgIndex)
                 .getDefiningOp<mlir::pulse::Waveform_CreateOp>();
     auto mixFrameArgIndex = getTarget().dyn_cast<BlockArgument>().getArgNumber();
