@@ -207,7 +207,7 @@ def Pulse_Port_CreateOp : Pulse_Op<"create_port", [Pure]> {
         Example:
 
         ```mlir
-        %port = pulse.port() {uid = "a unique identifier"} : () -> !pulse.port
+        %port = pulse.getPort() {uid = "a unique identifier"} : () -> !pulse.port
         ```
     }];
 

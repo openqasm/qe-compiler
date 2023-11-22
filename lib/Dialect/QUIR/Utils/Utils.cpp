@@ -230,7 +230,7 @@ std::optional<uint> lookupQubitId(const Value &val) {
     }   // if val is blockArg
     return std::nullopt;
   } // if !declOp
-  int id = declOp.id().getValue();
+  int id = declOp.getId().value();
   assert(id >= 0 && "Declared ID of qubit is < 0");
   return static_cast<uint>(id);
 } // lookupQubitId
@@ -301,12 +301,12 @@ bool isQuantumOp(Operation *op) {
 llvm::Expected<mlir::quir::DurationAttr>
 getDuration(mlir::quir::DelayOp &delayOp) {
   std::string durationStr;
-  auto durationDeclare = delayOp.time().getDefiningOp<quir::ConstantOp>();
+  auto durationDeclare = delayOp.getTime().getDefiningOp<quir::ConstantOp>();
   if (durationDeclare)
     return durationDeclare.value().dyn_cast<quir::DurationAttr>();
-  auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
+  auto argNum = delayOp.getTime().cast<BlockArgument>().getArgNumber();
   auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
-      delayOp.time().getParentBlock()->getParentOp());
+      delayOp.getTime().getParentBlock()->getParentOp());
   assert(circuitOp && "can only handle circuit arguments");
   auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::DurationAttr>(
       argNum, mlir::quir::getDurationAttrName());
@@ -336,7 +336,7 @@ std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
 
   Operation *findOp =
       SymbolTable::lookupNearestSymbolFrom<mlir::quir::CircuitOp>(
-          callCircuitOp, callCircuitOp.calleeAttr());
+          callCircuitOp, callCircuitOp.getCalleeAttr());
 
   auto circuitOp = dyn_cast<CircuitOp>(findOp);
   auto returnOp = dyn_cast<quir::ReturnOp>(circuitOp.back().getTerminator());

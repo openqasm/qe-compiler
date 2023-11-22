@@ -64,7 +64,7 @@ bool mayMoveVariableLoadOp(MeasureOp measureOp,
       moveVariableLoadOp = assignOp->isBeforeInBlock(measureOp);
       if (!moveVariableLoadOp) {
         auto assignCastOp =
-            dyn_cast<oq3::CastOp>(assignOp.assigned_value().getDefiningOp());
+            dyn_cast<oq3::CastOp>(assignOp.getAssignedValue().getDefiningOp());
         if (assignCastOp)
           moveVariableLoadOp = mayMoveCastOp(measureOp, assignCastOp, moveList);
       }
@@ -120,7 +120,7 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
       if (!nextOpt.has_value())
         break;
 
-      Operation *nextOp = nextOpt.getValue();
+      Operation *nextOp = nextOpt.value();
       // for control flow ops, continue, but add the operated qubits of the
       // control flow block to the currQubits set
       while (nextOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
@@ -131,7 +131,7 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
         if (!nextNextOpt.has_value()) // only move non-control-flow ops
           break;
 
-        nextOp = nextNextOpt.getValue();
+        nextOp = nextNextOpt.value();
       }
 
       // don't reorder past the next measurement or reset or control flow

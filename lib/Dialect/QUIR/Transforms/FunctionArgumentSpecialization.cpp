@@ -50,7 +50,7 @@ void FunctionArgumentSpecializationPass::processCallOp(
   Operation *moduleOp =
       callOp->template getParentOfType<ModuleOp>().getOperation();
   // look for func def match
-  Operation *findOp = SymbolTable::lookupSymbolIn(moduleOp, callOp.callee());
+  Operation *findOp = SymbolTable::lookupSymbolIn(moduleOp, callOp.getCallee());
   if (findOp) {
     mlir::func::FuncOp funcOp = dyn_cast<mlir::func::FuncOp>(findOp);
     if (!funcOp)
@@ -73,13 +73,13 @@ void FunctionArgumentSpecializationPass::processCallOp(
         copyFuncAndSpecialize<CallOpTy>(funcOp, callOp, callWorkList);
       } else {
         llvm::errs() << "Fundamental type mismatch between call to "
-                     << callOp.callee() << " and func def " << funcOp.getName()
+                     << callOp.getCallee() << " and func def " << funcOp.getName()
                      << "\n";
       }
     }      // else callable region found
   } else { // callee not matched by mlir::func::FuncOp
     LLVM_DEBUG(llvm::dbgs()
-               << "Found call to " << callOp.callee()
+               << "Found call to " << callOp.getCallee()
                << " with no matching function definition or prototype\n");
   }
 } // processCallOp<T1>

@@ -83,7 +83,7 @@ void LoadEliminationPass::runOnOperation() {
     // constants). For now and for angle constants, this approach is good-enough
     // while not satisfying.
     if (decl.isInputVariable())
-      varAssignmentOp.assigned_value().getDefiningOp()->setAttr(
+      varAssignmentOp.getAssignedValue().getDefiningOp()->setAttr(
           mlir::quir::getInputParameterAttrName(), decl.getNameAttr());
 
     for (auto *userOp : symbolUses) {
@@ -101,7 +101,7 @@ void LoadEliminationPass::runOnOperation() {
       if (!domInfo.dominates(assignment, variableUse)) // that is not the case
         continue;
 
-      variableUse.replaceAllUsesWith(varAssignmentOp.assigned_value());
+      variableUse.replaceAllUsesWith(varAssignmentOp.getAssignedValue());
       varUsesToErase.push_back(variableUse);
     }
 

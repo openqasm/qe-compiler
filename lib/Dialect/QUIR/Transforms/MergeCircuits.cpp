@@ -184,7 +184,7 @@ struct BarrierAndCircuitPattern : public OpRewritePattern<BarrierOp> {
     if (!callCircuitOp.has_value())
       return failure();
 
-    barrierOp->moveAfter(callCircuitOp.getValue().getOperation());
+    barrierOp->moveAfter(callCircuitOp.value().getOperation());
 
     return success();
   } // matchAndRewrite
@@ -204,7 +204,7 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
     if (!barrierOp.has_value())
       return failure();
 
-    auto *barrierOperation = barrierOp.getValue().getOperation();
+    auto *barrierOperation = barrierOp.value().getOperation();
     // check for circuit op to merge with
     auto nextCallCircuitOp =
         nextQuantumOpOrNullOfType<CallCircuitOp>(barrierOperation);

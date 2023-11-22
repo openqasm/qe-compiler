@@ -92,7 +92,7 @@ void SymbolTableBuildPass::runOnOperation() {
 auto MockFunctionLocalizationPass::lookupQubitId(const Value val) -> int {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
   if (declOp)
-    return declOp.id().getValue();
+    return declOp.getId().value();
 
   // Must be an argument to a function
   // see if we can find an attribute with the info
@@ -140,7 +140,7 @@ auto MockFunctionLocalizationPass::getMatchedOp(CallOpTy &callOp,
                                                 int callArgIndex,
                                                 int thisIdIndex)
     -> Operation * {
-  std::string calleeName = callOp.callee().str();
+  std::string calleeName = callOp.getCallee().str();
   FunctionType cType = callOp.getCalleeType();
 
   Operation *matchedOp = nullptr;
@@ -169,7 +169,7 @@ auto MockFunctionLocalizationPass::getMatchedOp(CallOpTy &callOp,
 template <class CallOpTy>
 auto MockFunctionLocalizationPass::getMangledName(CallOpTy &callOp)
     -> std::string {
-  std::string newName = callOp.callee().str();
+  std::string newName = callOp.getCallee().str();
   for (uint ii = 0; ii < callOp.getOperands().size(); ++ii) {
     if (callOp.getOperands()[ii].getType().template isa<QubitType>()) {
       int qId = lookupQubitId(callOp.getOperands()[ii]);
@@ -256,7 +256,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
   toWalk.push_back(mainFunc);
 
   auto walkSubroutineCalls = [&](CallSubroutineOp callOp) {
-    std::string calleeName = callOp.callee().str();
+    std::string calleeName = callOp.getCallee().str();
     FunctionType cType = callOp.getCalleeType();
 
     Operation *matchedOp =
@@ -281,11 +281,11 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // now update the callee of the callop
     auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
-    callOp.calleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    callOp.getCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkSubroutineCalls
 
   auto walkGateCalls = [&](CallGateOp callOp) {
-    std::string calleeName = callOp.callee().str();
+    std::string calleeName = callOp.getCallee().str();
 
     int callArgIndex = getCallArgIndex<CallGateOp>(callOp);
     if (callArgIndex ==
@@ -308,11 +308,11 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // now update the callee of the callop
     auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
-    callOp.calleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    callOp.getCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkGateCalls
 
   auto walkDefcalGateCalls = [&](CallDefCalGateOp callOp) {
-    std::string calleeName = callOp.callee().str();
+    std::string calleeName = callOp.getCallee().str();
 
     int callArgIndex = getCallArgIndex<CallDefCalGateOp>(callOp);
     if (callArgIndex == -1) {
@@ -336,11 +336,11 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // now update the callee of the callop
     auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
-    callOp.calleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    callOp.getCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkDefcalGateCalls
 
   auto walkDefcalMeasureCalls = [&](CallDefcalMeasureOp callOp) {
-    std::string calleeName = callOp.callee().str();
+    std::string calleeName = callOp.getCallee().str();
 
     int qId = lookupQubitId(callOp.getOperands()[0]);
     int thisIdIndex = -1;
@@ -390,7 +390,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // now update the callee of the callop
     auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
-    callOp.calleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    callOp.getCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkDefcalMeasureCalls
 
   // first walk all subroutine calls
@@ -407,7 +407,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
     std::unordered_set<std::string> subroutineCalls;
     // Find all subroutine calls
     moduleOp->walk([&](CallSubroutineOp callOp) {
-      subroutineCalls.emplace(callOp.callee().str());
+      subroutineCalls.emplace(callOp.getCallee().str());
     });
 
     moduleOp->walk([&](mlir::func::FuncOp funcOp) {

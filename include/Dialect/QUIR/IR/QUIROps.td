@@ -203,6 +203,7 @@ def QUIR_CallGateOp : QUIR_Op<"call_gate", [CallOpInterface,
         }]>];
 
     let extraClassDeclaration = [{
+
         FunctionType getCalleeType();
 
         /// Get the argument operands to the called function.
@@ -269,6 +270,8 @@ def QUIR_CallDefCalGateOp : QUIR_Op<"call_defcal_gate", [
         }]>];
 
     let extraClassDeclaration = [{
+        FunctionType getCalleeType();
+
         /// Get the argument operands to the called function.
         operand_range getArgOperands() {
             return {arg_operand_begin(), arg_operand_end()};
@@ -331,6 +334,8 @@ def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
         }]>];
 
     let extraClassDeclaration = [{
+        FunctionType getCalleeType();
+
         /// Get the argument operands to the called function.
         operand_range getArgOperands() {
             return {arg_operand_begin(), arg_operand_end()};
@@ -397,6 +402,7 @@ def QUIR_CallSubroutineOp : QUIR_Op<"call_subroutine", [CallOpInterface]> {
         }]>];
 
     let extraClassDeclaration = [{
+        FunctionType getCalleeType();
 
         /// Get the argument operands to the called function.
         operand_range getArgOperands() {

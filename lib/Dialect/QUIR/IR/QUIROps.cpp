@@ -89,6 +89,10 @@ std::set<uint32_t> CallGateOp::getOperatedQubits() {
   return getQubitIds<CallGateOp>(*this);
 }
 
+auto CallGateOp::getCalleeType() -> FunctionType {
+  return FunctionType::get(getContext(), getOperandTypes(), {});
+}
+
 //===----------------------------------------------------------------------===//
 // MeasureOp
 //===----------------------------------------------------------------------===//
@@ -191,6 +195,30 @@ LogicalResult CallDefcalMeasureOp::verify() {
   } else {
       return emitOpError("requires exactly one qubit");
   }
+}
+
+//===----------------------------------------------------------------------===//
+// CallDefcalMeasureOp
+//===----------------------------------------------------------------------===//
+
+auto CallDefcalMeasureOp::getCalleeType() -> FunctionType {
+  return FunctionType::get(getContext(), getOperandTypes(), {});
+}
+
+//===----------------------------------------------------------------------===//
+// CallDefCalGateOp
+//===----------------------------------------------------------------------===//
+
+auto CallDefCalGateOp::getCalleeType() -> FunctionType {
+  return FunctionType::get(getContext(), getOperandTypes(), {});
+}
+
+//===----------------------------------------------------------------------===//
+// CallSubroutineOp
+//===----------------------------------------------------------------------===//
+
+auto CallSubroutineOp::getCalleeType() -> FunctionType {
+  return FunctionType::get(getContext(), getOperandTypes(), getResultTypes());
 }
 
 //===----------------------------------------------------------------------===//

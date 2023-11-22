@@ -56,7 +56,7 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
 
     // identify additional reset operations that may happen in parallel and can
     // be merged
-    auto resetQubitOperands = resetOp.qubitsMutable();
+    auto resetQubitOperands = resetOp.getQubitsMutable();
 
     std::optional<Operation *> nextQuantumOp = nextQuantumOpOrNull(resetOp);
     if (!nextQuantumOp)
@@ -128,7 +128,7 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     if (!nextResetOpt.has_value())
       return failure();
 
-    ResetQubitOp nextResetOp = nextResetOpt.getValue();
+    ResetQubitOp nextResetOp = nextResetOpt.value();
 
     // There are 2 possible merge directions; we can hoist the next reset
     // to merge with this one (if nothing uses the future qubit between here
@@ -170,7 +170,7 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     // good to merge one way or the other. Prefer hoisting the next reset.
     if (mergeFwdIntersection.empty()) {
       // Hoist the next reset into this one
-      auto resetQubitOperands = resetOp.qubitsMutable();
+      auto resetQubitOperands = resetOp.getQubitsMutable();
       for (auto qubit : nextResetOp.getQubits())
         resetQubitOperands.append(qubit);
       rewriter.eraseOp(nextResetOp);

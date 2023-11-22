@@ -92,7 +92,7 @@ void LimitCBitWidthPass::processOp(
     uint numRemainingBits,
     llvm::SmallVector<mlir::oq3::DeclareVariableOp> &newRegisters) {
   auto castOp =
-      dyn_cast<oq3::CastOp>(variableAssignOp.assigned_value().getDefiningOp());
+      dyn_cast<oq3::CastOp>(variableAssignOp.getAssignedValue().getDefiningOp());
   if (!castOp) {
     variableAssignOp.emitError(
         "expect assigned_value() to be defined by a CastOp");

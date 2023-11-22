@@ -71,7 +71,7 @@ auto mock::MockQubitLocalizationPass::lookupQubitId(const Value &val) -> int {
     }   // if val is blockArg
     return -1;
   } // if !declOp
-  return declOp.id().getValue();
+  return declOp.getId().value();
 } // lookupQubitId
 
 /// Creates a broadcast op on Controller and recvOp on all other mocks
@@ -94,7 +94,7 @@ void mock::MockQubitLocalizationPass::broadcastAndReceiveValue(
           auto recvOp = (*mockBuilders)[id]->create<RecvOp>(
               loc, TypeRange(val.getType()),
               controllerBuilder->getIndexArrayAttr(config->controllerNode()));
-          mockMapping[id].map(val, recvOp.vals().front());
+          mockMapping[id].map(val, recvOp.getVals().front());
         }
       }
       alreadyBroadcastValues.insert(val);
@@ -210,9 +210,9 @@ void mock::MockQubitLocalizationPass::processOp(Builtin_UOp &uOp) {
 
   // broadcast all classical values from Controller to all Mockss
   // recv all classical values on all Mockss
-  broadcastAndReceiveValue(uOp.theta(), op->getLoc(), seenNodeIds);
-  broadcastAndReceiveValue(uOp.phi(), op->getLoc(), seenNodeIds);
-  broadcastAndReceiveValue(uOp.lambda(), op->getLoc(), seenNodeIds);
+  broadcastAndReceiveValue(uOp.getTheta(), op->getLoc(), seenNodeIds);
+  broadcastAndReceiveValue(uOp.getPhi(), op->getLoc(), seenNodeIds);
+  broadcastAndReceiveValue(uOp.getLambda(), op->getLoc(), seenNodeIds);
 
   if (qubitId < 0) {
     uOp->emitOpError() << "Can't resolve qubit ID for uOp\n";
@@ -260,7 +260,7 @@ void mock::MockQubitLocalizationPass::processOp(MeasureOp &measureOp) {
       op->getLoc(), TypeRange(clonedMeasureOp.getOuts().front().getType()),
       controllerBuilder->getIndexArrayAttr(qubitId));
   // map the result on Controller
-  controllerMapping.map(measureOp.getOuts().front(), recvOp.vals().front());
+  controllerMapping.map(measureOp.getOuts().front(), recvOp.getVals().front());
 } // processOp MeasureOp
 
 void mock::MockQubitLocalizationPass::processOp(
@@ -276,10 +276,10 @@ void mock::MockQubitLocalizationPass::processOp(
       *op, controllerMapping); // cloning the callOp to controller
   // first look up the func def in the parent Module
   Operation *funcOperation = SymbolTable::lookupSymbolIn(
-      controllerModule->getParentOp(), callOp.callee());
+      controllerModule->getParentOp(), callOp.getCallee());
   if (!funcOperation) {
     callOp->emitOpError() << "Unable to find func def to match "
-                          << callOp.callee() << "\n";
+                          << callOp.getCallee() << "\n";
     return;
   }
   auto funcOp = dyn_cast<mlir::func::FuncOp>(funcOperation);
@@ -304,8 +304,8 @@ void mock::MockQubitLocalizationPass::processOp(
   // Now clone the corresponding funcOp and recurse on it
   // First check if it's already been cloned!
   if (SymbolTable::lookupSymbolIn(controllerModule.getOperation(),
-                                  callOp.callee())) {
-    llvm::outs() << callOp.callee() << " has already been cloned!\n";
+                                  callOp.getCallee())) {
+    llvm::outs() << callOp.getCallee() << " has already been cloned!\n";
     return;
   }
   OpBuilder::InsertPoint savedPoint = controllerBuilder->saveInsertionPoint();
@@ -487,7 +487,7 @@ void mock::MockQubitLocalizationPass::processOp(CallDefcalMeasureOp &callOp) {
     auto recvOp = controllerBuilder->create<RecvOp>(
         op->getLoc(), TypeRange(acquireOp.getRes().getType()),
         controllerBuilder->getIndexArrayAttr(qubitId));
-    controllerMapping.map(callOp.getRes(), recvOp.vals().front());
+    controllerMapping.map(callOp.getRes(), recvOp.getVals().front());
   }
 } // processOp CallDefcalMeasureOp
 
@@ -517,7 +517,7 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
   }
 
   if (auto dOp = dyn_cast<DelayOp>(op)) {
-    auto *durationDeclare = dOp.time().getDefiningOp();
+    auto *durationDeclare = dOp.getTime().getDefiningOp();
     for (uint id : involvedNodes)
       (*mockBuilders)[id]->clone(*durationDeclare, mockMapping[id]);
   }
@@ -593,7 +593,7 @@ void mock::MockQubitLocalizationPass::processOp(
                   config->acquireNode(savedQubitId)));
       // map the result on the drive node
       mockMapping[config->driveNode(savedQubitId)].map(ifOp.getCondition(),
-                                                       recvOp.vals().front());
+                                                       recvOp.getVals().front());
     }
   }
 
@@ -728,10 +728,10 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
   // We do this first so that we can detect all physical qubit declarations
   auto newBuilders = std::make_unique<std::unordered_map<uint, OpBuilder *>>();
   mainFunc->walk([&](DeclareQubitOp qubitOp) {
-    llvm::outs() << qubitOp.getOperation()->getName() << " id: " << qubitOp.id()
+    llvm::outs() << qubitOp.getOperation()->getName() << " id: " << qubitOp.getId()
                  << "\n";
-    if (!qubitOp.id().has_value() ||
-        qubitOp.id().getValue() > config->getNumQubits()) {
+    if (!qubitOp.getId().has_value() ||
+        qubitOp.getId().value() > config->getNumQubits()) {
       qubitOp->emitOpError()
           << "Error! Found a qubit without an ID or with ID > "
           << std::to_string(config->getNumQubits())
@@ -740,7 +740,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
       signalPassFailure();
     }
 
-    uint qubitId = qubitOp.id().getValue();
+    uint qubitId = qubitOp.getId().value();
 
     if (!mockModules.count(config->driveNode(qubitId))) {
       llvm::outs() << "Creating module for drive Mocks " << qubitId << "\n";
@@ -785,7 +785,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
                            new OpBuilder(mockMainOp.getBody()));
     }
 
-    uint qId = qubitOp.id().getValue();
+    uint qId = qubitOp.getId().value();
     seenQubitIds.emplace(qId);
     driveNodeIds.emplace(config->driveNode(qId));
     acquireNodeIds.emplace(config->acquireNode(qId));

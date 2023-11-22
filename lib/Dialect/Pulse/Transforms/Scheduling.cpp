@@ -129,7 +129,7 @@
 //  OpBuilder playBuilder(playOp); // play operation builder
 //  // SSA form: waveform and frame should already be declared before
 //  // play
-//  auto *wfrOp = playOp.wfr().getDefiningOp();
+//  auto *wfrOp = playOp.getWfr().getDefiningOp();
 //  auto *frameOp = playOp.frame().getDefiningOp();
 //  auto wfrHash = getResultHash(wfrOp);
 //  auto frameHash = getResultHash(frameOp);

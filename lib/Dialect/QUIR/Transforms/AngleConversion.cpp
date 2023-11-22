@@ -43,7 +43,7 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
   LogicalResult matchAndRewrite(quir::CallGateOp callGateOp,
                                 PatternRewriter &rewriter) const override {
     // find the corresponding mlir::func::FuncOp
-    auto findOp = functionOps_.find(callGateOp.calleeAttr().getValue().str());
+    auto findOp = functionOps_.find(callGateOp.getCalleeAttr().getValue().str());
     if (findOp == functionOps_.end())
       return failure();
 

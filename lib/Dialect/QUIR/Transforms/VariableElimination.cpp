@@ -213,7 +213,7 @@ LogicalResult MemrefGlobalToAllocaPattern::matchAndRewrite(
   // Check that the global memref is only used by this GetGlobalOp
   auto global =
       mlir::SymbolTable::lookupNearestSymbolFrom<mlir::memref::GlobalOp>(
-          op, op.nameAttr());
+          op, op.getNameAttr());
 
   if (!global)
     return failure();
@@ -225,20 +225,20 @@ LogicalResult MemrefGlobalToAllocaPattern::matchAndRewrite(
   if (!uses)
     return failure();
 
-  for (auto &use : uses.getValue()) {
-    assert(use.getSymbolRef() == op.nameAttr() && "found wrong symbol");
+  for (auto &use : uses.value()) {
+    assert(use.getSymbolRef() == op.getNameAttr() && "found wrong symbol");
     if (use.getUser() != op) // other reference to the global memref
       return failure();
   }
 
-  auto mrt = op.result().getType().dyn_cast<mlir::MemRefType>();
+  auto mrt = op.getResult().getType().dyn_cast<mlir::MemRefType>();
 
   assert(mrt && "expect result of a GetGlobalOp to be of MemRefType");
   if (!mrt)
     return failure();
 
   rewriter.replaceOpWithNewOp<mlir::memref::AllocaOp>(op, mrt,
-                                                      global.alignmentAttr());
+                                                      global.getAlignmentAttr());
   rewriter.eraseOp(global);
   return success();
 }

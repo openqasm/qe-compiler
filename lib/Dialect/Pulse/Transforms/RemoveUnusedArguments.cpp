@@ -47,7 +47,7 @@ struct RemoveUnusedArgumentsPattern
     LLVM_DEBUG(callSequenceOp.dump());
 
     Operation *findOp = SymbolTable::lookupNearestSymbolFrom<SequenceOp>(
-        callSequenceOp, callSequenceOp.calleeAttr());
+        callSequenceOp, callSequenceOp.getCalleeAttr());
 
     if (!findOp)
       return failure();

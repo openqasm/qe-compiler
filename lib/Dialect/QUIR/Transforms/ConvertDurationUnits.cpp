@@ -63,7 +63,7 @@ public:
   convertFunctionSignature(FunctionType funcTy,
                            DurationTypeConverter::SignatureConversion &result) {
     // Convert argument types one by one and check for errors.
-    for (auto &en : llvm::enumerate(funcTy.getInputs())) {
+    for (const auto &en : llvm::enumerate(funcTy.getInputs())) {
       Type type = en.value();
       SmallVector<Type, 8> converted;
       auto convertedType = convertType(type);
@@ -107,7 +107,7 @@ struct DurationUnitsConstantOpConversionPattern
   matchAndRewrite(quir::ConstantOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto duration = op.value().dyn_cast<quir::DurationAttr>();
+    auto duration = op.getValue().dyn_cast<quir::DurationAttr>();
     if (!duration)
       return failure();
 
@@ -199,7 +199,7 @@ struct DurationUnitsFunctionOpConversionPattern
                   typename FunctionType::Adaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto funcLikeType = funcLikeOp.getType();
+    auto funcLikeType = funcLikeOp.getFunctionType();
     // Create a signature converter for our interface
     DurationTypeConverter::SignatureConversion signatureConverter(
         funcLikeType.getNumInputs());
@@ -208,7 +208,7 @@ struct DurationUnitsFunctionOpConversionPattern
     // The signatureConverter is built up which will then be
     // used below to map region types in the rewriter.
     auto newFuncLikeType = typeConverter.convertFunctionSignature(
-        funcLikeOp.getType(), signatureConverter);
+        funcLikeOp.getFunctionType(), signatureConverter);
     if (!newFuncLikeType)
       return failure();
 
@@ -277,8 +277,22 @@ void ConvertDurationUnitsPass::runOnOperation() {
     return true;
   });
 
-  target.addDynamicallyLegalOp<quir::CircuitOp, mlir::func::FuncOp>(
-      [&](mlir::FunctionOpInterface op) {
+    target.addDynamicallyLegalOp<mlir::func::FuncOp>(
+      [&](mlir::func::FuncOp op) {
+        for (auto type : op.getArgumentTypes()) {
+          if (checkTypeNeedsConversion(type, targetConvertUnits))
+            return false;
+        }
+        for (auto type : op.getResultTypes()) {
+          if (checkTypeNeedsConversion(type, targetConvertUnits))
+            return false;
+        }
+
+        return true;
+      });
+
+  target.addDynamicallyLegalOp<quir::CircuitOp>(
+      [&](quir::CircuitOp op) {
         for (auto type : op.getArgumentTypes()) {
           if (checkTypeNeedsConversion(type, targetConvertUnits))
             return false;

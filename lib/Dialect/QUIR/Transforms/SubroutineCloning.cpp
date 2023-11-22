@@ -32,7 +32,7 @@ using namespace mlir::quir;
 auto SubroutineCloningPass::lookupQubitId(const Value val) -> int {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
   if (declOp)
-    return declOp.id().getValue();
+    return declOp.getId().value();
 
   // Must be an argument to a function
   // see if we can find an attribute with the info
@@ -63,7 +63,7 @@ auto SubroutineCloningPass::lookupQubitId(const Value val) -> int {
 template <class CallLikeOp>
 auto SubroutineCloningPass::getMangledName(Operation *op) -> std::string {
   auto callOp = dyn_cast<CallLikeOp>(op);
-  std::string mangledName = callOp.callee().str();
+  std::string mangledName = callOp.getCallee().str();
 
   std::vector<Value> qOperands;
   qubitCallOperands(callOp, qOperands);
@@ -88,7 +88,7 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
 
   // look for func def match
   Operation *findOp =
-      SymbolTable::lookupSymbolIn(moduleOperation, callOp.callee());
+      SymbolTable::lookupSymbolIn(moduleOperation, callOp.getCallee());
   if (findOp) {
     std::vector<Value> qOperands;
     qubitCallOperands(callOp, qOperands);
@@ -129,7 +129,7 @@ void SubroutineCloningPass::processCallOp(Operation *op) {
 
   } else { // matching function not found
     callOp->emitOpError() << "No matching function def found for "
-                          << callOp.callee() << "\n";
+                          << callOp.getCallee() << "\n";
     return signalPassFailure();
   }
 

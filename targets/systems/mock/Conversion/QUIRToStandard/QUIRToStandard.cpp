@@ -183,7 +183,7 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
 
   // First remove all arguments from synchronization ops
   controllerModuleOp->walk([](qcs::SynchronizeOp synchOp) {
-    synchOp.qubitsMutable().assign(ValueRange({}));
+    synchOp.getQubitsMutable().assign(ValueRange({}));
   });
 
   QuirTypeConverter typeConverter;

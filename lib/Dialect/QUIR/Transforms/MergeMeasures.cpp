@@ -148,7 +148,7 @@ struct MeasureAndMeasureTopologicalPattern
 
     // found a measure and a measure, now make sure they aren't working on the
     // same qubit and that we can resolve them both
-    MeasureOp nextMeasureOp = nextMeasureOpt.getValue();
+    MeasureOp nextMeasureOp = nextMeasureOpt.value();
     auto nextMeasureQubits = nextMeasureOp.getOperatedQubits();
 
     // If there is an intersection we cannot merge

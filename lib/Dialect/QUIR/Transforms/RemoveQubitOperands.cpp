@@ -31,7 +31,7 @@ using namespace mlir::quir;
 auto RemoveQubitOperandsPass::lookupQubitId(const Value val) -> int {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
   if (declOp)
-    return declOp.id().getValue();
+    return declOp.getId().value();
 
   // Must be an argument to a function
   // see if we can find an attribute with the info
@@ -88,7 +88,7 @@ void RemoveQubitOperandsPass::processCallOp(Operation *op) {
 
   // look for func def match
   Operation *findOp =
-      SymbolTable::lookupSymbolIn(moduleOperation, callOp.callee());
+      SymbolTable::lookupSymbolIn(moduleOperation, callOp.getCallee());
   auto funcOp = dyn_cast<mlir::func::FuncOp>(findOp);
 
   if (!qIndicesBV.empty()) // some qubit args

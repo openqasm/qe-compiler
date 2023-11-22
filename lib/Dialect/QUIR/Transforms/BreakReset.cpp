@@ -77,7 +77,7 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
       if (delayCycles_ > 0 && iteration > 0)
         for (auto qubit : resetOp.getQubits())
           rewriter.create<DelayOp>(resetOp.getLoc(),
-                                   constantDurationOp.result(), qubit);
+                                   constantDurationOp.getResult(), qubit);
 
       auto measureOp = rewriter.create<MeasureOp>(
           resetOp.getLoc(), TypeRange(typeVec), resetOp.getQubits());
