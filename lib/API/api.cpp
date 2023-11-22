@@ -85,10 +85,17 @@ static llvm::cl::opt<bool> verifyDiagnostics(
                    "expected-* lines on the corresponding line"),
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
+#ifndef NOVERIFY
+#define VERIFY_PASSES_DEFAULT true
+#else
+#define VERIFY_PASSES_DEFAULT false
+#endif
+
 static llvm::cl::opt<bool> verifyPasses(
     "verify-each",
     llvm::cl::desc("Run the verifier after each transformation pass"),
-    llvm::cl::init(true), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(VERIFY_PASSES_DEFAULT),
+    llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool> showDialects(
     "show-dialects", llvm::cl::desc("Print the list of registered dialects"),
@@ -550,6 +557,9 @@ compile_(int argc, char const **argv, std::string *outputString,
   mlir::applyPassManagerCLOptions(pm);
   mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
+  // Configure verifier
+  pm.enableVerifier(verifyPasses);
+
   // Build the configuration for this compilation event.
   auto configResult = buildConfig_(&context);
   if (auto err = configResult.takeError())
@@ -735,7 +745,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     dumpMLIR_(ostream, moduleOp);
   }
 
-  if (emitAction == Action::GenQEM) {
+  if (emitAction == Action::GenQEM || emitAction == Action::GenQEQEM) {
 
     if (includeSourceInPayload) {
       if (directInput) {

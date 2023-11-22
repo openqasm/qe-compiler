@@ -74,6 +74,7 @@ private:
 
   std::string const path;
   struct zip *zip;
+  zip_source_t *inMemoryZipSource;
   bool enableInMemory;
 
   std::unordered_map<std::string, TrackedFile> files;

@@ -33,6 +33,7 @@
 #include "llvm/ADT/StringRef.h"
 
 #include <algorithm>
+#include <unordered_map>
 #include <vector>
 
 using namespace mlir;
@@ -51,8 +52,13 @@ bool moveUsers(Operation *curOp, MoveListVec &moveList) {
 
 // This pattern matches on two CallCircuitOps separated by non-quantum ops
 struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
-  explicit CircuitAndCircuitPattern(MLIRContext *ctx)
-      : OpRewritePattern<CallCircuitOp>(ctx) {}
+  explicit CircuitAndCircuitPattern(MLIRContext *ctx,
+                                    llvm::StringMap<Operation *> &symbolMap)
+      : OpRewritePattern<CallCircuitOp>(ctx) {
+    _symbolMap = &symbolMap;
+  }
+
+  llvm::StringMap<Operation *> *_symbolMap;
 
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
@@ -140,7 +146,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
       return failure();
 
     return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
-                                                nextCallCircuitOp);
+                                                nextCallCircuitOp, _symbolMap);
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
 
@@ -219,35 +225,51 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
 
 } // end anonymous namespace
 
-CircuitOp MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp) {
-  auto circuitAttr = callCircuitOp->getAttrOfType<FlatSymbolRefAttr>("callee");
-  assert(circuitAttr && "Requires a 'callee' symbol reference attribute");
+CircuitOp
+MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
+                                llvm::StringMap<Operation *> *symbolMap) {
+  // look for func def match
+  assert(symbolMap && "a valid symbolMap pointer must be provided");
+  auto search = symbolMap->find(callCircuitOp.callee());
 
-  auto circuitOp = SymbolTable::lookupNearestSymbolFrom<CircuitOp>(
-      callCircuitOp, circuitAttr);
+  assert(search != symbolMap->end() && "matching circuit not found");
+
+  auto circuitOp = dyn_cast<CircuitOp>(search->second);
   assert(circuitOp && "matching circuit not found");
   return circuitOp;
 }
 
-LogicalResult
-MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
-                                     CallCircuitOp callCircuitOp,
-                                     CallCircuitOp nextCallCircuitOp) {
-  auto circuitOp = getCircuitOp(callCircuitOp);
-  auto nextCircuitOp = getCircuitOp(nextCallCircuitOp);
+LogicalResult MergeCircuitsPass::mergeCallCircuits(
+    PatternRewriter &rewriter, CallCircuitOp callCircuitOp,
+    CallCircuitOp nextCallCircuitOp, llvm::StringMap<Operation *> *symbolMap) {
+  auto circuitOp = getCircuitOp(callCircuitOp, symbolMap);
+  auto nextCircuitOp = getCircuitOp(nextCallCircuitOp, symbolMap);
 
   rewriter.setInsertionPointAfter(nextCircuitOp);
 
-  llvm::SmallVector<Type> inputTypes;
-  llvm::SmallVector<Value> inputValues;
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Value> outputValues;
 
-  // merge input type into single SmallVector
-  inputTypes.append(circuitOp->getOperandTypes().begin(),
-                    circuitOp->getOperandTypes().end());
-  inputTypes.append(nextCircuitOp->getOperandTypes().begin(),
-                    nextCircuitOp->getOperandTypes().end());
+  // merge the call_circuits
+  // collect their input values
+  llvm::SmallVector<Value> callInputValues;
+  callInputValues.append(callCircuitOp->getOperands().begin(),
+                         callCircuitOp.getOperands().end());
+
+  llvm::SmallVector<int> insertedArguments;
+  std::unordered_map<int, int> reusedArguments;
+  int index = 0;
+  for (auto inputValue : nextCallCircuitOp->getOperands()) {
+    auto *search = find(callInputValues, inputValue);
+    if (search == callInputValues.end()) {
+      callInputValues.push_back(inputValue);
+      insertedArguments.push_back(index);
+    } else {
+      int originalIndex = search - callInputValues.begin();
+      reusedArguments[index] = originalIndex;
+    }
+    index++;
+  }
 
   // merge circuit names
   std::string newName =
@@ -269,12 +291,20 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   // argument numbers
   BlockAndValueMapping mapper;
   auto baseArgNum = newCircuitOp.getNumArguments();
+  int insertedCount = 0;
   for (uint cnt = 0; cnt < nextCircuitOp.getNumArguments(); cnt++) {
     auto arg = nextCircuitOp.getArgument(cnt);
-    auto dictArg = nextCircuitOp.getArgAttrDict(cnt);
-    newCircuitOp.insertArgument(baseArgNum + cnt, arg.getType(), dictArg,
-                                arg.getLoc());
-    mapper.map(arg, newCircuitOp.getArgument(baseArgNum + cnt));
+    int argumentIndex = 0;
+    if (find(insertedArguments, cnt) != insertedArguments.end()) {
+      auto dictArg = nextCircuitOp.getArgAttrDict(cnt);
+      newCircuitOp.insertArgument(baseArgNum + insertedCount, arg.getType(),
+                                  dictArg, arg.getLoc());
+      argumentIndex = baseArgNum + insertedCount;
+      insertedCount++;
+    } else {
+      argumentIndex = reusedArguments[cnt];
+    }
+    mapper.map(arg, newCircuitOp.getArgument(argumentIndex));
   }
 
   // find return op in new circuit and copy second circuit into the
@@ -331,14 +361,6 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   newCircuitOp->setAttr(mlir::quir::getPhysicalIdsAttrName(),
                         rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
 
-  // merge the call_circuits
-  // collect their input values
-  llvm::SmallVector<Value> callInputValues;
-  callInputValues.append(callCircuitOp->getOperands().begin(),
-                         callCircuitOp.getOperands().end());
-  callInputValues.append(nextCallCircuitOp->getOperands().begin(),
-                         nextCallCircuitOp.getOperands().end());
-
   rewriter.setInsertionPointAfter(nextCallCircuitOp);
   auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
       callCircuitOp->getLoc(), newName, TypeRange(outputTypes),
@@ -351,14 +373,24 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   rewriter.replaceOp(nextCallCircuitOp,
                      ResultRange(iterSep, newCallOp.result_end()));
 
+  // add new name to symbolMap
+  // do not remove old in case the are multiple calls
+  (*symbolMap)[newName] = newCircuitOp.getOperation();
+
   return success();
 }
 
 void MergeCircuitsPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
+  llvm::StringMap<Operation *> circuitOpsMap;
+
+  moduleOperation->walk([&](CircuitOp circuitOp) {
+    circuitOpsMap[circuitOp.sym_name()] = circuitOp.getOperation();
+  });
+
   RewritePatternSet patterns(&getContext());
-  patterns.add<CircuitAndCircuitPattern>(&getContext());
+  patterns.add<CircuitAndCircuitPattern>(&getContext(), circuitOpsMap);
   patterns.add<BarrierAndCircuitPattern>(&getContext());
   patterns.add<CircuitAndBarrierPattern>(&getContext());
 

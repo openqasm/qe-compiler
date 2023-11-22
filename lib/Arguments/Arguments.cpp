@@ -84,17 +84,42 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
 
   bool enableInMemoryOutput = payloadOutputPath == "";
 
-  llvm::StringRef payloadData =
-      (enableInMemoryOutput) ? moduleInput : payloadOutputPath;
+  // placeholder string for data on disk if required
+  std::string inputFromDisk;
 
-  if (!enableInMemoryOutput) {
-    std::error_code copyError =
-        llvm::sys::fs::copy_file(moduleInput, payloadOutputPath);
-
-    if (copyError)
-      return llvm::make_error<llvm::StringError>(
-          "Failed to copy circuit module to payload", copyError);
+  if (!enableInMemoryInput) {
+    // compile payload on disk
+    // copy to link payload if not returning in memory
+    // load from disk into string if returning in memory
+    if (!enableInMemoryOutput) {
+      std::error_code copyError =
+          llvm::sys::fs::copy_file(moduleInput, payloadOutputPath);
+      if (copyError)
+        return llvm::make_error<llvm::StringError>(
+            "Failed to copy circuit module to payload", copyError);
+    } else {
+      // read from disk to process in memory
+      std::ostringstream buf;
+      std::ifstream input(moduleInput.str().c_str());
+      buf << input.rdbuf();
+      inputFromDisk = buf.str();
+      moduleInput = inputFromDisk;
+      enableInMemoryInput = true;
+    }
   }
+
+  if (!enableInMemoryOutput && enableInMemoryInput) {
+    // if payload in memory but returning on disk
+    // copy to disk and process from there
+    std::ofstream payload;
+    payload.open(payloadOutputPath.str(), std::ios::binary);
+    payload.write(moduleInput.str().c_str(), moduleInput.str().length());
+    payload.close();
+    enableInMemoryInput = false;
+  }
+
+  llvm::StringRef payloadData =
+      (enableInMemoryInput) ? moduleInput : payloadOutputPath;
 
   auto binary = std::unique_ptr<BindArgumentsImplementation>(
       factory.create(onDiagnostic));
@@ -120,6 +145,8 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
   //    dump string to disk and clear string
   // if enableInMemoryInput is false:
   //    payload was on disk originally use writeBack
+  if (auto err = payload->writeBack())
+    return err;
   if (enableInMemoryOutput || enableInMemoryInput) {
     if (auto err = payload->writeString(inMemoryOutput))
       return err;
@@ -131,8 +158,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
       // clear output string
       *inMemoryOutput = "";
     }
-  } else if (auto err = payload->writeBack())
-    return err;
+  }
 
   return llvm::Error::success();
 }
