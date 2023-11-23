@@ -322,7 +322,7 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   rewriter.create<quir::ReturnOp>(nextReturnOp->getLoc(), outputValues);
 
   // change the input / output types for the quir.circuit
-  auto opType = newCircuitOp.getType();
+  auto opType = newCircuitOp.getFunctionType();
   newCircuitOp.setType(rewriter.getFunctionType(
       /*inputs=*/opType.getInputs(),
       /*results=*/ArrayRef<Type>(outputTypes)));

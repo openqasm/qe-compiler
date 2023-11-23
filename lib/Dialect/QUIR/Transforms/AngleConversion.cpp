@@ -50,7 +50,7 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
     mlir::func::FuncOp funcOp = findOp->second;
     FunctionType fType = funcOp.getFunctionType();
 
-    for (auto &pair : llvm::enumerate(callGateOp.getArgOperands())) {
+    for (const auto &pair : llvm::enumerate(callGateOp.getArgOperands())) {
       auto value = pair.value();
       auto index = pair.index();
       if (auto declOp = value.getDefiningOp<quir::ConstantOp>()) {
@@ -59,7 +59,7 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
         Type funcType = fType.getInput(index);
         if (value.getType() != funcType) {
           APFloat constVal = declOp.getAngleValueFromConstant();
-          declOp.valueAttr(
+          declOp.setValueAttr(
               AngleAttr::get(callGateOp.getContext(), funcType, constVal));
           value.setType(funcType);
         }
