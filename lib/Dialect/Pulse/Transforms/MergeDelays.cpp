@@ -67,8 +67,8 @@ struct DelayAndDelayPattern : public OpRewritePattern<DelayOp> {
 
     // get delay times and sum as int 32
     // TODO: check to see if int 32 is sufficient
-    auto firstDelay = delayOp.dur();
-    auto secondDelay = nextDelayOp.dur();
+    auto firstDelay = delayOp.getDur();
+    auto secondDelay = nextDelayOp.getDur();
 
     auto firstDelayOp =
         dyn_cast<mlir::arith::ConstantIntOp>(firstDelay.getDefiningOp());

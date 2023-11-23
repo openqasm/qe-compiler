@@ -223,7 +223,7 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
             }
 
             // order by timepoint
-            return currentTimepoint.getValue() < nextTimepoint.getValue();
+            return currentTimepoint.value() < nextTimepoint.value();
           }); // blockOps.sort
     }
   }

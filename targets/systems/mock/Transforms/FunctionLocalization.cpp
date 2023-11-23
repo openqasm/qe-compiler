@@ -267,7 +267,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
       return;
     }
     auto matchedFuncOp = dyn_cast<mlir::func::FuncOp>(matchedOp);
-    FunctionType fType = matchedFuncOp.getType();
+    FunctionType fType = matchedFuncOp.getFunctionType();
     if (!quirFunctionTypeMatch(fType, cType)) {
       LLVM_DEBUG(llvm::dbgs() << "The signatures for " << calleeName
                               << " and it's func def don't match!\n");
@@ -281,7 +281,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // now update the callee of the callop
     auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
-    callOp.getCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    callOp.setCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkSubroutineCalls
 
   auto walkGateCalls = [&](CallGateOp callOp) {
@@ -308,7 +308,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // now update the callee of the callop
     auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
-    callOp.getCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    callOp.setCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkGateCalls
 
   auto walkDefcalGateCalls = [&](CallDefCalGateOp callOp) {
@@ -336,7 +336,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // now update the callee of the callop
     auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
-    callOp.getCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    callOp.setCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkDefcalGateCalls
 
   auto walkDefcalMeasureCalls = [&](CallDefcalMeasureOp callOp) {
@@ -390,7 +390,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // now update the callee of the callop
     auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
-    callOp.getCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    callOp.setCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkDefcalMeasureCalls
 
   // first walk all subroutine calls

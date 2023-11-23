@@ -68,18 +68,18 @@ struct ConstantOpConversionPat : public OpConversionPattern<quir::ConstantOp> {
   LogicalResult
   matchAndRewrite(quir::ConstantOp constOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    if (auto angleAttr = constOp.value().dyn_cast<quir::AngleAttr>()) {
+    if (auto angleAttr = constOp.getValue().dyn_cast<quir::AngleAttr>()) {
       auto angleWidth = constOp.getType().cast<quir::AngleType>().getWidth();
 
       // cannot handle non-parameterized angle types
       if (!angleWidth.has_value())
         return failure();
 
-      int64_t multiplier = (int64_t)1 << (int64_t)angleWidth.getValue();
+      int64_t multiplier = (int64_t)1 << (int64_t)angleWidth.value();
       // shift the floating point value up by the desired precision
       double fVal = angleAttr.getValue().convertToDouble() * multiplier;
       IntegerType iType;
-      if (angleWidth.getValue() > 31)
+      if (angleWidth.value() > 31)
         iType = rewriter.getI64Type();
       else
         iType = rewriter.getI32Type();
@@ -87,7 +87,7 @@ struct ConstantOpConversionPat : public OpConversionPattern<quir::ConstantOp> {
 
       auto arithConstOp = rewriter.create<mlir::arith::ConstantOp>(
           constOp->getLoc(), iType, iAttr);
-      rewriter.replaceOp(constOp, {arithConstOp});
+      rewriter.replaceOp(constOp, arithConstOp);
       return success();
     }
     // attribute type is not handled (for now)
@@ -107,13 +107,13 @@ struct AngleBinOpConversionPat : public OpConversionPattern<QuirOp> {
                   ConversionPatternRewriter &rewriter) const override {
     auto operands = adaptor.getOperands();
     auto angleWidth =
-        binOp.lhs().getType().template dyn_cast<quir::AngleType>().getWidth();
+        binOp.getLhs().getType().template dyn_cast<quir::AngleType>().getWidth();
 
     // cannot handle non-parameterized angle types
     if (!angleWidth.has_value())
       return failure();
 
-    int64_t maskVal = ((int64_t)1 << (int64_t)angleWidth.getValue()) - 1;
+    int64_t maskVal = ((int64_t)1 << (int64_t)angleWidth.value()) - 1;
     auto iType = operands[0].getType().template dyn_cast<IntegerType>();
     IntegerAttr iAttr = rewriter.getIntegerAttr(iType, maskVal);
 
@@ -201,7 +201,7 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
       .addIllegalDialect<quir::QUIRDialect, qcs::QCSDialect, oq3::OQ3Dialect>();
   target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
   target.addDynamicallyLegalOp<mlir::func::FuncOp>(
-      [&](mlir::func::FuncOp op) { return typeConverter.isSignatureLegal(op.getType()); });
+      [&](mlir::func::FuncOp op) { return typeConverter.isSignatureLegal(op.getFunctionType()); });
   target.addDynamicallyLegalOp<func::CallOp>([&](func::CallOp op) {
     return typeConverter.isSignatureLegal(op.getCalleeType());
   });

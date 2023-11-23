@@ -73,7 +73,7 @@ void LimitCBitWidthPass::processOp(
     llvm::SmallVector<mlir::oq3::DeclareVariableOp> &newRegisters) {
   uint64_t index;
   uint64_t reg;
-  std::tie(reg, index) = remapBit(cbitAssignOp.index());
+  std::tie(reg, index) = remapBit(cbitAssignOp.getIndex());
   auto width = newRegisters[reg].getType().dyn_cast<quir::CBitType>().getWidth();
   auto value = cbitAssignOp.getAssignedBit();
 
@@ -157,7 +157,7 @@ void LimitCBitWidthPass::processOp(
     if (extractBitOp) {
       uint64_t reg;
       uint64_t remain;
-      std::tie(reg, remain) = remapBit(extractBitOp.index());
+      std::tie(reg, remain) = remapBit(extractBitOp.getIndex());
       auto newExtract = builder.create<CBitExtractBitOp>(
           extractBitOp->getLoc(), builder.getI1Type(), newVariableLoads[reg],
           builder.getIndexAttr(remain));
@@ -193,8 +193,8 @@ void LimitCBitWidthPass::runOnOperation() {
   eraseList_.clear();
 
   // check for command line override of MAX_CBIT_WIDTH
-  if (maxCBitWidthOption.has_value())
-    MAX_CBIT_WIDTH = maxCBitWidthOption.value();
+  if (maxCBitWidthOption.hasValue())
+    MAX_CBIT_WIDTH = maxCBitWidthOption.getValue();
 
   Operation *module = getOperation();
 

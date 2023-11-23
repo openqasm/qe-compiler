@@ -132,7 +132,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
         static llvm::Expected<uint64_t> getDuration(Operation *op) {
             auto castOp = dyn_cast<OpClass>(op);
             auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
-                castOp.dur().getDefiningOp());
+                castOp.getDur().getDefiningOp());
             if (durDeclOp) {
                 if (durDeclOp.value() < 0)
                 return llvm::createStringError(llvm::inconvertibleErrorCode(),

@@ -25,12 +25,14 @@
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 
 #include "mlir/Conversion/AffineToStandard/AffineToStandard.h"
-#include "mlir/Conversion/ArithmeticToLLVM/ArithmeticToLLVM.h"
+#include "mlir/Conversion/ArithToLLVM/ArithToLLVM.h"
+#include "mlir/Conversion/ControlFlowToLLVM/ControlFlowToLLVM.h"
+#include "mlir/Conversion/FuncToLLVM/ConvertFuncToLLVM.h"
+#include "mlir/Conversion/FuncToLLVM/ConvertFuncToLLVMPass.h"
 #include "mlir/Conversion/LLVMCommon/ConversionTarget.h"
 #include "mlir/Conversion/LLVMCommon/TypeConverter.h"
 #include "mlir/Conversion/MemRefToLLVM/MemRefToLLVM.h"
-#include "mlir/Conversion/SCFToStandard/SCFToStandard.h"
-#include "mlir/Conversion/StandardToLLVM/ConvertStandardToLLVM.h"
+#include "mlir/Conversion/SCFToControlFlow/SCFToControlFlow.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
 #include "mlir/Transforms/DialectConversion.h"
@@ -69,14 +71,13 @@ static auto translateModuleToLLVMDialect(mlir::ModuleOp op,
   mlir::LLVMTypeConverter typeConverter(context, options);
 
   mlir::RewritePatternSet patterns(context);
-  mlir::populateLoopToStdConversionPatterns(patterns);
   mlir::quir::populateSwitchOpLoweringPatterns(patterns);
-  mlir::arith::populateArithmeticToLLVMConversionPatterns(typeConverter,
-                                                          patterns);
   mlir::populateAffineToStdConversionPatterns(patterns);
-  mlir::populateMemRefToLLVMConversionPatterns(typeConverter, patterns);
-  mlir::populateStdToLLVMFuncOpConversionPattern(typeConverter, patterns);
-  mlir::populateStdToLLVMConversionPatterns(typeConverter, patterns);
+  mlir::populateSCFToControlFlowConversionPatterns(patterns);
+  mlir::arith::populateArithToLLVMConversionPatterns(typeConverter, patterns);
+  mlir::populateFinalizeMemRefToLLVMConversionPatterns(typeConverter, patterns);
+  mlir::cf::populateControlFlowToLLVMConversionPatterns(typeConverter, patterns);
+  mlir::populateFuncToLLVMConversionPatterns(typeConverter, patterns);
 
   if (mlir::applyFullConversion(op, target, std::move(patterns)).failed())
     return llvm::createStringError(llvm::inconvertibleErrorCode(),

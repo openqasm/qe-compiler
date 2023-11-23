@@ -72,7 +72,7 @@
 
 // void SchedulingPass::processOp(DelayOp &delayOp) {
 //  OpBuilder delayBuilder(delayOp); // delay operation builder
-//  auto dur = delayOp.dur();        // operand
+//  auto dur = delayOp.getDur();        // operand
 //  auto frames = delayOp.frames();
 //  auto intDur = delayOp.getDuration(); // integer duration of delay
 

@@ -47,10 +47,10 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
         double initial_value = 0.0;
         if (declareParameterOp.getInitialValue().has_value()) {
           auto angleAttr = declareParameterOp.getInitialValue()
-                               .getValue()
+                               .value()
                                .dyn_cast<mlir::quir::AngleAttr>();
           auto floatAttr = declareParameterOp.getInitialValue()
-                               .getValue()
+                               .value()
                                .dyn_cast<FloatAttr>();
           if (!(angleAttr || floatAttr))
             declareParameterOp.emitError("Parameters are currently limited to "

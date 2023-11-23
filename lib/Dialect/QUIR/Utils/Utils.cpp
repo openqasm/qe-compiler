@@ -303,7 +303,7 @@ getDuration(mlir::quir::DelayOp &delayOp) {
   std::string durationStr;
   auto durationDeclare = delayOp.getTime().getDefiningOp<quir::ConstantOp>();
   if (durationDeclare)
-    return durationDeclare.value().dyn_cast<quir::DurationAttr>();
+    return durationDeclare.getValue().dyn_cast<quir::DurationAttr>();
   auto argNum = delayOp.getTime().cast<BlockArgument>().getArgNumber();
   auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
       delayOp.getTime().getParentBlock()->getParentOp());
@@ -315,7 +315,7 @@ getDuration(mlir::quir::DelayOp &delayOp) {
 
 llvm::Expected<mlir::quir::DurationAttr>
 getDuration(mlir::quir::ConstantOp &duration) {
-  auto durAttr = duration.value().dyn_cast<mlir::quir::DurationAttr>();
+  auto durAttr = duration.getValue().dyn_cast<mlir::quir::DurationAttr>();
   if (!durAttr)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Expected a ConstantOp with a DurationAttr");
