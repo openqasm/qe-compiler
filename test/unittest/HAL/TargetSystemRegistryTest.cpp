@@ -37,7 +37,7 @@ TEST(TargetSystemRegistry, LookupMockTarget) {
       qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(mockName);
   EXPECT_TRUE(targetInfoOpt.has_value());
 
-  auto *targetInfo = targetInfoOpt.getValue();
+  auto *targetInfo = targetInfoOpt.value();
 
   ASSERT_NE(targetInfo, nullptr);
   EXPECT_EQ(targetInfo->getName(), mockName);
