@@ -706,8 +706,7 @@ compile_(int argc, char const **argv, std::string *outputString,
     context.disableMultithreading();
 
     // Parse the input file and reset the context threading state.
-    mlir::OwningOpRef<ModuleOp> module(
-        mlir::parseSourceFile(sourceMgr, &context));
+    mlir::OwningOpRef<mlir::ModuleOp> module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, &context);
     context.enableMultithreading(wasThreadingEnabled);
     if (!module)
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
