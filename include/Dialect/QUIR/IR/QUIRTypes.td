@@ -76,7 +76,7 @@ def QUIR_DurationType : QUIR_Type<"Duration", "duration"> {
             ```mlir
                 // Defaults to units at the scheduling rate (dt)
                 %duration_dt = quir.constant #quir.duration<10.0 : !quir.duration>
-                %duration_s = quir.constant #quir.duration<3.14 : !quir.duration<s>>
+                %duration_s = quir.constant #quir.duration<3.14> : !quir.duration<s>
             ```
 
      }];

@@ -91,7 +91,6 @@ def QUIR_DurationAttr : QUIR_Attr<"Duration", "duration", [TypedAttrInterface]> 
   let assemblyFormat = "`<` $duration `>`";
   let skipDefaultBuilders = 1;
 
-
 }
 
 def QUIR_InputParameterAttr : QUIR_Attr<"InputParameter", "inputParameter"> {

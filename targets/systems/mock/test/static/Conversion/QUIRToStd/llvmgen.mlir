@@ -17,7 +17,7 @@
 // CHECK: }
 module @controller attributes {quir.nodeId = 1000 : i32, quir.nodeType = "controller"}  {
   func.func @main() -> i32 attributes {quir.classicalOnly = false} {
-    %0 = quir.constant #quir.duration<1000.0 : !quir.duration<dt>>
+    %0 = quir.constant #quir.duration<1000.0> : !quir.duration<dt>
     %1 = qcs.recv {fromId = 0 : index} : i1
     qcs.broadcast %1 : i1
     scf.if %1 {

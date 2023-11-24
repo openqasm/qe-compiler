@@ -27,28 +27,28 @@ func.func @quir_durations (%arg : i32) {
     %angle = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
     // DT: {{.*}} = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
 
-    %duration_dt0 = quir.constant #quir.duration<10.0 : <dt>>
-    // DT: [[duration_dt0:%.*]] = quir.constant #quir.duration<1.000000e+01 : <dt>>
-    // S: [[duration_dt0:%.*]] = quir.constant #quir.duration<1.000000e+00 : <s>>
-    %duration_dt1 = quir.constant #quir.duration<10.0 : !quir.duration<dt>>
-    // DT: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <dt>>
-    // S: {{.*}} = quir.constant #quir.duration<1.000000e+00 : <s>>
-    %duration_s = quir.constant #quir.duration<10.0 : !quir.duration<s>>
-    // DT: [[duration_s:%.*]] = quir.constant #quir.duration<1.000000e+02 : <dt>>
-    // S: [[duration_s:%.*]] = quir.constant #quir.duration<1.000000e+01 : <s>>
-    %duration_ms = quir.constant #quir.duration<10.0 : !quir.duration<ms>>
-    // DT: [[duration_ms:%.*]] = quir.constant #quir.duration<0.099999999999999992 : <dt>>
-    // S: [[duration_ms:%.*]] = quir.constant #quir.duration<1.000000e-02 : <s>>
-    %duration_us = quir.constant #quir.duration<10.0 : !quir.duration<us>>
-    // DT: {{.*}} = quir.constant #quir.duration<9.9999999999999995E-8 : <dt>>
-    // S: {{.*}} = quir.constant #quir.duration<1.000000e-05 : <s>>
-    %duration_ns = quir.constant #quir.duration<10.0 : !quir.duration<ns>>
+    %duration_dt0 = quir.constant #quir.duration<10.0> : !quir.duration<dt>
+    // DT: [[duration_dt0:%.*]] = quir.constant #quir.duration<1.000000e+01> : !quir.duration<dt>
+    // S: [[duration_dt0:%.*]] = quir.constant #quir.duration<1.000000e+00> : !quir.duration<s>
+    %duration_dt1 = quir.constant #quir.duration<10.0> : !quir.duration<dt>
+    // DT: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<dt>
+    // S: {{.*}} = quir.constant #quir.duration<1.000000e+00> : !quir.duration<s>
+    %duration_s = quir.constant #quir.duration<10.0> : !quir.duration<s>
+    // DT: [[duration_s:%.*]] = quir.constant #quir.duration<1.000000e+02> : !quir.duration<dt>
+    // S: [[duration_s:%.*]] = quir.constant #quir.duration<1.000000e+01> : !quir.duration<s>
+    %duration_ms = quir.constant #quir.duration<10.0> : !quir.duration<ms>
+    // DT: [[duration_ms:%.*]] = quir.constant #quir.duration<0.099999999999999992> : !quir.duration<dt>
+    // S: [[duration_ms:%.*]] = quir.constant #quir.duration<1.000000e-02> : !quir.duration<s>
+    %duration_us = quir.constant #quir.duration<10.0> : !quir.duration<us>
+    // DT: {{.*}} = quir.constant #quir.duration<9.9999999999999995E-8> : !quir.duration<dt>
+    // S: {{.*}} = quir.constant #quir.duration<1.000000e-05> : !quir.duration<s>
+    %duration_ns = quir.constant #quir.duration<10.0> : !quir.duration<ns>
     // Floating point precision errors. If this is an issue longrun we should move to APFloat.
     // which is an easy change.
-    // S: {{.*}} = quir.constant #quir.duration<1.000000e-08 : <s>>
+    // S: {{.*}} = quir.constant #quir.duration<1.000000e-08> : !quir.duration<s>
 
-    %duration_ps = quir.constant #quir.duration<10.0 : !quir.duration<ps>>
-    %duration_fs = quir.constant #quir.duration<10.0 : !quir.duration<fs>>
+    %duration_ps = quir.constant #quir.duration<10.0> : !quir.duration<ps>
+    %duration_fs = quir.constant #quir.duration<10.0> : !quir.duration<fs>
 
     quir.delay %duration_s, (%q0) : !quir.duration<s>, (!quir.qubit<1>) -> ()
     // DT:  quir.delay [[duration_s]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()

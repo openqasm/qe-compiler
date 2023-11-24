@@ -535,7 +535,7 @@ def QUIR_DelayOp : QUIR_Op<"delay", [
 
         Example:
         ```mlir
-        %dur1 = quir.constant #quir.duration<10.0 : !quir.duration<dt>>
+        %dur1 = quir.constant #quir.duration<10.0> : !quir.duration<dt>
         "quir.delay"(%dur1, %q1_1) : (!quir.duration<dt>, !quir.qubit)
         ```
     }];
