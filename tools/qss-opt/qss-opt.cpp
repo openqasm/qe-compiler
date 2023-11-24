@@ -28,6 +28,7 @@
 #include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
+#include "Dialect/RegisterDialects.h"
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystemRegistry.h"
 #include "Payload/PayloadRegistry.h"
@@ -36,6 +37,7 @@
 #include "mlir/Debug/Counter.h"
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/Dialect.h"
+#include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/InitAllDialects.h"
 #include "mlir/InitAllPasses.h"
@@ -50,6 +52,7 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 
+using namespace qssc;
 using namespace qssc::hal;
 
 const static std::string toolName = "qss-opt";
@@ -84,34 +87,16 @@ registerAndParseCLIOptions(int argc, char **argv,
                                  llvm::StringRef toolName,
                                  mlir::DialectRegistry &registry) {
 
-  mlir::registerAllPasses();
-  mlir::registerConversionPasses();
-  mlir::oq3::registerOQ3Passes();
-  mlir::oq3::registerOQ3PassPipeline();
-  mlir::qcs::registerQCSPasses();
-  mlir::quir::registerQuirPasses();
-  mlir::quir::registerQuirPassPipeline();
-  mlir::pulse::registerPulsePasses();
-  mlir::pulse::registerPulsePassPipeline();
-
-  if (auto err = registerTargetPasses())
-    return err;
-
-  if (auto err = registerTargetPipelines())
-    return err;
-
-
   // Register any command line options.
   mlir::MlirOptMainConfig::registerCLOptions(registry);
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
-  mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
   mlir::registerDefaultTimingManagerCLOptions();
   mlir::tracing::DebugCounter::registerCLOptions();
 
   // Build the list of dialects as a header for the --help message.
-  std::string helpHeader = "qss-opt\n";
+  std::string helpHeader = (toolName + "\n").str();
   {
     llvm::raw_string_ostream os(helpHeader);
     os << "Available Dialects: ";
@@ -203,12 +188,7 @@ mlir::LogicalResult QSSCOptMain(int argc, char **argv,
 auto main(int argc, char **argv) -> int {
 
   mlir::DialectRegistry registry;
-  // Add the following to include *all* MLIR Core dialects, or selectively
-  // include what you need like above. You only need to register dialects that
-  // will be *parsed* by the tool, not the one generated
-  registerAllDialects(registry);
-  registry.insert<mlir::oq3::OQ3Dialect, mlir::quir::QUIRDialect,
-                  mlir::pulse::PulseDialect, mlir::qcs::QCSDialect>();
+  dialect::registerDialects(registry);
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;

@@ -19,6 +19,7 @@
 #include "Config/CLIConfig.h"
 #include "Config/EnvVarConfig.h"
 
+#include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Diagnostics.h"
@@ -556,7 +557,8 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   // Register the standard dialects with MLIR and prepare a registry and pass
   // pipeline
-  DialectRegistry registry = qssc::dialect::registerDialects();
+  mlir::DialectRegistry registry;
+  qssc::dialect::registerDialects(registry);
 
   // Parse the command line options.
   mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
