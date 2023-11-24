@@ -18,8 +18,8 @@
 // This test verifies that the pass --convert-quir-duration-units
 // is able to globally convert duration units throughout the IR.
 
-// CHECK-LABEL: func @quir_durations()
-func @quir_durations (%arg : i32) {
+// CHECK-LABEL: func.func @quir_durations()
+func.func @quir_durations (%arg : i32) {
 
     %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 
@@ -85,9 +85,9 @@ quir.circuit @circuit0 (%q: !quir.qubit<1>, %duration_dt0: !quir.duration<dt>, %
     // S: quir.return [[duration_ms]], [[duration_ms]] : !quir.duration<s>, !quir.duration<s>
 }
 
-func @func0 (%arg: i32, %q: !quir.qubit<1>, %duration_dt0: !quir.duration<dt>, %duration_s: !quir.duration<s>, %duration_ms: !quir.duration<ms>) -> (i32, !quir.duration<ms>) {
-// DT: func @func0(%arg0: i32, %arg1: !quir.qubit<1>, [[duration_dt0:%.*]]: !quir.duration<dt>, [[duration_s:%.*]]: !quir.duration<dt>, [[duration_ms:%.*]]: !quir.duration<dt>) -> (i32, !quir.duration<dt>) {
-// S: func @func0(%arg0: i32, %arg1: !quir.qubit<1>, [[duration_dt0:%.*]]: !quir.duration<s>, [[duration_s:%.*]]: !quir.duration<s>, [[duration_ms:%.*]]: !quir.duration<s>) -> (i32, !quir.duration<s>) {
+func.func @func0 (%arg: i32, %q: !quir.qubit<1>, %duration_dt0: !quir.duration<dt>, %duration_s: !quir.duration<s>, %duration_ms: !quir.duration<ms>) -> (i32, !quir.duration<ms>) {
+// DT: func.func @func0(%arg0: i32, %arg1: !quir.qubit<1>, [[duration_dt0:%.*]]: !quir.duration<dt>, [[duration_s:%.*]]: !quir.duration<dt>, [[duration_ms:%.*]]: !quir.duration<dt>) -> (i32, !quir.duration<dt>) {
+// S: func.func @func0(%arg0: i32, %arg1: !quir.qubit<1>, [[duration_dt0:%.*]]: !quir.duration<s>, [[duration_s:%.*]]: !quir.duration<s>, [[duration_ms:%.*]]: !quir.duration<s>) -> (i32, !quir.duration<s>) {
     quir.delay %duration_dt0, (%q) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
     // DT: quir.delay [[duration_dt0]], ({{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
     // S: quir.delay [[duration_dt0]], ({{.*}}) : !quir.duration<s>, (!quir.qubit<1>) -> ()

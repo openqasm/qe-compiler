@@ -13,14 +13,14 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// CHECK: func @"defcalPhase_q0_!quir.angle<20>_!quir.qubit<1>"(%arg0: !quir.angle<20>, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"}
-// CHECK: func @"defcalPhase_q0_!quir.angle<10>_!quir.qubit<1>"(%arg0: !quir.angle<10>, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"}
-func @defcalPhase_q0(%arg0: !quir.angle, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"} {
+// CHECK: func.func @"defcalPhase_q0_!quir.angle<20>_!quir.qubit<1>"(%arg0: !quir.angle<20>, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"}
+// CHECK: func.func @"defcalPhase_q0_!quir.angle<10>_!quir.qubit<1>"(%arg0: !quir.angle<10>, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"}
+func.func @defcalPhase_q0(%arg0: !quir.angle, %arg1: !quir.qubit<1> {quir.physicalId = 0 : i32}) attributes {quir.orig_func_name = "defcalPhase"} {
   return
 }
 
-// CHECK: func @"subroutine1_!quir.qubit<1>_!quir.angle<20>_index"(%arg0: !quir.qubit<1>, %arg1: !quir.angle<20>, %arg2: index)
-func @subroutine1(%q1 : !quir.qubit<1>, %phi : !quir.angle, %ub : index) {
+// CHECK: func.func @"subroutine1_!quir.qubit<1>_!quir.angle<20>_index"(%arg0: !quir.qubit<1>, %arg1: !quir.angle<20>, %arg2: index)
+func.func @subroutine1(%q1 : !quir.qubit<1>, %phi : !quir.angle, %ub : index) {
   %lb = arith.constant 0 : index
   %step = arith.constant 1 : index
   scf.for %iv = %lb to %ub step %step {
@@ -34,15 +34,15 @@ func @subroutine1(%q1 : !quir.qubit<1>, %phi : !quir.angle, %ub : index) {
   return
 }
 
-// CHECK: func @"defcalMeasure_q0_!quir.qubit<1>_!quir.angle<10>"(%arg0: !quir.qubit<1> {quir.physicalId = 0 : i32}, %arg1: !quir.angle<10>) -> i1 attributes {quir.orig_func_name = "defcalMeasure"}
-// CHECK: func @"defcalMeasure_q0_!quir.qubit<1>_!quir.angle<20>"(%arg0: !quir.qubit<1> {quir.physicalId = 0 : i32}, %arg1: !quir.angle<20>) -> i1 attributes {quir.orig_func_name = "defcalMeasure"}
-func @defcalMeasure_q0(%q1: !quir.qubit<1> {quir.physicalId = 0 : i32}, %phi : !quir.angle) -> i1 attributes {quir.orig_func_name = "defcalMeasure"} {
+// CHECK: func.func @"defcalMeasure_q0_!quir.qubit<1>_!quir.angle<10>"(%arg0: !quir.qubit<1> {quir.physicalId = 0 : i32}, %arg1: !quir.angle<10>) -> i1 attributes {quir.orig_func_name = "defcalMeasure"}
+// CHECK: func.func @"defcalMeasure_q0_!quir.qubit<1>_!quir.angle<20>"(%arg0: !quir.qubit<1> {quir.physicalId = 0 : i32}, %arg1: !quir.angle<20>) -> i1 attributes {quir.orig_func_name = "defcalMeasure"}
+func.func @defcalMeasure_q0(%q1: !quir.qubit<1> {quir.physicalId = 0 : i32}, %phi : !quir.angle) -> i1 attributes {quir.orig_func_name = "defcalMeasure"} {
   quir.call_gate @defcalPhase_q0(%phi, %q1) : (!quir.angle, !quir.qubit<1>) -> ()
   %false = arith.constant false
   return %false : i1
 }
 
-func @main () -> i32 {
+func.func @main () -> i32 {
   %q1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %ang = quir.constant #quir.angle<0.1 : !quir.angle<20>>
   %ub = arith.constant 10 : index

@@ -20,16 +20,16 @@
 module {
   oq3.declare_variable @b : !quir.cbit<1>
   oq3.declare_variable @results : !quir.cbit<1>
-  func @x(%arg0: !quir.qubit<1>) {
+  func.func @x(%arg0: !quir.qubit<1>) {
     return
   }
-  func @sx(%arg0: !quir.qubit<1>) {
+  func.func @sx(%arg0: !quir.qubit<1>) {
     return
   }
-  func @rz(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
+  func.func @rz(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
     return
   }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     %c0_i32 = arith.constant 0 : i32
     %angle = quir.constant #quir.angle<1.500000e+00 : !quir.angle<64>>
 

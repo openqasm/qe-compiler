@@ -33,7 +33,7 @@ OPENQASM 3.0;
 // AST-PRETTY: ,
 // AST-PRETTY: ]
 // AST-PRETTY: )
-// MLIR: func @h(%arg0: !quir.qubit<1>) {
+// MLIR: func.func @h(%arg0: !quir.qubit<1>) {
 gate h q {
     U(1.57079632679, 0, 3.14159265359) q;
 }
@@ -49,12 +49,12 @@ gate h q {
 // AST-PRETTY: ,
 // AST-PRETTY: ]
 // AST-PRETTY: )
-// MLIR: func @z(%arg0: !quir.qubit<1>) {
+// MLIR: func.func @z(%arg0: !quir.qubit<1>) {
 gate z q {
     U(0, 0, 3.14159265359) q;
 }
 
-// MLIR: func @x(%arg0: !quir.qubit<1>) {
+// MLIR: func.func @x(%arg0: !quir.qubit<1>) {
 gate x q {
     U(3.14159265359, 0, 3.14159265359) q;
 }

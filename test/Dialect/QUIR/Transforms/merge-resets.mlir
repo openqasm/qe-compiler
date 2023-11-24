@@ -18,10 +18,10 @@
 // that they have been altered from the originals.
 
 module  {
-  func @x(%arg0: !quir.qubit<1>) {
+  func.func @x(%arg0: !quir.qubit<1>) {
     return
   }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     %c0 = arith.constant 0 : index
     %c1000 = arith.constant 1000 : index
     %c1 = arith.constant 1 : index

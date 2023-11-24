@@ -15,14 +15,14 @@
 
 module {
     func private @proto (%qa1 : !quir.qubit<1>) -> ()
-    // CHECK-LABEL: func @gateCall1
-    func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
+    // CHECK-LABEL: func.func @gateCall1
+    func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
         %zero = quir.constant #quir.angle<0.0 : !quir.angle<1>>
         // CHECK: quir.builtin_U %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         return
     }
-    func @subroutine1(%q1 : !quir.qubit<1>, %phi : !quir.angle, %ub : index) {
+    func.func @subroutine1(%q1 : !quir.qubit<1>, %phi : !quir.angle, %ub : index) {
         %lb = arith.constant 0 : index
         %step = arith.constant 1 : index
         scf.for %iv = %lb to %ub step %step {
@@ -38,8 +38,8 @@ module {
         }
         return
     }
-    // CHECK-LABEL: func @bar()
-    func @bar() {
+    // CHECK-LABEL: func.func @bar()
+    func.func @bar() {
         // CHECK: qcs.init
         qcs.init
         // CHECK: qcs.finalize

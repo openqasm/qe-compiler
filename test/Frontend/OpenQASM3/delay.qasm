@@ -67,7 +67,7 @@ delay[a] $0;
 delay[a] $0, $1;
 
 //MLIR-CIRCUITS: quir.return
-//MLIR-CIRCUITS: func @main() -> i32 {
+//MLIR-CIRCUITS: func.func @main() -> i32 {
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<5.000000e+00 : <ns>>
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <ns>>
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<2.000000e+01 : <us>>

@@ -17,7 +17,7 @@
 // CHECK-NOT:  "pulse.create_port_group"
 // CHECK-NOT:  "pulse.select_port"
 
-func @main() -> i32 {
+func.func @main() -> i32 {
 %0 = "pulse.create_port"() {uid = "d0"} : () -> !pulse.port
 %1 = "pulse.create_port"() {uid = "d1"} : () -> !pulse.port
 %2 = "pulse.create_port"() {uid = "u0"} : () -> !pulse.port

@@ -47,8 +47,8 @@ quir.circuit @circuit2 (%q0: !quir.qubit<1>, %omega: !quir.angle<32>) -> (i1, i1
 	quir.return %res0, %res0 : i1, i1
 }
 
-// CHECK-LABEL: func @quir_switch(%arg0: i32) -> i32
-func @quir_switch (%flag: i32) -> (i32) {
+// CHECK-LABEL: func.func @quir_switch(%arg0: i32) -> i32
+func.func @quir_switch (%flag: i32) -> (i32) {
     // CHECK: %[[y:.*]] = quir.switch %arg0 -> (i32)
     %y = quir.switch %flag -> (i32) {
             // CHECK: %[[y_def:.*]] = arith.constant 0 : i32
@@ -90,8 +90,8 @@ func @quir_switch (%flag: i32) -> (i32) {
     return %y : i32
 }
 
-// CHECK-LABEL: func @quir_durations()
-func @quir_durations () {
+// CHECK-LABEL: func.func @quir_durations()
+func.func @quir_durations () {
     %duration_dt0 = quir.constant #quir.duration<10.0 : <dt>>
     // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <dt>>
     %duration_dt1 = quir.constant #quir.duration<10.0 : !quir.duration<dt>>

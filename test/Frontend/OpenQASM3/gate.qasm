@@ -15,7 +15,7 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// MLIR: func @h(%arg0: !quir.qubit<1>) {
+// MLIR: func.func @h(%arg0: !quir.qubit<1>) {
 // MLIR-NO-CIRCUITS: %angle = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
 // MLIR-NO-CIRCUITS: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.call_circuit @circuit_0(%arg0) : (!quir.qubit<1>) -> ()
@@ -37,7 +37,7 @@ gate h q {
 // MLIR-CIRCUITS: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS: quir.return
 
-// MLIR: func @main() -> i32 {
+// MLIR: func.func @main() -> i32 {
 
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 qubit $0;

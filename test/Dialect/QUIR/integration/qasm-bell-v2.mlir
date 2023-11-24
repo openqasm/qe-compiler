@@ -16,7 +16,7 @@
 // gate h q {
 //     U(1.57079632679, 0.0, 3.14159265359) q;
 // }
-func @h (%q : !quir.qubit<1>) -> () {
+func.func @h (%q : !quir.qubit<1>) -> () {
     %a0 = quir.constant #quir.angle<1.57079632679 : !quir.angle<20>>
     %a1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
     %a2 = quir.constant #quir.angle<3.14159265359 : !quir.angle<20>>
@@ -24,18 +24,18 @@ func @h (%q : !quir.qubit<1>) -> () {
     return
 }
 
-func @cx (%ctrl : !quir.qubit<1>, %targ : !quir.qubit<1>) {
+func.func @cx (%ctrl : !quir.qubit<1>, %targ : !quir.qubit<1>) {
     quir.builtin_CX %ctrl, %targ : !quir.qubit<1>, !quir.qubit<1>
     return
 }
 
-func @fake_multiqubit (%ctrl : !quir.qubit<1>, %targ : !quir.qubit<1>, %p1 : !quir.angle<20>) {
+func.func @fake_multiqubit (%ctrl : !quir.qubit<1>, %targ : !quir.qubit<1>, %p1 : !quir.angle<20>) {
     quir.builtin_U %ctrl, %p1, %p1, %p1 : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>
     quir.builtin_CX %ctrl, %targ : !quir.qubit<1>, !quir.qubit<1>
     return
 }
 
-func @main () -> i32 {
+func.func @main () -> i32 {
     // qubit %0;
     // qubit %1;
     // CHECK: %{{.*}} = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>

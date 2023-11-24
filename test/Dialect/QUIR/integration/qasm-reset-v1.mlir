@@ -13,7 +13,7 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-func @main () -> i32 {
+func.func @main () -> i32 {
     // CHECK: %{{.*}} = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
     // qubit %0;
     %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>

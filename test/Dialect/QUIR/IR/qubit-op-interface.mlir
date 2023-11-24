@@ -23,7 +23,7 @@ quir.circuit @circuit0 (%q0: !quir.qubit<1> {quir.physicalId = 0 : i32}) -> (i1,
 	quir.return %res0, %res0 : i1, i1
 }
 
-func @test_qubit_op_interface (%cond : i1) -> () {
+func.func @test_qubit_op_interface (%cond : i1) -> () {
   %q0 = quir.declare_qubit {id = 0: i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1: i32} : !quir.qubit<1>
   %q2 = quir.declare_qubit {id = 2: i32} : !quir.qubit<1>

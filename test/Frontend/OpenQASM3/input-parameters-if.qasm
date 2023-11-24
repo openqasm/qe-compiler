@@ -22,7 +22,7 @@ bit is_excited;
 bit other;
 bit result;
 
-gate x q { } 
+gate x q { }
 gate rz(phi) q { }
 
 input angle theta = 3.141;
@@ -46,7 +46,7 @@ is_excited = measure $2;
 // CHECK-NEXT: quir.return %0 : i1
 // CHECK-NEXT: }
 
-// CHECK: func @main() -> i32 {
+// CHECK: func.func @main() -> i32 {
 // CHECK: scf.for %arg0 = %c0 to %c1000 step %c1 {
 // CHECK: [[QUBIT2:%.*]] = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
 // CHECK: [[QUBIT3:%.*]] = quir.declare_qubit {id = 3 : i32} : !quir.qubit<1>

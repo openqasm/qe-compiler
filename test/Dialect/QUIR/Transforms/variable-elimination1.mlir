@@ -22,10 +22,10 @@
 module {
   oq3.declare_variable @a : !quir.cbit<1>
   oq3.declare_variable @b : !quir.cbit<1>
-  func @x(%arg0: !quir.qubit<1>) {
+  func.func @x(%arg0: !quir.qubit<1>) {
     return
   }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     // CHECK: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32}
     // CHECK: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32}
     %1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>

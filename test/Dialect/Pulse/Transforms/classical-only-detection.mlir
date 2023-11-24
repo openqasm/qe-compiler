@@ -21,8 +21,8 @@
 func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1> attributes {quir.classicalOnly = true}
 // CHECK: func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
 // CHECK-SAME: attributes {quir.classicalOnly = true}
-func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) attributes {quir.classicalOnly = false} {
-    // CHECK: func @subroutine1
+func.func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) attributes {quir.classicalOnly = false} {
+    // CHECK: func.func @subroutine1
     // CHECK: attributes {quir.classicalOnly = false} {
     %zero = arith.constant 0 : index
     %ang3 = oq3.angle_add %ang1, %ang2 : !quir.angle<20>
@@ -57,8 +57,8 @@ func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir
 func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
 // CHECK: func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
 // CHECK-SAME: attributes {quir.classicalOnly = true}
-func @subroutine2 () {
-    // CHECK: func @subroutine2()
+func.func @subroutine2 () {
+    // CHECK: func.func @subroutine2()
     // CHECK-SAME: attributes {quir.classicalOnly = false} {
 
     %c0_i32 = arith.constant 0 : i32

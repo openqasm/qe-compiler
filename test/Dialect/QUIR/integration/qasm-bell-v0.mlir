@@ -18,7 +18,7 @@
 oq3.declare_variable @c0 : !quir.cbit<1>
 oq3.declare_variable @c1 : !quir.cbit<1>
 
-func @main () -> i32 {
+func.func @main () -> i32 {
 
   // qubit %0;
   // qubit %1;

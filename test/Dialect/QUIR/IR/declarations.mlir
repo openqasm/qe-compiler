@@ -16,7 +16,7 @@
 // This test case checks that QUIR declarations can be parsed from
 // textual/assembly input.
 module {
-    func @bar() {
+    func.func @bar() {
         // CHECK: %{{.*}} = quir.declare_qubit : !quir.qubit<1>
         %qa1 = quir.declare_qubit : !quir.qubit<1>
         %qb1 = quir.declare_qubit : !quir.qubit<1>

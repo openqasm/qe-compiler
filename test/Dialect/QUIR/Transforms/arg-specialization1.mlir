@@ -17,13 +17,13 @@ module {
     oq3.declare_variable @cb1 : !quir.cbit<1>
     oq3.declare_variable @cb2 : !quir.cbit<1>
 
-    func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) {
+    func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) {
         %zero = quir.constant #quir.angle<0.0 : !quir.angle<1>>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         "quir.call_gate"(%q1) {callee = @proto} : (!quir.qubit<1>) -> ()
         return
     }
-    func @gateCall2(%q1 : !quir.qubit<1>, %lambda : !quir.angle) {
+    func.func @gateCall2(%q1 : !quir.qubit<1>, %lambda : !quir.angle) {
         %zero = quir.constant #quir.angle<0.0 : !quir.angle<20>>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
@@ -59,7 +59,7 @@ module {
 
         return
     }
-    func @gateCall3(%q1 : !quir.qubit<1>, %phi : !quir.angle) {
+    func.func @gateCall3(%q1 : !quir.qubit<1>, %phi : !quir.angle) {
         %zero = quir.constant #quir.angle<0.0 : !quir.angle<20>>
         %cmpval = quir.constant #quir.angle<0.3 : !quir.angle<20>>
         %farg = "oq3.cast"(%phi) : (!quir.angle) -> f64
@@ -72,7 +72,7 @@ module {
         }
         return
     }
-    func @main () -> i32 {
+    func.func @main () -> i32 {
         %qa1 = quir.declare_qubit { id = 1 : i32 } : !quir.qubit<1>
         %qb1 = quir.declare_qubit { id = 2 : i32 } : !quir.qubit<1>
         %qc1 = quir.declare_qubit { id = 3 : i32 } : !quir.qubit<1>

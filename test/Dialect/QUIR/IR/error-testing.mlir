@@ -15,7 +15,7 @@
 
 // -----
 
-func @qubit_type_parse_error() {
+func.func @qubit_type_parse_error() {
   // expected-error@+1 {{width must be > 0}}
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<0>
   return
@@ -23,7 +23,7 @@ func @qubit_type_parse_error() {
 
 // -----
 
-func @angle_type_parse_error() {
+func.func @angle_type_parse_error() {
   // expected-error@+2 {{failed to parse QUIR_AngleAttr parameter 'type' which is to be a `::mlir::Type`}}
   // expected-error@+1 {{width must be > 0}}
   %a1 = quir.constant #quir.angle<1.0 : !quir.angle<0>>
@@ -32,7 +32,7 @@ func @angle_type_parse_error() {
 
 // -----
 
-func @angle_type_cmp_error() {
+func.func @angle_type_cmp_error() {
   %a1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
   %a2 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
   // expected-error@+1 {{'oq3.angle_cmp' op requires predicate "eq", "ne", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge"}}
@@ -42,7 +42,7 @@ func @angle_type_cmp_error() {
 
 // -----
 
-func @call_defcal_measure_no_qubit_args() {
+func.func @call_defcal_measure_no_qubit_args() {
   %c1 = quir.constant #quir.angle<1.0 : !quir.angle<20>>
   // expected-error@+1 {{'quir.call_defcal_measure' op requires exactly one qubit}}
   %a1 = quir.call_defcal_measure @proto1(%c1) : (!quir.angle<20>) -> i1
@@ -51,7 +51,7 @@ func @call_defcal_measure_no_qubit_args() {
 
 // -----
 
-func @call_defcal_measure_too_many_qubit_args() {
+func.func @call_defcal_measure_too_many_qubit_args() {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   // expected-error@+1 {{'quir.call_defcal_measure' op requires exactly one qubit argument}}
@@ -61,7 +61,7 @@ func @call_defcal_measure_too_many_qubit_args() {
 
 // -----
 
-func @quir_switch (%flag: i32) -> (i32) {
+func.func @quir_switch (%flag: i32) -> (i32) {
   // expected-error@+1 {{expected '{' to begin a region}}
   %y = quir.switch %flag -> (i32) [
     4: {
@@ -74,7 +74,7 @@ func @quir_switch (%flag: i32) -> (i32) {
 
 // -----
 
-func @quir_switch (%flag: i32) -> (i32) {
+func.func @quir_switch (%flag: i32) -> (i32) {
   %y = quir.switch %flag -> (i32)
   {
     %y_default = arith.constant 0 : i32

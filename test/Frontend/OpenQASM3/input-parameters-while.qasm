@@ -28,9 +28,9 @@ int n = 1;
 
 bit is_excited;
 
-// CHECK: func @h(%arg0: !quir.qubit<1>) {
+// CHECK: func.func @h(%arg0: !quir.qubit<1>) {
 // CHECK: quir.call_circuit @circuit_0(%arg0) : (!quir.qubit<1>) -> ()
-// CHECK-NEXT: return 
+// CHECK-NEXT: return
 // CHECK-NEXT: }
 
 // CHECK: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) {
@@ -41,8 +41,8 @@ bit is_excited;
 // CHECK-NEXT: quir.return
 // CHECK-NEXT: }
 
-// CHECK: func @rz(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
-// CHECK-NEXT: return 
+// CHECK: func.func @rz(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
+// CHECK-NEXT: return
 // CHECK-NEXT: }
 
 // CHECK: quir.circuit @circuit_1(%arg0: !quir.qubit<1>) -> i1 {
@@ -54,10 +54,10 @@ bit is_excited;
 // CHECK: quir.circuit @circuit_2(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
 // CHECK-NEXT: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
 // CHECK quir.call_gate @rz(%arg0, %arg1) : (!quir.qubit<1>) -> ()
-// CHECK: quir.return 
+// CHECK: quir.return
 // CHECK-NEXT: }
 
-// CHECK: func @main() -> i32 {
+// CHECK: func.func @main() -> i32 {
 // CHECK: scf.for %arg0 = %c0 to %c1000 step %c1 {
 // CHECK: [[QUBIT:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // CHECK: scf.while : () -> () {
@@ -73,7 +73,7 @@ while (n != 0) {
     // CHECK: oq3.cbit_assign_bit @is_excited<1> [0] : i1 = [[MEASURE]]
     // CHECK: [[EXCITED:%.*]] = oq3.variable_load @is_excited : !quir.cbit<1>
     // CHECK: [[COND2:%.*]] = "oq3.cast"([[EXCITED]]) : (!quir.cbit<1>) -> i1
-    
+
     // CHECK: scf.if [[COND2]] {
     if (is_excited) {
         // CHECK:  [[THETA:%.*]] = oq3.variable_load @theta : !quir.angle<64>

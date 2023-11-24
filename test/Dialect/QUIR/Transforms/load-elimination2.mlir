@@ -25,7 +25,7 @@ module {
 
   // REMOVE-UNUSED-NOT: oq3.declare_variable {input} @a
 
-  func @main() -> !quir.angle<64> {
+  func.func @main() -> !quir.angle<64> {
 
     // CHECK: [[CONST314_ANGLE:%.*]] = quir.constant {quir.inputParameter = "a"} #quir.angle<3.140000e+00 : !quir.angle<64>>
     // REMOVE-UNUSED: [[CONST314_ANGLE:%.*]] = quir.constant #quir.angle<3.140000e+00 : !quir.angle<64>>

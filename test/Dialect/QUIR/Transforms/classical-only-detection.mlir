@@ -15,7 +15,7 @@
 
 func private @kernel1 (%ca1 : memref<1xi1>, %ca2 : memref<1xi1>, %ca3 : memref<1xi1>) -> memref<1xi1>
 func private @kernel2 (memref<?xi1>) -> memref<1xi1>
-func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) {
+func.func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) {
     %zero = arith.constant 0 : index
     %ang3 = oq3.angle_add %ang1, %ang2 : !quir.angle<20>
     %ang4 = quir.constant #quir.angle<0.9 : !quir.angle<20>>
@@ -42,35 +42,35 @@ func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir
     return %c1 : !quir.cbit<1>
 }
 func private @proto (%qa1 : !quir.qubit<1>) -> ()
-func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
+func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
     %zero = quir.constant #quir.angle<0.0 : !quir.angle<1>>
     quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
     "quir.call_gate"(%q1) {callee = @proto} : (!quir.qubit<1>) -> ()
     return
 }
-func @gateCall2(%q1 : !quir.qubit<1>, %lambda : !quir.angle) -> () {
+func.func @gateCall2(%q1 : !quir.qubit<1>, %lambda : !quir.angle) -> () {
     %zero = quir.constant #quir.angle<0.0 : !quir.angle>
     quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle, !quir.angle, !quir.angle
     return
 }
-func @multiQubitGateCall(%qa1 : !quir.qubit<1>, %qb1 : !quir.qubit<1>) -> () {
+func.func @multiQubitGateCall(%qa1 : !quir.qubit<1>, %qb1 : !quir.qubit<1>) -> () {
     quir.builtin_CX %qa1, %qb1 : !quir.qubit<1>, !quir.qubit<1>
     return
 }
-func @defcalGate2(%qa1 : !quir.qubit<1> {quir.qubit_id = 0 : i32}, %theta : !quir.angle {quir.value = 0.5 : f64}) -> () {
+func.func @defcalGate2(%qa1 : !quir.qubit<1> {quir.qubit_id = 0 : i32}, %theta : !quir.angle {quir.value = 0.5 : f64}) -> () {
     %zero = quir.constant #quir.angle<0.0 : !quir.angle>
     quir.builtin_U %qa1, %zero, %theta, %zero : !quir.qubit<1>, !quir.angle, !quir.angle, !quir.angle
     return
 }
-func @defcalRX(%qa1 : !quir.qubit<1>, %theta : !quir.angle<20>) -> () {
+func.func @defcalRX(%qa1 : !quir.qubit<1>, %theta : !quir.angle<20>) -> () {
     quir.call_gate @proto1(%qa1, %theta) : (!quir.qubit<1>, !quir.angle<20>) -> ()
     return
 }
-func @defcalRX_q0(%qa1 : !quir.qubit<1> {quir.qubit_id = 0 : i32}, %theta : !quir.angle<20>) -> () attributes {quir.orig_func_name = "defcalRX"} {
+func.func @defcalRX_q0(%qa1 : !quir.qubit<1> {quir.qubit_id = 0 : i32}, %theta : !quir.angle<20>) -> () attributes {quir.orig_func_name = "defcalRX"} {
     quir.call_gate @proto2(%qa1, %theta) : (!quir.qubit<1>, !quir.angle<20>) -> ()
     return
 }
-func @defcalRX_q0_api2(%qa1 : !quir.qubit<1> {quir.qubit_id = 0 : i32}, %theta : !quir.angle<20> {quir.value = 0.5 : f64}) -> ()
+func.func @defcalRX_q0_api2(%qa1 : !quir.qubit<1> {quir.qubit_id = 0 : i32}, %theta : !quir.angle<20> {quir.value = 0.5 : f64}) -> ()
     attributes {quir.orig_func_name = "defcalRX"}
 {
     quir.call_gate @proto3(%qa1, %theta) : (!quir.qubit<1>, !quir.angle<20>) -> ()

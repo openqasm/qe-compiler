@@ -25,21 +25,21 @@ int n = 1;
 
 bit is_excited;
 
-// MLIR-CIRCUITS: func @h(%arg0: !quir.qubit<1>) {
+// MLIR-CIRCUITS: func.func @h(%arg0: !quir.qubit<1>) {
 // MLIR-CIRCUITS: quir.call_circuit @circuit_0(%arg0) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: return 
+// MLIR-CIRCUITS: return
 
 // MLIR-CIRCUITS: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) {
 // MLIR-CIRCUITS: %angle = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
 // MLIR-CIRCUITS: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.return
-  
+
 // MLIR-CIRCUITS: quir.circuit @circuit_1(%arg0: !quir.qubit<1>) -> i1 {
 // MLIR-CIRCUITS: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS: %cst = constant unit
 // MLIR-CIRCUITS: %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
 // MLIR-CIRCUITS: quir.return %0 : i1
-  
+
 // MLIR-CIRCUITS: quir.circuit @circuit_2(%arg0: !quir.qubit<1>) {
 // MLIR-CIRCUITS: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS: quir.return

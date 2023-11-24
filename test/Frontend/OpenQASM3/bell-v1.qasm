@@ -31,7 +31,7 @@ OPENQASM 3.0;
 // AST-PRETTY: ,
 // AST-PRETTY: ]
 // AST-PRETTY: )
-// MLIR: func @h(%arg0: !quir.qubit<1>) {
+// MLIR: func.func @h(%arg0: !quir.qubit<1>) {
 // MLIR-NO-CIRCUITS: [[a0:%angle[_0-9]*]] = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
 // MLIR-NO-CIRCUITS: quir.builtin_U %arg0, [[a0]], {{.*}}, {{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.call_circuit @circuit_0(%arg0) : (!quir.qubit<1>) -> ()
@@ -57,7 +57,7 @@ gate h q {
 
 gate cx control, target { }
 
-// MLIR: func @main() -> i32 {
+// MLIR: func.func @main() -> i32 {
 // Qiskit will provide physical qubits
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // MLIR: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>

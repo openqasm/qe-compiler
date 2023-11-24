@@ -14,17 +14,17 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// CHECK:  func @d0
-// CHECK:  func @d1
-// CHECK:  func @u0
-// CHECK:  func @u1
-// CHECK:  func @u4
-// CHECK:  func @u8
-// CHECK:  func @d2
-// CHECK:  func @d3
-// CHECK:  func @main
+// CHECK:  func.func @d0
+// CHECK:  func.func @d1
+// CHECK:  func.func @u0
+// CHECK:  func.func @u1
+// CHECK:  func.func @u4
+// CHECK:  func.func @u8
+// CHECK:  func.func @d2
+// CHECK:  func.func @d3
+// CHECK:  func.func @main
 
-func @main() -> i32 {
+func.func @main() -> i32 {
 %0 = "pulse.create_port"() {uid = "d0"} : () -> !pulse.port
 %1 = "pulse.create_port"() {uid = "d1"} : () -> !pulse.port
 %2 = "pulse.create_port"() {uid = "u0"} : () -> !pulse.port

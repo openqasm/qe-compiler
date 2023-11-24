@@ -13,7 +13,7 @@
 // that they have been altered from the originals.
 
 // CHECK: Manifest
-func @main () -> i32 {
+func.func @main () -> i32 {
 
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>

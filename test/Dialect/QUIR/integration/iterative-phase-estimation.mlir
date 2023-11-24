@@ -18,8 +18,8 @@ module {
     // defcal y90p %0 {
     //    play drive(%0), drag(...);
     // }
-    // func @defcalRX_q0(%qa1 : !quir.qubit<1> {quir.physicalId = 0 : i32}, %theta : !quir.angle<20>) -> () attributes {quir.orig_func_name = "defcalRX"} {
-    func @defcalY90P_q0(%q0 : !quir.qubit<1> {quir.physicalId = 0 : i32}) -> () attributes {quir.orig_func_name = "defcalY90P"} {
+    // func.func @defcalRX_q0(%qa1 : !quir.qubit<1> {quir.physicalId = 0 : i32}, %theta : !quir.angle<20>) -> () attributes {quir.orig_func_name = "defcalRX"} {
+    func.func @defcalY90P_q0(%q0 : !quir.qubit<1> {quir.physicalId = 0 : i32}) -> () attributes {quir.orig_func_name = "defcalY90P"} {
         // PULSE IR Ops
         // CHECK: return
         return
@@ -27,21 +27,21 @@ module {
     // defcal y90p %1 {
     //    play drive(%1), drag(...);
     // }
-    func @defcalY90P_q1(%q0 : !quir.qubit<1> {quir.physicalId = 1 : i32}) -> () attributes {quir.orig_func_name = "defcalY90P"} {
+    func.func @defcalY90P_q1(%q0 : !quir.qubit<1> {quir.physicalId = 1 : i32}) -> () attributes {quir.orig_func_name = "defcalY90P"} {
         // PULSE IR Ops
         return
     }
     // defcal cr90p %0, %1 {
     //     play flat_top_gaussian(...), drive(%0), frame(drive(%1));
     // }
-    func @defcalCR90P_q0_q1(%q0 : !quir.qubit<1> {quir.physicalId = 0 : i32}, %q1 : !quir.qubit<1> {quir.physicalId = 1 : i32}) -> () attributes {quir.orig_func_name = "defcalCR90P"} {
+    func.func @defcalCR90P_q0_q1(%q0 : !quir.qubit<1> {quir.physicalId = 0 : i32}, %q1 : !quir.qubit<1> {quir.physicalId = 1 : i32}) -> () attributes {quir.orig_func_name = "defcalCR90P"} {
         // PULSE IR Ops
         return
     }
     // defcal phase(angle[20]: theta) %q {
     //    shift_phase drive(%q), -theta;
     // }
-    func @defcalPhase_qq(%angle : !quir.angle, %qq : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "defcalPhase"} {
+    func.func @defcalPhase_qq(%angle : !quir.angle, %qq : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "defcalPhase"} {
         // PULSE IR Ops
         return
     }
@@ -50,7 +50,7 @@ module {
     //     cr90p %0, %1;
     //     phase(pi) %1;
     // }
-    func @defcalCR90M_q0_q1(%q0 : !quir.qubit<1> {quir.physicalId = 0 : i32}, %q1 : !quir.qubit<1> {quir.physicalId = 1 : i32}) -> () attributes {quir.orig_func_name = "defcalCR90M"} {
+    func.func @defcalCR90M_q0_q1(%q0 : !quir.qubit<1> {quir.physicalId = 0 : i32}, %q1 : !quir.qubit<1> {quir.physicalId = 1 : i32}) -> () attributes {quir.orig_func_name = "defcalCR90M"} {
         %npi = quir.constant #quir.angle<-1.0  : !quir.angle<20>>
         %pi = quir.constant #quir.angle<1.0  : !quir.angle<20>>
         "quir.call_gate"(%npi, %q1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
@@ -63,7 +63,7 @@ module {
     //     y90p %q;
     //     phase(-pi) %q;
     // }
-    func @gateX90P_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateX90P"} {
+    func.func @gateX90P_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateX90P"} {
         %npi = quir.constant #quir.angle<-1.0  : !quir.angle<20>>
         %pi = quir.constant #quir.angle<1.0  : !quir.angle<20>>
         "quir.call_gate"(%pi, %qq_1)  {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
@@ -75,7 +75,7 @@ module {
     //     x90p %q;
     //     x90p %q;
     // }
-    func @gateXP_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateXP"} {
+    func.func @gateXP_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateXP"} {
         "quir.call_gate"(%qq_1) {callee = @gateX90P} : (!quir.qubit<1>) -> ()
         "quir.call_gate"(%qq_1) {callee = @gateX90P} : (!quir.qubit<1>) -> ()
         return
@@ -84,7 +84,7 @@ module {
     //     phase(pi) %q;
     //     y90p %q;
     // }
-    func @gateH_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateH"} {
+    func.func @gateH_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateH"} {
         %pi = quir.constant #quir.angle<1.0  : !quir.angle<20>>
         "quir.call_gate"(%pi, %qq_1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
         "quir.call_gate"(%qq_1) {callee = @defcalY90P} : (!quir.qubit<1>) -> ()
@@ -101,7 +101,7 @@ module {
     //     barrier %control, %target;
     //     cr90m %control, %target;
     // }
-    func @gateCX_qq_qq(%ctrl : !quir.qubit<1>, %targ : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateCX"} {
+    func.func @gateCX_qq_qq(%ctrl : !quir.qubit<1>, %targ : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateCX"} {
         %npi2 = quir.constant #quir.angle<-0.5  : !quir.angle<20>>
         "quir.call_gate"(%ctrl) {callee = @gateXP} : (!quir.qubit<1>) -> ()
         "quir.call_gate"(%targ) {callee = @gateX90P} : (!quir.qubit<1>) -> ()
@@ -118,7 +118,7 @@ module {
     //     iq = capture acquire(%0), 2048, kernel(k0);
     //     return threshold(iq, 1234);
     // }
-    func @defcalMeasure_q0(%q0_1 : !quir.qubit<1> {quir.physicalId = 0 : i32}) -> i1 attributes {quir.orig_func_name = "defcalMeasure"} {
+    func.func @defcalMeasure_q0(%q0_1 : !quir.qubit<1> {quir.physicalId = 0 : i32}) -> i1 attributes {quir.orig_func_name = "defcalMeasure"} {
         // Pulse IR Ops
         %res = arith.constant false
         return %res : i1

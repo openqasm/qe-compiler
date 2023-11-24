@@ -19,10 +19,10 @@
 // CHECK: module
 module {
   oq3.declare_variable @b : !quir.cbit<1>
-  func @x(%arg0: !quir.qubit<1>) {
+  func.func @x(%arg0: !quir.qubit<1>) {
     return
   }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     // CHECK-DAG: [[MEMREF:%.*]] = memref.alloca() : memref<i1>
     // CHECK-DAG: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32}
     // CHECK-DAG: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32}
