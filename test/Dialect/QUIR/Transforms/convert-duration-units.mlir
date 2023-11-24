@@ -61,9 +61,9 @@ func.func @quir_durations (%arg : i32) {
     quir.call_circuit @circuit0(%q0, %duration_dt0,  %duration_s, %duration_ms) : (!quir.qubit<1>, !quir.duration<dt>, !quir.duration<s>, !quir.duration<ms>) -> (!quir.duration<ms>, !quir.duration<ms>)
     // DT: {{.*}}:2 = quir.call_circuit @circuit0({{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (!quir.qubit<1>, !quir.duration<dt>, !quir.duration<dt>, !quir.duration<dt>) -> (!quir.duration<dt>, !quir.duration<dt>)
     // S: {{.*}}:2 = quir.call_circuit @circuit0({{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (!quir.qubit<1>, !quir.duration<s>, !quir.duration<s>, !quir.duration<s>) -> (!quir.duration<s>, !quir.duration<s>)
-    call @func0(%arg, %q0, %duration_dt0,  %duration_s, %duration_ms) : (i32, !quir.qubit<1>, !quir.duration<dt>, !quir.duration<s>, !quir.duration<ms>) -> (i32, !quir.duration<ms>)
-    // DT: {{.*}}:2 = call @func0({{.*}}, {{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (i32, !quir.qubit<1>, !quir.duration<dt>, !quir.duration<dt>, !quir.duration<dt>) -> (i32, !quir.duration<dt>)
-    // S: {{.*}}:2 = call @func0({{.*}}, {{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (i32, !quir.qubit<1>, !quir.duration<s>, !quir.duration<s>, !quir.duration<s>) -> (i32, !quir.duration<s>)
+    func.call @func0(%arg, %q0, %duration_dt0,  %duration_s, %duration_ms) : (i32, !quir.qubit<1>, !quir.duration<dt>, !quir.duration<s>, !quir.duration<ms>) -> (i32, !quir.duration<ms>)
+    // DT: {{.*}}:2 = func.call @func0({{.*}}, {{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (i32, !quir.qubit<1>, !quir.duration<dt>, !quir.duration<dt>, !quir.duration<dt>) -> (i32, !quir.duration<dt>)
+    // S: {{.*}}:2 = func.call @func0({{.*}}, {{.*}}, [[duration_dt0]], [[duration_s]], [[duration_ms]]) : (i32, !quir.qubit<1>, !quir.duration<s>, !quir.duration<s>, !quir.duration<s>) -> (i32, !quir.duration<s>)
     return
 }
 

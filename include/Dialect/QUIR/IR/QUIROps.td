@@ -641,7 +641,7 @@ def QUIR_CircuitOp : QUIR_Op<"circuit", [
     quir.circuit @vqe(%angle: quir.angle<32>) -> i1
       {quir.physicalId = 0 : i32} {
       %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
-      quir.gate_call @rz(%0, %angle) : (!quir.qubit<1>, !quir.angle<32>) -> ()
+      quir.gate_func.call @rz(%0, %angle) : (!quir.qubit<1>, !quir.angle<32>) -> ()
       %result = "quir.measure"(%0) : (!quir.qubit<1>) -> i1
       quir.return %result: i1
     }

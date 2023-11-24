@@ -189,10 +189,10 @@ def QCS_ParallelControlFlowOp : QCS_Op<"parallel_control_flow", [
         ```mlir
         qcs.parallel_control_flow {
             scf.if (%c0) {
-                quir.gate_call @x(%q0) : (!quir.qubit<1>) -> ()
+                quir.gate_func.call @x(%q0) : (!quir.qubit<1>) -> ()
             } {quir.physicalIds = [0 : i32]}
             scf.if (%c1) {
-                quir.gate_call @x(%q1) : (!quir.qubit<1>) -> ()
+                quir.gate_func.call @x(%q1) : (!quir.qubit<1>) -> ()
             } {quir.physicalIds = [1 : i32]}
         }
         ```

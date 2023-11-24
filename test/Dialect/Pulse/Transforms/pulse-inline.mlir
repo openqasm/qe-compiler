@@ -537,22 +537,22 @@ func.func @main() -> i32 {
 %47 = "pulse.create_port"() {uid = "u16"} : () -> !pulse.port
 %48 = "pulse.create_port"() {uid = "u7"} : () -> !pulse.port
 %49 = "pulse.create_port_group"(%35, %42, %36, %43, %40, %44, %46, %47, %48, %6, %8, %9, %10, %11, %12, %13, %14, %15, %16, %17, %18, %19, %20, %21, %22, %23, %24, %25, %26, %27, %28, %29, %30, %31, %32, %33, %7, %7) : (!pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port) -> !pulse.port_group
-call @x0(%34) : (!pulse.port_group) -> ()
-call @x1(%41) : (!pulse.port_group) -> ()
-call @x2(%45) : (!pulse.port_group) -> ()
-call @x3(%49) : (!pulse.port_group) -> ()
-call @cx01(%34, %41) : (!pulse.port_group, !pulse.port_group) -> ()
-call @cx10(%41, %34) : (!pulse.port_group, !pulse.port_group) -> ()
-call @cx12(%41, %45) : (!pulse.port_group, !pulse.port_group) -> ()
+func.call @x0(%34) : (!pulse.port_group) -> ()
+func.call @x1(%41) : (!pulse.port_group) -> ()
+func.call @x2(%45) : (!pulse.port_group) -> ()
+func.call @x3(%49) : (!pulse.port_group) -> ()
+func.call @cx01(%34, %41) : (!pulse.port_group, !pulse.port_group) -> ()
+func.call @cx10(%41, %34) : (!pulse.port_group, !pulse.port_group) -> ()
+func.call @cx12(%41, %45) : (!pulse.port_group, !pulse.port_group) -> ()
 %50 = quir.constant #quir.angle<3.140000e+00 : !quir.angle<10>>
 %51 = quir.constant #quir.angle<1.070000e+00 : !quir.angle<10>>
 %52 = quir.constant #quir.angle<5.350000e-01 : !quir.angle<10>>
-call @rz0(%34, %50) : (!pulse.port_group, !quir.angle<10>) -> ()
-call @rz1(%41, %51) : (!pulse.port_group, !quir.angle<10>) -> ()
-call @sx0(%34) : (!pulse.port_group) -> ()
-call @sx1(%41) : (!pulse.port_group) -> ()
-call @sx2(%45) : (!pulse.port_group) -> ()
-call @sx3(%49) : (!pulse.port_group) -> ()
+func.call @rz0(%34, %50) : (!pulse.port_group, !quir.angle<10>) -> ()
+func.call @rz1(%41, %51) : (!pulse.port_group, !quir.angle<10>) -> ()
+func.call @sx0(%34) : (!pulse.port_group) -> ()
+func.call @sx1(%41) : (!pulse.port_group) -> ()
+func.call @sx2(%45) : (!pulse.port_group) -> ()
+func.call @sx3(%49) : (!pulse.port_group) -> ()
 %c0_i32 = arith.constant 0 : i32
 return %c0_i32 : i32
 }

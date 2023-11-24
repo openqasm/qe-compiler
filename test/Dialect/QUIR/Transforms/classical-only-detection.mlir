@@ -107,7 +107,7 @@ scf.if %cond2 {
 %cb1 = "oq3.cast"(%mres1) : (i1) -> !quir.cbit<1>
 oq3.declare_variable @c1 : !quir.cbit<1>
 oq3.variable_assign @c1 : !quir.cbit<1> = %cb1
-//%res2 = call @subroutine1(%ang1, %ang2, %q1, %q2) : (!quir.angle<20>, !quir.angle<20>, !quir.qubit<1>, !quir.qubit<1>) -> memref<1xi1>
+//%res2 = func.call @subroutine1(%ang1, %ang2, %q1, %q2) : (!quir.angle<20>, !quir.angle<20>, !quir.qubit<1>, !quir.qubit<1>) -> memref<1xi1>
 
 %c11 = arith.constant 0 : i1
 %c21 = arith.constant 1 : i1
