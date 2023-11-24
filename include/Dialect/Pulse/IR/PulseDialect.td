@@ -17,7 +17,9 @@
 #ifndef PULSE_DIALECT
 #define PULSE_DIALECT
 
+include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/OpBase.td"
+
 
 //===----------------------------------------------------------------------===//
 // Pulse dialect definition.
@@ -33,7 +35,9 @@ def PulseDialect : Dialect {
     }];
     let cppNamespace = "::mlir::pulse";
 
-    let useDefaultAttributePrinterParser = 1;
+    // TODO: Uncomment when attributes are added
+    // that require a default printer parser
+    //let useDefaultAttributePrinterParser = 1;
     let useDefaultTypePrinterParser = 1;
 }
 
@@ -43,6 +47,15 @@ def PulseDialect : Dialect {
 
 class Pulse_Op<string mnemonic, list<Trait> traits = []> :
         Op<PulseDialect, mnemonic, traits>;
+
+//===----------------------------------------------------------------------===//
+// Base Pulse attribute definition.
+//===----------------------------------------------------------------------===//
+
+class Pulse_Attr<string name, string attrMnemonic, list<Trait> traits = []>
+    : AttrDef<PulseDialect, name, traits> {
+  let mnemonic = attrMnemonic;
+}
 
 include "PulseTypes.td"
 include "PulseOps.td"

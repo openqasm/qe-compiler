@@ -18,10 +18,12 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "Dialect/Pulse/IR/PulseAttributes.h"
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/Pulse/IR/PulseTypes.h"
 
+#include "mlir/IR/Attributes.h"
 #include "mlir/IR/Dialect.h"
 
 #include "llvm/ADT/TypeSwitch.h"
@@ -31,6 +33,9 @@
 
 #define GET_TYPEDEF_CLASSES
 #include "Dialect/Pulse/IR/PulseTypes.cpp.inc"
+
+#define GET_ATTRDEF_CLASSES
+#include "Dialect/Pulse/IR/PulseAttributes.cpp.inc"
 
 namespace mlir::pulse {
 
@@ -44,6 +49,11 @@ void pulse::PulseDialect::initialize() {
   addOperations<
 #define GET_OP_LIST
 #include "Dialect/Pulse/IR/Pulse.cpp.inc"
+      >();
+
+  addAttributes<
+#define GET_ATTRDEF_LIST
+#include "Dialect/Pulse/IR/PulseAttributes.cpp.inc"
       >();
 }
 

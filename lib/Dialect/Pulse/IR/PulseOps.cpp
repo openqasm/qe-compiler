@@ -336,6 +336,44 @@ LogicalResult SequenceOp::verify() {
   return success();
 }
 
+SequenceOp SequenceOp::create(Location location, StringRef name,
+                            FunctionType type, ArrayRef<NamedAttribute> attrs) {
+  OpBuilder builder(location->getContext());
+  OperationState state(location, getOperationName());
+  SequenceOp::build(builder, state, name, type, attrs);
+  return cast<SequenceOp>(Operation::create(state));
+}
+SequenceOp SequenceOp::create(Location location, StringRef name,
+                            FunctionType type,
+                            Operation::dialect_attr_range attrs) {
+  SmallVector<NamedAttribute, 8> attrRef(attrs);
+  return create(location, name, type, attrRef);
+}
+SequenceOp SequenceOp::create(Location location, StringRef name,
+                            FunctionType type, ArrayRef<NamedAttribute> attrs,
+                            ArrayRef<DictionaryAttr> argAttrs) {
+  SequenceOp circ = create(location, name, type, attrs);
+  circ.setAllArgAttrs(argAttrs);
+  return circ;
+}
+
+void SequenceOp::build(OpBuilder &builder, OperationState &state, StringRef name,
+                      FunctionType type, ArrayRef<NamedAttribute> attrs,
+                      ArrayRef<DictionaryAttr> argAttrs) {
+  state.addAttribute(SymbolTable::getSymbolAttrName(),
+                     builder.getStringAttr(name));
+  state.addAttribute(getFunctionTypeAttrName(state.name), TypeAttr::get(type));
+  state.attributes.append(attrs.begin(), attrs.end());
+  state.addRegion();
+
+  if (argAttrs.empty())
+    return;
+  assert(type.getNumInputs() == argAttrs.size());
+  function_interface_impl::addArgAndResultAttrs(
+      builder, state, argAttrs, /*resultAttrs=*/std::nullopt,
+      getArgAttrsAttrName(state.name), getResAttrsAttrName(state.name));
+}
+
 /// Clone the internal blocks and attributes from this sequence to the
 /// destination sequence.
 void SequenceOp::cloneInto(SequenceOp dest, IRMapping &mapper) {

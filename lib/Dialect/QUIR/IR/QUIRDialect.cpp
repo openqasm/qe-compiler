@@ -137,10 +137,4 @@ LogicalResult AngleType::verify(function_ref<InFlightDiagnostic()> emitError,
   return success();
 }
 
-/// Materialize a constant, can be any buildable type, used by canonicalization
-ConstantOp ConstantOp::materialize(OpBuilder &builder, Attribute value,
-                                            Type type, Location loc) {
-  return builder.create<quir::ConstantOp>(loc, cast<TypedAttr>(value));
-}
-
 } // namespace mlir::quir

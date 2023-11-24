@@ -321,9 +321,7 @@ void VariableEliminationPass::runOnOperation() {
   auto &postDomInfo = getAnalysis<PostDominanceInfo>();
 
   WalkResult result = getOperation()->walk([&](mlir::func::FuncOp func) {
-    // TODO LLVM 15+: Use MLIR's builtin affineScalarReplace, which is fixed
-    // there
-    mlir::affineScalarReplaceCopy(func, domInfo, postDomInfo);
+    mlir::affine::affineScalarReplace(func, domInfo, postDomInfo);
 
     return WalkResult::advance();
   });

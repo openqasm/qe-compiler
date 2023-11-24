@@ -168,3 +168,12 @@ ParameterType ParameterLoadOp::getInitialValue(
 //===----------------------------------------------------------------------===//
 // ParallelEndOp
 //===----------------------------------------------------------------------===//
+
+mlir::ParseResult ParallelEndOp::parse(mlir::OpAsmParser &parser,
+                                 mlir::OperationState &result) {
+  return mlir::success();
+}
+
+void ParallelEndOp::print(mlir::OpAsmPrinter &printer) {
+    printer << getOperationName();
+}

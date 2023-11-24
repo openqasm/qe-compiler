@@ -197,6 +197,24 @@ LogicalResult CallDefcalMeasureOp::verify() {
   }
 }
 
+mlir::OpFoldResult ConstantOp::fold(FoldAdaptor adaptor) {
+  assert(adaptor.getOperands().empty() && "constant has no operands");
+  return getValue();
+}
+
+/// Materialize a constant, can be any buildable type, used by canonicalization
+ConstantOp ConstantOp::materialize(OpBuilder &builder, Attribute value,
+                                            Type type, Location loc) {
+  return builder.create<quir::ConstantOp>(loc, cast<TypedAttr>(value));
+}
+
+/// Materialize a constant, can be any buildable type, used by canonicalization
+Operation *QUIRDialect::materializeConstant(OpBuilder &builder, Attribute value,
+                                            Type type, Location loc) {
+  return builder.create<quir::ConstantOp>(loc, type, cast<TypedAttr>(value));
+}
+
+
 //===----------------------------------------------------------------------===//
 // CallDefcalMeasureOp
 //===----------------------------------------------------------------------===//

@@ -13,4 +13,8 @@
 add_mlir_dialect(Pulse pulse)
 add_mlir_doc(Pulse PulseDialect generated/Dialect/Pulse/ -gen-dialect-doc -dialect=pulse)
 
+set(LLVM_TARGET_DEFINITIONS Pulse.td)
+mlir_tablegen(PulseAttributes.h.inc -gen-attrdef-decls -attrdefs-dialect=pulse)
+mlir_tablegen(PulseAttributes.cpp.inc -gen-attrdef-defs -attrdefs-dialect=pulse)
+
 add_mlir_interface(PulseInterfaces)

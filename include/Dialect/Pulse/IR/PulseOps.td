@@ -651,8 +651,6 @@ def Pulse_CallSequenceOp : Pulse_Op<"call_sequence", [CallOpInterface, MemRefsNo
             (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
         }
     }];
-
-    let hasVerifier = 1;
 }
 
 //===----------------------------------------------------------------------===//
