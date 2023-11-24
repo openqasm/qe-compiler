@@ -51,8 +51,13 @@ bool moveUsers(Operation *curOp, MoveListVec &moveList) {
 
 // This pattern matches on two CallCircuitOps separated by non-quantum ops
 struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
-  explicit CircuitAndCircuitPattern(MLIRContext *ctx)
-      : OpRewritePattern<CallCircuitOp>(ctx) {}
+  explicit CircuitAndCircuitPattern(MLIRContext *ctx,
+                                    llvm::StringMap<Operation *> &symbolMap)
+      : OpRewritePattern<CallCircuitOp>(ctx) {
+    _symbolMap = &symbolMap;
+  }
+
+  llvm::StringMap<Operation *> *_symbolMap;
 
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
@@ -140,7 +145,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
       return failure();
 
     return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
-                                                nextCallCircuitOp);
+                                                nextCallCircuitOp, _symbolMap);
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
 
@@ -219,22 +224,25 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
 
 } // end anonymous namespace
 
-CircuitOp MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp) {
-  auto circuitAttr = callCircuitOp->getAttrOfType<FlatSymbolRefAttr>("callee");
-  assert(circuitAttr && "Requires a 'callee' symbol reference attribute");
+CircuitOp
+MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
+                                llvm::StringMap<Operation *> *symbolMap) {
+  // look for func def match
+  assert(symbolMap && "a valid symbolMap pointer must be provided");
+  auto search = symbolMap->find(callCircuitOp.getCallee());
 
-  auto circuitOp = SymbolTable::lookupNearestSymbolFrom<CircuitOp>(
-      callCircuitOp, circuitAttr);
+  assert(search != symbolMap->end() && "matching circuit not found");
+
+  auto circuitOp = dyn_cast<CircuitOp>(search->second);
   assert(circuitOp && "matching circuit not found");
   return circuitOp;
 }
 
-LogicalResult
-MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
-                                     CallCircuitOp callCircuitOp,
-                                     CallCircuitOp nextCallCircuitOp) {
-  auto circuitOp = getCircuitOp(callCircuitOp);
-  auto nextCircuitOp = getCircuitOp(nextCallCircuitOp);
+LogicalResult MergeCircuitsPass::mergeCallCircuits(
+    PatternRewriter &rewriter, CallCircuitOp callCircuitOp,
+    CallCircuitOp nextCallCircuitOp, llvm::StringMap<Operation *> *symbolMap) {
+  auto circuitOp = getCircuitOp(callCircuitOp, symbolMap);
+  auto nextCircuitOp = getCircuitOp(nextCallCircuitOp, symbolMap);
 
   rewriter.setInsertionPointAfter(nextCircuitOp);
 
@@ -364,14 +372,24 @@ MergeCircuitsPass::mergeCallCircuits(PatternRewriter &rewriter,
   rewriter.replaceOp(nextCallCircuitOp,
                      ResultRange(iterSep, newCallOp.result_end()));
 
+  // add new name to symbolMap
+  // do not remove old in case the are multiple calls
+  (*symbolMap)[newName] = newCircuitOp.getOperation();
+
   return success();
 }
 
 void MergeCircuitsPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
+  llvm::StringMap<Operation *> circuitOpsMap;
+
+  moduleOperation->walk([&](CircuitOp circuitOp) {
+    circuitOpsMap[circuitOp.getSymName()] = circuitOp.getOperation();
+  });
+
   RewritePatternSet patterns(&getContext());
-  patterns.add<CircuitAndCircuitPattern>(&getContext());
+  patterns.add<CircuitAndCircuitPattern>(&getContext(), circuitOpsMap);
   patterns.add<BarrierAndCircuitPattern>(&getContext());
   patterns.add<CircuitAndBarrierPattern>(&getContext());
 
