@@ -539,8 +539,8 @@ mlir::ParseResult SwitchOp::parse(mlir::OpAsmParser &parser,
   Builder &builder = parser.getBuilder();
   OpAsmParser::UnresolvedOperand flag;
   Region *defaultRegion;
-  SmallVector<uint32_t> getCaseValues;
-  ElementsAttr getCaseValuesAttr;
+  SmallVector<uint32_t> caseValues;
+  ElementsAttr caseValuesAttr;
 
   if (parser.parseOperand(flag) ||
       parser.resolveOperand(flag, builder.getI32Type(), result.operands))
@@ -567,7 +567,7 @@ mlir::ParseResult SwitchOp::parse(mlir::OpAsmParser &parser,
     if (!integerParseResult.has_value() || integerParseResult.value())
       // getValue() returns the success() or failure()
       return failure();
-    getCaseValues.push_back(caseVal);
+    caseValues.push_back(caseVal);
 
     Region *caseRegion = result.addRegion();
     if (parser.parseColon() ||
@@ -577,13 +577,13 @@ mlir::ParseResult SwitchOp::parse(mlir::OpAsmParser &parser,
                                      result.location);
   }
 
-  if (!getCaseValues.empty())
-    getCaseValuesAttr = DenseIntElementsAttr::get(
-        VectorType::get(static_cast<int64_t>(getCaseValues.size()),
+  if (!caseValues.empty())
+    caseValuesAttr = DenseIntElementsAttr::get(
+        VectorType::get(static_cast<int64_t>(caseValues.size()),
                         builder.getIntegerType(32)),
-        getCaseValues);
-  if (getCaseValuesAttr)
-    result.addAttribute("getCaseValues", getCaseValuesAttr);
+        caseValues);
+  if (caseValuesAttr)
+    result.addAttribute("caseValues", caseValuesAttr);
 
   // Parse the optional attribute list.
   if (parser.parseOptionalAttrDict(result.attributes))
@@ -596,7 +596,7 @@ void SwitchOp::print(mlir::OpAsmPrinter &printer) {
 
   printer << " " << getFlag();
   if (!getResultTypes().empty()) {
-    printer << " -> (" << getResultTypes() << ")";
+    printer << " -> (" << getResultTypes().getTypes() << ")";
     // Print yield explicitly if the op defines values.
     printBlockTerminators = true;
   }

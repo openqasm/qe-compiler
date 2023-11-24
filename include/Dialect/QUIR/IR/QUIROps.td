@@ -752,6 +752,8 @@ def QUIR_ReturnOp : QUIR_Op<"return", [HasParent<"CircuitOp">, Pure, Terminator,
         let hasVerifier = 1;
 }
 
+// TODO: Usage should be replaced with https://github.com/llvm/llvm-project/blob/cf1bde33423da5eb9b7dc95daac4aada3167de3c/mlir/include/mlir/Dialect/ControlFlow/IR/ControlFlowOps.td#L229
+// now that we are on llvm 15+
 def QUIR_SwitchOp : QUIR_Op<"switch",
     [DeclareOpInterfaceMethods<RegionBranchOpInterface>,
      RecursiveMemoryEffects,
