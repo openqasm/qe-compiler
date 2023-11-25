@@ -9,37 +9,31 @@ bit c;
 // MLIR-CIRCUITS:   quir.circuit @circuit_0(%{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.duration<dt>) {
 // MLIR-CIRCUITS:     quir.delay %{{.*}}, (%{{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:     quir.call_gate @x(%{{.*}}) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS:     %cst = constant unit
 // MLIR-CIRCUITS:     quir.return
 // MLIR-CIRCUITS:   }
 // MLIR-CIRCUITS:   quir.circuit @circuit_1(%{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.duration<dt>) {
 // MLIR-CIRCUITS:     quir.delay %{{.*}}, (%{{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:     quir.call_gate @x(%{{.*}}) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS:     %cst = constant unit
 // MLIR-CIRCUITS:     quir.return
 // MLIR-CIRCUITS:   }
 // MLIR-CIRCUITS:   quir.circuit @circuit_2(%{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.duration<dt>) {
 // MLIR-CIRCUITS:     quir.delay %{{.*}}, (%{{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:     quir.call_gate @x(%{{.*}}) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS:     %cst = constant unit
 // MLIR-CIRCUITS:     quir.return
 // MLIR-CIRCUITS:   }
 // MLIR-CIRCUITS:   quir.circuit @circuit_3(%{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.duration<dt>) {
 // MLIR-CIRCUITS:     quir.delay %{{.*}}, (%{{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:     quir.call_gate @x(%{{.*}}) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS:     %cst = constant unit
 // MLIR-CIRCUITS:     quir.return
 // MLIR-CIRCUITS:   }
 // MLIR-CIRCUITS:   quir.circuit @circuit_4(%{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.duration<dt>) {
 // MLIR-CIRCUITS:     quir.delay %{{.*}}, (%{{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:     quir.call_gate @x(%{{.*}}) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS:     %cst = constant unit
 // MLIR-CIRCUITS:     quir.return
 // MLIR-CIRCUITS:   }
 // MLIR-CIRCUITS:   quir.circuit @circuit_5(%{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.duration<dt>) {
 // MLIR-CIRCUITS:     quir.delay %{{.*}}, (%{{.*}}) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS:     quir.call_gate @x(%{{.*}}) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS:     %cst = constant unit
 // MLIR-CIRCUITS:     quir.return
 // MLIR-CIRCUITS:   }
 

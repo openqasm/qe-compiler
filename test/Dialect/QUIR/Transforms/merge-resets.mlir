@@ -101,7 +101,6 @@ module  {
       quir.reset %1 : !quir.qubit<1>
       // CHECK: quir.reset [[QUBIT0]] : !quir.qubit<1>
       quir.call_gate @x(%4) : (!quir.qubit<1>) -> ()
-      %cst = constant unit
       quir.reset %2 : !quir.qubit<1>
       // CHECK: quir.reset [[QUBIT1]] : !quir.qubit<1>
       // TOPO: quir.reset [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>

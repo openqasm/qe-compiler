@@ -36,7 +36,6 @@ bit is_excited;
 
 // MLIR-CIRCUITS: quir.circuit @circuit_1(%arg0: !quir.qubit<1>) -> i1 {
 // MLIR-CIRCUITS: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: %cst = constant unit
 // MLIR-CIRCUITS: %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
 // MLIR-CIRCUITS: quir.return %0 : i1
 
@@ -57,7 +56,6 @@ while (n != 0) {
     // AST-PRETTY: ops=[
     // AST-PRETTY: UGateOpNode(params=[AngleNode(value=1.57079632679000003037, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=3.14159265359000006157, bits=64)], qubits=[], qcparams=[q])
     // MLIR-NO-CIRCUITS: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-    // MLIR-NO-CIRCUITS: %cst = constant unit
     h $0;
     // MLIR-NO-CIRCUITS: %2 = quir.measure(%0) : (!quir.qubit<1>) -> i1
     // MLIR-CIRCUITS: %2 = quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> i1

@@ -46,7 +46,6 @@ module {
     scf.if %5 {
       quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
       oq3.cbit_assign_bit @b<1> [0] : i1 = %5
-      %cst = constant unit
     }
 
     // CHECK: [[LOAD:%.*]] = affine.load [[MEMREF]]
@@ -58,7 +57,6 @@ module {
     // CHECK: scf.if [[LOAD]]
     scf.if %12 {
       quir.call_gate @x(%2) : (!quir.qubit<1>) -> ()
-      %cst = constant unit
     }
 
     return %11 : i32

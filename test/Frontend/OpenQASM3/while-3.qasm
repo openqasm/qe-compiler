@@ -52,7 +52,6 @@ while (i != 0) {
         // AST-PRETTY: ]
         // AST-PRETTY: )
         // MLIR-NO-CIRCUITS:         quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-        // MLIR-NO-CIRCUITS:         %cst = constant unit
         // MLIR-CIRCUITS: quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> ()
         // MLIR:         [[CONSTANT1:%c0_i32_.]] = arith.constant 0 : i32
         // MLIR:         oq3.variable_assign @j : i32 = [[CONSTANT1]]
