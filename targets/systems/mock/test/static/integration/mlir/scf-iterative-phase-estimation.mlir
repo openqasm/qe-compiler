@@ -49,8 +49,8 @@ func.func @defcalPhase_qq(%angle : !quir.angle, %qq : !quir.qubit<1>) -> () attr
 //     phase(pi) %1;
 // }
 func.func @defcalCR90M_q0_q1(%q0 : !quir.qubit<1> {quir.physicalId = 0 : i32}, %q1 : !quir.qubit<1> {quir.physicalId = 1 : i32}) -> () attributes {quir.orig_func_name = "defcalCR90M"} {
-    %npi = quir.constant #quir.angle<-1.0  : !quir.angle<20>>
-    %pi = quir.constant #quir.angle<1.0  : !quir.angle<20>>
+    %npi = quir.constant #quir.angle<-1.0> : !quir.angle<20>
+    %pi = quir.constant #quir.angle<1.0> : !quir.angle<20>
     "quir.call_gate"(%npi, %q1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     "quir.call_gate"(%q0, %q1) {callee = @defcalCR90P} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     "quir.call_gate"(%pi, %q1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
@@ -62,8 +62,8 @@ func.func @defcalCR90M_q0_q1(%q0 : !quir.qubit<1> {quir.physicalId = 0 : i32}, %
 //     phase(-pi) %q;
 // }
 func.func @gateX90P_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateX90P"} {
-    %npi = quir.constant #quir.angle<-1.0  : !quir.angle<20>>
-    %pi = quir.constant #quir.angle<1.0  : !quir.angle<20>>
+    %npi = quir.constant #quir.angle<-1.0> : !quir.angle<20>
+    %pi = quir.constant #quir.angle<1.0> : !quir.angle<20>
     "quir.call_gate"(%pi, %qq_1)  {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     "quir.call_gate"(%qq_1)       {callee = @defcalY90P}  : (!quir.qubit<1>) -> ()
     "quir.call_gate"(%npi, %qq_1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
@@ -83,7 +83,7 @@ func.func @gateXP_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_na
 //     y90p %q;
 // }
 func.func @gateH_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateH"} {
-    %pi = quir.constant #quir.angle<1.0  : !quir.angle<20>>
+    %pi = quir.constant #quir.angle<1.0> : !quir.angle<20>
     "quir.call_gate"(%pi, %qq_1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     "quir.call_gate"(%qq_1) {callee = @defcalY90P} : (!quir.qubit<1>) -> ()
     return
@@ -100,7 +100,7 @@ func.func @gateH_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_nam
 //     cr90m %control, %target;
 // }
 func.func @gateCX_qq_qq(%ctrl : !quir.qubit<1>, %targ : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateCX"} {
-    %npi2 = quir.constant #quir.angle<-0.5  : !quir.angle<20>>
+    %npi2 = quir.constant #quir.angle<-0.5> : !quir.angle<20>
     "quir.call_gate"(%ctrl) {callee = @gateXP} : (!quir.qubit<1>) -> ()
     "quir.call_gate"(%targ) {callee = @gateX90P} : (!quir.qubit<1>) -> ()
     "quir.call_gate"(%ctrl, %targ) {callee = @defcalCR90P} : (!quir.qubit<1>, !quir.qubit<1>) -> ()

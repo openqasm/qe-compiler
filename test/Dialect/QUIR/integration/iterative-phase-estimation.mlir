@@ -51,8 +51,8 @@ module {
     //     phase(pi) %1;
     // }
     func.func @defcalCR90M_q0_q1(%q0 : !quir.qubit<1> {quir.physicalId = 0 : i32}, %q1 : !quir.qubit<1> {quir.physicalId = 1 : i32}) -> () attributes {quir.orig_func_name = "defcalCR90M"} {
-        %npi = quir.constant #quir.angle<-1.0  : !quir.angle<20>>
-        %pi = quir.constant #quir.angle<1.0  : !quir.angle<20>>
+        %npi = quir.constant #quir.angle<-1.0> : !quir.angle<20>
+        %pi = quir.constant #quir.angle<1.0> : !quir.angle<20>
         "quir.call_gate"(%npi, %q1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
         "quir.call_gate"(%q0, %q1) {callee = @defcalCR90P} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
         "quir.call_gate"(%pi, %q1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
@@ -64,8 +64,8 @@ module {
     //     phase(-pi) %q;
     // }
     func.func @gateX90P_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateX90P"} {
-        %npi = quir.constant #quir.angle<-1.0  : !quir.angle<20>>
-        %pi = quir.constant #quir.angle<1.0  : !quir.angle<20>>
+        %npi = quir.constant #quir.angle<-1.0> : !quir.angle<20>
+        %pi = quir.constant #quir.angle<1.0> : !quir.angle<20>
         "quir.call_gate"(%pi, %qq_1)  {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
         "quir.call_gate"(%qq_1)       {callee = @defcalY90P}  : (!quir.qubit<1>) -> ()
         "quir.call_gate"(%npi, %qq_1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
@@ -85,7 +85,7 @@ module {
     //     y90p %q;
     // }
     func.func @gateH_qq(%qq_1 : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateH"} {
-        %pi = quir.constant #quir.angle<1.0  : !quir.angle<20>>
+        %pi = quir.constant #quir.angle<1.0> : !quir.angle<20>
         "quir.call_gate"(%pi, %qq_1) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
         "quir.call_gate"(%qq_1) {callee = @defcalY90P} : (!quir.qubit<1>) -> ()
         return
@@ -102,7 +102,7 @@ module {
     //     cr90m %control, %target;
     // }
     func.func @gateCX_qq_qq(%ctrl : !quir.qubit<1>, %targ : !quir.qubit<1>) -> () attributes {quir.orig_func_name = "gateCX"} {
-        %npi2 = quir.constant #quir.angle<-0.5  : !quir.angle<20>>
+        %npi2 = quir.constant #quir.angle<-0.5> : !quir.angle<20>
         "quir.call_gate"(%ctrl) {callee = @gateXP} : (!quir.qubit<1>) -> ()
         "quir.call_gate"(%targ) {callee = @gateX90P} : (!quir.qubit<1>) -> ()
         "quir.call_gate"(%ctrl, %targ) {callee = @defcalCR90P} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
@@ -124,7 +124,7 @@ module {
         return %res : i1
     }
     // angle[3] c = 0;
-    %npi2 = quir.constant #quir.angle<0.0  : !quir.angle<3>>
+    %npi2 = quir.constant #quir.angle<0.0> : !quir.angle<3>
     // reset %0;
     // reset %1;
     %q0_0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
@@ -145,13 +145,13 @@ module {
     // cx %0, %1;
     "quir.call_gate"(%q0_0, %q1_0) {callee = @gateCX} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     // phase(1.8125*pi) %1;
-    %ang1 = quir.constant #quir.angle<1.1825  : !quir.angle<20>>
+    %ang1 = quir.constant #quir.angle<1.1825> : !quir.angle<20>
     "quir.call_gate"(%ang1, %q1_0) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     // cx %0, %1;
     "quir.call_gate"(%q0_0, %q1_0) {callee = @gateCX} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     // phase(0.1875*pi) %1;
     // phase(0.1875*pi) %0;
-    %ang2 = quir.constant #quir.angle<0.1875  : !quir.angle<20>>
+    %ang2 = quir.constant #quir.angle<0.1875> : !quir.angle<20>
     "quir.call_gate"(%ang1, %q1_0) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     "quir.call_gate"(%ang1, %q0_0) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     // h %0;
@@ -176,19 +176,19 @@ module {
     // cx %0, %1;
     "quir.call_gate"(%q0_0, %q1_0) {callee = @gateCX} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     // phase(1.625*pi) %1;  // mod 2*pi
-    %ang3 = quir.constant #quir.angle<1.625  : !quir.angle<20>>
+    %ang3 = quir.constant #quir.angle<1.625> : !quir.angle<20>
     "quir.call_gate"(%ang3, %q1_0) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     // cx %0, %1;
     "quir.call_gate"(%q0_0, %q1_0) {callee = @gateCX} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     // phase(0.375*pi) %1;
-    %ang4 = quir.constant #quir.angle<0.375  : !quir.angle<20>>
+    %ang4 = quir.constant #quir.angle<0.375> : !quir.angle<20>
     "quir.call_gate"(%ang4, %q1_0) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
     // angle[32] temp_1 = 0.375*pi;
     // temp_1 -= c;  // cast and do arithmetic mod 2 pi
-    %tmp_angle_1 = quir.constant #quir.angle<0.375  : !quir.angle<32>>
+    %tmp_angle_1 = quir.constant #quir.angle<0.375> : !quir.angle<32>
     %cast_c = "oq3.cast"(%creg_1) : (!quir.cbit<3>) -> !quir.angle<32>
     // Math Ops resulting in !quir.angle<32>
-    %tmp_angle_2 = quir.constant #quir.angle<0.0  : !quir.angle<32>>
+    %tmp_angle_2 = quir.constant #quir.angle<0.0> : !quir.angle<32>
     %tmp_angle_2_cast = "oq3.cast"(%tmp_angle_2) : (!quir.angle<32>) -> !quir.angle<20>
     // phase(temp_1) %0;
     "quir.call_gate"(%tmp_angle_2_cast, %q1_0) {callee = @defcalPhase} : (!quir.angle<20>, !quir.qubit<1>) -> ()
