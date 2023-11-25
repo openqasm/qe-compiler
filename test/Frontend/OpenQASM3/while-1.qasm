@@ -66,15 +66,14 @@ while (n != 0) {
     // MLIR: scf.if %4 {
     if (is_excited) {
         // MLIR-NO-CIRCUITS:     quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-        // MLIR-NO-CIRCUITS:     %cst_1 = constant unit
         // MLIR-CIRCUITS: quir.call_circuit @circuit_2(%0) : (!quir.qubit<1>) -> ()
         // MLIR: }
         h $0;
     }
     // error: Binary operation ASTOpTypeSub not supported yet.
     // n = n - 1;
-    // MLIR: %c0_i32_0 = arith.constant 0 : i32
-    // MLIR: oq3.variable_assign @n : i32 = %c0_i32_0
+    // MLIR: %c0_i32_1 = arith.constant 0 : i32
+    // MLIR: oq3.variable_assign @n : i32 = %c0_i32_1
     n = 0;  // workaround for n = n - 1
     // MLIR: scf.yield
 }

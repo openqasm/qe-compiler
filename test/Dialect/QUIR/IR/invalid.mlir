@@ -39,12 +39,13 @@ func.func @call_circuit_call_does_not_match_getOperands(){
 
 // -----
 
+// expected-note@below {{return type declared here}}
 quir.circuit @circuit_1() -> i1 {
+	// expected-error@below {{expected 1 result operands}}
 	quir.return
 }
 
 func.func @call_circuit_call_does_not_match_results(){
-	// expected-error@+1 {{'quir.call_circuit' op incorrect number of results for the callee circuit}}
 	quir.call_circuit @circuit_1 () : () -> ()
 	return
 }
@@ -65,14 +66,14 @@ func.func @call_circuit_call_operand_types_do_not_match(%arg1: i1){
 
 // -----
 
+// expected-note@below {{return type declared here}}
 quir.circuit @circuit_1() -> i32 {
+	// expected-error@below {{expected 1 result operands}}
 	quir.return
 }
 
 func.func @call_circuit_call_result_types_do_not_match() {
-	// expected-error@below {{'quir.call_circuit' op result type mismatch at index 0}}
-	// expected-note@below {{op result types: 'i1'}}
-	// expected-note@below {{function result types: 'i32'}}
 	quir.call_circuit @circuit_1 () : () -> (i1)
 	return
 }
+
