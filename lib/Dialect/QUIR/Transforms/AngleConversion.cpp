@@ -60,7 +60,7 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
         if (value.getType() != funcType) {
           APFloat constVal = declOp.getAngleValueFromConstant();
           declOp.setValueAttr(
-              AngleAttr::get(callGateOp.getContext(), funcType, constVal));
+              AngleAttr::get(callGateOp.getContext(), funcType.dyn_cast<AngleType>(), constVal));
           value.setType(funcType);
         }
       }

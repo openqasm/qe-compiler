@@ -30,19 +30,19 @@ def QUIR_AngleAttr : QUIR_Attr<"Angle", "angle", [TypedAttrInterface]> {
     range (0,2*pi]
   }];
 
-  let parameters = (ins AttributeSelfTypeParameter<"">:$type, "APFloat":$value);
+  let parameters = (ins AttributeSelfTypeParameter<"", "AngleType">:$type, "APFloat":$value);
 
   let builders = [
-    AttrBuilderWithInferredContext<(ins "Type":$type,
+    AttrBuilderWithInferredContext<(ins "AngleType":$type,
                                         "const APFloat &":$value), [{
       return $_get(type.getContext(), type, value);
     }]>,
-    AttrBuilder<(ins "Type":$type, "const APFloat &":$value), [{
+    AttrBuilder<(ins "AngleType":$type, "const APFloat &":$value), [{
       return $_get(context, type, value);
     }]>
   ];
 
-  let assemblyFormat = "`<` $value `:` $type `>`";
+  let assemblyFormat = "`<` $value `>`";
   let skipDefaultBuilders = 1;
 }
 
