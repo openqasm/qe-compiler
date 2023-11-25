@@ -31,7 +31,7 @@ module {
   }
   func.func @main() -> i32 {
     %c0_i32 = arith.constant 0 : i32
-    %angle = quir.constant #quir.angle<1.500000e+00 : !quir.angle<64>>
+    %angle = quir.constant #quir.angle<1.500000e+00> : !quir.angle<64>
 
     // CHECK: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32}
     // CHECK: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32}

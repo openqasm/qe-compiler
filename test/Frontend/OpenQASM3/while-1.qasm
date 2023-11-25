@@ -30,7 +30,7 @@ bit is_excited;
 // MLIR-CIRCUITS: return
 
 // MLIR-CIRCUITS: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) {
-// MLIR-CIRCUITS: %angle = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
+// MLIR-CIRCUITS: %angle = quir.constant #quir.angle<1.57079632679> : !quir.angle<64>
 // MLIR-CIRCUITS: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.return
 

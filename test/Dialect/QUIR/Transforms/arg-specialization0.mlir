@@ -22,13 +22,13 @@ module {
 
     func private @proto (%qa1 : !quir.qubit<1>) -> ()
     func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
-        %zero = quir.constant #quir.angle<0.0 : !quir.angle<1>>
+        %zero = quir.constant #quir.angle<0.0> : !quir.angle<1>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         "quir.call_gate"(%q1) {callee = @proto} : (!quir.qubit<1>) -> ()
         return
     }
     func.func @gateCall2(%q1 : !quir.qubit<1>, %lambda : !quir.angle) -> () {
-        %zero = quir.constant #quir.angle<0.0 : !quir.angle<20>>
+        %zero = quir.constant #quir.angle<0.0> : !quir.angle<20>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
@@ -64,7 +64,7 @@ module {
         %qc1 = quir.declare_qubit { id = 3 : i32 } : !quir.qubit<1>
         quir.reset %qc1 : !quir.qubit<1>
         %cb1 = oq3.variable_load @cb1 : !quir.cbit<1>
-        %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
+        %theta = quir.constant #quir.angle<0.1> : !quir.angle<1>
 
         // CHECK: quir.call_gate @gateCall1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         // MLIR: quir.call_gate @gateCall1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()

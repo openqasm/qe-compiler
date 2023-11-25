@@ -93,7 +93,7 @@ def QCS_BroadcastOp : QCS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
 
         Example:
         ```mlir
-        %angle1 = quir.constant #quir.angle<0.2 : !quir.angle<20>>
+        %angle1 = quir.constant #quir.angle<0.2> : !quir.angle<20>
         qcs.broadcast %angle1 : !quir.angle<20>
         ```
     }];

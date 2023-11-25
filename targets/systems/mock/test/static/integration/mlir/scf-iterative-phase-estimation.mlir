@@ -155,11 +155,11 @@ quir.call_gate @gateH(%q1) : (!quir.qubit<1>) -> ()
   quir.call_gate @gateH (%q0) : (!quir.qubit<1>) -> ()
   // cphase(power*3*pi/8) q, r;
   %pow_extended = "oq3.cast"(%pow_iter) : (i3) -> !quir.angle<20>
-  %ang_tpo8 = quir.constant #quir.angle<0.1875 : !quir.angle<20>>
+  %ang_tpo8 = quir.constant #quir.angle<0.1875> : !quir.angle<20>
   %phase_ang = oq3.angle_mul %pow_extended, %ang_tpo8 : !quir.angle<20>
   quir.call_gate @cphase(%q0, %q1, %phase_ang) : (!quir.qubit<1>, !quir.qubit<1>, !quir.angle<20>) -> ()
   // phase(-c) q;
-  %neg_ang = quir.constant #quir.angle<-1.0 : !quir.angle<20>>
+  %neg_ang = quir.constant #quir.angle<-1.0> : !quir.angle<20>
   %ang_c = oq3.variable_load @c : !quir.cbit<3>
   %ang_iter_extended = "oq3.cast"(%ang_c) : (!quir.cbit<3>) -> !quir.angle<20>
   %neg_ang_mul = oq3.angle_mul %neg_ang, %ang_iter_extended : !quir.angle<20>

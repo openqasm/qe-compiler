@@ -34,7 +34,7 @@ func.func @sub2(%q0 : !quir.qubit<1>, %q1 : !quir.qubit<1>, %a1 : !quir.angle<20
 func.func @main() -> i32 {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
-  %a1 = quir.constant #quir.angle<3.14159 : !quir.angle<20>>
+  %a1 = quir.constant #quir.angle<3.14159> : !quir.angle<20>
   quir.call_subroutine @sub1(%q0) : (!quir.qubit<1>) -> ()
   quir.call_subroutine @sub1(%q1) : (!quir.qubit<1>) -> ()
   quir.call_subroutine @sub2(%q0, %q1, %a1) : (!quir.qubit<1>, !quir.qubit<1>, !quir.angle<20>) -> ()

@@ -44,7 +44,7 @@ func.func @defcalMeasure_q0(%q1: !quir.qubit<1> {quir.physicalId = 0 : i32}, %ph
 
 func.func @main () -> i32 {
   %q1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
-  %ang = quir.constant #quir.angle<0.1 : !quir.angle<20>>
+  %ang = quir.constant #quir.angle<0.1> : !quir.angle<20>
   %ub = arith.constant 10 : index
   // CHECK: quir.call_subroutine @"subroutine1_!quir.qubit<1>_!quir.angle<20>_index"(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()
   quir.call_subroutine @subroutine1(%q1, %ang, %ub) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()
@@ -58,7 +58,7 @@ func.func @main () -> i32 {
     quir.call_subroutine @subroutine1(%q1, %ang, %ub) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()
     %true = arith.constant true
     scf.if %true {
-      %ang2 = quir.constant #quir.angle<0.2 : !quir.angle<10>>
+      %ang2 = quir.constant #quir.angle<0.2> : !quir.angle<10>
       // CHECK: quir.call_defcal_gate @"defcalPhase_q0_!quir.angle<10>_!quir.qubit<1>"(%{{.*}}, %{{.*}}) : (!quir.angle<10>, !quir.qubit<1>) -> ()
       quir.call_defcal_gate @defcalPhase_q0(%ang2, %q1) : (!quir.angle<10>, !quir.qubit<1>) -> ()
       // CHECK: %{{.*}} = quir.call_defcal_measure @"defcalMeasure_q0_!quir.qubit<1>_!quir.angle<10>"(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<10>) -> i1

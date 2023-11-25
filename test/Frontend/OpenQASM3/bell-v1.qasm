@@ -32,14 +32,14 @@ OPENQASM 3.0;
 // AST-PRETTY: ]
 // AST-PRETTY: )
 // MLIR: func.func @h(%arg0: !quir.qubit<1>) {
-// MLIR-NO-CIRCUITS: [[a0:%angle[_0-9]*]] = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS: [[a0:%angle[_0-9]*]] = quir.constant #quir.angle<1.57079632679> : !quir.angle<64>
 // MLIR-NO-CIRCUITS: quir.builtin_U %arg0, [[a0]], {{.*}}, {{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.call_circuit @circuit_0(%arg0) : (!quir.qubit<1>) -> ()
 // MLIR: return
 // MLIR-CIRCUITS: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) {
-// MLIR-CIRCUITS: [[a0:%angle[_0-9]*]] = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
-// MLIR-CIRCUITS: [[a1:%angle[_0-9]*]] = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR-CIRCUITS: [[a2:%angle[_0-9]*]] = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+// MLIR-CIRCUITS: [[a0:%angle[_0-9]*]] = quir.constant #quir.angle<1.57079632679> : !quir.angle<64>
+// MLIR-CIRCUITS: [[a1:%angle[_0-9]*]] = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// MLIR-CIRCUITS: [[a2:%angle[_0-9]*]] = quir.constant #quir.angle<3.1415926535900001> : !quir.angle<64>
 // MLIR-CIRCUITS: quir.builtin_U %arg0, [[a0]], [[a1]], [[a2]] : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.return
 // MLIR-CIRCUITS: quir.circuit @circuit_1(%arg0: !quir.qubit<1>, %arg1: !quir.qubit<1>) -> i1 {

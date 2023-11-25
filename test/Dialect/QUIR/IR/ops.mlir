@@ -19,9 +19,9 @@
 // CHECK-LABEL: quir.circuit @circuit1(%{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.angle<32>) -> i1 {
 quir.circuit @circuit1 (%q0 : !quir.qubit<1>, %q1 : !quir.qubit<1>, %theta: !quir.angle<32>) -> i1 {
 
-	%a0 = quir.constant #quir.angle<1.57079632679 : !quir.angle<20>>
-	%a1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-	%a2 = quir.constant #quir.angle<3.14159265359 : !quir.angle<20>>
+	%a0 = quir.constant #quir.angle<1.57079632679> : !quir.angle<20>
+	%a1 = quir.constant #quir.angle<0.0> : !quir.angle<20>
+	%a2 = quir.constant #quir.angle<3.14159265359> : !quir.angle<20>
 	quir.builtin_U %q0, %a0, %a1, %a2 : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>
 	quir.builtin_CX %q0, %q1 : !quir.qubit<1>, !quir.qubit<1>
 
@@ -66,10 +66,10 @@ func.func @quir_switch (%flag: i32) -> (i32) {
 
     // CHECK: %[[qb1:.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
     %qb1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
-    // CHECK: %[[theta:.*]] = quir.constant #quir.angle<1.000000e-01 : !quir.angle<1>>
-    %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
-    // CHECK: %[[twotheta:.*]] = quir.constant #quir.angle<2.000000e-01 : !quir.angle<1>>
-    %twotheta = quir.constant #quir.angle<0.2 : !quir.angle<1>>
+    // CHECK: %[[theta:.*]] = quir.constant #quir.angle<1.000000e-01> : !quir.angle<1>
+    %theta = quir.constant #quir.angle<0.1> : !quir.angle<1>
+    // CHECK: %[[twotheta:.*]] = quir.constant #quir.angle<2.000000e-01> : !quir.angle<1>
+    %twotheta = quir.constant #quir.angle<0.2> : !quir.angle<1>
 
     // CHECK: quir.switch %arg0
     quir.switch %flag {

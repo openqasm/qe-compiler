@@ -26,7 +26,7 @@ gate x q { }
 gate rz(phi) q { }
 
 input angle theta = 3.141;
-// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00 : !quir.angle<64>>
+// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00> : !quir.angle<64>
 
 x $2;
 rz(theta) $2;

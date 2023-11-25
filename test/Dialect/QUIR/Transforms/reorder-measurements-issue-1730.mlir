@@ -34,7 +34,7 @@ module {
   }
   func.func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
-    %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
+    %angle = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
     %0 = quir.declare_qubit {id = 12 : i32} : !quir.qubit<1>
     %1 = quir.declare_qubit {id = 16 : i32} : !quir.qubit<1>
     %2 = quir.declare_qubit {id = 22 : i32} : !quir.qubit<1>

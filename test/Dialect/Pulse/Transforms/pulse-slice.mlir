@@ -361,9 +361,9 @@ pulse.play(%35, %99) : (!pulse.port, !pulse.waveform)
 pulse.shift_phase(%4, %cst_157) : (!pulse.port, f64)
 %cst_158 = arith.constant 1.5707963267948966 : f64
 pulse.shift_phase(%5, %cst_158) : (!pulse.port, f64)
-%100 = quir.constant #quir.angle<3.140000e+00 : !quir.angle<10>>
-%101 = quir.constant #quir.angle<1.070000e+00 : !quir.angle<10>>
-%102 = quir.constant #quir.angle<5.350000e-01 : !quir.angle<10>>
+%100 = quir.constant #quir.angle<3.140000e+00> : !quir.angle<10>
+%101 = quir.constant #quir.angle<1.070000e+00> : !quir.angle<10>
+%102 = quir.constant #quir.angle<5.350000e-01> : !quir.angle<10>
 %cst_159 = arith.constant 0.000000e+00 : f64
 pulse.shift_phase(%0, %cst_159) : (!pulse.port, f64)
 %cst_160 = arith.constant 0.000000e+00 : f64

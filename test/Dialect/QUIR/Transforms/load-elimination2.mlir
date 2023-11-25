@@ -27,15 +27,15 @@ module {
 
   func.func @main() -> !quir.angle<64> {
 
-    // CHECK: [[CONST314_ANGLE:%.*]] = quir.constant {quir.inputParameter = "a"} #quir.angle<3.140000e+00 : !quir.angle<64>>
-    // REMOVE-UNUSED: [[CONST314_ANGLE:%.*]] = quir.constant #quir.angle<3.140000e+00 : !quir.angle<64>>
-    %angle = quir.constant #quir.angle<3.140000e+00 : !quir.angle<64>>
-    %angle2 = quir.constant #quir.angle<3.140000e+00 : !quir.angle<64>>
+    // CHECK: [[CONST314_ANGLE:%.*]] = quir.constant {quir.inputParameter = "a"} #quir.angle<3.140000e+00> : !quir.angle<64>
+    // REMOVE-UNUSED: [[CONST314_ANGLE:%.*]] = quir.constant #quir.angle<3.140000e+00> : !quir.angle<64>
+    %angle = quir.constant #quir.angle<3.140000e+00> : !quir.angle<64>
+    %angle2 = quir.constant #quir.angle<3.140000e+00> : !quir.angle<64>
 
     // REMOVE-UNUSED-NOT: oq3.variable_assign @a
     oq3.variable_assign @a : !quir.angle<64> = %angle
 
-    %angle_0 = quir.constant #quir.angle<1.000000e+00 : !quir.angle<64>>
+    %angle_0 = quir.constant #quir.angle<1.000000e+00> : !quir.angle<64>
     oq3.variable_assign @b : !quir.angle<64> = %angle_0
 
     // The load elimination pass should forward-propagate the initializer to the

@@ -21,7 +21,7 @@ gate h q {
 gate rz(phi) q { }
 
 input angle theta = 3.141;
-// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00 : !quir.angle<64>>
+// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00> : !quir.angle<64>
 
 qubit $0;
 int n = 1;
@@ -34,9 +34,9 @@ bit is_excited;
 // CHECK-NEXT: }
 
 // CHECK: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) {
-// CHECK-NEXT: %angle = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
-// CHECK-NEXT: %angle_0 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// CHECK-NEXT: %angle_1 = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+// CHECK-NEXT: %angle = quir.constant #quir.angle<1.57079632679> : !quir.angle<64>
+// CHECK-NEXT: %angle_0 = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// CHECK-NEXT: %angle_1 = quir.constant #quir.angle<3.1415926535900001> : !quir.angle<64>
 // CHECK-NEXT: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // CHECK-NEXT: quir.return
 // CHECK-NEXT: }

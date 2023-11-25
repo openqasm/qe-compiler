@@ -17,9 +17,9 @@
 //     U(1.57079632679, 0.0, 3.14159265359) q;
 // }
 func.func @h (%q : !quir.qubit<1>) -> () {
-    %a0 = quir.constant #quir.angle<1.57079632679 : !quir.angle<20>>
-    %a1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-    %a2 = quir.constant #quir.angle<3.14159265359 : !quir.angle<20>>
+    %a0 = quir.constant #quir.angle<1.57079632679> : !quir.angle<20>
+    %a1 = quir.constant #quir.angle<0.0> : !quir.angle<20>
+    %a2 = quir.constant #quir.angle<3.14159265359> : !quir.angle<20>
     quir.builtin_U %q, %a0, %a1, %a2 : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>
     return
 }

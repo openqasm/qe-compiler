@@ -23,8 +23,8 @@ func.func @main () -> i32 {
     // if (result) {
     scf.if %mres {
         // U(pi, 0, pi) %0;
-        %zero_ang = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-        %pi_ang = quir.constant #quir.angle<3.14159 : !quir.angle<20>>
+        %zero_ang = quir.constant #quir.angle<0.0> : !quir.angle<20>
+        %pi_ang = quir.constant #quir.angle<3.14159> : !quir.angle<20>
         quir.builtin_U %q0, %pi_ang, %zero_ang, %pi_ang : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>
     }
     %bigfloat = arith.constant 1.0 : f64

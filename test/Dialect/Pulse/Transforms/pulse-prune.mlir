@@ -422,9 +422,9 @@ pulse.shift_phase(%166, %cst_157) : (!pulse.port, f64)
 %167 = "pulse.select_port"(%41) {id = "u8"} : (!pulse.port_group) -> !pulse.port
 %cst_158 = arith.constant 1.5707963267948966 : f64
 pulse.shift_phase(%167, %cst_158) : (!pulse.port, f64)
-%168 = quir.constant #quir.angle<3.140000e+00 : !quir.angle<10>>
-%169 = quir.constant #quir.angle<1.070000e+00 : !quir.angle<10>>
-%170 = quir.constant #quir.angle<5.350000e-01 : !quir.angle<10>>
+%168 = quir.constant #quir.angle<3.140000e+00> : !quir.angle<10>
+%169 = quir.constant #quir.angle<1.070000e+00> : !quir.angle<10>
+%170 = quir.constant #quir.angle<5.350000e-01> : !quir.angle<10>
 %171 = "pulse.select_port"(%34) {id = "d0"} : (!pulse.port_group) -> !pulse.port
 %cst_159 = arith.constant 0.000000e+00 : f64
 pulse.shift_phase(%171, %cst_159) : (!pulse.port, f64)

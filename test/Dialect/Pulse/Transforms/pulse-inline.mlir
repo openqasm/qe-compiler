@@ -544,9 +544,9 @@ func.call @x3(%49) : (!pulse.port_group) -> ()
 func.call @cx01(%34, %41) : (!pulse.port_group, !pulse.port_group) -> ()
 func.call @cx10(%41, %34) : (!pulse.port_group, !pulse.port_group) -> ()
 func.call @cx12(%41, %45) : (!pulse.port_group, !pulse.port_group) -> ()
-%50 = quir.constant #quir.angle<3.140000e+00 : !quir.angle<10>>
-%51 = quir.constant #quir.angle<1.070000e+00 : !quir.angle<10>>
-%52 = quir.constant #quir.angle<5.350000e-01 : !quir.angle<10>>
+%50 = quir.constant #quir.angle<3.140000e+00> : !quir.angle<10>
+%51 = quir.constant #quir.angle<1.070000e+00> : !quir.angle<10>
+%52 = quir.constant #quir.angle<5.350000e-01> : !quir.angle<10>
 func.call @rz0(%34, %50) : (!pulse.port_group, !quir.angle<10>) -> ()
 func.call @rz1(%41, %51) : (!pulse.port_group, !quir.angle<10>) -> ()
 func.call @sx0(%34) : (!pulse.port_group) -> ()

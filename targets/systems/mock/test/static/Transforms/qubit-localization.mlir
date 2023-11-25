@@ -13,7 +13,7 @@
 // that they have been altered from the originals.
 
 func.func @gateH_qq(%qArg : !quir.qubit<1>) attributes {quir.orig_func_name = "gateH"} {
-  %ang = quir.constant #quir.angle<0.1 : !quir.angle<20>>
+  %ang = quir.constant #quir.angle<0.1> : !quir.angle<20>
   quir.builtin_U %qArg, %ang, %ang, %ang : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>
   return
 }
@@ -33,7 +33,7 @@ func.func @subroutine1(%qq1 : !quir.qubit<1>, %phi : !quir.angle, %ub : index) {
 }
 
 func.func @subroutine2(%qq1 : !quir.qubit<1>, %qq2 : !quir.qubit<1>) {
-  %zero = quir.constant #quir.angle<0.0 : !quir.angle<20>>
+  %zero = quir.constant #quir.angle<0.0> : !quir.angle<20>
   quir.call_gate @defcalPhase_qq(%zero, %qq1) : (!quir.angle<20>, !quir.qubit<1>) -> ()
   quir.call_gate @defcalPhase_qq(%zero, %qq2) : (!quir.angle<20>, !quir.qubit<1>) -> ()
   %ub = arith.constant 5 : index
@@ -48,7 +48,7 @@ func.func @main () -> i32 {
   quir.reset %q0 : !quir.qubit<1>
   quir.barrier %q0, %q1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
   quir.call_gate @gateH(%q0) : (!quir.qubit<1>) -> ()
-  %ang1 = quir.constant #quir.angle<0.5 : !quir.angle<20>>
+  %ang1 = quir.constant #quir.angle<0.5> : !quir.angle<20>
   %ub = arith.constant 10 : index
   quir.call_subroutine @subroutine1(%q1, %ang1, %ub) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()
   quir.call_subroutine @subroutine1(%q0, %ang1, %ub) : (!quir.qubit<1>, !quir.angle<20>, index) -> ()

@@ -17,7 +17,7 @@ module {
     func private @proto (%qa1 : !quir.qubit<1>) -> ()
     // CHECK-LABEL: func.func @gateCall1
     func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
-        %zero = quir.constant #quir.angle<0.0 : !quir.angle<1>>
+        %zero = quir.constant #quir.angle<0.0> : !quir.angle<1>
         // CHECK: quir.builtin_U %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         return
@@ -49,14 +49,14 @@ module {
         %0 = arith.constant 1 : i32
         %val = arith.constant 1 : i1
         // quir.constant canonical form example with angle attribute
-        // CHECK: %angle{{.*}} = quir.constant #quir.angle<1.000000e+00 : !quir.angle<10>>
-        %angle1 = "quir.constant"() {"value" = #quir.angle<1.0 : !quir.angle<10>>} : () -> (!quir.angle<10>)
-        // CHECK: %angle{{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<10>>
-        %angle2 = quir.constant #quir.angle<0.0 : !quir.angle<10>>
+        // CHECK: %angle{{.*}} = quir.constant #quir.angle<1.000000e+00> : !quir.angle<10>
+        %angle1 = "quir.constant"() {"value" = #quir.angle<1.0> : !quir.angle<10>} : () -> (!quir.angle<10>)
+        // CHECK: %angle{{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<10>
+        %angle2 = quir.constant #quir.angle<0.0> : !quir.angle<10>
         // CHECK: %angle{{.*}} = quir.constant #quir.angle<1.000000e+01 : !quir.angle>
         %angle3 = quir.constant #quir.angle<10.0 : !quir.angle>
-        // CHECK: %angle{{.*}} = quir.constant #quir.angle<3.141591 : !quir.angle<20>>
-        %angle4 = quir.constant #quir.angle<3.141591 : !quir.angle<20>>
+        // CHECK: %angle{{.*}} = quir.constant #quir.angle<3.141591> : !quir.angle<20>
+        %angle4 = quir.constant #quir.angle<3.141591> : !quir.angle<20>
         // arbitrary constants can also be produced
         // CHECK: %qcst{{.*}} = quir.constant 2 : i16
         %qcst = quir.constant 2 : i16
@@ -68,8 +68,8 @@ module {
         quir.reset %qc1 : !quir.qubit<1>
         // CHECK: quir.builtin_CX %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.qubit<1>
         quir.builtin_CX %qa1, %qb1 : !quir.qubit<1>, !quir.qubit<1>
-        // CHECK: %{{.*}} = quir.constant #quir.angle<1.000000e-01 : !quir.angle<1>>
-        %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
+        // CHECK: %{{.*}} = quir.constant #quir.angle<1.000000e-01> : !quir.angle<1>
+        %theta = quir.constant #quir.angle<0.1> : !quir.angle<1>
         // CHECK: quir.builtin_U %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         quir.builtin_U %qb1, %theta, %theta, %theta : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         // CHECK: quir.call_gate @gateCall1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()

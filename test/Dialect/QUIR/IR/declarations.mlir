@@ -23,8 +23,8 @@ module {
         %qc1 = quir.declare_qubit : !quir.qubit<1>
         // CHECK: %{{.*}} = quir.declare_qubit : !quir.qubit<1>
         %qd1 = quir.declare_qubit : !quir.qubit<1>
-        // CHECK: %{{.*}} = quir.constant #quir.angle<1.000000e-01 : !quir.angle<1>>
-        %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
+        // CHECK: %{{.*}} = quir.constant #quir.angle<1.000000e-01> : !quir.angle<1>
+        %theta = quir.constant #quir.angle<0.1> : !quir.angle<1>
         // CHECK: %{{.*}} = quir.constant #quir.angle<2.000000e-01  : !quir.angle>
         %mu = quir.constant #quir.angle<0.2 : !quir.angle>
         // CHECK %{{.*}} = quir.constant #quir.duration<1.000000e+00 : !quir.duration<ns>>

@@ -38,9 +38,9 @@ func.func @test_qubit_op_interface (%cond : i1) -> () {
   quir.barrier %q0, %q1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
   // CHECK: quir.barrier {{.*}}, {{.*}} {quir.operatedQubits = [0 : i32, 1 : i32]} : (!quir.qubit<1>, !quir.qubit<1>) -> ()
 
-  %a0 = quir.constant #quir.angle<1.57079632679 : !quir.angle<20>>
-  %a1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-  %a2 = quir.constant #quir.angle<3.14159265359 : !quir.angle<20>>
+  %a0 = quir.constant #quir.angle<1.57079632679> : !quir.angle<20>
+  %a1 = quir.constant #quir.angle<0.0> : !quir.angle<20>
+  %a2 = quir.constant #quir.angle<3.14159265359> : !quir.angle<20>
   quir.builtin_U %q0, %a0, %a1, %a2 : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>
   // CHECK: quir.builtin_U {quir.operatedQubits = [0 : i32]} {{.*}}, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>
 

@@ -26,15 +26,15 @@ func.func @qubit_type_parse_error() {
 func.func @angle_type_parse_error() {
   // expected-error@+2 {{failed to parse QUIR_AngleAttr parameter 'type' which is to be a `::mlir::Type`}}
   // expected-error@+1 {{width must be > 0}}
-  %a1 = quir.constant #quir.angle<1.0 : !quir.angle<0>>
+  %a1 = quir.constant #quir.angle<1.0> : !quir.angle<0>
   return
 }
 
 // -----
 
 func.func @angle_type_cmp_error() {
-  %a1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-  %a2 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
+  %a1 = quir.constant #quir.angle<0.0> : !quir.angle<20>
+  %a2 = quir.constant #quir.angle<0.0> : !quir.angle<20>
   // expected-error@+1 {{'oq3.angle_cmp' op requires predicate "eq", "ne", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge"}}
   %b = oq3.angle_cmp {predicate = "test"} %a1, %a2 : !quir.angle<20> -> i1
   return
@@ -43,7 +43,7 @@ func.func @angle_type_cmp_error() {
 // -----
 
 func.func @call_defcal_measure_no_qubit_args() {
-  %c1 = quir.constant #quir.angle<1.0 : !quir.angle<20>>
+  %c1 = quir.constant #quir.angle<1.0> : !quir.angle<20>
   // expected-error@+1 {{'quir.call_defcal_measure' op requires exactly one qubit}}
   %a1 = quir.call_defcal_measure @proto1(%c1) : (!quir.angle<20>) -> i1
   return
