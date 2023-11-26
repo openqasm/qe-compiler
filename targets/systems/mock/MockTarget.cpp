@@ -45,6 +45,7 @@
 #include "mlir/ExecutionEngine/OptUtils.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h"
 #include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
 #include "mlir/Target/LLVMIR/Export.h"
 
@@ -276,6 +277,7 @@ void MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
 
   // Register LLVM dialect and all infrastructure required for translation to
   // LLVM IR
+  mlir::registerBuiltinDialectTranslation(*context);
   mlir::registerLLVMDialectTranslation(*context);
 
   mlir::PassManager pm(context);

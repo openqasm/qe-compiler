@@ -52,7 +52,7 @@ struct ReturnConversionPat : public OpConversionPattern<mlir::func::ReturnOp> {
   matchAndRewrite(mlir::func::ReturnOp retOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     rewriter.create<mlir::func::ReturnOp>(retOp->getLoc(), adaptor.getOperands());
-    rewriter.replaceOp(retOp, {});
+    rewriter.eraseOp(retOp);
     return success();
   } // matchAndRewrite
 };  // struct ReturnConversionPat
@@ -143,7 +143,7 @@ struct CommOpConversionPat : public OpConversionPattern<CommOp> {
 
     switch (numResults) {
     case 0:
-      rewriter.replaceOp(commOp.getOperation(), {});
+      rewriter.eraseOp(commOp.getOperation());
       return success();
 
     case 1: {
