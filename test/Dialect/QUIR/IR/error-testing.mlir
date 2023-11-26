@@ -24,7 +24,6 @@ func.func @qubit_type_parse_error() {
 // -----
 
 func.func @angle_type_parse_error() {
-  // expected-error@+2 {{failed to parse QUIR_AngleAttr parameter 'type' which is to be a `::mlir::Type`}}
   // expected-error@+1 {{width must be > 0}}
   %a1 = quir.constant #quir.angle<1.0> : !quir.angle<0>
   return
@@ -65,7 +64,7 @@ func.func @quir_switch (%flag: i32) -> (i32) {
   // expected-error@+1 {{expected '{' to begin a region}}
   %y = quir.switch %flag -> (i32) [
     4: {
-      %y_1 = constant 1 : i32
+      %y_1 = arith.constant 1 : i32
       quir.yield %y_1 : i32
     }
   ]
@@ -82,7 +81,7 @@ func.func @quir_switch (%flag: i32) -> (i32) {
     quir.yield
   } [
     1: {
-      %y_1 = constant 1 : i32
+      %y_1 = arith.constant 1 : i32
       quir.yield %y_1 : i32
     }
   ]

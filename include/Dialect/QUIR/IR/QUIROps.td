@@ -55,7 +55,7 @@ def QUIR_ConstantOp : QUIR_Op<"constant",
 
     ```
     // Angle constant
-    %1 = quir.constant #quir.angle<1.5 : !quir.angle>
+    %1 = quir.constant #quir.angle<1.5> : !quir.angle
     ```
   }];
 

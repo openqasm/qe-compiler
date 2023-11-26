@@ -13,8 +13,8 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-func private @kernel1 (%ca1 : memref<1xi1>, %ca2 : memref<1xi1>, %ca3 : memref<1xi1>) -> memref<1xi1>
-func private @kernel2 (memref<?xi1>) -> memref<1xi1>
+func.func private @kernel1 (%ca1 : memref<1xi1>, %ca2 : memref<1xi1>, %ca3 : memref<1xi1>) -> memref<1xi1>
+func.func private @kernel2 (memref<?xi1>) -> memref<1xi1>
 func.func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) {
     %zero = arith.constant 0 : index
     %ang3 = oq3.angle_add %ang1, %ang2 : !quir.angle<20>
@@ -41,7 +41,7 @@ func.func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : 
     %c1 = "oq3.cast"(%mres1) : (i1) -> !quir.cbit<1>
     return %c1 : !quir.cbit<1>
 }
-func private @proto (%qa1 : !quir.qubit<1>) -> ()
+func.func private @proto (%qa1 : !quir.qubit<1>) -> ()
 func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
     %zero = quir.constant #quir.angle<0.0> : !quir.angle<1>
     quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
@@ -49,7 +49,7 @@ func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
     return
 }
 func.func @gateCall2(%q1 : !quir.qubit<1>, %lambda : !quir.angle) -> () {
-    %zero = quir.constant #quir.angle<0.0 : !quir.angle>
+    %zero = quir.constant #quir.angle<0.0> : !quir.angle
     quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle, !quir.angle, !quir.angle
     return
 }
@@ -58,7 +58,7 @@ func.func @multiQubitGateCall(%qa1 : !quir.qubit<1>, %qb1 : !quir.qubit<1>) -> (
     return
 }
 func.func @defcalGate2(%qa1 : !quir.qubit<1> {quir.qubit_id = 0 : i32}, %theta : !quir.angle {quir.value = 0.5 : f64}) -> () {
-    %zero = quir.constant #quir.angle<0.0 : !quir.angle>
+    %zero = quir.constant #quir.angle<0.0> : !quir.angle
     quir.builtin_U %qa1, %zero, %theta, %zero : !quir.qubit<1>, !quir.angle, !quir.angle, !quir.angle
     return
 }

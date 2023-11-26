@@ -14,7 +14,7 @@
 // that they have been altered from the originals.
 
 module {
-    func private @proto (%qa1 : !quir.qubit<1>) -> ()
+    func.func private @proto (%qa1 : !quir.qubit<1>) -> ()
     // CHECK-LABEL: func.func @gateCall1
     func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
         %zero = quir.constant #quir.angle<0.0> : !quir.angle<1>
@@ -53,8 +53,8 @@ module {
         %angle1 = "quir.constant"() {"value" = #quir.angle<1.0> : !quir.angle<10>} : () -> (!quir.angle<10>)
         // CHECK: %angle{{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<10>
         %angle2 = quir.constant #quir.angle<0.0> : !quir.angle<10>
-        // CHECK: %angle{{.*}} = quir.constant #quir.angle<1.000000e+01 : !quir.angle>
-        %angle3 = quir.constant #quir.angle<10.0 : !quir.angle>
+        // CHECK: %angle{{.*}} = quir.constant #quir.angle<1.000000e+01> : !quir.angle
+        %angle3 = quir.constant #quir.angle<10.0> : !quir.angle
         // CHECK: %angle{{.*}} = quir.constant #quir.angle<3.141591> : !quir.angle<20>
         %angle4 = quir.constant #quir.angle<3.141591> : !quir.angle<20>
         // arbitrary constants can also be produced

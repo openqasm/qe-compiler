@@ -49,8 +49,8 @@ while (n != 0) {
         // MLIR-NO-CIRCUITS: %4 = quir.measure(%0) : (!quir.qubit<1>) -> i1
         // MLIR-CIRCUITS: %4 = quir.call_circuit @circuit_2(%0) : (!quir.qubit<1>) -> i1
         // MLIR: oq3.cbit_assign_bit @is_excited<1> [0] : i1 = %4
-        // MLIR: %c0_i32_2 = arith.constant 0 : i32
-        // MLIR: oq3.variable_assign @n : i32 = %c0_i32_2
+        // MLIR: [[REG:.*]] = arith.constant 0 : i32
+        // MLIR: oq3.variable_assign @n : i32 = [[REG]]
         h $0;
         is_excited = measure $0;
         n = 0;

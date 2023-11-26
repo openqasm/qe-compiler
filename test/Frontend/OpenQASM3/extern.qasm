@@ -16,32 +16,32 @@ OPENQASM 3.0;
 // that they have been altered from the originals.
 
 // AST-PRETTY: DeclarationNode(type=Unknown, ExternNode(name=test0, parameters=[], returns=ResultNode(void))
-// MLIR: func private @test0()
+// MLIR: func.func private @test0()
 extern test0();
 
 // AST-PRETTY: DeclarationNode(type=Unknown, ExternNode(name=test1, parameters=[DeclarationNode(type=ASTTypeInt, IntNode(signed=true, value=10, bits=32))
 // AST-PRETTY: ], returns=ResultNode(void))
-// MLIR: func private @test1(i32)
+// MLIR: func.func private @test1(i32)
 extern test1(int a);
 
 // AST-PRETTY: DeclarationNode(type=Unknown, ExternNode(name=test2, parameters=[], returns=ResultNode(CBitNode(name=bitset, bits=1)))
-// MLIR: func private @test2() -> !quir.cbit<1>
+// MLIR: func.func private @test2() -> !quir.cbit<1>
 extern test2() -> bit;
 
 // AST-PRETTY: DeclarationNode(type=Unknown, ExternNode(name=test3, parameters=[DeclarationNode(type=ASTTypeInt, IntNode(signed=true, value=10, bits=32))
 // AST-PRETTY: ], returns=ResultNode(CBitNode(name=bitset, bits=1)))
-// MLIR: func private @test3(i32) -> !quir.cbit<1>
+// MLIR: func.func private @test3(i32) -> !quir.cbit<1>
 extern test3(int a) -> bit;
 
 // AST-PRETTY: DeclarationNode(type=Unknown, ExternNode(name=test4, parameters=[DeclarationNode(type=ASTTypeInt, IntNode(signed=true, value=10, bits=32))
 // AST-PRETTY: DeclarationNode(type=ASTTypeFloat, IdentifierNode(name=b, bits=32))
 // AST-PRETTY: ], returns=ResultNode(MPDecimalNode(name=ast-mpdecimal-type-param-{{.*}}, bits=32)))
-// MLIR: func private @test4(i32, f32) -> f32
+// MLIR: func.func private @test4(i32, f32) -> f32
 extern test4(int a, float b) -> float[32];
 
 // AST-PRETTY: DeclarationNode(type=Unknown, ExternNode(name=test5, parameters=[DeclarationNode(type=ASTTypeMPInteger, IdentifierNode(name=a, bits=32))
 // AST-PRETTY: ], returns=ResultNode(MPIntegerNode(name=ast-mpinteger-type-param-{{.*}}, value=0, bits=64, signed=1)))
-// MLIR: func private @test5(i32) -> i64
+// MLIR: func.func private @test5(i32) -> i64
 extern test5(int[32] a) -> int[64];
 
 

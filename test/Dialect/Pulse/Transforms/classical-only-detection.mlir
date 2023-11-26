@@ -18,8 +18,8 @@
 // first validate that the pulse classical-only-detection does not harm the quir pass
 // determinations
 
-func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1> attributes {quir.classicalOnly = true}
-// CHECK: func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
+func.func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1> attributes {quir.classicalOnly = true}
+// CHECK: func.func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
 // CHECK-SAME: attributes {quir.classicalOnly = true}
 func.func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) attributes {quir.classicalOnly = false} {
     // CHECK: func.func @subroutine1
@@ -54,8 +54,8 @@ func.func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : 
 // next add pulse.sequence and  validate that the pulse classical-only-detection
 // labels the sequence as quir.classicalOnly = false
 
-func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
-// CHECK: func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
+func.func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
+// CHECK: func.func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
 // CHECK-SAME: attributes {quir.classicalOnly = true}
 func.func @subroutine2 () {
     // CHECK: func.func @subroutine2()

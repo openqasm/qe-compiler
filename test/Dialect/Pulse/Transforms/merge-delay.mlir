@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir -pass-pipeline='pulse.sequence(pulse-merge-delay)' %s | FileCheck %s
+// RUN: qss-compiler -X=mlir -pass-pipeline='any(pulse.sequence(pulse-merge-delay))' %s | FileCheck %s
 
 //
 // This code is part of Qiskit.
@@ -29,10 +29,10 @@ func.func @main() -> i32 {
 }
 
 pulse.sequence @seq_0(%arg0: !pulse.mixed_frame, %arg1: !pulse.mixed_frame) -> i1 {
-    // CHECK: %c6_i32 = arith.constant 6 : i32
-    // CHECK-NOT: %c12_i32 = arith.constant 12 : i32
     // CHECK: %c18_i32 = arith.constant 18 : i32
     // CHECK: %c36_i32 = arith.constant 36 : i32
+    // CHECK: %c6_i32 = arith.constant 6 : i32
+    // CHECK-NOT: %c12_i32 = arith.constant 12 : i32
     %c6_i32 = arith.constant 6 : i32
     %c12_i32 = arith.constant 12 : i32
     %c18_i32 = arith.constant 18 : i32

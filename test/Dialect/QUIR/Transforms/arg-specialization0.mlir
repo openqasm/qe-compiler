@@ -20,7 +20,7 @@ module {
     oq3.declare_variable @cb1 : !quir.cbit<1>
     oq3.declare_variable @cb2 : !quir.cbit<1>
 
-    func private @proto (%qa1 : !quir.qubit<1>) -> ()
+    func.func private @proto (%qa1 : !quir.qubit<1>) -> ()
     func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
         %zero = quir.constant #quir.angle<0.0> : !quir.angle<1>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
@@ -40,7 +40,7 @@ module {
         return
     }
     func.func @defcalGate2(%qa1 : !quir.qubit<1> {quir.qubit_id = 0 : i32}, %theta : !quir.angle {quir.value = 0.5 : f64}) -> () {
-        %zero = quir.constant #quir.angle<0.0 : !quir.angle>
+        %zero = quir.constant #quir.angle<0.0> : !quir.angle
         quir.builtin_U %qa1, %zero, %theta, %zero : !quir.qubit<1>, !quir.angle, !quir.angle, !quir.angle
         return
     }

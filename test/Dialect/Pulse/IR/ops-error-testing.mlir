@@ -53,8 +53,8 @@ pulse.sequence @sequence3 () {
 // -----
 
 pulse.sequence @sequence4 () -> i1 {
-	%ub = constant 10 : index
-	%cmpval = constant 9 : index
+	%ub = arith.constant 10 : index
+	%cmpval = arith.constant 9 : index
 	// expected-error@+1 {{'arith.cmpi' op is not valid within a real-time pulse sequence.}}
 	%cond = arith.cmpi "eq", %ub, %cmpval : index
 	pulse.return

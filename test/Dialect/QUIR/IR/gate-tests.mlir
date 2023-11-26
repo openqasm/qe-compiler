@@ -14,8 +14,8 @@
 // that they have been altered from the originals.
 
 module {
-    func private @kernel1 (%ca1 : memref<1xi1>, %ca2 : memref<1xi1>, %ca3 : memref<1xi1>) -> memref<1xi1>
-    func private @proto (%qa1 : !quir.qubit<1>) -> !quir.qubit<1>
+    func.func private @kernel1 (%ca1 : memref<1xi1>, %ca2 : memref<1xi1>, %ca3 : memref<1xi1>) -> memref<1xi1>
+    func.func private @proto (%qa1 : !quir.qubit<1>) -> !quir.qubit<1>
     func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
         %zero = quir.constant #quir.angle<0.0> : !quir.angle<1>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
