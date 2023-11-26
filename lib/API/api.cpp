@@ -25,6 +25,7 @@
 #include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/MLIRContext.h"
+#include "mlir/InitAllExtensions.h"
 #include "mlir/InitAllPasses.h"
 #include "mlir/Parser/Parser.h"
 #include "mlir/Pass/PassManager.h"
@@ -55,6 +56,7 @@
 #include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/RegisterDialects.h"
+#include "Dialect/RegisterPasses.h"
 
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
@@ -275,25 +277,6 @@ auto getExtension(const std::string &inStr) -> qss::FileExtension {
   if (pos < inStr.length())
     return strToFileExtension(inStr.substr(pos + 1));
   return qss::FileExtension::None;
-}
-
-llvm::Error registerPasses() {
-  // TODO: Register standalone passes here.
-  llvm::Error err = llvm::Error::success();
-  mlir::oq3::registerOQ3Passes();
-  mlir::oq3::registerOQ3PassPipeline();
-  mlir::qcs::registerQCSPasses();
-  mlir::quir::registerQuirPasses();
-  mlir::quir::registerQuirPassPipeline();
-  mlir::pulse::registerPulsePasses();
-  mlir::pulse::registerPulsePassPipeline();
-  mlir::registerConversionPasses();
-
-  err = llvm::joinErrors(std::move(err), qssc::hal::registerTargetPasses());
-  err = llvm::joinErrors(std::move(err), qssc::hal::registerTargetPipelines());
-
-  mlir::registerAllPasses();
-  return err;
 }
 
 auto registerPassManagerCLOpts() {
@@ -546,7 +529,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   // Register the standard passes with MLIR.
   // Must precede the command line parsing.
-  if (auto err = registerPasses())
+  if (auto err = qssc::dialect::registerPasses())
     return err;
 
   // The MLIR context for this compilation event.
@@ -559,6 +542,9 @@ compile_(int argc, char const **argv, std::string *outputString,
   // pipeline
   mlir::DialectRegistry registry;
   qssc::dialect::registerDialects(registry);
+
+  // Register all extensions
+  mlir::registerAllExtensions(registry);
 
   // Parse the command line options.
   mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");

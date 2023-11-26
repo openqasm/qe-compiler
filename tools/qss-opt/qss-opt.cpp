@@ -29,6 +29,7 @@
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/RegisterDialects.h"
+#include "Dialect/RegisterPasses.h"
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystemRegistry.h"
 #include "Payload/PayloadRegistry.h"
@@ -39,7 +40,7 @@
 #include "mlir/IR/Dialect.h"
 #include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/MLIRContext.h"
-#include "mlir/InitAllDialects.h"
+#include "mlir/InitAllExtensions.h"
 #include "mlir/InitAllPasses.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/FileUtilities.h"
@@ -187,8 +188,16 @@ mlir::LogicalResult QSSCOptMain(int argc, char **argv,
 
 auto main(int argc, char **argv) -> int {
 
+  // Register the standard passes with MLIR.
+  // Must precede the command line parsing.
+  if (auto err = qssc::dialect::registerPasses()) {
+    llvm::errs() << err << "\n";
+    return 1;
+  }
+
   mlir::DialectRegistry registry;
-  dialect::registerDialects(registry);
+  qssc::dialect::registerDialects(registry);
+  mlir::registerAllExtensions(registry);
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;
