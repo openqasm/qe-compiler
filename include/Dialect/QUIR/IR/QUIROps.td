@@ -312,7 +312,7 @@ def QUIR_CallDefcalMeasureOp : QUIR_Op<"call_defcal_measure", [
     let results = (outs I1:$res);
 
     let assemblyFormat = [{
-        $callee `(` $operands `)` attr-dict `:` functional-type(operands, results)
+        $callee `(` $operands `)` attr-dict `:` functional-type($operands, results)
     }];
 
     let builders = [

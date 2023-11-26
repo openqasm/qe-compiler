@@ -35,13 +35,13 @@ namespace mlir::quir {
 // ]
 // caseRegion_default:
 //     // gates
-//     br switchEnd
+//    cf.br switchEnd
 // caseRegion_1:
 //     // gates
-//     br switchEnd
+//    cf.br switchEnd
 // caseRegion_2:
 //     // gates
-//     br switchEnd
+//    cf.br switchEnd
 // ...
 // switchEnd:
 // ...

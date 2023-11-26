@@ -220,7 +220,7 @@ Operation *QUIRDialect::materializeConstant(OpBuilder &builder, Attribute value,
 //===----------------------------------------------------------------------===//
 
 auto CallDefcalMeasureOp::getCalleeType() -> FunctionType {
-  return FunctionType::get(getContext(), getOperandTypes(), {});
+  return FunctionType::get(getContext(), getOperandTypes(), getResult().getType());
 }
 
 //===----------------------------------------------------------------------===//

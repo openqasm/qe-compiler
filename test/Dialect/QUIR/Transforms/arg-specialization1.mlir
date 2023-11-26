@@ -30,27 +30,27 @@ module {
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
         %cb2 = "quir.measure"(%q1) : (!quir.qubit<1>) -> (i1)
-        cond_br %cb2, ^runz, ^dontrunz
+        cf.cond_br %cb2, ^runz, ^dontrunz
 
     ^runz:
         "quir.call_gate"(%q1) {callee = @Z} : (!quir.qubit<1>) -> ()
-        br ^afterz
+       cf.br ^afterz
 
     ^dontrunz:
-        br ^afterz
+       cf.br ^afterz
 
     ^afterz:
         // if(c1==1) { x q[2]; } // braces optional in this case
-        cond_br %cb2, ^runx, ^dontrunx
+        cf.cond_br %cb2, ^runx, ^dontrunx
 
     // this checks for both specialized and non-specialized intermediate qubit gate calls
     // CHECK: quir.call_gate @X(%{{.*}}) : (!quir.qubit<1>) -> ()
     ^runx:
         "quir.call_gate"(%q1) {callee = @X} : (!quir.qubit<1>) -> ()
-        br ^afterx
+       cf.br ^afterx
 
     ^dontrunx:
-        br ^afterx
+       cf.br ^afterx
 
     ^afterx:
         // post q[2]; // NOP/identity
