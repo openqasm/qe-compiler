@@ -28,7 +28,7 @@ module {
   func.func @main() -> !quir.angle<64> {
 
     // CHECK: [[CONST314_ANGLE:%.*]] = quir.constant {quir.inputParameter = "a"} #quir.angle<3.140000e+00> : !quir.angle<64>
-    // REMOVE-UNUSED: [[CONST314_ANGLE:%.*]] = quir.constant #quir.angle<3.140000e+00> : !quir.angle<64>
+    // REMOVE-UNUSED: [[CONST314_ANGLE:%.*]] = quir.constant {quir.inputParameter = "a"} #quir.angle<3.140000e+00> : !quir.angle<64>
     %angle = quir.constant #quir.angle<3.140000e+00> : !quir.angle<64>
     %angle2 = quir.constant #quir.angle<3.140000e+00> : !quir.angle<64>
 
