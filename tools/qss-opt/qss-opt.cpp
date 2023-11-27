@@ -119,7 +119,12 @@ registerAndParseCLIOptions(int argc, char **argv,
     }
   }
 
-    // Create target if one was specified.
+  // Parse pass names in main to ensure static initialization completed.
+  llvm::cl::ParseCommandLineOptions(argc, argv, helpHeader);
+
+  // The below must be performed after CL parsing
+
+  // Create target if one was specified.
   if (!targetStr.empty()) {
     auto targetInfo =
         registry::TargetSystemRegistry::lookupPluginInfo(targetStr);
@@ -141,8 +146,7 @@ registerAndParseCLIOptions(int argc, char **argv,
                                    "Error: Target " + targetStr + " could not be created.\n");
   }
 
-  // Parse pass names in main to ensure static initialization completed.
-  llvm::cl::ParseCommandLineOptions(argc, argv, helpHeader);
+
   return std::make_pair(inputFilename.getValue(), outputFilename.getValue());
 }
 
