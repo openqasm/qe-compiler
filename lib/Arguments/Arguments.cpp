@@ -43,9 +43,7 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
                              BindArgumentsImplementationFactory &factory,
                              const OptDiagnosticCallback &onDiagnostic) {
 
-  for (auto &entry : sig.patchPointsByBinary) {
-    auto binaryName = entry.getKey();
-    auto patchPoints = entry.getValue();
+  for (const auto &[binaryName, patchPoints] : sig.patchPointsByBinary) {
 
     if (patchPoints.size() == 0) // no patch points
       continue;
@@ -56,7 +54,7 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
       auto error = binaryDataOrErr.takeError();
       return emitDiagnostic(onDiagnostic, qssc::Severity::Error,
                             qssc::ErrorCategory::QSSLinkSignatureError,
-                            "Error reading " + binaryName.str() + " " +
+                            "Error reading " + binaryName + " " +
                                 toString(std::move(error)));
     }
 
@@ -66,7 +64,7 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
         factory.create(binaryData, onDiagnostic));
     binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
-    for (auto const &patchPoint : entry.getValue())
+    for (auto const &patchPoint : patchPoints)
       if (auto err = binary->patch(patchPoint, arguments))
         return err;
   }
