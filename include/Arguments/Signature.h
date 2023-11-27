@@ -68,14 +68,14 @@ public:
                               const PatchPoint &p);
   void dump();
 
-  std::string serialize();
+  std::string serialize() const;
 
   static llvm::Expected<Signature>
   deserialize(llvm::StringRef,
               const std::optional<qssc::DiagnosticCallback> &onDiagnostic,
               bool treatWarningsAsError = false);
 
-  bool isEmpty() { return patchPointsByBinary.size() == 0; }
+  bool isEmpty() const { return patchPointsByBinary.size() == 0; }
 };
 
 } // namespace qssc::arguments

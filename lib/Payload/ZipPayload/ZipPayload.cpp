@@ -229,3 +229,7 @@ void ZipPayload::writeZip(std::ostream &stream) {
 void ZipPayload::write(llvm::raw_ostream &stream) { writeZip(stream); }
 
 void ZipPayload::write(std::ostream &stream) { writeZip(stream); }
+
+void ZipPayload::writeArgumentSignature(qssc::arguments::Signature &&sig) {
+  getFile("arguments_signature.txt")->assign(sig.serialize());
+}
