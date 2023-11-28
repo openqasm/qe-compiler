@@ -228,7 +228,6 @@ def _do_compile(
         execution.input_file is not None or execution.input_str is not None
     ), "one of the compile options input_file or input_str must be set"
 
-    # import ipdb; ipdb.set_trace()
     options = execution.options
 
     parent_side, child_side = mp_ctx.Pipe(duplex=True)
