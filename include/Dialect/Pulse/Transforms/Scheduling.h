@@ -18,14 +18,14 @@
 ///
 //===----------------------------------------------------------------------===//
 
-//#ifndef PULSE_SCHEDULING_H
-//#define PULSE_SCHEDULING_H
+// #ifndef PULSE_SCHEDULING_H
+// #define PULSE_SCHEDULING_H
 
-//#include <unordered_map>
-//#include <unordered_set>
+// #include <unordered_map>
+// #include <unordered_set>
 
-//#include "Dialect/Pulse/IR/PulseOps.h"
-//#include "mlir/Pass/Pass.h"
+// #include "Dialect/Pulse/IR/PulseOps.h"
+// #include "mlir/Pass/Pass.h"
 
 // namespace mlir::pulse {
 
@@ -82,4 +82,4 @@
 //}; // end struct SchedulingPass
 //} // namespace mlir::pulse
 
-//#endif // PULSE_SCHEDULING_H
+// #endif // PULSE_SCHEDULING_H

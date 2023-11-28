@@ -49,7 +49,8 @@ void QUIRToPulsePass::runOnOperation() {
     parsePulseWaveformContainerOps(WAVEFORM_CONTAINER);
 
   ModuleOp moduleOp = getOperation();
-  mlir::func::FuncOp mainFunc = dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
+  mlir::func::FuncOp mainFunc =
+      dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
   assert(mainFunc && "could not find the main func");
 
   mainFuncFirstOp = &mainFunc.getBody().front().front();
@@ -97,7 +98,8 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   // build an empty pulse sequence
   SmallVector<Value> arguments;
   auto argumentsValueRange = ValueRange(arguments.data(), arguments.size());
-  mlir::FunctionType funcType = builder.getFunctionType(TypeRange(argumentsValueRange), {});
+  mlir::FunctionType funcType =
+      builder.getFunctionType(TypeRange(argumentsValueRange), {});
   llvm::SmallVector<mlir::Type> convertedPulseSequenceOpReturnTypes;
   llvm::SmallVector<mlir::Value> convertedPulseSequenceOpReturnValues;
   auto convertedPulseSequenceOp = builder.create<mlir::pulse::SequenceOp>(
@@ -350,7 +352,8 @@ void QUIRToPulsePass::processMixFrameOpArg(
 void QUIRToPulsePass::processPortOpArg(std::string const &portName,
                                        SequenceOp convertedPulseSequenceOp,
                                        SmallVector<Value> &pulseCalSequenceArgs,
-                                       Value argumentValue, mlir::func::FuncOp &mainFunc,
+                                       Value argumentValue,
+                                       mlir::func::FuncOp &mainFunc,
                                        mlir::OpBuilder &builder) {
   auto portOp = addPortOpToIR(portName, mainFunc, builder);
   auto it = std::find(convertedPulseCallSequenceOpOperandNames.begin(),
@@ -377,7 +380,8 @@ void QUIRToPulsePass::processPortOpArg(std::string const &portName,
 void QUIRToPulsePass::processWfrOpArg(std::string const &wfrName,
                                       SequenceOp convertedPulseSequenceOp,
                                       SmallVector<Value> &pulseCalSequenceArgs,
-                                      Value argumentValue, mlir::func::FuncOp &mainFunc,
+                                      Value argumentValue,
+                                      mlir::func::FuncOp &mainFunc,
                                       mlir::OpBuilder &builder) {
   auto wfrOp = addWfrOpToIR(wfrName, mainFunc, builder);
   auto it = std::find(convertedPulseCallSequenceOpOperandNames.begin(),
@@ -525,7 +529,8 @@ mlir::Value QUIRToPulsePass::convertDurationToI64(
 }
 
 mlir::pulse::Port_CreateOp
-QUIRToPulsePass::addPortOpToIR(std::string const &portName, mlir::func::FuncOp &mainFunc,
+QUIRToPulsePass::addPortOpToIR(std::string const &portName,
+                               mlir::func::FuncOp &mainFunc,
                                mlir::OpBuilder &builder) {
   if (openedPorts.find(portName) == openedPorts.end()) {
     auto portOp =
@@ -536,10 +541,9 @@ QUIRToPulsePass::addPortOpToIR(std::string const &portName, mlir::func::FuncOp &
   return openedPorts[portName];
 }
 
-mlir::pulse::MixFrameOp
-QUIRToPulsePass::addMixFrameOpToIR(std::string const &mixFrameName,
-                                   std::string const &portName,
-                                   mlir::func::FuncOp &mainFunc, mlir::OpBuilder &builder) {
+mlir::pulse::MixFrameOp QUIRToPulsePass::addMixFrameOpToIR(
+    std::string const &mixFrameName, std::string const &portName,
+    mlir::func::FuncOp &mainFunc, mlir::OpBuilder &builder) {
   if (openedMixFrames.find(mixFrameName) == openedMixFrames.end()) {
     auto portOp = addPortOpToIR(portName, mainFunc, builder);
     auto mixedFrameOp = builder.create<MixFrameOp>(
@@ -552,7 +556,8 @@ QUIRToPulsePass::addMixFrameOpToIR(std::string const &mixFrameName,
 }
 
 mlir::pulse::Waveform_CreateOp
-QUIRToPulsePass::addWfrOpToIR(std::string const &wfrName, mlir::func::FuncOp &mainFunc,
+QUIRToPulsePass::addWfrOpToIR(std::string const &wfrName,
+                              mlir::func::FuncOp &mainFunc,
                               mlir::OpBuilder &builder) {
   if (openedWfrs.find(wfrName) == openedWfrs.end()) {
     auto *clonedOp = builder.clone(*pulseNameToWaveformMap[wfrName]);
@@ -594,7 +599,8 @@ void QUIRToPulsePass::parsePulseWaveformContainerOps(
       mlir::openInputFile(waveformContainerPath, &errorMessage);
   sourceMgr.AddNewSourceBuffer(std::move(waveformContainerFile), llvm::SMLoc());
 
-  mlir::OwningOpRef<mlir::ModuleOp> waveformContainerFileModule = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, &getContext());
+  mlir::OwningOpRef<mlir::ModuleOp> waveformContainerFileModule =
+      mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, &getContext());
   assert(waveformContainerFileModule and
          "problem parsing waveform container file");
 

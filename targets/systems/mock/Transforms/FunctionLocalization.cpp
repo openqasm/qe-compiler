@@ -27,7 +27,6 @@
 
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
 
@@ -98,7 +97,8 @@ auto MockFunctionLocalizationPass::lookupQubitId(const Value val) -> int {
   // see if we can find an attribute with the info
   if (auto blockArg = val.dyn_cast<BlockArgument>()) {
     unsigned argIdx = blockArg.getArgNumber();
-    auto funcOp = dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
+    auto funcOp =
+        dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
     if (funcOp) {
       auto argAttr =
           funcOp.getArgAttrOfType<IntegerAttr>(argIdx, "quir.physicalId");

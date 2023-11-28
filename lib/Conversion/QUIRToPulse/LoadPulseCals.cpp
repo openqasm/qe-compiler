@@ -38,7 +38,8 @@ using namespace mlir::pulse;
 void LoadPulseCalsPass::runOnOperation() {
 
   mlir::ModuleOp moduleOp = getOperation();
-  mlir::func::FuncOp mainFunc = dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
+  mlir::func::FuncOp mainFunc =
+      dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
   assert(mainFunc && "could not find the main func");
 
   // check for command line override of the path to default pulse cals
@@ -339,7 +340,8 @@ void LoadPulseCalsPass::addPulseCalToModule(
 }
 
 llvm::Error LoadPulseCalsPass::parsePulseCalsModuleOp(
-    std::string &pulseCalsPath, mlir::OwningOpRef<mlir::ModuleOp> &owningOpRef) {
+    std::string &pulseCalsPath,
+    mlir::OwningOpRef<mlir::ModuleOp> &owningOpRef) {
   std::string errorMessage;
   llvm::SourceMgr sourceMgr;
   std::unique_ptr<llvm::MemoryBuffer> pulseCalsFile =

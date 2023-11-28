@@ -34,7 +34,6 @@
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/IRMapping.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/PassManager.h"
 
 using namespace mlir;
@@ -45,7 +44,8 @@ using namespace mlir::qcs;
 void AddShotLoopPass::runOnOperation() {
   // This pass is only called on module Ops
   ModuleOp moduleOp = getOperation();
-  mlir::func::FuncOp mainFunc = dyn_cast<mlir::func::FuncOp>(getMainFunction(moduleOp));
+  mlir::func::FuncOp mainFunc =
+      dyn_cast<mlir::func::FuncOp>(getMainFunction(moduleOp));
 
   if (!mainFunc) {
     signalPassFailure();
@@ -78,7 +78,8 @@ void AddShotLoopPass::runOnOperation() {
   for (Operation &op : mainFunc.getBody().getOps()) {
     if (dyn_cast<SystemInitOp>(&op))
       continue;
-    if (dyn_cast<SystemFinalizeOp>(&op) || dyn_cast<mlir::func::ReturnOp>(&op)) {
+    if (dyn_cast<SystemFinalizeOp>(&op) ||
+        dyn_cast<mlir::func::ReturnOp>(&op)) {
       lastOp = &op;
       break;
     }

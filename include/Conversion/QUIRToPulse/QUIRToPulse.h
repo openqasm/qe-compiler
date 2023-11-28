@@ -62,7 +62,8 @@ struct QUIRToPulsePass
 
   // convert quir circuit to pulse sequence
   void convertCircuitToSequence(mlir::quir::CallCircuitOp callCircuitOp,
-                                mlir::func::FuncOp &mainFunc, ModuleOp moduleOp);
+                                mlir::func::FuncOp &mainFunc,
+                                ModuleOp moduleOp);
   // helper datastructure for converting quir circuit to pulse sequence; these
   // will be reset every time convertCircuitToSequence is called and will be
   // used by several functions that are called within that function
@@ -75,7 +76,8 @@ struct QUIRToPulsePass
   // converted pulse sequence op
   void processCircuitArgs(mlir::quir::CallCircuitOp callCircuitOp,
                           mlir::quir::CircuitOp circuitOp,
-                          SequenceOp convertedPulseSequenceOp, mlir::func::FuncOp &mainFunc,
+                          SequenceOp convertedPulseSequenceOp,
+                          mlir::func::FuncOp &mainFunc,
                           mlir::OpBuilder &builder);
 
   // process the args of the pulse cal sequence op corresponding to quirOp
@@ -83,7 +85,8 @@ struct QUIRToPulsePass
                            SequenceOp pulseCalSequenceOp,
                            SmallVector<Value> &pulseCalSeqArgs,
                            SequenceOp convertedPulseSequenceOp,
-                           mlir::func::FuncOp &mainFunc, mlir::OpBuilder &builder);
+                           mlir::func::FuncOp &mainFunc,
+                           mlir::OpBuilder &builder);
   void getQUIROpClassicalOperands(mlir::Operation *quirOp,
                                   std::queue<Value> &angleOperands,
                                   std::queue<Value> &durationOperands);
@@ -117,7 +120,8 @@ struct QUIRToPulsePass
   // convert duration to I64
   mlir::Value convertDurationToI64(mlir::quir::CallCircuitOp callCircuitOp,
                                    Operation *durOp, uint &cnt,
-                                   mlir::OpBuilder &builder, mlir::func::FuncOp &mainFunc);
+                                   mlir::OpBuilder &builder,
+                                   mlir::func::FuncOp &mainFunc);
   // map of the hashed location of quir angle/duration ops to their converted
   // pulse ops
   std::map<std::string, mlir::Value> classicalQUIROpLocToConvertedPulseOpMap;

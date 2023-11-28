@@ -53,7 +53,6 @@
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
@@ -634,8 +633,8 @@ void QUIRGenQASM3Visitor::visit(const ASTFunctionCallNode *node) {
         varHandler.resolveQUIRVariableType(node->GetResult()));
   TypeRange resultRange(resultTypes.data(), resultTypes.size());
 
-  auto callOp = builder.create<func::CallOp>(getLocation(node), node->GetCallName(),
-                                       resultRange, operandRange);
+  auto callOp = builder.create<func::CallOp>(
+      getLocation(node), node->GetCallName(), resultRange, operandRange);
 
   // fill the expression in case the call result is assigned to something
   if (node->ReturnsResult())
@@ -658,11 +657,11 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
   }
   auto inputsRef = ArrayRef<Type>(inputs.data(), inputs.size());
 
-  auto func =
-      topLevelBuilder.create<mlir::func::FuncOp>(getLocation(node), gateNode->GetName(),
-                                     builder.getFunctionType(
-                                         /*inputs=*/inputsRef,
-                                         /*results=*/ArrayRef<Type>()));
+  auto func = topLevelBuilder.create<mlir::func::FuncOp>(
+      getLocation(node), gateNode->GetName(),
+      builder.getFunctionType(
+          /*inputs=*/inputsRef,
+          /*results=*/ArrayRef<Type>()));
   func.addEntryBlock();
 
   // TODO this wants to be a symbol table that now enters a new scope
@@ -2064,7 +2063,8 @@ QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(mlir::Location location) {
-  return builder.create<mlir::arith::ConstantOp>(location, builder.getZeroAttr(builder.getI1Type()));
+  return builder.create<mlir::arith::ConstantOp>(
+      location, builder.getZeroAttr(builder.getI1Type()));
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
@@ -2086,7 +2086,8 @@ void QUIRGenQASM3Visitor::startCircuit(mlir::Location location) {
   if (debugCircuits)
     llvm::errs() << "Start Circuit " << currentCircuitOp.getSymName() << "\n";
 
-  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&currentCircuitOp.getBody().front());
+  OpBuilder circuitBuilder =
+      OpBuilder::atBlockBegin(&currentCircuitOp.getBody().front());
 
   circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
   circuitBuilder.setInsertionPointToStart(block);
@@ -2146,8 +2147,8 @@ void QUIRGenQASM3Visitor::finishCircuit() {
       return;
     for (auto *user : value.getUsers()) {
       if (currentCircuitOp->isAncestor(user)) {
-        auto arg = currentCircuitOp.getBody().front().addArgument(value.getType(),
-                                                               value.getLoc());
+        auto arg = currentCircuitOp.getBody().front().addArgument(
+            value.getType(), value.getLoc());
         value.replaceUsesWithIf(arg, [&](OpOperand &operand) {
           return (operand.getOwner()->getParentOp() == currentCircuitOp);
         });

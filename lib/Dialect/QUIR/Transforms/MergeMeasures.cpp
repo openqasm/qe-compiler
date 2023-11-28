@@ -60,7 +60,8 @@ static void mergeMeasurements(PatternRewriter &rewriter, MeasureOp measureOp,
 
   // dice the output so we can specify which results to replace
   auto iterSep = mergedOp.getOuts().begin() + measureOp.getNumResults();
-  rewriter.replaceOp(measureOp, ResultRange(mergedOp.getOuts().begin(), iterSep));
+  rewriter.replaceOp(measureOp,
+                     ResultRange(mergedOp.getOuts().begin(), iterSep));
   rewriter.replaceOp(nextMeasureOp,
                      ResultRange(iterSep, mergedOp.getOuts().end()));
 }

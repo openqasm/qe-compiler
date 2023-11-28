@@ -19,11 +19,11 @@
 #include "Config/CLIConfig.h"
 #include "Config/EnvVarConfig.h"
 
-#include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/Dialect.h"
+#include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/InitAllExtensions.h"
 #include "mlir/InitAllPasses.h"
@@ -421,7 +421,7 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
       *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(
            targetName.value_or(""))
            .value_or(qssc::hal::registry::TargetSystemRegistry::
-                           nullTargetSystemInfo());
+                         nullTargetSystemInfo());
 
   std::optional<llvm::StringRef> conf{};
   if (targetConfigPath.has_value())
@@ -554,7 +554,9 @@ compile_(int argc, char const **argv, std::string *outputString,
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
 
   if (mlir::failed(mlir::applyPassManagerCLOptions(pm)))
-    return llvm::createStringError(llvm::inconvertibleErrorCode(), "Unable to apply pass manager command line options");
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "Unable to apply pass manager command line options");
 
   mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
@@ -701,7 +703,8 @@ compile_(int argc, char const **argv, std::string *outputString,
     context.disableMultithreading();
 
     // Parse the input file and reset the context threading state.
-    mlir::OwningOpRef<mlir::ModuleOp> module = mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, &context);
+    mlir::OwningOpRef<mlir::ModuleOp> module =
+        mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, &context);
     context.enableMultithreading(wasThreadingEnabled);
     if (!module)
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
@@ -833,7 +836,7 @@ _bindArguments(std::string_view target, std::string_view configPath,
   qssc::hal::registry::TargetSystemInfo &targetInfo =
       *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(target)
            .value_or(qssc::hal::registry::TargetSystemRegistry::
-                           nullTargetSystemInfo());
+                         nullTargetSystemInfo());
 
   auto created = targetInfo.createTarget(&context, llvm::StringRef(configPath));
   if (auto err = created.takeError()) {

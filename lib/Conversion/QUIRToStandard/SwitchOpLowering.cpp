@@ -100,8 +100,10 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
 
   rewriter.setInsertionPointToEnd(condBlock);
   rewriter.create<LLVM::SwitchOp>(
-      loc, /*flag=*/switchOp.getFlag(), /*defaultDestination=*/defaultBlock, /*defaultOperands=*/ValueRange(),
-      /*caseValues=*/switchOp.getCaseValues(), /*caseDestinations=*/caseBlocks, /*caseOperands=*/caseOperands);
+      loc, /*flag=*/switchOp.getFlag(), /*defaultDestination=*/defaultBlock,
+      /*defaultOperands=*/ValueRange(),
+      /*caseValues=*/switchOp.getCaseValues(), /*caseDestinations=*/caseBlocks,
+      /*caseOperands=*/caseOperands);
 
   // Ok, we're done!
   rewriter.replaceOp(switchOp, continueBlock->getArguments());

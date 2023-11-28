@@ -237,8 +237,8 @@ LogicalResult MemrefGlobalToAllocaPattern::matchAndRewrite(
   if (!mrt)
     return failure();
 
-  rewriter.replaceOpWithNewOp<mlir::memref::AllocaOp>(op, mrt,
-                                                      global.getAlignmentAttr());
+  rewriter.replaceOpWithNewOp<mlir::memref::AllocaOp>(
+      op, mrt, global.getAlignmentAttr());
   rewriter.eraseOp(global);
   return success();
 }

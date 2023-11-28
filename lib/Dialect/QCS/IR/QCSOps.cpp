@@ -25,7 +25,6 @@
 
 #include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/SymbolTable.h"
@@ -170,10 +169,10 @@ ParameterType ParameterLoadOp::getInitialValue(
 //===----------------------------------------------------------------------===//
 
 mlir::ParseResult ParallelEndOp::parse(mlir::OpAsmParser &parser,
-                                 mlir::OperationState &result) {
+                                       mlir::OperationState &result) {
   return mlir::success();
 }
 
 void ParallelEndOp::print(mlir::OpAsmPrinter &printer) {
-    printer << getOperationName();
+  printer << getOperationName();
 }

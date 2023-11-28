@@ -29,7 +29,8 @@ namespace mlir::quir {
 /// This pass converts input ResetQubitOps to a parameterized number of
 /// measure and the conditionally called x gates, as well as an optional delay.
 struct BreakResetPass
-    : public mlir::PassWrapper<BreakResetPass, mlir::OperationPass<mlir::ModuleOp>> {
+    : public mlir::PassWrapper<BreakResetPass,
+                               mlir::OperationPass<mlir::ModuleOp>> {
   BreakResetPass() = default;
   BreakResetPass(const BreakResetPass &pass) : PassWrapper(pass) {}
   BreakResetPass(uint inNumIterations, uint inDelayCycles) {

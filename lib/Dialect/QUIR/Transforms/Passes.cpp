@@ -29,7 +29,6 @@
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Dominance.h"
 #include "mlir/IR/SymbolTable.h"
 #include "mlir/Pass/Pass.h"

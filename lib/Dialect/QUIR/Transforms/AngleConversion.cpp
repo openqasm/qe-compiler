@@ -37,13 +37,15 @@ using namespace mlir::quir;
 namespace {
 
 struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
-  explicit AngleConversion(MLIRContext *ctx,
-                           std::unordered_map<std::string, mlir::func::FuncOp> &functionOps)
+  explicit AngleConversion(
+      MLIRContext *ctx,
+      std::unordered_map<std::string, mlir::func::FuncOp> &functionOps)
       : OpRewritePattern<quir::CallGateOp>(ctx), functionOps_(functionOps) {}
   LogicalResult matchAndRewrite(quir::CallGateOp callGateOp,
                                 PatternRewriter &rewriter) const override {
     // find the corresponding mlir::func::FuncOp
-    auto findOp = functionOps_.find(callGateOp.getCalleeAttr().getValue().str());
+    auto findOp =
+        functionOps_.find(callGateOp.getCalleeAttr().getValue().str());
     if (findOp == functionOps_.end())
       return failure();
 
@@ -59,8 +61,9 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
         Type funcType = fType.getInput(index);
         if (value.getType() != funcType) {
           APFloat constVal = declOp.getAngleValueFromConstant();
-          declOp.setValueAttr(
-              AngleAttr::get(callGateOp.getContext(), funcType.dyn_cast<AngleType>(), constVal));
+          declOp.setValueAttr(AngleAttr::get(callGateOp.getContext(),
+                                             funcType.dyn_cast<AngleType>(),
+                                             constVal));
           value.setType(funcType);
         }
       }
@@ -78,8 +81,9 @@ private:
 void QUIRAngleConversionPass::runOnOperation() {
 
   auto *op = getOperation();
-  op->walk(
-      [&](mlir::func::FuncOp funcOp) { functionOps[funcOp.getSymName().str()] = funcOp; });
+  op->walk([&](mlir::func::FuncOp funcOp) {
+    functionOps[funcOp.getSymName().str()] = funcOp;
+  });
 
   RewritePatternSet patterns(&getContext());
   patterns.add<AngleConversion>(&getContext(), functionOps);

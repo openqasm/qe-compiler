@@ -73,8 +73,8 @@ void FunctionArgumentSpecializationPass::processCallOp(
         copyFuncAndSpecialize<CallOpTy>(funcOp, callOp, callWorkList);
       } else {
         llvm::errs() << "Fundamental type mismatch between call to "
-                     << callOp.getCallee() << " and func def " << funcOp.getName()
-                     << "\n";
+                     << callOp.getCallee() << " and func def "
+                     << funcOp.getName() << "\n";
       }
     }      // else callable region found
   } else { // callee not matched by mlir::func::FuncOp
@@ -95,7 +95,8 @@ void FunctionArgumentSpecializationPass::processCallOp(
 
 template <class CallOpTy>
 void FunctionArgumentSpecializationPass::copyFuncAndSpecialize(
-    mlir::func::FuncOp inFunc, CallOpTy callOp, std::deque<Operation *> &callWorkList) {
+    mlir::func::FuncOp inFunc, CallOpTy callOp,
+    std::deque<Operation *> &callWorkList) {
   OpBuilder b(inFunc);
 
   std::string newName = SymbolRefAttr::get(inFunc).getLeafReference().str();

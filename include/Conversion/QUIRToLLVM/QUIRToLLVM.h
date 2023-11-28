@@ -78,7 +78,8 @@ static auto translateModuleToLLVMDialect(mlir::ModuleOp op,
   mlir::populateSCFToControlFlowConversionPatterns(patterns);
   mlir::arith::populateArithToLLVMConversionPatterns(typeConverter, patterns);
   mlir::populateFinalizeMemRefToLLVMConversionPatterns(typeConverter, patterns);
-  mlir::cf::populateControlFlowToLLVMConversionPatterns(typeConverter, patterns);
+  mlir::cf::populateControlFlowToLLVMConversionPatterns(typeConverter,
+                                                        patterns);
   mlir::populateFuncToLLVMConversionPatterns(typeConverter, patterns);
 
   if (mlir::applyFullConversion(op, target, std::move(patterns)).failed())

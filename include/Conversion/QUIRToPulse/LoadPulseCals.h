@@ -66,23 +66,32 @@ struct LoadPulseCalsPass
       llvm::cl::desc("default pulse calibrations MLIR file"),
       llvm::cl::value_desc("filename"), llvm::cl::init("")};
 
-  void loadPulseCals(mlir::quir::CallCircuitOp callCircuitOp, mlir::func::FuncOp funcOp);
+  void loadPulseCals(mlir::quir::CallCircuitOp callCircuitOp,
+                     mlir::func::FuncOp funcOp);
   void loadPulseCals(mlir::quir::CallGateOp callGateOp,
-                     mlir::quir::CallCircuitOp callCircuitOp, mlir::func::FuncOp funcOp);
+                     mlir::quir::CallCircuitOp callCircuitOp,
+                     mlir::func::FuncOp funcOp);
   void loadPulseCals(mlir::quir::BuiltinCXOp CXOp,
-                     mlir::quir::CallCircuitOp callCircuitOp, mlir::func::FuncOp funcOp);
+                     mlir::quir::CallCircuitOp callCircuitOp,
+                     mlir::func::FuncOp funcOp);
   void loadPulseCals(mlir::quir::Builtin_UOp UOp,
-                     mlir::quir::CallCircuitOp callCircuitOp, mlir::func::FuncOp funcOp);
+                     mlir::quir::CallCircuitOp callCircuitOp,
+                     mlir::func::FuncOp funcOp);
   void loadPulseCals(mlir::quir::MeasureOp measureOp,
-                     mlir::quir::CallCircuitOp callCircuitOp, mlir::func::FuncOp funcOp);
+                     mlir::quir::CallCircuitOp callCircuitOp,
+                     mlir::func::FuncOp funcOp);
   void loadPulseCals(mlir::quir::BarrierOp barrierOp,
-                     mlir::quir::CallCircuitOp callCircuitOp, mlir::func::FuncOp funcOp);
+                     mlir::quir::CallCircuitOp callCircuitOp,
+                     mlir::func::FuncOp funcOp);
   void loadPulseCals(mlir::quir::DelayOp delayOp,
-                     mlir::quir::CallCircuitOp callCircuitOp, mlir::func::FuncOp funcOp);
+                     mlir::quir::CallCircuitOp callCircuitOp,
+                     mlir::func::FuncOp funcOp);
   void loadPulseCals(mlir::quir::ResetQubitOp resetOp,
-                     mlir::quir::CallCircuitOp callCircuitOp, mlir::func::FuncOp funcOp);
+                     mlir::quir::CallCircuitOp callCircuitOp,
+                     mlir::func::FuncOp funcOp);
 
-  void addPulseCalToModule(mlir::func::FuncOp funcOp, mlir::pulse::SequenceOp sequenceOp);
+  void addPulseCalToModule(mlir::func::FuncOp funcOp,
+                           mlir::pulse::SequenceOp sequenceOp);
 
   // parse the pulse cals and return the parsed module
   llvm::Error parsePulseCalsModuleOp(std::string &pulseCalsPath,

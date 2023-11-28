@@ -59,7 +59,6 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
 
-
 using namespace QASM;
 
 namespace qssc::frontend::openqasm3 {

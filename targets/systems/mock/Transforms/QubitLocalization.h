@@ -102,8 +102,7 @@ struct MockQubitLocalizationPass
   mlir::DenseSet<mlir::Value> alreadyBroadcastValues;
   std::unordered_map<uint, mlir::Operation *> mockModules;   // one per nodeId
   std::unordered_map<uint, mlir::OpBuilder *> *mockBuilders; // one per nodeId
-  std::unordered_map<uint, mlir::IRMapping>
-      mockMapping; // one per nodeId
+  std::unordered_map<uint, mlir::IRMapping> mockMapping;     // one per nodeId
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;

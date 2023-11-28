@@ -22,7 +22,6 @@
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Transforms/DialectConversion.h"
 
 using namespace mlir;
@@ -82,8 +81,8 @@ struct CBitAssignBitOpConversionPattern
     // just a single bit? then generate a value assign
     if (cbitWidth == 1) {
 
-      rewriter.create<mlir::oq3::VariableAssignOp>(loc, op.getVariableNameAttr(),
-                                                   adaptor.getAssignedBit());
+      rewriter.create<mlir::oq3::VariableAssignOp>(
+          loc, op.getVariableNameAttr(), adaptor.getAssignedBit());
 
       rewriter.replaceOp(op, mlir::ValueRange({}));
       return success();
@@ -263,8 +262,8 @@ struct CastCBitToIntConversionPattern : public OQ3ToStandardConversion<CastOp> {
 
     if (cbitType.getWidth() < outWidth) {
       // need to zero-extend to match output type width
-      rewriter.replaceOpWithNewOp<mlir::arith::ExtUIOp>(op, op.getOut().getType(),
-                                                        adaptor.getArg());
+      rewriter.replaceOpWithNewOp<mlir::arith::ExtUIOp>(
+          op, op.getOut().getType(), adaptor.getArg());
       return success();
     }
 

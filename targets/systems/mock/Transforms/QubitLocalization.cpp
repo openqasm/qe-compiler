@@ -31,7 +31,6 @@
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/IRMapping.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
 
@@ -61,7 +60,8 @@ auto mock::MockQubitLocalizationPass::lookupQubitId(const Value &val) -> int {
     // see if we can find an attribute with the info
     if (auto blockArg = val.dyn_cast<BlockArgument>()) {
       unsigned argIdx = blockArg.getArgNumber();
-      auto funcOp = dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
+      auto funcOp =
+          dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
       if (funcOp) {
         auto argAttr =
             funcOp.getArgAttrOfType<IntegerAttr>(argIdx, "quir.physicalId");
@@ -104,16 +104,16 @@ void mock::MockQubitLocalizationPass::broadcastAndReceiveValue(
   } // if alreadyBroadcastValues.count(val) == 0
 } // broadcastValue
 
-void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
-    Region *from, Region *dest, IRMapping &mapper) {
+void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(Region *from,
+                                                            Region *dest,
+                                                            IRMapping &mapper) {
   assert(dest && "expected valid region to clone into");
   cloneRegionWithoutOps(from, dest, dest->end(), mapper);
 } // cloneRegionWithoutOps
 
 // clone region (from) into region (dest) before the given position
 void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
-    Region *from, Region *dest, Region::iterator destPos,
-    IRMapping &mapper) {
+    Region *from, Region *dest, Region::iterator destPos, IRMapping &mapper) {
   assert(dest && "expected valid region to clone into");
   assert(from != dest && "cannot clone region into itself");
 
@@ -153,11 +153,11 @@ void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
 auto mock::MockQubitLocalizationPass::addMainFunction(
     Operation *moduleOperation, const Location &loc) -> mlir::func::FuncOp {
   OpBuilder b(moduleOperation->getRegion(0));
-  auto funcOp =
-      b.create<mlir::func::FuncOp>(loc, "main",
-                       b.getFunctionType(
-                           /*inputs=*/ArrayRef<Type>(),
-                           /*results=*/ArrayRef<Type>(b.getI32Type())));
+  auto funcOp = b.create<mlir::func::FuncOp>(
+      loc, "main",
+      b.getFunctionType(
+          /*inputs=*/ArrayRef<Type>(),
+          /*results=*/ArrayRef<Type>(b.getI32Type())));
   funcOp.getOperation()->setAttr(llvm::StringRef("quir.classicalOnly"),
                                  b.getBoolAttr(false));
   funcOp.addEntryBlock();
@@ -529,7 +529,8 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
     (*mockBuilders)[nodeId]->clone(*op, mockMapping[nodeId]);
 } // processOp DelayOp
 
-void mock::MockQubitLocalizationPass::processOp(mlir::func::ReturnOp &returnOp) {
+void mock::MockQubitLocalizationPass::processOp(
+    mlir::func::ReturnOp &returnOp) {
   Operation *op = returnOp.getOperation();
   controllerBuilder->clone(*op, controllerMapping);
   FlatSymbolRefAttr symbolRef = SymbolRefAttr::get(op->getParentOp());
@@ -592,8 +593,8 @@ void mock::MockQubitLocalizationPass::processOp(
               controllerBuilder->getIndexArrayAttr(
                   config->acquireNode(savedQubitId)));
       // map the result on the drive node
-      mockMapping[config->driveNode(savedQubitId)].map(ifOp.getCondition(),
-                                                       recvOp.getVals().front());
+      mockMapping[config->driveNode(savedQubitId)].map(
+          ifOp.getCondition(), recvOp.getVals().front());
     }
   }
 
@@ -728,8 +729,8 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
   // We do this first so that we can detect all physical qubit declarations
   auto newBuilders = std::make_unique<std::unordered_map<uint, OpBuilder *>>();
   mainFunc->walk([&](DeclareQubitOp qubitOp) {
-    llvm::outs() << qubitOp.getOperation()->getName() << " id: " << qubitOp.getId()
-                 << "\n";
+    llvm::outs() << qubitOp.getOperation()->getName()
+                 << " id: " << qubitOp.getId() << "\n";
     if (!qubitOp.getId().has_value() ||
         qubitOp.getId().value() > config->getNumQubits()) {
       qubitOp->emitOpError()

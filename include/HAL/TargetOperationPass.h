@@ -61,8 +61,8 @@ protected:
       return nullptr;
     }
 
-    auto target = targetInfo.value()->getTarget(
-        &mlir::OperationPass<OpT>::getContext());
+    auto target =
+        targetInfo.value()->getTarget(&mlir::OperationPass<OpT>::getContext());
     if (!target) {
       // look for a child target that matches
       for (const auto &childName : TargetT::childNames)

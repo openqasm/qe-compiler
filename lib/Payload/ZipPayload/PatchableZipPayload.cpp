@@ -178,7 +178,8 @@ llvm::Error PatchableZipPayload::writeString(std::string *outputString) {
 
   std::optional<llvm::raw_string_ostream> outStringStream;
   outStringStream.emplace(*outputString);
-  llvm::raw_ostream *ostream = std::addressof(outStringStream.value());;
+  llvm::raw_ostream *ostream = std::addressof(outStringStream.value());
+  ;
 
   if (inMemoryZipSource) {
     // read from in memory source

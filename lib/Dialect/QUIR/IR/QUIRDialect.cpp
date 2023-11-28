@@ -77,8 +77,8 @@ struct QuirInlinerInterface : public DialectInlinerInterface {
   }
 
   /// For now all operations within quir can be inlined.
-  auto isLegalToInline(Operation *, Region *, bool,
-                       IRMapping &) const -> bool final {
+  auto isLegalToInline(Operation *, Region *, bool, IRMapping &) const
+      -> bool final {
     return true;
   }
 };

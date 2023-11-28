@@ -78,7 +78,8 @@ void ReorderCircuitsPass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   patterns.add<ReorderCircuitsAndNonCircuitPat>(&getContext());
 
-  mlir::func::FuncOp mainFunc = dyn_cast<mlir::func::FuncOp>(getMainFunction(moduleOperation));
+  mlir::func::FuncOp mainFunc =
+      dyn_cast<mlir::func::FuncOp>(getMainFunction(moduleOperation));
 
   if (!mainFunc) {
     signalPassFailure();

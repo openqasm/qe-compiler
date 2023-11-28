@@ -61,7 +61,6 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
   return success();
 }
 
-
 //===----------------------------------------------------------------------===//
 // CBit ops
 //===----------------------------------------------------------------------===//
@@ -91,10 +90,10 @@ findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
   return std::nullopt;
 }
 
-::mlir::OpFoldResult
-CBitExtractBitOp::fold(FoldAdaptor adaptor) {
+::mlir::OpFoldResult CBitExtractBitOp::fold(FoldAdaptor adaptor) {
 
-  auto foundDefiningBitOrNone = findDefiningBitInBitmap(getOperand(), getIndexAttr());
+  auto foundDefiningBitOrNone =
+      findDefiningBitInBitmap(getOperand(), getIndexAttr());
 
   if (foundDefiningBitOrNone)
     return foundDefiningBitOrNone.value();
@@ -126,15 +125,18 @@ CBitAssignBitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 //===----------------------------------------------------------------------===//
 
 mlir::LogicalResult DeclareVariableOp::verify() {
-    auto t = (*this).getType();
+  auto t = (*this).getType();
 
-    if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat() || t.isa<ComplexType>())
-        return success();
-    std::string str;
-    llvm::raw_string_ostream os(str);
-    t.print(os);
+  if (t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() ||
+      t.isa<::mlir::quir::DurationType>() ||
+      t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat() ||
+      t.isa<ComplexType>())
+    return success();
+  std::string str;
+  llvm::raw_string_ostream os(str);
+  t.print(os);
 
-    return emitOpError("MLIR type " + str + " not supported for declarations.");
+  return emitOpError("MLIR type " + str + " not supported for declarations.");
 }
 
 mlir::LogicalResult
@@ -156,8 +158,10 @@ VariableLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 mlir::LogicalResult DeclareArrayOp::verify() {
   auto t = (*this).getType();
 
-  if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat())
-      return success();
+  if (t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() ||
+      t.isa<::mlir::quir::DurationType>() ||
+      t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat())
+    return success();
   return failure();
 }
 
@@ -176,12 +180,15 @@ UseArrayElementOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 //===----------------------------------------------------------------------===//
 
 mlir::LogicalResult AngleCmpOp::verify() {
-  std::vector predicates = { "eq", "ne", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge" };
+  std::vector predicates = {"eq",  "ne",  "slt", "sle", "sgt",
+                            "sge", "ult", "ule", "ugt", "uge"};
 
-  if (std::find(predicates.begin(), predicates.end(), getPredicate()) != predicates.end())
-      return success();
+  if (std::find(predicates.begin(), predicates.end(), getPredicate()) !=
+      predicates.end())
+    return success();
   else
-      return emitOpError("requires predicate \"eq\", \"ne\", \"slt\", \"sle\", \"sgt\", \"sge\", \"ult\", \"ule\", \"ugt\", \"uge\"");
+    return emitOpError("requires predicate \"eq\", \"ne\", \"slt\", \"sle\", "
+                       "\"sgt\", \"sge\", \"ult\", \"ule\", \"ugt\", \"uge\"");
 }
 
 #define GET_OP_CLASSES

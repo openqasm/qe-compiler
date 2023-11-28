@@ -24,9 +24,7 @@
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/DialectImplementation.h"
 
-namespace mlir::quir {
-
-} // namespace mlir::pulse
+namespace mlir::quir {} // namespace mlir::quir
 
 #define GET_ATTRDEF_CLASSES
 #include "Dialect/Pulse/IR/PulseAttributes.h.inc"

@@ -31,11 +31,10 @@
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Func/Transforms/FuncConversions.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/Dialect/Func/Transforms/FuncConversions.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Transforms/DialectConversion.h"
@@ -51,7 +50,8 @@ struct ReturnConversionPat : public OpConversionPattern<mlir::func::ReturnOp> {
   LogicalResult
   matchAndRewrite(mlir::func::ReturnOp retOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
-    rewriter.create<mlir::func::ReturnOp>(retOp->getLoc(), adaptor.getOperands());
+    rewriter.create<mlir::func::ReturnOp>(retOp->getLoc(),
+                                          adaptor.getOperands());
     rewriter.eraseOp(retOp);
     return success();
   } // matchAndRewrite
@@ -106,8 +106,10 @@ struct AngleBinOpConversionPat : public OpConversionPattern<QuirOp> {
   matchAndRewrite(QuirOp binOp, typename QuirOp::Adaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
     auto operands = adaptor.getOperands();
-    auto angleWidth =
-        binOp.getLhs().getType().template dyn_cast<quir::AngleType>().getWidth();
+    auto angleWidth = binOp.getLhs()
+                          .getType()
+                          .template dyn_cast<quir::AngleType>()
+                          .getWidth();
 
     // cannot handle non-parameterized angle types
     if (!angleWidth.has_value())
@@ -200,14 +202,16 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   target
       .addIllegalDialect<quir::QUIRDialect, qcs::QCSDialect, oq3::OQ3Dialect>();
   target.addIllegalOp<qcs::RecvOp, qcs::BroadcastOp>();
-  target.addDynamicallyLegalOp<mlir::func::FuncOp>(
-      [&](mlir::func::FuncOp op) { return typeConverter.isSignatureLegal(op.getFunctionType()); });
+  target.addDynamicallyLegalOp<mlir::func::FuncOp>([&](mlir::func::FuncOp op) {
+    return typeConverter.isSignatureLegal(op.getFunctionType());
+  });
   target.addDynamicallyLegalOp<func::CallOp>([&](func::CallOp op) {
     return typeConverter.isSignatureLegal(op.getCalleeType());
   });
-  target.addDynamicallyLegalOp<mlir::func::ReturnOp>([&](mlir::func::ReturnOp op) {
-    return typeConverter.isLegal(op.getOperandTypes());
-  });
+  target.addDynamicallyLegalOp<mlir::func::ReturnOp>(
+      [&](mlir::func::ReturnOp op) {
+        return typeConverter.isLegal(op.getOperandTypes());
+      });
   // We mark `ConstantOp` legal so we don't err when attempting to convert a
   // constant `DurationType`. (Only `AngleType` is currently handled by the
   // conversion pattern, `ConstantOpConversionPat`.)
@@ -224,8 +228,8 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   target.addLegalOp<quir::YieldOp>();
 
   RewritePatternSet patterns(context);
-  populateFunctionOpInterfaceTypeConversionPattern<mlir::func::FuncOp>(patterns,
-                                                           typeConverter);
+  populateFunctionOpInterfaceTypeConversionPattern<mlir::func::FuncOp>(
+      patterns, typeConverter);
   populateCallOpTypeConversionPattern(patterns, typeConverter);
   // clang-format off
   patterns.add<ConstantOpConversionPat,

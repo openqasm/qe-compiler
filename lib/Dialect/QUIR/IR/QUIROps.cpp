@@ -22,11 +22,11 @@
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/FunctionImplementation.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
@@ -180,21 +180,18 @@ APFloat quir::ConstantOp::getAngleValueFromConstant() {
 LogicalResult CallDefcalMeasureOp::verify() {
   bool qubitFound = false;
   for (auto arg : (*this)->getOperands()) {
-      if(qubitFound) {
-          if(arg.getType().isa<QubitType>()) {
-              return emitOpError("requires exactly one qubit argument");
-          }
-      } else {
-          if(arg.getType().isa<QubitType>()) {
-              qubitFound = true;
-          }
-      }
+    if (qubitFound) {
+      if (arg.getType().isa<QubitType>())
+        return emitOpError("requires exactly one qubit argument");
+    } else {
+      if (arg.getType().isa<QubitType>())
+        qubitFound = true;
+    }
   }
-  if (qubitFound) {
-      return success();
-  } else {
-      return emitOpError("requires exactly one qubit");
-  }
+  if (qubitFound)
+    return success();
+  else
+    return emitOpError("requires exactly one qubit");
 }
 
 mlir::OpFoldResult ConstantOp::fold(FoldAdaptor adaptor) {
@@ -204,7 +201,7 @@ mlir::OpFoldResult ConstantOp::fold(FoldAdaptor adaptor) {
 
 /// Materialize a constant, can be any buildable type, used by canonicalization
 ConstantOp ConstantOp::materialize(OpBuilder &builder, Attribute value,
-                                            Type type, Location loc) {
+                                   Type type, Location loc) {
   return builder.create<quir::ConstantOp>(loc, cast<TypedAttr>(value));
 }
 
@@ -214,13 +211,13 @@ Operation *QUIRDialect::materializeConstant(OpBuilder &builder, Attribute value,
   return builder.create<quir::ConstantOp>(loc, type, cast<TypedAttr>(value));
 }
 
-
 //===----------------------------------------------------------------------===//
 // CallDefcalMeasureOp
 //===----------------------------------------------------------------------===//
 
 auto CallDefcalMeasureOp::getCalleeType() -> FunctionType {
-  return FunctionType::get(getContext(), getOperandTypes(), getResult().getType());
+  return FunctionType::get(getContext(), getOperandTypes(),
+                           getResult().getType());
 }
 
 //===----------------------------------------------------------------------===//
@@ -320,7 +317,7 @@ std::set<uint32_t> CallCircuitOp::getOperatedQubits() {
 //===----------------------------------------------------------------------===//
 
 mlir::ParseResult CircuitOp::parse(mlir::OpAsmParser &parser,
-                                 mlir::OperationState &result) {
+                                   mlir::OperationState &result) {
   auto buildFuncType =
       [](Builder &builder, ArrayRef<Type> argTypes, ArrayRef<Type> results,
          function_interface_impl::VariadicFlag,
@@ -342,13 +339,12 @@ void CircuitOp::print(mlir::OpAsmPrinter &printer) {
 static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
   auto fnInputTypes = op.getFunctionType().getInputs();
   Block &entryBlock = op.front();
-  for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i) {
+  for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i)
     if (fnInputTypes[i] != entryBlock.getArgument(i).getType())
       return op.emitOpError("type of entry block argument #")
              << i << '(' << entryBlock.getArgument(i).getType()
              << ") must match the type of the corresponding argument in "
              << "function signature(" << fnInputTypes[i] << ')';
-  }
   return success();
 }
 
@@ -357,10 +353,10 @@ static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
 static LogicalResult verifyClassical_(CircuitOp op) {
   mlir::Operation *classicalOp = nullptr;
   WalkResult result = op->walk([&](Operation *subOp) {
-    if (isa<mlir::arith::ConstantOp>(subOp) || isa<mlir::arith::ConstantOp>(subOp) ||
-        isa<quir::ConstantOp>(subOp) || isa<CallCircuitOp>(subOp) ||
-        isa<quir::ReturnOp>(subOp) || isa<CircuitOp>(subOp) ||
-        subOp->hasTrait<mlir::quir::UnitaryOp>() ||
+    if (isa<mlir::arith::ConstantOp>(subOp) ||
+        isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
+        isa<CallCircuitOp>(subOp) || isa<quir::ReturnOp>(subOp) ||
+        isa<CircuitOp>(subOp) || subOp->hasTrait<mlir::quir::UnitaryOp>() ||
         subOp->hasTrait<mlir::quir::CPTPOp>())
       return WalkResult::advance();
     classicalOp = subOp;
@@ -512,8 +508,8 @@ LogicalResult mlir::quir::ReturnOp::verify() {
        llvm::zip(circuitType.getResults(), getOperands())) {
     auto opType = operand.getType();
     if (type != opType) {
-      return emitOpError()
-             << "unexpected type `" << opType << "' for operand #" << i;
+      return emitOpError() << "unexpected type `" << opType << "' for operand #"
+                           << i;
     }
     i++;
   }
@@ -535,7 +531,7 @@ LogicalResult mlir::quir::ReturnOp::verify() {
 // SwitchOp
 //===----------------------------------------------------------------------===//
 mlir::ParseResult SwitchOp::parse(mlir::OpAsmParser &parser,
-                                 mlir::OperationState &result) {
+                                  mlir::OperationState &result) {
   Builder &builder = parser.getBuilder();
   OpAsmParser::UnresolvedOperand flag;
   Region *defaultRegion;
@@ -601,8 +597,8 @@ void SwitchOp::print(mlir::OpAsmPrinter &printer) {
     printBlockTerminators = true;
   }
   printer.printRegion(getDefaultRegion(),
-                /*printEntryBlockOperands=*/false,
-                /*printBlockTerminators=*/printBlockTerminators);
+                      /*printEntryBlockOperands=*/false,
+                      /*printBlockTerminators=*/printBlockTerminators);
 
   printer << "[";
 
@@ -616,13 +612,12 @@ void SwitchOp::print(mlir::OpAsmPrinter &printer) {
       id += 1;
       printer << " : ";
       printer.printRegion(*region,
-                    /*printEntryBlockOperands=*/false,
-                    /*printBlockTerminators=*/printBlockTerminators);
+                          /*printEntryBlockOperands=*/false,
+                          /*printBlockTerminators=*/printBlockTerminators);
     }
   printer << "]";
   printer.printOptionalAttrDict((*this)->getAttrs().drop_front(1));
 }
-
 
 /// Given the region at `index`, or the parent operation if `index` is None,
 /// return the successor regions. These are the regions that may be selected
@@ -640,8 +635,8 @@ void quir::SwitchOp::getSuccessorRegions(
 
   // all regions are possible to be the successor
   regions.push_back(RegionSuccessor(&getDefaultRegion()));
-  for (auto *region = getCaseRegions().begin(); region != getCaseRegions().end();
-       region++)
+  for (auto *region = getCaseRegions().begin();
+       region != getCaseRegions().end(); region++)
     regions.push_back(region);
 }
 
@@ -649,8 +644,7 @@ LogicalResult quir::SwitchOp::verify() {
   if ((!getCaseValues() && !getCaseRegions().empty()) ||
       (getCaseValues() &&
        getCaseValues().size() != static_cast<int64_t>(getCaseRegions().size())))
-    return emitOpError(
-        "expects same number of case values and case regions");
+    return emitOpError("expects same number of case values and case regions");
 
   return success();
 }
@@ -672,12 +666,10 @@ LogicalResult quir::YieldOp::verify() {
     return emitOpError() << "only terminates quir.switch regions";
   if (parentOp->getNumResults() != getNumOperands())
     return emitOpError() << "parent of yield must have same number of "
-                               "results as the yield operands";
-  for (auto it : llvm::zip(results, operands)) {
+                            "results as the yield operands";
+  for (auto it : llvm::zip(results, operands))
     if (std::get<0>(it).getType() != std::get<1>(it).getType())
-      return emitOpError()
-             << "types mismatch between yield op and its parent";
-  }
+      return emitOpError() << "types mismatch between yield op and its parent";
 
   return success();
 }
@@ -692,7 +684,6 @@ LogicalResult quir::YieldOp::verify() {
 
 #define GET_OP_CLASSES
 #include "Dialect/QUIR/IR/QUIR.cpp.inc"
-
 
 #define GET_ENUM_CLASSES
 #include "Dialect/QUIR/IR/QUIREnums.cpp.inc"

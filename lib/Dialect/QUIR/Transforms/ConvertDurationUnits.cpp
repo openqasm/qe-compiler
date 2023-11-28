@@ -25,7 +25,6 @@
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
@@ -277,33 +276,27 @@ void ConvertDurationUnitsPass::runOnOperation() {
     return true;
   });
 
-    target.addDynamicallyLegalOp<mlir::func::FuncOp>(
-      [&](mlir::func::FuncOp op) {
-        for (auto type : op.getArgumentTypes()) {
-          if (checkTypeNeedsConversion(type, targetConvertUnits))
-            return false;
-        }
-        for (auto type : op.getResultTypes()) {
-          if (checkTypeNeedsConversion(type, targetConvertUnits))
-            return false;
-        }
+  target.addDynamicallyLegalOp<mlir::func::FuncOp>([&](mlir::func::FuncOp op) {
+    for (auto type : op.getArgumentTypes())
+      if (checkTypeNeedsConversion(type, targetConvertUnits))
+        return false;
+    for (auto type : op.getResultTypes())
+      if (checkTypeNeedsConversion(type, targetConvertUnits))
+        return false;
 
-        return true;
-      });
+    return true;
+  });
 
-  target.addDynamicallyLegalOp<quir::CircuitOp>(
-      [&](quir::CircuitOp op) {
-        for (auto type : op.getArgumentTypes()) {
-          if (checkTypeNeedsConversion(type, targetConvertUnits))
-            return false;
-        }
-        for (auto type : op.getResultTypes()) {
-          if (checkTypeNeedsConversion(type, targetConvertUnits))
-            return false;
-        }
+  target.addDynamicallyLegalOp<quir::CircuitOp>([&](quir::CircuitOp op) {
+    for (auto type : op.getArgumentTypes())
+      if (checkTypeNeedsConversion(type, targetConvertUnits))
+        return false;
+    for (auto type : op.getResultTypes())
+      if (checkTypeNeedsConversion(type, targetConvertUnits))
+        return false;
 
-        return true;
-      });
+    return true;
+  });
 
   // Only constant declared durations if their type is not
   // the target output duration type.
@@ -311,14 +304,12 @@ void ConvertDurationUnitsPass::runOnOperation() {
       .addDynamicallyLegalOp<quir::DelayOp, quir::ReturnOp, quir::CallCircuitOp,
                              mlir::func::ReturnOp, mlir::func::CallOp>(
           [&](mlir::Operation *op) {
-            for (auto type : op->getOperandTypes()) {
+            for (auto type : op->getOperandTypes())
               if (checkTypeNeedsConversion(type, targetConvertUnits))
                 return false;
-            }
-            for (auto type : op->getResultTypes()) {
+            for (auto type : op->getResultTypes())
               if (checkTypeNeedsConversion(type, targetConvertUnits))
                 return false;
-            }
             return true;
           });
 

@@ -31,7 +31,6 @@
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
-#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Transforms/DialectConversion.h"
@@ -196,8 +195,9 @@ findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
   // Create new one at the top of the start of the function
   builder.setInsertionPointToStart(&surroundingFunction.getBody().front());
 
-  return builder.create<mlir::memref::GetGlobalOp>(
-      variableOp.getLoc(), globalMemrefOp.getType(), globalMemrefOp.getSymName());
+  return builder.create<mlir::memref::GetGlobalOp>(variableOp.getLoc(),
+                                                   globalMemrefOp.getType(),
+                                                   globalMemrefOp.getSymName());
 }
 
 struct VariableUseConversionPattern
@@ -216,8 +216,8 @@ struct VariableUseConversionPattern
       return failure();
 
     auto varRef = varRefOrNone.value();
-    auto loadOp =
-        rewriter.create<mlir::affine::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
+    auto loadOp = rewriter.create<mlir::affine::AffineLoadOp>(
+        useOp.getLoc(), varRef.getResult());
 
     rewriter.replaceOp(useOp, loadOp);
     return success();

@@ -84,9 +84,8 @@ static llvm::cl::opt<std::string>
                    llvm::cl::value_desc("filename"), llvm::cl::init("-"));
 
 llvm::Expected<std::pair<std::string, std::string>>
-registerAndParseCLIOptions(int argc, char **argv,
-                                 llvm::StringRef toolName,
-                                 mlir::DialectRegistry &registry) {
+registerAndParseCLIOptions(int argc, char **argv, llvm::StringRef toolName,
+                           mlir::DialectRegistry &registry) {
 
   // Register any command line options.
   mlir::MlirOptMainConfig::registerCLOptions(registry);
@@ -130,7 +129,8 @@ registerAndParseCLIOptions(int argc, char **argv,
         registry::TargetSystemRegistry::lookupPluginInfo(targetStr);
     if (!targetInfo)
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Error: Target " + targetStr + " is not registered.\n");
+                                     "Error: Target " + targetStr +
+                                         " is not registered.\n");
 
     std::optional<llvm::StringRef> conf{};
     if (!configurationPath.empty())
@@ -142,14 +142,13 @@ registerAndParseCLIOptions(int argc, char **argv,
     // We do this only because MlirOptMain does not expose the MLIRContext
     // it creates for us.
     if (!targetInfo.value()->createTarget(nullptr, conf))
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Error: Target " + targetStr + " could not be created.\n");
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "Error: Target " + targetStr +
+                                         " could not be created.\n");
   }
-
 
   return std::make_pair(inputFilename.getValue(), outputFilename.getValue());
 }
-
 
 mlir::LogicalResult QSSCOptMain(int argc, char **argv,
                                 llvm::StringRef inputFilename,
@@ -158,7 +157,8 @@ mlir::LogicalResult QSSCOptMain(int argc, char **argv,
 
   llvm::InitLLVM y(argc, argv);
 
-  mlir::MlirOptMainConfig config = mlir::MlirOptMainConfig::createFromCLOptions();
+  mlir::MlirOptMainConfig config =
+      mlir::MlirOptMainConfig::createFromCLOptions();
 
   // When reading from stdin and the input is a tty, it is often a user mistake
   // and the process "appears to be stuck". Print a message to let the user know
@@ -182,7 +182,8 @@ mlir::LogicalResult QSSCOptMain(int argc, char **argv,
     return mlir::failure();
   }
 
-  if (mlir::failed(mlir::MlirOptMain(output->os(), std::move(file), registry, config)))
+  if (mlir::failed(
+          mlir::MlirOptMain(output->os(), std::move(file), registry, config)))
     return mlir::failure();
 
   // Keep the output file if the invocation of MlirOptMain was successful.
@@ -205,7 +206,8 @@ auto main(int argc, char **argv) -> int {
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;
-  auto expectedFileNames = registerAndParseCLIOptions(argc, argv, toolName, registry);
+  auto expectedFileNames =
+      registerAndParseCLIOptions(argc, argv, toolName, registry);
   if (auto err = expectedFileNames.takeError()) {
     llvm::errs() << err << "\n";
     return 1;
@@ -213,7 +215,8 @@ auto main(int argc, char **argv) -> int {
 
   std::tie(inputFilename, outputFilename) = expectedFileNames.get();
 
-  if (mlir::failed(QSSCOptMain(argc, argv, inputFilename, outputFilename, registry)))
+  if (mlir::failed(
+          QSSCOptMain(argc, argv, inputFilename, outputFilename, registry)))
     return 1;
 
   return 0;

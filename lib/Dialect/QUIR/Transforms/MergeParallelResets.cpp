@@ -67,8 +67,8 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
       return failure();
 
     // check if we can add this reset
-    if (!std::all_of(nextResetOp.getQubits().begin(), nextResetOp.getQubits().end(),
-                     [&](auto qubit) {
+    if (!std::all_of(nextResetOp.getQubits().begin(),
+                     nextResetOp.getQubits().end(), [&](auto qubit) {
                        // can merge this adjacent qubit reset op when we can
                        // lookup all of its qubits' ids and these are not
                        // overlapping with the qubit ids in resetOp or other

@@ -74,7 +74,8 @@ void LimitCBitWidthPass::processOp(
   uint64_t index;
   uint64_t reg;
   std::tie(reg, index) = remapBit(cbitAssignOp.getIndex());
-  auto width = newRegisters[reg].getType().dyn_cast<quir::CBitType>().getWidth();
+  auto width =
+      newRegisters[reg].getType().dyn_cast<quir::CBitType>().getWidth();
   auto value = cbitAssignOp.getAssignedBit();
 
   OpBuilder builder(cbitAssignOp);
@@ -91,14 +92,15 @@ void LimitCBitWidthPass::processOp(
     VariableAssignOp variableAssignOp, uint orgWidth, uint numRegistersRequired,
     uint numRemainingBits,
     llvm::SmallVector<mlir::oq3::DeclareVariableOp> &newRegisters) {
-  auto castOp =
-      dyn_cast<oq3::CastOp>(variableAssignOp.getAssignedValue().getDefiningOp());
+  auto castOp = dyn_cast<oq3::CastOp>(
+      variableAssignOp.getAssignedValue().getDefiningOp());
   if (!castOp) {
     variableAssignOp.emitError(
         "expect assigned_value() to be defined by a CastOp");
     signalPassFailure();
   }
-  auto constantOp = dyn_cast<arith::ConstantOp>(castOp.getArg().getDefiningOp());
+  auto constantOp =
+      dyn_cast<arith::ConstantOp>(castOp.getArg().getDefiningOp());
   if (!constantOp) {
     castOp.emitError("expect cast arg() to be a constant op");
     signalPassFailure();
@@ -130,8 +132,9 @@ void LimitCBitWidthPass::processOp(
         constantOp->getLoc(), builder.getType<mlir::quir::CBitType>(bitWidth),
         initializerVal);
 
-    builder.create<VariableAssignOp>(
-        variableAssignOp->getLoc(), newRegisters[regNum].getSymName(), newCastOp);
+    builder.create<VariableAssignOp>(variableAssignOp->getLoc(),
+                                     newRegisters[regNum].getSymName(),
+                                     newCastOp);
   }
   eraseList_.push_back(variableAssignOp);
 }
