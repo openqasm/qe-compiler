@@ -101,6 +101,7 @@ def test_compile_invalid_file(example_invalid_qasm3_tmpfile):
     with pytest.raises(QSSCompilationFailure):
         compile_file(
             example_invalid_qasm3_tmpfile,
+            return_diagnostics=True,  # For testing purposes
             input_type=InputType.QASM3,
             output_type=OutputType.MLIR,
             output_file=None,
@@ -114,6 +115,7 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     with pytest.raises(QSSCompilationFailure) as compfail:
         compile_str(
             example_invalid_qasm3_str,
+            return_diagnostics=True,  # For testing purposes
             input_type=InputType.QASM3,
             output_type=OutputType.MLIR,
             output_file=None,
@@ -122,6 +124,10 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     assert hasattr(compfail.value, "diagnostics")
 
     diags = compfail.value.diagnostics
+
+    print("\n****************************************************\n")
+    print(str(compfail.value))
+    print("\n****************************************************\n")
 
     assert any(
         diag.severity == Severity.Error
