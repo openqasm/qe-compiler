@@ -47,13 +47,11 @@ set(qssc_api_libs
         MLIRCallInterfaces
         MLIRExecutionEngine
         MLIROptLib
-        MLIRArithDialect
         MLIRLLVMDialect
         MLIROQ3Dialect
         MLIRQCSDialect
         MLIRQUIRDialect
         MLIRPulseDialect
-        MLIRSCFDialect
         qasm::qasm
         mpc::mpc
         mpfr::mpfr
