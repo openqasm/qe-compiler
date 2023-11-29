@@ -186,9 +186,9 @@ mlir::LogicalResult AngleCmpOp::verify() {
   if (std::find(predicates.begin(), predicates.end(), getPredicate()) !=
       predicates.end())
     return success();
-  else
-    return emitOpError("requires predicate \"eq\", \"ne\", \"slt\", \"sle\", "
-                       "\"sgt\", \"sge\", \"ult\", \"ule\", \"ugt\", \"uge\"");
+
+  return emitOpError("requires predicate \"eq\", \"ne\", \"slt\", \"sle\", "
+                      "\"sgt\", \"sge\", \"ult\", \"ule\", \"ugt\", \"uge\"");
 }
 
 #define GET_OP_CLASSES

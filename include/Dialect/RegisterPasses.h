@@ -22,9 +22,13 @@
 #define REGISTER_PASSES_H
 
 #include "Dialect/OQ3/IR/OQ3Dialect.h"
+#include "Dialect/OQ3/Transforms/Passes.h"
 #include "Dialect/Pulse/IR/PulseDialect.h"
+#include "Dialect/Pulse/Transforms/Passes.h"
 #include "Dialect/QCS/IR/QCSDialect.h"
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
+#include "Dialect/QUIR/Transforms/Passes.h"
 #include "HAL/PassRegistration.h"
 
 #include "mlir/InitAllPasses.h"

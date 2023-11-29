@@ -190,8 +190,8 @@ LogicalResult CallDefcalMeasureOp::verify() {
   }
   if (qubitFound)
     return success();
-  else
-    return emitOpError("requires exactly one qubit");
+
+  return emitOpError("requires exactly one qubit");
 }
 
 mlir::OpFoldResult ConstantOp::fold(FoldAdaptor adaptor) {
@@ -353,8 +353,7 @@ static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
 static LogicalResult verifyClassical_(CircuitOp op) {
   mlir::Operation *classicalOp = nullptr;
   WalkResult result = op->walk([&](Operation *subOp) {
-    if (isa<mlir::arith::ConstantOp>(subOp) ||
-        isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
+    if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
         isa<CallCircuitOp>(subOp) || isa<quir::ReturnOp>(subOp) ||
         isa<CircuitOp>(subOp) || subOp->hasTrait<mlir::quir::UnitaryOp>() ||
         subOp->hasTrait<mlir::quir::CPTPOp>())
@@ -604,14 +603,13 @@ void SwitchOp::print(mlir::OpAsmPrinter &printer) {
 
   uint64_t id = 0;
 
-  for (auto *region = (getCaseRegions()).begin();
-       region != (getCaseRegions()).end(); region++)
-    if (!(region->empty())) {
+for (auto &region : getCaseRegions())
+    if (!(region.empty())) {
       printer.printAttributeWithoutType(
           getCaseValuesAttr().getValues<Attribute>()[id]);
       id += 1;
       printer << " : ";
-      printer.printRegion(*region,
+      printer.printRegion(region,
                           /*printEntryBlockOperands=*/false,
                           /*printBlockTerminators=*/printBlockTerminators);
     }

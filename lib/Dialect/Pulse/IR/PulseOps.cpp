@@ -316,8 +316,7 @@ static LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
 static LogicalResult verifyClassical_(SequenceOp op) {
   mlir::Operation *classicalOp = nullptr;
   WalkResult result = op->walk([&](Operation *subOp) {
-    if (isa<mlir::arith::ConstantOp>(subOp) ||
-        isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
+    if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
         isa<CallSequenceOp>(subOp) || isa<pulse::ReturnOp>(subOp) ||
         isa<SequenceOp>(subOp) || isa<mlir::complex::CreateOp>(subOp) ||
         subOp->hasTrait<mlir::pulse::SequenceAllowed>() ||
