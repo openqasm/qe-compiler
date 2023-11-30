@@ -125,10 +125,6 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
 
     diags = compfail.value.diagnostics
 
-    print("\n****************************************************\n")
-    print(str(compfail.value))
-    print("\n****************************************************\n")
-
     assert any(
         diag.severity == Severity.Error
         and diag.category == ErrorCategory.OpenQASM3ParseFailure
