@@ -188,7 +188,7 @@ mlir::LogicalResult AngleCmpOp::verify() {
     return success();
 
   return emitOpError("requires predicate \"eq\", \"ne\", \"slt\", \"sle\", "
-                      "\"sgt\", \"sge\", \"ult\", \"ule\", \"ugt\", \"uge\"");
+                     "\"sgt\", \"sge\", \"ult\", \"ule\", \"ugt\", \"uge\"");
 }
 
 #define GET_OP_CLASSES

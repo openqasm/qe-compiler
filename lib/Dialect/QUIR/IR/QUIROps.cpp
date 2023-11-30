@@ -603,7 +603,7 @@ void SwitchOp::print(mlir::OpAsmPrinter &printer) {
 
   uint64_t id = 0;
 
-for (auto &region : getCaseRegions())
+  for (auto &region : getCaseRegions())
     if (!(region.empty())) {
       printer.printAttributeWithoutType(
           getCaseValuesAttr().getValues<Attribute>()[id]);
