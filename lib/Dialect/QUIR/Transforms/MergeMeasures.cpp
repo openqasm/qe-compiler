@@ -109,8 +109,13 @@ void MergeMeasuresLexographicalPass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   patterns.add<MeasureAndMeasureLexographicalPattern>(&getContext());
 
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+config.enableRegionSimplification = false;
+
+
   if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
+          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns), config)))
     signalPassFailure();
 } // runOnOperation
 

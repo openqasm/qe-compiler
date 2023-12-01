@@ -394,8 +394,13 @@ void MergeCircuitsPass::runOnOperation() {
   patterns.add<BarrierAndCircuitPattern>(&getContext());
   patterns.add<CircuitAndBarrierPattern>(&getContext());
 
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+config.enableRegionSimplification = false;
+
+
   if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
+          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns), config)))
     signalPassFailure();
 } // runOnOperation
 
