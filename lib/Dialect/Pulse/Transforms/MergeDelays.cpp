@@ -102,7 +102,7 @@ void MergeDelayPass::runOnOperation() {
 
   mlir::GreedyRewriteConfig config;
   // Disable to improve performance
-config.enableRegionSimplification = false;
+  config.enableRegionSimplification = false;
 
   if (failed(applyPatternsAndFoldGreedily(operation, std::move(patterns), config)))
     signalPassFailure();

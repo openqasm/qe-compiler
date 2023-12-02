@@ -116,7 +116,7 @@ void BreakResetPass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
   // Disable to improve performance
-config.enableRegionSimplification = false;
+  config.enableRegionSimplification = false;
 
 
   patterns.add<BreakResetsPattern>(&getContext(), numIterations, delayCycles);

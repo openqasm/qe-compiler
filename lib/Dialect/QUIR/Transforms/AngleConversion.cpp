@@ -85,6 +85,7 @@ void QUIRAngleConversionPass::runOnOperation() {
   patterns.add<AngleConversion>(&getContext(), functionOps);
 
   mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
   config.enableRegionSimplification = false;
 
   if (failed(

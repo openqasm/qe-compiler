@@ -82,7 +82,7 @@ void UnusedVariablePass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
   // Disable to improve performance
-config.enableRegionSimplification = false;
+  config.enableRegionSimplification = false;
 
   patterns.add<UnusedVariablePat>(&getContext(), symbolUsers);
 

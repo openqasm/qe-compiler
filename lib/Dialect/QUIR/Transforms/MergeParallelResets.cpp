@@ -96,7 +96,7 @@ void MergeResetsLexicographicPass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
   // Disable to improve performance
-config.enableRegionSimplification = false;
+  config.enableRegionSimplification = false;
 
 
   patterns.add<MergeResetsLexicographicPattern>(&getContext());
@@ -209,7 +209,7 @@ void MergeResetsTopologicalPass::runOnOperation() {
   // any differently)
   config.useTopDownTraversal = true;
   // Disable to improve performance
-config.enableRegionSimplification = false;
+  config.enableRegionSimplification = false;
 
 
   patterns.add<MergeResetsTopologicalPattern>(&getContext());

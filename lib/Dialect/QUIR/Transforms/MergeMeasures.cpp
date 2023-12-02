@@ -111,7 +111,7 @@ void MergeMeasuresLexographicalPass::runOnOperation() {
 
   mlir::GreedyRewriteConfig config;
   // Disable to improve performance
-config.enableRegionSimplification = false;
+  config.enableRegionSimplification = false;
 
 
   if (failed(
@@ -180,8 +180,12 @@ void MergeMeasuresTopologicalPass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   patterns.add<MeasureAndMeasureTopologicalPattern>(&getContext());
 
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
+
   if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
+          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns), config)))
     signalPassFailure();
 } // runOnOperation
 

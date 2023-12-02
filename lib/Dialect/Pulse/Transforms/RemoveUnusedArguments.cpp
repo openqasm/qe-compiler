@@ -111,7 +111,7 @@ void RemoveUnusedArgumentsPass::runOnOperation() {
 
   mlir::GreedyRewriteConfig config;
   // Disable to improve performance
-config.enableRegionSimplification = false;
+  config.enableRegionSimplification = false;
 
   if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns), config)))
     signalPassFailure();
