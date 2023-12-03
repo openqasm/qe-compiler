@@ -1,4 +1,4 @@
-//===- TargetCompilationScheduler.h - Compilation Scheduler -----*- C++ -*-===//
+//===- ThreadedCompilationScheduler.h - Threaded Scheduler ------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,28 +14,28 @@
 //
 //===----------------------------------------------------------------------===//
 //
-//  This file declares the classes for the top-level compilation scheduling
-//  interface.
+//  This file declares the classes for the top-level threaded compilation
+//  interfaces.
 //
 //===----------------------------------------------------------------------===//
-#ifndef TARGETCOMPILATIONSCHEDULER_H
-#define TARGETCOMPILATIONSCHEDULER_H
+#ifndef THREADEDCOMPILATIONSCHEDULER_H
+#define THREADEDCOMPILATIONSCHEDULER_H
+
+#include "HAL/Compile/TargetCompilationScheduler.h"
 
 #include <string>
 
 namespace qssc::hal::compile {
 
-    class TargetCompilationScheduler {
+    class ThreadedCompilationScheduler : public TargetCompilationScheduler {
         protected:
-            TargetCompilationScheduler();
+            ThreadedCompilationScheduler();
 
         public:
-            virtual ~TargetCompilationScheduler() = default;
+            virtual ~ThreadedCompilationScheduler() = default;
             virtual const std::string getName() const;
 
-    }; // class TargetCompilationScheduler
+    }; // class THREADEDCOMPILATIONSCHEDULER
 
 } // namespace qssc::hal::compile
-#endif // TARGETCOMPILATIONSCHEDULER_H
-
-
+#endif // THREADEDCOMPILATIONSCHEDULER_H

@@ -12,6 +12,7 @@
 
 qssc_add_library(QSSCHALCompile
     TargetCompilationScheduler.cpp
+    ThreadedCompilationScheduler.cpp
 
     ADDITIONAL_HEADER_DIRS
     ${QSSC_INCLUDE_DIR}/HAL/Compile
