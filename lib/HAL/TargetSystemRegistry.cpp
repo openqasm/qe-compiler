@@ -22,12 +22,12 @@ public:
   NullTarget() : TargetSystem("NullTarget", nullptr) {}
 
   // Do nothing.
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override {
+  llvm::Error addPasses(mlir::PassManager &pm) override {
     return llvm::Error::success();
   }
 
   // Do nothing.
-  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            qssc::payload::Payload &payload) override {
     return llvm::Error::success();
   }

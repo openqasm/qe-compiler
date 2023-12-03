@@ -87,8 +87,8 @@ public:
     return instruments;
   }
 
-  virtual llvm::Error addPayloadPasses(mlir::PassManager &pm) = 0;
-  virtual llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
+  virtual llvm::Error addPasses(mlir::PassManager &pm) = 0;
+  virtual llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                                    payload::Payload &payload) = 0;
 
   virtual llvm::Optional<qssc::arguments::BindArgumentsImplementationFactory *>
@@ -108,8 +108,8 @@ protected: // Can only create subclasses
   TargetInstrument(std::string name, Target *parent);
 
 public:
-  virtual auto addPayloadPasses(mlir::PassManager &pm) -> llvm::Error = 0;
-  virtual auto addToPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload)
+  virtual auto addPasses(mlir::PassManager &pm) -> llvm::Error = 0;
+  virtual auto emitToPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload)
       -> llvm::Error = 0;
 
   virtual ~TargetInstrument() = default;

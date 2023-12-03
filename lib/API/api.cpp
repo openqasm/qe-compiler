@@ -465,7 +465,7 @@ static llvm::Error generateQEM_(qssc::hal::TargetSystem &target,
                                 mlir::ModuleOp moduleOp,
                                 llvm::raw_ostream *ostream) {
   if (!bypassPipeline)
-    if (auto err = target.addToPayload(moduleOp, *payload))
+    if (auto err = target.emitToPayload(moduleOp, *payload))
       return err;
 
   if (plaintextPayload)
@@ -740,7 +740,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction > Action::DumpMLIR && config.addTargetPasses)
     // check if the target quir to std pass has been specified in the CL
-    if (auto err = target.addPayloadPasses(pm))
+    if (auto err = target.addPasses(pm))
       return llvm::joinErrors(
           llvm::createStringError(llvm::inconvertibleErrorCode(),
                                   "Failure while preparing target passes"),

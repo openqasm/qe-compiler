@@ -191,7 +191,7 @@ llvm::Error MockSystem::registerTargetPipelines() {
   return llvm::Error::success();
 } // MockSystem::registerTargetPipelines
 
-llvm::Error MockSystem::addPayloadPasses(mlir::PassManager &pm) {
+llvm::Error MockSystem::addPasses(mlir::PassManager &pm) {
   if (payloadPassesFound(pm)) {
     // command line specified payload conversion,
     // let the user handle exactly what to add
@@ -201,13 +201,13 @@ llvm::Error MockSystem::addPayloadPasses(mlir::PassManager &pm) {
   pm.addPass(std::make_unique<BreakResetPass>());
   mockPipelineBuilder(pm);
   for (auto &child : children)
-    if (auto err = child->addPayloadPasses(pm))
+    if (auto err = child->addPasses(pm))
       return err;
   for (auto &instrument : instruments)
-    if (auto err = instrument->addPayloadPasses(pm))
+    if (auto err = instrument->addPasses(pm))
       return err;
   return llvm::Error::success();
-} // MockSystem::addPayloadPasses
+} // MockSystem::addPasses
 
 auto MockSystem::payloadPassesFound(mlir::PassManager &pm) -> bool {
   for (auto &pass : pm.getPasses())
@@ -216,16 +216,16 @@ auto MockSystem::payloadPassesFound(mlir::PassManager &pm) -> bool {
   return false;
 } // MockSystem::payloadPassesFound
 
-llvm::Error MockSystem::addToPayload(mlir::ModuleOp &moduleOp,
+llvm::Error MockSystem::emitToPayload(mlir::ModuleOp &moduleOp,
                                      qssc::payload::Payload &payload) {
   for (auto &child : children)
-    if (auto err = child->addToPayload(moduleOp, payload))
+    if (auto err = child->emitToPayload(moduleOp, payload))
       return err;
   for (auto &instrument : instruments)
-    if (auto err = instrument->addToPayload(moduleOp, payload))
+    if (auto err = instrument->emitToPayload(moduleOp, payload))
       return err;
   return llvm::Error::success();
-} // MockSystem::addToPayload
+} // MockSystem::emitToPayload
 
 MockController::MockController(std::string name, MockSystem *parent,
                                const SystemConfiguration &config)
@@ -237,9 +237,9 @@ void MockController::registerTargetPasses() {
 void MockController::registerTargetPipelines() {
 } // MockController::registerTargetPipelines
 
-llvm::Error MockController::addPayloadPasses(mlir::PassManager &pm) {
+llvm::Error MockController::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
-} // MockController::addPayloadPasses
+} // MockController::addPasses
 
 auto MockController::getModule(ModuleOp topModuleOp) -> ModuleOp {
   ModuleOp retOp = nullptr;
@@ -254,7 +254,7 @@ auto MockController::getModule(ModuleOp topModuleOp) -> ModuleOp {
   return retOp;
 } // MockController::getModule
 
-llvm::Error MockController::addToPayload(mlir::ModuleOp &moduleOp,
+llvm::Error MockController::emitToPayload(mlir::ModuleOp &moduleOp,
                                          qssc::payload::Payload &payload) {
   ModuleOp controllerModule = getModule(moduleOp);
   if (!controllerModule)
@@ -266,7 +266,7 @@ llvm::Error MockController::addToPayload(mlir::ModuleOp &moduleOp,
   buildLLVMPayload(controllerModule, payload);
 
   return llvm::Error::success();
-} // MockController::addToPayload
+} // MockController::emitToPayload
 
 void MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
                                       qssc::payload::Payload &payload) {
@@ -404,11 +404,11 @@ void MockAcquire::registerTargetPasses() {} // MockAcquire::registerTargetPasses
 void MockAcquire::registerTargetPipelines() {
 } // MockAcquire::registerTargetPipelines
 
-llvm::Error MockAcquire::addPayloadPasses(mlir::PassManager &pm) {
+llvm::Error MockAcquire::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
-} // MockAcquire::addPayloadPasses
+} // MockAcquire::addPasses
 
-llvm::Error MockAcquire::addToPayload(mlir::ModuleOp &moduleOp,
+llvm::Error MockAcquire::emitToPayload(mlir::ModuleOp &moduleOp,
                                       qssc::payload::Payload &payload) {
   ModuleOp mockModule = getModule(moduleOp);
   if (!mockModule)
@@ -417,7 +417,7 @@ llvm::Error MockAcquire::addToPayload(mlir::ModuleOp &moduleOp,
   llvm::raw_string_ostream mlirOStream(*mlirStr);
   mlirOStream << mockModule;
   return llvm::Error::success();
-} // MockAcquire::addToPayload
+} // MockAcquire::emitToPayload
 
 MockDrive::MockDrive(std::string name, MockSystem *parent,
                      const SystemConfiguration &config)
@@ -441,11 +441,11 @@ void MockDrive::registerTargetPasses() {} // MockDrive::registerTargetPasses
 void MockDrive::registerTargetPipelines() {
 } // MockDrive::registerTargetPipelines
 
-llvm::Error MockDrive::addPayloadPasses(mlir::PassManager &pm) {
+llvm::Error MockDrive::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
-} // MockDrive::addPayloadPasses
+} // MockDrive::addPasses
 
-llvm::Error MockDrive::addToPayload(mlir::ModuleOp &moduleOp,
+llvm::Error MockDrive::emitToPayload(mlir::ModuleOp &moduleOp,
                                     qssc::payload::Payload &payload) {
   ModuleOp mockModule = getModule(moduleOp);
   if (!mockModule)
@@ -454,4 +454,4 @@ llvm::Error MockDrive::addToPayload(mlir::ModuleOp &moduleOp,
   llvm::raw_string_ostream mlirOStream(*mlirStr);
   mlirOStream << mockModule;
   return llvm::Error::success();
-} // MockDrive::addToPayload
+} // MockDrive::emitToPayload

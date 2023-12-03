@@ -52,15 +52,15 @@ namespace qssc::hal::compile {
             /// system.
             /// @param moduleOp The root module operation to compile for.
             /// This must not be specialized to a system already.
-            virtual llvm::Error compileMLIR(mlir::ModuleOp &moduleOp);
+            virtual llvm::Error addPasses(mlir::ModuleOp &moduleOp);
 
             /// @brief Generate the full configured compilation pipeline
             /// for all targets of the base target system. This will also
-            /// invoke compileMLIR.
+            /// invoke addPasses.
             /// @param moduleOp The root module operation to compile for.
             /// This must not be specialized to a system already.
             /// @param payload The payload to populate.
-            virtual llvm::Error compilePayload(mlir::ModuleOp &moduleOp, qssc::payload::Payload &payload);
+            virtual llvm::Error emitToPayload(mlir::ModuleOp &moduleOp, qssc::payload::Payload &payload);
 
         private:
             hal::TargetSystem &target;

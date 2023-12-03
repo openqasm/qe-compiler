@@ -68,9 +68,9 @@ public:
   explicit MockSystem(std::unique_ptr<MockConfig> config);
   static llvm::Error registerTargetPasses();
   static llvm::Error registerTargetPipelines();
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
+  llvm::Error addPasses(mlir::PassManager &pm) override;
   auto payloadPassesFound(mlir::PassManager &pm) -> bool;
-  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
   auto getConfig() -> MockConfig & { return *mockConfig; }
 
@@ -84,8 +84,8 @@ public:
                  const qssc::hal::SystemConfiguration &config);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
-  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error addPasses(mlir::PassManager &pm) override;
+  llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
 
 private:
@@ -99,8 +99,8 @@ public:
               const qssc::hal::SystemConfiguration &config);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
-  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error addPasses(mlir::PassManager &pm) override;
+  llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
 
 private:
@@ -113,8 +113,8 @@ public:
             const qssc::hal::SystemConfiguration &config);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
-  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error addPasses(mlir::PassManager &pm) override;
+  llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
 
 private:
