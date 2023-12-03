@@ -18,4 +18,4 @@
 
 using namespace qssc::hal::compile;
 
-TargetCompilationScheduler::TargetCompilationScheduler() {}
+TargetCompilationScheduler::TargetCompilationScheduler(qssc::hal::TargetSystem &target) : target(target) {}

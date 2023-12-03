@@ -18,4 +18,9 @@
 
 using namespace qssc::hal::compile;
 
+
+ThreadedCompilationScheduler::ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context) :  TargetCompilationScheduler(target), context(context) {}
+
+
 const std::string ThreadedCompilationScheduler::getName() const { return "ThreadedCompilationScheduler"; }
+
