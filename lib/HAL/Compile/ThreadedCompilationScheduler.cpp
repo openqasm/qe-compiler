@@ -24,6 +24,19 @@ ThreadedCompilationScheduler::ThreadedCompilationScheduler(qssc::hal::TargetSyst
 
 const std::string ThreadedCompilationScheduler::getName() const { return "ThreadedCompilationScheduler"; }
 
+llvm::Error ThreadedCompilationScheduler::walkTargetThreaded(Target *target, WalkTargetFunction walkFunc) {
+    for (auto *child : target->getChildren()) {
+        // Call the input function for the walk on the target
+        if (auto err = walkFunc(child))
+            return err;
+        // Recurse on the target
+        if (auto err = walkTarget(child, walkFunc))
+            return err;
+    }
+    return llvm::Error::success();
+
+}
+
 llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
 
     auto threadedCompileMLIRTarget = [&](hal::Target *) -> llvm::Error {

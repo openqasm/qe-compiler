@@ -32,7 +32,10 @@ namespace qssc::hal::compile {
     /// @brief A threaded implementation of a TargetCompilationScheduler
     /// based on the threading pools provided by the mlir::MLIRContext.
     /// This enables compilation across disjoint subtree of compilation
-    /// targets in parallel. The implementation of parallel relies on MLIR's
+    /// targets in parallel.
+    /// If threading is disabled within the MLIRContext the implementation
+    /// will fall back to a sequential unthreaded version.
+    /// The implementation of parallel relies on MLIR's
     /// <a href="https://mlir.llvm.org/docs/PassManagement/#operation-pass">multi-threading assumptions</a>.
     /// As compilation is based on the shared MLIRContext's threadpool we are
     /// able to safely mix parallel nested passes and parallel target compilation
@@ -41,6 +44,12 @@ namespace qssc::hal::compile {
         protected:
             ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context);
 
+            using WalkTargetFunction = std::function<llvm::Error(hal::Target *)>;
+            /// Threaded depth first walker for a target system using the current MLIRContext's
+            /// threadpool.
+            llvm::Error walkTargetThreaded(Target *target, WalkTargetFunction walkFunc);
+
+
         public:
             virtual ~ThreadedCompilationScheduler() = default;
             virtual const std::string getName() const override;
@@ -48,6 +57,7 @@ namespace qssc::hal::compile {
             virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) override;
             virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) override;
 
+            bool isMultithreadingEnabled () { return getContext()->isMultithreadingEnabled(); }
             llvm::ThreadPool& getThreadPool() {return getContext()->getThreadPool(); }
 
         private:
