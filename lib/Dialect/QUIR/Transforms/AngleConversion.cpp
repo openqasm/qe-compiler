@@ -88,8 +88,8 @@ void QUIRAngleConversionPass::runOnOperation() {
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
-  if (failed(
-          applyPatternsAndFoldGreedily(getOperation(), std::move(patterns), config))) {
+  if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
+                                          config))) {
     ; // TODO why would this call to applyPatternsAndFoldGreedily fail?
       // signalPassFailure();
   }

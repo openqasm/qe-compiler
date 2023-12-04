@@ -118,9 +118,7 @@ void BreakResetPass::runOnOperation() {
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
-
   patterns.add<BreakResetsPattern>(&getContext(), numIterations, delayCycles);
-
 
   if (mlir::failed(applyPatternsAndFoldGreedily(getOperation(),
                                                 std::move(patterns), config)))

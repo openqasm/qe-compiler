@@ -91,10 +91,10 @@ void ReorderCircuitsPass::runOnOperation() {
   // labeled with their qubit arguments
   mlir::GreedyRewriteConfig config;
   // Disable to improve performance
-config.enableRegionSimplification = false;
+  config.enableRegionSimplification = false;
 
-
-  if (failed(applyPatternsAndFoldGreedily(mainFunc, std::move(patterns), config)))
+  if (failed(
+          applyPatternsAndFoldGreedily(mainFunc, std::move(patterns), config)))
     signalPassFailure();
 } // runOnOperation
 

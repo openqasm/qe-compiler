@@ -113,9 +113,8 @@ void MergeMeasuresLexographicalPass::runOnOperation() {
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
-
-  if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns), config)))
+  if (failed(applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns),
+                                          config)))
     signalPassFailure();
 } // runOnOperation
 
@@ -184,8 +183,8 @@ void MergeMeasuresTopologicalPass::runOnOperation() {
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
-  if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns), config)))
+  if (failed(applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns),
+                                          config)))
     signalPassFailure();
 } // runOnOperation
 

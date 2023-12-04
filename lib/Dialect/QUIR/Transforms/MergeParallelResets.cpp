@@ -98,10 +98,7 @@ void MergeResetsLexicographicPass::runOnOperation() {
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
-
   patterns.add<MergeResetsLexicographicPattern>(&getContext());
-
-
 
   if (mlir::failed(applyPatternsAndFoldGreedily(getOperation(),
                                                 std::move(patterns), config)))
@@ -210,7 +207,6 @@ void MergeResetsTopologicalPass::runOnOperation() {
   config.useTopDownTraversal = true;
   // Disable to improve performance
   config.enableRegionSimplification = false;
-
 
   patterns.add<MergeResetsTopologicalPattern>(&getContext());
 

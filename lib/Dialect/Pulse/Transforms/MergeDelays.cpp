@@ -99,12 +99,12 @@ void MergeDelayPass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   patterns.add<DelayAndDelayPattern>(&getContext());
 
-
   mlir::GreedyRewriteConfig config;
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
-  if (failed(applyPatternsAndFoldGreedily(operation, std::move(patterns), config)))
+  if (failed(
+          applyPatternsAndFoldGreedily(operation, std::move(patterns), config)))
     signalPassFailure();
 
 } // runOnOperation
