@@ -48,7 +48,6 @@ namespace qssc::hal::compile {
             virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) override;
             virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) override;
 
-            mlir::MLIRContext* getContext() { return context;};
             llvm::ThreadPool& getThreadPool() {return getContext()->getThreadPool(); }
 
         private:
@@ -56,11 +55,6 @@ namespace qssc::hal::compile {
             llvm::Error compileMLIRTarget(Target &target, mlir::ModuleOp moduleOp);
             /// Compiles the input payload for a single target.
             llvm::Error compilePayloadTarget(Target &target, mlir::ModuleOp moduleOp, qssc::payload::Payload &payload);
-
-
-            mlir::MLIRContext *context;
-
-
 
     }; // class THREADEDCOMPILATIONSCHEDULER
 

@@ -43,7 +43,7 @@ namespace qssc::hal::compile {
     /// target subtree independently.
     class TargetCompilationScheduler {
         protected:
-            TargetCompilationScheduler(hal::TargetSystem &target);
+            TargetCompilationScheduler(hal::TargetSystem &target, mlir::MLIRContext *context);
 
             using WalkTargetFunction = std::function<llvm::Error(hal::Target *)>;
             // Depth first walker for a target system
@@ -53,8 +53,11 @@ namespace qssc::hal::compile {
             virtual ~TargetCompilationScheduler() = default;
             virtual const std::string getName() const = 0;
 
-            /// @brief Get the base target system to be compiled.
+            /// Get the base target system to be compiled.
             virtual hal::Target &getTargetSystem() { return target; }
+
+            /// Get the base MLIR context for this compilation scheduler.
+            mlir::MLIRContext* getContext() { return context;};
 
             /// @brief Compile only at the MLIR level for the full target
             /// system.
@@ -70,8 +73,11 @@ namespace qssc::hal::compile {
             /// @param payload The payload to populate.
             virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) = 0;
 
+            virtual mlir::PassManager getTargetPassManager();
+
         private:
             hal::TargetSystem &target;
+            mlir::MLIRContext *context;
 
 
     }; // class TargetCompilationScheduler

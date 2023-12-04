@@ -18,8 +18,7 @@
 
 using namespace qssc::hal::compile;
 
-TargetCompilationScheduler::TargetCompilationScheduler(qssc::hal::TargetSystem &target) : target(target) {}
-
+TargetCompilationScheduler::TargetCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context) : target(target), context(context) {}
 
 llvm::Error TargetCompilationScheduler::walkTarget(Target *target, WalkTargetFunction walkFunc) {
     for (auto *child : target->getChildren()) {
@@ -32,4 +31,9 @@ llvm::Error TargetCompilationScheduler::walkTarget(Target *target, WalkTargetFun
     }
     return llvm::Error::success();
 
+}
+
+mlir::PassManager TargetCompilationScheduler::getTargetPassManager() {
+    // TODO apply compilation options
+    return mlir::PassManager(getContext());
 }

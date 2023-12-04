@@ -20,11 +20,9 @@ using namespace qssc;
 using namespace qssc::hal::compile;
 
 
-ThreadedCompilationScheduler::ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context) :  TargetCompilationScheduler(target), context(context) {}
+ThreadedCompilationScheduler::ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context) :  TargetCompilationScheduler(target, context) {}
 
 const std::string ThreadedCompilationScheduler::getName() const { return "ThreadedCompilationScheduler"; }
-
-
 
 llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
 
@@ -37,7 +35,7 @@ llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
 
 
 llvm::Error ThreadedCompilationScheduler::compileMLIRTarget(Target &target, mlir::ModuleOp moduleOp) {
-    mlir::PassManager pm(getContext());
+    auto pm = getTargetPassManager();
     if(auto err = target.addPasses(pm))
         return err;
     if(failed(pm.run(moduleOp)))
