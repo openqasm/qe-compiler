@@ -24,11 +24,15 @@
 
 #include "HAL/TargetSystem.h"
 
+
+#include "mlir/IR/BuiltinOps.h"
+
 #include "llvm/Support/Error.h"
 
 #include <string>
 
 using namespace qssc;
+
 
 namespace qssc::hal::compile {
 
@@ -41,26 +45,30 @@ namespace qssc::hal::compile {
         protected:
             TargetCompilationScheduler(hal::TargetSystem &target);
 
+            using WalkTargetFunction = std::function<llvm::Error(hal::Target *)>;
+            // Depth first walker for a target system
+            llvm::Error walkTarget(Target *target, WalkTargetFunction walkFunc);
+
         public:
             virtual ~TargetCompilationScheduler() = default;
-            virtual const std::string getName() const;
+            virtual const std::string getName() const = 0;
 
             /// @brief Get the base target system to be compiled.
-            virtual hal::Target &getBaseTargetSystem() { return target; }
+            virtual hal::Target &getTargetSystem() { return target; }
 
             /// @brief Compile only at the MLIR level for the full target
             /// system.
             /// @param moduleOp The root module operation to compile for.
             /// This must not be specialized to a system already.
-            virtual llvm::Error addPasses(mlir::ModuleOp &moduleOp);
+            virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) = 0;
 
             /// @brief Generate the full configured compilation pipeline
             /// for all targets of the base target system. This will also
-            /// invoke addPasses.
+            /// invoke compileMLIR.
             /// @param moduleOp The root module operation to compile for.
             /// This must not be specialized to a system already.
             /// @param payload The payload to populate.
-            virtual llvm::Error emitToPayload(mlir::ModuleOp &moduleOp, qssc::payload::Payload &payload);
+            virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) = 0;
 
         private:
             hal::TargetSystem &target;

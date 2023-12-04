@@ -19,3 +19,17 @@
 using namespace qssc::hal::compile;
 
 TargetCompilationScheduler::TargetCompilationScheduler(qssc::hal::TargetSystem &target) : target(target) {}
+
+
+llvm::Error TargetCompilationScheduler::walkTarget(Target *target, WalkTargetFunction walkFunc) {
+    for (auto *child : target->getChildren()) {
+        // Call the input function for the walk on the target
+        if (auto err = walkFunc(child))
+            return err;
+        // Recurse on the target
+        if (auto err = walkTarget(child, walkFunc))
+            return err;
+    }
+    return llvm::Error::success();
+
+}

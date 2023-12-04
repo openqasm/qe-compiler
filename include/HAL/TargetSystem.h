@@ -22,6 +22,7 @@
 
 #include "Arguments/Arguments.h"
 
+#include "llvm/ADT/iterator_range.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallString.h"
 
@@ -48,11 +49,54 @@ class Target {
 protected:
   Target(std::string name, Target *parent);
 
+  virtual const std::vector<std::unique_ptr<Target>> &getChildren_() const = 0;
+
 public:
   virtual const std::string &getName() const { return name; }
   virtual llvm::StringRef getDescription() const { return ""; }
   Target *getParent() { return parent; }
   const Target *getParent() const { return parent; }
+
+  template <class TargetType> std::vector<TargetType *> getChildrenOfType() const {
+    std::vector<TargetType *> filteredChildren;
+    for (auto &child : getChildren_()) {
+      if (auto casted = dynamic_cast<TargetType*>(child.get()))
+        filteredChildren.push_back(casted);
+    }
+    return filteredChildren;
+  }
+
+  std::vector<Target *> getChildren() const {
+    return getChildrenOfType<Target>();
+  }
+
+  std::vector<TargetSystem *> getSubsystems() const {
+    return getChildrenOfType<TargetSystem>();
+  }
+
+  std::vector<TargetInstrument *> getInstruments() const {
+    return getChildrenOfType<TargetInstrument>();
+  }
+
+  template <class TargetType> size_t getNumTargetsOfType() const {
+    return getChildrenOfType<TargetType>().size();
+  }
+
+  size_t getNumChildren() const {
+    return getNumTargetsOfType<Target>();
+  }
+
+  size_t getNumInstruments() const {
+    return getNumTargetsOfType<TargetInstrument>();
+  }
+
+  size_t getNumSubsystems() const {
+    return getNumTargetsOfType<TargetSystem>();
+  }
+
+  virtual llvm::Error addPasses(mlir::PassManager &pm) = 0;
+  virtual llvm::Error emitToPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload) = 0;
+
   virtual ~Target() = default;
 
 protected:
@@ -72,24 +116,10 @@ protected: // Can only create subclasses.
   TargetSystem(std::string name, Target *parent);
 
 public:
-  virtual std::vector<std::unique_ptr<TargetSystem>> &getChildren() {
-    return children;
-  }
-  virtual const std::vector<std::unique_ptr<TargetSystem>> &
-  getChildren() const {
-    return children;
-  }
-  virtual std::vector<std::unique_ptr<TargetInstrument>> &getInstruments() {
-    return instruments;
-  }
-  virtual const std::vector<std::unique_ptr<TargetInstrument>> &
-  getInstruments() const {
-    return instruments;
-  }
 
-  virtual llvm::Error addPasses(mlir::PassManager &pm) = 0;
-  virtual llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
-                                   payload::Payload &payload) = 0;
+  void addChild(std::unique_ptr<Target> child) {
+    children_.push_back(std::move(child));
+  }
 
   virtual llvm::Optional<qssc::arguments::BindArgumentsImplementationFactory *>
   getBindArgumentsImplementationFactory() {
@@ -99,20 +129,35 @@ public:
   virtual ~TargetSystem() = default;
 
 protected:
-  std::vector<std::unique_ptr<TargetSystem>> children;
-  std::vector<std::unique_ptr<TargetInstrument>> instruments;
+  virtual const std::vector<std::unique_ptr<Target>> &
+  getChildren_() const override {
+    return children_;
+  }
+
+  std::vector<std::unique_ptr<Target>> children_;
+  // Helper containers to track instruments for quick access.
+  std::vector<TargetSystem *> systems_;
+  std::vector<TargetInstrument *> instruments_;
 }; // class TargetSystem
 
 class TargetInstrument : public Target {
 protected: // Can only create subclasses
   TargetInstrument(std::string name, Target *parent);
 
-public:
-  virtual auto addPasses(mlir::PassManager &pm) -> llvm::Error = 0;
-  virtual auto emitToPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload)
-      -> llvm::Error = 0;
+  virtual const std::vector<std::unique_ptr<Target>> &
+  getChildren_() const override {
+    return children_;
+  }
 
+public:
   virtual ~TargetInstrument() = default;
+
+private:
+  // Used for returning empty children
+  // TODO: Do something more graceful than this.
+  static const std::vector<std::unique_ptr<Target>> children_;
+
+
 }; // class TargetInstrument
 } // namespace qssc::hal
 #endif // TARGETSYSTEM_H

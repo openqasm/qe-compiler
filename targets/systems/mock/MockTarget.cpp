@@ -138,17 +138,17 @@ MockConfig::MockConfig(llvm::StringRef configurationPath)
 
 MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
     : TargetSystem("MockSystem", nullptr), mockConfig(std::move(config)) {
-  instruments.push_back(
+  addChild(
       std::make_unique<MockController>("MockController", this, *mockConfig));
   for (uint qubitId = 0; qubitId < mockConfig->getNumQubits(); ++qubitId) {
-    instruments.push_back(std::make_unique<MockDrive>(
+    addChild(std::make_unique<MockDrive>(
         "MockDrive_" + std::to_string(qubitId), this, *mockConfig));
   }
   for (uint acquireId = 0;
        acquireId <
        mockConfig->getNumQubits() / mockConfig->getMultiplexingRatio() + 1;
        ++acquireId) {
-    instruments.push_back(std::make_unique<MockAcquire>(
+    addChild(std::make_unique<MockAcquire>(
         "MockAcquire_" + std::to_string(acquireId), this, *mockConfig));
   }
 } // MockSystem
@@ -200,10 +200,10 @@ llvm::Error MockSystem::addPasses(mlir::PassManager &pm) {
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(std::make_unique<BreakResetPass>());
   mockPipelineBuilder(pm);
-  for (auto &child : children)
+  for (auto &child : getChildren())
     if (auto err = child->addPasses(pm))
       return err;
-  for (auto &instrument : instruments)
+  for (auto &instrument : getInstruments())
     if (auto err = instrument->addPasses(pm))
       return err;
   return llvm::Error::success();
@@ -218,10 +218,10 @@ auto MockSystem::payloadPassesFound(mlir::PassManager &pm) -> bool {
 
 llvm::Error MockSystem::emitToPayload(mlir::ModuleOp &moduleOp,
                                      qssc::payload::Payload &payload) {
-  for (auto &child : children)
+  for (auto &child : getChildren())
     if (auto err = child->emitToPayload(moduleOp, payload))
       return err;
-  for (auto &instrument : instruments)
+  for (auto &instrument : getInstruments())
     if (auto err = instrument->emitToPayload(moduleOp, payload))
       return err;
   return llvm::Error::success();

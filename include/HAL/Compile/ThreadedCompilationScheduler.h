@@ -43,12 +43,23 @@ namespace qssc::hal::compile {
 
         public:
             virtual ~ThreadedCompilationScheduler() = default;
-            virtual const std::string getName() const;
+            virtual const std::string getName() const override;
+
+            virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) override;
+            virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) override;
 
             mlir::MLIRContext* getContext() { return context;};
+            llvm::ThreadPool& getThreadPool() {return getContext()->getThreadPool(); }
 
         private:
+            /// Compiles the input module for a single target.
+            llvm::Error compileMLIRTarget(Target &target, mlir::ModuleOp moduleOp);
+            /// Compiles the input payload for a single target.
+            llvm::Error compilePayloadTarget(Target &target, mlir::ModuleOp moduleOp, qssc::payload::Payload &payload);
+
+
             mlir::MLIRContext *context;
+
 
 
     }; // class THREADEDCOMPILATIONSCHEDULER
