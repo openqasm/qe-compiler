@@ -191,7 +191,8 @@ llvm::Error MockSystem::registerTargetPipelines() {
   return llvm::Error::success();
 } // MockSystem::registerTargetPipelines
 
-llvm::Error MockSystem::addPayloadPasses(mlir::PassManager &pm) {
+llvm::Error MockSystem::addPayloadPasses(mlir::PassManager &pm,
+                                         bool generatePayload) {
   if (payloadPassesFound(pm)) {
     // command line specified payload conversion,
     // let the user handle exactly what to add

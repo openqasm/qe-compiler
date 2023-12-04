@@ -29,8 +29,26 @@ using namespace mlir::qcs;
 ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
     mlir::Operation *moduleOp) {
 
+  auto modOp = dyn_cast<ModuleOp>(moduleOp);
+  std::string name = "TopLevel";
+  if (modOp.sym_name())
+    name = modOp.sym_name()->str();
+
+  llvm::errs() << "ParameterInitialValueAnalysis start " << name << "\n";
+
+  // ParameterInitialValueAnalysis should only process the top level
+  // module where parameters are define
+  // find the top level module
+  auto parentOp = moduleOp->getParentOfType<mlir::ModuleOp>();
+  while (parentOp) {
+    moduleOp = parentOp;
+    parentOp = moduleOp->getParentOfType<mlir::ModuleOp>();
+  }
+
   if (not invalid_)
     return;
+
+  llvm::errs() << "ParameterInitialValueAnalysis compute " << name << "\n";
 
   // process the module top level to cache declareParameterOp initial_values
   // this does not use a walk method so that submodule (if present) are not

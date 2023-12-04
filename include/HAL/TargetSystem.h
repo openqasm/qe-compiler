@@ -87,7 +87,8 @@ public:
     return instruments;
   }
 
-  virtual llvm::Error addPayloadPasses(mlir::PassManager &pm) = 0;
+  virtual llvm::Error addPayloadPasses(mlir::PassManager &pm,
+                                       bool generatePayload = false) = 0;
   virtual llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                                    payload::Payload &payload) = 0;
 

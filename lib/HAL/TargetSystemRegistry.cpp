@@ -22,7 +22,8 @@ public:
   NullTarget() : TargetSystem("NullTarget", nullptr) {}
 
   // Do nothing.
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override {
+  llvm::Error addPayloadPasses(mlir::PassManager &pm,
+                               bool generatePayload) override {
     return llvm::Error::success();
   }
 
