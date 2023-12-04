@@ -16,22 +16,23 @@
 
 #include "HAL/Compile/ThreadedCompilationScheduler.h"
 
+using namespace qssc;
 using namespace qssc::hal::compile;
 
-
-namespace mlir {
-    class ModuleOp;
-}
 
 ThreadedCompilationScheduler::ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context) :  TargetCompilationScheduler(target), context(context) {}
 
 const std::string ThreadedCompilationScheduler::getName() const { return "ThreadedCompilationScheduler"; }
 
 
+
 llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
 
+    auto threadedCompileMLIRTarget = [&](hal::Target *) -> llvm::Error {
+        return llvm::Error::success();
+    };
 
-    return llvm::Error::success();
+    return walkTarget(&getTargetSystem(), threadedCompileMLIRTarget);
 }
 
 
@@ -43,6 +44,16 @@ llvm::Error ThreadedCompilationScheduler::compileMLIRTarget(Target &target, mlir
         return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                 "Problems running the pass pipeline for target " + target.getName());
     return llvm::Error::success();
+
+}
+
+
+llvm::Error ThreadedCompilationScheduler::compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) {
+    auto threadedCompilePayloadTarget = [&](hal::Target *) -> llvm::Error {
+        return llvm::Error::success();
+    };
+
+    return walkTarget(&getTargetSystem(), threadedCompilePayloadTarget);
 
 }
 
