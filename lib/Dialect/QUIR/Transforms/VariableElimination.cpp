@@ -252,6 +252,8 @@ convertIsolatedMemrefGlobalToAlloca(mlir::MLIRContext &context,
 
   patterns.add<MemrefGlobalToAllocaPattern>(&context, top);
   mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
 
   config.useTopDownTraversal = true;
 
@@ -304,6 +306,8 @@ dropAllocaWithIsolatedStores(mlir::MLIRContext &context, mlir::Operation *top) {
   mlir::GreedyRewriteConfig config;
 
   config.useTopDownTraversal = true;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
 
   return applyPatternsAndFoldGreedily(top, std::move(patterns), config);
 }

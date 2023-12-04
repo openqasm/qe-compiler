@@ -109,7 +109,12 @@ void RemoveUnusedArgumentsPass::runOnOperation() {
 
   patterns.add<RemoveUnusedArgumentsPattern>(&getContext());
 
-  if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns))))
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
+
+  if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
+                                          config)))
     signalPassFailure();
 }
 

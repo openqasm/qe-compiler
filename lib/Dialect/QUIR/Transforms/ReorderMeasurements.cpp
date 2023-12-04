@@ -213,8 +213,12 @@ void ReorderMeasurementsPass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   patterns.add<ReorderMeasureAndNonMeasurePat>(&getContext());
 
-  if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
+
+  if (failed(applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns),
+                                          config)))
     signalPassFailure();
 } // runOnOperation
 
