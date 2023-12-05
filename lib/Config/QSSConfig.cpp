@@ -19,6 +19,14 @@
 
 using namespace qssc::config;
 
+/// Verbosity levels for logging output
+/// Error - Only error messages will be logged
+/// Warn  - Warnings and errors *default
+/// Info  - General information on compilation progress
+/// Debug - Detailed output
+const std::array<const std::string, _VerbosityCnt> verbosityToStr = {
+    "Error", "Warn", "Info", "Debug"};
+
 // For now emit in a pseudo-TOML format.
 void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "[qss.compiler]\n";
@@ -29,6 +37,7 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
      << "\n";
   os << "allowUnregisteredDialects: " << allowUnregisteredDialects << "\n";
   os << "addTargetPasses: " << addTargetPasses << "\n";
+  os << "verbosity: " << verbosityToStr[static_cast<uint>(verbosity)] << "\n";
 }
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os,

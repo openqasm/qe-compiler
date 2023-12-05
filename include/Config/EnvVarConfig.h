@@ -37,6 +37,7 @@ public:
 private:
   llvm::Error populateConfigurationPath_(QSSConfig &config);
   llvm::Error populateTarget_(QSSConfig &config);
+  llvm::Error populateVerbosity_(QSSConfig &config);
 };
 
 } // namespace qssc::config

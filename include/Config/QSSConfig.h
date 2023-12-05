@@ -25,6 +25,14 @@
 
 namespace qssc::config {
 
+enum QSSVerbosity {
+  Error = 0,
+  Warn = 1,
+  Info = 2,
+  Debug = 3,
+  _VerbosityCnt = 4
+};
+
 /// @brief The QSS configuration data structure that is to be used for global
 /// configuration of the QSS infrastructure. This is to be used for static
 /// options that are rarely changed for a system and do not need to be
@@ -42,6 +50,8 @@ struct QSSConfig {
   bool allowUnregisteredDialects = false;
   /// @brief Register target passes with the compiler.
   bool addTargetPasses = true;
+  /// @brief Verbosity level for logging info
+  QSSVerbosity verbosity = Info;
 
   /// @brief Emit the configuration to stdout.
   void emit(llvm::raw_ostream &out) const;

@@ -25,6 +25,9 @@ llvm::Error EnvVarConfigBuilder::populateConfig(QSSConfig &config) {
   if (auto err = populateTarget_(config))
     return err;
 
+  if (auto err = populateVerbosity_(config))
+    return err;
+
   return llvm::Error::success();
 }
 
@@ -37,5 +40,26 @@ llvm::Error EnvVarConfigBuilder::populateConfigurationPath_(QSSConfig &config) {
 llvm::Error EnvVarConfigBuilder::populateTarget_(QSSConfig &config) {
   if (const char *targetStr = std::getenv("QSSC_TARGET_NAME"))
     config.targetName = targetStr;
+  return llvm::Error::success();
+}
+
+llvm::Error EnvVarConfigBuilder::populateVerbosity_(QSSConfig &config) {
+  if (const char *verbosity = std::getenv("QSSC_VERBOSITY")) {
+    if (strcmp(verbosity, "ERROR") == 0) {
+      config.verbosity = QSSVerbosity::Error;
+    } else if (strcmp(verbosity, "WARN") == 0) {
+      config.verbosity = QSSVerbosity::Warn;
+    } else if (strcmp(verbosity, "INFO") == 0) {
+      config.verbosity = QSSVerbosity::Info;
+    } else if (strcmp(verbosity, "DEBUG") == 0) {
+      config.verbosity = QSSVerbosity::Debug;
+    } else {
+      return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "QSSC_VERBOSITY level unrecognized got (" +
+              llvm::StringRef(verbosity) +
+              "), options are ERROR, WARN, INFO, or DEBUG\n");
+    }
+  }
   return llvm::Error::success();
 }
