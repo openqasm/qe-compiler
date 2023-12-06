@@ -1,4 +1,4 @@
-//===- LabelQUIRCircuits.h - Add attrs for circuit arguments  ---*- C++ -*-===//
+//===- QUIRCircuitsAnalysis.h - Cache circuit argument values ---*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -8,8 +8,8 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// This file implements a pass for adding argument attributes with default
-/// values for angle and duration arguments.
+/// This file implements an analysis for caching argument attributes with 
+/// default values for angle and duration arguments.
 ///
 //===----------------------------------------------------------------------===//
 
