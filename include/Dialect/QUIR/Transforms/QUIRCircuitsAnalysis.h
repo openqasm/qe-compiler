@@ -43,16 +43,6 @@ private:
 public:
   QUIRCircuitsAnalysis(mlir::Operation *op, AnalysisManager &am);
   CircuitAnalysisMap &getAnalysisMap() { return circuitOperands; }
-  // void dump() {
-  //   for (auto entry : circuitOperands) {
-  //     auto circuitOp = dyn_cast<quir::CircuitOp>(entry.first);
-  //     llvm::errs() << "circuit: " << circuitOp.sym_name() << "\n";
-  //     for (auto arg : entry.second) {
-  //       llvm::errs() << "arg: " << arg.first << " ";
-  //       std::get<2>(arg.second).dump();
-  //   }
-  //   }
-  // }
 
   void invalidate() { invalid_ = true; }
   bool isInvalidated(const mlir::AnalysisManager::PreservedAnalyses &pa) {
