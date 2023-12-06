@@ -61,7 +61,7 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
   // go over the MLIR operation of the block in reverse order, and find
   // CallSequenceOps, each of which corresponds to a quantum gate. for each
   // CallSequenceOps, we add a timepoint based on the availability of involved
-  // ports; timepoints are <=0 because we're walking in reverse order Note this
+  // ports; timepoints are <=0 because we're walking in reverse order. Note this
   // pass assumes that the operations inside these CallSequenceOps are already
   // scheduled
   for (auto opIt = quantumCircuitSequenceOpBlock->rbegin(),
@@ -129,7 +129,7 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
   // setting duration of the quantum circuit
   PulseOpSchedulingInterface::setDuration(quantumCircuitSequenceOp,
                                           totalDurationOfQuantumCircuit);
-  // setting duration of the quantum circuit; at this point, we can add
+  // setting timepoint of the quantum circuit; at this point, we can add
   // totalDurationOfQuantumCircuit to above <=0 timepoints, so that they become
   // >=0, however, that would require walking the IR again. Instead, we add a
   // postive timepoint to the parent op, i.e., quantum circuit sequence op, and
