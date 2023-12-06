@@ -712,6 +712,7 @@ def Pulse_CallSequenceOp : Pulse_Op<"call_sequence", [CallOpInterface, MemRefsNo
 
 def Pulse_SequenceOp : Pulse_Op<"sequence", [
   AutomaticAllocationScope, CallableOpInterface,
+  DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getDuration"]>,
   FunctionOpInterface, IsolatedFromAbove, Symbol, SequenceAllowed
 ]> {
   let summary = "An operation with a name containing a single `SSACFG` region corresponding to a pulse sequence execution";

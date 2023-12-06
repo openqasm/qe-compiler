@@ -100,11 +100,26 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
             return PulseOpSchedulingInterface::setDuration($_op, other);
         }]
         >,
+        InterfaceMethod<
+        /*desc=*/"Get the ports of a pulse operation",
+        /*retTy=*/"::llvm::Expected<mlir::ArrayAttr>",
+        /*methodName=*/"getPorts",
+        /*args=*/(ins),
+        /*methodBody=*/[{}],
+        /*defaultImplementation=*/[{
+            // By default, return the pulse.argPorts attribute
+            return PulseOpSchedulingInterface::getPorts($_op);
+        }]
+        >,
     ];
 
     let extraSharedClassDeclaration = [{
         static llvm::Optional<int64_t> getTimepoint(mlir::Operation *op) {
             return interfaces_impl::getTimepoint(op);
+        }
+
+        static llvm::Expected<mlir::ArrayAttr> getPorts(mlir::Operation *op) {
+            return interfaces_impl::getPorts(op);
         }
 
         static void setTimepoint(mlir::Operation *op, int64_t timepoint) {

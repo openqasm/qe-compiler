@@ -1,4 +1,4 @@
-//===- Scheduling.cpp --- scheduling pulse sequences ------------*- C++ -*-===//
+//===- Scheduling.cpp ---  quantum circuits pulse scheduling ----*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,8 +14,8 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file implements the pass for scheduling the pulse sequences of quantum
-///  gates inside a circuit, based on the availability of involved ports
+///  This file implements the pass for scheduling the quantum circuits at pulse
+///  level, based on the availability of involved ports
 ///
 //===----------------------------------------------------------------------===//
 
@@ -27,7 +27,7 @@
 using namespace mlir;
 using namespace mlir::pulse;
 
-void SchedulingPulseSequencesPass::runOnOperation() {
+void quantumCircuitPulseSchedulingPass::runOnOperation() {
   // check for command line override of the scheduling method
   if (schedulingMethod.hasValue())
     SCHEDULING_METHOD = schedulingMethod.getValue();
@@ -36,100 +36,136 @@ void SchedulingPulseSequencesPass::runOnOperation() {
   FuncOp mainFunc = dyn_cast<FuncOp>(quir::getMainFunction(moduleOp));
   assert(mainFunc && "could not find the main func");
 
-  // for each pulse sequence, schedule the inner call sequences
-  mainFunc->walk([&](mlir::pulse::CallSequenceOp mainFuncCallSequenceOp) {
+  // schedule all the quantum circuits which are called in main function
+  mainFunc->walk([&](mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp) {
     assert(SCHEDULING_METHOD == "alap" &&
            "scheduling method not supported currently");
-    scheduleAlap(mainFuncCallSequenceOp, moduleOp);
+    scheduleAlap(quantumCircuitCallSequenceOp, moduleOp);
   });
 }
 
-void SchedulingPulseSequencesPass::scheduleAlap(
-    mlir::pulse::CallSequenceOp mainFuncCallSequenceOp, ModuleOp moduleOp) {
+void quantumCircuitPulseSchedulingPass::scheduleAlap(
+    mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp,
+    ModuleOp moduleOp) {
   mlir::OpBuilder builder(moduleOp);
 
-  auto mainFuncSequenceOp = getSequenceOp(mainFuncCallSequenceOp);
-  std::string sequenceName = mainFuncSequenceOp.sym_name().str();
+  auto quantumCircuitSequenceOp = getSequenceOp(quantumCircuitCallSequenceOp);
+  std::string sequenceName = quantumCircuitSequenceOp.sym_name().str();
   LLVM_DEBUG(llvm::dbgs() << "\nscheduling " << sequenceName << "\n");
 
-  int duration = 0;
+  int totalDurationOfQuantumCircuitNegative = 0;
   portNameToNextAvailabilityMap.clear();
-  for (auto &block : mainFuncSequenceOp) {
-    for (auto opIt = block.rbegin(), opEnd = block.rend(); opIt != opEnd;
-         ++opIt) {
-      auto &op = *opIt;
-      if (auto innerCallSequenceOp =
-              dyn_cast<mlir::pulse::CallSequenceOp>(op)) {
-        // find innerSequenceOp
-        auto innerSequenceOp = getSequenceOp(innerCallSequenceOp);
-        std::string innerSequenceName = innerSequenceOp.sym_name().str();
-        LLVM_DEBUG(llvm::dbgs() << "\tprocessing inner sequence "
-                                << innerSequenceName << "\n");
 
-        // find arg ports
-        assert(innerSequenceOp->hasAttrOfType<ArrayAttr>("pulse.argPorts") and
-               "no pulse.argPorts found for the innerSequenceOp.");
-        auto argPortsAttr =
-            innerSequenceOp->getAttrOfType<ArrayAttr>("pulse.argPorts");
+  // get the MLIR block of the quantum circuit
+  auto quantumCircuitSequenceOpBlock = quantumCircuitSequenceOp.body().begin();
+  // go over the MLIR operation of the block in reverse order, and find
+  // CallSequenceOps, each of which corresponds to a quantum gate. for each
+  // CallSequenceOps, we add a timepoint based on the availability of involved
+  // ports; timepoints are <=0 because we're walking in reverse order Note this
+  // pass assumes that the operations inside these CallSequenceOps are already
+  // scheduled
+  for (auto opIt = quantumCircuitSequenceOpBlock->rbegin(),
+            opEnd = quantumCircuitSequenceOpBlock->rend();
+       opIt != opEnd; ++opIt) {
+    auto &op = *opIt;
+    if (auto quantumGateCallSequenceOp =
+            dyn_cast<mlir::pulse::CallSequenceOp>(op)) {
+      // find quantum gate SequenceOp
+      auto quantumGateSequenceOp = getSequenceOp(quantumGateCallSequenceOp);
+      std::string quantumGateSequenceName =
+          quantumGateSequenceOp.sym_name().str();
+      LLVM_DEBUG(llvm::dbgs() << "\tprocessing inner sequence "
+                              << quantumGateSequenceName << "\n");
 
-        // find duration of the inner callseq
-        uint innerCallSequenceDuration = 0;
-        if (innerCallSequenceOp->hasAttrOfType<IntegerAttr>("pulse.duration"))
-          innerCallSequenceDuration = static_cast<uint64_t>(
-              innerCallSequenceOp->getAttrOfType<IntegerAttr>("pulse.duration")
-                  .getInt());
-        else if (innerSequenceOp->hasAttrOfType<IntegerAttr>("pulse.duration"))
-          innerCallSequenceDuration = static_cast<uint64_t>(
-              innerSequenceOp->getAttrOfType<IntegerAttr>("pulse.duration")
-                  .getInt());
-        else
-          llvm_unreachable("no pulse.duration specified");
-        LLVM_DEBUG(llvm::dbgs()
-                   << "\t\tduration " << innerCallSequenceDuration << "\n");
-
-        // find next avail
-        int nextAvailOfAllPorts = 0;
-        for (auto attr : argPortsAttr) {
-          std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
-          if (portName.empty())
-            continue;
-          if (portNameToNextAvailabilityMap.find(portName) !=
-              portNameToNextAvailabilityMap.end()) {
-            if (portNameToNextAvailabilityMap[portName] < nextAvailOfAllPorts)
-              nextAvailOfAllPorts = portNameToNextAvailabilityMap[portName];
-          }
-        }
-        LLVM_DEBUG(llvm::dbgs() << "\t\tnext availability is at "
-                                << nextAvailOfAllPorts << "\n");
-
-        // update the next availability map
-        int startingTime = nextAvailOfAllPorts - innerCallSequenceDuration;
-        LLVM_DEBUG(llvm::dbgs() << "\t\tscheduled at " << startingTime << "\n");
-        if (startingTime < duration)
-          duration = startingTime;
-        for (auto attr : argPortsAttr) {
-          std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
-          if (portName.empty())
-            continue;
-          portNameToNextAvailabilityMap[portName] = startingTime;
-        }
-
-        // set startingTime for innerCallSequenceOp
-        PulseOpSchedulingInterface::setTimepoint(innerCallSequenceOp,
-                                                 startingTime);
+      // find ports of the quantum gate SequenceOp
+      auto portsOrError =
+          PulseOpSchedulingInterface::getPorts(quantumGateSequenceOp);
+      if (auto err = portsOrError.takeError()) {
+        quantumGateSequenceOp.emitError() << toString(std::move(err));
+        signalPassFailure();
       }
+      auto ports = portsOrError.get();
+
+      // find duration of the quantum gate callSequenceOp
+      llvm::Expected<uint64_t> durOrError =
+          quantumGateSequenceOp.getDuration(quantumGateCallSequenceOp);
+      if (auto err = durOrError.takeError()) {
+        quantumGateSequenceOp.emitError() << toString(std::move(err));
+        signalPassFailure();
+      }
+      uint64_t quantumGateCallSequenceOpDuration = durOrError.get();
+      LLVM_DEBUG(llvm::dbgs() << "\t\tduration "
+                              << quantumGateCallSequenceOpDuration << "\n");
+
+      // find next available time for all the ports
+      int nextAvailableTimeOfAllPorts = getNextAvailableTimeOfPorts(ports);
+      LLVM_DEBUG(llvm::dbgs() << "\t\tnext availability is at "
+                              << nextAvailableTimeOfAllPorts << "\n");
+
+      // find the updated available time, i.e., when the current quantum gate
+      // will be scheduled
+      int updatedAvailableTime =
+          nextAvailableTimeOfAllPorts - quantumGateCallSequenceOpDuration;
+      LLVM_DEBUG(llvm::dbgs() << "\t\tcurrent gate scheduled at "
+                              << updatedAvailableTime << "\n");
+      // update the port availability map
+      updatePortAvailabilityMap(ports, updatedAvailableTime);
+
+      // keep track of total duration of the quantum circuit
+      if (updatedAvailableTime < totalDurationOfQuantumCircuitNegative)
+        totalDurationOfQuantumCircuitNegative = updatedAvailableTime;
+
+      // set the timepoint of quantum gate
+      PulseOpSchedulingInterface::setTimepoint(quantumGateCallSequenceOp,
+                                               updatedAvailableTime);
     }
   }
 
-  // multiply by -1 so that duration becomes positive
-  duration = -duration;
-  LLVM_DEBUG(llvm::dbgs() << "\ttotal circuit duration " << duration << "\n");
-  // setting timepoint and duration for mainFuncSequenceOp
-  PulseOpSchedulingInterface::setTimepoint(mainFuncSequenceOp, duration);
-  PulseOpSchedulingInterface::setDuration(mainFuncSequenceOp, duration);
+  // multiply by -1 so that quantum circuit duration becomes positive
+  int totalDurationOfQuantumCircuit = -totalDurationOfQuantumCircuitNegative;
+  LLVM_DEBUG(llvm::dbgs() << "\ttotal duration of quantum circuit "
+                          << totalDurationOfQuantumCircuit << "\n");
+
+  // setting duration of the quantum circuit
+  PulseOpSchedulingInterface::setDuration(quantumCircuitSequenceOp,
+                                          totalDurationOfQuantumCircuit);
+  // setting duration of the quantum circuit; at this point, we can add
+  // totalDurationOfQuantumCircuit to above <=0 timepoints, so that they become
+  // >=0, however, that would require walking the IR again. Instead, we add a
+  // postive timepoint to the parent op, i.e., quantum circuit sequence op, and
+  // later passes would need to add this value as an offset to determine the
+  // effective timepoints
+  PulseOpSchedulingInterface::setTimepoint(quantumCircuitSequenceOp,
+                                           totalDurationOfQuantumCircuit);
 }
 
-mlir::pulse::SequenceOp SchedulingPulseSequencesPass::getSequenceOp(
+int quantumCircuitPulseSchedulingPass::getNextAvailableTimeOfPorts(
+    mlir::ArrayAttr ports) {
+  int nextAvailableTimeOfAllPorts = 0;
+  for (auto attr : ports) {
+    std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
+    if (portName.empty())
+      continue;
+    if (portNameToNextAvailabilityMap.find(portName) !=
+        portNameToNextAvailabilityMap.end()) {
+      if (portNameToNextAvailabilityMap[portName] < nextAvailableTimeOfAllPorts)
+        nextAvailableTimeOfAllPorts = portNameToNextAvailabilityMap[portName];
+    }
+  }
+  return nextAvailableTimeOfAllPorts;
+}
+
+void quantumCircuitPulseSchedulingPass::updatePortAvailabilityMap(
+    mlir::ArrayAttr ports, int updatedAvailableTime) {
+  for (auto attr : ports) {
+    std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
+    if (portName.empty())
+      continue;
+    portNameToNextAvailabilityMap[portName] = updatedAvailableTime;
+  }
+}
+
+mlir::pulse::SequenceOp quantumCircuitPulseSchedulingPass::getSequenceOp(
     mlir::pulse::CallSequenceOp callSequenceOp) {
   auto seqAttr = callSequenceOp->getAttrOfType<FlatSymbolRefAttr>("callee");
   assert(seqAttr && "Requires a 'callee' symbol reference attribute");
@@ -141,11 +177,10 @@ mlir::pulse::SequenceOp SchedulingPulseSequencesPass::getSequenceOp(
   return sequenceOp;
 }
 
-llvm::StringRef SchedulingPulseSequencesPass::getArgument() const {
-  return "scheduling-pulse-sequences";
+llvm::StringRef quantumCircuitPulseSchedulingPass::getArgument() const {
+  return "quantum-circuit-pulse-scheduling";
 }
 
-llvm::StringRef SchedulingPulseSequencesPass::getDescription() const {
-  return "Scheduling the pulse sequences of the quantum gates inside a "
-         "circuit.";
+llvm::StringRef quantumCircuitPulseSchedulingPass::getDescription() const {
+  return "Scheduling a quantum circuit at pulse level.";
 }

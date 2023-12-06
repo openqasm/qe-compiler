@@ -1,4 +1,4 @@
-//===- scheduling.h --- scheduling pulse sequences --------------*- C++ -*-===//
+//===- scheduling.h --- quantum circuits pulse scheduling -------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -14,8 +14,8 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file implements the pass for scheduling the pulse sequences of quantum
-///  gates inside a circuit, based on the availability of involved ports
+///  This file implements the pass for scheduling the quantum circuits at pulse
+///  level, based on the availability of involved ports
 ///
 //===----------------------------------------------------------------------===//
 
@@ -29,17 +29,19 @@
 
 namespace mlir::pulse {
 
-struct SchedulingPulseSequencesPass
-    : public PassWrapper<SchedulingPulseSequencesPass,
+struct quantumCircuitPulseSchedulingPass
+    : public PassWrapper<quantumCircuitPulseSchedulingPass,
                          OperationPass<ModuleOp>> {
+public:
   std::string SCHEDULING_METHOD = "alap";
 
   // this pass can optionally receive an string specifying the scheduling
   // method; default method is alap scheduling
-  SchedulingPulseSequencesPass() = default;
-  SchedulingPulseSequencesPass(const SchedulingPulseSequencesPass &pass)
+  quantumCircuitPulseSchedulingPass() = default;
+  quantumCircuitPulseSchedulingPass(
+      const quantumCircuitPulseSchedulingPass &pass)
       : PassWrapper(pass) {}
-  SchedulingPulseSequencesPass(std::string inSchedulingMethod) {
+  quantumCircuitPulseSchedulingPass(std::string inSchedulingMethod) {
     SCHEDULING_METHOD = std::move(inSchedulingMethod);
   }
 
@@ -54,12 +56,15 @@ struct SchedulingPulseSequencesPass
       llvm::cl::desc("an string to specify scheduling method"),
       llvm::cl::value_desc("filename"), llvm::cl::init("")};
 
-  // port based alap scheduling
-  void scheduleAlap(mlir::pulse::CallSequenceOp mainFuncCallSequenceOp,
-                    ModuleOp moduleOp);
+private:
   // map to keep track of next availability of ports
   std::map<std::string, int> portNameToNextAvailabilityMap;
 
+  void scheduleAlap(mlir::pulse::CallSequenceOp mainFuncCallSequenceOp,
+                    ModuleOp moduleOp);
+  int getNextAvailableTimeOfPorts(mlir::ArrayAttr ports);
+  void updatePortAvailabilityMap(mlir::ArrayAttr ports,
+                                 int updatedAvailableTime);
   static mlir::pulse::SequenceOp
   getSequenceOp(mlir::pulse::CallSequenceOp callSequenceOp);
 };

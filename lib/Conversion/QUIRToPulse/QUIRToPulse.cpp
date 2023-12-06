@@ -146,7 +146,7 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
 
       // add starting timepoint for delayOp
       if (auto delayOp = dyn_cast<mlir::quir::DelayOp>(quirOp)) {
-        uint durValue = 0;
+        uint64_t durValue = 0;
         if (delayOp.time().isa<BlockArgument>()) {
           uint argNum = delayOp.time().dyn_cast<BlockArgument>().getArgNumber();
           auto durOpConstantOp = callCircuitOp.getOperand(argNum)
