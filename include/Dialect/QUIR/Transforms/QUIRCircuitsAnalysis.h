@@ -8,7 +8,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// This file implements an analysis for caching argument attributes with 
+/// This file implements an analysis for caching argument attributes with
 /// default values for angle and duration arguments.
 ///
 //===----------------------------------------------------------------------===//
