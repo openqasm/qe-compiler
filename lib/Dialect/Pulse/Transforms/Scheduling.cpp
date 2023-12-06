@@ -1,4 +1,4 @@
-//===- scheduling.cpp --- scheduling pulse sequences ------------*- C++ -*-===//
+//===- Scheduling.cpp --- scheduling pulse sequences ------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
