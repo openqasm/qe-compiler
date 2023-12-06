@@ -740,7 +740,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction > Action::DumpMLIR && config.addTargetPasses)
     // check if the target quir to std pass has been specified in the CL
-    if (auto err = target.addPayloadPasses(pm, emitAction == Action::GenQEM))
+    if (auto err = target.addPayloadPasses(pm))
       return llvm::joinErrors(
           llvm::createStringError(llvm::inconvertibleErrorCode(),
                                   "Failure while preparing target passes"),

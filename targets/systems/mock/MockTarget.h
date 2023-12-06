@@ -68,8 +68,7 @@ public:
   explicit MockSystem(std::unique_ptr<MockConfig> config);
   static llvm::Error registerTargetPasses();
   static llvm::Error registerTargetPipelines();
-  llvm::Error addPayloadPasses(mlir::PassManager &pm,
-                               bool generatePayload) override;
+  llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
   auto payloadPassesFound(mlir::PassManager &pm) -> bool;
   llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;

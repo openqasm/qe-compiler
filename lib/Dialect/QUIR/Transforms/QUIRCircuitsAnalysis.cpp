@@ -80,18 +80,8 @@ angleValToDouble(mlir::Value inVal,
 QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
                                            AnalysisManager &am) {
 
-  std::string name;
-  auto modOp = dyn_cast<ModuleOp>(moduleOp);
-  if (modOp && modOp.sym_name())
-    name = modOp.sym_name()->str();
-
-  llvm::errs() << "QUIRCircuitsAnalysis start " << name << "\n";
-
   if (not invalid_)
     return;
-
-  llvm::errs() << "QUIRCircuitsAnalysis compute " << name << "\n";
-
 
   bool runGetAnalysis = true;
   // auto nameAnalysis =
