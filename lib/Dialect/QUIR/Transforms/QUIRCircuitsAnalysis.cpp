@@ -84,8 +84,7 @@ QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
     return;
 
   bool runGetAnalysis = true;
-  // auto nameAnalysis =
-  //     am.getAnalysis<mlir::qcs::ParameterInitialValueAnalysis>();
+
   mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis;
   auto topLevelModuleOp = moduleOp->getParentOfType<ModuleOp>();
   if (topLevelModuleOp) {
@@ -153,12 +152,7 @@ QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
           parameterName = parameterLoad->getAttrOfType<StringAttr>(
               mlir::quir::getInputParameterAttrName());
         }
-        // if (value > 0) {
-        //   llvm::errs() << "Caching angle: " <<
-        //   circuitOp->getParentOfType<ModuleOp>().sym_name() << " " <<
-        //   circuitOp.sym_name() << " " << ii << " "; llvm::errs() << value <<
-        //   " parameterName " << parameterName << "\n";
-        // }
+
         circuitOperands[circuitOp->getParentOfType<ModuleOp>()][circuitOp][ii] =
             {value, parameterName, duration};
       }
@@ -169,12 +163,7 @@ QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
                              .dyn_cast<quir::DurationType>()) {
         auto operand = dyn_cast<quir::ConstantOp>(
             callCircuitOp.operands()[ii].getDefiningOp());
-        operand.dump();
         duration = operand.value().dyn_cast<DurationAttr>();
-        duration.dump();
-        // llvm::errs() << "Caching duration: " <<
-        // circuitOp->getParentOfType<ModuleOp>().sym_name() << " " <<
-        // circuitOp.sym_name() << " " << ii << " "; duration.dump();
         circuitOperands[circuitOp->getParentOfType<ModuleOp>()][circuitOp][ii] =
             {value, parameterName, duration};
       }
