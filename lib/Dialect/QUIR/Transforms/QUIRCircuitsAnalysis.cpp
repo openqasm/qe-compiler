@@ -61,11 +61,10 @@ angleValToDouble(mlir::Value inVal,
       return argAttr.getValue().convertToDouble();
 
     } else {
-
-      return std::get<0>(
+      auto parentModuleOp = circuitOp->getParentOfType<mlir::ModuleOp>();
+      return std::get<QUIRCircuitsAnalysisEntry::ANGLE>(
           circuitAnalysis
-              ->getAnalysisMap()[circuitOp->getParentOfType<mlir::ModuleOp>()]
-                                [circuitOp][argNum]);
+              ->getAnalysisMap()[parentModuleOp][circuitOp][argNum]);
     }
   }
 

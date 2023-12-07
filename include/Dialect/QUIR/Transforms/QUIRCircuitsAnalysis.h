@@ -28,6 +28,8 @@
 
 namespace mlir::quir {
 
+enum QUIRCircuitsAnalysisEntry { ANGLE = 0, PARAMETER_NAME, DURATION};
+
 using OperandAttributes =
     std::tuple<double, llvm::StringRef, mlir::quir::DurationAttr>;
 
