@@ -23,7 +23,7 @@
 #include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-#include "Dialect/QUIR/Transforms/QUIRCircuitsAnalysis.h"
+#include "Dialect/QUIR/Transforms/QUIRCircuitAnalysis.h"
 #include "mlir/Dialect/SCF/SCF.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"

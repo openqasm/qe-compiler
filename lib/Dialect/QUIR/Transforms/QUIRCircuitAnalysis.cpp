@@ -13,7 +13,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/QUIR/Transforms/QUIRCircuitsAnalysis.h"
+#include "Dialect/QUIR/Transforms/QUIRCircuitAnalysis.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
@@ -38,7 +38,7 @@ parameterValToDouble(mlir::qcs::ParameterLoadOp defOp,
 llvm::Expected<double>
 angleValToDouble(mlir::Value inVal,
                  mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis,
-                 mlir::quir::QUIRCircuitsAnalysis *circuitAnalysis) {
+                 mlir::quir::QUIRCircuitAnalysis *circuitAnalysis) {
 
   llvm::StringRef errorStr;
 
@@ -62,7 +62,7 @@ angleValToDouble(mlir::Value inVal,
 
     } else {
       auto parentModuleOp = circuitOp->getParentOfType<mlir::ModuleOp>();
-      return std::get<QUIRCircuitsAnalysisEntry::ANGLE>(
+      return std::get<QUIRCircuitAnalysisEntry::ANGLE>(
           circuitAnalysis
               ->getAnalysisMap()[parentModuleOp][circuitOp][argNum]);
     }
@@ -89,7 +89,7 @@ angleValToDouble(mlir::Value inVal,
   return llvm::createStringError(llvm::inconvertibleErrorCode(), errorStr);
 } // angleValToDouble
 
-QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
+QUIRCircuitAnalysis::QUIRCircuitAnalysis(mlir::Operation *moduleOp,
                                            AnalysisManager &am) {
 
   if (not invalid_)
@@ -191,15 +191,15 @@ QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
   invalid_ = false;
 }
 
-void QUIRCircuitsAnalysisPass::runOnOperation() {
-  mlir::Pass::getAnalysis<QUIRCircuitsAnalysis>();
+void QUIRCircuitAnalysisPass::runOnOperation() {
+  mlir::Pass::getAnalysis<QUIRCircuitAnalysis>();
 } // ParameterInitialValueAnalysisPass::runOnOperation()
 
-llvm::StringRef QUIRCircuitsAnalysisPass::getArgument() const {
+llvm::StringRef QUIRCircuitAnalysisPass::getArgument() const {
   return "quir-circuit-analysis";
 }
 
-llvm::StringRef QUIRCircuitsAnalysisPass::getDescription() const {
+llvm::StringRef QUIRCircuitAnalysisPass::getDescription() const {
   return "Analyze Circuit Inputs";
 }
 

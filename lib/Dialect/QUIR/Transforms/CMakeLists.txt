@@ -23,7 +23,7 @@ add_mlir_dialect_library(MLIRQUIRTransforms
     MergeParallelResets.cpp
     Passes.cpp
     QuantumDecoration.cpp
-    QUIRCircuitsAnalysis.cpp
+    QUIRCircuitAnalysis.cpp
     RemoveQubitOperands.cpp
     ReorderMeasurements.cpp
     ReorderCircuits.cpp

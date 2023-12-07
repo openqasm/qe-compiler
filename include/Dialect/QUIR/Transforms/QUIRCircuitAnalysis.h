@@ -1,4 +1,4 @@
-//===- QUIRCircuitsAnalysis.h - Cache circuit argument values ---*- C++ -*-===//
+//===- QUIRCircuitAnalysis.h - Cache circuit argument values ---*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -28,7 +28,7 @@
 
 namespace mlir::quir {
 
-enum QUIRCircuitsAnalysisEntry { ANGLE = 0, PARAMETER_NAME, DURATION};
+enum QUIRCircuitAnalysisEntry { ANGLE = 0, PARAMETER_NAME, DURATION};
 
 using OperandAttributes =
     std::tuple<double, llvm::StringRef, mlir::quir::DurationAttr>;
@@ -38,13 +38,13 @@ using CircuitAnalysisMap = std::unordered_map<
     std::unordered_map<mlir::Operation *,
                        std::unordered_map<int, OperandAttributes>>>;
 
-class QUIRCircuitsAnalysis {
+class QUIRCircuitAnalysis {
 private:
   CircuitAnalysisMap circuitOperands;
   bool invalid_{true};
 
 public:
-  QUIRCircuitsAnalysis(mlir::Operation *op, AnalysisManager &am);
+  QUIRCircuitAnalysis(mlir::Operation *op, AnalysisManager &am);
   CircuitAnalysisMap &getAnalysisMap() { return circuitOperands; }
 
   void invalidate() { invalid_ = true; }
@@ -53,23 +53,23 @@ public:
   }
 };
 
-struct QUIRCircuitsAnalysisPass
-    : public mlir::PassWrapper<QUIRCircuitsAnalysisPass,
+struct QUIRCircuitAnalysisPass
+    : public mlir::PassWrapper<QUIRCircuitAnalysisPass,
                                OperationPass<ModuleOp>> {
 
-  QUIRCircuitsAnalysisPass() = default;
-  QUIRCircuitsAnalysisPass(const QUIRCircuitsAnalysisPass &pass) = default;
+  QUIRCircuitAnalysisPass() = default;
+  QUIRCircuitAnalysisPass(const QUIRCircuitAnalysisPass &pass) = default;
 
   void runOnOperation() override;
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
-}; // QUIRCircuitsAnalysisPass
+}; // QUIRCircuitAnalysisPass
 
 llvm::Expected<double>
 angleValToDouble(mlir::Value inVal,
                  mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis,
-                 mlir::quir::QUIRCircuitsAnalysis *circuitAnalysis = nullptr);
+                 mlir::quir::QUIRCircuitAnalysis *circuitAnalysis = nullptr);
 
 } // namespace mlir::quir
 
