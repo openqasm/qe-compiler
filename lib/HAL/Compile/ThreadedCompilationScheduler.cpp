@@ -87,6 +87,8 @@ llvm::Error ThreadedCompilationScheduler::compilePayload(mlir::ModuleOp moduleOp
 
 
 llvm::Error ThreadedCompilationScheduler::compilePayloadTarget(Target &target, mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) {
+    if (auto err = compileMLIRTarget(target, moduleOp))
+        return err;
     if (auto err = target.emitToPayload(moduleOp, payload))
       return err;
     return llvm::Error::success();

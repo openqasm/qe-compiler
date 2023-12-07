@@ -743,12 +743,19 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (emitAction == Action::DumpMLIR) {
     // Run the pipeline.
-    if (!bypassTargetCompilation && config.addTargetPasses)
-      if (auto err = targetCompilationScheduler.compileMLIR(moduleOp))
-        return llvm::joinErrors(
-          llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                  "Failure while preparing target passes"),
-          std::move(err));
+    if (!bypassTargetCompilation) {
+
+      if(failed(pm.run(moduleOp)))
+        return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                      "Problems running the compiler pipeline!");
+
+      if (config.addTargetPasses)
+        if (auto err = targetCompilationScheduler.compileMLIR(moduleOp))
+          return llvm::joinErrors(
+            llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                    "Failure while preparing target passes"),
+            std::move(err));
+    }
 
 
     // Print the output.
