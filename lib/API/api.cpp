@@ -45,6 +45,7 @@
 #include "Payload/PayloadRegistry.h"
 #include "QSSC.h"
 
+#include "HAL/Compile/ThreadedCompilationScheduler.h"
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystem.h"
 #include "HAL/TargetSystemRegistry.h"
@@ -122,7 +123,7 @@ static llvm::cl::opt<bool> includeSourceInPayload(
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool>
-    bypassPipeline("bypass-pipeline", llvm::cl::desc("Bypass the pipeline"),
+    bypassTargetCompilation("bypass-target-compilation", llvm::cl::desc("Bypass target compilation"),
                    llvm::cl::init(false),
                    llvm::cl::cat(qssc::config::getQSSCCategory()));
 
@@ -464,7 +465,7 @@ static llvm::Error generateQEM_(qssc::hal::TargetSystem &target,
                                 std::unique_ptr<qssc::payload::Payload> payload,
                                 mlir::ModuleOp moduleOp,
                                 llvm::raw_ostream *ostream) {
-  if (!bypassPipeline)
+  if (!bypassTargetCompilation)
     if (auto err = target.emitToPayload(moduleOp, *payload))
       return err;
 
@@ -492,7 +493,7 @@ static void dumpMLIR_(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
 ///  @param diagnostic MLIR diagnostic from the Diagnostic Engine
 ///  @param diagnosticCb Handle to python diagnostic callback
 static void
-diagEngineHandler(Diagnostic &diagnostic,
+diagEngineHandler(mlir::Diagnostic &diagnostic,
                   std::optional<qssc::DiagnosticCallback> diagnosticCb) {
 
   // map diagnostic severity to qssc severity
@@ -559,7 +560,7 @@ compile_(int argc, char const **argv, std::string *outputString,
   DialectRegistry registry = qssc::dialect::registerDialects();
 
   // Parse the command line options.
-  mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run");
+  mlir::PassPipelineCLParser passPipelineParser("", "Compiler passes to run");
   registerPassManagerCLOpts();
   llvm::cl::SetVersionPrinter(&printVersion);
   llvm::cl::ParseCommandLineOptions(
@@ -626,7 +627,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   determineOutputType();
 
-  context.getDiagEngine().registerHandler([&](Diagnostic &diagnostic) {
+  context.getDiagEngine().registerHandler([&](mlir::Diagnostic &diagnostic) {
     diagEngineHandler(diagnostic, diagnosticCb);
   });
 
@@ -734,24 +735,22 @@ compile_(int argc, char const **argv, std::string *outputString,
   // QASM/AST or MLIR file
 
   // Build the provided pipeline.
-  if (failed(passPipeline.addToPipeline(pm, errorHandler)))
+  if (failed(passPipelineParser.addToPipeline(pm, errorHandler)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problem adding passes to passPipeline!");
 
-  if (emitAction > Action::DumpMLIR && config.addTargetPasses)
-    // check if the target quir to std pass has been specified in the CL
-    if (auto err = target.addPasses(pm))
-      return llvm::joinErrors(
+  auto targetCompilationScheduler = qssc::hal::compile::ThreadedCompilationScheduler(target, &context);
+
+  if (emitAction == Action::DumpMLIR) {
+    // Run the pipeline.
+    if (!bypassTargetCompilation && config.addTargetPasses)
+      if (auto err = targetCompilationScheduler.compileMLIR(moduleOp))
+        return llvm::joinErrors(
           llvm::createStringError(llvm::inconvertibleErrorCode(),
                                   "Failure while preparing target passes"),
           std::move(err));
 
-  // Run the pipeline.
-  if (!bypassPipeline && failed(pm.run(moduleOp)))
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Problems running the compiler pipeline!");
 
-  if (emitAction == Action::DumpMLIR) {
     // Print the output.
     dumpMLIR_(ostream, moduleOp);
   }

@@ -42,8 +42,6 @@ namespace qssc::hal::compile {
     /// subtrees without oversubscribing the compilation host's cores.
     class ThreadedCompilationScheduler : public TargetCompilationScheduler {
         protected:
-            ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context);
-
             using WalkTargetFunction = std::function<llvm::Error(hal::Target *)>;
             /// Threaded depth first walker for a target system using the current MLIRContext's
             /// threadpool.
@@ -51,6 +49,7 @@ namespace qssc::hal::compile {
 
 
         public:
+            ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context);
             virtual ~ThreadedCompilationScheduler() = default;
             virtual const std::string getName() const override;
 
