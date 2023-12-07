@@ -26,14 +26,15 @@ ThreadedCompilationScheduler::ThreadedCompilationScheduler(qssc::hal::TargetSyst
 
 const std::string ThreadedCompilationScheduler::getName() const { return "ThreadedCompilationScheduler"; }
 
-llvm::Error ThreadedCompilationScheduler::walkTargetThreaded(Target *target, WalkTargetFunction walkFunc) {
+llvm::Error ThreadedCompilationScheduler::walkTargetThreaded(Target *target, mlir::ModuleOp targetModuleOp, WalkTargetFunction walkFunc) {
 
-    if (auto err = walkFunc(target))
+    if (auto err = walkFunc(target, targetModuleOp))
         return err;
 
-    auto parallelWalkFunc = [&](Target *target) {
+    auto parallelWalkFunc = [&](Target *childTarget) {
         // Recurse on this target's children in a depth first fashion.
-        if(auto err = walkTargetThreaded(target, walkFunc))
+        mlir::ModuleOp childModuleOp = childTarget->getModule(targetModuleOp);
+        if(auto err = walkTargetThreaded(childTarget, childModuleOp, walkFunc))
             return mlir::failure();
 
         return mlir::success();
@@ -56,18 +57,19 @@ llvm::Error ThreadedCompilationScheduler::buildTargetPassManager(mlir::PassManag
 
 llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
 
-    auto threadedCompileMLIRTarget = [&](hal::Target *target) -> llvm::Error {
+    auto threadedCompileMLIRTarget = [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
+
         if (auto err = compileMLIRTarget(*target, moduleOp))
             return err;
         return llvm::Error::success();
     };
 
-    return walkTargetThreaded(&getTargetSystem(), threadedCompileMLIRTarget);
+    return walkTargetThreaded(&getTargetSystem(), moduleOp, threadedCompileMLIRTarget);
 
 }
 
 
-llvm::Error ThreadedCompilationScheduler::compileMLIRTarget(Target &target, mlir::ModuleOp moduleOp) {
+llvm::Error ThreadedCompilationScheduler::compileMLIRTarget(Target &target, mlir::ModuleOp targetModuleOp) {
     mlir::PassManager pm(getContext());
     if (auto err = buildTargetPassManager(pm))
         return err;
@@ -75,7 +77,7 @@ llvm::Error ThreadedCompilationScheduler::compileMLIRTarget(Target &target, mlir
     if(auto err = target.addPasses(pm))
         return err;
 
-    if(mlir::failed(pm.run(moduleOp)))
+    if(mlir::failed(pm.run(targetModuleOp)))
         return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                 "Problems running the pass pipeline for target " + target.getName());
     return llvm::Error::success();
@@ -84,22 +86,22 @@ llvm::Error ThreadedCompilationScheduler::compileMLIRTarget(Target &target, mlir
 
 
 llvm::Error ThreadedCompilationScheduler::compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) {
-    auto threadedCompilePayloadTarget = [&](hal::Target *target) -> llvm::Error {
+    auto threadedCompilePayloadTarget = [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
         if (auto err = compilePayloadTarget(*target, moduleOp, payload))
             return err;
         return llvm::Error::success();
     };
 
-    return walkTargetThreaded(&getTargetSystem(), threadedCompilePayloadTarget);
+    return walkTargetThreaded(&getTargetSystem(), moduleOp, threadedCompilePayloadTarget);
 
 }
 
 
-llvm::Error ThreadedCompilationScheduler::compilePayloadTarget(Target &target, mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) {
-    if (auto err = compileMLIRTarget(target, moduleOp))
+llvm::Error ThreadedCompilationScheduler::compilePayloadTarget(Target &target, mlir::ModuleOp targetModuleOp, qssc::payload::Payload &payload) {
+    if (auto err = compileMLIRTarget(target, targetModuleOp))
         return err;
 
-    if (auto err = target.emitToPayload(moduleOp, payload))
+    if (auto err = target.emitToPayload(targetModuleOp, payload))
       return err;
     return llvm::Error::success();
 }

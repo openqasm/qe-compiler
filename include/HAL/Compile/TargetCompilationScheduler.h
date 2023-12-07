@@ -45,9 +45,9 @@ namespace qssc::hal::compile {
         protected:
             TargetCompilationScheduler(hal::TargetSystem &target, mlir::MLIRContext *context);
 
-            using WalkTargetFunction = std::function<llvm::Error(hal::Target *)>;
+            using WalkTargetFunction = std::function<llvm::Error(hal::Target *, mlir::ModuleOp)>;
             // Depth first walker for a target system
-            llvm::Error walkTarget(Target *target, WalkTargetFunction walkFunc);
+            llvm::Error walkTarget(Target *target, mlir::ModuleOp targetModuleOp, WalkTargetFunction walkFunc);
 
         public:
             virtual ~TargetCompilationScheduler() = default;

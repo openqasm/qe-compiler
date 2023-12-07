@@ -42,10 +42,9 @@ namespace qssc::hal::compile {
     /// subtrees without oversubscribing the compilation host's cores.
     class ThreadedCompilationScheduler : public TargetCompilationScheduler {
         protected:
-            using WalkTargetFunction = std::function<llvm::Error(hal::Target *)>;
             /// Threaded depth first walker for a target system using the current MLIRContext's
             /// threadpool.
-            llvm::Error walkTargetThreaded(Target *target, WalkTargetFunction walkFunc);
+            llvm::Error walkTargetThreaded(Target *target, mlir::ModuleOp targetModuleOp, TargetCompilationScheduler::WalkTargetFunction walkFunc);
 
 
         public:
@@ -65,9 +64,9 @@ namespace qssc::hal::compile {
 
         private:
             /// Compiles the input module for a single target.
-            llvm::Error compileMLIRTarget(Target &target, mlir::ModuleOp moduleOp);
+            llvm::Error compileMLIRTarget(Target &target, mlir::ModuleOp targetModuleOp);
             /// Compiles the input payload for a single target.
-            llvm::Error compilePayloadTarget(Target &target, mlir::ModuleOp moduleOp, qssc::payload::Payload &payload);
+            llvm::Error compilePayloadTarget(Target &target, mlir::ModuleOp targetModuleOp, qssc::payload::Payload &payload);
 
             PMBuilder pmBuilder;
 
