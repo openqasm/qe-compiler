@@ -94,8 +94,24 @@ public:
     return getNumTargetsOfType<TargetSystem>();
   }
 
+  /// @brief Lookup this target's module within the provided module operation.
+  /// It is critical that the module be unique for the target be from any other module
+  /// to ensure that it may be processed in parallel.
+  /// @param parentModuleOp The parent module of this target. At this stage the parent must ensure that the child module has been created.
+  /// @return The module operation for this target.
+  virtual llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) = 0;
+  /// @brief Configure the provided pass manager to process this target's module.
+  /// It is important that all passes *only* touch this target's module to ensure
+  /// MLIR's parallelization rules are obeyed.
+  /// @param pm A pass manager that will operate *only* on this target's module
   virtual llvm::Error addPasses(mlir::PassManager &pm) = 0;
-  virtual llvm::Error emitToPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload) = 0;
+  /// @brief Compile and emit the out target outputs to the supplied payload.
+  /// This will also call and populate addPasses for this target and run the corresponding
+  /// pass pipeline.
+  /// @param targetModuleOp The target module after application of the target's passes populated in
+  /// addPasses and having run the pass manager on the module.
+  /// @param payload The payload to populate for this target.
+  virtual llvm::Error emitToPayload(mlir::ModuleOp &targetModuleOp, payload::Payload &payload) = 0;
 
   virtual ~Target() = default;
 
