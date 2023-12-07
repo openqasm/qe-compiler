@@ -28,10 +28,10 @@ const std::string ThreadedCompilationScheduler::getName() const { return "Thread
 
 llvm::Error ThreadedCompilationScheduler::walkTargetThreaded(Target *target, WalkTargetFunction walkFunc) {
 
-    auto parallelWalkFunc = [&](Target *target) {
-        if (auto err = walkFunc(target))
-            return mlir::failure();
+    if (auto err = walkFunc(target))
+        return err;
 
+    auto parallelWalkFunc = [&](Target *target) {
         // Recurse on this target's children in a depth first fashion.
         if(auto err = walkTargetThreaded(target, walkFunc))
             return mlir::failure();
@@ -74,6 +74,7 @@ llvm::Error ThreadedCompilationScheduler::compileMLIRTarget(Target &target, mlir
 
     if(auto err = target.addPasses(pm))
         return err;
+
     if(mlir::failed(pm.run(moduleOp)))
         return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                 "Problems running the pass pipeline for target " + target.getName());
@@ -89,7 +90,7 @@ llvm::Error ThreadedCompilationScheduler::compilePayload(mlir::ModuleOp moduleOp
         return llvm::Error::success();
     };
 
-    return walkTarget(&getTargetSystem(), threadedCompilePayloadTarget);
+    return walkTargetThreaded(&getTargetSystem(), threadedCompilePayloadTarget);
 
 }
 
@@ -97,6 +98,7 @@ llvm::Error ThreadedCompilationScheduler::compilePayload(mlir::ModuleOp moduleOp
 llvm::Error ThreadedCompilationScheduler::compilePayloadTarget(Target &target, mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) {
     if (auto err = compileMLIRTarget(target, moduleOp))
         return err;
+
     if (auto err = target.emitToPayload(moduleOp, payload))
       return err;
     return llvm::Error::success();

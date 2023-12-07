@@ -566,9 +566,6 @@ compile_(int argc, char const **argv, std::string *outputString,
   if (auto err = registerPasses())
     return err;
 
-  // The MLIR context for this compilation event.
-  MLIRContext context{};
-
   // Register the standard dialects with MLIR and prepare a registry and pass
   // pipeline
   DialectRegistry registry = qssc::dialect::registerDialects();
@@ -579,6 +576,11 @@ compile_(int argc, char const **argv, std::string *outputString,
   llvm::cl::SetVersionPrinter(&printVersion);
   llvm::cl::ParseCommandLineOptions(
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
+
+
+  // The MLIR context for this compilation event.
+  // Instantiate after parsing command line options.
+  MLIRContext context{};
 
   // Build the configuration for this compilation event.
   auto configResult = buildConfig_(&context);

@@ -21,10 +21,11 @@ using namespace qssc::hal::compile;
 TargetCompilationScheduler::TargetCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context) : target(target), context(context) {}
 
 llvm::Error TargetCompilationScheduler::walkTarget(Target *target, WalkTargetFunction walkFunc) {
+    // Call the input function for the walk on the target
+    if (auto err = walkFunc(target))
+        return err;
+
     for (auto *child : target->getChildren()) {
-        // Call the input function for the walk on the target
-        if (auto err = walkFunc(child))
-            return err;
         // Recurse on the target
         if (auto err = walkTarget(child, walkFunc))
             return err;
