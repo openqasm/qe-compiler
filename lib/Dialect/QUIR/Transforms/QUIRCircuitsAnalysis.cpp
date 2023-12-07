@@ -17,7 +17,6 @@
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 #include "mlir/Pass/AnalysisManager.h"
@@ -30,51 +29,65 @@ namespace mlir::quir {
 
 double
 parameterValToDouble(mlir::qcs::ParameterLoadOp defOp,
-                     mlir::qcs::ParameterInitialValueAnalysis &nameAnalysis) {
-  // this method must be called from a pass being
-  // managed via a pass manager
-  // getCachedParentAnalysis will trigger an assert
-  // if the pass is not properly initialized
-  return std::get<double>(defOp.getInitialValue(nameAnalysis.getNames()));
+                     mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis) {
+  assert(nameAnalysis &&
+         "A valid ParameterInitialValueAnalysis pointer is required");
+  return std::get<double>(defOp.getInitialValue(nameAnalysis->getNames()));
 }
 
-double
+llvm::Expected<double>
 angleValToDouble(mlir::Value inVal,
-                 mlir::qcs::ParameterInitialValueAnalysis &nameAnalysis) {
-  double retVal = 0.0;
-  if (auto defOp = inVal.getDefiningOp<mlir::quir::ConstantOp>()) {
-    retVal = defOp.getAngleValueFromConstant().convertToDouble();
-  } else if (auto defOp = inVal.getDefiningOp<mlir::qcs::ParameterLoadOp>()) {
-    retVal = parameterValToDouble(defOp, nameAnalysis);
-  } else if (auto blockArg = inVal.dyn_cast<mlir::BlockArgument>()) {
+                 mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis,
+                 mlir::quir::QUIRCircuitsAnalysis *circuitAnalysis) {
+
+  llvm::StringRef errorStr;
+
+  if (auto defOp = inVal.getDefiningOp<mlir::quir::ConstantOp>())
+    return defOp.getAngleValueFromConstant().convertToDouble();
+
+  if (auto defOp = inVal.getDefiningOp<mlir::qcs::ParameterLoadOp>())
+    return parameterValToDouble(defOp, nameAnalysis);
+
+  if (auto blockArg = inVal.dyn_cast<mlir::BlockArgument>()) {
     auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
         inVal.getParentBlock()->getParentOp());
     assert(circuitOp && "can only handle circuit arguments");
-    auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::AngleAttr>(
-        blockArg.getArgNumber(), mlir::quir::getAngleAttrName());
-    retVal = argAttr.getValue().convertToDouble();
-  } else if (auto castOp = inVal.getDefiningOp<mlir::oq3::CastOp>()) {
+
+    auto argNum = blockArg.getArgNumber();
+    if (circuitAnalysis == nullptr) {
+
+      auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::AngleAttr>(
+          argNum, mlir::quir::getAngleAttrName());
+      return argAttr.getValue().convertToDouble();
+
+    } else {
+
+      return std::get<0>(
+          circuitAnalysis
+              ->getAnalysisMap()[circuitOp->getParentOfType<mlir::ModuleOp>()]
+                                [circuitOp][argNum]);
+    }
+  }
+
+  if (auto castOp = inVal.getDefiningOp<mlir::oq3::CastOp>()) {
     auto defOp = castOp.arg().getDefiningOp<mlir::qcs::ParameterLoadOp>();
     if (defOp) {
-      retVal = parameterValToDouble(defOp, nameAnalysis);
+      return parameterValToDouble(defOp, nameAnalysis);
     } else if (auto constOp =
                    castOp.arg().getDefiningOp<mlir::arith::ConstantOp>()) {
       if (auto angleAttr = constOp.getValue().dyn_cast<mlir::quir::AngleAttr>())
-        retVal = angleAttr.getValue().convertToDouble();
+        return angleAttr.getValue().convertToDouble();
       else if (auto floatAttr = constOp.getValue().dyn_cast<mlir::FloatAttr>())
-        retVal = floatAttr.getValue().convertToDouble();
+        return floatAttr.getValue().convertToDouble();
       else
-        inVal.getDefiningOp()->emitOpError()
-            << "unable to cast Angle from constant op\n";
+        errorStr = "unable to cast Angle from constant op";
     } else {
-      inVal.getDefiningOp()->emitOpError()
-          << "unable to cast Angle from defining op\n";
+      errorStr = "unable to cast Angle from defining op";
     }
   } else {
-    inVal.getDefiningOp()->emitOpError()
-        << "Non-constant angles are not supported!\n";
+    errorStr = "Non-constant angles are not supported!";
   }
-  return retVal;
+  return llvm::createStringError(llvm::inconvertibleErrorCode(), errorStr);
 } // angleValToDouble
 
 QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
@@ -135,7 +148,13 @@ QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
         // auto bits = angType.getWidth();
         auto operand = callCircuitOp.operands()[ii];
 
-        value = angleValToDouble(operand, *nameAnalysis);
+        auto valueOrError = angleValToDouble(operand, nameAnalysis);
+        if (auto err = valueOrError.takeError()) {
+          operand.getDefiningOp()->emitOpError()
+              << toString(std::move(err)) + "\n";
+          assert(false && "unhandled value in angleValToDouble");
+        }
+        value = *valueOrError;
 
         qcs::ParameterLoadOp parameterLoad;
         parameterLoad = dyn_cast<qcs::ParameterLoadOp>(operand.getDefiningOp());
@@ -153,8 +172,8 @@ QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
               mlir::quir::getInputParameterAttrName());
         }
 
-        circuitOperands[circuitOp->getParentOfType<ModuleOp>()][circuitOp][ii] =
-            {value, parameterName, duration};
+        circuitOperands[parentModuleOp][circuitOp][ii] = {value, parameterName,
+                                                          duration};
       }
 
       // track durations
@@ -164,8 +183,8 @@ QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
         auto operand = dyn_cast<quir::ConstantOp>(
             callCircuitOp.operands()[ii].getDefiningOp());
         duration = operand.value().dyn_cast<DurationAttr>();
-        circuitOperands[circuitOp->getParentOfType<ModuleOp>()][circuitOp][ii] =
-            {value, parameterName, duration};
+        circuitOperands[parentModuleOp][circuitOp][ii] = {value, parameterName,
+                                                          duration};
       }
     }
   });

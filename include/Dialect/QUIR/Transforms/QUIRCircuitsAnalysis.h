@@ -17,6 +17,7 @@
 #define QUIR_CIRCUITS_ANALYSIS_H
 
 #include "Dialect/Pulse/IR/PulseOps.h"
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 #include "mlir/IR/BuiltinOps.h"
@@ -62,6 +63,11 @@ struct QUIRCircuitsAnalysisPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
 }; // QUIRCircuitsAnalysisPass
+
+llvm::Expected<double>
+angleValToDouble(mlir::Value inVal,
+                 mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis,
+                 mlir::quir::QUIRCircuitsAnalysis *circuitAnalysis = nullptr);
 
 } // namespace mlir::quir
 
