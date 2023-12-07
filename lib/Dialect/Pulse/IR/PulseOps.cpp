@@ -186,13 +186,13 @@ CallSequenceOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
 
 llvm::Expected<uint64_t>
 SequenceOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
+  // first, check if the sequence has duration attribute. If not, also check if
+  // the call sequence has duration attribute; e.g., for sequences that receives
+  // delay arguments, duration of the sequence can vary depending on the
+  // argument, so we look at the duration of call sequence as well
   if ((*this)->hasAttr("pulse.duration"))
     return static_cast<uint64_t>(
         (*this)->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
-  // next check if the call sequence has duration attributes; e.g., for
-  // sequences that receives delay arguments, duration of the sequence can vary
-  // depending on the argument, so we look at the duration of call sequence as
-  // well
   else if (callSequenceOp->hasAttr("pulse.duration"))
     return static_cast<uint64_t>(
         callSequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
