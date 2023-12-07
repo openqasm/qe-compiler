@@ -538,6 +538,23 @@ diagEngineHandler(mlir::Diagnostic &diagnostic,
   return;
 }
 
+using ErrorHandler = function_ref< LogicalResult(const Twine &)>;
+
+llvm::Error buildPassManager(mlir::PassManager &pm, mlir::PassPipelineCLParser &passPipelineParser, ErrorHandler errorHandler){
+  mlir::applyPassManagerCLOptions(pm);
+  mlir::applyDefaultTimingPassManagerCLOptions(pm);
+
+  // Configure verifier
+  pm.enableVerifier(verifyPasses);
+
+  // Build the provided pipeline.
+  if (failed(passPipelineParser.addToPipeline(pm, errorHandler)))
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Problem adding passes to passPipeline!");
+  return llvm::Error::success();
+}
+
+
 static llvm::Error
 compile_(int argc, char const **argv, std::string *outputString,
          std::optional<qssc::DiagnosticCallback> diagnosticCb) {
@@ -552,9 +569,6 @@ compile_(int argc, char const **argv, std::string *outputString,
   // The MLIR context for this compilation event.
   MLIRContext context{};
 
-  // Pass manager for the compilation
-  mlir::PassManager pm(&context);
-
   // Register the standard dialects with MLIR and prepare a registry and pass
   // pipeline
   DialectRegistry registry = qssc::dialect::registerDialects();
@@ -565,12 +579,6 @@ compile_(int argc, char const **argv, std::string *outputString,
   llvm::cl::SetVersionPrinter(&printVersion);
   llvm::cl::ParseCommandLineOptions(
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
-
-  mlir::applyPassManagerCLOptions(pm);
-  mlir::applyDefaultTimingPassManagerCLOptions(pm);
-
-  // Configure verifier
-  pm.enableVerifier(verifyPasses);
 
   // Build the configuration for this compilation event.
   auto configResult = buildConfig_(&context);
@@ -734,27 +742,30 @@ compile_(int argc, char const **argv, std::string *outputString,
   // at this point we have QUIR+Pulse in the moduleOp from either the
   // QASM/AST or MLIR file
 
-  // Build the provided pipeline.
-  if (failed(passPipelineParser.addToPipeline(pm, errorHandler)))
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Problem adding passes to passPipeline!");
-
-  auto targetCompilationScheduler = qssc::hal::compile::ThreadedCompilationScheduler(target, &context);
+  auto targetCompilationScheduler = qssc::hal::compile::ThreadedCompilationScheduler(target, &context, [&](mlir::PassManager &pm){
+    return buildPassManager(pm, passPipelineParser, errorHandler);
+  });
 
   if (emitAction == Action::DumpMLIR) {
-    // Run the pipeline.
+    //
     if (!bypassTargetCompilation) {
-
-      if(failed(pm.run(moduleOp)))
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                      "Problems running the compiler pipeline!");
-
-      if (config.addTargetPasses)
+      // Check if we can run the target compilation scheduler.
+      if (config.addTargetPasses) {
         if (auto err = targetCompilationScheduler.compileMLIR(moduleOp))
           return llvm::joinErrors(
             llvm::createStringError(llvm::inconvertibleErrorCode(),
                                     "Failure while preparing target passes"),
             std::move(err));
+      } else {
+        // Otherwise we have to run a standard pass-manager.
+        mlir::PassManager pm(&context);
+        if (auto err = buildPassManager(pm, passPipelineParser, errorHandler))
+          return err;
+        if(failed(pm.run(moduleOp)))
+          return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                        "Problems running the compiler pipeline!");
+      }
+
     }
 
 

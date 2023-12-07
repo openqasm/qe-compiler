@@ -49,7 +49,9 @@ namespace qssc::hal::compile {
 
 
         public:
-            ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context);
+            using PMBuilder = std::function<llvm::Error(mlir::PassManager &)>;
+
+            ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context, PMBuilder pmBuilder);
             virtual ~ThreadedCompilationScheduler() = default;
             virtual const std::string getName() const override;
 
@@ -59,11 +61,15 @@ namespace qssc::hal::compile {
             bool isMultithreadingEnabled () { return getContext()->isMultithreadingEnabled(); }
             llvm::ThreadPool& getThreadPool() {return getContext()->getThreadPool(); }
 
+            llvm::Error buildTargetPassManager(mlir::PassManager &pm);
+
         private:
             /// Compiles the input module for a single target.
             llvm::Error compileMLIRTarget(Target &target, mlir::ModuleOp moduleOp);
             /// Compiles the input payload for a single target.
             llvm::Error compilePayloadTarget(Target &target, mlir::ModuleOp moduleOp, qssc::payload::Payload &payload);
+
+            PMBuilder pmBuilder;
 
     }; // class THREADEDCOMPILATIONSCHEDULER
 

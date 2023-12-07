@@ -32,8 +32,3 @@ llvm::Error TargetCompilationScheduler::walkTarget(Target *target, WalkTargetFun
     return llvm::Error::success();
 
 }
-
-mlir::PassManager TargetCompilationScheduler::getTargetPassManager() {
-    // TODO apply compilation options
-    return mlir::PassManager(getContext());
-}

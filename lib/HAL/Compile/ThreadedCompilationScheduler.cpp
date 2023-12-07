@@ -22,7 +22,7 @@ using namespace qssc;
 using namespace qssc::hal::compile;
 
 
-ThreadedCompilationScheduler::ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context) :  TargetCompilationScheduler(target, context) {}
+ThreadedCompilationScheduler::ThreadedCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context, ThreadedCompilationScheduler::PMBuilder pmBuilder) :  TargetCompilationScheduler(target, context), pmBuilder(pmBuilder) {}
 
 const std::string ThreadedCompilationScheduler::getName() const { return "ThreadedCompilationScheduler"; }
 
@@ -49,6 +49,11 @@ llvm::Error ThreadedCompilationScheduler::walkTargetThreaded(Target *target, Wal
 
 }
 
+llvm::Error ThreadedCompilationScheduler::buildTargetPassManager(mlir::PassManager &pm) {
+   return pmBuilder(pm);
+}
+
+
 llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
 
     auto threadedCompileMLIRTarget = [&](hal::Target *target) -> llvm::Error {
@@ -63,10 +68,13 @@ llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
 
 
 llvm::Error ThreadedCompilationScheduler::compileMLIRTarget(Target &target, mlir::ModuleOp moduleOp) {
-    auto pm = getTargetPassManager();
+    mlir::PassManager pm(getContext());
+    if (auto err = buildTargetPassManager(pm))
+        return err;
+
     if(auto err = target.addPasses(pm))
         return err;
-    if(failed(pm.run(moduleOp)))
+    if(mlir::failed(pm.run(moduleOp)))
         return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                 "Problems running the pass pipeline for target " + target.getName());
     return llvm::Error::success();

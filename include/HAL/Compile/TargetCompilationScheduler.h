@@ -73,8 +73,6 @@ namespace qssc::hal::compile {
             /// @param payload The payload to populate.
             virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) = 0;
 
-            virtual mlir::PassManager getTargetPassManager();
-
         private:
             hal::TargetSystem &target;
             mlir::MLIRContext *context;
