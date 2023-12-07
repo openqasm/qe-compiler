@@ -49,7 +49,7 @@ class Target {
 protected:
   Target(std::string name, Target *parent);
 
-  virtual const std::vector<std::unique_ptr<Target>> &getChildren_() const = 0;
+  virtual const std::vector<std::unique_ptr<Target>> &getChildren_() const { return children_; };
 
 public:
   virtual const std::string &getName() const { return name; }
@@ -106,6 +106,9 @@ protected:
   // owned by the constructing context
   // class Target
   Target *parent;
+
+  /// @brief Children targets storage.
+  std::vector<std::unique_ptr<Target>> children_;
 };
 
 class TargetSystem : public Target {
@@ -128,34 +131,14 @@ public:
 
   virtual ~TargetSystem() = default;
 
-protected:
-  virtual const std::vector<std::unique_ptr<Target>> &
-  getChildren_() const override {
-    return children_;
-  }
-
-  std::vector<std::unique_ptr<Target>> children_;
-  // Helper containers to track instruments for quick access.
-  std::vector<TargetSystem *> systems_;
-  std::vector<TargetInstrument *> instruments_;
 }; // class TargetSystem
 
 class TargetInstrument : public Target {
 protected: // Can only create subclasses
   TargetInstrument(std::string name, Target *parent);
 
-  virtual const std::vector<std::unique_ptr<Target>> &
-  getChildren_() const override {
-    return children_;
-  }
-
 public:
   virtual ~TargetInstrument() = default;
-
-private:
-  // Used for returning empty children
-  // TODO: Do something more graceful than this.
-  static const std::vector<std::unique_ptr<Target>> children_;
 
 
 }; // class TargetInstrument
