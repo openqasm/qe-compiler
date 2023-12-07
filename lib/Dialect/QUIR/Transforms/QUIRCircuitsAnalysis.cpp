@@ -132,6 +132,7 @@ QUIRCircuitsAnalysis::QUIRCircuitsAnalysis(mlir::Operation *moduleOp,
     }
 
     auto circuitOp = dyn_cast<CircuitOp>(search->second);
+    auto parentModuleOp = circuitOp->getParentOfType<ModuleOp>();
 
     // add angle value attributes to all the angle arguments
     for (uint ii = 0; ii < callCircuitOp.operands().size(); ++ii) {
