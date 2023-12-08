@@ -34,7 +34,7 @@ void quantumCircuitPulseSchedulingPass::runOnOperation() {
 
   ModuleOp moduleOp = getOperation();
 
-  // schedule all the quantum circuits which are called in main function
+  // schedule all the quantum circuits which are root call sequence ops
   moduleOp->walk([&](mlir::pulse::CallSequenceOp callSequenceOp) {
     // return if the call sequence op is not a root op
     if (isa<SequenceOp>(callSequenceOp->getParentOp()))
