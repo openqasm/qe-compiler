@@ -33,21 +33,20 @@ void quantumCircuitPulseSchedulingPass::runOnOperation() {
     SCHEDULING_METHOD = schedulingMethod.getValue();
 
   ModuleOp moduleOp = getOperation();
-  FuncOp mainFunc = dyn_cast<FuncOp>(quir::getMainFunction(moduleOp));
-  assert(mainFunc && "could not find the main func");
 
   // schedule all the quantum circuits which are called in main function
-  mainFunc->walk([&](mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp) {
+  moduleOp->walk([&](mlir::pulse::CallSequenceOp callSequenceOp) {
+    // return if the call sequence op is not a root op
+    if (isa<SequenceOp>(callSequenceOp->getParentOp()))
+      return;
     assert(SCHEDULING_METHOD == "alap" &&
            "scheduling method not supported currently");
-    scheduleAlap(quantumCircuitCallSequenceOp, moduleOp);
+    scheduleAlap(callSequenceOp);
   });
 }
 
 void quantumCircuitPulseSchedulingPass::scheduleAlap(
-    mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp,
-    ModuleOp moduleOp) {
-  mlir::OpBuilder builder(moduleOp);
+    mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp) {
 
   auto quantumCircuitSequenceOp = getSequenceOp(quantumCircuitCallSequenceOp);
   std::string sequenceName = quantumCircuitSequenceOp.sym_name().str();

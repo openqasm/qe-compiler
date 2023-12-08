@@ -60,8 +60,7 @@ private:
   // map to keep track of next availability of ports
   std::map<std::string, int> portNameToNextAvailabilityMap;
 
-  void scheduleAlap(mlir::pulse::CallSequenceOp mainFuncCallSequenceOp,
-                    ModuleOp moduleOp);
+  void scheduleAlap(mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp);
   int getNextAvailableTimeOfPorts(mlir::ArrayAttr ports);
   void updatePortAvailabilityMap(mlir::ArrayAttr ports,
                                  int updatedAvailableTime);
