@@ -47,8 +47,10 @@ llvm::Expected<mlir::ModuleOp> TargetInstrument::getModule(mlir::ModuleOp parent
   parentModuleOp->walk([&](mlir::ModuleOp walkOp) {
     auto moduleNodeType = walkOp->getAttrOfType<mlir::StringAttr>("quir.nodeType");
     auto moduleNodeId = mlir::quir::getNodeId(walkOp);
+    if (moduleNodeId.takeError())
+        return mlir::WalkResult::advance();
     // Match by node type & id
-    if (moduleNodeType && moduleNodeType.getValue() == getNodeType() && moduleNodeId == (int32_t)getNodeId()) {
+    if (moduleNodeType && moduleNodeType.getValue() == getNodeType() && moduleNodeId.get() == getNodeId()) {
       retOp = walkOp;
       return mlir::WalkResult::interrupt();
     }
