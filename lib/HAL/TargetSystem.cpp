@@ -18,6 +18,7 @@
 
 #include "llvm/ADT/SmallString.h"
 
+#include "Dialect/QUIR/Utils/Utils.h"
 #include "HAL/TargetSystem.h"
 
 using namespace qssc::hal;
@@ -44,8 +45,10 @@ TargetInstrument::TargetInstrument(std::string name, Target *parent)
 llvm::Expected<mlir::ModuleOp> TargetInstrument::getModule(mlir::ModuleOp parentModuleOp) {
   mlir::ModuleOp retOp = nullptr;
   parentModuleOp->walk([&](mlir::ModuleOp walkOp) {
-    auto nodeType = walkOp->getAttrOfType<mlir::StringAttr>("quir.nodeType");
-    if (nodeType && nodeType.getValue() == getNodeType()) {
+    auto moduleNodeType = walkOp->getAttrOfType<mlir::StringAttr>("quir.nodeType");
+    auto moduleNodeId = mlir::quir::getNodeId(walkOp);
+    // Match by node type & id
+    if (moduleNodeType && moduleNodeType.getValue() == getNodeType() && moduleNodeId == (int32_t)getNodeId()) {
       retOp = walkOp;
       return mlir::WalkResult::interrupt();
     }

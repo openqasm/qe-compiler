@@ -167,7 +167,7 @@ public:
   /// and the target.
   virtual llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
   virtual llvm::StringRef getNodeType() = 0;
-  virtual uint32_t getNodeID() = 0;
+  virtual uint32_t getNodeId() = 0;
 
 
 }; // class TargetInstrument

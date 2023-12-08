@@ -86,7 +86,7 @@ public:
   static void registerTargetPipelines();
   virtual llvm::StringRef getNodeType() override { return "controller"; }
   // Currently there is a single controller with a fixed node id.
-  virtual uint32_t getNodeID() override { return 1000; }
+  virtual uint32_t getNodeId() override { return 1000; }
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
@@ -102,7 +102,7 @@ public:
   static void registerTargetPasses();
   static void registerTargetPipelines();
   virtual llvm::StringRef getNodeType() override { return "drive"; }
-  virtual uint32_t getNodeID() override { return nodeId_; };
+  virtual uint32_t getNodeId() override { return nodeId_; };
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
@@ -119,7 +119,7 @@ public:
   static void registerTargetPasses();
   static void registerTargetPipelines();
   virtual llvm::StringRef getNodeType() override { return "acquire"; }
-  virtual uint32_t getNodeID() override { return nodeId_; };
+  virtual uint32_t getNodeId() override { return nodeId_; };
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
