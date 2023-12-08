@@ -68,7 +68,6 @@ public:
   explicit MockSystem(std::unique_ptr<MockConfig> config);
   static llvm::Error registerTargetPasses();
   static llvm::Error registerTargetPipelines();
-  llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
   llvm::Error addPasses(mlir::PassManager &pm) override;
   auto payloadPassesFound(mlir::PassManager &pm) -> bool;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
@@ -103,7 +102,7 @@ public:
   static void registerTargetPasses();
   static void registerTargetPipelines();
   virtual llvm::StringRef getNodeType() override { return "drive"; }
-  virtual uint32_t getNodeID() override;
+  virtual uint32_t getNodeID() override { return nodeId_; };
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
@@ -120,7 +119,7 @@ public:
   static void registerTargetPasses();
   static void registerTargetPipelines();
   virtual llvm::StringRef getNodeType() override { return "acquire"; }
-  virtual uint32_t getNodeID() override;
+  virtual uint32_t getNodeID() override { return nodeId_; };
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
