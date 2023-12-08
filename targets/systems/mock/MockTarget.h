@@ -37,16 +37,22 @@ int init();
 class MockConfig : public qssc::hal::SystemConfiguration {
 public:
   explicit MockConfig(llvm::StringRef configurationPath);
-  auto getMultiplexingRatio() const -> uint { return multiplexing_ratio; }
-  auto driveNode(uint qubitId) const -> uint { return qubitDriveMap[qubitId]; }
-  auto acquireNode(uint qubitId) const -> uint {
+  uint getMultiplexingRatio() const { return multiplexing_ratio; }
+  uint driveNode(uint qubitId) const { return qubitDriveMap[qubitId]; }
+  const std::vector<uint>& getDriveNodes() {
+    return qubitDriveMap;
+  }
+  uint acquireNode(uint qubitId) const {
     return qubitAcquireMap[qubitId];
   }
-  auto acquireQubits(uint nodeId) -> const std::vector<int> & {
+  const std::vector<uint>& getAcquireNodes() {
+    return qubitAcquireMap;
+  }
+  const std::vector<int> & acquireQubits(uint nodeId) {
     return qubitAcquireToPhysIdMap[nodeId];
   }
-  auto controllerNode() const -> uint { return controllerNodeId; }
-  auto multiplexedQubits(uint qubitId) -> const std::vector<int> & {
+  uint controllerNode() const { return controllerNodeId; }
+  const std::vector<int> & multiplexedQubits(uint qubitId) {
     return acquireQubits(acquireNode(qubitId));
   }
 
