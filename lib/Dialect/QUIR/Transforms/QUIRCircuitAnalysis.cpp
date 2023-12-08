@@ -84,6 +84,47 @@ angleValToDouble(mlir::Value inVal,
   return llvm::createStringError(llvm::inconvertibleErrorCode(), errorStr);
 } // angleValToDouble
 
+double QUIRCircuitAnalysis::getAngleValue(
+    mlir::Value operand,
+    mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis) {
+  assert(nameAnalysis && "valid nameAnalysis pointer required");
+  auto valueOrError = angleValToDouble(operand, nameAnalysis);
+  if (auto err = valueOrError.takeError()) {
+    operand.getDefiningOp()->emitOpError() << toString(std::move(err)) + "\n";
+    assert(false && "unhandled value in angleValToDouble");
+  }
+  return *valueOrError;
+}
+
+llvm::StringRef QUIRCircuitAnalysis::getParameterName(mlir::Value operand) {
+  llvm::StringRef parameterName = {};
+  qcs::ParameterLoadOp parameterLoad;
+  parameterLoad = dyn_cast<qcs::ParameterLoadOp>(operand.getDefiningOp());
+
+  if (!parameterLoad) {
+    auto castOp = dyn_cast<mlir::oq3::CastOp>(operand.getDefiningOp());
+    if (castOp)
+      parameterLoad =
+          dyn_cast<qcs::ParameterLoadOp>(castOp.arg().getDefiningOp());
+  }
+
+  if (parameterLoad &&
+      parameterLoad->hasAttr(mlir::quir::getInputParameterAttrName())) {
+    parameterName = parameterLoad->getAttrOfType<StringAttr>(
+        mlir::quir::getInputParameterAttrName());
+  }
+  return parameterName;
+}
+
+quir::DurationAttr QUIRCircuitAnalysis::getDuration(mlir::Value operand) {
+  quir::DurationAttr duration;
+  auto constantOp = dyn_cast<quir::ConstantOp>(operand.getDefiningOp());
+
+  if (constantOp)
+    return constantOp.value().dyn_cast<DurationAttr>();
+  return duration;
+}
+
 QUIRCircuitAnalysis::QUIRCircuitAnalysis(mlir::Operation *moduleOp,
                                          AnalysisManager &am) {
 
@@ -128,56 +169,27 @@ QUIRCircuitAnalysis::QUIRCircuitAnalysis(mlir::Operation *moduleOp,
     auto circuitOp = dyn_cast<CircuitOp>(search->second);
     auto parentModuleOp = circuitOp->getParentOfType<ModuleOp>();
 
-    // add angle value attributes to all the angle arguments
     for (uint ii = 0; ii < callCircuitOp.operands().size(); ++ii) {
 
       double value = 0;
       llvm::StringRef parameterName = {};
       quir::DurationAttr duration;
 
-      // track angle values
-      if (auto angType = callCircuitOp.operands()[ii]
-                             .getType()
-                             .dyn_cast<quir::AngleType>()) {
+      auto operand = callCircuitOp.operands()[ii];
 
-        // auto bits = angType.getWidth();
-        auto operand = callCircuitOp.operands()[ii];
+      // cache angle values and parameter names
+      if (auto angType = operand.getType().dyn_cast<quir::AngleType>()) {
 
-        auto valueOrError = angleValToDouble(operand, nameAnalysis);
-        if (auto err = valueOrError.takeError()) {
-          operand.getDefiningOp()->emitOpError()
-              << toString(std::move(err)) + "\n";
-          assert(false && "unhandled value in angleValToDouble");
-        }
-        value = *valueOrError;
-
-        qcs::ParameterLoadOp parameterLoad;
-        parameterLoad = dyn_cast<qcs::ParameterLoadOp>(operand.getDefiningOp());
-
-        if (!parameterLoad) {
-          auto castOp = dyn_cast<mlir::oq3::CastOp>(operand.getDefiningOp());
-          if (castOp)
-            parameterLoad =
-                dyn_cast<qcs::ParameterLoadOp>(castOp.arg().getDefiningOp());
-        }
-
-        if (parameterLoad &&
-            parameterLoad->hasAttr(mlir::quir::getInputParameterAttrName())) {
-          parameterName = parameterLoad->getAttrOfType<StringAttr>(
-              mlir::quir::getInputParameterAttrName());
-        }
-
+        value = getAngleValue(operand, nameAnalysis);
+        parameterName = getParameterName(operand);
         circuitOperands[parentModuleOp][circuitOp][ii] = {value, parameterName,
                                                           duration};
       }
 
-      // track durations
-      if (auto durType = callCircuitOp.operands()[ii]
-                             .getType()
-                             .dyn_cast<quir::DurationType>()) {
-        auto operand = dyn_cast<quir::ConstantOp>(
-            callCircuitOp.operands()[ii].getDefiningOp());
-        duration = operand.value().dyn_cast<DurationAttr>();
+      // cache durations
+      if (auto durType = operand.getType().dyn_cast<quir::DurationType>()) {
+
+        duration = getDuration(operand);
         circuitOperands[parentModuleOp][circuitOp][ii] = {value, parameterName,
                                                           duration};
       }
