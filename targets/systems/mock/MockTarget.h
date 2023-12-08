@@ -68,6 +68,7 @@ public:
   explicit MockSystem(std::unique_ptr<MockConfig> config);
   static llvm::Error registerTargetPasses();
   static llvm::Error registerTargetPipelines();
+  llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
   llvm::Error addPasses(mlir::PassManager &pm) override;
   auto payloadPassesFound(mlir::PassManager &pm) -> bool;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
@@ -84,13 +85,13 @@ public:
                  const qssc::hal::SystemConfiguration &config);
   static void registerTargetPasses();
   static void registerTargetPipelines();
+  llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
 
 private:
-  auto getModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
-  void buildLLVMPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload);
+  llvm::Error buildLLVMPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload);
 }; // class MockController
 
 class MockAcquire : public qssc::hal::TargetInstrument {
@@ -99,12 +100,10 @@ public:
               const qssc::hal::SystemConfiguration &config);
   static void registerTargetPasses();
   static void registerTargetPipelines();
+  llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
-
-private:
-  auto getModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
 }; // class MockAcquire
 
 class MockDrive : public qssc::hal::TargetInstrument {
@@ -113,12 +112,10 @@ public:
             const qssc::hal::SystemConfiguration &config);
   static void registerTargetPasses();
   static void registerTargetPipelines();
+  llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
-
-private:
-  auto getModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
 }; // class MockDrive
 
 } // namespace qssc::targets::systems::mock
