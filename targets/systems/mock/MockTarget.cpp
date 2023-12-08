@@ -125,6 +125,7 @@ MockConfig::MockConfig(llvm::StringRef configurationPath)
   qubitDriveMap.resize(numQubits);
   qubitAcquireMap.resize(numQubits);
   uint nextId = 0, acquireId = 0;
+
   for (uint physId = 0; physId < numQubits; ++physId) {
     if (physId % multiplexing_ratio == 0) {
       acquireId = nextId++;
@@ -142,7 +143,7 @@ MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
       std::make_unique<MockController>("MockController", this, *mockConfig));
   for (uint qubitId = 0; qubitId < mockConfig->getNumQubits(); ++qubitId) {
     addChild(std::make_unique<MockDrive>(
-        "MockDrive_" + std::to_string(qubitId), this, *mockConfig, qubitId));
+        "MockDrive_" + std::to_string(qubitId), this, *mockConfig, mockConfig->driveNode(qubitId)));
   }
   for (uint acquireId = 0;
        acquireId <

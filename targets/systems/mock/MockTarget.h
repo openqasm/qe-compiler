@@ -101,7 +101,7 @@ public:
               const qssc::hal::SystemConfiguration &config, uint32_t nodeId);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  virtual llvm::StringRef getNodeType() override { return "drive"; }
+  virtual llvm::StringRef getNodeType() override { return "acquire"; }
   virtual uint32_t getNodeId() override { return nodeId_; };
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
@@ -118,7 +118,7 @@ public:
             const qssc::hal::SystemConfiguration &config, uint32_t nodeId);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  virtual llvm::StringRef getNodeType() override { return "acquire"; }
+  virtual llvm::StringRef getNodeType() override { return "drive"; }
   virtual uint32_t getNodeId() override { return nodeId_; };
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,

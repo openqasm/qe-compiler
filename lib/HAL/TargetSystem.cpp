@@ -58,6 +58,6 @@ llvm::Expected<mlir::ModuleOp> TargetInstrument::getModule(mlir::ModuleOp parent
   });
   if (!retOp)
     return llvm::createStringError(
-              llvm::inconvertibleErrorCode(),"Could not find target module for target " + getName());
+              llvm::inconvertibleErrorCode(),"Could not find target module for target " + getName() + ". Searching for quir.nodeType="+getNodeType() + " and quir.nodeId=" + std::to_string(getNodeId()));
   return retOp;
 }
