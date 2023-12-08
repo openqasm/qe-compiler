@@ -38,6 +38,7 @@ llvm::Error ThreadedCompilationScheduler::walkTargetThreaded(Target *target, mli
             llvm::errs() << err << "\n";
             return mlir::failure();
         }
+
         if(auto err = walkTargetThreaded(childTarget, *childModuleOp, walkFunc)) {
             llvm::errs() << err << "\n";
             return mlir::failure();
@@ -65,7 +66,7 @@ llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
 
     auto threadedCompileMLIRTarget = [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
 
-        if (auto err = compileMLIRTarget(*target, moduleOp))
+        if (auto err = compileMLIRTarget(*target, targetModuleOp))
             return err;
         return llvm::Error::success();
     };
@@ -93,7 +94,7 @@ llvm::Error ThreadedCompilationScheduler::compileMLIRTarget(Target &target, mlir
 
 llvm::Error ThreadedCompilationScheduler::compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) {
     auto threadedCompilePayloadTarget = [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
-        if (auto err = compilePayloadTarget(*target, moduleOp, payload))
+        if (auto err = compilePayloadTarget(*target,targetModuleOp, payload))
             return err;
         return llvm::Error::success();
     };
