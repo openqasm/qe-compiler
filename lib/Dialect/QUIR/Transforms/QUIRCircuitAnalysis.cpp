@@ -60,22 +60,21 @@ angleValToDouble(mlir::Value inVal,
           argNum, mlir::quir::getAngleAttrName());
       return argAttr.getValue().convertToDouble();
 
-    } else {
-      auto parentModuleOp = circuitOp->getParentOfType<mlir::ModuleOp>();
+    }       auto parentModuleOp = circuitOp->getParentOfType<mlir::ModuleOp>();
       return std::get<QUIRCircuitAnalysisEntry::ANGLE>(
           circuitAnalysis->getAnalysisMap()[parentModuleOp][circuitOp][argNum]);
-    }
+   
   }
 
   if (auto castOp = inVal.getDefiningOp<mlir::oq3::CastOp>()) {
     auto defOp = castOp.arg().getDefiningOp<mlir::qcs::ParameterLoadOp>();
     if (defOp) {
       return parameterValToDouble(defOp, nameAnalysis);
-    } else if (auto constOp =
+    } if (auto constOp =
                    castOp.arg().getDefiningOp<mlir::arith::ConstantOp>()) {
       if (auto angleAttr = constOp.getValue().dyn_cast<mlir::quir::AngleAttr>())
         return angleAttr.getValue().convertToDouble();
-      else if (auto floatAttr = constOp.getValue().dyn_cast<mlir::FloatAttr>())
+      if (auto floatAttr = constOp.getValue().dyn_cast<mlir::FloatAttr>())
         return floatAttr.getValue().convertToDouble();
       else
         errorStr = "unable to cast Angle from constant op";
