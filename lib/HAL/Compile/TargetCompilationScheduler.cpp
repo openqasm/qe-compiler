@@ -27,8 +27,10 @@ llvm::Error TargetCompilationScheduler::walkTarget(Target *target, mlir::ModuleO
 
     for (auto *child : target->getChildren()) {
         // Recurse on the target
-        mlir::ModuleOp childModuleOp = child->getModule(targetModuleOp);
-        if (auto err = walkTarget(child, childModuleOp, walkFunc))
+        auto childModuleOp = child->getModule(targetModuleOp);
+        if (auto err = childModuleOp.takeError())
+            return err;
+        if (auto err = walkTarget(child, *childModuleOp, walkFunc))
             return err;
     }
     return llvm::Error::success();

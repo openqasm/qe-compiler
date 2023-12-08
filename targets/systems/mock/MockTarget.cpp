@@ -142,14 +142,14 @@ MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
       std::make_unique<MockController>("MockController", this, *mockConfig));
   for (uint qubitId = 0; qubitId < mockConfig->getNumQubits(); ++qubitId) {
     addChild(std::make_unique<MockDrive>(
-        "MockDrive_" + std::to_string(qubitId), this, *mockConfig));
+        "MockDrive_" + std::to_string(qubitId), this, *mockConfig, qubitId));
   }
   for (uint acquireId = 0;
        acquireId <
        mockConfig->getNumQubits() / mockConfig->getMultiplexingRatio() + 1;
        ++acquireId) {
     addChild(std::make_unique<MockAcquire>(
-        "MockAcquire_" + std::to_string(acquireId), this, *mockConfig));
+        "MockAcquire_" + std::to_string(acquireId), this, *mockConfig, acquireId));
   }
 } // MockSystem
 
@@ -368,11 +368,13 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
 
   payload.getFile("controller.bin")->assign(std::move(binaryContents));
 
+  return llvm::Error::success();
+
 } // MockController::buildLLVMPayload
 
 MockAcquire::MockAcquire(std::string name, MockSystem *parent,
                          const SystemConfiguration &config, uint32_t nodeId)
-    : TargetInstrument(std::move(name), parent) nodeId_(nodeId) {} // MockAcquire
+    : TargetInstrument(std::move(name), parent), nodeId_(nodeId) {} // MockAcquire
 
 void MockAcquire::registerTargetPasses() {} // MockAcquire::registerTargetPasses
 

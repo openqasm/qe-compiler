@@ -33,9 +33,15 @@ llvm::Error ThreadedCompilationScheduler::walkTargetThreaded(Target *target, mli
 
     auto parallelWalkFunc = [&](Target *childTarget) {
         // Recurse on this target's children in a depth first fashion.
-        mlir::ModuleOp childModuleOp = childTarget->getModule(targetModuleOp);
-        if(auto err = walkTargetThreaded(childTarget, childModuleOp, walkFunc))
+        auto childModuleOp = childTarget->getModule(targetModuleOp);
+        if (auto err = childModuleOp.takeError()) {
+            llvm::errs() << err << "\n";
             return mlir::failure();
+        }
+        if(auto err = walkTargetThreaded(childTarget, *childModuleOp, walkFunc)) {
+            llvm::errs() << err << "\n";
+            return mlir::failure();
+        }
 
         return mlir::success();
     };

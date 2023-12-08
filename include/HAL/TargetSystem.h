@@ -166,7 +166,7 @@ public:
   /// TODO: In the future the method of system lookup should be more explicitly tied to the IR
   /// and the target.
   virtual llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
-  virtual const std::string& getNodeType() = 0;
+  virtual llvm::StringRef getNodeType() = 0;
   virtual uint32_t getNodeID() = 0;
 
 

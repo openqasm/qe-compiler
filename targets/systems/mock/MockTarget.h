@@ -85,7 +85,7 @@ public:
                  const qssc::hal::SystemConfiguration &config);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  virtual const std::string& getNodeType() override { return "controller"; }
+  virtual llvm::StringRef getNodeType() override { return "controller"; }
   // Currently there is a single controller with a fixed node id.
   virtual uint32_t getNodeID() override { return 1000; }
   llvm::Error addPasses(mlir::PassManager &pm) override;
@@ -102,7 +102,7 @@ public:
               const qssc::hal::SystemConfiguration &config, uint32_t nodeId);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  virtual const std::string& getNodeType() override { return "drive"; }
+  virtual llvm::StringRef getNodeType() override { return "drive"; }
   virtual uint32_t getNodeID() override;
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
@@ -119,7 +119,7 @@ public:
             const qssc::hal::SystemConfiguration &config, uint32_t nodeId);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  virtual const std::string& getNodeType() override { return "acquire"; }
+  virtual llvm::StringRef getNodeType() override { return "acquire"; }
   virtual uint32_t getNodeID() override;
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
