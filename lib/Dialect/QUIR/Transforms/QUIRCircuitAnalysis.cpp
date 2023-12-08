@@ -74,8 +74,7 @@ angleValToDouble(mlir::Value inVal,
         return angleAttr.getValue().convertToDouble();
       if (auto floatAttr = constOp.getValue().dyn_cast<mlir::FloatAttr>())
         return floatAttr.getValue().convertToDouble();
-      else
-        errorStr = "unable to cast Angle from constant op";
+      errorStr = "unable to cast Angle from constant op";
     } else {
       errorStr = "unable to cast Angle from defining op";
     }
