@@ -14,6 +14,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "mlir/IR/BuiltinOps.h"
+
 #include "llvm/ADT/SmallString.h"
 
 #include "HAL/TargetSystem.h"
@@ -21,11 +23,36 @@
 using namespace qssc::hal;
 using namespace qssc::payload;
 
+
 Target::Target(std::string name, Target *parent)
     : name(std::move(name)), parent(parent) {}
 
 TargetSystem::TargetSystem(std::string name, Target *parent)
     : Target(std::move(name), parent) {}
 
+llvm::Expected<mlir::ModuleOp>
+TargetSystem::getModule(mlir::ModuleOp parentModuleOp) {
+    // For the system we treat the top-level parent module as the system module currently.
+    // TODO: Add a more general target module formalism
+    return parentModuleOp;
+}
+
+
 TargetInstrument::TargetInstrument(std::string name, Target *parent)
     : Target(std::move(name), parent) {}
+
+llvm::Expected<mlir::ModuleOp> TargetInstrument::getModule(mlir::ModuleOp parentModuleOp) {
+  mlir::ModuleOp retOp = nullptr;
+  parentModuleOp->walk([&](mlir::ModuleOp walkOp) {
+    auto nodeType = walkOp->getAttrOfType<mlir::StringAttr>("quir.nodeType");
+    if (nodeType && nodeType.getValue() == getNodeType()) {
+      retOp = walkOp;
+      return mlir::WalkResult::interrupt();
+    }
+    return mlir::WalkResult::advance();
+  });
+  if (!retOp)
+    return llvm::createStringError(
+              llvm::inconvertibleErrorCode(),"Could not find target module for target " + getName());
+  return retOp;
+}

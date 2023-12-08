@@ -135,6 +135,11 @@ protected: // Can only create subclasses.
   TargetSystem(std::string name, Target *parent);
 
 public:
+  /// @brief Get the module for this system. Currently the default implementation simply
+  /// returns the top-level module.
+  /// TODO: In the future the method of system lookup should be more explicitly tied to the IR
+  /// and the target.
+  virtual llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
 
   void addChild(std::unique_ptr<Target> child) {
     children_.push_back(std::move(child));
@@ -155,6 +160,14 @@ protected: // Can only create subclasses
 
 public:
   virtual ~TargetInstrument() = default;
+
+  /// @brief Get the module for this system. Currently the default implementation is based
+  /// on lookup the module by node type and node id.
+  /// TODO: In the future the method of system lookup should be more explicitly tied to the IR
+  /// and the target.
+  virtual llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
+  virtual const std::string& getNodeType() = 0;
+  virtual uint32_t getNodeID() = 0;
 
 
 }; // class TargetInstrument

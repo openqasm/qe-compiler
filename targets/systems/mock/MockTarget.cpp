@@ -191,10 +191,6 @@ llvm::Error MockSystem::registerTargetPipelines() {
   return llvm::Error::success();
 } // MockSystem::registerTargetPipelines
 
-llvm::Expected<mlir::ModuleOp> MockSystem::getModule(mlir::ModuleOp parentModuleOp) {
-
-}
-
 llvm::Error MockSystem::addPasses(mlir::PassManager &pm) {
   if (payloadPassesFound(pm)) {
     // command line specified payload conversion,
@@ -244,20 +240,6 @@ void MockController::registerTargetPipelines() {
 llvm::Error MockController::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
 } // MockController::addPasses
-
-llvm::Expected<mlir::ModuleOp> MockController::getModule(mlir::ModuleOp parentModuleOp) {
-    ModuleOp retOp = nullptr;
-    parentModuleOp->walk([&](ModuleOp walkOp) {
-    auto nodeType = walkOp->getAttrOfType<StringAttr>("quir.nodeType");
-    if (nodeType && nodeType.getValue() == "controller") {
-      retOp = walkOp;
-      return WalkResult::interrupt();
-    }
-    return WalkResult::advance();
-  });
-  return retOp;
-
-}
 
 llvm::Error MockController::emitToPayload(mlir::ModuleOp &moduleOp,
                                          qssc::payload::Payload &payload) {
@@ -343,7 +325,6 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
         llvm::createStringError(llvm::inconvertibleErrorCode(),
                                 "Failed to optimize LLVM IR"),
         std::move(err));
-    return;
   }
   std::string *payloadStr = payload.getFile("llvmModule.ll");
   llvm::raw_string_ostream llvmOStream(*payloadStr);
@@ -390,26 +371,13 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
 } // MockController::buildLLVMPayload
 
 MockAcquire::MockAcquire(std::string name, MockSystem *parent,
-                         const SystemConfiguration &config)
-    : TargetInstrument(std::move(name), parent) {} // MockAcquire
+                         const SystemConfiguration &config, uint32_t nodeId)
+    : TargetInstrument(std::move(name), parent) nodeId_(nodeId) {} // MockAcquire
 
 void MockAcquire::registerTargetPasses() {} // MockAcquire::registerTargetPasses
 
 void MockAcquire::registerTargetPipelines() {
 } // MockAcquire::registerTargetPipelines
-
-llvm::Expected<mlir::ModuleOp> MockAcquire::getModule(mlir::ModuleOp parentModuleOp) {
-  ModuleOp retOp = nullptr;
-  parentModuleOp->walk([&](ModuleOp walkOp) {
-    auto nodeType = walkOp->getAttrOfType<StringAttr>("quir.nodeType");
-    if (nodeType && nodeType.getValue() == "acquire") {
-      retOp = walkOp;
-      return WalkResult::interrupt();
-    }
-    return WalkResult::advance();
-  });
-  return retOp;
-} // MockAcquire::getModule
 
 llvm::Error MockAcquire::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
@@ -429,26 +397,13 @@ llvm::Error MockAcquire::emitToPayload(mlir::ModuleOp &moduleOp,
 } // MockAcquire::emitToPayload
 
 MockDrive::MockDrive(std::string name, MockSystem *parent,
-                     const SystemConfiguration &config)
-    : TargetInstrument(std::move(name), parent) {} // MockDrive
+                     const SystemConfiguration &config, uint32_t nodeId)
+    : TargetInstrument(std::move(name), parent), nodeId_(nodeId) {} // MockDrive
 
 void MockDrive::registerTargetPasses() {} // MockDrive::registerTargetPasses
 
 void MockDrive::registerTargetPipelines() {
 } // MockDrive::registerTargetPipelines
-
-llvm::Expected<mlir::ModuleOp> MockDrive::getModule(mlir::ModuleOp parentModuleOp) {
-  ModuleOp retOp = nullptr;
-  parentModuleOp->walk([&](ModuleOp walkOp) {
-    auto nodeType = walkOp->getAttrOfType<StringAttr>("quir.nodeType");
-    if (nodeType && nodeType.getValue() == "drive") {
-      retOp = walkOp;
-      return WalkResult::interrupt();
-    }
-    return WalkResult::advance();
-  });
-  return retOp;
-} // MockDrive::getModule
 
 llvm::Error MockDrive::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();

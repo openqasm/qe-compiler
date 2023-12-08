@@ -85,7 +85,9 @@ public:
                  const qssc::hal::SystemConfiguration &config);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
+  virtual const std::string& getNodeType() override { return "controller"; }
+  // Currently there is a single controller with a fixed node id.
+  virtual uint32_t getNodeID() override { return 1000; }
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
@@ -97,25 +99,34 @@ private:
 class MockAcquire : public qssc::hal::TargetInstrument {
 public:
   MockAcquire(std::string name, MockSystem *parent,
-              const qssc::hal::SystemConfiguration &config);
+              const qssc::hal::SystemConfiguration &config, uint32_t nodeId);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
+  virtual const std::string& getNodeType() override { return "drive"; }
+  virtual uint32_t getNodeID() override;
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
+
+private:
+  uint32_t nodeId_;
+
 }; // class MockAcquire
 
 class MockDrive : public qssc::hal::TargetInstrument {
 public:
   MockDrive(std::string name, MockSystem *parent,
-            const qssc::hal::SystemConfiguration &config);
+            const qssc::hal::SystemConfiguration &config, uint32_t nodeId);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  llvm::Expected<mlir::ModuleOp> getModule(mlir::ModuleOp parentModuleOp) override;
+  virtual const std::string& getNodeType() override { return "acquire"; }
+  virtual uint32_t getNodeID() override;
   llvm::Error addPasses(mlir::PassManager &pm) override;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
+
+  private:
+    uint32_t nodeId_;
 }; // class MockDrive
 
 } // namespace qssc::targets::systems::mock
