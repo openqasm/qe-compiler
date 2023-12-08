@@ -51,6 +51,12 @@ public:
   bool isInvalidated(const mlir::AnalysisManager::PreservedAnalyses &pa) {
     return invalid_;
   }
+
+private:
+  double getAngleValue(mlir::Value operand,
+                       mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis);
+  llvm::StringRef getParameterName(mlir::Value operand);
+  quir::DurationAttr getDuration(mlir::Value operand);
 };
 
 struct QUIRCircuitAnalysisPass
