@@ -59,19 +59,17 @@ angleValToDouble(mlir::Value inVal,
       auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::AngleAttr>(
           argNum, mlir::quir::getAngleAttrName());
       return argAttr.getValue().convertToDouble();
-
-    }       auto parentModuleOp = circuitOp->getParentOfType<mlir::ModuleOp>();
-      return std::get<QUIRCircuitAnalysisEntry::ANGLE>(
-          circuitAnalysis->getAnalysisMap()[parentModuleOp][circuitOp][argNum]);
-   
+    }
+    auto parentModuleOp = circuitOp->getParentOfType<mlir::ModuleOp>();
+    return std::get<QUIRCircuitAnalysisEntry::ANGLE>(
+        circuitAnalysis->getAnalysisMap()[parentModuleOp][circuitOp][argNum]);
   }
 
   if (auto castOp = inVal.getDefiningOp<mlir::oq3::CastOp>()) {
     auto defOp = castOp.arg().getDefiningOp<mlir::qcs::ParameterLoadOp>();
-    if (defOp) {
+    if (defOp)
       return parameterValToDouble(defOp, nameAnalysis);
-    } if (auto constOp =
-                   castOp.arg().getDefiningOp<mlir::arith::ConstantOp>()) {
+    if (auto constOp = castOp.arg().getDefiningOp<mlir::arith::ConstantOp>()) {
       if (auto angleAttr = constOp.getValue().dyn_cast<mlir::quir::AngleAttr>())
         return angleAttr.getValue().convertToDouble();
       if (auto floatAttr = constOp.getValue().dyn_cast<mlir::FloatAttr>())
