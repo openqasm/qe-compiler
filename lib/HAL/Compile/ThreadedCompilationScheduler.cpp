@@ -95,10 +95,18 @@ ThreadedCompilationScheduler::compileMLIRTarget(Target &target,
   if (auto err = target.addPasses(pm))
     return err;
 
+
+if (getPrintBeforeAllTargetPasses())
+    printIR("IR dump before running passes for target " + target.getName(), targetModuleOp, llvm::outs());
+
   if (mlir::failed(pm.run(targetModuleOp)))
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Problems running the pass pipeline for target " + target.getName());
+
+  if (getPrintAfterAllTargetPasses())
+    printIR("IR dump after running passes for target " + target.getName(), targetModuleOp, llvm::outs());
+
   return llvm::Error::success();
 }
 
@@ -121,6 +129,10 @@ llvm::Error ThreadedCompilationScheduler::compilePayloadTarget(
     qssc::payload::Payload &payload) {
   if (auto err = compileMLIRTarget(target, targetModuleOp))
     return err;
+
+  if (getPrintBeforeAllTargetPayload())
+    printIR("IR dump before emitting payload for target " + target.getName(), targetModuleOp, llvm::outs());
+
 
   if (auto err = target.emitToPayload(targetModuleOp, payload))
     return err;

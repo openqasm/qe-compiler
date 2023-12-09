@@ -74,17 +74,23 @@ public:
   virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
                                      qssc::payload::Payload &payload) = 0;
 
-  void enableIRPrinting(bool printBeforeAll, bool printAfterAll);
+  void enableIRPrinting(bool printBeforeAllTargetPasses, bool printAfterAllTargetPasses, bool printBeforeAllTargetPayload);
+
+protected:
+  bool getPrintBeforeAllTargetPasses() { return printBeforeAllTargetPasses; }
+  bool getPrintAfterAllTargetPasses() { return printAfterAllTargetPasses; }
+  bool getPrintBeforeAllTargetPayload() { return printBeforeAllTargetPayload; }
+
+  void printIR(llvm::StringRef msg, mlir::Operation *op, llvm::raw_ostream &out);
 
 private:
-  bool getPrintBeforeAll() { return printBeforeAll; }
-  bool getPrintAfterAll() { return printAfterAll; }
 
   hal::TargetSystem &target;
   mlir::MLIRContext *context;
 
-  bool printBeforeAll = false;
-  bool printAfterAll = false;
+  bool printBeforeAllTargetPasses = false;
+  bool printAfterAllTargetPasses = false;
+  bool printBeforeAllTargetPayload = false;
 
 }; // class TargetCompilationScheduler
 

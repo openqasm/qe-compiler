@@ -28,17 +28,15 @@ struct TargetCompilationSchedulerOptions {
   //===--------------------------------------------------------------------===//
   // IR Printing
   //===--------------------------------------------------------------------===//
-  llvm::cl::opt<bool> printBeforeAll{
-      "qssc-print-ir-before-all-targets", llvm::cl::desc("Print IR before each target compilation pass"),
+  llvm::cl::opt<bool> printBeforeAllTargetPasses{
+      "print-ir-before-all-target-passes", llvm::cl::desc("Print IR before each target compilation pass"),
       llvm::cl::init(false)};
-  llvm::cl::opt<bool> printAfterAll{"qssc-print-ir-after-all-targets",
+  llvm::cl::opt<bool> printAfterAllTargetPasses{"print-ir-after-all-target-passes",
                                     llvm::cl::desc("Print IR after each target compilation pass"),
                                     llvm::cl::init(false)};
-  llvm::cl::opt<bool> printAfterFailure{
-      "qssc-print-ir-after-failure",
-      llvm::cl::desc(
-          "When printing the IR after a pass, only print if the pass failed"),
-      llvm::cl::init(false)};
+  llvm::cl::opt<bool> printBeforeAllTargetPayload{"print-ir-before-emit-all-target-payloads",
+                                    llvm::cl::desc("Print IR before each target payload compilation"),
+                                    llvm::cl::init(false)};
 };
 } // namespace
 
@@ -55,7 +53,7 @@ mlir::LogicalResult qssc::hal::compile::applyTargetCompilationSchedulerCLOptions
     return mlir::failure();
 
   // Otherwise, add the IR printing instrumentation.
-  scheduler.enableIRPrinting(options->printBeforeAll, options->printAfterAll);
+  scheduler.enableIRPrinting(options->printBeforeAllTargetPasses, options->printAfterAllTargetPasses, options->printBeforeAllTargetPayload);
 
   return mlir::success();
 }
@@ -85,7 +83,17 @@ TargetCompilationScheduler::walkTarget(Target *target,
   return llvm::Error::success();
 }
 
-void TargetCompilationScheduler::enableIRPrinting(bool printBeforeAll, bool printAfterAll) {
-  this->printBeforeAll = printBeforeAll;
-  this->printAfterAll = printAfterAll;
+void TargetCompilationScheduler::enableIRPrinting(bool printBeforeAllTargetPasses, bool printAfterAllTargetPasses, bool printBeforeAllTargetPayload) {
+  this->printBeforeAllTargetPasses = printBeforeAllTargetPasses;
+  this->printAfterAllTargetPasses = printAfterAllTargetPasses;
+  this->printBeforeAllTargetPayload = printBeforeAllTargetPayload;
+}
+
+void TargetCompilationScheduler::printIR(llvm::StringRef msg, mlir::Operation *op, llvm::raw_ostream &out) {
+  out << "// -----// ";
+  out << msg;
+  out << " //----- //";
+  out << "\n";
+  op->print(out);
+  out << "\n";
 }
