@@ -71,8 +71,11 @@ public:
   /// @param moduleOp The root module operation to compile for.
   /// This must not be specialized to a system already.
   /// @param payload The payload to populate.
+  /// @param doCompileMLIR Whether to call compileMLIR prior to compiling the payload.
+  /// Defaults to true.
   virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
-                                     qssc::payload::Payload &payload) = 0;
+                                     qssc::payload::Payload &payload,
+                                     bool doCompileMLIR=true) = 0;
 
   void enableIRPrinting(bool printBeforeAllTargetPasses,
                         bool printAfterAllTargetPasses,

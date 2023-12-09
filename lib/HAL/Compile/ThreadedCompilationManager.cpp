@@ -113,10 +113,11 @@ ThreadedCompilationManager::compileMLIRTarget(Target &target,
 
 llvm::Error
 ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
-                                           qssc::payload::Payload &payload) {
+                                           qssc::payload::Payload &payload,
+                                           bool doCompileMLIR) {
   auto threadedCompilePayloadTarget =
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
-    if (auto err = compilePayloadTarget(*target, targetModuleOp, payload))
+    if (auto err = compilePayloadTarget(*target, targetModuleOp, payload, doCompileMLIR))
       return err;
     return llvm::Error::success();
   };
@@ -127,9 +128,11 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
 
 llvm::Error ThreadedCompilationManager::compilePayloadTarget(
     Target &target, mlir::ModuleOp targetModuleOp,
-    qssc::payload::Payload &payload) {
-  if (auto err = compileMLIRTarget(target, targetModuleOp))
-    return err;
+    qssc::payload::Payload &payload, bool doCompileMLIR) {
+
+  if (doCompileMLIR)
+    if (auto err = compileMLIRTarget(target, targetModuleOp))
+      return err;
 
   if (getPrintBeforeAllTargetPayload())
     printIR("IR dump before emitting payload for target " + target.getName(),

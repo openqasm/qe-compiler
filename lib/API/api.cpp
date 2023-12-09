@@ -469,9 +469,9 @@ static llvm::Error
 generateQEM_(qssc::hal::compile::TargetCompilationManager *target,
              std::unique_ptr<qssc::payload::Payload> payload,
              mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
-  if (!bypassPayloadTargetCompilation)
-    if (auto err = target->compilePayload(moduleOp, *payload))
-      return err;
+
+  if (auto err = target->compilePayload(moduleOp, *payload, /* compileMLIR=*/!bypassPayloadTargetCompilation))
+    return err;
 
   if (plaintextPayload)
     payload->writePlain(*ostream);
@@ -530,15 +530,6 @@ static llvm::Error emitMLIR_(
                                     "Failure while preparing target passes"),
             std::move(err));
     }
-  } else {
-    // Otherwise we have to run a standard pass-manager.
-    mlir::PassManager pm(&context);
-    if (auto err = buildPassManager(pm, passPipelineParser, errorHandler))
-      return err;
-
-    if (failed(pm.run(moduleOp)))
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Problems running the compiler pipeline!");
   }
 
   // Print the output.
@@ -839,6 +830,16 @@ compile_(int argc, char const **argv, std::string *outputString,
         llvm::inconvertibleErrorCode(),
         "Unable to apply target compilation options.");
 
+  // Run additional passes specified on the command line
+  mlir::PassManager pm(&context);
+  if (auto err = buildPassManager(pm, passPipelineParser, errorHandler))
+    return err;
+
+  if (pm.size() && failed(pm.run(moduleOp)))
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                    "Problems running the compiler pipeline!");
+
+  // Prepare outputs
   if (emitAction == Action::DumpMLIR) {
     if (auto err = emitMLIR_(ostream, context, moduleOp, config,
                              targetCompilationManager, passPipelineParser,
