@@ -103,7 +103,9 @@ llvm::Expected<uint32_t> getNodeId(Operation *moduleOperation) {
   auto typeAttr = moduleOperation->getAttrOfType<IntegerAttr>("quir.nodeId");
 
   if (!typeAttr)
-    return llvm::createStringError(llvm::inconvertibleErrorCode(), "module Op lacks expected attribute quir.nodeId.");
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "module Op lacks expected attribute quir.nodeId.");
 
   return typeAttr.getUInt();
 } // getNodeType

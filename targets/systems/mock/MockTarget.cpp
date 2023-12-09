@@ -144,7 +144,7 @@ MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
       std::make_unique<MockController>("MockController", this, *mockConfig));
 
   // Create drive targets
-  for (const auto &result: llvm::enumerate(mockConfig->getDriveNodes())) {
+  for (const auto &result : llvm::enumerate(mockConfig->getDriveNodes())) {
     uint32_t qubitIdx = result.index();
     uint32_t nodeId = result.value();
     addChild(std::make_unique<MockDrive>(
@@ -152,11 +152,12 @@ MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
   }
 
   // Create acquire targets
-  for (const auto &result: llvm::enumerate(mockConfig->getAcquireNodes())) {
+  for (const auto &result : llvm::enumerate(mockConfig->getAcquireNodes())) {
     uint32_t acquireIdx = result.index();
     uint32_t nodeId = result.value();
-    addChild(std::make_unique<MockAcquire>(
-        "MockAcquire_" + std::to_string(acquireIdx), this, *mockConfig, nodeId));
+    addChild(std::make_unique<MockAcquire>("MockAcquire_" +
+                                               std::to_string(acquireIdx),
+                                           this, *mockConfig, nodeId));
   }
 } // MockSystem
 
@@ -207,7 +208,7 @@ llvm::Error MockSystem::addPasses(mlir::PassManager &pm) {
 } // MockSystem::addPasses
 
 llvm::Error MockSystem::emitToPayload(mlir::ModuleOp &moduleOp,
-                                     qssc::payload::Payload &payload) {
+                                      qssc::payload::Payload &payload) {
   return llvm::Error::success();
 } // MockSystem::emitToPayload
 
@@ -235,7 +236,7 @@ llvm::Error MockController::addPasses(mlir::PassManager &pm) {
 } // MockController::addPasses
 
 llvm::Error MockController::emitToPayload(mlir::ModuleOp &moduleOp,
-                                         qssc::payload::Payload &payload) {
+                                          qssc::payload::Payload &payload) {
 
   auto *mlirStr = payload.getFile(name + ".mlir");
   llvm::raw_string_ostream mlirOStream(*mlirStr);
@@ -248,7 +249,7 @@ llvm::Error MockController::emitToPayload(mlir::ModuleOp &moduleOp,
 } // MockController::emitToPayload
 
 llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
-                                      qssc::payload::Payload &payload) {
+                                             qssc::payload::Payload &payload) {
 
   // Initialize native LLVM target
   llvm::InitializeNativeTarget();
@@ -262,9 +263,8 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
   const auto *target =
       llvm::TargetRegistry::lookupTarget(targetTriple, errorMessage);
   if (!target) {
-    return llvm::createStringError(
-              llvm::inconvertibleErrorCode(),
-              "Unable to find target: " + errorMessage);
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Unable to find target: " + errorMessage);
   }
 
   std::string cpu("generic");
@@ -274,17 +274,16 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
   auto dataLayout = machine->createDataLayout();
 
   if (auto err =
-          quir::translateModuleToLLVMDialect(controllerModule, dataLayout)) {
+          quir::translateModuleToLLVMDialect(controllerModule, dataLayout))
     return err;
-  }
 
   // Build LLVM payload
   llvm::LLVMContext llvmContext;
   std::unique_ptr<llvm::Module> llvmModule =
       mlir::translateModuleToLLVMIR(controllerModule, llvmContext);
   if (!llvmModule) {
-    return llvm::createStringError(
-              llvm::inconvertibleErrorCode(),"Error converting LLVM module to LLVM IR!");
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Error converting LLVM module to LLVM IR!");
   }
 
   llvmModule->setDataLayout(machine->createDataLayout());
@@ -308,7 +307,8 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
   if (auto err = llvm::sys::fs::createTemporaryFile("controllerModule", "o",
                                                     objFd, objPath)) {
     return llvm::createStringError(
-              llvm::inconvertibleErrorCode(),"Failed to create temporary object file for controller module");
+        llvm::inconvertibleErrorCode(),
+        "Failed to create temporary object file for controller module");
   }
   auto obj = std::make_unique<llvm::ToolOutputFile>(objPath, objFd);
   llvm::legacy::PassManager pass;
@@ -316,7 +316,8 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
   if (machine->addPassesToEmitFile(pass, obj->os(), nullptr,
                                    llvm::CodeGenFileType::CGFT_ObjectFile)) {
     return llvm::createStringError(
-              llvm::inconvertibleErrorCode(),"Cannot emit object files with TargetMachine");
+        llvm::inconvertibleErrorCode(),
+        "Cannot emit object files with TargetMachine");
   }
   pass.run(*llvmModule);
   obj->os().flush();
@@ -330,7 +331,8 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
 
   if (!binary) {
     return llvm::createStringError(
-              llvm::inconvertibleErrorCode(),"Failed top open generated controller object file" + objPath);
+        llvm::inconvertibleErrorCode(),
+        "Failed top open generated controller object file" + objPath);
   }
 
   /* read whole content of object file into buffer */
@@ -346,7 +348,8 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
 
 MockAcquire::MockAcquire(std::string name, MockSystem *parent,
                          const SystemConfiguration &config, uint32_t nodeId)
-    : TargetInstrument(std::move(name), parent), nodeId_(nodeId) {} // MockAcquire
+    : TargetInstrument(std::move(name), parent), nodeId_(nodeId) {
+} // MockAcquire
 
 void MockAcquire::registerTargetPasses() {} // MockAcquire::registerTargetPasses
 
@@ -358,7 +361,7 @@ llvm::Error MockAcquire::addPasses(mlir::PassManager &pm) {
 } // MockAcquire::addPasses
 
 llvm::Error MockAcquire::emitToPayload(mlir::ModuleOp &moduleOp,
-                                      qssc::payload::Payload &payload) {
+                                       qssc::payload::Payload &payload) {
   auto mockModule = getModule(moduleOp);
   if (auto err = mockModule.takeError())
     return err;
@@ -384,7 +387,7 @@ llvm::Error MockDrive::addPasses(mlir::PassManager &pm) {
 } // MockDrive::addPasses
 
 llvm::Error MockDrive::emitToPayload(mlir::ModuleOp &moduleOp,
-                                    qssc::payload::Payload &payload) {
+                                     qssc::payload::Payload &payload) {
   auto mockModule = getModule(moduleOp);
   if (auto err = mockModule.takeError())
     return err;

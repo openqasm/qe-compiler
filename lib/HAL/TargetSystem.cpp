@@ -24,7 +24,6 @@
 using namespace qssc::hal;
 using namespace qssc::payload;
 
-
 Target::Target(std::string name, Target *parent)
     : name(std::move(name)), parent(parent) {}
 
@@ -33,24 +32,27 @@ TargetSystem::TargetSystem(std::string name, Target *parent)
 
 llvm::Expected<mlir::ModuleOp>
 TargetSystem::getModule(mlir::ModuleOp parentModuleOp) {
-    // For the system we treat the top-level parent module as the system module currently.
-    // TODO: Add a more general target module formalism
-    return parentModuleOp;
+  // For the system we treat the top-level parent module as the system module
+  // currently.
+  // TODO: Add a more general target module formalism
+  return parentModuleOp;
 }
-
 
 TargetInstrument::TargetInstrument(std::string name, Target *parent)
     : Target(std::move(name), parent) {}
 
-llvm::Expected<mlir::ModuleOp> TargetInstrument::getModule(mlir::ModuleOp parentModuleOp) {
+llvm::Expected<mlir::ModuleOp>
+TargetInstrument::getModule(mlir::ModuleOp parentModuleOp) {
   mlir::ModuleOp retOp = nullptr;
   parentModuleOp->walk([&](mlir::ModuleOp walkOp) {
-    auto moduleNodeType = walkOp->getAttrOfType<mlir::StringAttr>("quir.nodeType");
+    auto moduleNodeType =
+        walkOp->getAttrOfType<mlir::StringAttr>("quir.nodeType");
     auto moduleNodeId = mlir::quir::getNodeId(walkOp);
     if (moduleNodeId.takeError())
-        return mlir::WalkResult::advance();
+      return mlir::WalkResult::advance();
     // Match by node type & id
-    if (moduleNodeType && moduleNodeType.getValue() == getNodeType() && moduleNodeId.get() == getNodeId()) {
+    if (moduleNodeType && moduleNodeType.getValue() == getNodeType() &&
+        moduleNodeId.get() == getNodeId()) {
       retOp = walkOp;
       return mlir::WalkResult::interrupt();
     }
@@ -58,6 +60,9 @@ llvm::Expected<mlir::ModuleOp> TargetInstrument::getModule(mlir::ModuleOp parent
   });
   if (!retOp)
     return llvm::createStringError(
-              llvm::inconvertibleErrorCode(),"Could not find target module for target " + getName() + ". Searching for quir.nodeType="+getNodeType() + " and quir.nodeId=" + std::to_string(getNodeId()));
+        llvm::inconvertibleErrorCode(),
+        "Could not find target module for target " + getName() +
+            ". Searching for quir.nodeType=" + getNodeType() +
+            " and quir.nodeId=" + std::to_string(getNodeId()));
   return retOp;
 }

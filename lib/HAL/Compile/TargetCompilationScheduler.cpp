@@ -1,4 +1,5 @@
-//===- TargetCompilationScheduler.cpp ----------------------------*- C++ -*-===//
+//===- TargetCompilationScheduler.cpp ----------------------------*- C++
+//-*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -18,21 +19,25 @@
 
 using namespace qssc::hal::compile;
 
-TargetCompilationScheduler::TargetCompilationScheduler(qssc::hal::TargetSystem &target, mlir::MLIRContext *context) : target(target), context(context) {}
+TargetCompilationScheduler::TargetCompilationScheduler(
+    qssc::hal::TargetSystem &target, mlir::MLIRContext *context)
+    : target(target), context(context) {}
 
-llvm::Error TargetCompilationScheduler::walkTarget(Target *target, mlir::ModuleOp targetModuleOp, WalkTargetFunction walkFunc) {
-    // Call the input function for the walk on the target
-    if (auto err = walkFunc(target, targetModuleOp))
-        return err;
+llvm::Error
+TargetCompilationScheduler::walkTarget(Target *target,
+                                       mlir::ModuleOp targetModuleOp,
+                                       WalkTargetFunction walkFunc) {
+  // Call the input function for the walk on the target
+  if (auto err = walkFunc(target, targetModuleOp))
+    return err;
 
-    for (auto *child : target->getChildren()) {
-        // Recurse on the target
-        auto childModuleOp = child->getModule(targetModuleOp);
-        if (auto err = childModuleOp.takeError())
-            return err;
-        if (auto err = walkTarget(child, *childModuleOp, walkFunc))
-            return err;
-    }
-    return llvm::Error::success();
-
+  for (auto *child : target->getChildren()) {
+    // Recurse on the target
+    auto childModuleOp = child->getModule(targetModuleOp);
+    if (auto err = childModuleOp.takeError())
+      return err;
+    if (auto err = walkTarget(child, *childModuleOp, walkFunc))
+      return err;
+  }
+  return llvm::Error::success();
 }

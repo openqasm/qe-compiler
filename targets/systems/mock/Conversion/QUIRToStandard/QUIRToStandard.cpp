@@ -240,8 +240,7 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`
   // operations were not converted successfully.
-  if (failed(applyPartialConversion(moduleOp, target,
-                                    std::move(patterns)))) {
+  if (failed(applyPartialConversion(moduleOp, target, std::move(patterns)))) {
     // If we fail conversion remove remaining ops for the Mock target.
     moduleOp.walk([&](Operation *op) {
       if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||

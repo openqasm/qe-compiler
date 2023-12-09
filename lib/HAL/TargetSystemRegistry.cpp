@@ -28,7 +28,7 @@ public:
 
   // Do nothing.
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
-                           qssc::payload::Payload &payload) override {
+                            qssc::payload::Payload &payload) override {
     return llvm::Error::success();
   }
 };

@@ -21,9 +21,7 @@
 #ifndef TARGETCOMPILATIONSCHEDULER_H
 #define TARGETCOMPILATIONSCHEDULER_H
 
-
 #include "HAL/TargetSystem.h"
-
 
 #include "mlir/IR/BuiltinOps.h"
 
@@ -33,54 +31,54 @@
 
 using namespace qssc;
 
-
 namespace qssc::hal::compile {
 
-    /// @brief Base class for the compiler's
-    /// target compilation infrastructure.
-    /// A target system is a tree of compilation targets.
-    /// We aim to support compiling each disjoint
-    /// target subtree independently.
-    class TargetCompilationScheduler {
-        protected:
-            TargetCompilationScheduler(hal::TargetSystem &target, mlir::MLIRContext *context);
+/// @brief Base class for the compiler's
+/// target compilation infrastructure.
+/// A target system is a tree of compilation targets.
+/// We aim to support compiling each disjoint
+/// target subtree independently.
+class TargetCompilationScheduler {
+protected:
+  TargetCompilationScheduler(hal::TargetSystem &target,
+                             mlir::MLIRContext *context);
 
-            using WalkTargetFunction = std::function<llvm::Error(hal::Target *, mlir::ModuleOp)>;
-            // Depth first walker for a target system
-            llvm::Error walkTarget(Target *target, mlir::ModuleOp targetModuleOp, WalkTargetFunction walkFunc);
+  using WalkTargetFunction =
+      std::function<llvm::Error(hal::Target *, mlir::ModuleOp)>;
+  // Depth first walker for a target system
+  llvm::Error walkTarget(Target *target, mlir::ModuleOp targetModuleOp,
+                         WalkTargetFunction walkFunc);
 
-        public:
-            virtual ~TargetCompilationScheduler() = default;
-            virtual const std::string getName() const = 0;
+public:
+  virtual ~TargetCompilationScheduler() = default;
+  virtual const std::string getName() const = 0;
 
-            /// Get the base target system to be compiled.
-            virtual hal::Target &getTargetSystem() { return target; }
+  /// Get the base target system to be compiled.
+  virtual hal::Target &getTargetSystem() { return target; }
 
-            /// Get the base MLIR context for this compilation scheduler.
-            mlir::MLIRContext* getContext() { return context;};
+  /// Get the base MLIR context for this compilation scheduler.
+  mlir::MLIRContext *getContext() { return context; };
 
-            /// @brief Compile only at the MLIR level for the full target
-            /// system.
-            /// @param moduleOp The root module operation to compile for.
-            /// This must not be specialized to a system already.
-            virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) = 0;
+  /// @brief Compile only at the MLIR level for the full target
+  /// system.
+  /// @param moduleOp The root module operation to compile for.
+  /// This must not be specialized to a system already.
+  virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) = 0;
 
-            /// @brief Generate the full configured compilation pipeline
-            /// for all targets of the base target system. This will also
-            /// invoke compileMLIR.
-            /// @param moduleOp The root module operation to compile for.
-            /// This must not be specialized to a system already.
-            /// @param payload The payload to populate.
-            virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp, qssc::payload::Payload &payload) = 0;
+  /// @brief Generate the full configured compilation pipeline
+  /// for all targets of the base target system. This will also
+  /// invoke compileMLIR.
+  /// @param moduleOp The root module operation to compile for.
+  /// This must not be specialized to a system already.
+  /// @param payload The payload to populate.
+  virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
+                                     qssc::payload::Payload &payload) = 0;
 
-        private:
-            hal::TargetSystem &target;
-            mlir::MLIRContext *context;
+private:
+  hal::TargetSystem &target;
+  mlir::MLIRContext *context;
 
+}; // class TargetCompilationScheduler
 
-    }; // class TargetCompilationScheduler
-
-} // namespace hal::compile
+} // namespace qssc::hal::compile
 #endif // TARGETCOMPILATIONSCHEDULER_H
-
-
