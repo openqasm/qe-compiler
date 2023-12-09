@@ -122,8 +122,12 @@ static llvm::cl::opt<bool> includeSourceInPayload(
     "include-source", llvm::cl::desc("Write the input source into the payload"),
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-static llvm::cl::opt<bool> bypassTargetCompilation(
-    "bypass-target-compilation", llvm::cl::desc("Bypass target compilation"),
+static llvm::cl::opt<bool> compileTargetIr(
+    "compile-target-ir", llvm::cl::desc("Apply the target's IR compilation"),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+
+static llvm::cl::opt<bool> bypassPayloadTargetCompilation(
+    "bypass-payload-target-compilation", llvm::cl::desc("Bypass target compilation during payload generation."),
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 namespace {
@@ -465,7 +469,7 @@ static llvm::Error
 generateQEM_(qssc::hal::compile::TargetCompilationManager *target,
              std::unique_ptr<qssc::payload::Payload> payload,
              mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
-  if (!bypassTargetCompilation)
+  if (!bypassPayloadTargetCompilation)
     if (auto err = target->compilePayload(moduleOp, *payload))
       return err;
 
@@ -517,7 +521,7 @@ static llvm::Error emitMLIR_(
     mlir::ModuleOp moduleOp, const qssc::config::QSSConfig &config,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
     mlir::PassPipelineCLParser &passPipelineParser, ErrorHandler errorHandler) {
-  if (!bypassTargetCompilation) {
+  if (compileTargetIr) {
     // Check if we can run the target compilation scheduler.
     if (config.addTargetPasses) {
       if (auto err = targetCompilationManager.compileMLIR(moduleOp))
