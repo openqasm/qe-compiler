@@ -139,18 +139,24 @@ MockConfig::MockConfig(llvm::StringRef configurationPath)
 
 MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
     : TargetSystem("MockSystem", nullptr), mockConfig(std::move(config)) {
+  // Create controller target
   addChild(
       std::make_unique<MockController>("MockController", this, *mockConfig));
-  for (uint qubitId = 0; qubitId < mockConfig->getNumQubits(); ++qubitId) {
+
+  // Create drive targets
+  for (const auto &result: llvm::enumerate(mockConfig->getDriveNodes())) {
+    uint32_t qubitIdx = result.index();
+    uint32_t nodeId = result.value();
     addChild(std::make_unique<MockDrive>(
-        "MockDrive_" + std::to_string(qubitId), this, *mockConfig, mockConfig->driveNode(qubitId)));
+        "MockDrive_" + std::to_string(qubitIdx), this, *mockConfig, nodeId));
   }
-  for (uint acquireId = 0;
-       acquireId <
-       mockConfig->getNumQubits() / mockConfig->getMultiplexingRatio() + 1;
-       ++acquireId) {
+
+  // Create acquire targets
+  for (const auto &result: llvm::enumerate(mockConfig->getAcquireNodes())) {
+    uint32_t acquireIdx = result.index();
+    uint32_t nodeId = result.value();
     addChild(std::make_unique<MockAcquire>(
-        "MockAcquire_" + std::to_string(acquireId), this, *mockConfig, acquireId));
+        "MockAcquire_" + std::to_string(acquireIdx), this, *mockConfig, nodeId));
   }
 } // MockSystem
 
@@ -231,7 +237,6 @@ llvm::Error MockController::addPasses(mlir::PassManager &pm) {
 llvm::Error MockController::emitToPayload(mlir::ModuleOp &moduleOp,
                                          qssc::payload::Payload &payload) {
 
-  moduleOp.dump();
   auto *mlirStr = payload.getFile(name + ".mlir");
   llvm::raw_string_ostream mlirOStream(*mlirStr);
   mlirOStream << moduleOp;

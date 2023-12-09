@@ -26,6 +26,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
 
@@ -45,8 +46,11 @@ public:
   uint acquireNode(uint qubitId) const {
     return qubitAcquireMap[qubitId];
   }
-  const std::vector<uint>& getAcquireNodes() {
-    return qubitAcquireMap;
+  const std::vector<uint> getAcquireNodes() {
+    std::vector<uint> acquireNodes = qubitAcquireMap;
+    acquireNodes.erase(std::unique(acquireNodes.begin(),acquireNodes.end()),acquireNodes.end());
+    return acquireNodes;
+
   }
   const std::vector<int> & acquireQubits(uint nodeId) {
     return qubitAcquireToPhysIdMap[nodeId];
