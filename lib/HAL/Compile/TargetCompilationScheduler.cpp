@@ -15,9 +15,52 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/ManagedStatic.h"
+
 #include "HAL/Compile/TargetCompilationScheduler.h"
 
 using namespace qssc::hal::compile;
+
+namespace {
+struct TargetCompilationSchedulerOptions {
+
+  //===--------------------------------------------------------------------===//
+  // IR Printing
+  //===--------------------------------------------------------------------===//
+  llvm::cl::opt<bool> printBeforeAll{
+      "qssc-print-ir-before-all-targets", llvm::cl::desc("Print IR before each target compilation pass"),
+      llvm::cl::init(false)};
+  llvm::cl::opt<bool> printAfterAll{"qssc-print-ir-after-all-targets",
+                                    llvm::cl::desc("Print IR after each target compilation pass"),
+                                    llvm::cl::init(false)};
+  llvm::cl::opt<bool> printAfterFailure{
+      "qssc-print-ir-after-failure",
+      llvm::cl::desc(
+          "When printing the IR after a pass, only print if the pass failed"),
+      llvm::cl::init(false)};
+};
+} // namespace
+
+
+static llvm::ManagedStatic<TargetCompilationSchedulerOptions> options;
+
+void qssc::hal::compile::registerTargetCompilationSchedulerCLOptions() {
+  // Make sure that the options struct has been constructed.
+  *options;
+}
+
+mlir::LogicalResult qssc::hal::compile::applyTargetCompilationSchedulerCLOptions(TargetCompilationScheduler &scheduler) {
+  if (!options.isConstructed())
+    return mlir::failure();
+
+  // Otherwise, add the IR printing instrumentation.
+  scheduler.enableIRPrinting(options->printBeforeAll, options->printAfterAll);
+
+  return mlir::success();
+}
+
+
 
 TargetCompilationScheduler::TargetCompilationScheduler(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context)
@@ -40,4 +83,9 @@ TargetCompilationScheduler::walkTarget(Target *target,
       return err;
   }
   return llvm::Error::success();
+}
+
+void TargetCompilationScheduler::enableIRPrinting(bool printBeforeAll, bool printAfterAll) {
+  this->printBeforeAll = printBeforeAll;
+  this->printAfterAll = printAfterAll;
 }

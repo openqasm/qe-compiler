@@ -295,11 +295,12 @@ llvm::Error registerPasses() {
   return err;
 }
 
-auto registerPassManagerCLOpts() {
+auto registerCLOpts() {
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
   mlir::registerDefaultTimingManagerCLOptions();
+  qssc::hal::compile::registerTargetCompilationSchedulerCLOptions();
 }
 
 llvm::Error determineInputType() {
@@ -656,7 +657,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   // Parse the command line options.
   mlir::PassPipelineCLParser passPipelineParser("", "Compiler passes to run");
-  registerPassManagerCLOpts();
+  registerCLOpts();
   llvm::cl::SetVersionPrinter(&printVersion);
   llvm::cl::ParseCommandLineOptions(
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
@@ -832,6 +833,9 @@ compile_(int argc, char const **argv, std::string *outputString,
           target, &context, [&](mlir::PassManager &pm) {
             return buildPassManager(pm, passPipelineParser, errorHandler);
           });
+  if (mlir::failed(qssc::hal::compile::applyTargetCompilationSchedulerCLOptions(targetCompilationScheduler)))
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "Unable to apply target compilation options.");
 
   if (emitAction == Action::DumpMLIR) {
     if (auto err = emitMLIR_(ostream, context, moduleOp, config,

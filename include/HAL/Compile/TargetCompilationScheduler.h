@@ -74,11 +74,28 @@ public:
   virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
                                      qssc::payload::Payload &payload) = 0;
 
+  void enableIRPrinting(bool printBeforeAll, bool printAfterAll);
+
 private:
+  bool getPrintBeforeAll() { return printBeforeAll; }
+  bool getPrintAfterAll() { return printAfterAll; }
+
   hal::TargetSystem &target;
   mlir::MLIRContext *context;
 
+  bool printBeforeAll = false;
+  bool printAfterAll = false;
+
 }; // class TargetCompilationScheduler
+
+
+/// Register a set of useful command-line options that can be used to configure
+/// a target compilation scheduler.
+void registerTargetCompilationSchedulerCLOptions();
+
+/// Apply any values provided to the target compilation scheduler options that were registered
+/// with 'registerTargetCompilationSchedulerCLOptions'.
+mlir::LogicalResult applyTargetCompilationSchedulerCLOptions(TargetCompilationScheduler &scheduler);
 
 } // namespace qssc::hal::compile
 #endif // TARGETCOMPILATIONSCHEDULER_H
