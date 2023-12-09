@@ -201,12 +201,7 @@ llvm::Error MockSystem::addPasses(mlir::PassManager &pm) {
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(std::make_unique<BreakResetPass>());
   mockPipelineBuilder(pm);
-  for (auto &child : getChildren())
-    if (auto err = child->addPasses(pm))
-      return err;
-  for (auto &instrument : getInstruments())
-    if (auto err = instrument->addPasses(pm))
-      return err;
+
   return llvm::Error::success();
 } // MockSystem::addPasses
 
@@ -219,12 +214,6 @@ auto MockSystem::payloadPassesFound(mlir::PassManager &pm) -> bool {
 
 llvm::Error MockSystem::emitToPayload(mlir::ModuleOp &moduleOp,
                                      qssc::payload::Payload &payload) {
-  for (auto &child : getChildren())
-    if (auto err = child->emitToPayload(moduleOp, payload))
-      return err;
-  for (auto &instrument : getInstruments())
-    if (auto err = instrument->emitToPayload(moduleOp, payload))
-      return err;
   return llvm::Error::success();
 } // MockSystem::emitToPayload
 
@@ -239,6 +228,15 @@ void MockController::registerTargetPipelines() {
 } // MockController::registerTargetPipelines
 
 llvm::Error MockController::addPasses(mlir::PassManager &pm) {
+  // Register LLVM dialect and all infrastructure required for translation to
+  // LLVM IR
+  mlir::registerLLVMDialectTranslation(*pm.getContext());
+
+  pm.addPass(std::make_unique<conversion::MockQUIRToStdPass>(false));
+  pm.addPass(mlir::createCanonicalizerPass());
+  pm.addPass(mlir::createLowerToLLVMPass());
+  pm.addPass(mlir::LLVM::createLegalizeForExportPass());
+
   return llvm::Error::success();
 } // MockController::addPasses
 
@@ -258,24 +256,6 @@ llvm::Error MockController::emitToPayload(mlir::ModuleOp &moduleOp,
 
 llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
                                       qssc::payload::Payload &payload) {
-
-  auto *context = controllerModule.getContext();
-  assert(context);
-
-  // Register LLVM dialect and all infrastructure required for translation to
-  // LLVM IR
-  mlir::registerLLVMDialectTranslation(*context);
-
-  mlir::PassManager pm(context);
-  pm.addPass(std::make_unique<conversion::MockQUIRToStdPass>(false));
-  pm.addPass(mlir::createCanonicalizerPass());
-  pm.addPass(mlir::createLowerToLLVMPass());
-  pm.addPass(mlir::LLVM::createLegalizeForExportPass());
-  if (failed(pm.run(controllerModule))) {
-    return llvm::createStringError(
-              llvm::inconvertibleErrorCode(),
-              "Problems converting `MockController` module to std dialect!");
-  }
 
   // Initialize native LLVM target
   llvm::InitializeNativeTarget();
