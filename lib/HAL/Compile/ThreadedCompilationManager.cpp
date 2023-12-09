@@ -39,6 +39,9 @@ ThreadedCompilationManager::walkTargetThreaded(Target *target,
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
 
+  // Get child modules in a non-threaded fashion to preserve
+  // MLIR parallelization rules
+
   auto parallelWalkFunc = [&](Target *childTarget) {
     // Recurse on this target's children in a depth first fashion.
     auto childModuleOp = childTarget->getModule(targetModuleOp);

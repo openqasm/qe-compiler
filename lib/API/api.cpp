@@ -491,15 +491,18 @@ static void dumpMLIR_(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
 
 using ErrorHandler = function_ref<LogicalResult(const Twine &)>;
 
-llvm::Error buildPassManager(mlir::PassManager &pm,
-                             mlir::PassPipelineCLParser &passPipelineParser,
-                             ErrorHandler errorHandler) {
+static void buildPassManager_(mlir::PassManager &pm) {
   mlir::applyPassManagerCLOptions(pm);
   mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
   // Configure verifier
   pm.enableVerifier(verifyPasses);
+}
 
+static llvm::Error buildPassManager(mlir::PassManager &pm,
+                             mlir::PassPipelineCLParser &passPipelineParser,
+                             ErrorHandler errorHandler) {
+  buildPassManager_(pm);
   // Build the provided pipeline.
   if (failed(passPipelineParser.addToPipeline(pm, errorHandler)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
@@ -822,7 +825,8 @@ compile_(int argc, char const **argv, std::string *outputString,
   auto targetCompilationManager =
       qssc::hal::compile::ThreadedCompilationManager(
           target, &context, [&](mlir::PassManager &pm) {
-            return buildPassManager(pm, passPipelineParser, errorHandler);
+          buildPassManager_(pm);
+          return llvm::Error::success();
           });
   if (mlir::failed(qssc::hal::compile::applyTargetCompilationManagerCLOptions(
           targetCompilationManager)))
