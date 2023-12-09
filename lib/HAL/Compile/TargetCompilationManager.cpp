@@ -1,4 +1,4 @@
-//===- TargetCompilationScheduler.cpp ----------------------------*- C++
+//===- TargetCompilationManager.cpp ----------------------------*- C++
 //-*-===//
 //
 // (C) Copyright IBM 2023.
@@ -18,56 +18,58 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/ManagedStatic.h"
 
-#include "HAL/Compile/TargetCompilationScheduler.h"
+#include "HAL/Compile/TargetCompilationManager.h"
 
 using namespace qssc::hal::compile;
 
 namespace {
-struct TargetCompilationSchedulerOptions {
+struct TargetCompilationManagerOptions {
 
   //===--------------------------------------------------------------------===//
   // IR Printing
   //===--------------------------------------------------------------------===//
   llvm::cl::opt<bool> printBeforeAllTargetPasses{
-      "print-ir-before-all-target-passes", llvm::cl::desc("Print IR before each target compilation pass"),
+      "print-ir-before-all-target-passes",
+      llvm::cl::desc("Print IR before each target compilation pass"),
       llvm::cl::init(false)};
-  llvm::cl::opt<bool> printAfterAllTargetPasses{"print-ir-after-all-target-passes",
-                                    llvm::cl::desc("Print IR after each target compilation pass"),
-                                    llvm::cl::init(false)};
-  llvm::cl::opt<bool> printBeforeAllTargetPayload{"print-ir-before-emit-all-target-payloads",
-                                    llvm::cl::desc("Print IR before each target payload compilation"),
-                                    llvm::cl::init(false)};
+  llvm::cl::opt<bool> printAfterAllTargetPasses{
+      "print-ir-after-all-target-passes",
+      llvm::cl::desc("Print IR after each target compilation pass"),
+      llvm::cl::init(false)};
+  llvm::cl::opt<bool> printBeforeAllTargetPayload{
+      "print-ir-before-emit-all-target-payloads",
+      llvm::cl::desc("Print IR before each target payload compilation"),
+      llvm::cl::init(false)};
 };
 } // namespace
 
+static llvm::ManagedStatic<TargetCompilationManagerOptions> options;
 
-static llvm::ManagedStatic<TargetCompilationSchedulerOptions> options;
-
-void qssc::hal::compile::registerTargetCompilationSchedulerCLOptions() {
+void qssc::hal::compile::registerTargetCompilationManagerCLOptions() {
   // Make sure that the options struct has been constructed.
   *options;
 }
 
-mlir::LogicalResult qssc::hal::compile::applyTargetCompilationSchedulerCLOptions(TargetCompilationScheduler &scheduler) {
+mlir::LogicalResult qssc::hal::compile::applyTargetCompilationManagerCLOptions(
+    TargetCompilationManager &scheduler) {
   if (!options.isConstructed())
     return mlir::failure();
 
   // Otherwise, add the IR printing instrumentation.
-  scheduler.enableIRPrinting(options->printBeforeAllTargetPasses, options->printAfterAllTargetPasses, options->printBeforeAllTargetPayload);
+  scheduler.enableIRPrinting(options->printBeforeAllTargetPasses,
+                             options->printAfterAllTargetPasses,
+                             options->printBeforeAllTargetPayload);
 
   return mlir::success();
 }
 
-
-
-TargetCompilationScheduler::TargetCompilationScheduler(
+TargetCompilationManager::TargetCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context)
     : target(target), context(context) {}
 
-llvm::Error
-TargetCompilationScheduler::walkTarget(Target *target,
-                                       mlir::ModuleOp targetModuleOp,
-                                       WalkTargetFunction walkFunc) {
+llvm::Error TargetCompilationManager::walkTarget(Target *target,
+                                                 mlir::ModuleOp targetModuleOp,
+                                                 WalkTargetFunction walkFunc) {
   // Call the input function for the walk on the target
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
@@ -83,13 +85,16 @@ TargetCompilationScheduler::walkTarget(Target *target,
   return llvm::Error::success();
 }
 
-void TargetCompilationScheduler::enableIRPrinting(bool printBeforeAllTargetPasses, bool printAfterAllTargetPasses, bool printBeforeAllTargetPayload) {
+void TargetCompilationManager::enableIRPrinting(
+    bool printBeforeAllTargetPasses, bool printAfterAllTargetPasses,
+    bool printBeforeAllTargetPayload) {
   this->printBeforeAllTargetPasses = printBeforeAllTargetPasses;
   this->printAfterAllTargetPasses = printAfterAllTargetPasses;
   this->printBeforeAllTargetPayload = printBeforeAllTargetPayload;
 }
 
-void TargetCompilationScheduler::printIR(llvm::StringRef msg, mlir::Operation *op, llvm::raw_ostream &out) {
+void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
+                                       llvm::raw_ostream &out) {
   out << "// -----// ";
   out << msg;
   out << " //----- //";

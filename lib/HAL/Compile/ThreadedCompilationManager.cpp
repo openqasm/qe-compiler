@@ -1,4 +1,4 @@
-//===- TargetCompilationScheduler.cpp ----------------------------*- C++
+//===- TargetCompilationManager.cpp ----------------------------*- C++
 //-*-===//
 //
 // (C) Copyright IBM 2023.
@@ -15,26 +15,26 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "HAL/Compile/ThreadedCompilationScheduler.h"
+#include "HAL/Compile/ThreadedCompilationManager.h"
 
 #include "mlir/IR/Threading.h"
 
 using namespace qssc;
 using namespace qssc::hal::compile;
 
-ThreadedCompilationScheduler::ThreadedCompilationScheduler(
+ThreadedCompilationManager::ThreadedCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context,
-    ThreadedCompilationScheduler::PMBuilder pmBuilder)
-    : TargetCompilationScheduler(target, context), pmBuilder(pmBuilder) {}
+    ThreadedCompilationManager::PMBuilder pmBuilder)
+    : TargetCompilationManager(target, context), pmBuilder(pmBuilder) {}
 
-const std::string ThreadedCompilationScheduler::getName() const {
-  return "ThreadedCompilationScheduler";
+const std::string ThreadedCompilationManager::getName() const {
+  return "ThreadedCompilationManager";
 }
 
 llvm::Error
-ThreadedCompilationScheduler::walkTargetThreaded(Target *target,
-                                                 mlir::ModuleOp targetModuleOp,
-                                                 WalkTargetFunction walkFunc) {
+ThreadedCompilationManager::walkTargetThreaded(Target *target,
+                                               mlir::ModuleOp targetModuleOp,
+                                               WalkTargetFunction walkFunc) {
 
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
@@ -68,11 +68,11 @@ ThreadedCompilationScheduler::walkTargetThreaded(Target *target,
 }
 
 llvm::Error
-ThreadedCompilationScheduler::buildTargetPassManager(mlir::PassManager &pm) {
+ThreadedCompilationManager::buildTargetPassManager(mlir::PassManager &pm) {
   return pmBuilder(pm);
 }
 
-llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
+llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
 
   auto threadedCompileMLIRTarget =
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
@@ -86,8 +86,8 @@ llvm::Error ThreadedCompilationScheduler::compileMLIR(mlir::ModuleOp moduleOp) {
 }
 
 llvm::Error
-ThreadedCompilationScheduler::compileMLIRTarget(Target &target,
-                                                mlir::ModuleOp targetModuleOp) {
+ThreadedCompilationManager::compileMLIRTarget(Target &target,
+                                              mlir::ModuleOp targetModuleOp) {
   mlir::PassManager pm(getContext());
   if (auto err = buildTargetPassManager(pm))
     return err;
@@ -95,9 +95,9 @@ ThreadedCompilationScheduler::compileMLIRTarget(Target &target,
   if (auto err = target.addPasses(pm))
     return err;
 
-
-if (getPrintBeforeAllTargetPasses())
-    printIR("IR dump before running passes for target " + target.getName(), targetModuleOp, llvm::outs());
+  if (getPrintBeforeAllTargetPasses())
+    printIR("IR dump before running passes for target " + target.getName(),
+            targetModuleOp, llvm::outs());
 
   if (mlir::failed(pm.run(targetModuleOp)))
     return llvm::createStringError(
@@ -105,14 +105,15 @@ if (getPrintBeforeAllTargetPasses())
         "Problems running the pass pipeline for target " + target.getName());
 
   if (getPrintAfterAllTargetPasses())
-    printIR("IR dump after running passes for target " + target.getName(), targetModuleOp, llvm::outs());
+    printIR("IR dump after running passes for target " + target.getName(),
+            targetModuleOp, llvm::outs());
 
   return llvm::Error::success();
 }
 
 llvm::Error
-ThreadedCompilationScheduler::compilePayload(mlir::ModuleOp moduleOp,
-                                             qssc::payload::Payload &payload) {
+ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
+                                           qssc::payload::Payload &payload) {
   auto threadedCompilePayloadTarget =
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
     if (auto err = compilePayloadTarget(*target, targetModuleOp, payload))
@@ -124,15 +125,15 @@ ThreadedCompilationScheduler::compilePayload(mlir::ModuleOp moduleOp,
                             threadedCompilePayloadTarget);
 }
 
-llvm::Error ThreadedCompilationScheduler::compilePayloadTarget(
+llvm::Error ThreadedCompilationManager::compilePayloadTarget(
     Target &target, mlir::ModuleOp targetModuleOp,
     qssc::payload::Payload &payload) {
   if (auto err = compileMLIRTarget(target, targetModuleOp))
     return err;
 
   if (getPrintBeforeAllTargetPayload())
-    printIR("IR dump before emitting payload for target " + target.getName(), targetModuleOp, llvm::outs());
-
+    printIR("IR dump before emitting payload for target " + target.getName(),
+            targetModuleOp, llvm::outs());
 
   if (auto err = target.emitToPayload(targetModuleOp, payload))
     return err;

@@ -45,7 +45,7 @@
 #include "Payload/PayloadRegistry.h"
 #include "QSSC.h"
 
-#include "HAL/Compile/ThreadedCompilationScheduler.h"
+#include "HAL/Compile/ThreadedCompilationManager.h"
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystem.h"
 #include "HAL/TargetSystemRegistry.h"
@@ -300,7 +300,7 @@ auto registerCLOpts() {
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
   mlir::registerDefaultTimingManagerCLOptions();
-  qssc::hal::compile::registerTargetCompilationSchedulerCLOptions();
+  qssc::hal::compile::registerTargetCompilationManagerCLOptions();
 }
 
 llvm::Error determineInputType() {
@@ -462,7 +462,7 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
 /// @param ostream The output ostream to populate
 /// @return The output error if one occurred.
 static llvm::Error
-generateQEM_(qssc::hal::compile::TargetCompilationScheduler *target,
+generateQEM_(qssc::hal::compile::TargetCompilationManager *target,
              std::unique_ptr<qssc::payload::Payload> payload,
              mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
   if (!bypassTargetCompilation)
@@ -508,22 +508,19 @@ llvm::Error buildPassManager(mlir::PassManager &pm,
 /// @param context The active MLIR context
 /// @param moduleOp The module operation to process and emit
 /// @param config Compilation configuration options
-/// @param targetCompilationScheduler The target's compilation scheduler
+/// @param targetCompilationManager The target's compilation scheduler
 /// @param passPipelineParser The Parser for the passpipeline
 /// @param errorHandler MLIR error handler
 /// @return
-static llvm::Error emitMLIR_(llvm::raw_ostream *ostream,
-                             mlir::MLIRContext &context,
-                             mlir::ModuleOp moduleOp,
-                             const qssc::config::QSSConfig &config,
-                             qssc::hal::compile::ThreadedCompilationScheduler
-                                 &targetCompilationScheduler,
-                             mlir::PassPipelineCLParser &passPipelineParser,
-                             ErrorHandler errorHandler) {
+static llvm::Error emitMLIR_(
+    llvm::raw_ostream *ostream, mlir::MLIRContext &context,
+    mlir::ModuleOp moduleOp, const qssc::config::QSSConfig &config,
+    qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
+    mlir::PassPipelineCLParser &passPipelineParser, ErrorHandler errorHandler) {
   if (!bypassTargetCompilation) {
     // Check if we can run the target compilation scheduler.
     if (config.addTargetPasses) {
-      if (auto err = targetCompilationScheduler.compileMLIR(moduleOp))
+      if (auto err = targetCompilationManager.compileMLIR(moduleOp))
         return llvm::joinErrors(
             llvm::createStringError(llvm::inconvertibleErrorCode(),
                                     "Failure while preparing target passes"),
@@ -549,13 +546,12 @@ static llvm::Error emitMLIR_(llvm::raw_ostream *ostream,
 /// @param ostream Output stream to emit to
 /// @param payload The payload to emit
 /// @param moduleOp The module operation to process and emit
-/// @param targetCompilationScheduler The target's compilation scheduler
+/// @param targetCompilationManager The target's compilation scheduler
 /// @return
-static llvm::Error emitQEM_(llvm::raw_ostream *ostream,
-                            std::unique_ptr<qssc::payload::Payload> payload,
-                            mlir::ModuleOp moduleOp,
-                            qssc::hal::compile::ThreadedCompilationScheduler
-                                &targetCompilationScheduler) {
+static llvm::Error emitQEM_(
+    llvm::raw_ostream *ostream, std::unique_ptr<qssc::payload::Payload> payload,
+    mlir::ModuleOp moduleOp,
+    qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager) {
   if (includeSourceInPayload) {
     if (directInput) {
       if (inputType == InputType::QASM)
@@ -580,7 +576,7 @@ static llvm::Error emitQEM_(llvm::raw_ostream *ostream,
     }
   }
 
-  if (auto err = generateQEM_(&targetCompilationScheduler, std::move(payload),
+  if (auto err = generateQEM_(&targetCompilationManager, std::move(payload),
                               moduleOp, ostream))
     return err;
 
@@ -828,25 +824,27 @@ compile_(int argc, char const **argv, std::string *outputString,
   // at this point we have QUIR+Pulse in the moduleOp from either the
   // QASM/AST or MLIR file
 
-  auto targetCompilationScheduler =
-      qssc::hal::compile::ThreadedCompilationScheduler(
+  auto targetCompilationManager =
+      qssc::hal::compile::ThreadedCompilationManager(
           target, &context, [&](mlir::PassManager &pm) {
             return buildPassManager(pm, passPipelineParser, errorHandler);
           });
-  if (mlir::failed(qssc::hal::compile::applyTargetCompilationSchedulerCLOptions(targetCompilationScheduler)))
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Unable to apply target compilation options.");
+  if (mlir::failed(qssc::hal::compile::applyTargetCompilationManagerCLOptions(
+          targetCompilationManager)))
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "Unable to apply target compilation options.");
 
   if (emitAction == Action::DumpMLIR) {
     if (auto err = emitMLIR_(ostream, context, moduleOp, config,
-                             targetCompilationScheduler, passPipelineParser,
+                             targetCompilationManager, passPipelineParser,
                              errorHandler))
       return err;
   }
 
   if (emitAction == Action::GenQEM || emitAction == Action::GenQEQEM) {
     if (auto err = emitQEM_(ostream, std::move(payload), moduleOp,
-                            targetCompilationScheduler))
+                            targetCompilationManager))
       return err;
   }
 

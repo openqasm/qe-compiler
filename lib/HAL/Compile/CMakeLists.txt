@@ -11,8 +11,8 @@
 # that they have been altered from the originals.
 
 qssc_add_library(QSSCHALCompile
-    TargetCompilationScheduler.cpp
-    ThreadedCompilationScheduler.cpp
+    TargetCompilationManager.cpp
+    ThreadedCompilationManager.cpp
 
     ADDITIONAL_HEADER_DIRS
     ${QSSC_INCLUDE_DIR}/HAL/Compile

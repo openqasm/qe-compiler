@@ -1,4 +1,4 @@
-//===- TargetCompilationScheduler.h - Compilation Scheduler -----*- C++ -*-===//
+//===- TargetCompilationManager.h - Compilation Scheduler -----*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -18,8 +18,8 @@
 //  interface.
 //
 //===----------------------------------------------------------------------===//
-#ifndef TARGETCOMPILATIONSCHEDULER_H
-#define TARGETCOMPILATIONSCHEDULER_H
+#ifndef TARGETCOMPILATIONMANAGER_H
+#define TARGETCOMPILATIONMANAGER_H
 
 #include "HAL/TargetSystem.h"
 
@@ -38,10 +38,10 @@ namespace qssc::hal::compile {
 /// A target system is a tree of compilation targets.
 /// We aim to support compiling each disjoint
 /// target subtree independently.
-class TargetCompilationScheduler {
+class TargetCompilationManager {
 protected:
-  TargetCompilationScheduler(hal::TargetSystem &target,
-                             mlir::MLIRContext *context);
+  TargetCompilationManager(hal::TargetSystem &target,
+                           mlir::MLIRContext *context);
 
   using WalkTargetFunction =
       std::function<llvm::Error(hal::Target *, mlir::ModuleOp)>;
@@ -50,7 +50,7 @@ protected:
                          WalkTargetFunction walkFunc);
 
 public:
-  virtual ~TargetCompilationScheduler() = default;
+  virtual ~TargetCompilationManager() = default;
   virtual const std::string getName() const = 0;
 
   /// Get the base target system to be compiled.
@@ -74,17 +74,19 @@ public:
   virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
                                      qssc::payload::Payload &payload) = 0;
 
-  void enableIRPrinting(bool printBeforeAllTargetPasses, bool printAfterAllTargetPasses, bool printBeforeAllTargetPayload);
+  void enableIRPrinting(bool printBeforeAllTargetPasses,
+                        bool printAfterAllTargetPasses,
+                        bool printBeforeAllTargetPayload);
 
 protected:
   bool getPrintBeforeAllTargetPasses() { return printBeforeAllTargetPasses; }
   bool getPrintAfterAllTargetPasses() { return printAfterAllTargetPasses; }
   bool getPrintBeforeAllTargetPayload() { return printBeforeAllTargetPayload; }
 
-  void printIR(llvm::StringRef msg, mlir::Operation *op, llvm::raw_ostream &out);
+  void printIR(llvm::StringRef msg, mlir::Operation *op,
+               llvm::raw_ostream &out);
 
 private:
-
   hal::TargetSystem &target;
   mlir::MLIRContext *context;
 
@@ -92,16 +94,16 @@ private:
   bool printAfterAllTargetPasses = false;
   bool printBeforeAllTargetPayload = false;
 
-}; // class TargetCompilationScheduler
-
+}; // class TargetCompilationManager
 
 /// Register a set of useful command-line options that can be used to configure
 /// a target compilation scheduler.
-void registerTargetCompilationSchedulerCLOptions();
+void registerTargetCompilationManagerCLOptions();
 
-/// Apply any values provided to the target compilation scheduler options that were registered
-/// with 'registerTargetCompilationSchedulerCLOptions'.
-mlir::LogicalResult applyTargetCompilationSchedulerCLOptions(TargetCompilationScheduler &scheduler);
+/// Apply any values provided to the target compilation scheduler options that
+/// were registered with 'registerTargetCompilationManagerCLOptions'.
+mlir::LogicalResult
+applyTargetCompilationManagerCLOptions(TargetCompilationManager &scheduler);
 
 } // namespace qssc::hal::compile
-#endif // TARGETCOMPILATIONSCHEDULER_H
+#endif // TARGETCOMPILATIONMANAGER_H

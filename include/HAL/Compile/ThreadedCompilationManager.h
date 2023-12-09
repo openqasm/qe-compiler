@@ -1,4 +1,4 @@
-//===- ThreadedCompilationScheduler.h - Threaded Scheduler ------*- C++ -*-===//
+//===- ThreadedCompilationManager.h - Threaded Scheduler ------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -18,10 +18,10 @@
 //  interfaces.
 //
 //===----------------------------------------------------------------------===//
-#ifndef THREADEDCOMPILATIONSCHEDULER_H
-#define THREADEDCOMPILATIONSCHEDULER_H
+#ifndef THREADEDCOMPILATIONMANAGER_H
+#define THREADEDCOMPILATIONMANAGER_H
 
-#include "HAL/Compile/TargetCompilationScheduler.h"
+#include "HAL/Compile/TargetCompilationManager.h"
 
 #include "mlir/IR/MLIRContext.h"
 
@@ -29,7 +29,7 @@
 
 namespace qssc::hal::compile {
 
-/// @brief A threaded implementation of a TargetCompilationScheduler
+/// @brief A threaded implementation of a TargetCompilationManager
 /// based on the threading pools provided by the mlir::MLIRContext.
 /// This enables compilation across disjoint subtree of compilation
 /// targets in parallel.
@@ -42,20 +42,20 @@ namespace qssc::hal::compile {
 /// threadpool we are able to safely mix parallel nested passes and parallel
 /// target compilation subtrees without oversubscribing the compilation host's
 /// cores.
-class ThreadedCompilationScheduler : public TargetCompilationScheduler {
+class ThreadedCompilationManager : public TargetCompilationManager {
 protected:
   /// Threaded depth first walker for a target system using the current
   /// MLIRContext's threadpool.
   llvm::Error
   walkTargetThreaded(Target *target, mlir::ModuleOp targetModuleOp,
-                     TargetCompilationScheduler::WalkTargetFunction walkFunc);
+                     TargetCompilationManager::WalkTargetFunction walkFunc);
 
 public:
   using PMBuilder = std::function<llvm::Error(mlir::PassManager &)>;
 
-  ThreadedCompilationScheduler(qssc::hal::TargetSystem &target,
-                               mlir::MLIRContext *context, PMBuilder pmBuilder);
-  virtual ~ThreadedCompilationScheduler() = default;
+  ThreadedCompilationManager(qssc::hal::TargetSystem &target,
+                             mlir::MLIRContext *context, PMBuilder pmBuilder);
+  virtual ~ThreadedCompilationManager() = default;
   virtual const std::string getName() const override;
 
   virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) override;
@@ -79,7 +79,7 @@ private:
 
   PMBuilder pmBuilder;
 
-}; // class THREADEDCOMPILATIONSCHEDULER
+}; // class THREADEDCOMPILATIONMANAGER
 
 } // namespace qssc::hal::compile
-#endif // THREADEDCOMPILATIONSCHEDULER_H
+#endif // THREADEDCOMPILATIONMANAGER_H
