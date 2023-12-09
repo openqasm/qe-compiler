@@ -75,7 +75,6 @@ public:
   static llvm::Error registerTargetPasses();
   static llvm::Error registerTargetPipelines();
   llvm::Error addPasses(mlir::PassManager &pm) override;
-  auto payloadPassesFound(mlir::PassManager &pm) -> bool;
   llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
                            payload::Payload &payload) override;
   auto getConfig() -> MockConfig & { return *mockConfig; }

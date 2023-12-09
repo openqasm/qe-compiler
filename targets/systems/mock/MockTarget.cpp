@@ -193,24 +193,12 @@ llvm::Error MockSystem::registerTargetPipelines() {
 } // MockSystem::registerTargetPipelines
 
 llvm::Error MockSystem::addPasses(mlir::PassManager &pm) {
-  if (payloadPassesFound(pm)) {
-    // command line specified payload conversion,
-    // let the user handle exactly what to add
-    return llvm::Error::success();
-  }
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(std::make_unique<BreakResetPass>());
   mockPipelineBuilder(pm);
 
   return llvm::Error::success();
 } // MockSystem::addPasses
-
-auto MockSystem::payloadPassesFound(mlir::PassManager &pm) -> bool {
-  for (auto &pass : pm.getPasses())
-    if (pass.getName() == "qssc::targets::mock::conversion::QUIRToStdPass")
-      return true;
-  return false;
-} // MockSystem::payloadPassesFound
 
 llvm::Error MockSystem::emitToPayload(mlir::ModuleOp &moduleOp,
                                      qssc::payload::Payload &payload) {
