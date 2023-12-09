@@ -176,13 +176,8 @@ void conversion::MockQUIRToStdPass::getDependentDialects(
 void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   ModuleOp moduleOp = getOperation();
 
-  // Attempt to apply the conversion only to the controller module
-  ModuleOp controllerModuleOp = getControllerModule(moduleOp);
-  if (!controllerModuleOp)
-    controllerModuleOp = moduleOp;
-
   // First remove all arguments from synchronization ops
-  controllerModuleOp->walk([](qcs::SynchronizeOp synchOp) {
+  moduleOp->walk([](qcs::SynchronizeOp synchOp) {
     synchOp.qubitsMutable().assign(ValueRange({}));
   });
 
@@ -245,10 +240,10 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`
   // operations were not converted successfully.
-  if (failed(applyPartialConversion(controllerModuleOp, target,
+  if (failed(applyPartialConversion(moduleOp, target,
                                     std::move(patterns)))) {
     // If we fail conversion remove remaining ops for the Mock target.
-    controllerModuleOp.walk([&](Operation *op) {
+    moduleOp.walk([&](Operation *op) {
       if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||
           llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
           llvm::isa<qcs::QCSDialect>(op->getDialect())) {

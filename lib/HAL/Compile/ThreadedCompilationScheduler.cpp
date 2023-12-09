@@ -28,12 +28,15 @@ const std::string ThreadedCompilationScheduler::getName() const { return "Thread
 
 llvm::Error ThreadedCompilationScheduler::walkTargetThreaded(Target *target, mlir::ModuleOp targetModuleOp, WalkTargetFunction walkFunc) {
 
+    llvm::outs() << "Processing target " << target->getName() << "\n";
     if (auto err = walkFunc(target, targetModuleOp))
         return err;
 
     auto parallelWalkFunc = [&](Target *childTarget) {
         // Recurse on this target's children in a depth first fashion.
         auto childModuleOp = childTarget->getModule(targetModuleOp);
+        llvm::outs() << "Child module \n";
+        (*childModuleOp)->dump();
         if (auto err = childModuleOp.takeError()) {
             llvm::errs() << err << "\n";
             return mlir::failure();

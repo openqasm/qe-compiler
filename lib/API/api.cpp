@@ -485,6 +485,95 @@ static void dumpMLIR_(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
   *ostream << '\n';
 }
 
+using ErrorHandler = function_ref< LogicalResult(const Twine &)>;
+
+llvm::Error buildPassManager(mlir::PassManager &pm, mlir::PassPipelineCLParser &passPipelineParser, ErrorHandler errorHandler){
+  mlir::applyPassManagerCLOptions(pm);
+  mlir::applyDefaultTimingPassManagerCLOptions(pm);
+
+  // Configure verifier
+  pm.enableVerifier(verifyPasses);
+
+  // Build the provided pipeline.
+  if (failed(passPipelineParser.addToPipeline(pm, errorHandler)))
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Problem adding passes to passPipeline!");
+  return llvm::Error::success();
+}
+
+/// @brief Emit MLIR from the compiler
+/// @param ostream Output stream to emit to
+/// @param context The active MLIR context
+/// @param moduleOp The module operation to process and emit
+/// @param config Compilation configuration options
+/// @param targetCompilationScheduler The target's compilation scheduler
+/// @param passPipelineParser The Parser for the passpipeline
+/// @param errorHandler MLIR error handler
+/// @return
+static llvm::Error emitMLIR_(llvm::raw_ostream *ostream, mlir::MLIRContext &context, mlir::ModuleOp moduleOp, const qssc::config::QSSConfig &config, qssc::hal::compile::ThreadedCompilationScheduler &targetCompilationScheduler, mlir::PassPipelineCLParser &passPipelineParser, ErrorHandler errorHandler) {
+    if (!bypassTargetCompilation) {
+      // Check if we can run the target compilation scheduler.
+      if (config.addTargetPasses) {
+        if (auto err = targetCompilationScheduler.compileMLIR(moduleOp))
+          return llvm::joinErrors(
+            llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                    "Failure while preparing target passes"),
+            std::move(err));
+      }
+    } else {
+        // Otherwise we have to run a standard pass-manager.
+        mlir::PassManager pm(&context);
+        if (auto err = buildPassManager(pm, passPipelineParser, errorHandler))
+          return err;
+
+        if(failed(pm.run(moduleOp)))
+          return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                        "Problems running the compiler pipeline!");
+    }
+
+
+    // Print the output.
+    dumpMLIR_(ostream, moduleOp);
+    return llvm::Error::success();
+}
+
+/// @brief Emit a QEM payload from the compiler
+/// @param ostream Output stream to emit to
+/// @param payload The payload to emit
+/// @param moduleOp The module operation to process and emit
+/// @param targetCompilationScheduler The target's compilation scheduler
+/// @return
+static llvm::Error emitQEM_(llvm::raw_ostream *ostream,std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp, qssc::hal::compile::ThreadedCompilationScheduler &targetCompilationScheduler) {
+    if (includeSourceInPayload) {
+      if (directInput) {
+        if (inputType == InputType::QASM)
+          payload->addFile("manifest/input.qasm", inputSource + "\n");
+        else if (inputType == InputType::MLIR)
+          payload->addFile("manifest/input.mlir", inputSource + "\n");
+        else
+          llvm_unreachable("Unhandled input file type");
+      } else { // just copy the input file
+        std::ifstream fileStream(inputSource);
+        std::stringstream fileSS;
+        fileSS << fileStream.rdbuf();
+
+        if (inputType == InputType::QASM)
+          payload->addFile("manifest/input.qasm", fileSS.str());
+        else if (inputType == InputType::MLIR)
+          payload->addFile("manifest/input.mlir", fileSS.str());
+        else
+          llvm_unreachable("Unhandled input file type");
+
+        fileStream.close();
+      }
+    }
+
+    if (auto err = generateQEM_(&targetCompilationScheduler, std::move(payload), moduleOp, ostream))
+      return err;
+
+    return llvm::Error::success();
+}
+
 /// @brief Handler for the Diagnostic Engine.
 ///
 ///        Uses qssc::emitDiagnostic to forward diagnostic to the python
@@ -537,23 +626,6 @@ diagEngineHandler(mlir::Diagnostic &diagnostic,
   llvm::errs() << diagnostic << "\n";
   return;
 }
-
-using ErrorHandler = function_ref< LogicalResult(const Twine &)>;
-
-llvm::Error buildPassManager(mlir::PassManager &pm, mlir::PassPipelineCLParser &passPipelineParser, ErrorHandler errorHandler){
-  mlir::applyPassManagerCLOptions(pm);
-  mlir::applyDefaultTimingPassManagerCLOptions(pm);
-
-  // Configure verifier
-  pm.enableVerifier(verifyPasses);
-
-  // Build the provided pipeline.
-  if (failed(passPipelineParser.addToPipeline(pm, errorHandler)))
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Problem adding passes to passPipeline!");
-  return llvm::Error::success();
-}
-
 
 static llvm::Error
 compile_(int argc, char const **argv, std::string *outputString,
@@ -749,59 +821,12 @@ compile_(int argc, char const **argv, std::string *outputString,
   });
 
   if (emitAction == Action::DumpMLIR) {
-    //
-    if (!bypassTargetCompilation) {
-      // Check if we can run the target compilation scheduler.
-      if (config.addTargetPasses) {
-        if (auto err = targetCompilationScheduler.compileMLIR(moduleOp))
-          return llvm::joinErrors(
-            llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                    "Failure while preparing target passes"),
-            std::move(err));
-      } else {
-        // Otherwise we have to run a standard pass-manager.
-        mlir::PassManager pm(&context);
-        if (auto err = buildPassManager(pm, passPipelineParser, errorHandler))
-          return err;
-        if(failed(pm.run(moduleOp)))
-          return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                        "Problems running the compiler pipeline!");
-      }
-
-    }
-
-
-    // Print the output.
-    dumpMLIR_(ostream, moduleOp);
+    if(auto err = emitMLIR_(ostream, context, moduleOp, config, targetCompilationScheduler, passPipelineParser, errorHandler))
+      return err;
   }
 
   if (emitAction == Action::GenQEM || emitAction == Action::GenQEQEM) {
-
-    if (includeSourceInPayload) {
-      if (directInput) {
-        if (inputType == InputType::QASM)
-          payload->addFile("manifest/input.qasm", inputSource + "\n");
-        else if (inputType == InputType::MLIR)
-          payload->addFile("manifest/input.mlir", inputSource + "\n");
-        else
-          llvm_unreachable("Unhandled input file type");
-      } else { // just copy the input file
-        std::ifstream fileStream(inputSource);
-        std::stringstream fileSS;
-        fileSS << fileStream.rdbuf();
-
-        if (inputType == InputType::QASM)
-          payload->addFile("manifest/input.qasm", fileSS.str());
-        else if (inputType == InputType::MLIR)
-          payload->addFile("manifest/input.mlir", fileSS.str());
-        else
-          llvm_unreachable("Unhandled input file type");
-
-        fileStream.close();
-      }
-    }
-
-    if (auto err = generateQEM_(&targetCompilationScheduler, std::move(payload), moduleOp, ostream))
+    if(auto err = emitQEM_(ostream, std::move(payload), moduleOp, targetCompilationScheduler))
       return err;
   }
 

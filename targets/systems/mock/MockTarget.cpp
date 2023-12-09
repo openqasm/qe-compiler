@@ -244,15 +244,13 @@ llvm::Error MockController::addPasses(mlir::PassManager &pm) {
 
 llvm::Error MockController::emitToPayload(mlir::ModuleOp &moduleOp,
                                          qssc::payload::Payload &payload) {
-  auto controllerModule = getModule(moduleOp);
-  if (auto err = controllerModule.takeError())
-    return err;
 
+  moduleOp.dump();
   auto *mlirStr = payload.getFile(name + ".mlir");
   llvm::raw_string_ostream mlirOStream(*mlirStr);
-  mlirOStream << *controllerModule;
+  mlirOStream << moduleOp;
 
-  if (auto err = buildLLVMPayload(*controllerModule, payload))
+  if (auto err = buildLLVMPayload(moduleOp, payload))
     return err;
 
   return llvm::Error::success();
