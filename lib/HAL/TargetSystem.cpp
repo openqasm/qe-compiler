@@ -58,6 +58,10 @@ TargetInstrument::getModule(mlir::ModuleOp parentModuleOp) {
     }
     return mlir::WalkResult::advance();
   });
+  if (!retOp) {
+    llvm::outs() << "Couldn't find target \n";
+    parentModuleOp.dump();
+  }
   if (!retOp)
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
