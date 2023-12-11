@@ -655,8 +655,8 @@ compile_(int argc, char const **argv, std::string *outputString,
       payload = std::move(
           payloadInfo.getValue()->createPluginInstance(llvm::None).get());
     } else {
-      const qssc::payload::PayloadConfig payloadConfig{fNamePrefix,
-                                                       fNamePrefix};
+      const qssc::payload::PayloadConfig payloadConfig{fNamePrefix, fNamePrefix,
+                                                       config.verbosity};
       payload = std::move(
           payloadInfo.getValue()->createPluginInstance(payloadConfig).get());
     }

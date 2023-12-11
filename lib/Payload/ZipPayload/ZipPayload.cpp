@@ -132,7 +132,8 @@ void setFilePermissions(zip_int64_t fileIndex, fs::path &fName,
 } // end anonymous namespace
 
 void ZipPayload::writeZip(llvm::raw_ostream &stream) {
-  llvm::outs() << "Writing zip to stream\n";
+  if (verbosity >= qssc::config::QSSVerbosity::Info)
+    llvm::outs() << "Writing zip to stream\n";
   // first add the manifest
   addManifest();
 
@@ -168,12 +169,14 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   }
   zip_error_fini(&error);
 
-  llvm::outs() << "Zip buffer created, adding files to archive\n";
+  if (verbosity >= qssc::config::QSSVerbosity::Info)
+    llvm::outs() << "Zip buffer created, adding files to archive\n";
   // archive is now allocated and created, need to fill it with files/data
   std::vector<fs::path> orderedNames = orderedFileNames();
   for (auto &fName : orderedNames) {
-    llvm::outs() << "Adding file " << fName << " to archive buffer ("
-                 << files[fName].size() << " bytes)\n";
+    if (verbosity >= qssc::config::QSSVerbosity::Info)
+      llvm::outs() << "Adding file " << fName << " to archive buffer ("
+                   << files[fName].size() << " bytes)\n";
 
     //===---- Add file ----===//
     // init the error object
