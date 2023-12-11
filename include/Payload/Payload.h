@@ -51,7 +51,7 @@ public:
       : prefix(""), name("exp"), verbosity(qssc::config::QSSVerbosity::Warn) {}
   explicit Payload(PayloadConfig config)
       : prefix(std::move(config.prefix) + "/"), name(std::move(config.name)),
-        verbosity(std::move(config.verbosity)) {
+        verbosity(config.verbosity) {
     files.clear();
   }
   virtual ~Payload() = default;
