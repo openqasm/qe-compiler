@@ -39,6 +39,7 @@ llvm::cl::OptionCategory &getQSSCCategory();
 /// - `--allow-unregistered-dialect=<bool>`: Sets
 /// QSSConfig::allowUnregisteredDialects.
 /// - `--add-target-passes=<bool>`: Sets QSSConfig::addTargetPasses.
+/// - `--verbosity=<str>` : Sets verbosity level for output
 ///
 class CLIConfigBuilder : public QSSConfigBuilder {
 public:
@@ -49,6 +50,7 @@ private:
   llvm::Error populateTarget_(QSSConfig &config);
   llvm::Error populateAllowUnregisteredDialects_(QSSConfig &config);
   llvm::Error populateAddTargetPasses_(QSSConfig &config);
+  llvm::Error populateVerbosity_(QSSConfig &config);
 };
 
 } // namespace qssc::config

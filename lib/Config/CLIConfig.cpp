@@ -46,6 +46,19 @@ static llvm::cl::opt<bool> addTargetPasses(
     "add-target-passes", llvm::cl::desc("Add target-specific passes"),
     llvm::cl::init(true), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
+static llvm::cl::opt<enum QSSVerbosity>
+    verbosity("verbosity", llvm::cl::init(QSSVerbosity::_VerbosityCnt),
+              llvm::cl::desc("Set verbosity level for output, default is warn"),
+              llvm::cl::values(clEnumValN(QSSVerbosity::Error, "error",
+                                          "Emit only errors")),
+              llvm::cl::values(clEnumValN(QSSVerbosity::Warn, "warn",
+                                          "Also emit warnings")),
+              llvm::cl::values(clEnumValN(QSSVerbosity::Info, "info",
+                                          "Also emit informational messages")),
+              llvm::cl::values(clEnumValN(QSSVerbosity::Debug, "debug",
+                                          "Also emit debug messages")),
+              llvm::cl::cat(qssc::config::getQSSCCategory()));
+
 llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   if (auto err = populateConfigurationPath_(config))
     return err;
@@ -57,6 +70,9 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
     return err;
 
   if (auto err = populateAddTargetPasses_(config))
+    return err;
+
+  if (auto err = populateVerbosity_(config))
     return err;
 
   return llvm::Error::success();
@@ -81,5 +97,11 @@ CLIConfigBuilder::populateAllowUnregisteredDialects_(QSSConfig &config) {
 
 llvm::Error CLIConfigBuilder::populateAddTargetPasses_(QSSConfig &config) {
   config.addTargetPasses = addTargetPasses;
+  return llvm::Error::success();
+}
+
+llvm::Error CLIConfigBuilder::populateVerbosity_(QSSConfig &config) {
+  if (verbosity != QSSVerbosity::_VerbosityCnt)
+    config.verbosity = verbosity;
   return llvm::Error::success();
 }

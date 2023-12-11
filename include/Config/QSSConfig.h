@@ -51,7 +51,7 @@ struct QSSConfig {
   /// @brief Register target passes with the compiler.
   bool addTargetPasses = true;
   /// @brief Verbosity level for logging info
-  QSSVerbosity verbosity = Info;
+  QSSVerbosity verbosity = Warn;
 
   /// @brief Emit the configuration to stdout.
   void emit(llvm::raw_ostream &out) const;
