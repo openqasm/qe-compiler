@@ -101,10 +101,14 @@ ThreadedCompilationManager::compileMLIRTarget(Target &target,
     printIR("IR dump before running passes for target " + target.getName(),
             targetModuleOp, llvm::outs());
 
-  if (mlir::failed(pm.run(targetModuleOp)))
+  if (mlir::failed(pm.run(targetModuleOp))) {
+    if (getPrintAfterTargetCompileFailure())
+      printIR("IR dump after failure emitting payload for target " + target.getName(),
+              targetModuleOp, llvm::outs());
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Problems running the pass pipeline for target " + target.getName());
+  }
 
   if (getPrintAfterAllTargetPasses())
     printIR("IR dump after running passes for target " + target.getName(),
@@ -140,7 +144,11 @@ llvm::Error ThreadedCompilationManager::compilePayloadTarget(
     printIR("IR dump before emitting payload for target " + target.getName(),
             targetModuleOp, llvm::outs());
 
-  if (auto err = target.emitToPayload(targetModuleOp, payload))
+  if (auto err = target.emitToPayload(targetModuleOp, payload)) {
+    if (getPrintAfterTargetCompileFailure())
+      printIR("IR dump after failure emitting payload for target " + target.getName(),
+              targetModuleOp, llvm::outs());
     return err;
+  }
   return llvm::Error::success();
 }

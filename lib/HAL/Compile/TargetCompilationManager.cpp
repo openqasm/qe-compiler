@@ -39,6 +39,10 @@ struct TargetCompilationManagerOptions {
       "print-ir-before-emit-all-target-payloads",
       llvm::cl::desc("Print IR before each target payload compilation"),
       llvm::cl::init(false)};
+  llvm::cl::opt<bool> printAfterTargetCompileFailure{
+      "print-ir-after-target-compile-failure",
+      llvm::cl::desc("Print IR after failure of applying target compilation"),
+      llvm::cl::init(false)};
 };
 } // namespace
 
@@ -57,7 +61,8 @@ mlir::LogicalResult qssc::hal::compile::applyTargetCompilationManagerCLOptions(
   // Otherwise, add the IR printing instrumentation.
   scheduler.enableIRPrinting(options->printBeforeAllTargetPasses,
                              options->printAfterAllTargetPasses,
-                             options->printBeforeAllTargetPayload);
+                             options->printBeforeAllTargetPayload,
+                             options->printAfterTargetCompileFailure);
 
   return mlir::success();
 }
@@ -86,10 +91,11 @@ llvm::Error TargetCompilationManager::walkTarget(Target *target,
 
 void TargetCompilationManager::enableIRPrinting(
     bool printBeforeAllTargetPasses, bool printAfterAllTargetPasses,
-    bool printBeforeAllTargetPayload) {
+    bool printBeforeAllTargetPayload, bool printAfterTargetCompileFailure) {
   this->printBeforeAllTargetPasses = printBeforeAllTargetPasses;
   this->printAfterAllTargetPasses = printAfterAllTargetPasses;
   this->printBeforeAllTargetPayload = printBeforeAllTargetPayload;
+  this->printAfterTargetCompileFailure = printAfterTargetCompileFailure;
 }
 
 void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,

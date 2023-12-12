@@ -79,12 +79,14 @@ public:
 
   void enableIRPrinting(bool printBeforeAllTargetPasses,
                         bool printAfterAllTargetPasses,
-                        bool printBeforeAllTargetPayload);
+                        bool printBeforeAllTargetPayload,
+                        bool printAfterTargetCompileFailure);
 
 protected:
   bool getPrintBeforeAllTargetPasses() { return printBeforeAllTargetPasses; }
   bool getPrintAfterAllTargetPasses() { return printAfterAllTargetPasses; }
   bool getPrintBeforeAllTargetPayload() { return printBeforeAllTargetPayload; }
+  bool getPrintAfterTargetCompileFailure() { return printAfterTargetCompileFailure; }
 
   void printIR(llvm::StringRef msg, mlir::Operation *op,
                llvm::raw_ostream &out);
@@ -96,6 +98,7 @@ private:
   bool printBeforeAllTargetPasses = false;
   bool printAfterAllTargetPasses = false;
   bool printBeforeAllTargetPayload = false;
+  bool printAfterTargetCompileFailure = false;
 
 }; // class TargetCompilationManager
 
