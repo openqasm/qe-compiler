@@ -460,17 +460,17 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
 }
 
 /// @brief Generate the final QEM.
-/// @param target Target to build the QEM for.
+/// @param targetCompilationManager Target compilation to build the QEM with.
 /// @param payload The payload to populate
 /// @param moduleOp The module to build for
 /// @param ostream The output ostream to populate
 /// @return The output error if one occurred.
 static llvm::Error
-generateQEM_(qssc::hal::compile::TargetCompilationManager *target,
+generateQEM_(qssc::hal::compile::TargetCompilationManager *targetCompilationManager,
              std::unique_ptr<qssc::payload::Payload> payload,
              mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
 
-  if (auto err = target->compilePayload(moduleOp, *payload, /* compileMLIR=*/!bypassPayloadTargetCompilation))
+  if (auto err = targetCompilationManager->compilePayload(moduleOp, *payload, /* compileMLIR=*/!bypassPayloadTargetCompilation))
     return err;
 
   if (plaintextPayload)
