@@ -217,6 +217,8 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   //===---- Reopen for copying ----===//
   zip_int64_t sz;
   char *outbuffer = read_zip_src_to_buffer(new_archive_src, sz);
+  if (verbosity >= qssc::config::QSSVerbosity::Info)
+    llvm::outs() << "Zip buffer is of size " << sz << " bytes\n";
   if (outbuffer) {
     // output the new archive to the stream
     stream.write(outbuffer, sz);
