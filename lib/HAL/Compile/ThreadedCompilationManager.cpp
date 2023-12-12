@@ -24,7 +24,7 @@ using namespace qssc::hal::compile;
 ThreadedCompilationManager::ThreadedCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context,
     ThreadedCompilationManager::PMBuilder pmBuilder)
-    : TargetCompilationManager(target, context), pmBuilder(pmBuilder) {}
+    : TargetCompilationManager(target, context), pmBuilder(std::move(pmBuilder)) {}
 
 const std::string ThreadedCompilationManager::getName() const {
   return "ThreadedCompilationManager";
@@ -33,7 +33,7 @@ const std::string ThreadedCompilationManager::getName() const {
 llvm::Error
 ThreadedCompilationManager::walkTargetThreaded(Target *target,
                                                mlir::ModuleOp targetModuleOp,
-                                               WalkTargetFunction walkFunc) {
+                                               const WalkTargetFunction &walkFunc) {
 
   if (auto err = walkFunc(target, targetModuleOp))
     return err;

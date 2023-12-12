@@ -73,7 +73,7 @@ TargetCompilationManager::TargetCompilationManager(
 
 llvm::Error TargetCompilationManager::walkTarget(Target *target,
                                                  mlir::ModuleOp targetModuleOp,
-                                                 WalkTargetFunction walkFunc) {
+                                                 const WalkTargetFunction &walkFunc) {
   // Call the input function for the walk on the target
   if (auto err = walkFunc(target, targetModuleOp))
     return err;

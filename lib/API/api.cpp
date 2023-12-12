@@ -470,7 +470,7 @@ generateQEM_(qssc::hal::compile::TargetCompilationManager *targetCompilationMana
              std::unique_ptr<qssc::payload::Payload> payload,
              mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
 
-  if (auto err = targetCompilationManager->compilePayload(moduleOp, *payload, /* compileMLIR=*/!bypassPayloadTargetCompilation))
+  if (auto err = targetCompilationManager->compilePayload(moduleOp, *payload, /* doCompileMLIR=*/!bypassPayloadTargetCompilation))
     return err;
 
   if (plaintextPayload)
