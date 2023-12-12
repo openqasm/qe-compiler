@@ -1,5 +1,4 @@
-//===- TargetCompilationManager.cpp ----------------------------*- C++
-//-*-===//
+//===- TargetCompilationManager.cpp ----------------------------*- C++ -*--===//
 //
 // (C) Copyright IBM 2023.
 //
