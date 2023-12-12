@@ -59,6 +59,10 @@ static llvm::cl::opt<enum QSSVerbosity>
                                           "Also emit debug messages")),
               llvm::cl::cat(qssc::config::getQSSCCategory()));
 
+static llvm::cl::alias verbosityShort("v",
+                                      llvm::cl::desc("Alias for --verbosity"),
+                                      llvm::cl::aliasopt(verbosity));
+
 llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   if (auto err = populateConfigurationPath_(config))
     return err;
