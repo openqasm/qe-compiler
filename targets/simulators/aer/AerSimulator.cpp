@@ -62,13 +62,6 @@ using namespace qssc::targets::simulators::aer;
 
 using json = nlohmann::json;
 
-// The space below at the front of the string causes this category to be
-// printed first
-static llvm::cl::OptionCategory simulatorCat(
-    " QSS Compiler Options for the Simulator target",
-    "Options that control Simulator-specific behavior of the Simulator QSS "
-    "Compiler target");
-
 namespace qssc::targets::simulators::aer {
 
 int init() {
@@ -244,7 +237,7 @@ llvm::Error AerSimulator::addPayloadPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
 } // AerSimulator::addPayloadPasses
 
-auto AerSimulator::payloadPassesFound(mlir::PassManager &pm) -> bool {
+bool AerSimulator::payloadPassesFound(mlir::PassManager &pm) {
   for (auto &pass : pm.getPasses())
     if (pass.getName() ==
         "qssc::targets::simulator::aer::conversion::QUIRToAerPass")
