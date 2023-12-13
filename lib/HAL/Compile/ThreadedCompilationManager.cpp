@@ -24,16 +24,16 @@ using namespace qssc::hal::compile;
 ThreadedCompilationManager::ThreadedCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context,
     ThreadedCompilationManager::PMBuilder pmBuilder)
-    : TargetCompilationManager(target, context), pmBuilder(std::move(pmBuilder)) {}
+    : TargetCompilationManager(target, context),
+      pmBuilder(std::move(pmBuilder)) {}
 
 const std::string ThreadedCompilationManager::getName() const {
   return "ThreadedCompilationManager";
 }
 
-llvm::Error
-ThreadedCompilationManager::walkTargetThreaded(Target *target,
-                                               mlir::ModuleOp targetModuleOp,
-                                               const WalkTargetFunction &walkFunc) {
+llvm::Error ThreadedCompilationManager::walkTargetThreaded(
+    Target *target, mlir::ModuleOp targetModuleOp,
+    const WalkTargetFunction &walkFunc) {
 
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
@@ -103,7 +103,8 @@ ThreadedCompilationManager::compileMLIRTarget(Target &target,
 
   if (mlir::failed(pm.run(targetModuleOp))) {
     if (getPrintAfterTargetCompileFailure())
-      printIR("IR dump after failure emitting payload for target " + target.getName(),
+      printIR("IR dump after failure emitting payload for target " +
+                  target.getName(),
               targetModuleOp, llvm::outs());
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
@@ -123,7 +124,8 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
                                            bool doCompileMLIR) {
   auto threadedCompilePayloadTarget =
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
-    if (auto err = compilePayloadTarget(*target, targetModuleOp, payload, doCompileMLIR))
+    if (auto err = compilePayloadTarget(*target, targetModuleOp, payload,
+                                        doCompileMLIR))
       return err;
     return llvm::Error::success();
   };
@@ -146,7 +148,8 @@ llvm::Error ThreadedCompilationManager::compilePayloadTarget(
 
   if (auto err = target.emitToPayload(targetModuleOp, payload)) {
     if (getPrintAfterTargetCompileFailure())
-      printIR("IR dump after failure emitting payload for target " + target.getName(),
+      printIR("IR dump after failure emitting payload for target " +
+                  target.getName(),
               targetModuleOp, llvm::outs());
     return err;
   }

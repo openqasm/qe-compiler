@@ -46,9 +46,9 @@ class ThreadedCompilationManager : public TargetCompilationManager {
 protected:
   /// Threaded depth first walker for a target system using the current
   /// MLIRContext's threadpool.
-  llvm::Error
-  walkTargetThreaded(Target *target, mlir::ModuleOp targetModuleOp,
-                     const TargetCompilationManager::WalkTargetFunction &walkFunc);
+  llvm::Error walkTargetThreaded(
+      Target *target, mlir::ModuleOp targetModuleOp,
+      const TargetCompilationManager::WalkTargetFunction &walkFunc);
 
 public:
   using PMBuilder = std::function<llvm::Error(mlir::PassManager &)>;
@@ -60,7 +60,8 @@ public:
 
   virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) override;
   virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
-                                     qssc::payload::Payload &payload, bool doCompileMLIR=true) override;
+                                     qssc::payload::Payload &payload,
+                                     bool doCompileMLIR = true) override;
 
   bool isMultithreadingEnabled() {
     return getContext()->isMultithreadingEnabled();
@@ -75,7 +76,8 @@ private:
   /// Compiles the input payload for a single target.
   llvm::Error compilePayloadTarget(Target &target,
                                    mlir::ModuleOp targetModuleOp,
-                                   qssc::payload::Payload &payload, bool doCompileMLIR);
+                                   qssc::payload::Payload &payload,
+                                   bool doCompileMLIR);
 
   PMBuilder pmBuilder;
 

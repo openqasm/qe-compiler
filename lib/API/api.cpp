@@ -127,7 +127,8 @@ static llvm::cl::opt<bool> compileTargetIr(
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 static llvm::cl::opt<bool> bypassPayloadTargetCompilation(
-    "bypass-payload-target-compilation", llvm::cl::desc("Bypass target compilation during payload generation."),
+    "bypass-payload-target-compilation",
+    llvm::cl::desc("Bypass target compilation during payload generation."),
     llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
 namespace {
@@ -465,12 +466,14 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
 /// @param moduleOp The module to build for
 /// @param ostream The output ostream to populate
 /// @return The output error if one occurred.
-static llvm::Error
-generateQEM_(qssc::hal::compile::TargetCompilationManager *targetCompilationManager,
-             std::unique_ptr<qssc::payload::Payload> payload,
-             mlir::ModuleOp moduleOp, llvm::raw_ostream *ostream) {
+static llvm::Error generateQEM_(
+    qssc::hal::compile::TargetCompilationManager *targetCompilationManager,
+    std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
+    llvm::raw_ostream *ostream) {
 
-  if (auto err = targetCompilationManager->compilePayload(moduleOp, *payload, /* doCompileMLIR=*/!bypassPayloadTargetCompilation))
+  if (auto err = targetCompilationManager->compilePayload(
+          moduleOp, *payload,
+          /* doCompileMLIR=*/!bypassPayloadTargetCompilation))
     return err;
 
   if (plaintextPayload)
@@ -499,9 +502,10 @@ static void buildPassManager_(mlir::PassManager &pm) {
   pm.enableVerifier(verifyPasses);
 }
 
-static llvm::Error buildPassManager(mlir::PassManager &pm,
-                             mlir::PassPipelineCLParser &passPipelineParser,
-                             ErrorHandler errorHandler) {
+static llvm::Error
+buildPassManager(mlir::PassManager &pm,
+                 mlir::PassPipelineCLParser &passPipelineParser,
+                 ErrorHandler errorHandler) {
   buildPassManager_(pm);
   // Build the provided pipeline.
   if (failed(passPipelineParser.addToPipeline(pm, errorHandler)))
@@ -825,8 +829,8 @@ compile_(int argc, char const **argv, std::string *outputString,
   auto targetCompilationManager =
       qssc::hal::compile::ThreadedCompilationManager(
           target, &context, [&](mlir::PassManager &pm) {
-          buildPassManager_(pm);
-          return llvm::Error::success();
+            buildPassManager_(pm);
+            return llvm::Error::success();
           });
   if (mlir::failed(qssc::hal::compile::applyTargetCompilationManagerCLOptions(
           targetCompilationManager)))
@@ -841,7 +845,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
   if (pm.size() && failed(pm.run(moduleOp)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                    "Problems running the compiler pipeline!");
+                                   "Problems running the compiler pipeline!");
 
   // Prepare outputs
   if (emitAction == Action::DumpMLIR) {

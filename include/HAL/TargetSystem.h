@@ -96,8 +96,8 @@ public:
   }
 
   /// @brief Lookup this target's module within the provided module operation.
-  /// It is critical that the module be unique for the target be separate from any other
-  /// module to ensure that it may be processed in parallel.
+  /// It is critical that the module be unique for the target be separate from
+  /// any other module to ensure that it may be processed in parallel.
   /// @param parentModuleOp The parent module of this target. At this stage the
   /// parent must ensure that the child module has been created.
   /// @return The module operation for this target.
