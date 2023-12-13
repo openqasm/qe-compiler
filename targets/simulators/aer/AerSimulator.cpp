@@ -249,7 +249,6 @@ llvm::Error AerSimulator::addToPayload(mlir::ModuleOp &moduleOp,
   return buildLLVMPayload(moduleOp, payload);
 } // AerSimulator::addToPayload
 
-// FUTURE: Support to lower completely to LLVM-IR and generate a binary file
 llvm::Error AerSimulator::buildLLVMPayload(mlir::ModuleOp &moduleOp,
                                            payload::Payload &payload) {
 
