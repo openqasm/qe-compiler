@@ -66,7 +66,8 @@ struct RemoveUnusedArgumentsPattern
         LLVM_DEBUG(argumentResult.value().dump());
 
         auto *argOp = callSequenceOp.getOperand(index).getDefiningOp();
-        testEraseList.push_back(argOp);
+        if (argOp)
+          testEraseList.push_back(argOp);
       }
     }
 
@@ -77,6 +78,18 @@ struct RemoveUnusedArgumentsPattern
     // rewrite - removed arguments and matching operands
     sequenceOp.eraseArguments(argIndicesBV);
     callSequenceOp->eraseOperands(argIndicesBV);
+
+    // check for other CallSequenceOps calling the same sequence
+    auto moduleOp = sequenceOp->getParentOfType<mlir::ModuleOp>();
+    if (moduleOp) {
+      moduleOp->walk([&](pulse::CallSequenceOp op) {
+        if (op == callSequenceOp)
+          return;
+        if (op.callee() != sequenceOp.sym_name())
+          return;
+        op->eraseOperands(argIndicesBV);
+      });
+    }
 
     // remove defining ops if the have no usage
     for (auto *argOp : testEraseList)

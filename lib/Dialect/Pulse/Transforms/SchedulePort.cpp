@@ -141,6 +141,17 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
           auto index = blockArg.getArgNumber();
 
           mixedFrameSequences[index].push_back(&op);
+        } else if (auto castOp = dyn_cast<CallSequenceOp>(op)) {
+          // add a call sequence to all mixedFrameSequences for
+          // mixedFrames passed to it
+          for (auto operand : castOp.operands()) {
+            auto operandType = operand.getType();
+            if (operandType.isa<MixedFrameType>()) {
+              auto blockArg = operand.cast<BlockArgument>();
+              auto index = blockArg.getArgNumber();
+              mixedFrameSequences[index].push_back(&op);
+            }
+          }
         }
       }
     }
