@@ -87,6 +87,11 @@ struct RemoveUnusedArgumentsPattern
           return;
         if (op.callee() != sequenceOp.sym_name())
           return;
+        // verify that the sequence and the new callSequenceOp are in
+        // the same module
+        auto checkModuleOp = op->getParentOfType<mlir::ModuleOp>();
+        if (checkModuleOp != moduleOp)
+          return;
         op->eraseOperands(argIndicesBV);
       });
     }
