@@ -213,7 +213,7 @@ struct QCSInitConversionPat : public OpConversionPattern<qcs::SystemInitOp> {
                                 AerFunctionTable aerFuncTable)
       : OpConversionPattern(typeConverter, ctx, /* benefit= */ 1),
         config(std::move(config)), aerFuncTable(std::move(aerFuncTable)),
-        aerState(std::move(aerState)) {}
+        aerState(aerState) {}
 
   LogicalResult
   matchAndRewrite(qcs::SystemInitOp initOp, qcs::SystemInitOp::Adaptor adapter,
