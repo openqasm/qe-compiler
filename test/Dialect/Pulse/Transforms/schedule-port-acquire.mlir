@@ -51,6 +51,20 @@ module @acquire_0 attributes {quir.nodeId = 7 : i32, quir.nodeType = "acquire", 
     // CHECK: pulse.return {pulse.timepoint = 18096 : i64} %{{.*}} : i1
     pulse.return %0 : i1
   }
+  pulse.sequence @seq_1(%arg0: !pulse.mixed_frame, %arg1: !pulse.mixed_frame, %arg2: !pulse.mixed_frame, %arg3: !pulse.mixed_frame, %arg4: !pulse.mixed_frame) -> (i1, i1) {
+    %c1000_i32 = arith.constant 1000 : i32
+    pulse.delay(%arg0, %c1000_i32) : (!pulse.mixed_frame, i32)
+    // CHECK-NOT: pulse.delay(%[[ARG1]], %c1000_i32) : (!pulse.mixed_frame, i32)
+    %0 = pulse.call_sequence @seq_0(%arg0, %arg1, %arg2, %arg3, %arg4) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> i1
+    // CHECK: %0 = pulse.call_sequence @seq_0(%arg0, %arg1, %arg2, %arg3, %arg4) {pulse.duration = 18096 : i64, pulse.timepoint = 1000 : i64}
+    pulse.delay(%arg0, %c1000_i32) : (!pulse.mixed_frame, i32)
+    // CHECK-NOT: pulse.delay(%[[ARG1]], %c1000_i32) : (!pulse.mixed_frame, i32)
+    %1 = pulse.call_sequence @seq_0(%arg0, %arg1, %arg2, %arg3, %arg4) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> i1
+    // CHECK: %1 = pulse.call_sequence @seq_0(%arg0, %arg1, %arg2, %arg3, %arg4) {pulse.duration = 18096 : i64, pulse.timepoint = 20096 : i64} 
+    pulse.delay(%arg0, %c1000_i32) : (!pulse.mixed_frame, i32)
+    // CHECK-NOT: pulse.delay(%[[ARG1]], %c1000_i32) : (!pulse.mixed_frame, i32)
+    pulse.return %0, %1 : i1, i1
+  }
   func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
     %2 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
@@ -63,6 +77,9 @@ module @acquire_0 attributes {quir.nodeId = 7 : i32, quir.nodeType = "acquire", 
     %13 = "pulse.create_port"() {uid = "p3"} : () -> !pulse.port
     %15 = "pulse.mix_frame"(%13) {uid = "mf0-p3"} : (!pulse.port) -> !pulse.mixed_frame
     %16 = pulse.call_sequence @seq_0(%4, %6, %9, %12, %15) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> i1
+    // CHECK: {{.*}} = pulse.call_sequence @seq_0(%1, %2, %4, %6, %8) {pulse.duration = 18096 : i64}
+    %17:2 = pulse.call_sequence @seq_1(%4, %6, %9, %12, %15) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1,i1)
+    // CHECK: {{.*}}:2 = pulse.call_sequence @seq_1(%1, %2, %4, %6, %8) {pulse.duration = 39192 : i64}
     return %c0_i32 : i32
   }
 }
