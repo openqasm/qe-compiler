@@ -305,6 +305,11 @@ SequenceOp SequenceOp::clone() {
   return clone(mapper);
 }
 
+llvm::Expected<uint64_t>
+SequenceOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
+  return interfaces_impl::getDuration(*this, callSequenceOp);
+}
+
 //===----------------------------------------------------------------------===//
 //
 // end SequenceOp
