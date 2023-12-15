@@ -33,7 +33,8 @@ struct quantumCircuitPulseSchedulingPass
     : public PassWrapper<quantumCircuitPulseSchedulingPass,
                          OperationPass<ModuleOp>> {
 public:
-  std::string SCHEDULING_METHOD = "alap";
+  enum SchedulingMethod { ALAP, ASAP };
+  SchedulingMethod SCHEDULING_METHOD = ALAP;
 
   // this pass can optionally receive an string specifying the scheduling
   // method; default method is alap scheduling
@@ -41,8 +42,8 @@ public:
   quantumCircuitPulseSchedulingPass(
       const quantumCircuitPulseSchedulingPass &pass)
       : PassWrapper(pass) {}
-  quantumCircuitPulseSchedulingPass(std::string inSchedulingMethod) {
-    SCHEDULING_METHOD = std::move(inSchedulingMethod);
+  quantumCircuitPulseSchedulingPass(SchedulingMethod inSchedulingMethod) {
+    SCHEDULING_METHOD = inSchedulingMethod;
   }
 
   void runOnOperation() override;

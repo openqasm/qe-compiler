@@ -29,8 +29,14 @@ using namespace mlir::pulse;
 
 void quantumCircuitPulseSchedulingPass::runOnOperation() {
   // check for command line override of the scheduling method
-  if (schedulingMethod.hasValue())
-    SCHEDULING_METHOD = schedulingMethod.getValue();
+  if (schedulingMethod.hasValue()) {
+    if (schedulingMethod.getValue() == "alap")
+      SCHEDULING_METHOD = ALAP;
+    else if (schedulingMethod.getValue() == "asap")
+      SCHEDULING_METHOD = ASAP;
+    else
+      llvm_unreachable("scheduling method not supported currently");
+  }
 
   ModuleOp moduleOp = getOperation();
 
@@ -39,9 +45,13 @@ void quantumCircuitPulseSchedulingPass::runOnOperation() {
     // return if the call sequence op is not a root op
     if (isa<SequenceOp>(callSequenceOp->getParentOp()))
       return;
-    assert(SCHEDULING_METHOD == "alap" &&
-           "scheduling method not supported currently");
-    scheduleAlap(callSequenceOp);
+    switch (SCHEDULING_METHOD) {
+    case ALAP:
+      scheduleAlap(callSequenceOp);
+      break;
+    default:
+      llvm_unreachable("scheduling method not supported currently");
+    }
   });
 }
 
