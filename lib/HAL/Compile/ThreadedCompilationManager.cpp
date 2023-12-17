@@ -40,16 +40,20 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
 
   // Get child modules in a non-threaded fashion to preserve
   // MLIR parallelization rules
+  auto children = target->getChildren();
+  std::unordered_map<Target *, mlir::ModuleOp> childrenModules;
+  for (auto *childTarget : children) {
+    auto childModuleOp = childTarget->getModule(targetModuleOp);
+    if (auto err = childModuleOp.takeError())
+      return err;
+    childrenModules[childTarget] = *childModuleOp;
+  }
+
 
   auto parallelWalkFunc = [&](Target *childTarget) {
     // Recurse on this target's children in a depth first fashion.
-    auto childModuleOp = childTarget->getModule(targetModuleOp);
-    if (auto err = childModuleOp.takeError()) {
-      llvm::errs() << err << "\n";
-      return mlir::failure();
-    }
 
-    if (auto err = walkTargetThreaded(childTarget, *childModuleOp, walkFunc, postChildrenCallbackFunc)) {
+    if (auto err = walkTargetThreaded(childTarget, childrenModules[childTarget], walkFunc, postChildrenCallbackFunc)) {
       llvm::errs() << err << "\n";
       return mlir::failure();
     }
@@ -60,7 +64,7 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
   // By utilizing the MLIR parallelism methods, we automatically inherit the
   // multiprocessing settings from the context.
   if (mlir::failed(mlir::failableParallelForEach(
-          getContext(), target->getChildren(), parallelWalkFunc)))
+          getContext(), children, parallelWalkFunc)))
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Problems encountered while walking children of target " +
