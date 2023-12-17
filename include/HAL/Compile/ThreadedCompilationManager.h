@@ -48,7 +48,8 @@ protected:
   /// MLIRContext's threadpool.
   llvm::Error walkTargetThreaded(
       Target *target, mlir::ModuleOp targetModuleOp,
-      const TargetCompilationManager::WalkTargetFunction &walkFunc);
+      const TargetCompilationManager::WalkTargetFunction &walkFunc,
+      const TargetCompilationManager::WalkTargetFunction &postChildrenCallbackFunc);
 
 public:
   using PMBuilder = std::function<llvm::Error(mlir::PassManager &)>;

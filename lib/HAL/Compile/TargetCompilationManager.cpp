@@ -74,7 +74,8 @@ TargetCompilationManager::TargetCompilationManager(
 llvm::Error
 TargetCompilationManager::walkTarget(Target *target,
                                      mlir::ModuleOp targetModuleOp,
-                                     const WalkTargetFunction &walkFunc) {
+                                     const WalkTargetFunction &walkFunc,
+                                     const WalkTargetFunction &postChildrenCallbackFunc) {
   // Call the input function for the walk on the target
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
@@ -84,9 +85,13 @@ TargetCompilationManager::walkTarget(Target *target,
     auto childModuleOp = child->getModule(targetModuleOp);
     if (auto err = childModuleOp.takeError())
       return err;
-    if (auto err = walkTarget(child, *childModuleOp, walkFunc))
+    if (auto err = walkTarget(child, *childModuleOp, walkFunc, postChildrenCallbackFunc))
       return err;
   }
+
+  if (auto err = postChildrenCallbackFunc(target, targetModuleOp))
+    return err;
+
   return llvm::Error::success();
 }
 

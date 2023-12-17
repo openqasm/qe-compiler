@@ -33,7 +33,7 @@ const std::string ThreadedCompilationManager::getName() const {
 
 llvm::Error ThreadedCompilationManager::walkTargetThreaded(
     Target *target, mlir::ModuleOp targetModuleOp,
-    const WalkTargetFunction &walkFunc) {
+    const WalkTargetFunction &walkFunc, const WalkTargetFunction &postChildrenCallbackFunc) {
 
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
@@ -49,7 +49,7 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
       return mlir::failure();
     }
 
-    if (auto err = walkTargetThreaded(childTarget, *childModuleOp, walkFunc)) {
+    if (auto err = walkTargetThreaded(childTarget, *childModuleOp, walkFunc, postChildrenCallbackFunc)) {
       llvm::errs() << err << "\n";
       return mlir::failure();
     }
@@ -65,6 +65,9 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
         llvm::inconvertibleErrorCode(),
         "Problems encountered while walking children of target " +
             target->getName());
+
+  if (auto err = postChildrenCallbackFunc(target, targetModuleOp))
+    return err;
 
   return llvm::Error::success();
 }
@@ -83,8 +86,16 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
     return llvm::Error::success();
   };
 
+  // Placeholder function
+  auto postChildrenEmitToPayload =
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
+    return llvm::Error::success();
+  };
+
+
   return walkTargetThreaded(&getTargetSystem(), moduleOp,
-                            threadedCompileMLIRTarget);
+                            threadedCompileMLIRTarget,
+                            postChildrenEmitToPayload);
 }
 
 llvm::Error
@@ -130,8 +141,17 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
     return llvm::Error::success();
   };
 
+  auto postChildrenEmitToPayload =
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
+    if (auto err = target->emitToPayloadPostChildren(targetModuleOp, payload))
+      return err;
+    return llvm::Error::success();
+  };
+
+
   return walkTargetThreaded(&getTargetSystem(), moduleOp,
-                            threadedCompilePayloadTarget);
+                            threadedCompilePayloadTarget,
+                            postChildrenEmitToPayload);
 }
 
 llvm::Error ThreadedCompilationManager::compilePayloadTarget(

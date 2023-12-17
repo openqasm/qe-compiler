@@ -47,7 +47,8 @@ protected:
       std::function<llvm::Error(hal::Target *, mlir::ModuleOp)>;
   // Depth first walker for a target system
   llvm::Error walkTarget(Target *target, mlir::ModuleOp targetModuleOp,
-                         const WalkTargetFunction &walkFunc);
+                         const WalkTargetFunction &walkFunc,
+                         const WalkTargetFunction &postChildrenCallbackFunc);
 
 public:
   virtual ~TargetCompilationManager() = default;
