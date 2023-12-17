@@ -27,6 +27,9 @@ using namespace qssc::payload;
 Target::Target(std::string name, Target *parent)
     : name(std::move(name)), parent(parent) {}
 
+llvm::Error Target::emitToPayloadPostChildren(mlir::ModuleOp &targetModuleOp,
+                                    payload::Payload &payload) { return llvm::Error::success(); }
+
 TargetSystem::TargetSystem(std::string name, Target *parent)
     : Target(std::move(name), parent) {}
 
@@ -36,6 +39,17 @@ TargetSystem::getModule(mlir::ModuleOp parentModuleOp) {
   // currently.
   // TODO: Add a more general target module formalism
   return parentModuleOp;
+}
+
+llvm::Expected<TargetInstrument*> TargetSystem::getInstrumentWithNodeId(uint nodeId) const {
+  for (auto *inst : getInstruments())
+    if (inst->getNodeId() == nodeId)
+      return inst;
+
+  return llvm::createStringError(
+    llvm::inconvertibleErrorCode(),
+    "Could not find instrument with nodeId " + std::to_string(nodeId));
+
 }
 
 TargetInstrument::TargetInstrument(std::string name, Target *parent)
