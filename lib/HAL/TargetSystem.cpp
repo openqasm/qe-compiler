@@ -57,30 +57,21 @@ TargetInstrument::TargetInstrument(std::string name, Target *parent)
 
 llvm::Expected<mlir::ModuleOp>
 TargetInstrument::getModule(mlir::ModuleOp parentModuleOp) {
-  mlir::ModuleOp retOp = nullptr;
-  parentModuleOp->walk([&](mlir::ModuleOp walkOp) {
+  for(auto childModuleOp : parentModuleOp.getBody()->getOps<mlir::ModuleOp>()) {
     auto moduleNodeType =
-        walkOp->getAttrOfType<mlir::StringAttr>("quir.nodeType");
-    auto moduleNodeId = mlir::quir::getNodeId(walkOp);
-    if (moduleNodeId.takeError())
-      return mlir::WalkResult::advance();
+        childModuleOp->getAttrOfType<mlir::StringAttr>("quir.nodeType");
+    auto moduleNodeId = mlir::quir::getNodeId(childModuleOp);
+    if (auto err = moduleNodeId.takeError())
+      return std::move(err);
     // Match by node type & id
     if (moduleNodeType && moduleNodeType.getValue() == getNodeType() &&
         moduleNodeId.get() == getNodeId()) {
-      retOp = walkOp;
-      return mlir::WalkResult::interrupt();
+      return childModuleOp;
     }
-    return mlir::WalkResult::advance();
-  });
-  if (!retOp) {
-    llvm::outs() << "Couldn't find target \n";
-    parentModuleOp.dump();
   }
-  if (!retOp)
-    return llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        "Could not find target module for target " + getName() +
-            ". Searching for quir.nodeType=" + getNodeType() +
-            " and quir.nodeId=" + std::to_string(getNodeId()));
-  return retOp;
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Could not find target module for target " + getName() +
+          ". Searching for quir.nodeType=" + getNodeType() +
+          " and quir.nodeId=" + std::to_string(getNodeId()));
 }
