@@ -362,13 +362,9 @@ llvm::Error MockAcquire::addPasses(mlir::PassManager &pm) {
 
 llvm::Error MockAcquire::emitToPayload(mlir::ModuleOp &moduleOp,
                                        qssc::payload::Payload &payload) {
-  auto mockModule = getModule(moduleOp);
-  if (auto err = mockModule.takeError())
-    return err;
-
   auto *mlirStr = payload.getFile(name + ".mlir");
   llvm::raw_string_ostream mlirOStream(*mlirStr);
-  mlirOStream << *mockModule;
+  mlirOStream << moduleOp;
 
   return llvm::Error::success();
 } // MockAcquire::emitToPayload
@@ -388,13 +384,9 @@ llvm::Error MockDrive::addPasses(mlir::PassManager &pm) {
 
 llvm::Error MockDrive::emitToPayload(mlir::ModuleOp &moduleOp,
                                      qssc::payload::Payload &payload) {
-  auto mockModule = getModule(moduleOp);
-  if (auto err = mockModule.takeError())
-    return err;
-
   auto *mlirStr = payload.getFile(name + ".mlir");
   llvm::raw_string_ostream mlirOStream(*mlirStr);
-  mlirOStream << *mockModule;
+  mlirOStream << moduleOp;
 
   return llvm::Error::success();
 } // MockDrive::emitToPayload
