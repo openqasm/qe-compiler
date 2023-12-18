@@ -81,20 +81,19 @@ struct RemoveUnusedArgumentsPattern
 
     // check for other CallSequenceOps calling the same sequence
     auto moduleOp = sequenceOp->getParentOfType<mlir::ModuleOp>();
-    if (moduleOp) {
-      moduleOp->walk([&](pulse::CallSequenceOp op) {
-        if (op == callSequenceOp)
-          return;
-        if (op.callee() != sequenceOp.sym_name())
-          return;
-        // verify that the sequence and the new callSequenceOp are in
-        // the same module
-        auto checkModuleOp = op->getParentOfType<mlir::ModuleOp>();
-        if (checkModuleOp != moduleOp)
-          return;
-        op->eraseOperands(argIndicesBV);
-      });
-    }
+    assert(moduleOp && "Operation outside of a Module");
+    moduleOp->walk([&](pulse::CallSequenceOp op) {
+      if (op == callSequenceOp)
+        return;
+      if (op.callee() != sequenceOp.sym_name())
+        return;
+      // verify that the sequence and the new callSequenceOp are in
+      // the same module
+      auto checkModuleOp = op->getParentOfType<mlir::ModuleOp>();
+      if (checkModuleOp != moduleOp)
+        return;
+      op->eraseOperands(argIndicesBV);
+    });
 
     // remove defining ops if the have no usage
     for (auto *argOp : testEraseList)
