@@ -28,7 +28,9 @@ Target::Target(std::string name, Target *parent)
     : name(std::move(name)), parent(parent) {}
 
 llvm::Error Target::emitToPayloadPostChildren(mlir::ModuleOp &targetModuleOp,
-                                    payload::Payload &payload) { return llvm::Error::success(); }
+                                              payload::Payload &payload) {
+  return llvm::Error::success();
+}
 
 TargetSystem::TargetSystem(std::string name, Target *parent)
     : Target(std::move(name), parent) {}
@@ -41,15 +43,15 @@ TargetSystem::getModule(mlir::ModuleOp parentModuleOp) {
   return parentModuleOp;
 }
 
-llvm::Expected<TargetInstrument*> TargetSystem::getInstrumentWithNodeId(uint nodeId) const {
+llvm::Expected<TargetInstrument *>
+TargetSystem::getInstrumentWithNodeId(uint nodeId) const {
   for (auto *inst : getInstruments())
     if (inst->getNodeId() == nodeId)
       return inst;
 
-  return llvm::createStringError(
-    llvm::inconvertibleErrorCode(),
-    "Could not find instrument with nodeId " + std::to_string(nodeId));
-
+  return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                 "Could not find instrument with nodeId " +
+                                     std::to_string(nodeId));
 }
 
 TargetInstrument::TargetInstrument(std::string name, Target *parent)
@@ -57,7 +59,8 @@ TargetInstrument::TargetInstrument(std::string name, Target *parent)
 
 llvm::Expected<mlir::ModuleOp>
 TargetInstrument::getModule(mlir::ModuleOp parentModuleOp) {
-  for(auto childModuleOp : parentModuleOp.getBody()->getOps<mlir::ModuleOp>()) {
+  for (auto childModuleOp :
+       parentModuleOp.getBody()->getOps<mlir::ModuleOp>()) {
     auto moduleNodeType =
         childModuleOp->getAttrOfType<mlir::StringAttr>("quir.nodeType");
     auto moduleNodeId = mlir::quir::getNodeId(childModuleOp);
@@ -65,9 +68,8 @@ TargetInstrument::getModule(mlir::ModuleOp parentModuleOp) {
       return std::move(err);
     // Match by node type & id
     if (moduleNodeType && moduleNodeType.getValue() == getNodeType() &&
-        moduleNodeId.get() == getNodeId()) {
+        moduleNodeId.get() == getNodeId())
       return childModuleOp;
-    }
   }
   return llvm::createStringError(
       llvm::inconvertibleErrorCode(),

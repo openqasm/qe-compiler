@@ -71,11 +71,10 @@ TargetCompilationManager::TargetCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context)
     : target(target), context(context) {}
 
-llvm::Error
-TargetCompilationManager::walkTarget(Target *target,
-                                     mlir::ModuleOp targetModuleOp,
-                                     const WalkTargetFunction &walkFunc,
-                                     const WalkTargetFunction &postChildrenCallbackFunc) {
+llvm::Error TargetCompilationManager::walkTarget(
+    Target *target, mlir::ModuleOp targetModuleOp,
+    const WalkTargetFunction &walkFunc,
+    const WalkTargetFunction &postChildrenCallbackFunc) {
   // Call the input function for the walk on the target
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
@@ -85,7 +84,8 @@ TargetCompilationManager::walkTarget(Target *target,
     auto childModuleOp = child->getModule(targetModuleOp);
     if (auto err = childModuleOp.takeError())
       return err;
-    if (auto err = walkTarget(child, *childModuleOp, walkFunc, postChildrenCallbackFunc))
+    if (auto err = walkTarget(child, *childModuleOp, walkFunc,
+                              postChildrenCallbackFunc))
       return err;
   }
 

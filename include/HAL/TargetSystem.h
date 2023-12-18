@@ -120,15 +120,15 @@ public:
                                     payload::Payload &payload) = 0;
   /// @brief Hook called by the TargetCompilationManager
   /// after emitToPayload has been called on all children. This is useful
-  /// for preparing amalgamated payload artifacts which require the children to have
-  /// completed their payload emission. Will be invoked *after* emitToPayload
-  /// has been called on all of its children.
+  /// for preparing amalgamated payload artifacts which require the children to
+  /// have completed their payload emission. Will be invoked *after*
+  /// emitToPayload has been called on all of its children.
   /// @param targetModuleOp The target module after application of the target's
   /// passes populated in addPasses and having run the pass manager on the
   /// module.
   /// @param payload The payload to populate for this target.
   virtual llvm::Error emitToPayloadPostChildren(mlir::ModuleOp &targetModuleOp,
-                                    payload::Payload &payload);
+                                                payload::Payload &payload);
 
   virtual ~Target() = default;
 
@@ -169,7 +169,6 @@ public:
   };
 
   llvm::Expected<TargetInstrument *> getInstrumentWithNodeId(uint nodeId) const;
-
 
   virtual ~TargetSystem() = default;
 

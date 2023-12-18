@@ -33,7 +33,8 @@ const std::string ThreadedCompilationManager::getName() const {
 
 llvm::Error ThreadedCompilationManager::walkTargetThreaded(
     Target *target, mlir::ModuleOp targetModuleOp,
-    const WalkTargetFunction &walkFunc, const WalkTargetFunction &postChildrenCallbackFunc) {
+    const WalkTargetFunction &walkFunc,
+    const WalkTargetFunction &postChildrenCallbackFunc) {
 
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
@@ -49,11 +50,11 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
     childrenModules[childTarget] = *childModuleOp;
   }
 
-
   auto parallelWalkFunc = [&](Target *childTarget) {
     // Recurse on this target's children in a depth first fashion.
 
-    if (auto err = walkTargetThreaded(childTarget, childrenModules[childTarget], walkFunc, postChildrenCallbackFunc)) {
+    if (auto err = walkTargetThreaded(childTarget, childrenModules[childTarget],
+                                      walkFunc, postChildrenCallbackFunc)) {
       llvm::errs() << err << "\n";
       return mlir::failure();
     }
@@ -63,8 +64,8 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
 
   // By utilizing the MLIR parallelism methods, we automatically inherit the
   // multiprocessing settings from the context.
-  if (mlir::failed(mlir::failableParallelForEach(
-          getContext(), children, parallelWalkFunc)))
+  if (mlir::failed(mlir::failableParallelForEach(getContext(), children,
+                                                 parallelWalkFunc)))
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Problems encountered while walking children of target " +
@@ -95,7 +96,6 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
     return llvm::Error::success();
   };
-
 
   return walkTargetThreaded(&getTargetSystem(), moduleOp,
                             threadedCompileMLIRTarget,
@@ -151,7 +151,6 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
       return err;
     return llvm::Error::success();
   };
-
 
   return walkTargetThreaded(&getTargetSystem(), moduleOp,
                             threadedCompilePayloadTarget,
