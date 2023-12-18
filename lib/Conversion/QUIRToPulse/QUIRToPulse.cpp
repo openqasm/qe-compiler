@@ -118,11 +118,9 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
                      mainFunc, entryBuilder);
 
   circuitOp->walk([&](Operation *quirOp) {
-    if (quirOp->hasAttr("pulse.pulseCalName")) {
+    if (quirOp->hasAttr("pulse.calName")) {
       std::string pulseCalName =
-          quirOp->getAttrOfType<StringAttr>("pulse.pulseCalName")
-              .getValue()
-              .str();
+          quirOp->getAttrOfType<StringAttr>("pulse.calName").getValue().str();
       SmallVector<Value> pulseCalSequenceArgs;
       Operation *findOp = SymbolTable::lookupSymbolIn(moduleOp, pulseCalName);
       auto pulseCalSequenceOp = dyn_cast<SequenceOp>(findOp);
