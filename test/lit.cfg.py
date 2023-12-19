@@ -55,3 +55,7 @@ llvm_config.with_environment("PATH", config.llvm_tools_dir, append_path=True)
 # Add substitutions for all files in QSS compiler tools directory.
 tools = os.listdir(config.qss_compiler_tools_dir)
 llvm_config.add_tool_substitutions(tools, [config.qss_compiler_tools_dir])
+
+llvm_config.feature_config(
+    [('--assertion-mode', {'ON': 'asserts'}),
+     ('--build-mode', {'[Dd][Ee][Bb][Uu][Gg]': 'debug'})])
