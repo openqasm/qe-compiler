@@ -46,7 +46,7 @@ namespace qssc::frontend::openqasm3 {
 /// otherwise
 llvm::Error parse(std::string const &source, bool sourceIsFilename,
                   bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
-                  mlir::ModuleOp &newModule,
+                  mlir::ModuleOp newModule,
                   std::optional<DiagnosticCallback> diagnosticCb);
 
 }; // namespace qssc::frontend::openqasm3

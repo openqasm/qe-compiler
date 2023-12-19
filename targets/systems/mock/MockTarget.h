@@ -75,7 +75,7 @@ public:
   static llvm::Error registerTargetPasses();
   static llvm::Error registerTargetPipelines();
   llvm::Error addPasses(mlir::PassManager &pm) override;
-  llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error emitToPayload(mlir::ModuleOp moduleOp,
                             payload::Payload &payload) override;
   auto getConfig() -> MockConfig & { return *mockConfig; }
 
@@ -93,11 +93,11 @@ public:
   // Currently there is a single controller with a fixed node id.
   virtual uint32_t getNodeId() override { return 1000; }
   llvm::Error addPasses(mlir::PassManager &pm) override;
-  llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error emitToPayload(mlir::ModuleOp moduleOp,
                             payload::Payload &payload) override;
 
 private:
-  llvm::Error buildLLVMPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error buildLLVMPayload(mlir::ModuleOp moduleOp,
                                payload::Payload &payload);
 }; // class MockController
 
@@ -110,7 +110,7 @@ public:
   virtual llvm::StringRef getNodeType() override { return "acquire"; }
   virtual uint32_t getNodeId() override { return nodeId_; };
   llvm::Error addPasses(mlir::PassManager &pm) override;
-  llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error emitToPayload(mlir::ModuleOp moduleOp,
                             payload::Payload &payload) override;
 
 private:
@@ -127,7 +127,7 @@ public:
   virtual llvm::StringRef getNodeType() override { return "drive"; }
   virtual uint32_t getNodeId() override { return nodeId_; };
   llvm::Error addPasses(mlir::PassManager &pm) override;
-  llvm::Error emitToPayload(mlir::ModuleOp &moduleOp,
+  llvm::Error emitToPayload(mlir::ModuleOp moduleOp,
                             payload::Payload &payload) override;
 
 private:

@@ -26,6 +26,7 @@
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/iterator_range.h"
 
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
@@ -35,10 +36,6 @@
 namespace qssc::payload {
 class Payload;
 } // namespace qssc::payload
-
-namespace mlir {
-class ModuleOp;
-} // namespace mlir
 
 namespace qssc::hal {
 class Target;
@@ -116,7 +113,7 @@ public:
   /// passes populated in addPasses and having run the pass manager on the
   /// module.
   /// @param payload The payload to populate for this target.
-  virtual llvm::Error emitToPayload(mlir::ModuleOp &targetModuleOp,
+  virtual llvm::Error emitToPayload(mlir::ModuleOp targetModuleOp,
                                     payload::Payload &payload) = 0;
   /// @brief Hook called by the TargetCompilationManager
   /// after emitToPayload has been called on all children. This is useful
@@ -127,7 +124,7 @@ public:
   /// passes populated in addPasses and having run the pass manager on the
   /// module.
   /// @param payload The payload to populate for this target.
-  virtual llvm::Error emitToPayloadPostChildren(mlir::ModuleOp &targetModuleOp,
+  virtual llvm::Error emitToPayloadPostChildren(mlir::ModuleOp targetModuleOp,
                                                 payload::Payload &payload);
 
   virtual ~Target() = default;

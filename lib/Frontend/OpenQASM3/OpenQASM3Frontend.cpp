@@ -99,7 +99,7 @@ parseDurationStr(const std::string &durationStr) {
 
 llvm::Error qssc::frontend::openqasm3::parse(
     std::string const &source, bool sourceIsFilename, bool emitRawAST,
-    bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp &newModule,
+    bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp newModule,
     std::optional<qssc::DiagnosticCallback> diagnosticCallback) {
 
   // The QASM parser can only be called from a single thread.

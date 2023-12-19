@@ -207,7 +207,7 @@ llvm::Error MockSystem::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
 } // MockSystem::addPasses
 
-llvm::Error MockSystem::emitToPayload(mlir::ModuleOp &moduleOp,
+llvm::Error MockSystem::emitToPayload(mlir::ModuleOp moduleOp,
                                       qssc::payload::Payload &payload) {
   return llvm::Error::success();
 } // MockSystem::emitToPayload
@@ -235,7 +235,7 @@ llvm::Error MockController::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
 } // MockController::addPasses
 
-llvm::Error MockController::emitToPayload(mlir::ModuleOp &moduleOp,
+llvm::Error MockController::emitToPayload(mlir::ModuleOp moduleOp,
                                           qssc::payload::Payload &payload) {
 
   auto *mlirStr = payload.getFile(name + ".mlir");
@@ -248,7 +248,7 @@ llvm::Error MockController::emitToPayload(mlir::ModuleOp &moduleOp,
   return llvm::Error::success();
 } // MockController::emitToPayload
 
-llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp &controllerModule,
+llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
                                              qssc::payload::Payload &payload) {
 
   // Initialize native LLVM target
@@ -360,7 +360,7 @@ llvm::Error MockAcquire::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
 } // MockAcquire::addPasses
 
-llvm::Error MockAcquire::emitToPayload(mlir::ModuleOp &moduleOp,
+llvm::Error MockAcquire::emitToPayload(mlir::ModuleOp moduleOp,
                                        qssc::payload::Payload &payload) {
   auto *mlirStr = payload.getFile(name + ".mlir");
   llvm::raw_string_ostream mlirOStream(*mlirStr);
@@ -382,7 +382,7 @@ llvm::Error MockDrive::addPasses(mlir::PassManager &pm) {
   return llvm::Error::success();
 } // MockDrive::addPasses
 
-llvm::Error MockDrive::emitToPayload(mlir::ModuleOp &moduleOp,
+llvm::Error MockDrive::emitToPayload(mlir::ModuleOp moduleOp,
                                      qssc::payload::Payload &payload) {
   auto *mlirStr = payload.getFile(name + ".mlir");
   llvm::raw_string_ostream mlirOStream(*mlirStr);

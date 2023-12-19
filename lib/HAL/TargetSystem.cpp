@@ -14,8 +14,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mlir/IR/BuiltinOps.h"
-
 #include "llvm/ADT/SmallString.h"
 
 #include "Dialect/QUIR/Utils/Utils.h"
@@ -27,7 +25,7 @@ using namespace qssc::payload;
 Target::Target(std::string name, Target *parent)
     : name(std::move(name)), parent(parent) {}
 
-llvm::Error Target::emitToPayloadPostChildren(mlir::ModuleOp &targetModuleOp,
+llvm::Error Target::emitToPayloadPostChildren(mlir::ModuleOp targetModuleOp,
                                               payload::Payload &payload) {
   return llvm::Error::success();
 }
