@@ -109,7 +109,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
     QASM::QasmPreprocessor::Instance().AddIncludePath(dirStr);
 
   QASM::ASTParser parser;
-  QASM::ASTRoot *root = nullptr;
+  auto root = std::unique_ptr<QASM::ASTRoot>(nullptr);
   llvm::SourceMgr sourceMgr;
 
   // Add a callback for diagnostics to the parser. Since the callback needs
@@ -205,13 +205,13 @@ llvm::Error qssc::frontend::openqasm3::parse(
 
       sourceMgr.AddNewSourceBuffer(std::move(file), llvm::SMLoc());
 
-      root = parser.ParseAST();
+      root.reset(parser.ParseAST());
 
     } else {
       auto sourceBuffer = llvm::MemoryBuffer::getMemBuffer(source, "", false);
 
       sourceMgr.AddNewSourceBuffer(std::move(sourceBuffer), llvm::SMLoc());
-      root = parser.ParseAST(source);
+      root.reset(parser.ParseAST(source));
     }
   } catch (std::exception &e) {
     return llvm::createStringError(
@@ -219,7 +219,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
         llvm::Twine{"Exception while parsing OpenQASM 3 input: "} + e.what());
   }
 
-  if (root == nullptr)
+  if (!root)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Failed to parse OpenQASM 3 input");
 
