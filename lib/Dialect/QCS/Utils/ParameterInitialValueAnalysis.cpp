@@ -29,6 +29,15 @@ using namespace mlir::qcs;
 ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
     mlir::Operation *moduleOp) {
 
+  // ParameterInitialValueAnalysis should only process the top level
+  // module where parameters are defined
+  // find the top level module
+  auto parentOp = moduleOp->getParentOfType<mlir::ModuleOp>();
+  while (parentOp) {
+    moduleOp = parentOp;
+    parentOp = moduleOp->getParentOfType<mlir::ModuleOp>();
+  }
+
   if (not invalid_)
     return;
 
