@@ -60,7 +60,7 @@ struct ParameterInitialValueAnalysisPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
+  std::string passName =
       "Parameter Initial Value Analysis Pass (" + getArgument().str() + ")";
 }; // struct ParameterInitialValueAnalysisPass
 

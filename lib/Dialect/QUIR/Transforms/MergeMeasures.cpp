@@ -126,7 +126,9 @@ llvm::StringRef MergeMeasuresLexographicalPass::getDescription() const {
          "single measurement operation with lexographicalal ordering";
 }
 
-llvm::StringRef MergeMeasuresLexographicalPass::getName() const { return passName; }
+llvm::StringRef MergeMeasuresLexographicalPass::getName() const {
+  return passName;
+}
 
 namespace {
 // This pattern matches on two MeasureOps that are only interspersed by
@@ -198,4 +200,6 @@ llvm::StringRef MergeMeasuresTopologicalPass::getDescription() const {
          "single measurement operation with topological ordering";
 }
 
-llvm::StringRef MergeMeasuresTopologicalPass::getName() const { return passName; }
+llvm::StringRef MergeMeasuresTopologicalPass::getName() const {
+  return passName;
+}

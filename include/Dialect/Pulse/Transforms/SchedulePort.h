@@ -46,8 +46,7 @@ public:
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
-      "Schedule Port Pass (" + getArgument().str() + ")";
+  std::string passName = "Schedule Port Pass (" + getArgument().str() + ")";
 
 private:
   using mixedFrameMap_t = std::map<uint32_t, std::vector<Operation *>>;

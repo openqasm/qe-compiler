@@ -36,7 +36,7 @@ struct TestQubitOpInterfacePass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
+  std::string passName =
       "Test Qubit Op Interface Pass (" + getArgument().str() + ")";
 };
 

@@ -54,8 +54,7 @@ struct AddShotLoopPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
-      "Add Shot Loop Pass (" + getArgument().str() + ")";
+  std::string passName = "Add Shot Loop Pass (" + getArgument().str() + ")";
 
   void getDependentDialects(DialectRegistry &registry) const override {
     registry.insert<mlir::quir::QUIRDialect>();

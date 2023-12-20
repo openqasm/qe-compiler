@@ -50,7 +50,7 @@ struct RemoveQubitOperandsPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
+  std::string passName =
       "Remove Qubit Operands Pass (" + getArgument().str() + ")";
 }; // struct SubroutineCloningPass
 } // namespace mlir::quir

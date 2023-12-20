@@ -88,7 +88,9 @@ llvm::StringRef ParameterInitialValueAnalysisPass::getDescription() const {
   return "Run ParameterInitialValueAnalysis";
 }
 
-llvm::StringRef ParameterInitialValueAnalysisPass::getName() const { return passName; }
+llvm::StringRef ParameterInitialValueAnalysisPass::getName() const {
+  return passName;
+}
 
 // TODO: move registerQCSPasses to separate source file if additional passes
 // are added to the QCS Dialect

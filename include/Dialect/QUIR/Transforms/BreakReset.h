@@ -51,8 +51,7 @@ struct BreakResetPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
-      "Break Reset Pass (" + getArgument().str() + ")";
+  std::string passName = "Break Reset Pass (" + getArgument().str() + ")";
 }; // struct BreakResetPass
 } // namespace mlir::quir
 

@@ -37,8 +37,7 @@ public:
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
-      "Merge Delay Pass (" + getArgument().str() + ")";
+  std::string passName = "Merge Delay Pass (" + getArgument().str() + ")";
 };
 } // namespace mlir::pulse
 

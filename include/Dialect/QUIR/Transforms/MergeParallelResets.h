@@ -38,7 +38,7 @@ struct MergeResetsLexicographicPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
+  std::string passName =
       "Merge Resets Lexicographic Pass (" + getArgument().str() + ")";
 }; // struct MergeResetsLexicographicPass
 
@@ -55,7 +55,7 @@ struct MergeResetsTopologicalPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
+  std::string passName =
       "Merge Resets Topological Pass (" + getArgument().str() + ")";
 }; // struct MergeResetsTopologicalPass
 

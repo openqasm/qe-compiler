@@ -38,8 +38,7 @@ struct UnusedVariablePass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
-      "Unused Variable Pass (" + getArgument().str() + ")";
+  std::string passName = "Unused Variable Pass (" + getArgument().str() + ")";
 }; // struct UnusedVariablePass
 } // namespace mlir::quir
 

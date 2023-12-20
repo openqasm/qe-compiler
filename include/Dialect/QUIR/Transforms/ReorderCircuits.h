@@ -33,8 +33,7 @@ struct ReorderCircuitsPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
-      "Reorder Circuits Pass (" + getArgument().str() + ")";
+  std::string passName = "Reorder Circuits Pass (" + getArgument().str() + ")";
 }; // struct ReorderCircuitsPass
 
 } // namespace mlir::quir

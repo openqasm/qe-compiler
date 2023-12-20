@@ -40,7 +40,7 @@ struct VariableEliminationPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
+  std::string passName =
       "Variable Elimination Pass (" + getArgument().str() + ")";
 
   void getDependentDialects(DialectRegistry &registry) const override {

@@ -56,7 +56,7 @@ struct SubroutineCloningPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
+  std::string passName =
       "Subroutine Cloning Pass (" + getArgument().str() + ")";
 }; // struct SubroutineCloningPass
 } // namespace mlir::quir

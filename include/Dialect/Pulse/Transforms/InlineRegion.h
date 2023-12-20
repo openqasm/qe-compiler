@@ -33,8 +33,7 @@ public:
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
-      "Inline Region Pass (" + getArgument().str() + ")";
+  std::string passName = "Inline Region Pass (" + getArgument().str() + ")";
 };
 
 } // namespace mlir::pulse

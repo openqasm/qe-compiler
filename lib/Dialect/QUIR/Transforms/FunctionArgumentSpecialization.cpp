@@ -175,4 +175,6 @@ llvm::StringRef FunctionArgumentSpecializationPass::getDescription() const {
          "original function def is left unchanged";
 }
 
-llvm::StringRef FunctionArgumentSpecializationPass::getName() const { return passName; }
+llvm::StringRef FunctionArgumentSpecializationPass::getName() const {
+  return passName;
+}

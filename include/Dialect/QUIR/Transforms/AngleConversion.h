@@ -36,7 +36,7 @@ struct QUIRAngleConversionPass
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
-  std::string passName = 
+  std::string passName =
       "QUIR Angle Conversion Pass (" + getArgument().str() + ")";
 
 private:

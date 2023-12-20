@@ -445,4 +445,6 @@ llvm::StringRef MockFunctionLocalizationPass::getDescription() const {
   return "Copy and localize functions for Mock code blocks.";
 }
 
-llvm::StringRef MockFunctionLocalizationPass::getName() const { return passName; }
+llvm::StringRef MockFunctionLocalizationPass::getName() const {
+  return passName;
+}

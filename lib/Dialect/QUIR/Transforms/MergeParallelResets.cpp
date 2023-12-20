@@ -113,7 +113,9 @@ llvm::StringRef MergeResetsLexicographicPass::getDescription() const {
          "single operation lexicographically.";
 }
 
-llvm::StringRef MergeResetsLexicographicPass::getName() const { return passName; }
+llvm::StringRef MergeResetsLexicographicPass::getName() const {
+  return passName;
+}
 
 namespace {
 // This pattern merges qubit reset operations that can be parallelized into a
