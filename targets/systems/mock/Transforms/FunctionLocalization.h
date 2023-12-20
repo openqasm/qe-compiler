@@ -61,6 +61,9 @@ struct MockFunctionLocalizationPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
+  std::string passName = 
+      "Mock Function Localization Pass (" + getArgument().str() + ")";
 
 private:
   mlir::Operation *moduleOperation;

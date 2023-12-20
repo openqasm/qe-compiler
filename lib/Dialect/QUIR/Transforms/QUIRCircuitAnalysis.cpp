@@ -210,4 +210,6 @@ llvm::StringRef QUIRCircuitAnalysisPass::getDescription() const {
   return "Analyze Circuit Inputs";
 }
 
+llvm::StringRef QUIRCircuitAnalysisPass::getName() const { return passName; }
+
 } // namespace mlir::quir

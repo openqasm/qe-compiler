@@ -230,3 +230,5 @@ llvm::StringRef ReorderMeasurementsPass::getDescription() const {
   return "Move qubits to be as lexicograpically as late as possible without "
          "affecting the topological ordering.";
 }
+
+llvm::StringRef ReorderMeasurementsPass::getName() const { return passName; }

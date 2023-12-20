@@ -51,6 +51,9 @@ struct QuantumDecorationPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
+  std::string passName = 
+      "Quantum Decoration Pass (" + getArgument().str() + ")";
 }; // QuantumDecorationPass
 } // namespace mlir::quir
 

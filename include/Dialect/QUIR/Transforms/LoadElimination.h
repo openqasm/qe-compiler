@@ -31,6 +31,9 @@ struct LoadEliminationPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
+  std::string passName = 
+      "Load Elimination Pass (" + getArgument().str() + ")";
 }; // struct LoadEliminationPass
 
 } // namespace mlir::quir

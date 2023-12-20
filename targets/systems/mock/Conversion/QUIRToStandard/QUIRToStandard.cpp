@@ -269,4 +269,6 @@ llvm::StringRef MockQUIRToStdPass::getDescription() const {
   return "Convert QUIR ops to std dialect";
 }
 
+llvm::StringRef MockQUIRToStdPass::getName() const { return passName; }
+
 } // namespace qssc::targets::systems::mock::conversion

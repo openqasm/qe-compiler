@@ -126,6 +126,9 @@ void BreakResetPass::runOnOperation() {
 } // BreakResetPass::runOnOperation
 
 llvm::StringRef BreakResetPass::getArgument() const { return "break-reset"; }
+
 llvm::StringRef BreakResetPass::getDescription() const {
   return "Break reset ops into repeated measure and conditional x gate calls";
 }
+
+llvm::StringRef BreakResetPass::getName() const { return passName; }

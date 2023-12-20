@@ -248,3 +248,5 @@ llvm::StringRef SchedulePortPass::getArgument() const {
 llvm::StringRef SchedulePortPass::getDescription() const {
   return "Schedule operations on the same port in a sequence";
 }
+
+llvm::StringRef SchedulePortPass::getName() const { return passName; }

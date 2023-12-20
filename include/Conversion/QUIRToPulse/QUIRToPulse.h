@@ -49,6 +49,9 @@ struct QUIRToPulsePass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
+  std::string passName = 
+      "QUIR To Pulse Pass (" + getArgument().str() + ")";
 
   // optionally, one can override the path to pulse waveform container file with
   // this option; e.g., to write a LIT test one can invoke this pass with

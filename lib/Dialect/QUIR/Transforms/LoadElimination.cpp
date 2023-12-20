@@ -121,4 +121,6 @@ llvm::StringRef LoadEliminationPass::getDescription() const {
          "to a variable to subsequent uses of the variable.";
 }
 
+llvm::StringRef LoadEliminationPass::getName() const { return passName; }
+
 } // namespace mlir::quir

@@ -74,4 +74,6 @@ llvm::StringRef ClassicalOnlyDetectionPass::getDescription() const {
   return "Detect control flow blocks that contain only classical (non-quantum) "
          "operations, and decorate them with a classicalOnly bool attribute";
 }
+
+llvm::StringRef ClassicalOnlyDetectionPass::getName() const { return passName; }
 } // namespace mlir::pulse

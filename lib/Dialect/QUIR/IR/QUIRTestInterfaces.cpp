@@ -56,3 +56,5 @@ llvm::StringRef TestQubitOpInterfacePass::getDescription() const {
   return "Test QubitOpInterface by attributing operations with operated "
          "qubits.";
 }
+
+llvm::StringRef TestQubitOpInterfacePass::getName() const { return passName; }

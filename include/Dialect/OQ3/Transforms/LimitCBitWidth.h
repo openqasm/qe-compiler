@@ -38,6 +38,9 @@ public:
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
+  std::string passName = 
+      "Limit CBit Width Pass (" + getArgument().str() + ")";
 
   Option<uint> maxCBitWidthOption{
       *this, "max-cbit-width",

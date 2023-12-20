@@ -37,6 +37,9 @@ struct MergeResetsLexicographicPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
+  std::string passName = 
+      "Merge Resets Lexicographic Pass (" + getArgument().str() + ")";
 }; // struct MergeResetsLexicographicPass
 
 /// This pass merges qubit reset operations that can be parallelized into a
@@ -51,6 +54,9 @@ struct MergeResetsTopologicalPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
+  std::string passName = 
+      "Merge Resets Topological Pass (" + getArgument().str() + ")";
 }; // struct MergeResetsTopologicalPass
 
 } // namespace mlir::quir

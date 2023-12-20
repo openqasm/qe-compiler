@@ -82,7 +82,10 @@ void InlineRegionPass::runOnOperation() {
 }
 
 llvm::StringRef InlineRegionPass::getArgument() const { return "pulse-inline"; }
+
 llvm::StringRef InlineRegionPass::getDescription() const {
   return "Inline all dialects.";
 }
+
+llvm::StringRef InlineRegionPass::getName() const { return passName; }
 } // namespace mlir::pulse

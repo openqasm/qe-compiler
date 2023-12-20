@@ -32,6 +32,9 @@ struct ReorderMeasurementsPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
+  std::string passName = 
+      "Reorder Measurements Pass (" + getArgument().str() + ")";
 }; // struct ReorderMeasurementsPass
 
 } // namespace mlir::quir

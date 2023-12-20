@@ -37,6 +37,9 @@ struct ClassicalOnlyDetectionPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
+  std::string passName = 
+      "Classical Only Detection Pass (" + getArgument().str() + ")";
 }; // end struct ClassicalOnlyDetectionPass
 
 } // namespace mlir::pulse
