@@ -36,6 +36,7 @@ enum class ErrorCategory {
   QSSCompilerCommunicationFailure,
   QSSCompilerEOFFailure,
   QSSCompilerNonZeroStatus,
+  QSSCompilerSequenceTooLong,
   QSSCompilationFailure,
   QSSLinkerNotImplemented,
   QSSLinkSignatureWarning,
