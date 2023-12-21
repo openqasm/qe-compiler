@@ -3,11 +3,11 @@
 
 The qe-compiler is an [MLIR](https://mlir.llvm.org/)-based compiler with support for OpenQASM 3. It is designed to compile quantum programs to quantum hardware and is designed as part of the overall Quantum Engine. This repo contains the compiler front-end to convert OpenQASM 3 source files into a collection of four MLIR dialects called QUIR (QUantum Intermediate Representation), OQ3 (OpenQASM 3), Pulse (OpenPulse), and QCS (Quantum Computing System). This set of dialects allows OpenQASM programs to be converted into a form suitable to manipulate with LLVM. This repo also contains tools and compiler passes that are agnostic of details of any control system vendor. For instance, it contains localization passes to split source programs into the qubit or channel-specific groupings required by a target quantum control system.
 
-This repo does not contain a complete compiler. Rather, it is a framework for building compilers. To produce a complete compiler, one needs to implement at qe-compiler **target**. This repo comes with a "mock" target to assist developers in understanding how to develop such targets.
+This repo does not contain a complete compiler. Rather, it is a framework for building compilers. To produce a complete compiler, one needs to implement a qe-compiler **target**. This repo comes with a ["mock" target](https://github.com/Qiskit/qss-compiler/tree/main/targets/systems/mock) to assist developers in understanding how to develop such targets.
 
 ## Notice
 
-We are in the process of changing the name of this project from `qss-compiler` to `qe-compiler`. At present, only the repository name and this README have been updated.
+We are in the process of [changing the name of this project](https://github.com/Qiskit/qss-compiler/issues/210) from `qss-compiler` to `qe-compiler`. At present, only the repository name and this README have been updated.
 
 This open-source version of the qe-compiler is currently lacking documentation. We will add getting started guides and other resources in the near future.
 
