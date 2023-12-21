@@ -105,7 +105,7 @@ public:
   /// to ensure MLIR's parallelization rules are obeyed.
   /// @param pm A pass manager that will operate *only* on this target's module
   virtual llvm::Error addPasses(mlir::PassManager &pm) = 0;
-  /// @brief Compile and emit the out target outputs to the supplied payload.
+  /// @brief Compile and emit the target outputs to the supplied payload.
   /// This will also call and populate addPasses for this target and run the
   /// corresponding pass pipeline. Will be invoked *before* emitToPayload
   /// is called on any of its children.

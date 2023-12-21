@@ -13,10 +13,10 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file declares the classes for the top-level compilation scheduling
-//  interface.
-//
+///
+///  This file declares the classes for the top-level compilation scheduling
+///  interface.
+///
 //===----------------------------------------------------------------------===//
 #ifndef TARGETCOMPILATIONMANAGER_H
 #define TARGETCOMPILATIONMANAGER_H

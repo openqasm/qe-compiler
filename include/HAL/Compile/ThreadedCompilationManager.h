@@ -13,17 +13,15 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-//
-//  This file declares the classes for the top-level threaded compilation
-//  interfaces.
-//
+///
+///  This file declares the classes for the top-level threaded compilation
+///  interfaces.
+///
 //===----------------------------------------------------------------------===//
 #ifndef THREADEDCOMPILATIONMANAGER_H
 #define THREADEDCOMPILATIONMANAGER_H
 
 #include "HAL/Compile/TargetCompilationManager.h"
-
-#include "mlir/IR/MLIRContext.h"
 
 #include <string>
 
@@ -35,7 +33,7 @@ namespace qssc::hal::compile {
 /// targets in parallel.
 /// If threading is disabled within the MLIRContext the implementation
 /// will fall back to a sequential unthreaded version.
-/// The implementation of parallel relies on MLIR's
+/// The threaded implementation relies on MLIR's
 /// <a
 /// href="https://mlir.llvm.org/docs/PassManagement/#operation-pass">multi-threading
 /// assumptions</a>. As compilation is based on the shared MLIRContext's
