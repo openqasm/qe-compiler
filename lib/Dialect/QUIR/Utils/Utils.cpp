@@ -99,10 +99,15 @@ auto getNodeType(Operation *moduleOperation) -> std::string {
 } // getNodeType
 
 // takes a module Op and returns the quir.nodeId attribute string
-auto getNodeId(Operation *moduleOperation) -> int {
+llvm::Expected<uint32_t> getNodeId(Operation *moduleOperation) {
   auto typeAttr = moduleOperation->getAttrOfType<IntegerAttr>("quir.nodeId");
-  assert(typeAttr && "module Op lacks expected attribute quir.nodeId");
-  return typeAttr.getInt();
+
+  if (!typeAttr)
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "module Op lacks expected attribute quir.nodeId.");
+
+  return typeAttr.getUInt();
 } // getNodeType
 
 // adds the qubit Ids on the physicalId or physicalIds attributes to theseIds

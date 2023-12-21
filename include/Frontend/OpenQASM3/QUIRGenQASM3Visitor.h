@@ -41,7 +41,7 @@ private:
   mlir::OpBuilder builder;
   mlir::OpBuilder topLevelBuilder;
   mlir::OpBuilder circuitParentBuilder;
-  mlir::ModuleOp &newModule;
+  mlir::ModuleOp newModule;
   mlir::quir::CircuitOp currentCircuitOp;
   std::string filename;
   bool hasFailed{false};
@@ -95,14 +95,14 @@ private:
 
 public:
   QUIRGenQASM3Visitor(QASM::ASTStatementList *sList, mlir::OpBuilder b,
-                      mlir::ModuleOp &newModule, std::string f)
+                      mlir::ModuleOp newModule, std::string f)
       : BaseQASM3Visitor(sList), builder(b), topLevelBuilder(b),
         circuitParentBuilder(b), newModule(newModule), filename(std::move(f)),
         expression(llvm::createStringError(llvm::inconvertibleErrorCode(),
                                            "Testing error")),
         varHandler(builder) {}
 
-  QUIRGenQASM3Visitor(mlir::OpBuilder b, mlir::ModuleOp &newModule,
+  QUIRGenQASM3Visitor(mlir::OpBuilder b, mlir::ModuleOp newModule,
                       std::string filename)
       : builder(b), topLevelBuilder(b), circuitParentBuilder(b),
         newModule(newModule), filename(std::move(filename)),
