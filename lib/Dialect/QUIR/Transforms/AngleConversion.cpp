@@ -88,8 +88,12 @@ void QUIRAngleConversionPass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   patterns.add<AngleConversion>(&getContext(), functionOps);
 
-  if (failed(
-          applyPatternsAndFoldGreedily(getOperation(), std::move(patterns)))) {
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
+
+  if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
+                                          config))) {
     ; // TODO why would this call to applyPatternsAndFoldGreedily fail?
       // signalPassFailure();
   }

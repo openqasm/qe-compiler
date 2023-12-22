@@ -152,7 +152,7 @@ ParameterType ParameterLoadOp::getInitialValue(
   auto paramOpEntry = declareParametersMap.find(paramRefAttr.getValue());
 
   if (paramOpEntry == declareParametersMap.end()) {
-    op->emitError("Could not find declare parameter op" +
+    op->emitError("Could not find declare parameter op " +
                   paramRefAttr.getValue().str());
     return 0.0;
   }

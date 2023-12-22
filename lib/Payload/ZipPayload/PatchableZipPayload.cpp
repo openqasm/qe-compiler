@@ -131,10 +131,14 @@ llvm::Error PatchableZipPayload::addFileToZip(zip_t *zip,
   if (src == nullptr)
     return extractLibZipError("Creating zip source from data buffer", err);
 
-  if (zip_file_add(zip, path.c_str(), src, ZIP_FL_OVERWRITE) < 0) {
-    auto *archiveErr = zip_get_error(zip);
-    return extractLibZipError("Adding or replacing file to zip", *archiveErr);
+  if (int idx = zip_file_add(zip, path.c_str(), src, ZIP_FL_OVERWRITE) < 0) {
+    if (idx < 0) {
+      auto *archiveErr = zip_get_error(zip);
+      return extractLibZipError("Adding or replacing file to zip", *archiveErr);
+    }
+    zip_set_file_compression(zip, idx, ZIP_CM_STORE, 1);
   }
+
   return llvm::Error::success();
 }
 

@@ -59,7 +59,7 @@ auto getNodeType(Operation *moduleOperation) -> std::string;
 
 /// takes a module Op and returns the quir.nodeId attribute.
 // TODO: Should be replaced by an analysis compatable struct.
-auto getNodeId(Operation *moduleOperation) -> int;
+llvm::Expected<uint32_t> getNodeId(Operation *moduleOperation);
 
 // adds the qubit Ids on the physicalId or physicalIds attributes to theseIds
 void addQubitIdsFromAttr(Operation *operation, std::vector<uint> &theseIds);

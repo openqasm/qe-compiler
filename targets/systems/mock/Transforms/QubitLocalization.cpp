@@ -728,6 +728,52 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
   // first work on creating the modules
   // We do this first so that we can detect all physical qubit declarations
   auto newBuilders = std::make_unique<std::unordered_map<uint, OpBuilder *>>();
+
+  for (const auto &result : llvm::enumerate(config->getDriveNodes())) {
+    uint qubitIdx = result.index();
+    uint nodeId = result.value();
+    llvm::outs() << "Creating module for drive Mocks " << qubitIdx << "\n";
+    auto driveMod = b.create<ModuleOp>(
+        b.getUnknownLoc(),
+        llvm::StringRef("mock_drive_" + std::to_string(qubitIdx)));
+    driveMod.getOperation()->setAttr(
+        llvm::StringRef("quir.nodeType"),
+        controllerBuilder->getStringAttr(llvm::StringRef("drive")));
+    driveMod.getOperation()->setAttr(
+        llvm::StringRef("quir.nodeId"),
+        controllerBuilder->getI32IntegerAttr(nodeId));
+    driveMod.getOperation()->setAttr(
+        llvm::StringRef("quir.physicalId"),
+        controllerBuilder->getI32IntegerAttr(qubitIdx));
+    mockModules[nodeId] = driveMod.getOperation();
+    mlir::func::FuncOp mockMainOp =
+        addMainFunction(driveMod.getOperation(), mainFunc->getLoc());
+    newBuilders->emplace(nodeId, new OpBuilder(mockMainOp.getBody()));
+  }
+
+  for (const auto &result : llvm::enumerate(config->getAcquireNodes())) {
+    uint acquireIdx = result.index();
+    uint nodeId = result.value();
+    llvm::outs() << "Creating module for acquire Mocks " << acquireIdx << "\n";
+    auto acquireMod = b.create<ModuleOp>(
+        b.getUnknownLoc(),
+        llvm::StringRef("mock_acquire_" + std::to_string(acquireIdx)));
+    acquireMod.getOperation()->setAttr(
+        llvm::StringRef("quir.nodeType"),
+        controllerBuilder->getStringAttr(llvm::StringRef("acquire")));
+    acquireMod.getOperation()->setAttr(
+        llvm::StringRef("quir.nodeId"),
+        controllerBuilder->getI32IntegerAttr(nodeId));
+    acquireMod.getOperation()->setAttr(
+        llvm::StringRef("quir.physicalIds"),
+        controllerBuilder->getI32ArrayAttr(
+            ArrayRef<int>(config->acquireQubits(nodeId))));
+    mockModules[nodeId] = acquireMod.getOperation();
+    mlir::func::FuncOp mockMainOp =
+        addMainFunction(acquireMod.getOperation(), mainFunc->getLoc());
+    newBuilders->emplace(nodeId, new OpBuilder(mockMainOp.getBody()));
+  }
+
   mainFunc->walk([&](DeclareQubitOp qubitOp) {
     llvm::outs() << qubitOp.getOperation()->getName()
                  << " id: " << qubitOp.getId() << "\n";
@@ -740,52 +786,6 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
           << " during qubit localization!\n";
       signalPassFailure();
     }
-
-    uint qubitId = qubitOp.getId().value();
-
-    if (!mockModules.count(config->driveNode(qubitId))) {
-      llvm::outs() << "Creating module for drive Mocks " << qubitId << "\n";
-      auto driveMod = b.create<ModuleOp>(
-          qubitOp->getLoc(),
-          llvm::StringRef("mock_drive_" + std::to_string(qubitId)));
-      driveMod.getOperation()->setAttr(
-          llvm::StringRef("quir.nodeType"),
-          controllerBuilder->getStringAttr(llvm::StringRef("drive")));
-      driveMod.getOperation()->setAttr(
-          llvm::StringRef("quir.nodeId"),
-          controllerBuilder->getI32IntegerAttr(config->driveNode(qubitId)));
-      driveMod.getOperation()->setAttr(
-          llvm::StringRef("quir.physicalId"),
-          controllerBuilder->getI32IntegerAttr(qubitId));
-      mockModules[config->driveNode(qubitId)] = driveMod.getOperation();
-      mlir::func::FuncOp mockMainOp =
-          addMainFunction(driveMod.getOperation(), mainFunc->getLoc());
-      newBuilders->emplace(config->driveNode(qubitId),
-                           new OpBuilder(mockMainOp.getBody()));
-    }
-
-    if (!mockModules.count(config->acquireNode(qubitId))) {
-      llvm::outs() << "Creating module for acquire Mocks " << qubitId << "\n";
-      auto acquireMod = b.create<ModuleOp>(
-          qubitOp->getLoc(),
-          llvm::StringRef("mock_acquire_" + std::to_string(qubitId)));
-      acquireMod.getOperation()->setAttr(
-          llvm::StringRef("quir.nodeType"),
-          controllerBuilder->getStringAttr(llvm::StringRef("acquire")));
-      acquireMod.getOperation()->setAttr(
-          llvm::StringRef("quir.nodeId"),
-          controllerBuilder->getI32IntegerAttr(config->acquireNode(qubitId)));
-      acquireMod.getOperation()->setAttr(
-          llvm::StringRef("quir.physicalIds"),
-          controllerBuilder->getI32ArrayAttr(
-              ArrayRef<int>(config->multiplexedQubits(qubitId))));
-      mockModules[config->acquireNode(qubitId)] = acquireMod.getOperation();
-      mlir::func::FuncOp mockMainOp =
-          addMainFunction(acquireMod.getOperation(), mainFunc->getLoc());
-      newBuilders->emplace(config->acquireNode(qubitId),
-                           new OpBuilder(mockMainOp.getBody()));
-    }
-
     uint qId = qubitOp.getId().value();
     seenQubitIds.emplace(qId);
     driveNodeIds.emplace(config->driveNode(qId));

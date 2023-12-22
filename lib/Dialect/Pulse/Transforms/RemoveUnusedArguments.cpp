@@ -66,7 +66,8 @@ struct RemoveUnusedArgumentsPattern
         LLVM_DEBUG(argumentResult.value().dump());
 
         auto *argOp = callSequenceOp.getOperand(index).getDefiningOp();
-        testEraseList.push_back(argOp);
+        if (argOp)
+          testEraseList.push_back(argOp);
       }
     }
 
@@ -77,6 +78,22 @@ struct RemoveUnusedArgumentsPattern
     // rewrite - removed arguments and matching operands
     sequenceOp.eraseArguments(argIndicesBV);
     callSequenceOp->eraseOperands(argIndicesBV);
+
+    // check for other CallSequenceOps calling the same sequence
+    auto moduleOp = sequenceOp->getParentOfType<mlir::ModuleOp>();
+    assert(moduleOp && "Operation outside of a Module");
+    moduleOp->walk([&](pulse::CallSequenceOp op) {
+      if (op == callSequenceOp)
+        return;
+      if (op.getCallee() != sequenceOp.getSymName())
+        return;
+      // verify that the sequence and the new callSequenceOp are in
+      // the same module
+      auto checkModuleOp = op->getParentOfType<mlir::ModuleOp>();
+      if (checkModuleOp != moduleOp)
+        return;
+      op->eraseOperands(argIndicesBV);
+    });
 
     // remove defining ops if the have no usage
     for (auto *argOp : testEraseList)
@@ -109,7 +126,12 @@ void RemoveUnusedArgumentsPass::runOnOperation() {
 
   patterns.add<RemoveUnusedArgumentsPattern>(&getContext());
 
-  if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns))))
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
+
+  if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
+                                          config)))
     signalPassFailure();
 }
 

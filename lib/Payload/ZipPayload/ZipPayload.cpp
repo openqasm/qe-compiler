@@ -198,6 +198,7 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
                    << " to archive: " << zip_strerror(new_archive) << "\n";
       continue;
     }
+    zip_set_file_compression(new_archive, fileIndex, ZIP_CM_STORE, 1);
 
     setFilePermissions(fileIndex, fName, new_archive);
   }

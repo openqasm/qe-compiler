@@ -90,8 +90,12 @@ void ReorderCircuitsPass::runOnOperation() {
   // only run this pass on call_circuits within the main body of the program
   // there may be call_circuits within circuits that have not been properly
   // labeled with their qubit arguments
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
 
-  if (failed(applyPatternsAndFoldGreedily(mainFunc, std::move(patterns))))
+  if (failed(
+          applyPatternsAndFoldGreedily(mainFunc, std::move(patterns), config)))
     signalPassFailure();
 } // runOnOperation
 
