@@ -36,6 +36,12 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
     const WalkTargetFunction &walkFunc,
     const WalkTargetFunction &postChildrenCallbackFunc) {
 
+
+  // Enables some checks for correct use of context
+  // Must be exited after threaded region is completed.
+  if (isMultithreadingEnabled())
+    getContext()->enterMultiThreadedExecution();
+
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
 
@@ -58,6 +64,10 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
       llvm::errs() << err << "\n";
       return mlir::failure();
     }
+
+    // Exit the multi-threading region
+    if(isMultithreadingEnabled())
+      getContext()->exitMultiThreadedExecution();
 
     return mlir::success();
   };
@@ -177,4 +187,10 @@ llvm::Error ThreadedCompilationManager::compilePayloadTarget(
     return err;
   }
   return llvm::Error::success();
+}
+
+void ThreadedCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
+                                       llvm::raw_ostream &out) {
+  const std::lock_guard<std::mutex> lock(printir_mutex_);
+  TargetCompilationManager::printIR(msg, op, out);
 }

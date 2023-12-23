@@ -91,7 +91,8 @@ protected:
     return printAfterTargetCompileFailure;
   }
 
-  void printIR(llvm::StringRef msg, mlir::Operation *op,
+  /// Thread-safe implementation
+  virtual void printIR(llvm::StringRef msg, mlir::Operation *op,
                llvm::raw_ostream &out);
 
 private:

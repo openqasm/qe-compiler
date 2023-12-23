@@ -23,6 +23,7 @@
 
 #include "HAL/Compile/TargetCompilationManager.h"
 
+#include <mutex>
 #include <string>
 
 namespace qssc::hal::compile {
@@ -50,6 +51,9 @@ protected:
       const TargetCompilationManager::WalkTargetFunction
           &postChildrenCallbackFunc);
 
+  virtual void printIR(llvm::StringRef msg, mlir::Operation *op,
+              llvm::raw_ostream &out) override;
+
 public:
   using PMBuilder = std::function<llvm::Error(mlir::PassManager &)>;
 
@@ -71,6 +75,9 @@ public:
   llvm::Error buildTargetPassManager(mlir::PassManager &pm);
 
 private:
+  // ensures we print in order when threading
+  std::mutex printir_mutex_;
+
   /// Compiles the input module for a single target.
   llvm::Error compileMLIRTarget(Target &target, mlir::ModuleOp targetModuleOp);
   /// Compiles the input payload for a single target.
