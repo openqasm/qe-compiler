@@ -69,7 +69,8 @@ angleValToDouble(mlir::Value inVal,
     auto defOp = castOp.getArg().getDefiningOp<mlir::qcs::ParameterLoadOp>();
     if (defOp)
       return parameterValToDouble(defOp, nameAnalysis);
-    if (auto constOp = castOp.getArg().getDefiningOp<mlir::arith::ConstantOp>()) {
+    if (auto constOp =
+            castOp.getArg().getDefiningOp<mlir::arith::ConstantOp>()) {
       if (auto angleAttr = constOp.getValue().dyn_cast<mlir::quir::AngleAttr>())
         return angleAttr.getValue().convertToDouble();
       if (auto floatAttr = constOp.getValue().dyn_cast<mlir::FloatAttr>())

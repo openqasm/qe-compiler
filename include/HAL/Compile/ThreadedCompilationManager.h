@@ -46,7 +46,8 @@ protected:
   /// Threaded depth first walker for a target system using the current
   /// MLIRContext's threadpool.
   llvm::Error walkTargetThreaded(
-      Target *target, const TargetCompilationManager::WalkTargetFunction &walkFunc);
+      Target *target,
+      const TargetCompilationManager::WalkTargetFunction &walkFunc);
   /// Threaded depth first walker for a target system modules using the current
   /// MLIRContext's threadpool.
   llvm::Error walkTargetModulesThreaded(
@@ -56,7 +57,7 @@ protected:
           &postChildrenCallbackFunc);
 
   virtual void printIR(llvm::StringRef msg, mlir::Operation *op,
-              llvm::raw_ostream &out) override;
+                       llvm::raw_ostream &out) override;
 
 public:
   using PMBuilder = std::function<llvm::Error(mlir::PassManager &)>;
@@ -90,7 +91,6 @@ private:
   // ensures we print in order when threading
   std::mutex printIRMutex_;
 
-
   /// Prepare pass managers in a threaded way
   /// initializing them with the mlir context safely.
   llvm::Error buildTargetPassManagers_(Target &target);
@@ -101,17 +101,17 @@ private:
   /// and will follow up in the thread.
   void registerPassManagerWithContext_(mlir::PassManager &pm);
   /// Thread safely get the passmanager for a target.
-  mlir::PassManager& getTargetPassManager_(Target *target);
+  mlir::PassManager &getTargetPassManager_(Target *target);
   /// Thread safely set the passmanager for a target.
-  mlir::PassManager& createTargetPassManager_(Target *target);
+  mlir::PassManager &createTargetPassManager_(Target *target);
 
   /// Compiles the input module for a single target.
   llvm::Error compileMLIRTarget_(Target &target, mlir::ModuleOp targetModuleOp);
   /// Compiles the input payload for a single target.
   llvm::Error compilePayloadTarget_(Target &target,
-                                   mlir::ModuleOp targetModuleOp,
-                                   qssc::payload::Payload &payload,
-                                   bool doCompileMLIR);
+                                    mlir::ModuleOp targetModuleOp,
+                                    qssc::payload::Payload &payload,
+                                    bool doCompileMLIR);
 
   PMBuilder pmBuilder;
 

@@ -842,7 +842,7 @@ compile_(int argc, char const **argv, std::string *outputString,
   auto targetCompilationManager =
       qssc::hal::compile::ThreadedCompilationManager(
           target, &context, [&](mlir::PassManager &pm) -> llvm::Error {
-            if(auto err = buildPassManager_(pm))
+            if (auto err = buildPassManager_(pm))
               return err;
             return llvm::Error::success();
           });

@@ -85,7 +85,7 @@ llvm::Error TargetCompilationManager::walkTargetModules(
     if (auto err = childModuleOp.takeError())
       return err;
     if (auto err = walkTargetModules(child, *childModuleOp, walkFunc,
-                              postChildrenCallbackFunc))
+                                     postChildrenCallbackFunc))
       return err;
   }
 
@@ -95,8 +95,9 @@ llvm::Error TargetCompilationManager::walkTargetModules(
   return llvm::Error::success();
 }
 
-llvm::Error TargetCompilationManager::walkTarget(
-    Target *target, const WalkTargetFunction &walkFunc) {
+llvm::Error
+TargetCompilationManager::walkTarget(Target *target,
+                                     const WalkTargetFunction &walkFunc) {
   // Call the input function for the walk on the target
   if (auto err = walkFunc(target))
     return err;
@@ -118,7 +119,6 @@ void TargetCompilationManager::enableIRPrinting(
   this->printBeforeAllTargetPayload = printBeforeAllTargetPayload;
   this->printAfterTargetCompileFailure = printAfterTargetCompileFailure;
 }
-
 
 void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
                                        llvm::raw_ostream &out) {
