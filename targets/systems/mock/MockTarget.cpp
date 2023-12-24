@@ -224,12 +224,6 @@ void MockController::registerTargetPipelines() {
 } // MockController::registerTargetPipelines
 
 llvm::Error MockController::addPasses(mlir::PassManager &pm) {
-  // Register LLVM dialect and all infrastructure required for translation to
-  // LLVM IR
-  auto *context = pm.getContext();
-  mlir::registerBuiltinDialectTranslation(*context);
-  mlir::registerLLVMDialectTranslation(*context);
-
   pm.addPass(std::make_unique<conversion::MockQUIRToStdPass>(false));
   pm.addPass(mlir::createCanonicalizerPass());
   pm.addPass(mlir::LLVM::createLegalizeForExportPass());
@@ -252,6 +246,12 @@ llvm::Error MockController::emitToPayload(mlir::ModuleOp moduleOp,
 
 llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
                                              qssc::payload::Payload &payload) {
+
+  // Register LLVM dialect and all infrastructure required for translation to
+  // LLVM IR
+  auto *context = controllerModule.getContext();
+  mlir::registerBuiltinDialectTranslation(*context);
+  mlir::registerLLVMDialectTranslation(*context);
 
   // Initialize native LLVM target
   llvm::InitializeNativeTarget();

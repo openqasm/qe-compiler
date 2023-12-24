@@ -46,9 +46,13 @@ protected:
   /// Threaded depth first walker for a target system using the current
   /// MLIRContext's threadpool.
   llvm::Error walkTargetThreaded(
+      Target *target, const TargetCompilationManager::WalkTargetFunction &walkFunc);
+  /// Threaded depth first walker for a target system modules using the current
+  /// MLIRContext's threadpool.
+  llvm::Error walkTargetModulesThreaded(
       Target *target, mlir::ModuleOp targetModuleOp,
-      const TargetCompilationManager::WalkTargetFunction &walkFunc,
-      const TargetCompilationManager::WalkTargetFunction
+      const TargetCompilationManager::WalkTargetModulesFunction &walkFunc,
+      const TargetCompilationManager::WalkTargetModulesFunction
           &postChildrenCallbackFunc);
 
   virtual void printIR(llvm::StringRef msg, mlir::Operation *op,
@@ -72,16 +76,39 @@ public:
   }
   llvm::ThreadPool &getThreadPool() { return getContext()->getThreadPool(); }
 
-  llvm::Error buildTargetPassManager(mlir::PassManager &pm);
-
 private:
+  // Used to store initialized and registered pass managers
+  // with the context prior to compilation.
+  std::map<Target *, mlir::PassManager> targetPassManagers_;
+  // target pass manager map mutex
+  std::shared_mutex targetPassManagersMutex_;
+
+  // ensures we register passes with the context
+  // in a threadsafe way.
+  std::mutex contextMutex_;
+
   // ensures we print in order when threading
-  std::mutex printir_mutex_;
+  std::mutex printIRMutex_;
+
+
+  /// Prepare pass managers in a threaded way
+  /// initializing them with the mlir context safely.
+  llvm::Error buildTargetPassManagers_(Target &target);
+  /// Threadsafe initialization of PM to work around
+  /// non-threadsafe registration of dependent dialects.
+  /// I (Thomas) believe this is related to the conversation here
+  /// https://discourse.llvm.org/t/caching-and-parallel-compilation/67907
+  /// and will follow up in the thread.
+  void registerPassManagerWithContext_(mlir::PassManager &pm);
+  /// Thread safely get the passmanager for a target.
+  mlir::PassManager& getTargetPassManager_(Target *target);
+  /// Thread safely set the passmanager for a target.
+  mlir::PassManager& createTargetPassManager_(Target *target);
 
   /// Compiles the input module for a single target.
-  llvm::Error compileMLIRTarget(Target &target, mlir::ModuleOp targetModuleOp);
+  llvm::Error compileMLIRTarget_(Target &target, mlir::ModuleOp targetModuleOp);
   /// Compiles the input payload for a single target.
-  llvm::Error compilePayloadTarget(Target &target,
+  llvm::Error compilePayloadTarget_(Target &target,
                                    mlir::ModuleOp targetModuleOp,
                                    qssc::payload::Payload &payload,
                                    bool doCompileMLIR);

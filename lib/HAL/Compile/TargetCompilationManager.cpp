@@ -71,10 +71,10 @@ TargetCompilationManager::TargetCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context)
     : target(target), context(context) {}
 
-llvm::Error TargetCompilationManager::walkTarget(
+llvm::Error TargetCompilationManager::walkTargetModules(
     Target *target, mlir::ModuleOp targetModuleOp,
-    const WalkTargetFunction &walkFunc,
-    const WalkTargetFunction &postChildrenCallbackFunc) {
+    const WalkTargetModulesFunction &walkFunc,
+    const WalkTargetModulesFunction &postChildrenCallbackFunc) {
   // Call the input function for the walk on the target
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
@@ -84,13 +84,28 @@ llvm::Error TargetCompilationManager::walkTarget(
     auto childModuleOp = child->getModule(targetModuleOp);
     if (auto err = childModuleOp.takeError())
       return err;
-    if (auto err = walkTarget(child, *childModuleOp, walkFunc,
+    if (auto err = walkTargetModules(child, *childModuleOp, walkFunc,
                               postChildrenCallbackFunc))
       return err;
   }
 
   if (auto err = postChildrenCallbackFunc(target, targetModuleOp))
     return err;
+
+  return llvm::Error::success();
+}
+
+llvm::Error TargetCompilationManager::walkTarget(
+    Target *target, const WalkTargetFunction &walkFunc) {
+  // Call the input function for the walk on the target
+  if (auto err = walkFunc(target))
+    return err;
+
+  for (auto *child : target->getChildren()) {
+    // Recurse on the target
+    if (auto err = walkTarget(child, walkFunc))
+      return err;
+  }
 
   return llvm::Error::success();
 }
