@@ -34,7 +34,7 @@ class QSSCompilerConan(ConanFile):
     author = "IBM Quantum development team"
     topics = ("Compiler", "Scheduler", "OpenQASM3")
     description = "An LLVM- and MLIR-based Quantum compiler that consumes OpenQASM 3.0"
-    generators = ["CMakeToolchain", "CMakeDeps"]
+    generators = ["CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"]
     exports_sources = "*"
 
     def requirements(self):
