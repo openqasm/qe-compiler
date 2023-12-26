@@ -19,22 +19,26 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <list>
-
 #include "Dialect/QUIR/Transforms/AddShotLoop.h"
 
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/IRMapping.h"
+#include "mlir/IR/Location.h"
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <list>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -56,7 +60,7 @@ void AddShotLoopPass::runOnOperation() {
   // start the builder outside the main function so we aren't cloning or
   // building into the same region that we are copying from
   OpBuilder build = OpBuilder::atBlockBegin(moduleOp.getBody());
-  Location opLoc = mainFunc.getLoc();
+  Location const opLoc = mainFunc.getLoc();
 
   auto startOp = build.create<mlir::arith::ConstantOp>(
       opLoc, build.getIndexType(), build.getIndexAttr(0));

@@ -15,19 +15,40 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/IR/PulseOps.h"
-#include "Dialect/Pulse/IR/PulseDialect.h"
 
+#include "Dialect/Pulse/IR/PulseTraits.h"
+#include "Dialect/QUIR/IR/QUIROps.h"
+
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Complex/IR/Complex.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Block.h"
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinTypeInterfaces.h"
 #include "mlir/IR/FunctionImplementation.h"
 #include "mlir/IR/IRMapping.h"
+#include "mlir/IR/Location.h"
 #include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
-#include "mlir/Interfaces/CallInterfaces.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
+
 #include "llvm/ADT/MapVector.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/Support/Error.h"
+
+#include <cassert>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <utility>
 
 namespace mlir::pulse {
 
@@ -315,7 +336,7 @@ static LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
 /// values that originate as argument values or the result of a measurement.
 static LogicalResult verifyClassical_(SequenceOp op) {
   mlir::Operation *classicalOp = nullptr;
-  WalkResult result = op->walk([&](Operation *subOp) {
+  WalkResult const result = op->walk([&](Operation *subOp) {
     if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
         isa<CallSequenceOp>(subOp) || isa<pulse::ReturnOp>(subOp) ||
         isa<SequenceOp>(subOp) || isa<mlir::complex::CreateOp>(subOp) ||
@@ -357,7 +378,7 @@ SequenceOp SequenceOp::create(Location location, StringRef name,
 SequenceOp SequenceOp::create(Location location, StringRef name,
                               FunctionType type,
                               Operation::dialect_attr_range attrs) {
-  SmallVector<NamedAttribute, 8> attrRef(attrs);
+  SmallVector<NamedAttribute, 8> const attrRef(attrs);
   return create(location, name, type, attrRef);
 }
 SequenceOp SequenceOp::create(Location location, StringRef name,
@@ -417,7 +438,7 @@ SequenceOp SequenceOp::clone(IRMapping &mapper) {
   // If the function contains a body, then its possible arguments
   // may be deleted in the mapper. Verify this so they aren't
   // added to the input type vector.
-  bool isExternalSequence = isExternal();
+  bool const isExternalSequence = isExternal();
   if (!isExternalSequence) {
     SmallVector<Type, 4> inputTypes;
     inputTypes.reserve(newType.getNumInputs());
@@ -455,7 +476,7 @@ SequenceOp SequenceOp::clone() {
 
 LogicalResult ReturnOp::verify() {
   auto sequence = (*this)->getParentOfType<SequenceOp>();
-  FunctionType sequenceType = sequence.getFunctionType();
+  FunctionType const sequenceType = sequence.getFunctionType();
 
   auto numResults = sequenceType.getNumResults();
   // Verify number of operands match type signature
@@ -584,4 +605,3 @@ mlir::LogicalResult PlayOp::verify() {
 } // namespace mlir::pulse
 
 #define GET_OP_CLASSES
-#include "Dialect/Pulse/IR/Pulse.cpp.inc"

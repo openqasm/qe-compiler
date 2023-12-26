@@ -21,20 +21,25 @@
 #include "Dialect/QUIR/Transforms/ReorderMeasurements.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Interfaces/ControlFlowInterfaces.h"
 #include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
-#include <llvm/ADT/SmallVector.h>
-#include <llvm/Support/Casting.h>
-#include <llvm/Support/Debug.h>
+#include "llvm/Support/Debug.h"
 
-#include <algorithm>
 #include <iterator>
+#include <set>
+#include <sys/types.h>
+#include <utility>
 #include <vector>
 
 #define DEBUG_TYPE "QUIRReorderMeasurements"

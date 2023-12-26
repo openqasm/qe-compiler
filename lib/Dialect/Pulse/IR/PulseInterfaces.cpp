@@ -20,7 +20,14 @@
 
 #include "Dialect/Pulse/IR/PulseInterfaces.h"
 
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/Operation.h"
+
+#include "llvm/Support/Error.h"
+
+#include <cstdint>
+#include <optional>
 
 using namespace mlir::pulse;
 
@@ -28,7 +35,6 @@ using namespace mlir::pulse;
 // Tablegen Interface Definitions
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/Pulse/IR/PulseInterfaces.cpp.inc"
 
 //===----------------------------------------------------------------------===//
 // PulseOpSchedulingInterface

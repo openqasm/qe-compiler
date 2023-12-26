@@ -21,15 +21,28 @@
 
 #include "Dialect/QUIR/Transforms/MergeMeasures.h"
 
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/TypeRange.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/StringRef.h"
+
 #include <algorithm>
+#include <iterator>
+#include <optional>
+#include <set>
+#include <sys/types.h>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;

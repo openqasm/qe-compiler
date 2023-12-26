@@ -28,17 +28,24 @@
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Location.h"
 #include "mlir/IR/SymbolTable.h"
-
-#include "qasm/AST/ASTTypeEnums.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/ErrorHandling.h"
 
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
-#include <string>
-#include <utility>
+#include <qasm/AST/ASTResult.h>
+#include <qasm/AST/ASTSymbolTable.h>
+#include <qasm/AST/ASTTypeEnums.h>
+#include <qasm/AST/ASTTypes.h>
 
 namespace qssc::frontend::openqasm3 {
 
@@ -48,7 +55,7 @@ void QUIRVariableBuilder::generateVariableDeclaration(
 
   // variables are symbols and thus need to be placed directly in a surrounding
   // Op that contains a symbol table.
-  mlir::OpBuilder::InsertionGuard g(builder);
+  mlir::OpBuilder::InsertionGuard const g(builder);
   auto *symbolTableOp = mlir::SymbolTable::getNearestSymbolTable(
       builder.getInsertionBlock()->getParentOp());
   assert(symbolTableOp &&
@@ -76,7 +83,7 @@ void QUIRVariableBuilder::generateParameterDeclaration(
     mlir::Location location, llvm::StringRef variableName, mlir::Type type,
     mlir::Value assignedValue) {
 
-  mlir::OpBuilder::InsertionGuard g(builder);
+  mlir::OpBuilder::InsertionGuard const g(builder);
   auto *symbolTableOp = mlir::SymbolTable::getNearestSymbolTable(
       builder.getInsertionBlock()->getParentOp());
   assert(symbolTableOp &&

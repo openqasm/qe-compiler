@@ -21,13 +21,18 @@
 #include "Dialect/QUIR/Transforms/Analysis.h"
 
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTraits.h"
 
 #include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/IR/Visitors.h"
+
+#include "llvm/Support/Casting.h"
 
 namespace mlir::quir {
 
 PurelyUnitaryAnalysis::PurelyUnitaryAnalysis(mlir::Operation *op) {
-  mlir::WalkResult result = op->walk([&](mlir::Operation *op) {
+  mlir::WalkResult const result = op->walk([&](mlir::Operation *op) {
     if (op->hasTrait<mlir::quir::UnitaryOp>() or
         llvm::isa<mlir::scf::YieldOp>(op) or
         // declaring CallCircuitOp may be cheating

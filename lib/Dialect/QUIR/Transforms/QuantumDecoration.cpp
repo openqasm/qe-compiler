@@ -20,13 +20,21 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/QuantumDecoration.h"
+
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
 
 #include <algorithm>
+#include <unordered_set>
 #include <vector>
 
 using namespace mlir;
@@ -87,7 +95,7 @@ void QuantumDecorationPass::processOp(CallDefcalMeasureOp measureOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(measureOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value  const&val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp MeasureOp
 
@@ -108,7 +116,7 @@ void QuantumDecorationPass::processOp(CallDefCalGateOp callOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(callOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value  const&val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp CallGateOp
 
@@ -117,7 +125,7 @@ void QuantumDecorationPass::processOp(CallGateOp callOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(callOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value  const&val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp CallGateOp
 
@@ -126,7 +134,7 @@ void QuantumDecorationPass::processOp(BarrierOp barrierOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(barrierOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value  const&val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp BarrierOp
 
@@ -135,12 +143,12 @@ void QuantumDecorationPass::processOp(CallCircuitOp callOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(callOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value  const&val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp CallGateOp
 
 void QuantumDecorationPass::runOnOperation() {
-  ModuleOp moduleOp = getOperation();
+  ModuleOp const moduleOp = getOperation();
   OpBuilder build(moduleOp);
 
   moduleOp->walk([&](Operation *op) {

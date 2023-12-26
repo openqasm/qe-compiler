@@ -20,7 +20,18 @@
 
 #include "Conversion/QUIRToStandard/TypeConversion.h"
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
+
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/Types.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/ValueRange.h"
+
+#include "llvm/Support/raw_ostream.h"
+
+#include <optional>
 
 namespace mlir {
 
@@ -74,7 +85,7 @@ std::optional<Type> QuirTypeConverter::convertAngleType(Type t) {
 std::optional<Value> QuirTypeConverter::angleSourceMaterialization(
     OpBuilder &builder, quir::AngleType aType, ValueRange valRange,
     Location loc) {
-  for (Value val : valRange) {
+  for (Value const val : valRange) {
     auto castOp = builder.create<oq3::CastOp>(loc, aType, val);
     return castOp.getOut();
   } // for val : valRange

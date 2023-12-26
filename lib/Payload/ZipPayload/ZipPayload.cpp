@@ -18,28 +18,31 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include <algorithm>
-#include <cstdint>
-#include <fstream>
-#include <ostream>
-#include <sys/stat.h>
-#include <unordered_set>
-
-#include "nlohmann/json.hpp"
-#include <zip.h>
+#include "ZipPayload.h"
 
 #include "Config.h"
-#include "ZipPayload.h"
-#include "ZipUtil.h"
+#include "Payload/ZipPayload/ZipUtil.h"
 
-#include "Payload/PayloadRegistry.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <cstdint>
+#include <cstdlib>
+#include <filesystem>
+#include <mutex>
+#include <ostream>
+#include <string>
+#include <sys/_types/_s_ifmt.h>
+#include <zip.h>
+#include <zipconf.h>
 
 using namespace qssc::payload;
 namespace fs = std::filesystem;
 
 int qssc::payload::init() {
   const char *name = "ZIP";
-  bool registered = registry::PayloadRegistry::registerPlugin(
+  bool const registered = registry::PayloadRegistry::registerPlugin(
       name, name, "Payload that generates zip file with .qem extension.",
       [](std::optional<PayloadConfig> config)
           -> llvm::Expected<std::unique_ptr<payload::Payload>> {
@@ -52,8 +55,8 @@ int qssc::payload::init() {
 
 // creates a manifest json file and adds it to the file map
 void ZipPayload::addManifest() {
-  std::lock_guard<std::mutex> lock(_mtx);
-  std::string manifest_fname = "manifest/manifest.json";
+  std::lock_guard<std::mutex> const lock(_mtx);
+  std::string const manifest_fname = "manifest/manifest.json";
   nlohmann::json manifest;
   manifest["version"] = QSSC_VERSION;
   manifest["contents_path"] = prefix;
@@ -61,12 +64,12 @@ void ZipPayload::addManifest() {
 }
 
 void ZipPayload::addFile(llvm::StringRef filename, llvm::StringRef str) {
-  std::lock_guard<std::mutex> lock(_mtx);
+  std::lock_guard<std::mutex> const lock(_mtx);
   files[filename.str()] = str;
 }
 
 void ZipPayload::writePlain(const std::string &dirName) {
-  std::lock_guard<std::mutex> lock(_mtx);
+  std::lock_guard<std::mutex> const lock(_mtx);
   for (const auto &filePair : files) {
     fs::path fName(dirName);
     fName /= filePair.first;
@@ -83,7 +86,7 @@ void ZipPayload::writePlain(const std::string &dirName) {
 }
 
 void ZipPayload::writePlain(llvm::raw_ostream &stream) {
-  std::vector<fs::path> orderedNames = orderedFileNames();
+  std::vector<fs::path> const orderedNames = orderedFileNames();
   stream << "------------------------------------------\n";
   stream << "Plaintext payload: " << prefix << "\n";
   stream << "------------------------------------------\n";

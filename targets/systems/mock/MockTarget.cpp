@@ -18,39 +18,57 @@
 
 #include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
 #include "Conversion/QUIRToStandard/QUIRToStandard.h"
+#include "Dialect/QUIR/Transforms/BreakReset.h"
+#include "Dialect/QUIR/Transforms/FunctionArgumentSpecialization.h"
+#include "Dialect/QUIR/Transforms/Passes.h"
+#include "Dialect/QUIR/Transforms/RemoveQubitOperands.h"
+#include "Dialect/QUIR/Transforms/SubroutineCloning.h"
+#include "HAL/SystemConfiguration.h"
+#include "HAL/TargetSystem.h"
+#include "HAL/TargetSystemRegistry.h"
+#include "Payload/Payload.h"
 #include "Transforms/FunctionLocalization.h"
 #include "Transforms/QubitLocalization.h"
 
-#include "Dialect/QUIR/Transforms/Passes.h"
-#include "HAL/TargetSystemRegistry.h"
-#include "Payload/Payload.h"
+#include "mlir/Dialect/LLVMIR/Transforms/LegalizeForExport.h"
+#include "mlir/ExecutionEngine/OptUtils.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Pass/PassManager.h"
+#include "mlir/Pass/PassRegistry.h"
+#include "mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h"
+#include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
+#include "mlir/Target/LLVMIR/Export.h"
+#include "mlir/Transforms/Passes.h"
 
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/MC/TargetRegistry.h"
+#include "llvm/Support/CodeGen.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
-#include "llvm/Support/Host.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/ToolOutputFile.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetMachine.h"
+#include "llvm/TargetParser/Host.h"
 #include "llvm/TargetParser/SubtargetFeature.h"
 
-#include "mlir/Conversion/Passes.h"
-#include "mlir/Dialect/LLVMIR/Transforms/Passes.h"
-#include "mlir/ExecutionEngine/OptUtils.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/Pass/PassManager.h"
-#include "mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h"
-#include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
-#include "mlir/Target/LLVMIR/Export.h"
-
+#include <cstdint>
 #include <fstream>
-#include <sstream>
+#include <ios>
+#include <iterator>
+#include <memory>
+#include <optional>
+#include <string>
+#include <sys/types.h>
+#include <utility>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -66,7 +84,7 @@ static llvm::cl::OptionCategory
             "Compiler target");
 
 int qssc::targets::systems::mock::init() {
-  bool registered = registry::TargetSystemRegistry::registerPlugin<MockSystem>(
+  bool const registered = registry::TargetSystemRegistry::registerPlugin<MockSystem>(
       "mock", "Mock system for testing the targeting infrastructure.",
       [](std::optional<llvm::StringRef> configurationPath)
           -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
@@ -146,16 +164,16 @@ MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
 
   // Create drive targets
   for (const auto &result : llvm::enumerate(mockConfig->getDriveNodes())) {
-    uint32_t qubitIdx = result.index();
-    uint32_t nodeId = result.value();
+    uint32_t const qubitIdx = result.index();
+    uint32_t const nodeId = result.value();
     addChild(std::make_unique<MockDrive>(
         "MockDrive_" + std::to_string(qubitIdx), this, *mockConfig, nodeId));
   }
 
   // Create acquire targets
   for (const auto &result : llvm::enumerate(mockConfig->getAcquireNodes())) {
-    uint32_t acquireIdx = result.index();
-    uint32_t nodeId = result.value();
+    uint32_t const acquireIdx = result.index();
+    uint32_t const nodeId = result.value();
     addChild(std::make_unique<MockAcquire>("MockAcquire_" +
                                                std::to_string(acquireIdx),
                                            this, *mockConfig, nodeId));
@@ -191,7 +209,7 @@ void mockPipelineBuilder(mlir::OpPassManager &pm) {
 } // anonymous namespace
 
 llvm::Error MockSystem::registerTargetPipelines() {
-  mlir::PassPipelineRegistration<> pipeline(
+  mlir::PassPipelineRegistration<> const pipeline(
       "mock-conversion", "Run Mock-specific conversions", mockPipelineBuilder);
   MockController::registerTargetPipelines();
   MockAcquire::registerTargetPipelines();
@@ -260,7 +278,7 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
   llvm::InitializeAllTargetMCs();
 
   // Setup the machine properties for the target architecture.
-  std::string targetTriple = llvm::sys::getDefaultTargetTriple();
+  std::string const targetTriple = llvm::sys::getDefaultTargetTriple();
   std::string errorMessage;
   const auto *target =
       llvm::TargetRegistry::lookupTarget(targetTriple, errorMessage);
@@ -269,8 +287,8 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
                                    "Unable to find target: " + errorMessage);
   }
 
-  std::string cpu("generic");
-  llvm::SubtargetFeatures features;
+  std::string const cpu("generic");
+  llvm::SubtargetFeatures const features;
   std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(
       targetTriple, cpu, features.getString(), {}, {}));
   auto dataLayout = machine->createDataLayout();

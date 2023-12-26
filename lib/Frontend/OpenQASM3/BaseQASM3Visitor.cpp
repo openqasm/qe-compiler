@@ -56,8 +56,40 @@
 
 #include "Frontend/OpenQASM3/BaseQASM3Visitor.h"
 
-#include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <cassert>
+#include <map>
+#include <qasm/AST/ASTBarrier.h>
+#include <qasm/AST/ASTBase.h>
+#include <qasm/AST/ASTCBit.h>
+#include <qasm/AST/ASTCastExpr.h>
+#include <qasm/AST/ASTDeclarationList.h>
+#include <qasm/AST/ASTDelay.h>
+#include <qasm/AST/ASTDuration.h>
+#include <qasm/AST/ASTExpression.h>
+#include <qasm/AST/ASTFunctionCallExpr.h>
+#include <qasm/AST/ASTFunctions.h>
+#include <qasm/AST/ASTGates.h>
+#include <qasm/AST/ASTIdentifier.h>
+#include <qasm/AST/ASTIfConditionals.h>
+#include <qasm/AST/ASTKernel.h>
+#include <qasm/AST/ASTLoops.h>
+#include <qasm/AST/ASTMeasure.h>
+#include <qasm/AST/ASTParameterList.h>
+#include <qasm/AST/ASTQubit.h>
+#include <qasm/AST/ASTReset.h>
+#include <qasm/AST/ASTResult.h>
+#include <qasm/AST/ASTReturn.h>
+#include <qasm/AST/ASTStatement.h>
+#include <qasm/AST/ASTStretch.h>
+#include <qasm/AST/ASTSwitchStatement.h>
+#include <qasm/AST/ASTSymbolTable.h>
+#include <qasm/AST/ASTTypeEnums.h>
+#include <qasm/AST/ASTTypes.h>
+#include <sstream>
+#include <stdexcept>
 
 using namespace QASM;
 
@@ -86,7 +118,7 @@ void BaseQASM3Visitor::visit(const ASTStatementList *list) {
 
 void BaseQASM3Visitor::visit(const ASTSymbolTableEntry *symTableEntry) {
   assert(symTableEntry);
-  switch (ASTType astType = symTableEntry->GetValueType()) {
+  switch (ASTType const astType = symTableEntry->GetValueType()) {
   case ASTTypeQubitContainer:
     dispatchSymbolTableEntryVisit<ASTQubitContainerNode>(symTableEntry);
     break;
@@ -146,7 +178,7 @@ void BaseQASM3Visitor::visit(const ASTSymbolTableEntry *symTableEntry) {
 
 void BaseQASM3Visitor::visit(const ASTStatementNode *node) {
   // evaluate statements by type
-  switch (ASTType astType = node->GetASTType()) {
+  switch (ASTType const astType = node->GetASTType()) {
   case ASTTypeOpenQASMStatement:
     dispatchVisit<ASTOpenQASMStatementNode>(node);
     break;
@@ -241,7 +273,7 @@ void BaseQASM3Visitor::visit(const ASTBinaryOpStatementNode *node) {
 void BaseQASM3Visitor::visit(const ASTOpenQASMStatementNode *node) {}
 
 void BaseQASM3Visitor::visit(const ASTExpressionNode *node) {
-  switch (ASTType astType = node->GetASTType()) {
+  switch (ASTType const astType = node->GetASTType()) {
   case ASTTypeIdentifier: {
     const ASTIdentifierNode *identifierNode = nullptr;
     if (node->IsIdentifier()) {

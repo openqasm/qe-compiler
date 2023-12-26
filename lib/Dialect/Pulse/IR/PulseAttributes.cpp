@@ -14,9 +14,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/Pulse/IR/PulseAttributes.h"
-#include "Dialect/Pulse/IR/PulseDialect.h"
-#include "Dialect/Pulse/IR/PulseTypes.h"
 
 using namespace mlir;
 using namespace mlir::pulse;

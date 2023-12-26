@@ -23,11 +23,18 @@
 
 #include "API/errors.h"
 
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/raw_ostream.h"
 
+
+#include <cstdint>
+#include <optional>
 #include <sstream>
+#include <string>
+#include <sys/types.h>
+#include <tuple>
 
 namespace qssc::arguments {
 
@@ -130,7 +137,7 @@ llvm::Expected<Signature> Signature::deserialize(
                             qssc::ErrorCategory::QSSLinkSignatureError,
                             "Expected binary:");
     }
-    llvm::StringRef binaryName = value;
+    llvm::StringRef const binaryName = value;
 
     std::tie(line, buffer) = buffer.split("\n");
     std::tie(label, value) = line.split(' ');

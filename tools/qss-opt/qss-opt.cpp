@@ -20,38 +20,37 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/OQ3/IR/OQ3Dialect.h"
-#include "Dialect/OQ3/Transforms/Passes.h"
-#include "Dialect/Pulse/IR/PulseDialect.h"
-#include "Dialect/Pulse/Transforms/Passes.h"
-#include "Dialect/QCS/IR/QCSDialect.h"
-#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/RegisterDialects.h"
 #include "Dialect/RegisterPasses.h"
-#include "HAL/PassRegistration.h"
 #include "HAL/TargetSystemRegistry.h"
 #include "Payload/PayloadRegistry.h"
 
-#include "mlir/Debug/CLOptionsSetup.h"
 #include "mlir/Debug/Counter.h"
 #include "mlir/IR/AsmState.h"
-#include "mlir/IR/Dialect.h"
 #include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/InitAllExtensions.h"
-#include "mlir/InitAllPasses.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/FileUtilities.h"
+#include "mlir/Support/LogicalResult.h"
+#include "mlir/Support/Timing.h"
 #include "mlir/Tools/mlir-opt/MlirOptMain.h"
 
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <cstdio>
+#include <optional>
+#include <stdio.h>
+#include <string>
+#include <tuple>
+#include <utility>
 
 using namespace qssc;
 using namespace qssc::hal;
@@ -155,9 +154,9 @@ mlir::LogicalResult QSSCOptMain(int argc, char **argv,
                                 llvm::StringRef outputFilename,
                                 mlir::DialectRegistry &registry) {
 
-  llvm::InitLLVM y(argc, argv);
+  llvm::InitLLVM const y(argc, argv);
 
-  mlir::MlirOptMainConfig config =
+  mlir::MlirOptMainConfig const config =
       mlir::MlirOptMainConfig::createFromCLOptions();
 
   // When reading from stdin and the input is a tty, it is often a user mistake

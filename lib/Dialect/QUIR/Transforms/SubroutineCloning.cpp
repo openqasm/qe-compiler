@@ -23,8 +23,26 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/SubroutineCloning.h"
+
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <string>
+#include <sys/types.h>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -37,7 +55,7 @@ auto SubroutineCloningPass::lookupQubitId(const Value val) -> int {
   // Must be an argument to a function
   // see if we can find an attribute with the info
   if (auto blockArg = val.dyn_cast<BlockArgument>()) {
-    unsigned argIdx = blockArg.getArgNumber();
+    unsigned const argIdx = blockArg.getArgNumber();
     auto funcOp =
         dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
     if (funcOp) {
@@ -69,8 +87,8 @@ auto SubroutineCloningPass::getMangledName(Operation *op) -> std::string {
   std::vector<Value> qOperands;
   qubitCallOperands(callOp, qOperands);
 
-  for (Value qArg : qOperands) {
-    int qId = SubroutineCloningPass::lookupQubitId(qArg);
+  for (Value const qArg : qOperands) {
+    int const qId = SubroutineCloningPass::lookupQubitId(qArg);
     if (qId < 0) {
       callOp->emitOpError() << "Unable to resolve qubit ID for call\n";
       callOp->print(llvm::errs());
@@ -103,7 +121,7 @@ void SubroutineCloningPass::processCallOp(Operation *op,
     qubitCallOperands(callOp, qOperands);
 
     // first get the mangled name
-    std::string mangledName = getMangledName<CallLikeOp>(callOp);
+    std::string const mangledName = getMangledName<CallLikeOp>(callOp);
     callOp->setAttr("callee",
                     FlatSymbolRefAttr::get(&getContext(), mangledName));
 
@@ -121,7 +139,7 @@ void SubroutineCloningPass::processCallOp(Operation *op,
     // add qubit ID attributes to all the arguments
     for (uint ii = 0; ii < callOp.getOperands().size(); ++ii) {
       if (callOp.getOperands()[ii].getType().template isa<QubitType>()) {
-        int qId =
+        int const qId =
             lookupQubitId(callOp.getOperands()[ii]); // copy qubitId from call
         newFunc.setArgAttrs(
             ii, ArrayRef({NamedAttribute(

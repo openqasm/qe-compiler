@@ -24,16 +24,27 @@
 //===----------------------------------------------------------------------===//
 
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
+
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/Transforms/Passes.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
+#include <mlir/Dialect/Func/IR/FuncOps.h>
+
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringRef.h"
+
+#include <cassert>
+#include <cstdint>
+#include <optional>
 
 using namespace mlir;
 using namespace mlir::oq3;
@@ -47,7 +58,7 @@ createGlobalMemrefOp(mlir::OpBuilder &builder, mlir::Location loc,
 
   // place memref::GlobalOps at the top of the surrounding module.
   // (note: required by llvm.mlir.global, which this is lowered to)
-  mlir::OpBuilder::InsertionGuard g(builder);
+  mlir::OpBuilder::InsertionGuard const g(builder);
   auto containingModule = insertionAnchor->getParentOfType<mlir::ModuleOp>();
 
   if (!containingModule) {
@@ -137,7 +148,7 @@ struct ArrayDeclarationConversionPattern
     if (convertedType)
       declarationType = convertedType;
 
-    uint64_t numElements = declareOp.getNumElements().getZExtValue();
+    uint64_t const numElements = declareOp.getNumElements().getZExtValue();
     auto const memRefType = mlir::MemRefType::get(
         llvm::ArrayRef<int64_t>{(int64_t)numElements}, declareOp.getType());
     assert(memRefType && "failed to instantiate a MemRefType, likely trying "
@@ -164,7 +175,7 @@ template <class QUIRVariableOp>
 std::optional<mlir::memref::GetGlobalOp>
 findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
                             ConversionPatternRewriter &builder) {
-  mlir::OpBuilder::InsertionGuard g(builder);
+  mlir::OpBuilder::InsertionGuard const g(builder);
 
   auto globalMemrefOp =
       SymbolTable::lookupNearestSymbolFrom<mlir::memref::GlobalOp>(

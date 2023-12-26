@@ -20,9 +20,14 @@
 
 #include "API/errors.h"
 
+#include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <optional>
+#include <string>
+#include <string_view>
+#include <system_error>
 #include <utility>
 
 namespace qssc {
@@ -109,7 +114,7 @@ llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
                            std::string message, std::error_code ec) {
   auto *diagnosticCallback =
       onDiagnostic.has_value() ? &onDiagnostic.value() : nullptr;
-  qssc::Diagnostic diag{severity, category, std::move(message)};
+  qssc::Diagnostic const diag{severity, category, std::move(message)};
   if (diagnosticCallback)
     (*diagnosticCallback)(diag);
   return llvm::createStringError(ec, diag.toString());

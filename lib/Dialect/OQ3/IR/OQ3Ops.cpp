@@ -13,8 +13,26 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/OQ3/IR/OQ3Dialect.h"
-#include "Dialect/OQ3/IR/OQ3Types.h"
+
+#include "Dialect/QUIR/IR/QUIRTypes.h"
+
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/OpDefinition.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h>
+#include <mlir/Support/LogicalResult.h>
+
+#include "llvm/Support/raw_ostream.h"
+
+#include <algorithm>
+#include <cassert>
+#include <optional>
+#include <string>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::oq3;
@@ -192,4 +210,3 @@ mlir::LogicalResult AngleCmpOp::verify() {
 }
 
 #define GET_OP_CLASSES
-#include "Dialect/OQ3/IR/OQ3Ops.cpp.inc"

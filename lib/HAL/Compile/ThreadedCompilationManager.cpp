@@ -16,7 +16,27 @@
 
 #include "HAL/Compile/ThreadedCompilationManager.h"
 
+#include "HAL/Compile/TargetCompilationManager.h"
+#include "HAL/TargetSystem.h"
+#include "Payload/Payload.h"
+
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/DialectRegistry.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/Operation.h"
 #include "mlir/IR/Threading.h"
+#include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LogicalResult.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <mutex>
+#include <shared_mutex>
+#include <string>
+#include <unordered_map>
+#include <utility>
 
 using namespace qssc;
 using namespace qssc::hal::compile;
@@ -139,21 +159,21 @@ void ThreadedCompilationManager::registerPassManagerWithContext_(
   pm.getDependentDialects(dependentDialects);
   auto *context = getContext();
 
-  std::unique_lock lock(contextMutex_);
+  std::unique_lock const lock(contextMutex_);
   context->appendDialectRegistry(dependentDialects);
-  for (llvm::StringRef name : dependentDialects.getDialectNames())
+  for (llvm::StringRef const name : dependentDialects.getDialectNames())
     context->getOrLoadDialect(name);
 }
 
 mlir::PassManager &
 ThreadedCompilationManager::getTargetPassManager_(Target *target) {
-  std::shared_lock lock(targetPassManagersMutex_);
+  std::shared_lock const lock(targetPassManagersMutex_);
   return targetPassManagers_.at(target);
 }
 
 mlir::PassManager &
 ThreadedCompilationManager::createTargetPassManager_(Target *target) {
-  std::unique_lock lock(targetPassManagersMutex_);
+  std::unique_lock const lock(targetPassManagersMutex_);
   return targetPassManagers_.emplace(target, getContext()).first->second;
 }
 

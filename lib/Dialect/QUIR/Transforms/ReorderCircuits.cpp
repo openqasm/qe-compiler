@@ -24,11 +24,20 @@
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <set>
+#include <sys/types.h>
+#include <utility>
 
 #define DEBUG_TYPE "QUIRReorderMeasurements"
 
@@ -49,7 +58,7 @@ struct ReorderCircuitsAndNonCircuitPat
                                 PatternRewriter &rewriter) const override {
 
     // Accumulate qubits in measurement set
-    std::set<uint> currQubits = callCircuitOp.getOperatedQubits();
+    std::set<uint> const currQubits = callCircuitOp.getOperatedQubits();
     LLVM_DEBUG(llvm::dbgs() << "Matching on call_circuit for qubits:\t");
     LLVM_DEBUG(for (uint id : currQubits) llvm::dbgs() << id << " ");
     LLVM_DEBUG(llvm::dbgs() << "\n");

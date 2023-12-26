@@ -19,18 +19,17 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/Passes.h"
-#include "Dialect/Pulse/IR/PulseDialect.h"
-#include "Dialect/Pulse/IR/PulseOps.h"
-#include "Dialect/Pulse/IR/PulseTypes.h"
 
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/IR/QUIRTypes.h"
+#include "Conversion/QUIRToPulse/LoadPulseCals.h"
+#include "Conversion/QUIRToPulse/QUIRToPulse.h"
 
-#include "mlir/Dialect/SCF/IR/SCF.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/Pass/Pass.h"
+#include "Dialect/Pulse/Transforms/ClassicalOnlyDetection.h"
+#include "Dialect/Pulse/Transforms/MergeDelays.h"
+#include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
+#include "Dialect/Pulse/Transforms/SchedulePort.h"
+
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Pass/PassRegistry.h"
 
 namespace mlir::pulse {
 
@@ -46,7 +45,7 @@ void registerPulsePasses() {
 }
 
 void registerPulsePassPipeline() {
-  PassPipelineRegistration<> pipeline("pulseOpt",
+  PassPipelineRegistration<> const pipeline("pulseOpt",
                                       "Enable Pulse IR specific optimizations",
                                       pulse::pulsePassPipelineBuilder);
 }

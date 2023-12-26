@@ -23,8 +23,14 @@
 
 #include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
+
+#include <cassert>
+#include <vector>
 
 namespace mlir::quir {
 
@@ -73,7 +79,7 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
   auto &defaultRegion = switchOp.getDefaultRegion();
   auto *defaultBlock = &defaultRegion.front();
   Operation *defaultTerminator = defaultRegion.back().getTerminator();
-  ValueRange defaultTerminatorOperands = defaultTerminator->getOperands();
+  ValueRange const defaultTerminatorOperands = defaultTerminator->getOperands();
   rewriter.setInsertionPointToEnd(&defaultRegion.back());
   rewriter.create<cf::BranchOp>(loc, continueBlock, defaultTerminatorOperands);
   rewriter.eraseOp(defaultTerminator);
@@ -87,11 +93,11 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
   auto caseOperands = std::vector<mlir::ValueRange>();
   for (auto &region : switchOp.getCaseRegions())
     if (!region.empty()) {
-      caseOperands.emplace_back(ValueRange());
+      caseOperands.emplace_back();
       currBlock = &region.front();
       caseBlocks.push_back(currBlock);
       Operation *caseTerminator = region.back().getTerminator();
-      ValueRange caseTerminatorOperands = caseTerminator->getOperands();
+      ValueRange const caseTerminatorOperands = caseTerminator->getOperands();
       rewriter.setInsertionPointToEnd(&region.back());
       rewriter.create<cf::BranchOp>(loc, continueBlock, caseTerminatorOperands);
       rewriter.eraseOp(caseTerminator);

@@ -18,18 +18,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <algorithm>
-#include <fstream>
-#include <ostream>
-#include <unordered_set>
-
-#include "nlohmann/json.hpp"
-
 #include "Payload/Payload.h"
+
+#include <algorithm>
+#include <filesystem>
+#include <mutex>
+#include <string>
+#include <vector>
 
 // Inject static initialization headers from payloads. We need to include them
 // in a translation unit that is not being optimized (removed) by the compiler.
-#include "Payloads.inc"
 
 using namespace qssc::payload;
 namespace fs = std::filesystem;
@@ -51,7 +49,8 @@ auto Payload::getFile(const char *fName) -> std::string * {
 auto Payload::orderedFileNames() -> std::vector<fs::path> {
   const std::lock_guard<std::mutex> lock(_mtx);
   std::vector<fs::path> ret;
-  for (auto &filePair : files)
+  ret.reserve(files.size());
+for (auto &filePair : files)
     ret.emplace_back(filePair.first);
   std::sort(ret.begin(), ret.end());
   return ret;

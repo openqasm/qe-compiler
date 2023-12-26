@@ -37,37 +37,85 @@
 ///
 //===----------------------------------------------------------------------===//
 
+#include "Frontend/OpenQASM3/QUIRGenQASM3Visitor.h"
+
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
-
 #include "Frontend/OpenQASM3/BaseQASM3Visitor.h"
-#include "Frontend/OpenQASM3/QUIRGenQASM3Visitor.h"
 #include "Frontend/OpenQASM3/QUIRVariableBuilder.h"
 
-#include "qasm/AST/ASTDelay.h"
-#include "qasm/AST/ASTTypeEnums.h"
-
 #include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Complex/IR/Complex.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Diagnostics.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/IR/Region.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <algorithm>
+#include <array>
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
+#include <qasm/AST/ASTBarrier.h>
+#include <qasm/AST/ASTBase.h>
+#include <qasm/AST/ASTCBit.h>
+#include <qasm/AST/ASTCastExpr.h>
+#include <qasm/AST/ASTDelay.h>
+#include <qasm/AST/ASTDuration.h>
+#include <qasm/AST/ASTFunctionCallExpr.h>
+#include <qasm/AST/ASTFunctions.h>
+#include <qasm/AST/ASTGateOpList.h>
+#include <qasm/AST/ASTGates.h>
+#include <qasm/AST/ASTIdentifier.h>
+#include <qasm/AST/ASTIfConditionals.h>
+#include <qasm/AST/ASTIntegerList.h>
+#include <qasm/AST/ASTKernel.h>
+#include <qasm/AST/ASTLoops.h>
+#include <qasm/AST/ASTMeasure.h>
+#include <qasm/AST/ASTQubit.h>
+#include <qasm/AST/ASTReset.h>
+#include <qasm/AST/ASTResult.h>
+#include <qasm/AST/ASTReturn.h>
+#include <qasm/AST/ASTStatement.h>
+#include <qasm/AST/ASTStretch.h>
+#include <qasm/AST/ASTSwitchStatement.h>
+#include <qasm/AST/ASTSymbolTable.h>
+#include <qasm/AST/ASTTypeEnums.h>
+#include <qasm/AST/ASTTypes.h>
+#include <sstream>
+#include <stdexcept>
 #include <string>
+#include <sys/types.h>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
 #define DEBUG_TYPE "QUIRGen"
 
@@ -127,8 +175,8 @@ QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
           dynamic_cast<const ASTIdentifierRefNode *>(node->GetExpression()))
     return refNode->GetName();
   if (const auto *intNode = dynamic_cast<const ASTIntNode *>(node)) {
-    unsigned bits = intNode->GetBits();
-    int64_t value = intNode->IsSigned() ? intNode->GetSignedValue()
+    unsigned const bits = intNode->GetBits();
+    int64_t const value = intNode->IsSigned() ? intNode->GetSignedValue()
                                         : intNode->GetUnsignedValue();
     return intNode->GetName() + std::to_string(value) + "_i" +
            std::to_string(bits);
@@ -187,7 +235,7 @@ auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
 void QUIRGenQASM3Visitor::initialize(
     uint numShots, const double &shotDelay,
     const mlir::quir::TimeUnits &shotDelayUnits) {
-  Location initialLocation =
+  Location const initialLocation =
       mlir::FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
 
   // validate command line options
@@ -208,7 +256,7 @@ void QUIRGenQASM3Visitor::initialize(
 
   // set up the builders to point to the proper places
   func.addEntryBlock();
-  OpBuilder b = OpBuilder::atBlockBegin(&func.getBody().front());
+  OpBuilder const b = OpBuilder::atBlockBegin(&func.getBody().front());
   builder = b;
   topLevelBuilder.setInsertionPointToStart(topLevelBuilder.getBlock());
 
@@ -248,7 +296,7 @@ void QUIRGenQASM3Visitor::initialize(
   builder.create<SystemFinalizeOp>(initialLocation);
 
   // return 0
-  Value intRef = builder.create<mlir::arith::ConstantOp>(
+  Value const intRef = builder.create<mlir::arith::ConstantOp>(
       initialLocation, builder.getIntegerAttr(builder.getIntegerType(32), 0));
   auto returnValueRange = ValueRange(intRef);
   builder.create<mlir::func::ReturnOp>(initialLocation, returnValueRange);
@@ -300,7 +348,7 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
   }
 
   const ASTIntegerList &intList = loop->GetIntegerList();
-  Location loc = getLocation(node);
+  Location const loc = getLocation(node);
 
   // Lower bound
   auto startOp = builder.create<mlir::arith::ConstantOp>(
@@ -321,7 +369,7 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
 
   // Adding induction variable to SSA values map
   const ASTIntNode *indVar = loop->GetIndVar();
-  Value forOpIndVar = forOp.getInductionVar();
+  Value const forOpIndVar = forOp.getInductionVar();
   ssaValues[indVar->GetName()] = forOpIndVar;
 
   // Dictionary of SSA values used inside "for"
@@ -330,7 +378,7 @@ void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {
   std::swap(ssaValues, forSsaValues);
 
   // set up the builders to point to the proper places
-  OpBuilder b(&forOp.getRegion());
+  OpBuilder const b(&forOp.getRegion());
   builder = b;
   circuitParentBuilder = b;
 
@@ -356,7 +404,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
   switchCircuit(false, getLocation(node));
 
   // Checking to see if the IfStatementNode has an else part or not
-  bool hasElse = node->HasElse();
+  bool const hasElse = node->HasElse();
 
   // Create an SSA Value from the if statement condition
   const ASTExpressionNode *exprNode = node->GetExpression();
@@ -366,7 +414,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
                         "set state to failed.");
     return;
   }
-  Value condition = conditionOrError.get();
+  Value const condition = conditionOrError.get();
 
   Value conditionBool;
   if (condition.getType() == builder.getI1Type()) {
@@ -381,7 +429,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
                                         /*withElseRegion=*/hasElse);
 
   // Save current level OpBuilder
-  OpBuilder prevBuilder = builder;
+  OpBuilder const prevBuilder = builder;
 
   // Dictionary of SSA values used inside "if"
   std::unordered_map<std::string, mlir::Value> ifSsaValues = ssaValues;
@@ -389,7 +437,7 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
   std::swap(ssaValues, ifSsaValues);
 
   // New OpBuilder for the if statement Region
-  OpBuilder ifRegionBuilder(ifOp.getThenRegion());
+  OpBuilder const ifRegionBuilder(ifOp.getThenRegion());
   builder = ifRegionBuilder;
   circuitParentBuilder = ifRegionBuilder;
 
@@ -418,9 +466,9 @@ void QUIRGenQASM3Visitor::visit(const ASTIfStatementNode *node) {
     std::swap(ssaValues, elseSsaValues);
 
     // Save current level OpBuilder
-    OpBuilder elseBuilder = builder;
+    OpBuilder const elseBuilder = builder;
 
-    OpBuilder ElseRegionBuilder(ifOp.getElseRegion());
+    OpBuilder const ElseRegionBuilder(ifOp.getElseRegion());
     builder = ElseRegionBuilder;
     circuitParentBuilder = builder;
 
@@ -450,8 +498,8 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   switchCircuit(false, getLocation(node));
 
   // Getting the number of cases we have
-  unsigned caseSize = node->GetNumCaseStatements();
-  Location loc = getLocation(node);
+  unsigned const caseSize = node->GetNumCaseStatements();
+  Location const loc = getLocation(node);
 
   // Getting all the case values
   DenseIntElementsAttr caseValuesAttr;
@@ -466,7 +514,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
 
   auto caseOperands = node->GetCaseStatementsMap();
 
-  ASTType quantityType = node->GetQuantityType();
+  ASTType const quantityType = node->GetQuantityType();
 
   llvm::Expected<mlir::Value> flagOrError(llvm::createStringError(
       llvm::inconvertibleErrorCode(), "Initializing error flag"));
@@ -510,12 +558,12 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
       /*caseRegionsCount=*/caseSize);
 
   // Save current level OpBuilder
-  OpBuilder prevBuilder = builder;
+  OpBuilder const prevBuilder = builder;
 
   // Parse the default region.
   Region &defaultRegion = switchOp.getDefaultRegion();
   defaultRegion.emplaceBlock();
-  OpBuilder defaultRegionBuilder(defaultRegion);
+  OpBuilder const defaultRegionBuilder(defaultRegion);
   builder = defaultRegionBuilder;
   circuitParentBuilder = defaultRegionBuilder;
   if (const ASTDefaultStatementNode *defaultStatementNode =
@@ -534,7 +582,7 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   for (auto const &[key, caseValue] : node->GetCaseStatementsMap()) {
     Region &caseRegion = switchOp.getCaseRegions()[i];
     caseRegion.emplaceBlock();
-    OpBuilder caseRegionBuilder(caseRegion);
+    OpBuilder const caseRegionBuilder(caseRegion);
     i++;
     builder = caseRegionBuilder;
     circuitParentBuilder = caseRegionBuilder;
@@ -554,7 +602,7 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
   switchCircuit(false, getLocation(node));
 
   const ASTWhileLoopNode *loop = node->GetLoop();
-  Location loc = getLocation(node);
+  Location const loc = getLocation(node);
 
   auto whileOp =
       builder.create<scf::WhileOp>(loc, TypeRange({}), ValueRange({}));
@@ -568,7 +616,7 @@ void QUIRGenQASM3Visitor::visit(const ASTWhileStatementNode *node) {
                         "set state to failed.");
     return;
   }
-  Value condition = conditionOrError.get();
+  Value const condition = conditionOrError.get();
 
   builder.create<scf::ConditionOp>(loc, condition, ValueRange({}));
 
@@ -625,13 +673,13 @@ void QUIRGenQASM3Visitor::visit(const ASTFunctionCallNode *node) {
     }
     operands.push_back(expressionOrError.get());
   }
-  ValueRange operandRange(operands.data(), operands.size());
+  ValueRange const operandRange(operands.data(), operands.size());
 
   llvm::SmallVector<Type, 1> resultTypes;
   if (node->ReturnsResult())
     resultTypes.emplace_back(
         varHandler.resolveQUIRVariableType(node->GetResult()));
-  TypeRange resultRange(resultTypes.data(), resultTypes.size());
+  TypeRange const resultRange(resultTypes.data(), resultTypes.size());
 
   auto callOp = builder.create<func::CallOp>(
       getLocation(node), node->GetCallName(), resultRange, operandRange);
@@ -668,7 +716,7 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
   // Store argument Values so we can reference them within this gate
   std::unordered_map<std::string, mlir::Value> gateSsaValues;
   unsigned i = 0;
-  MutableArrayRef<BlockArgument> arguments = func.getBody().getArguments();
+  MutableArrayRef<BlockArgument> const arguments = func.getBody().getArguments();
   for (BlockArgument *arg = arguments.begin(); arg < arguments.end(); arg++) {
     if (i < numQubits) {
       gateSsaValues[gateNode->GetQubit(i)->GetGateQubitName()] = *arg;
@@ -680,11 +728,11 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
   }
 
   // Save the current builder, temporarily swap the available Values
-  OpBuilder prevBuilder = builder;
+  OpBuilder const prevBuilder = builder;
   std::swap(ssaValues, gateSsaValues);
 
   // New OpBuilder for the gate declaration Region
-  OpBuilder gateDeclarationBuilder(func.getBody());
+  OpBuilder const gateDeclarationBuilder(func.getBody());
   builder = gateDeclarationBuilder;
   circuitParentBuilder = builder;
 
@@ -830,7 +878,7 @@ void QUIRGenQASM3Visitor::visit(const ASTUGateOpNode *node) {
   }
   auto resolveQCParam = resolveQCParamOrError.get();
 
-  Value qubitRef = getCurrentValue(resolveQCParam);
+  Value const qubitRef = getCurrentValue(resolveQCParam);
 
   std::array<Value, fixedNumParams> angles;
   for (unsigned i = 0; i < fixedNumParams; i++) {
@@ -885,7 +933,7 @@ void QUIRGenQASM3Visitor::visit(const ASTCXGateOpNode *node) {
   }
   auto resolveQCParam0 = resolveQCParam0OrError.get();
 
-  Value controlQubit = getCurrentValue(resolveQCParam0);
+  Value const controlQubit = getCurrentValue(resolveQCParam0);
 
   auto resolveQCParam1OrError = resolveQCParam(gateNode, 1);
   if (!resolveQCParam1OrError) {
@@ -895,7 +943,7 @@ void QUIRGenQASM3Visitor::visit(const ASTCXGateOpNode *node) {
   }
   auto resolveQCParam1 = resolveQCParam1OrError.get();
 
-  Value targetQubit = getCurrentValue(resolveQCParam1);
+  Value const targetQubit = getCurrentValue(resolveQCParam1);
 
   builder.create<BuiltinCXOp>(getLocation(node), controlQubit, targetQubit);
 }
@@ -903,7 +951,7 @@ void QUIRGenQASM3Visitor::visit(const ASTCXGateOpNode *node) {
 void QUIRGenQASM3Visitor::visit(const ASTResetNode *node) {
   // do not insert reset into circuit due to BreakResetPass
   switchCircuit(false, getLocation(node));
-  Value qubitRef = getCurrentValue(node->GetTarget()->GetName());
+  Value const qubitRef = getCurrentValue(node->GetTarget()->GetName());
   builder.create<ResetQubitOp>(getLocation(node), qubitRef);
 }
 
@@ -939,12 +987,12 @@ mlir::Value QUIRGenQASM3Visitor::createMeasurement(const ASTMeasureNode *node,
   }
 
   const ASTQubitContainerNode *qubitsNode = node->GetTarget();
-  Value qubitRef = getCurrentValue(qubitsNode->GetName());
+  Value const qubitRef = getCurrentValue(qubitsNode->GetName());
   auto measureOp = builder.create<MeasureOp>(getLocation(node),
                                              builder.getI1Type(), qubitRef);
   if (emitAssignment) {
     auto *target = node->GetResult();
-    unsigned resultIndex =
+    unsigned const resultIndex =
         node->GetResultSize() == 0 ? 0 : node->GetResultIndex(0);
     auto *identifier = target->GetIdentifier();
 
@@ -979,8 +1027,8 @@ void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
   switch (delayNode->GetDelayType()) {
   case ASTTypeDuration: {
     // duration a = 10ns; delay[a] $q;
-    Value duration = getCurrentValue(delayNode->GetDurationNode()->GetName());
-    Value qubitRef =
+    Value const duration = getCurrentValue(delayNode->GetDurationNode()->GetName());
+    Value const qubitRef =
         getCurrentValue(delayNode->GetDelayQubitIdentifier()->GetName());
     builder.create<DelayOp>(getLocation(delayNode), duration, qubitRef);
     break;
@@ -1007,7 +1055,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
   case ASTTypeStretch: {
     // stretch a; delay[a] $q;
     // stretch a; delay[a] $0, $1;
-    Value stretchRef = getCurrentValue(
+    Value const stretchRef = getCurrentValue(
         delayNode->GetStretchNode()->GetIdentifier()->GetName());
 
     const ASTIdentifierList &idList = delayNode->GetOperandList();
@@ -1153,7 +1201,7 @@ void QUIRGenQASM3Visitor::visit(const ASTKernelNode *node) {
   attrs.emplace_back(
       builder.getStringAttr(SymbolTable::getVisibilityAttrName()),
       builder.getStringAttr("private"));
-  ArrayRef<NamedAttribute> funcAttrs(attrs.data(), attrs.size());
+  ArrayRef<NamedAttribute> const funcAttrs(attrs.data(), attrs.size());
 
   topLevelBuilder.create<mlir::func::FuncOp>(
       getLocation(node), node->GetName(),
@@ -1188,7 +1236,7 @@ ExpressionValueType
 QUIRGenQASM3Visitor::visit_(const ASTQubitContainerNode *node) {
   switchCircuit(false, getLocation(node));
   const std::string &qId = node->GetName();
-  int id = stoi(node->GetIdentifier()->GetQubitMnemonic());
+  int const id = stoi(node->GetIdentifier()->GetQubitMnemonic());
 
   const unsigned size = node->Size();
   Value qubitRef = builder
@@ -1249,7 +1297,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTCBitNode *node) {
   // classical bit expression, so truncate to trailing (least-significant bits)
   // or take full string
   auto stringRepr = llvm::StringRef(node->AsString()).take_back(node->Size());
-  llvm::APInt initializer(node->Size(), stringRepr, /* radix */ 2);
+  llvm::APInt const initializer(node->Size(), stringRepr, /* radix */ 2);
 
   // build an arbitrary-precision integer and let OQ3_CastOp take care of
   // initializing a classical register value from it.
@@ -1301,7 +1349,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTStretchNode *node) {
 ExpressionValueType
 QUIRGenQASM3Visitor::visit_(const ASTIdentifierRefNode *node) {
   switchCircuit(false, getLocation(node));
-  unsigned index = node->IsIndexed() ? node->GetIndex() : 0;
+  unsigned const index = node->IsIndexed() ? node->GetIndex() : 0;
   std::string const &variableName = node->GetIdentifier()->GetName();
 
   if (varHandler.tracksVariable(variableName)) {
@@ -1324,9 +1372,9 @@ QUIRGenQASM3Visitor::visit_(const ASTIdentifierRefNode *node) {
   }
 
   // TODO replace old case, incorrect handling
-  Value memRef = getCurrentValue(variableName);
+  Value const memRef = getCurrentValue(variableName);
 
-  Value indexRef = builder.create<mlir::arith::ConstantOp>(
+  Value const indexRef = builder.create<mlir::arith::ConstantOp>(
       getLocation(node), builder.getIndexAttr(index));
 
   Value loadOpRef =
@@ -1337,8 +1385,8 @@ QUIRGenQASM3Visitor::visit_(const ASTIdentifierRefNode *node) {
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTIdentifierNode *node) {
   switchCircuit(false, getLocation(node));
-  llvm::StringRef variableName = node->GetName();
-  mlir::Location location = getLocation(node);
+  llvm::StringRef const variableName = node->GetName();
+  mlir::Location const location = getLocation(node);
 
   // old-style variable (i.e., still broken?!)
   if (!varHandler.tracksVariable(variableName))
@@ -1384,7 +1432,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
                         "set state to failed.");
     return rightRefOrError;
   }
-  Value rightRef = rightRefOrError.get();
+  Value const rightRef = rightRefOrError.get();
 
   llvm::Expected<std::string> leftNameOrError = getExpressionName(left);
   if (!leftNameOrError) {
@@ -1392,7 +1440,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
                         "the state to failed.");
     return createVoidValue(node);
   }
-  std::string leftName = leftNameOrError.get();
+  std::string const leftName = leftNameOrError.get();
 
   if (left->GetASTType() != ASTTypeIdentifier) {
     reportError(node, mlir::DiagnosticSeverity::Error)
@@ -1424,7 +1472,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
                           "not set state to failed.");
       return leftRefOrError;
     }
-    Value leftRef = leftRefOrError.get();
+    Value const leftRef = leftRefOrError.get();
 
     Value opRef = rightRef;
     if (leftRef.getType() != rightRef.getType()) {
@@ -1796,7 +1844,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTIntNode *node) {
   }
 
   const unsigned bits = node->GetBits();
-  int64_t value =
+  int64_t const value =
       node->IsSigned() ? node->GetSignedValue() : node->GetUnsignedValue();
 
   return builder.create<mlir::arith::ConstantOp>(
@@ -1832,11 +1880,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPIntegerNode *node) {
                         "the state to failed.");
     return createVoidValue(node);
   }
-  std::string name = nameOrError.get();
+  std::string const name = nameOrError.get();
 
   const unsigned bits = node->GetBits();
-  bool isSigned = node->IsSigned();
-  int64_t value = isSigned ? node->ToSignedInt() : node->ToUnsignedInt();
+  bool const isSigned = node->IsSigned();
+  int64_t const value = isSigned ? node->ToSignedInt() : node->ToUnsignedInt();
 
   return builder.create<mlir::arith::ConstantOp>(
       getLocation(node),
@@ -1855,7 +1903,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTFloatNode *node) {
   }
 
   const unsigned bits = node->GetBits();
-  double value = node->GetValue();
+  double const value = node->GetValue();
 
   // MLIR does not support arbitrary precision float types
   mlir::Type type;
@@ -1942,7 +1990,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
                         "the state to failed.");
     return createVoidValue(node);
   }
-  std::string name = nameOrError.get();
+  std::string const name = nameOrError.get();
 
   if (ssaValues.find(name) != ssaValues.end()) {
     reportError(node, mlir::DiagnosticSeverity::Error)
@@ -1958,13 +2006,13 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTMPComplexNode *node) {
     assert(hasFailed && "Error in real value");
     return realOrError;
   }
-  Value real = realOrError.get();
+  Value const real = realOrError.get();
 
   if (!imagOrError) {
     assert(hasFailed && "Error in imag value");
     return imagOrError;
   }
-  Value imag = imagOrError.get();
+  Value const imag = imagOrError.get();
 
   return builder.create<complex::CreateOp>(
       getLocation(node), ComplexType::get(real.getType()), real, imag);
@@ -2054,7 +2102,7 @@ QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
     assert(hasFailed && "Expected visit functions to signal error state");
     return std::move(expression);
   }
-  mlir::Value operandRef = expression.get();
+  mlir::Value const operandRef = expression.get();
 
   Value opRef = builder.create<CastOp>(
       getLocation(node), getCastDestinationType(node, builder), operandRef);

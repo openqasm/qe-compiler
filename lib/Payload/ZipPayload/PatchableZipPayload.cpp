@@ -20,14 +20,25 @@
 //===----------------------------------------------------------------------===//
 
 #include "Payload/PatchableZipPayload.h"
+
 #include "ZipUtil.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <cassert>
+#include <cerrno>
+#include <cstdlib>
 #include <fstream>
-#include <string_view>
+#include <memory>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <system_error>
+#include <utility>
 #include <zip.h>
+#include <zipconf.h>
 
 namespace qssc::payload {
 
@@ -131,7 +142,7 @@ llvm::Error PatchableZipPayload::addFileToZip(zip_t *zip,
   if (src == nullptr)
     return extractLibZipError("Creating zip source from data buffer", err);
 
-  if (int idx = zip_file_add(zip, path.c_str(), src, ZIP_FL_OVERWRITE) < 0) {
+  if (int const idx = zip_file_add(zip, path.c_str(), src, ZIP_FL_OVERWRITE) < 0) {
     if (idx < 0) {
       auto *archiveErr = zip_get_error(zip);
       return extractLibZipError("Adding or replacing file to zip", *archiveErr);
@@ -199,7 +210,7 @@ llvm::Error PatchableZipPayload::writeString(std::string *outputString) {
   } else {
     // re-read file from disk
     std::ostringstream buf;
-    std::ifstream input(path.c_str());
+    std::ifstream const input(path.c_str());
     buf << input.rdbuf();
     ostream->write(buf.str().c_str(), buf.str().length());
   }
@@ -259,8 +270,7 @@ PatchableZipPayload::readMember(llvm::StringRef path, bool markForWriteBack) {
     return extractLibZipError("Closing file in zip", err);
   }
 
-  auto ins = files.emplace(std::make_pair(
-      pathStr, TrackedFile{markForWriteBack, std::move(fileBuf)}));
+  auto ins = files.emplace(pathStr, TrackedFile{markForWriteBack, std::move(fileBuf)});
 
   assert(ins.second && "expect insertion, i.e., had not been present before.");
 

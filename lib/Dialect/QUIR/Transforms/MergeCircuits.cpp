@@ -20,19 +20,42 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/MergeCircuits.h"
+
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/IRMapping.h"
+#include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/Operation.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/TypeRange.h"
+#include "mlir/IR/Types.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <algorithm>
+#include <cassert>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/StringMap.h>
+#include <optional>
+#include <set>
+#include <string>
+#include <sys/types.h>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 using namespace mlir;
@@ -264,14 +287,14 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
       callInputValues.push_back(inputValue);
       insertedArguments.push_back(index);
     } else {
-      int originalIndex = search - callInputValues.begin();
+      int const originalIndex = search - callInputValues.begin();
       reusedArguments[index] = originalIndex;
     }
     index++;
   }
 
   // merge circuit names
-  std::string newName =
+  std::string const newName =
       (circuitOp.getSymName() + "_" + nextCircuitOp.getSymName()).str();
 
   // create new circuit operation by cloning first circuit
@@ -344,13 +367,13 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // collect all of the first circuit's ids
   std::vector<int> allIds;
-  for (Attribute valAttr : theseIdsAttr) {
+  for (Attribute const valAttr : theseIdsAttr) {
     auto intAttr = valAttr.dyn_cast<IntegerAttr>();
     allIds.push_back(intAttr.getInt());
   }
 
   // add IDs from the second circuit if not from the first
-  for (Attribute valAttr : newIdsAttr) {
+  for (Attribute const valAttr : newIdsAttr) {
     auto intAttr = valAttr.dyn_cast<IntegerAttr>();
     auto result = std::find(begin(allIds), end(allIds), intAttr.getInt());
     if (result == end(allIds))

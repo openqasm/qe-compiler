@@ -21,24 +21,37 @@
 
 #include "Dialect/QUIR/Transforms/VariableElimination.h"
 
-#include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-
 #include "Conversion/OQ3ToStandard/OQ3ToStandard.h"
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
+#include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Affine/Passes.h"
 #include "mlir/Dialect/Affine/Utils.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Dominance.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Types.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
+#include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
-#include <llvm/ADT/SmallVector.h>
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringRef.h"
+
+#include <cassert>
+#include <optional>
+#include <utility>
 
 namespace mlir {
 void affineScalarReplaceCopy(mlir::func::FuncOp f, DominanceInfo &domInfo,
@@ -324,7 +337,7 @@ void VariableEliminationPass::runOnOperation() {
   auto &domInfo = getAnalysis<DominanceInfo>();
   auto &postDomInfo = getAnalysis<PostDominanceInfo>();
 
-  WalkResult result = getOperation()->walk([&](mlir::func::FuncOp func) {
+  WalkResult const result = getOperation()->walk([&](mlir::func::FuncOp func) {
     mlir::affine::affineScalarReplace(func, domInfo, postDomInfo);
 
     return WalkResult::advance();

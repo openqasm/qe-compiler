@@ -20,13 +20,22 @@
 
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 
+#include "mlir/IR/Operation.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <iterator>
+#include <optional>
+#include <set>
+
 using namespace mlir::quir;
 
 //===----------------------------------------------------------------------===//
 // Tablegen Interface Definitions
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/QUIR/IR/QUIRInterfaces.cpp.inc"
 
 //===----------------------------------------------------------------------===//
 // QubitOpInterface
@@ -84,7 +93,7 @@ std::set<uint32_t> interfaces_impl::getUnionQubits(std::set<uint32_t> &first,
 
 bool interfaces_impl::qubitSetsOverlap(std::set<uint32_t> &first,
                                        std::set<uint32_t> &second) {
-  std::set<uint32_t> sharedQubits = getSharedQubits(first, second);
+  std::set<uint32_t> const sharedQubits = getSharedQubits(first, second);
   return !sharedQubits.empty();
 }
 

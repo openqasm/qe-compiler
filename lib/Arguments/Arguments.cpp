@@ -20,17 +20,20 @@
 
 #include "Arguments/Arguments.h"
 #include "API/errors.h"
+#include "Arguments/Signature.h"
 #include "Payload/Payload.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/FileSystem.h"
-
-#include <llvm/Support/raw_ostream.h>
+#include "llvm/Support/raw_ostream.h"
 
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
+#include <string>
+#include <system_error>
 #include <utility>
 
 namespace qssc::arguments {
@@ -80,7 +83,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
                           BindArgumentsImplementationFactory &factory,
                           const OptDiagnosticCallback &onDiagnostic) {
 
-  bool enableInMemoryOutput = payloadOutputPath == "";
+  bool const enableInMemoryOutput = payloadOutputPath == "";
 
   // placeholder string for data on disk if required
   std::string inputFromDisk;
@@ -90,7 +93,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
     // copy to link payload if not returning in memory
     // load from disk into string if returning in memory
     if (!enableInMemoryOutput) {
-      std::error_code copyError =
+      std::error_code const copyError =
           llvm::sys::fs::copy_file(moduleInput, payloadOutputPath);
       if (copyError)
         return llvm::make_error<llvm::StringError>(
@@ -98,7 +101,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
     } else {
       // read from disk to process in memory
       std::ostringstream buf;
-      std::ifstream input(moduleInput.str().c_str());
+      std::ifstream const input(moduleInput.str().c_str());
       buf << input.rdbuf();
       inputFromDisk = buf.str();
       moduleInput = inputFromDisk;
@@ -116,7 +119,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
     enableInMemoryInput = false;
   }
 
-  llvm::StringRef payloadData =
+  llvm::StringRef const payloadData =
       (enableInMemoryInput) ? moduleInput : payloadOutputPath;
 
   auto binary = std::unique_ptr<BindArgumentsImplementation>(

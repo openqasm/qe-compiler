@@ -19,22 +19,36 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Utils/Utils.h"
+
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/FunctionInterfaces.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Interfaces/ControlFlowInterfaces.h"
+#include "mlir/Support/LLVM.h"
 
 #include "llvm/ADT/BitVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <cassert>
+#include <cstdint>
+#include <optional>
+#include <set>
+#include <string>
+#include <sys/types.h>
 #include <tuple>
-#include <utility>
+#include <vector>
 
 namespace mlir::quir {
 
@@ -58,15 +72,15 @@ auto quirFunctionTypeMatch(FunctionType &ft1, FunctionType &ft2) -> bool {
     return false;
 
   for (uint ii = 0; ii < ft1.getNumInputs(); ++ii) {
-    Type t1 = ft1.getInput(ii);
-    Type t2 = ft2.getInput(ii);
+    Type const t1 = ft1.getInput(ii);
+    Type const t2 = ft2.getInput(ii);
     if (!quirTypeMatch<AngleType, QubitType>(t1, t2) && t1 != t2)
       return false;
   }
 
   for (uint ii = 0; ii < ft1.getNumResults(); ++ii) {
-    Type t1 = ft1.getResult(ii);
-    Type t2 = ft2.getResult(ii);
+    Type const t1 = ft1.getResult(ii);
+    Type const t2 = ft2.getResult(ii);
     if (!quirTypeMatch<AngleType, QubitType>(t1, t2) && t1 != t2)
       return false;
   }
@@ -76,7 +90,7 @@ auto quirFunctionTypeMatch(FunctionType &ft1, FunctionType &ft2) -> bool {
 
 // walks the module operation and searches for a func def labeled "main"
 auto getMainFunction(Operation *moduleOperation) -> Operation * {
-  OpBuilder b(moduleOperation);
+  OpBuilder const b(moduleOperation);
   Operation *mainFunc = nullptr;
   moduleOperation->walk([&](mlir::func::FuncOp funcOp) {
     if (SymbolRefAttr::get(funcOp).getLeafReference() == "main") {
@@ -119,7 +133,7 @@ void addQubitIdsFromAttr(Operation *operation, std::vector<uint> &theseIds) {
   if (thisIdAttr)
     theseIds.push_back(thisIdAttr.getInt());
   if (theseIdsAttr) {
-    for (Attribute valAttr : theseIdsAttr) {
+    for (Attribute const valAttr : theseIdsAttr) {
       auto intAttr = valAttr.dyn_cast<IntegerAttr>();
       theseIds.push_back(intAttr.getInt());
     }
@@ -135,7 +149,7 @@ void addQubitIdsFromAttr(Operation *operation, std::set<uint> &theseIds) {
   if (thisIdAttr)
     theseIds.emplace(thisIdAttr.getInt());
   if (theseIdsAttr) {
-    for (Attribute valAttr : theseIdsAttr) {
+    for (Attribute const valAttr : theseIdsAttr) {
       auto intAttr = valAttr.dyn_cast<IntegerAttr>();
       theseIds.emplace(intAttr.getInt());
     }
@@ -220,7 +234,7 @@ std::optional<uint> lookupQubitId(const Value &val) {
   if (!declOp) { // Must be an argument to a function
     // see if we can find an attribute with the info
     if (auto blockArg = val.dyn_cast<BlockArgument>()) {
-      unsigned argIdx = blockArg.getArgNumber();
+      unsigned const argIdx = blockArg.getArgNumber();
       auto *parentOp = blockArg.getOwner()->getParentOp();
       if (FunctionOpInterface functionOpInterface =
               dyn_cast<FunctionOpInterface>(parentOp)) {
@@ -305,7 +319,7 @@ bool isQuantumOp(Operation *op) {
 
 llvm::Expected<mlir::quir::DurationAttr>
 getDuration(mlir::quir::DelayOp &delayOp) {
-  std::string durationStr;
+  std::string const durationStr;
   auto durationDeclare = delayOp.getTime().getDefiningOp<quir::ConstantOp>();
   if (durationDeclare)
     return durationDeclare.getValue().dyn_cast<quir::DurationAttr>();
@@ -330,14 +344,14 @@ getDuration(mlir::quir::ConstantOp &duration) {
 std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,
                                                  Value result) {
   auto opRes = result.cast<OpResult>();
-  uint resNum = opRes.getResultNumber();
+  uint const resNum = opRes.getResultNumber();
   return std::make_tuple(measureOp.getQubits()[resNum], measureOp);
 }
 
 std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
                                                  Value result) {
   auto opRes = result.cast<OpResult>();
-  uint resNum = opRes.getResultNumber();
+  uint const resNum = opRes.getResultNumber();
 
   Operation *findOp =
       SymbolTable::lookupNearestSymbolFrom<mlir::quir::CircuitOp>(

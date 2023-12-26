@@ -19,7 +19,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Utils/Utils.h"
+
 #include "Dialect/Pulse/IR/PulseOps.h"
+
+#include "mlir/IR/Value.h"
 
 namespace mlir::pulse {
 

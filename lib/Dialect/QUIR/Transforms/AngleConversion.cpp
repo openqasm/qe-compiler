@@ -20,16 +20,26 @@
 
 #include "Dialect/QUIR/Transforms/AngleConversion.h"
 
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/Types.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -50,7 +60,7 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
       return failure();
 
     mlir::func::FuncOp funcOp = findOp->second;
-    FunctionType fType = funcOp.getFunctionType();
+    FunctionType const fType = funcOp.getFunctionType();
 
     for (const auto &pair : llvm::enumerate(callGateOp.getArgOperands())) {
       auto value = pair.value();
@@ -58,9 +68,9 @@ struct AngleConversion : public OpRewritePattern<quir::CallGateOp> {
       if (auto declOp = value.getDefiningOp<quir::ConstantOp>()) {
         // compare the angle type in mlir::func::FuncOp and callGateOp
         // and change the angle type in callGateOp if the types are different
-        Type funcType = fType.getInput(index);
+        Type const funcType = fType.getInput(index);
         if (value.getType() != funcType) {
-          APFloat constVal = declOp.getAngleValueFromConstant();
+          APFloat const constVal = declOp.getAngleValueFromConstant();
           declOp.setValueAttr(AngleAttr::get(callGateOp.getContext(),
                                              funcType.dyn_cast<AngleType>(),
                                              constVal));

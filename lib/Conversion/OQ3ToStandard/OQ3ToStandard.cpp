@@ -13,16 +13,26 @@
 //===----------------------------------------------------------------------===//
 
 #include "Conversion/OQ3ToStandard/OQ3ToStandard.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/Transforms/Passes.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/LLVMIR/LLVMAttrs.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
+
+#include "llvm/Support/ErrorHandling.h"
+
+#include <cassert>
+#include <cstdint>
+#include <sys/types.h>
 
 using namespace mlir;
 using namespace oq3;
@@ -42,7 +52,7 @@ struct CBitBinaryOpConversionPattern : public OQ3ToStandardConversion<OQ3Op> {
     assert(operands.size() == 2 &&
            "Expect binary CBit operation to have exactly two operands.");
 
-    for (Value operand : op->getOperands()) {
+    for (Value const operand : op->getOperands()) {
       auto operandType = operand.getType();
       assert((operandType.isa<quir::CBitType>() || operandType.isInteger(1)) &&
              "Binary CBit operation pattern operands must be `CBit` or i1");
@@ -50,11 +60,11 @@ struct CBitBinaryOpConversionPattern : public OQ3ToStandardConversion<OQ3Op> {
         return failure();
     }
 
-    for (Value operand : operands)
+    for (Value const operand : operands)
       if (!operand.getType().isSignlessInteger())
         return failure();
 
-    Type operandType = op.getLhs().getType();
+    Type const operandType = op.getLhs().getType();
     if (auto cbitType = operandType.dyn_cast<quir::CBitType>())
       if (cbitType.getWidth() > 64)
         return failure();
@@ -139,7 +149,7 @@ struct CBitInsertBitOpConversionPattern
     if (cbitWidth > 64)
       return failure();
 
-    uint64_t mask = ~((1ull) << op.getIndex().getZExtValue());
+    uint64_t const mask = ~((1ull) << op.getIndex().getZExtValue());
     auto maskOp =
         rewriter.create<mlir::arith::ConstantIntOp>(loc, mask, cbitWidth);
 

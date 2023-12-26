@@ -20,28 +20,46 @@
 
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
 
+#include "API/errors.h"
+#include "Dialect/QUIR/IR/QUIRDialect.h"
+#include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Frontend/OpenQASM3/PrintQASM3Visitor.h"
 #include "Frontend/OpenQASM3/QUIRGenQASM3Visitor.h"
 
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIREnums.h"
-
-#include "qasm/Frontend/QasmDiagnosticEmitter.h"
-#include "qasm/Frontend/QasmParser.h"
-
+#include "mlir/Dialect/Complex/IR/Complex.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Verifier.h"
 #include "mlir/Support/FileUtilities.h"
+#include "mlir/Support/LogicalResult.h"
 
-#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/SMLoc.h"
 #include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <cassert>
+#include <exception>
+#include <iostream>
+#include <memory>
 #include <mutex>
+#include <optional>
+#include <qasm/AST/ASTRoot.h>
+#include <qasm/AST/ASTStatement.h>
+#include <qasm/AST/ASTStatementBuilder.h>
+#include <qasm/Frontend/QasmDiagnosticEmitter.h>
+#include <qasm/Frontend/QasmParser.h>
+#include <qasm/QPP/QasmPP.h>
+#include <regex>
 #include <sstream>
+#include <stdexcept>
+#include <string>
+#include <sys/types.h>
+#include <utility>
 
 static llvm::cl::OptionCategory openqasm3Cat(
     " OpenQASM 3 Frontend Options",
@@ -79,7 +97,7 @@ parseDurationStr(const std::string &durationStr) {
         llvm::inconvertibleErrorCode(),
         llvm::Twine("Unable to parse duration from ") + durationStr);
 
-  double parsedDuration = std::stod(m[1]);
+  double const parsedDuration = std::stod(m[1]);
   // Convert all units to lower case.
   auto unitStr = m[2].str();
   auto lowerUnitStr = llvm::StringRef(unitStr).lower();
@@ -103,7 +121,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
     std::optional<qssc::DiagnosticCallback> diagnosticCallback) {
 
   // The QASM parser can only be called from a single thread.
-  std::lock_guard<std::mutex> qasmParserLockGuard(qasmParserLock);
+  std::lock_guard<std::mutex> const qasmParserLockGuard(qasmParserLock);
 
   for (const auto &dirStr : includeDirs)
     QASM::QasmPreprocessor::Instance().AddIncludePath(dirStr);
@@ -177,7 +195,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
                      << sourceString << "\n";
 
         if (diagnosticCallback_) {
-          qssc::Diagnostic diag{
+          qssc::Diagnostic const diag{
               diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure,
               fileLoc.str() + "\n" + Msg + "\n" + sourceString};
           (*diagnosticCallback_)(diag);
@@ -241,7 +259,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
     context->loadDialect<mlir::complex::ComplexDialect>();
     context->loadDialect<mlir::func::FuncDialect>();
 
-    mlir::OpBuilder builder(newModule.getBodyRegion());
+    mlir::OpBuilder const builder(newModule.getBodyRegion());
 
     QASM::ASTStatementList *statementList =
         QASM::ASTStatementBuilder::Instance().List();

@@ -19,8 +19,15 @@
 #include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
+
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/Pass/PassRegistry.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
 
 #define DEBUG_TYPE "ParameterInitialValueAnalysis"
 

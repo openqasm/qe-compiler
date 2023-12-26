@@ -19,17 +19,21 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/OQ3/IR/OQ3Dialect.h"
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/OQ3/IR/OQ3Types.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
+
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
-#include "mlir/Dialect/SCF/IR/SCF.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/IRMapping.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/Operation.h"
 #include "mlir/IR/PatternMatch.h"
-#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
+
+#include <cassert>
+#include <optional>
 
 using namespace mlir;
 using namespace oq3;

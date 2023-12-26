@@ -19,15 +19,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QCS/IR/QCSDialect.h"
-#include "Dialect/QCS/IR/QCSAttributes.h"
-#include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QCS/IR/QCSTypes.h"
 
 using namespace mlir;
 using namespace mlir::qcs;
 
 /// Tablegen Definitions
-#include "Dialect/QCS/IR/QCSOpsDialect.cpp.inc"
 
 //===----------------------------------------------------------------------===//
 // Quantum Control System dialect
@@ -37,6 +33,5 @@ void QCSDialect::initialize() {
 
   addOperations<
 #define GET_OP_LIST
-#include "Dialect/QCS/IR/QCSOps.cpp.inc"
-      >();
+     >();
 }

@@ -14,8 +14,14 @@
 
 #include "Config/QSSConfig.h"
 
-#include "llvm/ADT/DenseMap.h"
+#include "mlir/IR/MLIRContext.h"
+
+#include "llvm/Support/Error.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <ostream>
+#include <utility>
 
 using namespace qssc::config;
 
@@ -51,8 +57,8 @@ std::ostream &operator<<(std::ostream &os,
 static llvm::DenseMap<mlir::MLIRContext *, QSSConfig> contextConfigs{};
 
 void qssc::config::setContextConfig(mlir::MLIRContext *context,
-                                    QSSConfig config) {
-  contextConfigs[context] = std::move(config);
+                                    const QSSConfig& config) {
+  contextConfigs[context] = config;
 }
 
 llvm::Expected<const QSSConfig &>

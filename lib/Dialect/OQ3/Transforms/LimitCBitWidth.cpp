@@ -18,17 +18,23 @@
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinAttributes.h"
-#include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/Support/LLVM.h"
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/Casting.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <cassert>
+#include <cstdint>
 #include <string>
+#include <sys/types.h>
+#include <tuple>
+#include <utility>
 
 #define DEBUG_TYPE "LimitCBitWidth"
 
@@ -52,14 +58,14 @@ void LimitCBitWidthPass::addNewDeclareVariableOps(
         symbolTableCol.getSymbolTable(module).lookup(newVariableName);
     if (findOp) {
       uint extraInt = 0;
-      std::string baseVariableName = newVariableName;
+      std::string const baseVariableName = newVariableName;
       while (findOp) {
         newVariableName = baseVariableName + std::to_string(extraInt++);
         findOp = symbolTableCol.getSymbolTable(module).lookup(newVariableName);
       }
     }
 
-    uint bitWidth =
+    uint const bitWidth =
         getNewRegisterWidth(regNum, numRegistersRequired, numRemainingBits);
     auto newCbitType = builder.getType<mlir::quir::CBitType>(bitWidth);
     newRegisters.push_back(builder.create<DeclareVariableOp>(
@@ -118,10 +124,10 @@ void LimitCBitWidthPass::processOp(
     signalPassFailure();
   }
 
-  APInt apInt = intAttr.getValue();
+  APInt const apInt = intAttr.getValue();
 
   for (uint regNum = 0; regNum < numRegistersRequired; regNum++) {
-    uint bitWidth =
+    uint const bitWidth =
         getNewRegisterWidth(regNum, numRegistersRequired, numRemainingBits);
     auto subPart = apInt.extractBits(bitWidth, regNum * MAX_CBIT_WIDTH);
     auto initializerVal = builder.create<mlir::arith::ConstantOp>(
@@ -147,7 +153,7 @@ void LimitCBitWidthPass::processOp(
   llvm::SmallVector<VariableLoadOp> newVariableLoads;
   OpBuilder builder(variableLoadOp);
   for (uint regNum = 0; regNum < numRegistersRequired; regNum++) {
-    uint bitWidth =
+    uint const bitWidth =
         getNewRegisterWidth(regNum, numRegistersRequired, numRemainingBits);
     newVariableLoads.push_back(builder.create<VariableLoadOp>(
         variableLoadOp.getLoc(),
@@ -178,7 +184,7 @@ void LimitCBitWidthPass::processOp(
 std::pair<uint64_t, uint64_t>
 LimitCBitWidthPass::remapBit(const llvm::APInt &indexInt) {
   uint64_t index = indexInt.getZExtValue();
-  uint64_t reg = index / MAX_CBIT_WIDTH;
+  uint64_t const reg = index / MAX_CBIT_WIDTH;
   index = index - (reg * MAX_CBIT_WIDTH);
   return std::make_pair(reg, index);
 }
@@ -186,7 +192,7 @@ LimitCBitWidthPass::remapBit(const llvm::APInt &indexInt) {
 uint LimitCBitWidthPass::getNewRegisterWidth(uint regNum,
                                              uint numRegistersRequired,
                                              uint numRemainingBits) {
-  uint bitWidth =
+  uint const bitWidth =
       regNum == (numRegistersRequired - 1) ? numRemainingBits : MAX_CBIT_WIDTH;
   return bitWidth;
 }
@@ -209,9 +215,9 @@ void LimitCBitWidthPass::runOnOperation() {
     if (!cbitType || cbitType.getWidth() <= MAX_CBIT_WIDTH)
       return;
 
-    uint orgWidth = cbitType.getWidth();
-    uint numRegistersRequired = cbitType.getWidth() / MAX_CBIT_WIDTH + 1;
-    uint numRemainingBits = cbitType.getWidth() % MAX_CBIT_WIDTH;
+    uint const orgWidth = cbitType.getWidth();
+    uint const numRegistersRequired = cbitType.getWidth() / MAX_CBIT_WIDTH + 1;
+    uint const numRemainingBits = cbitType.getWidth() % MAX_CBIT_WIDTH;
     llvm::SmallVector<mlir::oq3::DeclareVariableOp> newRegisters;
 
     addNewDeclareVariableOps(module, op, numRegistersRequired, numRemainingBits,

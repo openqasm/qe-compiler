@@ -19,18 +19,26 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIRDialect.h"
+
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIREnums.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-#include "llvm/ADT/TypeSwitch.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/Diagnostics.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/IR/Region.h"
+#include "mlir/IR/Types.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
+#include "mlir/Transforms/InliningUtils.h"
+
+#include <optional>
+#include <type_traits>
 
 /// Tablegen Definitions
-#include "Dialect/QUIR/IR/QUIRDialect.cpp.inc"
 
 #define GET_TYPEDEF_CLASSES
-#include "Dialect/QUIR/IR/QUIRTypes.cpp.inc"
 
 namespace mlir {
 // TODO: This is a parser template for APFloat, not defined in LLVM 14,
@@ -39,7 +47,7 @@ namespace mlir {
 // for parseFloat() that takes APFloat or gnu mpfr.
 template <class FloatT>
 struct FieldParser<
-    FloatT, std::enable_if_t<std::is_same<FloatT, APFloat>::value, FloatT>> {
+    FloatT, std::enable_if_t<std::is_same_v<FloatT, APFloat>, FloatT>> {
   static FailureOr<FloatT> parse(AsmParser &parser) {
     double value;
     if (parser.parseFloat(value))
@@ -55,7 +63,6 @@ struct FieldParser<
 //===----------------------------------------------------------------------===//
 
 #define GET_ATTRDEF_CLASSES
-#include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
 
 namespace mlir::quir {
 
@@ -87,18 +94,15 @@ void quir::QUIRDialect::initialize() {
 
   addTypes<
 #define GET_TYPEDEF_LIST
-#include "Dialect/QUIR/IR/QUIRTypes.cpp.inc"
-      >();
+     >();
 
   addOperations<
 #define GET_OP_LIST
-#include "Dialect/QUIR/IR/QUIR.cpp.inc"
-      >();
+     >();
 
   addAttributes<
 #define GET_ATTRDEF_LIST
-#include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
-      >();
+     >();
 
   addInterfaces<QuirInlinerInterface>();
 }

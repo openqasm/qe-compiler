@@ -21,16 +21,30 @@
 
 #include "Dialect/QUIR/Transforms/BreakReset.h"
 
-#include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
+#include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/Dialect/SCF/IR/SCF.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/TypeRange.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
-#include <unordered_set>
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <cstddef>
+#include <cstdint>
+#include <sys/types.h>
+#include <utility>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::oq3;
@@ -70,7 +84,7 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
     }
 
     // result of measurement in each iteration is number of qubits * i1
-    std::vector<mlir::Type> typeVec(resetOp.getQubits().size(),
+    std::vector<mlir::Type> const typeVec(resetOp.getQubits().size(),
                                     rewriter.getI1Type());
 
     for (uint iteration = 0; iteration < numIterations_; iteration++) {

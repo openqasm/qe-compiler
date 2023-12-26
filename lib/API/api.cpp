@@ -15,56 +15,65 @@
 //===----------------------------------------------------------------------===//
 
 #include "API/api.h"
+
 #include "API/errors.h"
+#include "Arguments/Arguments.h"
 #include "Config/CLIConfig.h"
 #include "Config/EnvVarConfig.h"
+#include "Config/QSSConfig.h"
+#include "Dialect/OQ3/Transforms/Passes.h"
+#include "Dialect/Pulse/Transforms/Passes.h"
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
+#include "Dialect/QUIR/Transforms/Passes.h"
+#include "Dialect/RegisterDialects.h"
+#include "Dialect/RegisterPasses.h"
+#include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
+#include "HAL/Compile/TargetCompilationManager.h"
+#include "HAL/Compile/ThreadedCompilationManager.h"
+#include "HAL/PassRegistration.h"
+#include "HAL/TargetSystem.h"
+#include "HAL/TargetSystemInfo.h"
+#include "HAL/TargetSystemRegistry.h"
+#include "Payload/Payload.h"
+#include "Payload/PayloadRegistry.h"
+#include "Plugin/PluginInfo.h"
+#include "QSSC.h"
 
+#include "mlir/Conversion/Passes.h"
 #include "mlir/IR/AsmState.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/Diagnostics.h"
-#include "mlir/IR/Dialect.h"
 #include "mlir/IR/DialectRegistry.h"
+#include "mlir/IR/Location.h"
 #include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/OwningOpRef.h"
 #include "mlir/InitAllExtensions.h"
 #include "mlir/InitAllPasses.h"
 #include "mlir/Parser/Parser.h"
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Pass/PassRegistry.h"
 #include "mlir/Support/FileUtilities.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
-#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
-
-#include "Arguments/Arguments.h"
-#include "Payload/Payload.h"
-#include "Payload/PayloadRegistry.h"
-#include "QSSC.h"
-
-#include "HAL/Compile/ThreadedCompilationManager.h"
-#include "HAL/PassRegistration.h"
-#include "HAL/TargetSystem.h"
-#include "HAL/TargetSystemRegistry.h"
-
-#include "Dialect/OQ3/Transforms/Passes.h"
-#include "Dialect/Pulse/IR/PulseDialect.h"
-#include "Dialect/Pulse/Transforms/Passes.h"
-#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
-#include "Dialect/QUIR/Transforms/Passes.h"
-#include "Dialect/RegisterDialects.h"
-#include "Dialect/RegisterPasses.h"
-
-#include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <optional>
+#include <sstream>
+#include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 
 using namespace mlir;
@@ -334,7 +343,7 @@ llvm::Error determineInputType() {
 
 void determineOutputType() {
   if (outputFilename != "-") {
-    Action extensionAction =
+    Action const extensionAction =
         fileExtensionToAction(getExtension(outputFilename));
     if (extensionAction == Action::None && emitAction == Action::None) {
       llvm::errs()
@@ -386,7 +395,7 @@ buildConfig_(mlir::MLIRContext *context) {
     return std::move(err);
 
   // Set this as the configuration for the current context
-  qssc::config::setContextConfig(context, std::move(*config));
+  qssc::config::setContextConfig(context, *config);
 
   // Return a constant reference to the managed configuration
   return qssc::config::getContextConfig(context);
@@ -651,7 +660,7 @@ static llvm::Error
 compile_(int argc, char const **argv, std::string *outputString,
          std::optional<qssc::DiagnosticCallback> diagnosticCb) {
   // Initialize LLVM to start.
-  llvm::InitLLVM y(argc, argv);
+  llvm::InitLLVM const y(argc, argv);
 
   // Register the standard passes with MLIR.
   // Must precede the command line parsing.
@@ -813,7 +822,7 @@ compile_(int argc, char const **argv, std::string *outputString,
 
     // Disable multi-threading when parsing the input file. This removes the
     // unnecessary/costly context synchronization when parsing.
-    bool wasThreadingEnabled = context.isMultithreadingEnabled();
+    bool const wasThreadingEnabled = context.isMultithreadingEnabled();
     context.disableMultithreading();
 
     // Parse the input file and reset the context threading state.
@@ -908,7 +917,7 @@ public:
 
   qssc::arguments::ArgumentType
   getArgumentValue(llvm::StringRef name) const override {
-    std::string name_{name};
+    std::string const name_{name};
     auto pos = parameterMap.find(name_);
 
     if (pos == parameterMap.end())
@@ -951,7 +960,7 @@ _bindArguments(std::string_view target, std::string_view configPath,
         std::move(err));
   }
 
-  MapAngleArgumentSource source(arguments);
+  MapAngleArgumentSource const source(arguments);
 
   auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
   if ((!factory.has_value()) || (factory.value() == nullptr)) {

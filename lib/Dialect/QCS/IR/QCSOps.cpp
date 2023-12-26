@@ -19,23 +19,25 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QCS/IR/QCSDialect.h"
+
 #include "Dialect/QCS/IR/QCSTypes.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
-
-#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/SymbolTable.h"
+#include <mlir/IR/OpImplementation.h>
+#include <mlir/IR/OperationSupport.h>
+#include <mlir/Support/LogicalResult.h>
+
 #include "llvm/ADT/StringMap.h"
-#include "llvm/ADT/StringRef.h"
+
+#include <cassert>
 
 using namespace mlir;
 using namespace mlir::qcs;
 
 #define GET_OP_CLASSES
-#include "Dialect/QCS/IR/QCSOps.cpp.inc"
 
 static LogicalResult
 verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,

@@ -20,13 +20,26 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
+
 #include "Dialect/Pulse/IR/PulseOps.h"
 
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/SymbolTable.h"
 #include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/BitVector.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <cassert>
+#include <utility>
 #include <vector>
 
 #define DEBUG_TYPE "RemoveUnusedArguments"

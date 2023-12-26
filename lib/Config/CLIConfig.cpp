@@ -13,6 +13,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "Config/CLIConfig.h"
+#include "Config/QSSConfig.h"
+
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Error.h"
+
+#include <string>
 
 using namespace qssc::config;
 

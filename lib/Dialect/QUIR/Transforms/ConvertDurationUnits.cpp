@@ -21,12 +21,26 @@
 
 #include "Dialect/QUIR/Transforms/ConvertDurationUnits.h"
 
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
+#include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
-#include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
+
+#include <optional>
+#include <sys/types.h>
+#include <utility>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -63,7 +77,7 @@ public:
                            DurationTypeConverter::SignatureConversion &result) {
     // Convert argument types one by one and check for errors.
     for (const auto &en : llvm::enumerate(funcTy.getInputs())) {
-      Type type = en.value();
+      Type const type = en.value();
       SmallVector<Type, 8> converted;
       auto convertedType = convertType(type);
       if (!convertedType)
@@ -117,7 +131,7 @@ struct DurationUnitsConstantOpConversionPattern
 
     auto units = dstType.cast<DurationType>().getUnits();
 
-    DurationAttr newDuration =
+    DurationAttr const newDuration =
         duration.getConvertedDurationAttr(units, dtTimestep);
     rewriter.replaceOpWithNewOp<quir::ConstantOp>(op, newDuration);
 
@@ -212,8 +226,8 @@ struct DurationUnitsFunctionOpConversionPattern
       return failure();
 
     // Create a new function operation with the update signature type.
-    Location loc = funcLikeOp.getLoc();
-    StringRef name = funcLikeOp.getName();
+    Location const loc = funcLikeOp.getLoc();
+    StringRef const name = funcLikeOp.getName();
     auto newFuncLikeOp =
         rewriter.create<FunctionType>(loc, name, newFuncLikeType);
 
@@ -255,7 +269,7 @@ void ConvertDurationUnitsPass::runOnOperation() {
   // Extract conversion units
   auto targetConvertUnits = getTargetConvertUnits();
 
-  double dtConversion = getDtTimestep();
+  double const dtConversion = getDtTimestep();
 
   auto &context = getContext();
   ConversionTarget target(context);

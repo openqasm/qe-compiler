@@ -21,10 +21,16 @@
 #include "Dialect/QUIR/Transforms/LoadElimination.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/IR/Dominance.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+
+#include <algorithm>
 
 namespace mlir::quir {
 

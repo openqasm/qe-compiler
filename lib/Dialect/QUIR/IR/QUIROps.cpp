@@ -15,24 +15,46 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/OQ3/IR/OQ3Ops.h"
+
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
+#include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Block.h"
 #include "mlir/IR/Builders.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/BuiltinAttributeInterfaces.h"
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/FunctionImplementation.h"
 #include "mlir/IR/IRMapping.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/OpDefinition.h"
 #include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
-#include "mlir/IR/ValueRange.h"
-#include "mlir/Interfaces/CallInterfaces.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Interfaces/ControlFlowInterfaces.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
+
 #include "llvm/ADT/MapVector.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallVector.h"
+
+#include <cassert>
+#include <cstdint>
+#include <optional>
+#include <set>
+#include <string>
+#include <sys/types.h>
+#include <utility>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -352,7 +374,7 @@ static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
 /// values that originate as argument values or the result of a measurement.
 static LogicalResult verifyClassical_(CircuitOp op) {
   mlir::Operation *classicalOp = nullptr;
-  WalkResult result = op->walk([&](Operation *subOp) {
+  WalkResult const result = op->walk([&](Operation *subOp) {
     if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
         isa<CallCircuitOp>(subOp) || isa<quir::ReturnOp>(subOp) ||
         isa<CircuitOp>(subOp) || subOp->hasTrait<mlir::quir::UnitaryOp>() ||
@@ -392,7 +414,7 @@ CircuitOp CircuitOp::create(Location location, StringRef name,
 CircuitOp CircuitOp::create(Location location, StringRef name,
                             FunctionType type,
                             Operation::dialect_attr_range attrs) {
-  SmallVector<NamedAttribute, 8> attrRef(attrs);
+  SmallVector<NamedAttribute, 8> const attrRef(attrs);
   return create(location, name, type, attrRef);
 }
 CircuitOp CircuitOp::create(Location location, StringRef name,
@@ -451,7 +473,7 @@ CircuitOp CircuitOp::clone(IRMapping &mapper) {
   // If the function contains a body, then its possible arguments
   // may be deleted in the mapper. Verify this so they aren't
   // added to the input type vector.
-  bool isExternalCircuit = isExternal();
+  bool const isExternalCircuit = isExternal();
   if (!isExternalCircuit) {
     SmallVector<Type, 4> inputTypes;
     inputTypes.reserve(newType.getNumInputs());
@@ -491,7 +513,7 @@ CircuitOp CircuitOp::clone() {
 LogicalResult mlir::quir::ReturnOp::verify() {
   auto circuit = (*this)->getParentOfType<CircuitOp>();
 
-  FunctionType circuitType = circuit.getFunctionType();
+  FunctionType const circuitType = circuit.getFunctionType();
 
   auto numResults = circuitType.getNumResults();
   // Verify number of operands match type signature
@@ -557,7 +579,7 @@ mlir::ParseResult SwitchOp::parse(mlir::OpAsmParser &parser,
 
   while (parser.parseOptionalRSquare()) {
     uint32_t caseVal;
-    OptionalParseResult integerParseResult =
+    OptionalParseResult const integerParseResult =
         parser.parseOptionalInteger(caseVal);
     if (!integerParseResult.has_value() || integerParseResult.value())
       // getValue() returns the success() or failure()
@@ -681,7 +703,5 @@ LogicalResult quir::YieldOp::verify() {
 //===----------------------------------------------------------------------===//
 
 #define GET_OP_CLASSES
-#include "Dialect/QUIR/IR/QUIR.cpp.inc"
 
 #define GET_ENUM_CLASSES
-#include "Dialect/QUIR/IR/QUIREnums.cpp.inc"

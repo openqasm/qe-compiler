@@ -14,11 +14,19 @@
 
 #include "HAL/TargetSystemInfo.h"
 
+#include "mlir/IR/MLIRContext.h"
+
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+
 #include <memory>
+#include <optional>
+#include <utility>
 
 // Inject static initialization headers from targets. We need to include them in
 // a translation unit that is not being optimized (removed) by the compiler.
-#include "Targets.inc"
+#include "HAL/TargetSystem.h"
 
 using namespace qssc::hal::registry;
 

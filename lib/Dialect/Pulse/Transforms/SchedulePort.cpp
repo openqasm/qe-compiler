@@ -24,9 +24,28 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/SchedulePort.h"
+#include "Dialect/Pulse/IR/PulseInterfaces.h"
+#include "Dialect/Pulse/IR/PulseOps.h"
+#include "Dialect/Pulse/IR/PulseTraits.h"
+#include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/Pulse/Utils/Utils.h"
+#include "Utils/DebugIndent.h"
 
-#include "llvm/Support/Debug.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/IR/Block.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/Region.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+
+#include <cstdint>
+#include <optional>
+#include <utility>
 
 #define DEBUG_TYPE "SchedulePortPass"
 
@@ -123,7 +142,7 @@ uint64_t SchedulePortPass::updateSequence(SequenceOp sequenceOp) {
           // a nested sequence should only have a duration if it has been
           // updated by this method already
           if (!castOp->hasAttr("pulse.duration")) {
-            uint64_t calleeDuration =
+            uint64_t const calleeDuration =
                 processCall(castOp, /*updateNested*/ true);
             PulseOpSchedulingInterface::setDuration(castOp, calleeDuration);
             updateDelta += calleeDuration;
@@ -266,9 +285,9 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
                 !isa<arith::ConstantIntOp>(op2))
               return true;
 
-            bool testOp1 = (op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
+            bool const testOp1 = (op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
                             isa<CallSequenceOp>(op1));
-            bool testOp2 = (op2.hasTrait<mlir::pulse::HasTargetFrame>() ||
+            bool const testOp2 = (op2.hasTrait<mlir::pulse::HasTargetFrame>() ||
                             isa<CallSequenceOp>(op2));
 
             if (!testOp1 || !testOp2)

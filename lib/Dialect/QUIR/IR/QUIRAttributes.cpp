@@ -15,11 +15,14 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIRTypes.h"
-#include "Dialect/QUIR/Utils/Utils.h"
 
+#include "Dialect/QUIR/IR/QUIREnums.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
+
+#include "llvm/ADT/APFloat.h"
 #include "llvm/Support/ErrorHandling.h"
+
+#include <cstdint>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -103,12 +106,12 @@ double DurationAttr::convertUnitsToUnits(double value, TimeUnits inputUnits,
   // Check if we can avoid the conversion.
   if (inputUnits == outputUnits)
     return value;
-  double seconds = convertToSeconds(value, inputUnits, dt);
+  double const seconds = convertToSeconds(value, inputUnits, dt);
   return convertFromSeconds(seconds, outputUnits, dt);
 }
 
 uint64_t DurationAttr::getSchedulingCycles(const double dt) {
-  double duration = convertUnits(TimeUnits::dt, dt);
+  double const duration = convertUnits(TimeUnits::dt, dt);
 
   // Convert through int64_t first to handle platform dependence
   return static_cast<int64_t>(duration);
@@ -116,7 +119,7 @@ uint64_t DurationAttr::getSchedulingCycles(const double dt) {
 
 double DurationAttr::convertUnits(const TimeUnits targetUnits,
                                   const double dt) {
-  double duration = getDuration().convertToDouble();
+  double const duration = getDuration().convertToDouble();
   return DurationAttr::convertUnitsToUnits(
       duration, getType().dyn_cast<DurationType>().getUnits(), targetUnits, dt);
 }

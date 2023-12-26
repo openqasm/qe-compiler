@@ -21,15 +21,50 @@
 
 #include "Conversion/QUIRToPulse/QUIRToPulse.h"
 
+#include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/Pulse/IR/PulseOps.h"
+#include "Dialect/Pulse/IR/PulseTypes.h"
+#include "Dialect/QCS/IR/QCSOps.h"
+#include "Dialect/QUIR/IR/QUIREnums.h"
+#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/IRMapping.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/OwningOpRef.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/TypeRange.h"
+#include "mlir/IR/Types.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/ValueRange.h"
 #include "mlir/Parser/Parser.h"
 #include "mlir/Support/FileUtilities.h"
-#include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+#include "mlir/Support/LLVM.h"
 
+#include "llvm/ADT/APFloat.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
+#include "llvm/Support/SMLoc.h"
 #include "llvm/Support/SourceMgr.h"
+
+#include <algorithm>
+#include <cassert>
+#include <cstdint>
+#include <iterator>
+#include <memory>
+#include <queue>
+#include <string>
+#include <sys/types.h>
+#include <utility>
+#include <vector>
 
 #define DEBUG_TYPE "QUIRToPulseDebug"
 
@@ -88,7 +123,7 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   mlir::OpBuilder builder(mainFunc);
 
   auto circuitOp = getCircuitOp(callCircuitOp);
-  std::string circName = circuitOp.getSymName().str();
+  std::string const circName = circuitOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nConverting QUIR circuit " << circName << ":\n");
   assert(callCircuitOp && "callCircuit op is null");
   assert(circuitOp && "circuit op is null");
@@ -98,7 +133,7 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   // build an empty pulse sequence
   SmallVector<Value> arguments;
   auto argumentsValueRange = ValueRange(arguments.data(), arguments.size());
-  mlir::FunctionType funcType =
+  mlir::FunctionType const funcType =
       builder.getFunctionType(TypeRange(argumentsValueRange), {});
   llvm::SmallVector<mlir::Type> convertedPulseSequenceOpReturnTypes;
   llvm::SmallVector<mlir::Value> convertedPulseSequenceOpReturnValues;
@@ -121,7 +156,7 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
 
   circuitOp->walk([&](Operation *quirOp) {
     if (quirOp->hasAttr("pulse.calName")) {
-      std::string pulseCalName =
+      std::string const pulseCalName =
           quirOp->getAttrOfType<StringAttr>("pulse.calName").getValue().str();
       SmallVector<Value> pulseCalSequenceArgs;
       Operation *findOp = SymbolTable::lookupSymbolIn(moduleOp, pulseCalName);
@@ -183,7 +218,7 @@ void QUIRToPulsePass::processCircuitArgs(
   for (uint cnt = 0; cnt < circuitOp.getNumArguments(); cnt++) {
     auto arg = circuitOp.getArgument(cnt);
     auto dictArg = circuitOp.getArgAttrDict(cnt);
-    mlir::Type argumentType = arg.getType();
+    mlir::Type const argumentType = arg.getType();
     if (argumentType.isa<mlir::quir::AngleType>()) {
       auto *angleOp = callCircuitOp.getOperand(cnt).getDefiningOp();
       LLVM_DEBUG(llvm::dbgs() << "angle argument ");
@@ -244,10 +279,10 @@ void QUIRToPulsePass::processPulseCalArgs(
   for (auto const &argumentResult :
        llvm::enumerate(pulseCalSequenceOp.getArguments())) {
     auto index = argumentResult.index();
-    mlir::Type argumentType = argumentResult.value().getType();
-    mlir::Value argumentValue = argumentResult.value();
+    mlir::Type const argumentType = argumentResult.value().getType();
+    mlir::Value const argumentValue = argumentResult.value();
     if (argumentType.isa<WaveformType>()) {
-      std::string wfrName =
+      std::string const wfrName =
           argAttr[index].dyn_cast<StringAttr>().getValue().str();
       LLVM_DEBUG(llvm::dbgs() << "waveform argument " << wfrName << "\n");
       processWfrOpArg(wfrName, convertedPulseSequenceOp, pulseCalSequenceArgs,
@@ -340,7 +375,7 @@ void QUIRToPulsePass::processMixFrameOpArg(
         convertedPulseSequenceOp.getArguments()[convertedSequenceOpArgIndex]);
     convertedSequenceOpArgIndex += 1;
   } else {
-    uint mixFrameOperandIndex =
+    uint const mixFrameOperandIndex =
         std::distance(convertedPulseCallSequenceOpOperandNames.begin(), it);
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp.getArguments()[mixFrameOperandIndex]);
@@ -368,7 +403,7 @@ void QUIRToPulsePass::processPortOpArg(std::string const &portName,
         convertedPulseSequenceOp.getArguments()[convertedSequenceOpArgIndex]);
     convertedSequenceOpArgIndex += 1;
   } else {
-    uint portOperandIndex =
+    uint const portOperandIndex =
         std::distance(convertedPulseCallSequenceOpOperandNames.begin(), it);
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp.getArguments()[portOperandIndex]);
@@ -397,7 +432,7 @@ void QUIRToPulsePass::processWfrOpArg(std::string const &wfrName,
         convertedPulseSequenceOp.getArguments()[convertedSequenceOpArgIndex]);
     convertedSequenceOpArgIndex += 1;
   } else {
-    uint wfrOperandIndex =
+    uint const wfrOperandIndex =
         std::distance(convertedPulseCallSequenceOpOperandNames.begin(), it);
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp.getArguments()[wfrOperandIndex]);
@@ -409,17 +444,17 @@ void QUIRToPulsePass::processAngleArg(Value nextAngleOperand,
                                       SmallVector<Value> &pulseCalSequenceArgs,
                                       mlir::OpBuilder &entryBuilder) {
   if (nextAngleOperand.isa<BlockArgument>()) {
-    uint circNum = nextAngleOperand.dyn_cast<BlockArgument>().getArgNumber();
+    uint const circNum = nextAngleOperand.dyn_cast<BlockArgument>().getArgNumber();
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp
             .getArguments()[circuitArgToConvertedSequenceArgMap[circNum]]);
   } else {
     auto angleOp = nextAngleOperand.getDefiningOp<mlir::quir::ConstantOp>();
-    std::string angleLocHash =
+    std::string const angleLocHash =
         std::to_string(mlir::hash_value(angleOp->getLoc()));
     if (classicalQUIROpLocToConvertedPulseOpMap.find(angleLocHash) ==
         classicalQUIROpLocToConvertedPulseOpMap.end()) {
-      double angleVal = angleOp.getAngleValueFromConstant().convertToDouble();
+      double const angleVal = angleOp.getAngleValueFromConstant().convertToDouble();
       auto f64Angle = entryBuilder.create<mlir::arith::ConstantOp>(
           angleOp.getLoc(), entryBuilder.getFloatAttr(entryBuilder.getF64Type(),
                                                       llvm::APFloat(angleVal)));
@@ -434,14 +469,14 @@ void QUIRToPulsePass::processDurationArg(
     Value nextDurationOperand, SequenceOp convertedPulseSequenceOp,
     SmallVector<Value> &pulseCalSequenceArgs, mlir::OpBuilder &entryBuilder) {
   if (nextDurationOperand.isa<BlockArgument>()) {
-    uint circNum = nextDurationOperand.dyn_cast<BlockArgument>().getArgNumber();
+    uint const circNum = nextDurationOperand.dyn_cast<BlockArgument>().getArgNumber();
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp
             .getArguments()[circuitArgToConvertedSequenceArgMap[circNum]]);
   } else {
     auto durationOp =
         nextDurationOperand.getDefiningOp<mlir::quir::ConstantOp>();
-    std::string durLocHash =
+    std::string const durLocHash =
         std::to_string(mlir::hash_value(nextDurationOperand.getLoc()));
     auto durVal =
         quir::getDuration(durationOp).get().getDuration().convertToDouble();
@@ -465,13 +500,13 @@ void QUIRToPulsePass::processDurationArg(
 mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
                                                mlir::OpBuilder &builder) {
   assert(angleOp && "angle op is null");
-  std::string angleLocHash =
+  std::string const angleLocHash =
       std::to_string(mlir::hash_value(angleOp->getLoc()));
   if (classicalQUIROpLocToConvertedPulseOpMap.find(angleLocHash) ==
       classicalQUIROpLocToConvertedPulseOpMap.end()) {
     if (auto castOp = dyn_cast<quir::ConstantOp>(angleOp)) {
       addCircuitOperandToEraseList(angleOp);
-      double angleVal = castOp.getAngleValueFromConstant().convertToDouble();
+      double const angleVal = castOp.getAngleValueFromConstant().convertToDouble();
       auto f64Angle = builder.create<mlir::arith::ConstantOp>(
           castOp->getLoc(),
           builder.getFloatAttr(builder.getF64Type(), llvm::APFloat(angleVal)));
@@ -503,7 +538,7 @@ mlir::Value QUIRToPulsePass::convertDurationToI64(
     mlir::quir::CallCircuitOp callCircuitOp, Operation *durationOp, uint &cnt,
     mlir::OpBuilder &builder, mlir::func::FuncOp &mainFunc) {
   assert(durationOp && "duration op is null");
-  std::string durLocHash =
+  std::string const durLocHash =
       std::to_string(mlir::hash_value(durationOp->getLoc()));
   if (classicalQUIROpLocToConvertedPulseOpMap.find(durLocHash) ==
       classicalQUIROpLocToConvertedPulseOpMap.end()) {
