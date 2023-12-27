@@ -145,7 +145,10 @@ ThreadedCompilationManager::buildTargetPassManagers_(Target &target) {
     return llvm::Error::success();
   };
 
-  return walkTargetThreaded(&getTargetSystem(), threadedBuildTargetPassManager);
+  getContext()->enableMultithreading(isMultithreadingEnabled());
+  auto err = walkTargetThreaded(&getTargetSystem(), threadedBuildTargetPassManager);
+  getContext()->disableMultithreading();
+  return err;
 }
 
 // Mirroring mlir::PassManager::run() we register all of the pass's dependent
@@ -199,8 +202,11 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
     return llvm::Error::success();
   };
 
-  return walkTargetModulesThreaded(&target, moduleOp, threadedCompileMLIRTarget,
+  getContext()->enableMultithreading(isMultithreadingEnabled());
+  auto err = walkTargetModulesThreaded(&target, moduleOp, threadedCompileMLIRTarget,
                                    postChildrenEmitToPayload);
+  getContext()->disableMultithreading();
+  return err;
 }
 
 llvm::Error
@@ -255,9 +261,12 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
     return llvm::Error::success();
   };
 
-  return walkTargetModulesThreaded(&target, moduleOp,
+  getContext()->enableMultithreading(isMultithreadingEnabled());
+  auto err = walkTargetModulesThreaded(&target, moduleOp,
                                    threadedCompilePayloadTarget,
                                    postChildrenEmitToPayload);
+  getContext()->disableMultithreading();
+  return err;
 }
 
 llvm::Error ThreadedCompilationManager::compilePayloadTarget_(

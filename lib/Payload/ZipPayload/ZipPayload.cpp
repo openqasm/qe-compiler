@@ -41,7 +41,7 @@
 #include <optional>
 #include <ostream>
 #include <string>
-#include <sys/_types/_s_ifmt.h>
+#include <sys/stat.h>
 #include <vector>
 #include <zip.h>
 #include <zipconf.h>
