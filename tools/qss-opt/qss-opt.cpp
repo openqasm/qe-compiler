@@ -76,12 +76,13 @@ llvm::cl::opt<bool>
                     llvm::cl::init(false));
 
 llvm::cl::opt<std::string> inputFilename(llvm::cl::Positional,
-                                                llvm::cl::desc("<input file>"),
-                                                llvm::cl::init("-"));
+                                         llvm::cl::desc("<input file>"),
+                                         llvm::cl::init("-"));
 
-llvm::cl::opt<std::string>
-    outputFilename("o", llvm::cl::desc("Output filename"),
-                   llvm::cl::value_desc("filename"), llvm::cl::init("-"));
+llvm::cl::opt<std::string> outputFilename("o",
+                                          llvm::cl::desc("Output filename"),
+                                          llvm::cl::value_desc("filename"),
+                                          llvm::cl::init("-"));
 
 } // anonymous namespace
 

@@ -117,7 +117,7 @@ struct CBitAssignBitOpConversionPattern
 };
 
 namespace {
-  int getCBitOrIntBitWidth(mlir::Type t) {
+int getCBitOrIntBitWidth(mlir::Type t) {
   assert((t.isa<quir::CBitType>() || t.isSignlessInteger()) &&
          "expect CBitType or integer type");
 

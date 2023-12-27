@@ -53,7 +53,7 @@ llvm::cl::opt<bool> addTargetPasses(
 
 } // anonymous namespace
 
-llvm::cl::OptionCategory& qssc::config::getQSSCCategory() { return qsscCat_; }
+llvm::cl::OptionCategory &qssc::config::getQSSCCategory() { return qsscCat_; }
 
 llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   if (auto err = populateConfigurationPath_(config))

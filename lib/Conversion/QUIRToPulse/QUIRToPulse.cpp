@@ -444,7 +444,8 @@ void QUIRToPulsePass::processAngleArg(Value nextAngleOperand,
                                       SmallVector<Value> &pulseCalSequenceArgs,
                                       mlir::OpBuilder &entryBuilder) {
   if (nextAngleOperand.isa<BlockArgument>()) {
-    uint const circNum = nextAngleOperand.dyn_cast<BlockArgument>().getArgNumber();
+    uint const circNum =
+        nextAngleOperand.dyn_cast<BlockArgument>().getArgNumber();
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp
             .getArguments()[circuitArgToConvertedSequenceArgMap[circNum]]);
@@ -454,7 +455,8 @@ void QUIRToPulsePass::processAngleArg(Value nextAngleOperand,
         std::to_string(mlir::hash_value(angleOp->getLoc()));
     if (classicalQUIROpLocToConvertedPulseOpMap.find(angleLocHash) ==
         classicalQUIROpLocToConvertedPulseOpMap.end()) {
-      double const angleVal = angleOp.getAngleValueFromConstant().convertToDouble();
+      double const angleVal =
+          angleOp.getAngleValueFromConstant().convertToDouble();
       auto f64Angle = entryBuilder.create<mlir::arith::ConstantOp>(
           angleOp.getLoc(), entryBuilder.getFloatAttr(entryBuilder.getF64Type(),
                                                       llvm::APFloat(angleVal)));
@@ -469,7 +471,8 @@ void QUIRToPulsePass::processDurationArg(
     Value nextDurationOperand, SequenceOp convertedPulseSequenceOp,
     SmallVector<Value> &pulseCalSequenceArgs, mlir::OpBuilder &entryBuilder) {
   if (nextDurationOperand.isa<BlockArgument>()) {
-    uint const circNum = nextDurationOperand.dyn_cast<BlockArgument>().getArgNumber();
+    uint const circNum =
+        nextDurationOperand.dyn_cast<BlockArgument>().getArgNumber();
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp
             .getArguments()[circuitArgToConvertedSequenceArgMap[circNum]]);
@@ -506,7 +509,8 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
       classicalQUIROpLocToConvertedPulseOpMap.end()) {
     if (auto castOp = dyn_cast<quir::ConstantOp>(angleOp)) {
       addCircuitOperandToEraseList(angleOp);
-      double const angleVal = castOp.getAngleValueFromConstant().convertToDouble();
+      double const angleVal =
+          castOp.getAngleValueFromConstant().convertToDouble();
       auto f64Angle = builder.create<mlir::arith::ConstantOp>(
           castOp->getLoc(),
           builder.getFloatAttr(builder.getF64Type(), llvm::APFloat(angleVal)));

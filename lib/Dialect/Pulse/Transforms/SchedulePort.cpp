@@ -286,9 +286,9 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
               return true;
 
             bool const testOp1 = (op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
-                            isa<CallSequenceOp>(op1));
+                                  isa<CallSequenceOp>(op1));
             bool const testOp2 = (op2.hasTrait<mlir::pulse::HasTargetFrame>() ||
-                            isa<CallSequenceOp>(op2));
+                                  isa<CallSequenceOp>(op2));
 
             if (!testOp1 || !testOp2)
               return false;

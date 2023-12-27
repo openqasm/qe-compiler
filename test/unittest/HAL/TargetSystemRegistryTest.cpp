@@ -36,16 +36,13 @@ TEST(TargetSystemRegistry, LookupMockTarget) {
   auto targetInfoOpt =
       qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(mockName);
 
-
   ASSERT_TRUE(targetInfoOpt.has_value());
-  if(targetInfoOpt.has_value()) {
+  if (targetInfoOpt.has_value()) {
     auto *targetInfo = targetInfoOpt.value();
 
     ASSERT_NE(targetInfo, nullptr);
     EXPECT_EQ(targetInfo->getName(), mockName);
   }
-
-
 }
 
 } // anonymous namespace

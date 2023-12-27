@@ -84,7 +84,7 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
 
     // result of measurement in each iteration is number of qubits * i1
     std::vector<mlir::Type> const typeVec(resetOp.getQubits().size(),
-                                    rewriter.getI1Type());
+                                          rewriter.getI1Type());
 
     for (uint iteration = 0; iteration < numIterations_; iteration++) {
       if (delayCycles_ > 0 && iteration > 0)

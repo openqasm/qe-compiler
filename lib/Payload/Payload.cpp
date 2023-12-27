@@ -52,7 +52,7 @@ auto Payload::orderedFileNames() -> std::vector<fs::path> {
   const std::lock_guard<std::mutex> lock(_mtx);
   std::vector<fs::path> ret;
   ret.reserve(files.size());
-for (auto &filePair : files)
+  for (auto &filePair : files)
     ret.emplace_back(filePair.first);
   std::sort(ret.begin(), ret.end());
   return ret;

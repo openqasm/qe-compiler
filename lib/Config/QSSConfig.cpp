@@ -57,12 +57,13 @@ namespace {
 /// QUESTION: Rather than a global registry it seems like it would be much
 /// better to inherit the MLIRContext as QSSContext and set the configuration on
 /// this? Alternatively the QSSContext could own the MLIRContext?
-static llvm::ManagedStatic<llvm::DenseMap<mlir::MLIRContext *, QSSConfig>> contextConfigs{};
+static llvm::ManagedStatic<llvm::DenseMap<mlir::MLIRContext *, QSSConfig>>
+    contextConfigs{};
 
-} //anonymous namespace
+} // anonymous namespace
 
 void qssc::config::setContextConfig(mlir::MLIRContext *context,
-                                    const QSSConfig& config) {
+                                    const QSSConfig &config) {
   (*contextConfigs)[context] = config;
 }
 

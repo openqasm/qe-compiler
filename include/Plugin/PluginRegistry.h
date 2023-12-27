@@ -52,7 +52,7 @@ public:
   }
 
   static const llvm::StringMap<PluginInfo> &registeredPlugins() {
-    PluginRegistry  const&pluginRegistry = instance();
+    PluginRegistry const &pluginRegistry = instance();
     return pluginRegistry.registry;
   }
 

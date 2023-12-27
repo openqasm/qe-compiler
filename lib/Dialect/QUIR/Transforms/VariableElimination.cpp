@@ -141,9 +141,9 @@ struct MaterializeBitOpForInt : public OpConversionPattern<OperationType> {
   }
 };
 
-mlir::LogicalResult
-convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
-                     bool externalizeOutputVariables) {
+mlir::LogicalResult convertQuirVariables(mlir::MLIRContext &context,
+                                         mlir::Operation *top,
+                                         bool externalizeOutputVariables) {
 
   // This conversion step gets rid of QUIR variables and classical bit
   // registers. These two concepts should be in the OpenQASM 3 dialect.
@@ -304,8 +304,8 @@ LogicalResult RemoveAllocaWithIsolatedStoresPattern::matchAndRewrite(
   return success();
 }
 
-mlir::LogicalResult
-dropAllocaWithIsolatedStores(mlir::MLIRContext &context, mlir::Operation *top) {
+mlir::LogicalResult dropAllocaWithIsolatedStores(mlir::MLIRContext &context,
+                                                 mlir::Operation *top) {
 
   RewritePatternSet patterns(&context);
 

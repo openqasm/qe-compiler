@@ -54,7 +54,7 @@ std::ostream &operator<<(std::ostream &os, const QSSConfig &config);
 /// @param context The context to assign the configuration to.
 /// This must outlive all usages of the context registry.
 /// @param config The configuration to move for the context.
-void setContextConfig(mlir::MLIRContext *context, const QSSConfig& config);
+void setContextConfig(mlir::MLIRContext *context, const QSSConfig &config);
 
 /// @brief Get a constant reference to the configuration registered for this
 /// context.

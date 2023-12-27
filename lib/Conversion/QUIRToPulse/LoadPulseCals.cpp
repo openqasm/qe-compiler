@@ -232,7 +232,8 @@ void LoadPulseCalsPass::loadPulseCals(MeasureOp measureOp,
   // yes, merge them and add the merged pulse sequence to the module
   std::vector<SequenceOp> sequenceOps;
   for (const auto &qubit : qubits) {
-    std::string const individualGateMangledName = getMangledName(gateName, qubit);
+    std::string const individualGateMangledName =
+        getMangledName(gateName, qubit);
     assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
                pulseCalsNameToSequenceMap.end() &&
            "could not find pulse calibrations for the measurement gate");
@@ -268,7 +269,8 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
   // yes, merge them and add the merged pulse sequence to the module
   std::vector<SequenceOp> sequenceOps;
   for (const auto &qubit : qubits) {
-    std::string const individualGateMangledName = getMangledName(gateName, qubit);
+    std::string const individualGateMangledName =
+        getMangledName(gateName, qubit);
     assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
                pulseCalsNameToSequenceMap.end() &&
            "could not find pulse calibrations for the barrier gate");
@@ -304,7 +306,8 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
   // yes, merge them and add the merged pulse sequence to the module
   std::vector<SequenceOp> sequenceOps;
   for (const auto &qubit : qubits) {
-    std::string const individualGateMangledName = getMangledName(gateName, qubit);
+    std::string const individualGateMangledName =
+        getMangledName(gateName, qubit);
     assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
                pulseCalsNameToSequenceMap.end() &&
            "could not find pulse calibrations for the delay gate");
@@ -341,7 +344,8 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::ResetQubitOp resetOp,
   // yes, merge them and add the merged pulse sequence to the module
   std::vector<SequenceOp> sequenceOps;
   for (const auto &qubit : qubits) {
-    std::string const individualGateMangledName = getMangledName(gateName, qubit);
+    std::string const individualGateMangledName =
+        getMangledName(gateName, qubit);
     assert(pulseCalsNameToSequenceMap.find(individualGateMangledName) !=
                pulseCalsNameToSequenceMap.end() &&
            "could not find pulse calibrations for the reset gate");
@@ -486,7 +490,8 @@ mlir::pulse::SequenceOp LoadPulseCalsPass::mergePulseSequenceOps(
     mergedSequenceOp->removeAttr("pulse.args");
 
   if (allSequenceOpsHasArgPortsAttr) {
-    mlir::ArrayAttr const arrayAttr = builder.getArrayAttr(pulseSequenceOpArgPorts);
+    mlir::ArrayAttr const arrayAttr =
+        builder.getArrayAttr(pulseSequenceOpArgPorts);
     mergedSequenceOp->setAttr("pulse.argPorts", arrayAttr);
   } else if (mergedSequenceOp->hasAttr("pulse.argPorts"))
     mergedSequenceOp->removeAttr("pulse.argPorts");

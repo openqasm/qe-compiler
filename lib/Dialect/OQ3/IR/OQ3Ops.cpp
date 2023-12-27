@@ -24,7 +24,6 @@
 #include "mlir/IR/Value.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
-#include "mlir/Support/LogicalResult.h"
 
 #include "llvm/Support/raw_ostream.h"
 
@@ -86,8 +85,8 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
 //===----------------------------------------------------------------------===//
 
 namespace {
-std::optional<mlir::Value>
-findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
+std::optional<mlir::Value> findDefiningBitInBitmap(mlir::Value val,
+                                                   mlir::IntegerAttr bitIndex) {
 
   // for single-bit registers, CBitExtractBitOp is the identity.
   if (val.getType().isInteger(1))

@@ -170,8 +170,7 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   zip_source_keep(new_archive_src);
 
   // create and open an archive from the new archive source
-  new_archive = zip_open_from_source(new_archive_src, ZIP_TRUNCATE,
-                                          &error);
+  new_archive = zip_open_from_source(new_archive_src, ZIP_TRUNCATE, &error);
   if (new_archive == nullptr) {
     llvm::errs() << "Can't create/open an archive from the new archive source: "
                  << zip_error_strerror(&error) << "\n";
@@ -194,9 +193,8 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
 
     // first create a zip source from the file data
     file_src = zip_source_buffer_create(files[fName].c_str(),
-                                             files[fName].size(), 0, &error);
-    if (file_src ==
-        nullptr) {
+                                        files[fName].size(), 0, &error);
+    if (file_src == nullptr) {
       llvm::errs() << "Can't create zip source for " << fName << " : "
                    << zip_error_strerror(&error) << "\n";
       zip_error_fini(&error);
@@ -205,8 +203,8 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
     zip_error_fini(&error);
 
     // now add it to the archive
-    zip_int64_t const fileIndex = zip_file_add(new_archive, fName.c_str(), file_src,
-                                  ZIP_FL_OVERWRITE);
+    zip_int64_t const fileIndex =
+        zip_file_add(new_archive, fName.c_str(), file_src, ZIP_FL_OVERWRITE);
     if (fileIndex < 0) {
       llvm::errs() << "Problem adding file " << fName
                    << " to archive: " << zip_strerror(new_archive) << "\n";

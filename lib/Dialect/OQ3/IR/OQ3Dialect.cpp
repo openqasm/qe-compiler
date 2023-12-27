@@ -61,7 +61,7 @@ void OQ3Dialect::initialize() {
 #define GET_OP_LIST
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/OQ3/IR/OQ3Ops.cpp.inc"
-     >();
+      >();
 
   addInterfaces<OQ3InlinerInterface>();
 }

@@ -136,13 +136,13 @@ llvm::cl::opt<bool>
                      llvm::cl::desc("enable qasm3 input parameters"),
                      llvm::cl::init(false));
 
-llvm::cl::opt<bool>
-    enableCircuits("enable-circuits", llvm::cl::desc("enable quir circuits"),
-                   llvm::cl::init(false));
+llvm::cl::opt<bool> enableCircuits("enable-circuits",
+                                   llvm::cl::desc("enable quir circuits"),
+                                   llvm::cl::init(false));
 
 llvm::cl::opt<bool> debugCircuits("debug-circuits",
-                                         llvm::cl::desc("debug quir circuits"),
-                                         llvm::cl::init(false));
+                                  llvm::cl::desc("debug quir circuits"),
+                                  llvm::cl::init(false));
 
 } // anonymous namespace
 
@@ -180,7 +180,7 @@ QUIRGenQASM3Visitor::getExpressionName(const ASTExpressionNode *node) {
   if (const auto *intNode = dynamic_cast<const ASTIntNode *>(node)) {
     unsigned const bits = intNode->GetBits();
     int64_t const value = intNode->IsSigned() ? intNode->GetSignedValue()
-                                        : intNode->GetUnsignedValue();
+                                              : intNode->GetUnsignedValue();
     return intNode->GetName() + std::to_string(value) + "_i" +
            std::to_string(bits);
   }
@@ -742,7 +742,8 @@ void QUIRGenQASM3Visitor::visit(const ASTGateDeclarationNode *node) {
   // Store argument Values so we can reference them within this gate
   std::unordered_map<std::string, mlir::Value> gateSsaValues;
   unsigned i = 0;
-  MutableArrayRef<BlockArgument> const arguments = func.getBody().getArguments();
+  MutableArrayRef<BlockArgument> const arguments =
+      func.getBody().getArguments();
   for (BlockArgument *arg = arguments.begin(); arg < arguments.end(); arg++) {
     if (i < numQubits) {
       gateSsaValues[gateNode->GetQubit(i)->GetGateQubitName()] = *arg;
@@ -1053,7 +1054,8 @@ void QUIRGenQASM3Visitor::visit(const ASTDelayStatementNode *node) {
   switch (delayNode->GetDelayType()) {
   case ASTTypeDuration: {
     // duration a = 10ns; delay[a] $q;
-    Value const duration = getCurrentValue(delayNode->GetDurationNode()->GetName());
+    Value const duration =
+        getCurrentValue(delayNode->GetDurationNode()->GetName());
     Value const qubitRef =
         getCurrentValue(delayNode->GetDelayQubitIdentifier()->GetName());
     builder.create<DelayOp>(getLocation(delayNode), duration, qubitRef);

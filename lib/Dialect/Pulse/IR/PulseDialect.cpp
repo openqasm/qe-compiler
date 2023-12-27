@@ -27,7 +27,6 @@
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/Pulse/IR/PulseTypes.h"
 
-
 /// Tablegen Definitions
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/Pulse/IR/PulseDialect.cpp.inc"
@@ -48,19 +47,19 @@ void pulse::PulseDialect::initialize() {
 #define GET_TYPEDEF_LIST
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/Pulse/IR/PulseTypes.cpp.inc"
-     >();
+      >();
 
   addOperations<
 #define GET_OP_LIST
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/Pulse/IR/Pulse.cpp.inc"
-     >();
+      >();
 
   addAttributes<
 #define GET_ATTRDEF_LIST
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/Pulse/IR/Pulse.cpp.inc"
-     >();
+      >();
 }
 
 } // namespace mlir::pulse

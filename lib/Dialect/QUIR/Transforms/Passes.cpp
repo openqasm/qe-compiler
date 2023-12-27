@@ -14,6 +14,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTestInterfaces.h"
@@ -27,7 +28,6 @@
 #include "Dialect/QUIR/Transforms/MergeCircuits.h"
 #include "Dialect/QUIR/Transforms/MergeMeasures.h"
 #include "Dialect/QUIR/Transforms/MergeParallelResets.h"
-#include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/QUIR/Transforms/QuantumDecoration.h"
 #include "Dialect/QUIR/Transforms/RemoveQubitOperands.h"
 #include "Dialect/QUIR/Transforms/ReorderCircuits.h"
@@ -181,7 +181,8 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
     if (auto funcOp = dyn_cast<mlir::func::FuncOp>(op)) {
       // just check the arguments for qubitType values
       FunctionType const fType = funcOp.getFunctionType();
-      bool const isMain = SymbolRefAttr::get(funcOp).getLeafReference() == "main";
+      bool const isMain =
+          SymbolRefAttr::get(funcOp).getLeafReference() == "main";
       bool quantumOperands = false;
       for (auto argType : fType.getInputs()) {
         if (argType.isa<QubitType>()) {
@@ -299,8 +300,8 @@ void registerQuirPasses() {
 }
 
 void registerQuirPassPipeline() {
-  PassPipelineRegistration<> const pipeline("quirOpt",
-                                      "Enable QUIR-specific optimizations",
-                                      quir::quirPassPipelineBuilder);
+  PassPipelineRegistration<> const pipeline(
+      "quirOpt", "Enable QUIR-specific optimizations",
+      quir::quirPassPipelineBuilder);
 }
 } // end namespace mlir::quir

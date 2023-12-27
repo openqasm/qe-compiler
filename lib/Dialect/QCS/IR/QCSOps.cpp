@@ -128,8 +128,7 @@ ParameterType ParameterLoadOp::getInitialValue() {
 
   double retVal;
 
-  auto iniValue =
-      declOp.getInitialValue();
+  auto iniValue = declOp.getInitialValue();
   if (iniValue.has_value()) {
     auto angleAttr = iniValue.value().dyn_cast<mlir::quir::AngleAttr>();
 
@@ -148,12 +147,9 @@ ParameterType ParameterLoadOp::getInitialValue() {
       retVal = floatAttr.getValue().convertToDouble();
 
     return retVal;
-
   }
 
-  op->emitError(
-    "Does not have initial value set."
-  );
+  op->emitError("Does not have initial value set.");
   return 0.0;
 }
 

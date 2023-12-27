@@ -393,7 +393,7 @@ LogicalResult verifyClassical_(CircuitOp op) {
            << "is classical and should not be inside a circuit.";
   return success();
 }
-} //anonymous namespace
+} // anonymous namespace
 
 LogicalResult CircuitOp::verify() {
   // If external will be linked in later and nothing to do

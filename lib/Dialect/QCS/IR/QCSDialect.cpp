@@ -44,5 +44,5 @@ void QCSDialect::initialize() {
 #define GET_OP_LIST
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QCS/IR/QCSOps.cpp.inc"
-     >();
+      >();
 }

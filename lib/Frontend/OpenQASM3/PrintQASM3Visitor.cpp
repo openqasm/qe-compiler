@@ -605,7 +605,8 @@ void PrintQASM3Visitor::visit(const ASTMPComplexNode *node) {
   const unsigned bits = node->GetIdentifier()->GetBits();
   int const position = val.find(' ');
   std::string const real = val.substr(1, position - 1);
-  std::string const imag = val.substr(position + 1, val.length() - position - 2);
+  std::string const imag =
+      val.substr(position + 1, val.length() - position - 2);
 
   vStream << "MPComplexNode(name=" << name;
   if (!node->IsNan()) {

@@ -66,9 +66,10 @@ protected:
     if (!target) {
       // look for a child target that matches
       for (const auto &childName : TargetT::childNames) {
-        targetInfo = registry::TargetSystemRegistry::lookupPluginInfo(childName);
+        targetInfo =
+            registry::TargetSystemRegistry::lookupPluginInfo(childName);
         target = targetInfo.value()->getTarget(
-                 &mlir::OperationPass<OpT>::getContext());
+            &mlir::OperationPass<OpT>::getContext());
         if (targetInfo && target)
           break;
       }

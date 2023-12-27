@@ -45,9 +45,9 @@ void registerPulsePasses() {
 }
 
 void registerPulsePassPipeline() {
-  PassPipelineRegistration<> const pipeline("pulseOpt",
-                                      "Enable Pulse IR specific optimizations",
-                                      pulse::pulsePassPipelineBuilder);
+  PassPipelineRegistration<> const pipeline(
+      "pulseOpt", "Enable Pulse IR specific optimizations",
+      pulse::pulsePassPipelineBuilder);
 }
 
 } // namespace mlir::pulse

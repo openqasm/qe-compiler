@@ -97,8 +97,8 @@ llvm::Error PatchableZipPayload::ensureOpen() {
   zip_error_init(&zipError);
 
   if (enableInMemory) {
-    zip_source_t *zs = zip_source_buffer_create(path.data(), path.length(), 0,
-                                       &zipError);
+    zip_source_t *zs =
+        zip_source_buffer_create(path.data(), path.length(), 0, &zipError);
     if (zs == nullptr) {
       zip_error_set(&zipError, errorCode, errno);
       retVal = extractLibZipError(
@@ -144,7 +144,8 @@ llvm::Error PatchableZipPayload::addFileToZip(zip_t *zip,
   if (src == nullptr)
     return extractLibZipError("Creating zip source from data buffer", err);
 
-  if (int const idx = zip_file_add(zip, path.c_str(), src, ZIP_FL_OVERWRITE) < 0) {
+  if (int const idx =
+          zip_file_add(zip, path.c_str(), src, ZIP_FL_OVERWRITE) < 0) {
     if (idx < 0) {
       auto *archiveErr = zip_get_error(zip);
       return extractLibZipError("Adding or replacing file to zip", *archiveErr);
@@ -272,7 +273,8 @@ PatchableZipPayload::readMember(llvm::StringRef path, bool markForWriteBack) {
     return extractLibZipError("Closing file in zip", err);
   }
 
-  auto ins = files.emplace(pathStr, TrackedFile{markForWriteBack, std::move(fileBuf)});
+  auto ins =
+      files.emplace(pathStr, TrackedFile{markForWriteBack, std::move(fileBuf)});
 
   assert(ins.second && "expect insertion, i.e., had not been present before.");
 

@@ -55,8 +55,8 @@ namespace mlir {
 // so anything that requires more precision will need an update or definition
 // for parseFloat() that takes APFloat or gnu mpfr.
 template <class FloatT>
-struct FieldParser<
-    FloatT, std::enable_if_t<std::is_same_v<FloatT, APFloat>, FloatT>> {
+struct FieldParser<FloatT,
+                   std::enable_if_t<std::is_same_v<FloatT, APFloat>, FloatT>> {
   static FailureOr<FloatT> parse(AsmParser &parser) {
     double value;
     if (parser.parseFloat(value))
@@ -107,19 +107,19 @@ void quir::QUIRDialect::initialize() {
 #define GET_TYPEDEF_LIST
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRTypes.cpp.inc"
-     >();
+      >();
 
   addOperations<
 #define GET_OP_LIST
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIR.cpp.inc"
-     >();
+      >();
 
   addAttributes<
 #define GET_ATTRDEF_LIST
 // NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
-     >();
+      >();
 
   addInterfaces<QuirInlinerInterface>();
 }

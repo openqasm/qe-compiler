@@ -520,10 +520,9 @@ llvm::Error buildPassManager_(mlir::PassManager &pm) {
   return llvm::Error::success();
 }
 
-llvm::Error
-buildPassManager(mlir::PassManager &pm,
-                 mlir::PassPipelineCLParser &passPipelineParser,
-                 ErrorHandler errorHandler) {
+llvm::Error buildPassManager(mlir::PassManager &pm,
+                             mlir::PassPipelineCLParser &passPipelineParser,
+                             ErrorHandler errorHandler) {
   if (auto err = buildPassManager_(pm))
     return err;
   // Build the provided pipeline.
@@ -611,9 +610,8 @@ llvm::Error emitQEM_(
 ///        Prints diagnostic to llvm::errs to mimic default handler.
 ///  @param diagnostic MLIR diagnostic from the Diagnostic Engine
 ///  @param diagnosticCb Handle to python diagnostic callback
-void
-diagEngineHandler(mlir::Diagnostic &diagnostic,
-                  std::optional<qssc::DiagnosticCallback> diagnosticCb) {
+void diagEngineHandler(mlir::Diagnostic &diagnostic,
+                       std::optional<qssc::DiagnosticCallback> diagnosticCb) {
 
   // map diagnostic severity to qssc severity
   auto severity = diagnostic.getSeverity();
@@ -657,9 +655,8 @@ diagEngineHandler(mlir::Diagnostic &diagnostic,
   return;
 }
 
-llvm::Error
-compile_(int argc, char const **argv, std::string *outputString,
-         std::optional<qssc::DiagnosticCallback> diagnosticCb) {
+llvm::Error compile_(int argc, char const **argv, std::string *outputString,
+                     std::optional<qssc::DiagnosticCallback> diagnosticCb) {
   // Initialize LLVM to start.
   llvm::InitLLVM const y(argc, argv);
 
