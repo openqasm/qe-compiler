@@ -13,7 +13,3 @@
 // that they have been altered from the originals.
 //
 //===----------------------------------------------------------------------===//
-
-
-using namespace mlir;
-using namespace mlir::pulse;

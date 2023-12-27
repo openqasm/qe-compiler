@@ -103,8 +103,15 @@ void SymbolTableBuildPass::runOnOperation() {
 
 auto MockFunctionLocalizationPass::lookupQubitId(const Value val) -> int {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
-  if (declOp)
-    return declOp.getId().value();
+  if (declOp) {
+    auto id = declOp.getId();
+    if (!id.has_value()) {
+      declOp->emitOpError() << "Qubit declaration does not have id";
+      signalPassFailure();
+      return -1;
+    }
+    return id.value();
+  }
 
   // Must be an argument to a function
   // see if we can find an attribute with the info

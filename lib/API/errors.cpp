@@ -30,8 +30,9 @@
 #include <system_error>
 #include <utility>
 
-namespace qssc {
-static std::string_view getErrorCategoryAsString(ErrorCategory category) {
+namespace {
+
+std::string_view getErrorCategoryAsString(qssc::ErrorCategory category) {
   using namespace qssc;
   switch (category) {
   case ErrorCategory::OpenQASM3ParseFailure:
@@ -83,20 +84,24 @@ static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   llvm_unreachable("unhandled category");
 }
 
-static llvm::StringRef getSeverityAsString(Severity sev) {
+llvm::StringRef getSeverityAsString(qssc::Severity sev) {
   switch (sev) {
-  case Severity::Info:
+  case qssc::Severity::Info:
     return "Info";
-  case Severity::Warning:
+  case qssc::Severity::Warning:
     return "Warning";
-  case Severity::Error:
+  case qssc::Severity::Error:
     return "Error";
-  case Severity::Fatal:
+  case qssc::Severity::Fatal:
     return "Fatal";
   }
 
   llvm_unreachable("unhandled severity");
 }
+
+} // anonymous namespace
+
+namespace qssc {
 
 std::string Diagnostic::toString() const {
   std::string str;

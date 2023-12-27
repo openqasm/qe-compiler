@@ -23,8 +23,8 @@
 #include "mlir/IR/SymbolTable.h"
 #include "mlir/IR/Value.h"
 #include "mlir/Support/LLVM.h"
-#include "mlir/Support/LogicalResult.h>
-#include <mlir/Support/LogicalResult.h>
+#include "mlir/Support/LogicalResult.h"
+#include "mlir/Support/LogicalResult.h"
 
 #include "llvm/Support/raw_ostream.h"
 
@@ -37,7 +37,8 @@
 using namespace mlir;
 using namespace mlir::oq3;
 
-static mlir::LogicalResult
+namespace {
+mlir::LogicalResult
 verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
                               mlir::Operation *op,
                               bool operandMustMatchSymbolType = false) {
@@ -78,12 +79,14 @@ verifyOQ3VariableOpSymbolUses(SymbolTableCollection &symbolTable,
 
   return success();
 }
+} // anonymous namespace
 
 //===----------------------------------------------------------------------===//
 // CBit ops
 //===----------------------------------------------------------------------===//
 
-static std::optional<mlir::Value>
+namespace {
+std::optional<mlir::Value>
 findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
 
   // for single-bit registers, CBitExtractBitOp is the identity.
@@ -107,6 +110,7 @@ findDefiningBitInBitmap(mlir::Value val, mlir::IntegerAttr bitIndex) {
 
   return std::nullopt;
 }
+} // anonymous namespace
 
 ::mlir::OpFoldResult CBitExtractBitOp::fold(FoldAdaptor adaptor) {
 
@@ -210,3 +214,5 @@ mlir::LogicalResult AngleCmpOp::verify() {
 }
 
 #define GET_OP_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/OQ3/IR/OQ3Ops.cpp.inc"

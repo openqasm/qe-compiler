@@ -20,8 +20,13 @@
 
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIREnums.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIROps.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
 #include "mlir/IR/Builders.h"
@@ -37,8 +42,12 @@
 #include <type_traits>
 
 /// Tablegen Definitions
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIRDialect.cpp.inc"
 
 #define GET_TYPEDEF_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIRTypes.cpp.inc"
 
 namespace mlir {
 // TODO: This is a parser template for APFloat, not defined in LLVM 14,
@@ -63,6 +72,8 @@ struct FieldParser<
 //===----------------------------------------------------------------------===//
 
 #define GET_ATTRDEF_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
 
 namespace mlir::quir {
 
@@ -94,14 +105,20 @@ void quir::QUIRDialect::initialize() {
 
   addTypes<
 #define GET_TYPEDEF_LIST
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIRTypes.cpp.inc"
      >();
 
   addOperations<
 #define GET_OP_LIST
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIR.cpp.inc"
      >();
 
   addAttributes<
 #define GET_ATTRDEF_LIST
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
      >();
 
   addInterfaces<QuirInlinerInterface>();

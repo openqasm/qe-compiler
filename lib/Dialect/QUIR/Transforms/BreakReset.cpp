@@ -47,7 +47,6 @@
 #include <vector>
 
 using namespace mlir;
-using namespace mlir::oq3;
 using namespace mlir::quir;
 
 namespace {

@@ -97,7 +97,12 @@ auto mock::MockQubitLocalizationPass::lookupQubitId(const Value &val) -> int {
     }   // if val is blockArg
     return -1;
   } // if !declOp
-  return declOp.getId().value();
+
+  auto id = declOp.getId();
+  if (id.has_value())
+    return id.value();
+
+  return -1;
 } // lookupQubitId
 
 /// Creates a broadcast op on Controller and recvOp on all other mocks

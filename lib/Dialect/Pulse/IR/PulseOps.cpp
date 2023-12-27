@@ -319,8 +319,9 @@ void SequenceOp::print(mlir::OpAsmPrinter &printer) {
       getArgAttrsAttrName(), getResAttrsAttrName());
 }
 
+namespace {
 /// Verify the argument list and entry block are in agreement.
-static LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
+LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
   auto fnInputTypes = op.getFunctionType().getInputs();
   Block &entryBlock = op.front();
   for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i)
@@ -334,7 +335,7 @@ static LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
 
 /// Verify that no classical values are created/used in the sequence outside of
 /// values that originate as argument values or the result of a measurement.
-static LogicalResult verifyClassical_(SequenceOp op) {
+LogicalResult verifyClassical_(SequenceOp op) {
   mlir::Operation *classicalOp = nullptr;
   WalkResult const result = op->walk([&](Operation *subOp) {
     if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
@@ -352,6 +353,7 @@ static LogicalResult verifyClassical_(SequenceOp op) {
            << "is not valid within a real-time pulse sequence.";
   return success();
 }
+} // anonymous namespace
 
 LogicalResult SequenceOp::verify() {
   // If external will be linked in later and nothing to do
@@ -605,3 +607,5 @@ mlir::LogicalResult PlayOp::verify() {
 } // namespace mlir::pulse
 
 #define GET_OP_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/Pulse/IR/Pulse.cpp.inc"

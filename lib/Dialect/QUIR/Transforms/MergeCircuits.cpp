@@ -48,8 +48,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <llvm/ADT/STLExtras.h>
-#include <llvm/ADT/StringMap.h>
 #include <optional>
 #include <set>
 #include <string>

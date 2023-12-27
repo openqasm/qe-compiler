@@ -60,7 +60,7 @@ struct ReorderCircuitsAndNonCircuitPat
     // Accumulate qubits in measurement set
     std::set<uint> const currQubits = callCircuitOp.getOperatedQubits();
     LLVM_DEBUG(llvm::dbgs() << "Matching on call_circuit for qubits:\t");
-    LLVM_DEBUG(for (uint id : currQubits) llvm::dbgs() << id << " ");
+    LLVM_DEBUG(for (const uint id : currQubits) llvm::dbgs() << id << " ");
     LLVM_DEBUG(llvm::dbgs() << "\n");
 
     auto nextAffineStoreOpp =

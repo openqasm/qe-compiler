@@ -14,6 +14,8 @@
 
 #include "HAL/TargetSystemInfo.h"
 
+#include "HAL/TargetSystem.h"
+
 #include "mlir/IR/MLIRContext.h"
 
 #include "llvm/ADT/DenseMap.h"
@@ -26,7 +28,8 @@
 
 // Inject static initialization headers from targets. We need to include them in
 // a translation unit that is not being optimized (removed) by the compiler.
-#include "HAL/TargetSystem.h"
+// NOLINTNEXTLINE: Required for target initializations even if not used
+#include "Targets.inc"
 
 using namespace qssc::hal::registry;
 

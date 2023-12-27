@@ -54,9 +54,10 @@ struct TargetCompilationManagerOptions {
       llvm::cl::desc("Print IR after failure of applying target compilation"),
       llvm::cl::init(false)};
 };
-} // namespace
 
-static llvm::ManagedStatic<TargetCompilationManagerOptions> options;
+llvm::ManagedStatic<TargetCompilationManagerOptions> options;
+
+} // anonymous namespace
 
 void qssc::hal::compile::registerTargetCompilationManagerCLOptions() {
   // Make sure that the options struct has been constructed.

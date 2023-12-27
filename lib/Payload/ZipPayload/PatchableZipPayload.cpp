@@ -97,22 +97,24 @@ llvm::Error PatchableZipPayload::ensureOpen() {
   zip_error_init(&zipError);
 
   if (enableInMemory) {
-    zip_source_t *zs;
-    if ((zs = zip_source_buffer_create(path.data(), path.length(), 0,
-                                       &zipError)) == nullptr) {
+    zip_source_t *zs = zip_source_buffer_create(path.data(), path.length(), 0,
+                                       &zipError);
+    if (zs == nullptr) {
       zip_error_set(&zipError, errorCode, errno);
       retVal = extractLibZipError(
           "Failure while opening in memory circuit module (zip) ", zipError);
     }
 
-    if ((zip = zip_open_from_source(zs, 0, &zipError)) == nullptr) {
+    zip = zip_open_from_source(zs, 0, &zipError);
+    if (zip == nullptr) {
       zip_error_set(&zipError, errorCode, errno);
       retVal = extractLibZipError(
           "Failure while opening in memory circuit module (zip) ", zipError);
     }
     inMemoryZipSource = zs;
   } else {
-    if ((zip = zip_open(path.c_str(), 0, &errorCode)) == nullptr) {
+    zip = zip_open(path.c_str(), 0, &errorCode);
+    if (zip == nullptr) {
       zip_error_set(&zipError, errorCode, errno);
       retVal = extractLibZipError(
           "Failure while opening circuit module (zip) file ", zipError);

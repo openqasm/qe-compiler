@@ -20,8 +20,11 @@
 
 #include "ZipPayload.h"
 
+#include "Payload/Payload.h"
+#include "ZipUtil.h"
+
 #include "Config.h"
-#include "Payload/ZipPayload/ZipUtil.h"
+#include "Payload/PayloadRegistry.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_os_ostream.h"
@@ -30,10 +33,16 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
+#include <memory>
 #include <mutex>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <sys/_types/_s_ifmt.h>
+#include <vector>
 #include <zip.h>
 #include <zipconf.h>
 
@@ -149,8 +158,8 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   zip_error_init(&error);
 
   // open a zip source, buffer is allocated internally to libzip
-  if ((new_archive_src = zip_source_buffer_create(nullptr, 0, 0, &error)) ==
-      nullptr) {
+  new_archive_src = zip_source_buffer_create(nullptr, 0, 0, &error);
+  if (new_archive_src == nullptr) {
     llvm::errs() << "Can't create zip source for new archive: "
                  << zip_error_strerror(&error) << "\n";
     zip_error_fini(&error);
@@ -161,8 +170,9 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   zip_source_keep(new_archive_src);
 
   // create and open an archive from the new archive source
-  if ((new_archive = zip_open_from_source(new_archive_src, ZIP_TRUNCATE,
-                                          &error)) == nullptr) {
+  new_archive = zip_open_from_source(new_archive_src, ZIP_TRUNCATE,
+                                          &error);
+  if (new_archive == nullptr) {
     llvm::errs() << "Can't create/open an archive from the new archive source: "
                  << zip_error_strerror(&error) << "\n";
     zip_source_free(new_archive_src);
@@ -183,8 +193,9 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
     zip_error_init(&error);
 
     // first create a zip source from the file data
-    if ((file_src = zip_source_buffer_create(files[fName].c_str(),
-                                             files[fName].size(), 0, &error)) ==
+    file_src = zip_source_buffer_create(files[fName].c_str(),
+                                             files[fName].size(), 0, &error);
+    if (file_src ==
         nullptr) {
       llvm::errs() << "Can't create zip source for " << fName << " : "
                    << zip_error_strerror(&error) << "\n";
@@ -194,9 +205,9 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
     zip_error_fini(&error);
 
     // now add it to the archive
-    zip_int64_t fileIndex = -1;
-    if ((fileIndex = zip_file_add(new_archive, fName.c_str(), file_src,
-                                  ZIP_FL_OVERWRITE)) < 0) {
+    zip_int64_t const fileIndex = zip_file_add(new_archive, fName.c_str(), file_src,
+                                  ZIP_FL_OVERWRITE);
+    if (fileIndex < 0) {
       llvm::errs() << "Problem adding file " << fName
                    << " to archive: " << zip_strerror(new_archive) << "\n";
       continue;

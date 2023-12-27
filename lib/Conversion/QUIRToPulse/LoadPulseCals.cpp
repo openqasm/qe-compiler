@@ -29,7 +29,7 @@
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinAttributes.h"
-#include "mlir/IR/BuiltinOps.h>
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/IRMapping.h"
 #include "mlir/IR/OwningOpRef.h"
@@ -618,8 +618,11 @@ LoadPulseCalsPass::getQubitOperands(std::vector<Value> &qubitOperands,
   std::vector<uint32_t> qubits;
   for (auto &qubit : qubitOperands) {
     if (auto declOp = qubit.getDefiningOp<quir::DeclareQubitOp>()) {
-      uint const qubitId = *quir::lookupQubitId(declOp);
-      qubits.push_back(qubitId);
+      auto qubitId = quir::lookupQubitId(declOp);
+      if (qubitId.has_value())
+        qubits.push_back(qubitId.value());
+      else
+        declOp->emitError() << "Could not find qubit id.";
     } else {
       // qubit is a block argument
       auto blockArg = qubit.dyn_cast<BlockArgument>();
@@ -627,9 +630,12 @@ LoadPulseCalsPass::getQubitOperands(std::vector<Value> &qubitOperands,
       auto qubitOperand = callCircuitOp->getOperand(argIdx);
       assert(qubitOperand.getDefiningOp<quir::DeclareQubitOp>() &&
              "could not find the qubit op");
-      uint const qubitId = *quir::lookupQubitId(
-          qubitOperand.getDefiningOp<quir::DeclareQubitOp>());
-      qubits.push_back(qubitId);
+      auto opDeclOp = qubitOperand.getDefiningOp<quir::DeclareQubitOp>();
+      auto qubitId = quir::lookupQubitId(opDeclOp);
+      if (qubitId.has_value())
+        qubits.push_back(qubitId.value());
+      else
+        opDeclOp->emitError() << "Could not find qubit id.";
     }
   }
   return qubits;

@@ -249,7 +249,14 @@ std::optional<uint> lookupQubitId(const Value &val) {
     }   // if val is blockArg
     return std::nullopt;
   } // if !declOp
-  int id = declOp.getId().value();
+  auto idOpt = declOp.getId();
+
+  int id;
+  if (idOpt.has_value())
+    id = idOpt.value();
+  else
+    id = -1;
+
   assert(id >= 0 && "Declared ID of qubit is < 0");
   return static_cast<uint>(id);
 } // lookupQubitId

@@ -129,19 +129,22 @@ namespace qssc::frontend::openqasm3 {
 
 using ExpressionValueType = llvm::Expected<mlir::Value>;
 
+namespace {
 // temporary feature flags to be used during development of parameters support
-static llvm::cl::opt<bool>
+llvm::cl::opt<bool>
     enableParameters("enable-parameters",
                      llvm::cl::desc("enable qasm3 input parameters"),
                      llvm::cl::init(false));
 
-static llvm::cl::opt<bool>
+llvm::cl::opt<bool>
     enableCircuits("enable-circuits", llvm::cl::desc("enable quir circuits"),
                    llvm::cl::init(false));
 
-static llvm::cl::opt<bool> debugCircuits("debug-circuits",
+llvm::cl::opt<bool> debugCircuits("debug-circuits",
                                          llvm::cl::desc("debug quir circuits"),
                                          llvm::cl::init(false));
+
+} // anonymous namespace
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
   return mlir::FileLineColLoc::get(builder.getContext(), filename,
@@ -214,7 +217,30 @@ getDurationTimeUnits(const QASM::LengthUnit &durationUnit) {
     llvm_unreachable("unhandled time unit");
   }
 }
-}; // anonymous namespace
+
+mlir::arith::CmpIPredicate getComparisonPredicate(QASM::ASTOpType opType) {
+  switch (opType) {
+  case ASTOpTypeCompEq:
+    return mlir::arith::CmpIPredicate::eq;
+  case ASTOpTypeCompNeq:
+    return mlir::arith::CmpIPredicate::ne;
+  case ASTOpTypeLT:
+    return mlir::arith::CmpIPredicate::slt;
+  case ASTOpTypeLE:
+    return mlir::arith::CmpIPredicate::sle;
+  case ASTOpTypeGT:
+    return mlir::arith::CmpIPredicate::sgt;
+  case ASTOpTypeGE:
+    return mlir::arith::CmpIPredicate::sge;
+
+  default:
+    llvm::errs() << "Cannot derive comparison predicate for opType "
+                 << QASM::PrintOpTypeEnum(opType) << "\n";
+    llvm_unreachable("Unimplemented.");
+  }
+}
+
+} // anonymous namespace
 
 auto QUIRGenQASM3Visitor::createDurationRef(const Location &location,
                                             uint64_t durationValue,
@@ -1396,28 +1422,6 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTIdentifierNode *node) {
 }
 
 using mlir::arith::CmpIPredicate;
-
-static CmpIPredicate getComparisonPredicate(QASM::ASTOpType opType) {
-  switch (opType) {
-  case ASTOpTypeCompEq:
-    return CmpIPredicate::eq;
-  case ASTOpTypeCompNeq:
-    return CmpIPredicate::ne;
-  case ASTOpTypeLT:
-    return CmpIPredicate::slt;
-  case ASTOpTypeLE:
-    return CmpIPredicate::sle;
-  case ASTOpTypeGT:
-    return CmpIPredicate::sgt;
-  case ASTOpTypeGE:
-    return CmpIPredicate::sge;
-
-  default:
-    llvm::errs() << "Cannot derive comparison predicate for opType "
-                 << QASM::PrintOpTypeEnum(opType) << "\n";
-    llvm_unreachable("Unimplemented.");
-  }
-}
 
 ExpressionValueType
 QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {

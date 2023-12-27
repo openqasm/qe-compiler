@@ -38,8 +38,11 @@ using namespace mlir;
 using namespace mlir::qcs;
 
 #define GET_OP_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QCS/IR/QCSOps.cpp.inc"
 
-static LogicalResult
+namespace {
+LogicalResult
 verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
                                mlir::Operation *op,
                                bool operandMustMatchSymbolType = false) {
@@ -89,6 +92,8 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
   return success();
 }
 
+} // anonymous namespace
+
 //===----------------------------------------------------------------------===//
 // ParameterLoadOp
 //===----------------------------------------------------------------------===//
@@ -123,23 +128,33 @@ ParameterType ParameterLoadOp::getInitialValue() {
 
   double retVal;
 
-  auto angleAttr =
-      declOp.getInitialValue().value().dyn_cast<mlir::quir::AngleAttr>();
-  auto floatAttr = declOp.getInitialValue().value().dyn_cast<FloatAttr>();
+  auto iniValue =
+      declOp.getInitialValue();
+  if (iniValue.has_value()) {
+    auto angleAttr = iniValue.value().dyn_cast<mlir::quir::AngleAttr>();
 
-  if (!(angleAttr || floatAttr)) {
-    op->emitError(
-        "Parameters are currently limited to angles or float[64] only.");
-    return 0.0;
+    auto floatAttr = iniValue.value().dyn_cast<FloatAttr>();
+
+    if (!(angleAttr || floatAttr)) {
+      op->emitError(
+          "Parameters are currently limited to angles or float[64] only.");
+      return 0.0;
+    }
+
+    if (angleAttr)
+      retVal = angleAttr.getValue().convertToDouble();
+
+    if (floatAttr)
+      retVal = floatAttr.getValue().convertToDouble();
+
+    return retVal;
+
   }
 
-  if (angleAttr)
-    retVal = angleAttr.getValue().convertToDouble();
-
-  if (floatAttr)
-    retVal = floatAttr.getValue().convertToDouble();
-
-  return retVal;
+  op->emitError(
+    "Does not have initial value set."
+  );
+  return 0.0;
 }
 
 // Returns the float value from the initial value of this parameter

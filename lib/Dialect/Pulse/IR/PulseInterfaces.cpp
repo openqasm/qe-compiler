@@ -34,7 +34,8 @@ using namespace mlir::pulse;
 //===----------------------------------------------------------------------===//
 // Tablegen Interface Definitions
 //===----------------------------------------------------------------------===//
-
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/Pulse/IR/PulseInterfaces.cpp.inc"
 
 //===----------------------------------------------------------------------===//
 // PulseOpSchedulingInterface

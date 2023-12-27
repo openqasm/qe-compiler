@@ -65,12 +65,13 @@ protected:
         targetInfo.value()->getTarget(&mlir::OperationPass<OpT>::getContext());
     if (!target) {
       // look for a child target that matches
-      for (const auto &childName : TargetT::childNames)
-        if ((targetInfo =
-                 registry::TargetSystemRegistry::lookupPluginInfo(childName)) &&
-            (target = targetInfo.value()->getTarget(
-                 &mlir::OperationPass<OpT>::getContext())))
+      for (const auto &childName : TargetT::childNames) {
+        targetInfo = registry::TargetSystemRegistry::lookupPluginInfo(childName);
+        target = targetInfo.value()->getTarget(
+                 &mlir::OperationPass<OpT>::getContext());
+        if (targetInfo && target)
           break;
+      }
       if (!target) {
         llvm::errs() << "Error: failed to get target '" << TargetT::name
                      << "':\n";

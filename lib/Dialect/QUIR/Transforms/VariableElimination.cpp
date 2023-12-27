@@ -141,9 +141,7 @@ struct MaterializeBitOpForInt : public OpConversionPattern<OperationType> {
   }
 };
 
-} // namespace
-
-static mlir::LogicalResult
+mlir::LogicalResult
 convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
                      bool externalizeOutputVariables) {
 
@@ -219,7 +217,6 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   return applyPartialConversion(top, target, std::move(patterns));
 }
 
-namespace {
 LogicalResult MemrefGlobalToAllocaPattern::matchAndRewrite(
     mlir::memref::GetGlobalOp op, mlir::PatternRewriter &rewriter) const {
 
@@ -255,9 +252,8 @@ LogicalResult MemrefGlobalToAllocaPattern::matchAndRewrite(
   rewriter.eraseOp(global);
   return success();
 }
-} // namespace
 
-static mlir::LogicalResult
+mlir::LogicalResult
 convertIsolatedMemrefGlobalToAlloca(mlir::MLIRContext &context,
                                     mlir::Operation *top) {
 
@@ -273,7 +269,6 @@ convertIsolatedMemrefGlobalToAlloca(mlir::MLIRContext &context,
   return applyPatternsAndFoldGreedily(top, std::move(patterns), config);
 }
 
-namespace {
 struct RemoveAllocaWithIsolatedStoresPattern
     : public OpRewritePattern<mlir::memref::AllocaOp> {
   RemoveAllocaWithIsolatedStoresPattern(MLIRContext *context,
@@ -308,9 +303,8 @@ LogicalResult RemoveAllocaWithIsolatedStoresPattern::matchAndRewrite(
   rewriter.eraseOp(op);
   return success();
 }
-} // namespace
 
-static mlir::LogicalResult
+mlir::LogicalResult
 dropAllocaWithIsolatedStores(mlir::MLIRContext &context, mlir::Operation *top) {
 
   RewritePatternSet patterns(&context);
@@ -324,6 +318,8 @@ dropAllocaWithIsolatedStores(mlir::MLIRContext &context, mlir::Operation *top) {
 
   return applyPatternsAndFoldGreedily(top, std::move(patterns), config);
 }
+
+} // anonymous namespace
 
 void VariableEliminationPass::runOnOperation() {
 

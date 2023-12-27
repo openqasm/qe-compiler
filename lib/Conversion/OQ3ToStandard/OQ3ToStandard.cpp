@@ -116,7 +116,8 @@ struct CBitAssignBitOpConversionPattern
   }
 };
 
-static int getCBitOrIntBitWidth(mlir::Type t) {
+namespace {
+  int getCBitOrIntBitWidth(mlir::Type t) {
   assert((t.isa<quir::CBitType>() || t.isSignlessInteger()) &&
          "expect CBitType or integer type");
 
@@ -128,6 +129,7 @@ static int getCBitOrIntBitWidth(mlir::Type t) {
 
   llvm::report_fatal_error("unhandled type");
 }
+} // anonymous namespace
 
 struct CBitInsertBitOpConversionPattern
     : public OQ3ToStandardConversion<CBitInsertBitOp> {

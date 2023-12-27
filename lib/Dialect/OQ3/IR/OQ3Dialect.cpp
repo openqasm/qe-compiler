@@ -14,12 +14,19 @@
 
 #include "Dialect/OQ3/IR/OQ3Dialect.h"
 
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/OQ3/IR/OQ3Ops.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/OQ3/IR/OQ3Types.h"
+
 #include "mlir/Transforms/InliningUtils.h"
 
 using namespace mlir;
 using namespace mlir::oq3;
 
 /// Tablegen Definitions
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/OQ3/IR/OQ3OpsDialect.cpp.inc"
 
 //===----------------------------------------------------------------------===//
 // OpenQASM 3 dialect
@@ -52,6 +59,8 @@ void OQ3Dialect::initialize() {
 
   addOperations<
 #define GET_OP_LIST
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/OQ3/IR/OQ3Ops.cpp.inc"
      >();
 
   addInterfaces<OQ3InlinerInterface>();

@@ -35,7 +35,8 @@ using namespace mlir::quir;
 //===----------------------------------------------------------------------===//
 // Tablegen Interface Definitions
 //===----------------------------------------------------------------------===//
-
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIRInterfaces.cpp.inc"
 
 //===----------------------------------------------------------------------===//
 // QubitOpInterface

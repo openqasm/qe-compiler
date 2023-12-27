@@ -28,6 +28,8 @@
 
 // Inject static initialization headers from payloads. We need to include them
 // in a translation unit that is not being optimized (removed) by the compiler.
+// NOLINTNEXTLINE: Required for payload initializations even if not used
+#include "Payloads.inc"
 
 using namespace qssc::payload;
 namespace fs = std::filesystem;

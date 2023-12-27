@@ -118,7 +118,7 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
       // Accumulate qubits in measurement set
       std::set<uint> currQubits = measureOp.getOperatedQubits();
       LLVM_DEBUG(llvm::dbgs() << "Matching on measurement for qubits:\t");
-      LLVM_DEBUG(for (uint id : currQubits) llvm::dbgs() << id << " ");
+      LLVM_DEBUG(for (const uint id : currQubits) llvm::dbgs() << id << " ");
       LLVM_DEBUG(llvm::dbgs() << "\n");
 
       auto nextOpt = nextQuantumOrControlFlowOrNull(measureOp);
@@ -193,7 +193,7 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
       LLVM_DEBUG(llvm::dbgs() << "Succeeded match with operation:\n");
       LLVM_DEBUG(nextOp->dump());
       LLVM_DEBUG(llvm::dbgs() << "on qubits:\t");
-      LLVM_DEBUG(for (uint id // this is ugly but clang-format insists
+      LLVM_DEBUG(for (const uint id // this is ugly but clang-format insists
                       : QubitOpInterface::getOperatedQubits(nextOp)) {
         llvm::dbgs() << id << " ";
       });

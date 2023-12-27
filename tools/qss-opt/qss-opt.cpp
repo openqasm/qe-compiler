@@ -47,7 +47,7 @@
 
 #include <cstdio>
 #include <optional>
-#include <stdio.h>
+#include <stdio.h> // NOLINT: fileno is not in cstdio as suggested
 #include <string>
 #include <tuple>
 #include <utility>
@@ -55,32 +55,35 @@
 using namespace qssc;
 using namespace qssc::hal;
 
-const static std::string toolName = "qss-opt";
+namespace {
+const std::string toolName = "qss-opt";
 
-static llvm::cl::opt<std::string> configurationPath(
+llvm::cl::opt<std::string> configurationPath(
     "config",
     llvm::cl::desc("Path to configuration file or directory (depends on the "
                    "target), - means use the config service"),
     llvm::cl::value_desc("path"));
 
-static llvm::cl::opt<std::string>
+llvm::cl::opt<std::string>
     targetStr("target",
               llvm::cl::desc(
                   "Target architecture. Required for machine code generation."),
               llvm::cl::value_desc("targetName"));
 
-static llvm::cl::opt<bool>
+llvm::cl::opt<bool>
     addTargetPasses("add-target-passes",
                     llvm::cl::desc("Add target-specific passes"),
                     llvm::cl::init(false));
 
-static llvm::cl::opt<std::string> inputFilename(llvm::cl::Positional,
+llvm::cl::opt<std::string> inputFilename(llvm::cl::Positional,
                                                 llvm::cl::desc("<input file>"),
                                                 llvm::cl::init("-"));
 
-static llvm::cl::opt<std::string>
+llvm::cl::opt<std::string>
     outputFilename("o", llvm::cl::desc("Output filename"),
                    llvm::cl::value_desc("filename"), llvm::cl::init("-"));
+
+} // anonymous namespace
 
 llvm::Expected<std::pair<std::string, std::string>>
 registerAndParseCLIOptions(int argc, char **argv, llvm::StringRef toolName,

@@ -61,32 +61,33 @@
 #include <sys/types.h>
 #include <utility>
 
-static llvm::cl::OptionCategory openqasm3Cat(
+namespace {
+
+llvm::cl::OptionCategory openqasm3Cat(
     " OpenQASM 3 Frontend Options",
     "Options that control the OpenQASM 3 frontend of QSS Compiler");
 
-static llvm::cl::opt<uint>
+llvm::cl::opt<uint>
     numShots("num-shots",
              llvm::cl::desc("The number of shots to execute on the quantum "
                             "circuit, default is 1000"),
              llvm::cl::init(1000), llvm::cl::cat(openqasm3Cat));
 
-static llvm::cl::opt<std::string> shotDelay(
+llvm::cl::opt<std::string> shotDelay(
     "shot-delay",
     llvm::cl::desc("Repetition delay between shots. Defaults to 1ms."),
     llvm::cl::init("1ms"), llvm::cl::cat(openqasm3Cat));
 
-static llvm::cl::list<std::string>
+llvm::cl::list<std::string>
     includeDirs("I", llvm::cl::desc("Add <dir> to the include path"),
                 llvm::cl::value_desc("dir"), llvm::cl::cat(openqasm3Cat));
 
-static qssc::DiagnosticCallback *diagnosticCallback_;
-static llvm::SourceMgr *sourceMgr_;
+qssc::DiagnosticCallback *diagnosticCallback_;
+llvm::SourceMgr *sourceMgr_;
 
-static std::mutex qasmParserLock;
+std::mutex qasmParserLock;
 
-namespace {
-static std::regex durationRe("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
+std::regex durationRe("^([0-9]*[.]?[0-9]+)([a-zA-Z]*)");
 
 llvm::Expected<std::pair<double, mlir::quir::TimeUnits>>
 parseDurationStr(const std::string &durationStr) {

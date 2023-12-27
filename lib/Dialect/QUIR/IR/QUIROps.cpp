@@ -59,16 +59,19 @@
 using namespace mlir;
 using namespace mlir::quir;
 
-static uint lookupQubitIdHandleError_(const Value &val) {
+namespace {
+uint lookupQubitIdHandleError_(const Value &val) {
   auto id = lookupQubitId(val);
   if (!id.has_value()) {
     auto &diagEngine = val.getContext()->getDiagEngine();
     diagEngine.emit(val.getLoc(), mlir::DiagnosticSeverity::Error)
         << "Qubit does not have a valid ID.";
     val.getDefiningOp()->emitError() << "Qubit does not have a valid ID.";
+    assert(false && "Qubit does not have a valid id.");
   }
   return id.value();
 } // lookupQubitIdHandleError_
+} // anonymous namespace
 
 template <class Op>
 std::set<uint32_t> getQubitIds(Op &op) {
@@ -357,8 +360,9 @@ void CircuitOp::print(mlir::OpAsmPrinter &printer) {
       getArgAttrsAttrName(), getResAttrsAttrName());
 }
 
+namespace {
 /// Verify the argument list and entry block are in agreement.
-static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
+LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
   auto fnInputTypes = op.getFunctionType().getInputs();
   Block &entryBlock = op.front();
   for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i)
@@ -372,7 +376,7 @@ static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
 
 /// Verify that no classical values are created/used in the circuit outside of
 /// values that originate as argument values or the result of a measurement.
-static LogicalResult verifyClassical_(CircuitOp op) {
+LogicalResult verifyClassical_(CircuitOp op) {
   mlir::Operation *classicalOp = nullptr;
   WalkResult const result = op->walk([&](Operation *subOp) {
     if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
@@ -389,6 +393,7 @@ static LogicalResult verifyClassical_(CircuitOp op) {
            << "is classical and should not be inside a circuit.";
   return success();
 }
+} //anonymous namespace
 
 LogicalResult CircuitOp::verify() {
   // If external will be linked in later and nothing to do
@@ -703,5 +708,9 @@ LogicalResult quir::YieldOp::verify() {
 //===----------------------------------------------------------------------===//
 
 #define GET_OP_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIR.cpp.inc"
 
 #define GET_ENUM_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
+#include "Dialect/QUIR/IR/QUIREnums.cpp.inc"

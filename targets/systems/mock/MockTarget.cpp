@@ -76,12 +76,14 @@ using namespace mlir::quir;
 using namespace qssc::hal;
 using namespace qssc::targets::systems::mock;
 
+namespace {
 // The space below at the front of the string causes this category to be printed
 // first
-static llvm::cl::OptionCategory
+llvm::cl::OptionCategory
     mockCat(" QSS Compiler Options for the Mock target",
             "Options that control Mock-specific behavior of the Mock QSS "
             "Compiler target");
+} // anonymous namespace
 
 int qssc::targets::systems::mock::init() {
   bool const registered = registry::TargetSystemRegistry::registerPlugin<MockSystem>(
