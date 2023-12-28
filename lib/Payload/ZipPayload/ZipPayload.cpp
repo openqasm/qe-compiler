@@ -41,6 +41,7 @@
 #include <optional>
 #include <ostream>
 #include <string>
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include <sys/stat.h>
 #include <vector>
 #include <zip.h>
@@ -126,7 +127,9 @@ void setFilePermissions(zip_int64_t fileIndex, fs::path &fName,
                                    &attributes);
   if (opsys == ZIP_OPSYS_UNIX) {
     zip_uint32_t mask = UINT32_MAX; // all 1s for negative mask
+    // NOLINTNEXTLINE(misc-include-cleaner)
     mask ^= (S_IWGRP << 16);        // turn off write for the group
+    // NOLINTNEXTLINE(misc-include-cleaner)
     mask ^= (S_IWOTH << 16);        // turn off write for others
 
     // apply negative write mask
@@ -134,6 +137,7 @@ void setFilePermissions(zip_int64_t fileIndex, fs::path &fName,
 
     // if executable turn on S_IXUSR
     if (fName.has_extension() && fName.extension() == ".sh")
+      // NOLINTNEXTLINE(misc-include-cleaner)
       attributes |= (S_IXUSR << 16); // turn on execute for user
 
     // set new attributes
