@@ -163,6 +163,7 @@ void ThreadedCompilationManager::registerPassManagerWithContext_(
   pm.getDependentDialects(dependentDialects);
   auto *context = getContext();
 
+  // NOLINTNEXTLINE(clang-diagnostic-ctad-maybe-unsupported)
   std::unique_lock const lock(contextMutex_);
   context->appendDialectRegistry(dependentDialects);
   for (llvm::StringRef const name : dependentDialects.getDialectNames())
@@ -171,12 +172,14 @@ void ThreadedCompilationManager::registerPassManagerWithContext_(
 
 mlir::PassManager &
 ThreadedCompilationManager::getTargetPassManager_(Target *target) {
+  // NOLINTNEXTLINE(clang-diagnostic-ctad-maybe-unsupported)
   std::shared_lock const lock(targetPassManagersMutex_);
   return targetPassManagers_.at(target);
 }
 
 mlir::PassManager &
 ThreadedCompilationManager::createTargetPassManager_(Target *target) {
+  // NOLINTNEXTLINE(clang-diagnostic-ctad-maybe-unsupported)
   std::unique_lock const lock(targetPassManagersMutex_);
   return targetPassManagers_.emplace(target, getContext()).first->second;
 }
