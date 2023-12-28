@@ -42,6 +42,7 @@ std::optional<uint64_t> getSetupLatency(mlir::Operation *op);
 void setSetupLatency(mlir::Operation *op, uint64_t setupLatency);
 llvm::Expected<uint64_t> getDuration(mlir::Operation *op,
                                      mlir::Operation *callSequenceOp = nullptr);
+llvm::Expected<mlir::ArrayAttr> getPorts(mlir::Operation *op);
 void setDuration(mlir::Operation *op, uint64_t duration);
 
 } // namespace mlir::pulse::interfaces_impl

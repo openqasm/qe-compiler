@@ -41,6 +41,7 @@ void registerPulsePasses() {
   PassRegistration<MergeDelayPass>();
   PassRegistration<RemoveUnusedArgumentsPass>();
   PassRegistration<SchedulePortPass>();
+  PassRegistration<quantumCircuitPulseSchedulingPass>();
   PassRegistration<ClassicalOnlyDetectionPass>();
 }
 

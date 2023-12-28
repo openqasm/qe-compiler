@@ -180,6 +180,29 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
         convertedPulseSequenceOpReturnTypes.push_back(type);
       for (auto val : pulseCalCallSequenceOp.getRes())
         convertedPulseSequenceOpReturnValues.push_back(val);
+
+      // add starting timepoint for delayOp
+      if (auto delayOp = dyn_cast<mlir::quir::DelayOp>(quirOp)) {
+        uint64_t durValue = 0;
+        if (delayOp.getTime().isa<BlockArgument>()) {
+          uint argNum = delayOp.getTime().dyn_cast<BlockArgument>().getArgNumber();
+          auto durOpConstantOp = callCircuitOp.getOperand(argNum)
+                                     .getDefiningOp<mlir::quir::ConstantOp>();
+          auto durOp = quir::getDuration(durOpConstantOp).get();
+          durValue = static_cast<uint>(durOp.getDuration().convertToDouble());
+          assert(durOp.getType().dyn_cast<DurationType>().getUnits() ==
+                     TimeUnits::dt &&
+                 "this pass only accepts durations with dt unit");
+        } else {
+          auto durOp = quir::getDuration(delayOp).get();
+          durValue = static_cast<uint>(durOp.getDuration().convertToDouble());
+          assert(durOp.getType().dyn_cast<DurationType>().getUnits() ==
+                     TimeUnits::dt &&
+                 "this pass only accepts durations with dt unit");
+        }
+        PulseOpSchedulingInterface::setDuration(pulseCalCallSequenceOp,
+                                                durValue);
+      }
     } else
       assert(((isa<quir::ConstantOp>(quirOp) or isa<quir::ReturnOp>(quirOp) or
                isa<quir::CircuitOp>(quirOp))) &&

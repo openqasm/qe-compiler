@@ -297,7 +297,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
   delayOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
-    // found a pulse calibration for the barrier gate
+    // found a pulse calibration for the delay gate
     addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
     return;
   }
