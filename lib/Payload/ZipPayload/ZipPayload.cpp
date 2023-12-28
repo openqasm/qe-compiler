@@ -128,9 +128,9 @@ void setFilePermissions(zip_int64_t fileIndex, fs::path &fName,
   if (opsys == ZIP_OPSYS_UNIX) {
     zip_uint32_t mask = UINT32_MAX; // all 1s for negative mask
     // NOLINTNEXTLINE(misc-include-cleaner)
-    mask ^= (S_IWGRP << 16);        // turn off write for the group
+    mask ^= (S_IWGRP << 16); // turn off write for the group
     // NOLINTNEXTLINE(misc-include-cleaner)
-    mask ^= (S_IWOTH << 16);        // turn off write for others
+    mask ^= (S_IWOTH << 16); // turn off write for others
 
     // apply negative write mask
     attributes &= mask;
