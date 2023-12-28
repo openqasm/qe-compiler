@@ -26,6 +26,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <algorithm>
 #include <memory>
 #include <unordered_map>
 
@@ -37,16 +38,21 @@ int init();
 class MockConfig : public qssc::hal::SystemConfiguration {
 public:
   explicit MockConfig(llvm::StringRef configurationPath);
-  auto getMultiplexingRatio() const -> uint { return multiplexing_ratio; }
-  auto driveNode(uint qubitId) const -> uint { return qubitDriveMap[qubitId]; }
-  auto acquireNode(uint qubitId) const -> uint {
-    return qubitAcquireMap[qubitId];
+  uint getMultiplexingRatio() const { return multiplexing_ratio; }
+  uint driveNode(uint qubitId) const { return qubitDriveMap[qubitId]; }
+  const std::vector<uint> &getDriveNodes() { return qubitDriveMap; }
+  uint acquireNode(uint qubitId) const { return qubitAcquireMap[qubitId]; }
+  const std::vector<uint> getAcquireNodes() {
+    std::vector<uint> acquireNodes = qubitAcquireMap;
+    acquireNodes.erase(std::unique(acquireNodes.begin(), acquireNodes.end()),
+                       acquireNodes.end());
+    return acquireNodes;
   }
-  auto acquireQubits(uint nodeId) -> const std::vector<int> & {
+  const std::vector<int> &acquireQubits(uint nodeId) {
     return qubitAcquireToPhysIdMap[nodeId];
   }
-  auto controllerNode() const -> uint { return controllerNodeId; }
-  auto multiplexedQubits(uint qubitId) -> const std::vector<int> & {
+  uint controllerNode() const { return controllerNodeId; }
+  const std::vector<int> &multiplexedQubits(uint qubitId) {
     return acquireQubits(acquireNode(qubitId));
   }
 
@@ -68,10 +74,9 @@ public:
   explicit MockSystem(std::unique_ptr<MockConfig> config);
   static llvm::Error registerTargetPasses();
   static llvm::Error registerTargetPipelines();
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
-  auto payloadPassesFound(mlir::PassManager &pm) -> bool;
-  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
-                           payload::Payload &payload) override;
+  llvm::Error addPasses(mlir::PassManager &pm) override;
+  llvm::Error emitToPayload(mlir::ModuleOp moduleOp,
+                            payload::Payload &payload) override;
   auto getConfig() -> MockConfig & { return *mockConfig; }
 
 private:
@@ -84,41 +89,49 @@ public:
                  const qssc::hal::SystemConfiguration &config);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
-  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
-                           payload::Payload &payload) override;
+  virtual llvm::StringRef getNodeType() override { return "controller"; }
+  // Currently there is a single controller with a fixed node id.
+  virtual uint32_t getNodeId() override { return 1000; }
+  llvm::Error addPasses(mlir::PassManager &pm) override;
+  llvm::Error emitToPayload(mlir::ModuleOp moduleOp,
+                            payload::Payload &payload) override;
 
 private:
-  auto getModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
-  void buildLLVMPayload(mlir::ModuleOp &moduleOp, payload::Payload &payload);
+  llvm::Error buildLLVMPayload(mlir::ModuleOp moduleOp,
+                               payload::Payload &payload);
 }; // class MockController
 
 class MockAcquire : public qssc::hal::TargetInstrument {
 public:
   MockAcquire(std::string name, MockSystem *parent,
-              const qssc::hal::SystemConfiguration &config);
+              const qssc::hal::SystemConfiguration &config, uint32_t nodeId);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
-  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
-                           payload::Payload &payload) override;
+  virtual llvm::StringRef getNodeType() override { return "acquire"; }
+  virtual uint32_t getNodeId() override { return nodeId_; };
+  llvm::Error addPasses(mlir::PassManager &pm) override;
+  llvm::Error emitToPayload(mlir::ModuleOp moduleOp,
+                            payload::Payload &payload) override;
 
 private:
-  auto getModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
+  uint32_t nodeId_;
+
 }; // class MockAcquire
 
 class MockDrive : public qssc::hal::TargetInstrument {
 public:
   MockDrive(std::string name, MockSystem *parent,
-            const qssc::hal::SystemConfiguration &config);
+            const qssc::hal::SystemConfiguration &config, uint32_t nodeId);
   static void registerTargetPasses();
   static void registerTargetPipelines();
-  llvm::Error addPayloadPasses(mlir::PassManager &pm) override;
-  llvm::Error addToPayload(mlir::ModuleOp &moduleOp,
-                           payload::Payload &payload) override;
+  virtual llvm::StringRef getNodeType() override { return "drive"; }
+  virtual uint32_t getNodeId() override { return nodeId_; };
+  llvm::Error addPasses(mlir::PassManager &pm) override;
+  llvm::Error emitToPayload(mlir::ModuleOp moduleOp,
+                            payload::Payload &payload) override;
 
 private:
-  auto getModule(mlir::ModuleOp topModuleOp) -> mlir::ModuleOp;
+  uint32_t nodeId_;
 }; // class MockDrive
 
 } // namespace qssc::targets::systems::mock
