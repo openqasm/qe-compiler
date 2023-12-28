@@ -125,7 +125,8 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
                               << quantumGateCallSequenceOpDuration << "\n");
 
       // find next available time for all the ports
-      const int nextAvailableTimeOfAllPorts = getNextAvailableTimeOfPorts(ports);
+      const int nextAvailableTimeOfAllPorts =
+          getNextAvailableTimeOfPorts(ports);
       LLVM_DEBUG(llvm::dbgs() << "\t\tnext availability is at "
                               << nextAvailableTimeOfAllPorts << "\n");
 
@@ -149,7 +150,8 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
   }
 
   // multiply by -1 so that quantum circuit duration becomes positive
-  const int totalDurationOfQuantumCircuit = -totalDurationOfQuantumCircuitNegative;
+  const int totalDurationOfQuantumCircuit =
+      -totalDurationOfQuantumCircuitNegative;
   LLVM_DEBUG(llvm::dbgs() << "\ttotal duration of quantum circuit "
                           << totalDurationOfQuantumCircuit << "\n");
 
