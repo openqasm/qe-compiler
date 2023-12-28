@@ -20,7 +20,24 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/Scheduling.h"
+#include "Dialect/Pulse/IR/PulseInterfaces.h"
+#include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/ErrorHandling.h"
+
+#include <cassert>
+#include <cstdint>
+#include <string>
+#include <utility>
 
 #define DEBUG_TYPE "SchedulingDebug"
 
@@ -38,7 +55,7 @@ void quantumCircuitPulseSchedulingPass::runOnOperation() {
       llvm_unreachable("scheduling method not supported currently");
   }
 
-  ModuleOp moduleOp = getOperation();
+  ModuleOp const moduleOp = getOperation();
 
   // schedule all the quantum circuits which are root call sequence ops
   moduleOp->walk([&](mlir::pulse::CallSequenceOp callSequenceOp) {
@@ -59,7 +76,7 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
     mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp) {
 
   auto quantumCircuitSequenceOp = getSequenceOp(quantumCircuitCallSequenceOp);
-  std::string sequenceName = quantumCircuitSequenceOp.getSymName().str();
+  std::string const sequenceName = quantumCircuitSequenceOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nscheduling " << sequenceName << "\n");
 
   int totalDurationOfQuantumCircuitNegative = 0;
@@ -82,7 +99,7 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
             dyn_cast<mlir::pulse::CallSequenceOp>(op)) {
       // find quantum gate SequenceOp
       auto quantumGateSequenceOp = getSequenceOp(quantumGateCallSequenceOp);
-      std::string quantumGateSequenceName =
+      const std::string quantumGateSequenceName =
           quantumGateSequenceOp.getSymName().str();
       LLVM_DEBUG(llvm::dbgs() << "\tprocessing inner sequence "
                               << quantumGateSequenceName << "\n");
@@ -103,18 +120,18 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
         quantumGateSequenceOp.emitError() << toString(std::move(err));
         signalPassFailure();
       }
-      uint64_t quantumGateCallSequenceOpDuration = durOrError.get();
+      const uint64_t quantumGateCallSequenceOpDuration = durOrError.get();
       LLVM_DEBUG(llvm::dbgs() << "\t\tduration "
                               << quantumGateCallSequenceOpDuration << "\n");
 
       // find next available time for all the ports
-      int nextAvailableTimeOfAllPorts = getNextAvailableTimeOfPorts(ports);
+      const int nextAvailableTimeOfAllPorts = getNextAvailableTimeOfPorts(ports);
       LLVM_DEBUG(llvm::dbgs() << "\t\tnext availability is at "
                               << nextAvailableTimeOfAllPorts << "\n");
 
       // find the updated available time, i.e., when the current quantum gate
       // will be scheduled
-      int updatedAvailableTime =
+      const int updatedAvailableTime =
           nextAvailableTimeOfAllPorts - quantumGateCallSequenceOpDuration;
       LLVM_DEBUG(llvm::dbgs() << "\t\tcurrent gate scheduled at "
                               << updatedAvailableTime << "\n");
@@ -132,7 +149,7 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
   }
 
   // multiply by -1 so that quantum circuit duration becomes positive
-  int totalDurationOfQuantumCircuit = -totalDurationOfQuantumCircuitNegative;
+  const int totalDurationOfQuantumCircuit = -totalDurationOfQuantumCircuitNegative;
   LLVM_DEBUG(llvm::dbgs() << "\ttotal duration of quantum circuit "
                           << totalDurationOfQuantumCircuit << "\n");
 
@@ -153,7 +170,7 @@ int quantumCircuitPulseSchedulingPass::getNextAvailableTimeOfPorts(
     mlir::ArrayAttr ports) {
   int nextAvailableTimeOfAllPorts = 0;
   for (auto attr : ports) {
-    std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
+    const std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
     if (portName.empty())
       continue;
     if (portNameToNextAvailabilityMap.find(portName) !=
@@ -168,7 +185,7 @@ int quantumCircuitPulseSchedulingPass::getNextAvailableTimeOfPorts(
 void quantumCircuitPulseSchedulingPass::updatePortAvailabilityMap(
     mlir::ArrayAttr ports, int updatedAvailableTime) {
   for (auto attr : ports) {
-    std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
+    const std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
     if (portName.empty())
       continue;
     portNameToNextAvailabilityMap[portName] = updatedAvailableTime;

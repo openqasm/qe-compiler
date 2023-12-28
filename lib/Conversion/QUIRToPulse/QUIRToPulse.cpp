@@ -22,6 +22,7 @@
 #include "Conversion/QUIRToPulse/QUIRToPulse.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/Pulse/IR/PulseInterfaces.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
@@ -185,7 +186,7 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
       if (auto delayOp = dyn_cast<mlir::quir::DelayOp>(quirOp)) {
         uint64_t durValue = 0;
         if (delayOp.getTime().isa<BlockArgument>()) {
-          uint argNum =
+          const uint argNum =
               delayOp.getTime().dyn_cast<BlockArgument>().getArgNumber();
           auto durOpConstantOp = callCircuitOp.getOperand(argNum)
                                      .getDefiningOp<mlir::quir::ConstantOp>();

@@ -28,6 +28,7 @@
 #include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
 #include "Dialect/Pulse/Transforms/SchedulePort.h"
 
+#include "Dialect/Pulse/Transforms/Scheduling.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
