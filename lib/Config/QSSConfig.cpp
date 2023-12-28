@@ -29,14 +29,32 @@ using namespace qssc::config;
 
 // For now emit in a pseudo-TOML format.
 void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
-  os << "[qss.compiler]\n";
-  os << "targetName: " << (targetName.has_value() ? targetName.value() : "None")
+  // Compiler configuration
+  os << "[compiler]\n";
+  os << "targetName: " << (getTargetName().has_value() ? getTargetName().value() : "None")
      << "\n";
   os << "targetConfigPath: "
-     << (targetConfigPath.has_value() ? targetConfigPath.value() : "None")
+     << (getTargetConfigPath().has_value() ? getTargetConfigPath().value() : "None")
      << "\n";
-  os << "allowUnregisteredDialects: " << allowUnregisteredDialects << "\n";
   os << "addTargetPasses: " << addTargetPasses << "\n";
+  os << "\n";
+
+  // Mlir opt configuration
+  os << "[opt]\n";
+  os << "allowUnregisteredDialects: " << shouldAllowUnregisteredDialects() << "\n";
+  os << "dumpPassPipeline: " << shouldDumpPassPipeline() << "\n";
+  os << "emitBytecode: " << shouldEmitBytecode() << "\n";
+  os << "bytecodeEmitVersion: " << bytecodeVersionToEmit() << "\n";
+  os << "irdlFile: " << getIrdlFile() << "\n";
+  os << "runReproducer: " << shouldRunReproducer() << "\n";
+  os << "showDialects: " << shouldShowDialects() << "\n";
+  os << "splitInputFile: " << shouldSplitInputFile() << "\n";
+  os << "useExplicitModule" << shouldUseExplicitModule() << "\n";
+  os << "verifyDiagnostics" << shouldVerifyDiagnostics() << "\n";
+  os << "verifyPasses" << shouldVerifyPasses() << "\n";
+  os << "verifyRoundTrip" << shouldVerifyRoundtrip() << "\n";
+  os << "\n";
+
 }
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os,

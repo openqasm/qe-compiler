@@ -22,7 +22,11 @@ namespace qssc::config {
 
 /// @brief Get the CLI category for the QSS compiler.
 /// @return The reference to the CLI category for the compiler.
-llvm::cl::OptionCategory &getQSSCCategory();
+llvm::cl::OptionCategory &getQSSCCLCategory();
+
+/// @brief Get the CLI category for the QSS compiler mlir-opt options.
+/// @return The reference to the CLI category for the compiler.
+llvm::cl::OptionCategory &getQSSOptCLCategory();
 
 /// @brief Build a QSSConfig from input CLI arguments.
 ///

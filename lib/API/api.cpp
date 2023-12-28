@@ -81,23 +81,23 @@ using namespace mlir;
 namespace {
 llvm::cl::opt<std::string> inputSource(
     llvm::cl::Positional, llvm::cl::desc("Input filename or program source"),
-    llvm::cl::init("-"), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init("-"), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<std::string>
     outputFilename("o", llvm::cl::desc("Output filename"),
                    llvm::cl::value_desc("filename"), llvm::cl::init("-"),
-                   llvm::cl::cat(qssc::config::getQSSCCategory()));
+                   llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool>
     directInput("direct",
                 llvm::cl::desc("Accept the input program directly as a string"),
-                llvm::cl::cat(qssc::config::getQSSCCategory()));
+                llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool> verifyDiagnostics(
     "verify-diagnostics",
     llvm::cl::desc("Check that emitted diagnostics match "
                    "expected-* lines on the corresponding line"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 #ifndef NOVERIFY
 #define VERIFY_PASSES_DEFAULT true
@@ -109,40 +109,40 @@ llvm::cl::opt<bool> verifyPasses(
     "verify-each",
     llvm::cl::desc("Run the verifier after each transformation pass"),
     llvm::cl::init(VERIFY_PASSES_DEFAULT),
-    llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool> showDialects(
     "show-dialects", llvm::cl::desc("Print the list of registered dialects"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool> showTargets(
     "show-targets", llvm::cl::desc("Print the list of registered targets"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool> showPayloads(
     "show-payloads", llvm::cl::desc("Print the list of registered payloads"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool> showConfig(
     "show-config", llvm::cl::desc("Print the loaded compiler configuration."),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool> plaintextPayload(
     "plaintext-payload", llvm::cl::desc("Write the payload in plaintext"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool> includeSourceInPayload(
     "include-source", llvm::cl::desc("Write the input source into the payload"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool> compileTargetIr(
     "compile-target-ir", llvm::cl::desc("Apply the target's IR compilation"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 llvm::cl::opt<bool> bypassPayloadTargetCompilation(
     "bypass-payload-target-compilation",
     llvm::cl::desc("Bypass target compilation during payload generation."),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCategory()));
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 enum InputType { NONE, QASM, MLIR, QOBJ };
 

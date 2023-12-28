@@ -18,6 +18,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "mlir/IR/MLIRContext.h"
+#include "mlir/Tools/mlir-opt/MlirOptMain.h"
 
 #include <iostream>
 #include <optional>
@@ -33,18 +34,33 @@ namespace qssc::config {
 /// as CLI, environment variables and possible configuration file formats
 /// through QSSConfigBuilder implementations which apply successive views over
 /// the configuration to produce the final configuration.
-struct QSSConfig {
-  /// @brief The TargetSystem to target compilation for.
-  std::optional<std::string> targetName = std::nullopt;
-  /// @brief The path to the TargetSystem configuration information.
-  std::optional<std::string> targetConfigPath = std::nullopt;
-  /// @brief Allow unregistered dialects to be used during compilation.
-  bool allowUnregisteredDialects = false;
-  /// @brief Register target passes with the compiler.
-  bool addTargetPasses = true;
+struct QSSConfig : mlir::MlirOptMainConfig{
 
-  /// @brief Emit the configuration to stdout.
-  void emit(llvm::raw_ostream &out) const;
+  public:
+    friend class CLIConfigBuilder;
+    friend class EnvVarConfigBuilder;
+    std::optional<std::string>& getTargetName() { return targetName;}
+    std::optional<std::string>&  getTargetConfigPath() { return targetConfigPath;}
+
+
+    QSSConfig &addTargetPassess(bool add) {
+      addTargetPassesFlag = add;
+      return *this;
+    }
+    bool shouldAddTargetPasses() const {
+      return addTargetPassesFlag;
+    }
+
+  public:
+    /// @brief Emit the configuration to stdout.
+    void emit(llvm::raw_ostream &out) const;
+  protected:
+    /// @brief The TargetSystem to target compilation for.
+    std::optional<std::string> targetName = std::nullopt;
+    /// @brief The path to the TargetSystem configuration information.
+    std::optional<std::string> targetConfigPath = std::nullopt;
+    /// @brief Register target passes with the compiler.
+    bool addTargetPassesFlag = true;
 };
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const QSSConfig &config);
