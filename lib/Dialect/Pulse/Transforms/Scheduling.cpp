@@ -66,7 +66,8 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
   portNameToNextAvailabilityMap.clear();
 
   // get the MLIR block of the quantum circuit
-  auto quantumCircuitSequenceOpBlock = quantumCircuitSequenceOp.getBody().begin();
+  auto quantumCircuitSequenceOpBlock =
+      quantumCircuitSequenceOp.getBody().begin();
   // go over the MLIR operation of the block in reverse order, and find
   // CallSequenceOps, each of which corresponds to a quantum gate. for each
   // CallSequenceOps, we add a timepoint based on the availability of involved
