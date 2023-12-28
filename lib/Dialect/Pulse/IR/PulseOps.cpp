@@ -193,7 +193,7 @@ SequenceOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
   if ((*this)->hasAttr("pulse.duration"))
     return static_cast<uint64_t>(
         (*this)->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
-  else if (callSequenceOp->hasAttr("pulse.duration"))
+  if (callSequenceOp->hasAttr("pulse.duration"))
     return static_cast<uint64_t>(
         callSequenceOp->getAttrOfType<IntegerAttr>("pulse.duration").getInt());
   return llvm::createStringError(
