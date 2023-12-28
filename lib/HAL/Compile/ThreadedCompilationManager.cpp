@@ -146,7 +146,8 @@ ThreadedCompilationManager::buildTargetPassManagers_(Target &target) {
   };
 
   getContext()->enableMultithreading(isMultithreadingEnabled());
-  auto err = walkTargetThreaded(&getTargetSystem(), threadedBuildTargetPassManager);
+  auto err =
+      walkTargetThreaded(&getTargetSystem(), threadedBuildTargetPassManager);
   getContext()->disableMultithreading();
   return err;
 }
@@ -203,8 +204,8 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
   };
 
   getContext()->enableMultithreading(isMultithreadingEnabled());
-  auto err = walkTargetModulesThreaded(&target, moduleOp, threadedCompileMLIRTarget,
-                                   postChildrenEmitToPayload);
+  auto err = walkTargetModulesThreaded(
+      &target, moduleOp, threadedCompileMLIRTarget, postChildrenEmitToPayload);
   getContext()->disableMultithreading();
   return err;
 }
@@ -262,9 +263,9 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
   };
 
   getContext()->enableMultithreading(isMultithreadingEnabled());
-  auto err = walkTargetModulesThreaded(&target, moduleOp,
-                                   threadedCompilePayloadTarget,
-                                   postChildrenEmitToPayload);
+  auto err =
+      walkTargetModulesThreaded(&target, moduleOp, threadedCompilePayloadTarget,
+                                postChildrenEmitToPayload);
   getContext()->disableMultithreading();
   return err;
 }
