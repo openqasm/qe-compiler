@@ -34,10 +34,12 @@ struct MergeCircuitsPass
     : public PassWrapper<MergeCircuitsPass, OperationPass<>> {
   void runOnOperation() override;
 
-  static CircuitOp getCircuitOp(CallCircuitOp callCircuitOp);
-  static LogicalResult mergeCallCircuits(PatternRewriter &rewriter,
-                                         CallCircuitOp callCircuitOp,
-                                         CallCircuitOp nextCallCircuitOp);
+  static CircuitOp getCircuitOp(CallCircuitOp callCircuitOp,
+                                llvm::StringMap<Operation *> *symbolMap);
+  static LogicalResult
+  mergeCallCircuits(PatternRewriter &rewriter, CallCircuitOp callCircuitOp,
+                    CallCircuitOp nextCallCircuitOp,
+                    llvm::StringMap<Operation *> *symbolMap);
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;

@@ -115,6 +115,8 @@ void BreakResetPass::runOnOperation() {
   // use cheaper top-down traversal (in this case, bottom-up would not behave
   // any differently)
   config.useTopDownTraversal = true;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
 
   patterns.add<BreakResetsPattern>(&getContext(), numIterations, delayCycles);
 

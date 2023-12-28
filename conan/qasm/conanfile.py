@@ -20,7 +20,7 @@ import subprocess
 
 class QasmConan(ConanFile):
     name = "qasm"
-    version = "0.2.14"
+    version = "0.2.16"
     url = "https://github.com/Qiskit/qss-qasm.git"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "examples": [True, False]}
