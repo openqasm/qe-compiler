@@ -177,42 +177,4 @@ struct QSSConfigCLOptions : public QSSConfig {
 
 
 llvm::cl::OptionCategory &qssc::config::getQSSCCLCategory() { return qsscCat_; }
-llvm::cl::OptionCategory &qssc::config::getQSSOptCLCategory() { return qsscOpt_; }
-
-llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
-  if (auto err = populateConfigurationPath_(config))
-    return err;
-
-  if (auto err = populateTarget_(config))
-    return err;
-
-  if (auto err = populateAllowUnregisteredDialects_(config))
-    return err;
-
-  if (auto err = populateAddTargetPasses_(config))
-    return err;
-
-  return llvm::Error::success();
-}
-
-llvm::Error CLIConfigBuilder::populateConfigurationPath_(QSSConfig &config) {
-  if (configurationPath != "")
-    config.targetConfigPath = configurationPath;
-  return llvm::Error::success();
-}
-
-llvm::Error CLIConfigBuilder::populateTarget_(QSSConfig &config) {
-  if (targetStr != "")
-    config.targetName = targetStr;
-  return llvm::Error::success();
-}
-llvm::Error
-CLIConfigBuilder::populateAllowUnregisteredDialects_(QSSConfig &config) {
-  config.allowUnregisteredDialects(allowUnregisteredDialects);
-  return llvm::Error::success();
-}
-
-llvm::Error CLIConfigBuilder::populateAddTargetPasses_(QSSConfig &config) {
-  config.addTargetPasses = addTargetPasses;
-  return llvm::Error::success();
-}
+llvm::cl::OptionCategory &qssc::config::getQSSOptCLCategory() { return optCat_; }
