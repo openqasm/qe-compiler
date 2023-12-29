@@ -85,7 +85,7 @@ void qssc::config::setContextConfig(mlir::MLIRContext *context,
   (*contextConfigs)[context] = config;
 }
 
-llvm::Expected<const QSSConfig &>
+llvm::Expected<QSSConfig &>
 qssc::config::getContextConfig(mlir::MLIRContext *context) {
   auto it = contextConfigs->find(context);
   if (it != contextConfigs->end())

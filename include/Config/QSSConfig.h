@@ -75,7 +75,7 @@ void setContextConfig(mlir::MLIRContext *context, const QSSConfig &config);
 /// @brief Get a constant reference to the configuration registered for this
 /// context.
 /// @param context The context to lookup the configuration for.
-llvm::Expected<const QSSConfig &> getContextConfig(mlir::MLIRContext *context);
+llvm::Expected<QSSConfig &> getContextConfig(mlir::MLIRContext *context);
 
 /// @brief A builder class for the QSSConfig. All standard configuration
 /// population should be completed through builders.

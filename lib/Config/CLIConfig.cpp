@@ -56,6 +56,7 @@ public:
 /// creating a qss-compiler mlir-opt based config. This is a singleton.
 /// The implementation closely follows that of
 /// https://github.com/llvm/llvm-project/blob/llvmorg-17.0.6/mlir/lib/Tools/mlir-opt/MlirOptMain.cpp
+/// As the implementation is anonymous we recreate the population of the configuration here.
 struct QSSConfigCLOptions : public QSSConfig {
   QSSConfigCLOptions() {
 

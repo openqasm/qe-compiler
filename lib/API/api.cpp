@@ -379,8 +379,8 @@ void printVersion(llvm::raw_ostream &out) {
 /// @param context The context to build and register the configuration for.
 /// @return The constructed configuration that has been registered for the
 /// supplied context.
-llvm::Expected<const qssc::config::QSSConfig &>
-buildConfig_(mlir::MLIRContext *context) {
+llvm::Expected<qssc::config::QSSConfig &>
+buildConfig_(mlir::DialectRegistry &registry, mlir::MLIRContext *context) {
   // First populate the configuration from default values then
   // environment variables.
   auto config = qssc::config::EnvVarConfigBuilder().buildConfig();
@@ -390,7 +390,7 @@ buildConfig_(mlir::MLIRContext *context) {
     return std::move(err);
 
   // Apply CLI options of top of the configuration constructed above.
-  if (auto err = qssc::config::CLIConfigBuilder().populateConfig(*config))
+  if (auto err = qssc::config::CLIConfigBuilder(registry).populateConfig(*config))
     // Explicit move required for some systems as automatic move
     // is not recognized.
     return std::move(err);
@@ -403,7 +403,7 @@ buildConfig_(mlir::MLIRContext *context) {
 }
 
 /// @brief Emit the registered dialects to llvm::outs
-void showDialects_(const DialectRegistry &registry) {
+void showDialects_(const mlir::DialectRegistry &registry) {
   llvm::outs() << "Registered Dialects:\n";
   for (const auto &registeredDialect : registry.getDialectNames())
     llvm::outs() << registeredDialect << "\n";
@@ -436,9 +436,9 @@ void showPayloads_() {
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
 llvm::Expected<qssc::hal::TargetSystem &>
-buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
-  const auto &targetName = config.targetName;
-  const auto &targetConfigPath = config.targetConfigPath;
+buildTarget_(MLIRContext *context, qssc::config::QSSConfig &config) {
+  auto &targetName = config.getTargetName();
+  auto &targetConfigPath = config.getTargetConfigPath();
 
   if (targetName.has_value()) {
     if (!qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
@@ -548,7 +548,7 @@ llvm::Error emitMLIR_(
     mlir::PassPipelineCLParser &passPipelineParser, ErrorHandler errorHandler) {
   if (compileTargetIr) {
     // Check if we can run the target compilation scheduler.
-    if (config.addTargetPasses) {
+    if (config.shouldAddTargetPasses()) {
       if (auto err = targetCompilationManager.compileMLIR(moduleOp))
         return llvm::joinErrors(
             llvm::createStringError(llvm::inconvertibleErrorCode(),
@@ -685,14 +685,14 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   MLIRContext context{};
 
   // Build the configuration for this compilation event.
-  auto configResult = buildConfig_(&context);
+  auto configResult = buildConfig_(registry, &context);
   if (auto err = configResult.takeError())
     return err;
-  const qssc::config::QSSConfig &config = configResult.get();
+  qssc::config::QSSConfig &config = configResult.get();
 
   // Populate the context
   context.appendDialectRegistry(registry);
-  context.allowUnregisteredDialects(config.allowUnregisteredDialects);
+  context.allowUnregisteredDialects(config.shouldAllowUnregisteredDialects());
   context.printOpOnDiagnostic(!verifyDiagnostics);
 
   if (showDialects) {
@@ -749,7 +749,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   auto outputFile = mlir::openOutputFile(outputFilename, &errorMessage);
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
-  if (emitAction == Action::GenQEQEM && !config.targetName.has_value())
+  if (emitAction == Action::GenQEQEM && !config.getTargetName().has_value())
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Unsupported target-specific payload: no target");
@@ -757,7 +757,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
     const std::filesystem::path payloadPath(outputFilename.c_str());
     const std::string fNamePrefix = payloadPath.stem();
     const auto payloadName =
-        (emitAction == Action::GenQEM) ? "ZIP" : config.targetName.value();
+        (emitAction == Action::GenQEM) ? "ZIP" : config.getTargetName().value();
     auto payloadInfo =
         qssc::payload::registry::PayloadRegistry::lookupPluginInfo(payloadName);
     if (payloadInfo == std::nullopt)
