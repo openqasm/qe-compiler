@@ -31,6 +31,9 @@ using namespace qssc::config;
 void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   // Compiler configuration
   os << "[compiler]\n";
+  os << "inputSource: " << getInputSource().substr(0, 100) << "\n";
+  os << "directInput: " << isDirectInput() << "\n";
+  os << "outputFilePath: " << getOutputFilePath() << "\n";
   os << "inputType: " << to_string(getInputType()) << "\n";
   os << "emitAction: " << to_string(getEmitAction()) << "\n";
   os << "targetName: " << (getTargetName().has_value() ? getTargetName().value() : "None")
@@ -226,7 +229,7 @@ EmitAction qssc::config::fileExtensionToAction(const FileExtension &inExt) {
   return EmitAction::None;
 }
 
-FileExtension qssc::config::strToFileExtension(const std::string &extStr) {
+FileExtension qssc::config::strToFileExtension(const llvm::StringRef extStr) {
   if (extStr == "ast" || extStr == "AST")
     return FileExtension::AST;
   if (extStr == "ast-pretty" || extStr == "AST-PRETTY")
@@ -244,9 +247,10 @@ FileExtension qssc::config::strToFileExtension(const std::string &extStr) {
   return FileExtension::None;
 }
 
-FileExtension qssc::config::getExtension(const std::string &inStr) {
+FileExtension qssc::config::getExtension(const llvm::StringRef inStr) {
   auto pos = inStr.find_last_of('.');
-  if (pos < inStr.length())
+  if (pos < inStr.size())
     return strToFileExtension(inStr.substr(pos + 1));
   return FileExtension::None;
 }
+

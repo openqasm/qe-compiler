@@ -61,6 +61,21 @@ struct QSSConfigCLOptions : public QSSConfig {
   QSSConfigCLOptions() {
 
     // qss-compiler options
+    llvm::cl::opt<std::string, /*ExternalStorage=*/true> inputSource_(
+    llvm::cl::Positional, llvm::cl::desc("Input filename or program source"),
+    llvm::cl::location(inputSource), llvm::cl::init("-"), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
+
+    llvm::cl::opt<std::string, /*ExternalStorage=*/true>
+    outputFilename("o", llvm::cl::desc("Output filename"),
+                   llvm::cl::value_desc("filename"),
+                   llvm::cl::location(outputFilePath), llvm::cl::init("-"),
+                   llvm::cl::cat(qssc::config::getQSSCCLCategory()));
+
+    llvm::cl::opt<bool, /*ExternalStorage=*/true>
+        directInput("direct",
+                    llvm::cl::desc("Accept the input program directly as a string"),
+                    llvm::cl::location(directInputFlag),
+                    llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
     static llvm::cl::opt<enum InputType, /*ExternalStorage=*/true> inputType_(
         "X", llvm::cl::location(inputType),
@@ -253,6 +268,51 @@ struct QSSConfigCLOptions : public QSSConfig {
   /// Pointer to static dialectPlugins variable in constructor, needed by
   /// setDialectPluginsCallback(DialectRegistry&).
   llvm::cl::list<std::string> *dialectPlugins = nullptr;
+
+  llvm::Error computeInputType() {
+    if (getInputType() == InputType::None) {
+
+      if (isDirectInput())
+        return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "The input source format must be specified with -X for direct input.");
+
+      setInputType(fileExtensionToInputType(getExtension(getInputSource())));
+      if (getInputType() == InputType::None) {
+        return llvm::createStringError(
+            llvm::inconvertibleErrorCode(),
+            "Unable to autodetect file extension type! Please specify the "
+            "input type with -X");
+      }
+    }
+
+    return llvm::Error::success();
+  }
+
+  llvm::Error computeOutputType() {
+    if (getOutputFilePath() != "-") {
+      EmitAction const extensionAction =
+          fileExtensionToAction(getExtension(getOutputFilePath()));
+      if (extensionAction == EmitAction::None && emitAction == EmitAction::None) {
+        llvm::errs()
+            << "Cannot determine the file extension of the specified output file "
+            << getOutputFilePath() << " defaulting to dumping MLIR\n";
+        setEmitAction(EmitAction::MLIR);
+      } else if (emitAction == EmitAction::None) {
+        setEmitAction(extensionAction);
+      } else if (extensionAction != getEmitAction()) {
+        return llvm::createStringError(
+            llvm::inconvertibleErrorCode(),
+            "Warning! The output type in the file extension doesn't "
+            "match the output type specified by --emit!");
+      }
+    } else {
+      if (emitAction == EmitAction::None)
+        setEmitAction(EmitAction::MLIR);
+    }
+
+    return llvm::Error::success();
+  }
 };
 
 } // anonymous namespace
@@ -267,15 +327,20 @@ llvm::cl::OptionCategory &qssc::config::getQSSOptCLCategory() { return optCat_; 
 CLIConfigBuilder::CLIConfigBuilder(mlir::DialectRegistry &registry) {
   clOptionsConfig->setDialectPluginsCallback(registry);
   mlir::tracing::DebugConfig::registerCLOptions();
-}
-
-llvm::Expected<QSSConfig> CLIConfigBuilder::buildConfig() {
   clOptionsConfig->setDebugConfig(mlir::tracing::DebugConfig::createFromCLOptions());
-  return *clOptionsConfig;
 }
 
 llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
+  if (auto err = clOptionsConfig->computeInputType())
+    return err;
+
+  if (auto err = clOptionsConfig->computeOutputType())
+    return err;
+
   // qss
+  config.inputSource = clOptionsConfig->inputSource;
+  config.directInputFlag = clOptionsConfig->directInputFlag;
+  config.outputFilePath = clOptionsConfig->outputFilePath;
   config.inputType = clOptionsConfig->inputType;
   config.emitAction = clOptionsConfig->emitAction;
   if (clOptionsConfig->targetName.has_value())

@@ -44,15 +44,15 @@ std::string to_string(const EmitAction &inExt);
 
 std::string to_string(const FileExtension &inExt);
 
-std::string to_string(const InputType &inExt);
+std::string to_string(const InputType &inType);
 
 InputType fileExtensionToInputType(const FileExtension &inExt);
 
 EmitAction fileExtensionToAction(const FileExtension &inExt);
 
-FileExtension strToFileExtension(const std::string &extStr);
+FileExtension strToFileExtension(const llvm::StringRef extStr);
 
-FileExtension getExtension(const std::string &inStr);
+FileExtension getExtension(const llvm::StringRef inStr);
 
 
 
@@ -69,6 +69,30 @@ struct QSSConfig : mlir::MlirOptMainConfig{
   public:
     friend class CLIConfigBuilder;
     friend class EnvVarConfigBuilder;
+
+    QSSConfig &setInputSource(std::string source) {
+      inputSource = source;
+      return *this;
+    }
+    llvm::StringRef getInputSource() const {
+      return inputSource;
+    }
+
+    QSSConfig &directInput(bool flag) {
+      directInputFlag = flag;
+      return *this;
+    }
+    bool isDirectInput() const {
+      return directInputFlag;
+    }
+
+    QSSConfig &setOutputFilePath(std::string path) {
+      outputFilePath = path;
+      return *this;
+    }
+    llvm::StringRef getOutputFilePath() const {
+      return outputFilePath;
+    }
 
     QSSConfig &setTargetName(std::string name) {
       targetName = name;
@@ -173,7 +197,14 @@ struct QSSConfig : mlir::MlirOptMainConfig{
   public:
     /// @brief Emit the configuration to stdout.
     void emit(llvm::raw_ostream &out) const;
+
   protected:
+    /// @brief input source (file path or direct input) to compile
+    std::string inputSource = "-";
+    /// @brief Whether inputSource directly contains the input source (otherwise it is a file path).
+    bool directInputFlag = true;
+    /// @brief Output path for the compiler output if emitting to file.
+    std::string outputFilePath = "-";
     /// @brief The TargetSystem to target compilation for.
     std::optional<std::string> targetName = std::nullopt;
     /// @brief The path to the TargetSystem configuration information.

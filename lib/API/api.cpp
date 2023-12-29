@@ -77,23 +77,7 @@
 #include <utility>
 
 using namespace mlir;
-
-namespace {
-llvm::cl::opt<std::string> inputSource(
-    llvm::cl::Positional, llvm::cl::desc("Input filename or program source"),
-    llvm::cl::init("-"), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<std::string>
-    outputFilename("o", llvm::cl::desc("Output filename"),
-                   llvm::cl::value_desc("filename"), llvm::cl::init("-"),
-                   llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<bool>
-    directInput("direct",
-                llvm::cl::desc("Accept the input program directly as a string"),
-                llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-} // anonymous namespace
+using namespace qssc::config;
 
 
 llvm::Error registerPasses() {
@@ -121,48 +105,6 @@ auto registerPassManagerCLOpts() {
   mlir::registerPassManagerCLOptions();
   mlir::registerDefaultTimingManagerCLOptions();
   qssc::hal::compile::registerTargetCompilationManagerCLOptions();
-}
-
-llvm::Error determineInputType() {
-  if (inputType == InputType::NONE) {
-    inputType = fileExtensionToInputType(getExtension(inputSource));
-    if (inputType == InputType::NONE) {
-      if (directInput) {
-        inputType = InputType::QASM;
-      } else {
-        return llvm::createStringError(
-            llvm::inconvertibleErrorCode(),
-            "Unable to autodetect file extension type! Please specify the "
-            "input type with -X");
-      }
-    } else if (directInput && inputType != InputType::QASM) {
-      return llvm::createStringError(
-          llvm::inconvertibleErrorCode(),
-          "Can only compile direct input when the input type is QASM");
-    }
-  }
-  return llvm::Error::success();
-}
-
-void determineOutputType() {
-  if (outputFilename != "-") {
-    Action const extensionAction =
-        fileExtensionToAction(getExtension(outputFilename));
-    if (extensionAction == Action::None && emitAction == Action::None) {
-      llvm::errs()
-          << "Can't figure out file extension of specified output file "
-          << outputFilename << " defaulting to dumping MLIR\n";
-      emitAction = Action::DumpMLIR;
-    } else if (emitAction == Action::None) {
-      emitAction = extensionAction;
-    } else if (extensionAction != emitAction) {
-      llvm::errs() << "Warning! The output type in the file extension doesn't "
-                      "match the output type specified by --emit!\n";
-    }
-  } else {
-    if (emitAction == Action::None)
-      emitAction = Action::DumpMLIR;
-  }
 }
 
 namespace {
@@ -240,8 +182,8 @@ void showPayloads_() {
 /// @return The constructed TargetSystem.
 llvm::Expected<qssc::hal::TargetSystem &>
 buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
-  auto &targetName = config.getTargetName();
-  auto &targetConfigPath = config.getTargetConfigPath();
+  const auto &targetName = config.getTargetName();
+  const auto &targetConfigPath = config.getTargetConfigPath();
 
   if (targetName.has_value()) {
     if (!qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
@@ -524,9 +466,6 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
     return err;
   auto &target = targetResult.get();
 
-  if (auto err = determineInputType())
-    return err;
-
   // Set up the input, which is loaded from a file by name by default. With the
   // "--direct" option, the input program can be provided as a string to stdin.
   std::string errorMessage;
@@ -540,8 +479,6 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
     }
   }
 
-  determineOutputType();
-
   context.getDiagEngine().registerHandler([&](mlir::Diagnostic &diagnostic) {
     diagEngineHandler(diagnostic, diagnosticCb);
   });
@@ -552,15 +489,15 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   auto outputFile = mlir::openOutputFile(outputFilename, &errorMessage);
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
-  if (emitAction == Action::GenQEQEM && !config.getTargetName().has_value())
+  if (emitAction == EmitAction::GenQEQEM && !config.getTargetName().has_value())
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Unsupported target-specific payload: no target");
-  if (emitAction == Action::GenQEM || emitAction == Action::GenQEQEM) {
+  if (emitAction == EmitAction::GenQEM || emitAction == EmitAction::GenQEQEM) {
     const std::filesystem::path payloadPath(outputFilename.c_str());
     const std::string fNamePrefix = payloadPath.stem();
     const auto payloadName =
-        (emitAction == Action::GenQEM) ? "ZIP" : config.getTargetName().value();
+        (emitAction == EmitAction::GenQEM) ? "ZIP" : config.getTargetName().value();
     auto payloadInfo =
         qssc::payload::registry::PayloadRegistry::lookupPluginInfo(payloadName);
     if (payloadInfo == std::nullopt)
@@ -593,18 +530,18 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   mlir::ModuleOp moduleOp;
 
   if (inputType == InputType::QASM) {
-    if (emitAction >= Action::DumpMLIR) {
+    if (emitAction >= EmitAction::MLIR) {
       moduleOp = mlir::ModuleOp::create(FileLineColLoc::get(
           &context, directInput ? std::string{"-"} : inputSource, 0, 0));
     }
 
     if (auto frontendError = qssc::frontend::openqasm3::parse(
-            inputSource, !directInput, emitAction == Action::DumpAST,
-            emitAction == Action::DumpASTPretty, emitAction >= Action::DumpMLIR,
+            inputSource, !directInput, emitAction == EmitAction::AST,
+            emitAction == EmitAction::ASTPretty, emitAction >= EmitAction::MLIR,
             moduleOp, diagnosticCb))
       return frontendError;
 
-    if (emitAction < Action::DumpMLIR)
+    if (emitAction < EmitAction::MLIR)
       return llvm::Error::success();
   } // if input == QASM
 
@@ -673,14 +610,14 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
                                    "Problems running the compiler pipeline!");
 
   // Prepare outputs
-  if (emitAction == Action::DumpMLIR) {
+  if (emitAction == EmitAction::MLIR) {
     if (auto err = emitMLIR_(ostream, context, moduleOp, config,
                              targetCompilationManager, passPipelineParser,
                              errorHandler))
       return err;
   }
 
-  if (emitAction == Action::GenQEM || emitAction == Action::GenQEQEM) {
+  if (emitAction == EmitAction::QEM || emitAction == EmitAction::QEQEM) {
     if (auto err = emitQEM_(ostream, std::move(payload), moduleOp,
                             targetCompilationManager))
       return err;
