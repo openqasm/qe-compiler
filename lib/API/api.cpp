@@ -93,205 +93,8 @@ llvm::cl::opt<bool>
                 llvm::cl::desc("Accept the input program directly as a string"),
                 llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
-llvm::cl::opt<bool> verifyDiagnostics(
-    "verify-diagnostics",
-    llvm::cl::desc("Check that emitted diagnostics match "
-                   "expected-* lines on the corresponding line"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-#ifndef NOVERIFY
-#define VERIFY_PASSES_DEFAULT true
-#else
-#define VERIFY_PASSES_DEFAULT false
-#endif
-
-llvm::cl::opt<bool> verifyPasses(
-    "verify-each",
-    llvm::cl::desc("Run the verifier after each transformation pass"),
-    llvm::cl::init(VERIFY_PASSES_DEFAULT),
-    llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<bool> showDialects(
-    "show-dialects", llvm::cl::desc("Print the list of registered dialects"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<bool> showTargets(
-    "show-targets", llvm::cl::desc("Print the list of registered targets"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<bool> showPayloads(
-    "show-payloads", llvm::cl::desc("Print the list of registered payloads"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<bool> showConfig(
-    "show-config", llvm::cl::desc("Print the loaded compiler configuration."),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<bool> plaintextPayload(
-    "plaintext-payload", llvm::cl::desc("Write the payload in plaintext"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<bool> includeSourceInPayload(
-    "include-source", llvm::cl::desc("Write the input source into the payload"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<bool> compileTargetIr(
-    "compile-target-ir", llvm::cl::desc("Apply the target's IR compilation"),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-llvm::cl::opt<bool> bypassPayloadTargetCompilation(
-    "bypass-payload-target-compilation",
-    llvm::cl::desc("Bypass target compilation during payload generation."),
-    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-enum InputType { NONE, QASM, MLIR, QOBJ };
-
-llvm::cl::opt<enum InputType> inputType(
-    "X", llvm::cl::init(InputType::NONE),
-    llvm::cl::desc("Specify the kind of input desired"),
-    llvm::cl::values(
-        clEnumValN(InputType::QASM, "qasm",
-                   "load the input file as an OpenQASM 3.0 source")),
-    llvm::cl::values(clEnumValN(MLIR, "mlir",
-                                "load the input file as an MLIR file")),
-    llvm::cl::values(clEnumValN(QOBJ, "qobj",
-                                "load the input file as a QOBJ file")));
-
-enum Action {
-  None,
-  DumpAST,
-  DumpASTPretty,
-  DumpMLIR,
-  DumpWaveMem,
-  GenQEM,
-  GenQEQEM
-};
-
-llvm::cl::opt<enum Action> emitAction(
-    "emit", llvm::cl::init(Action::None),
-    llvm::cl::desc("Select the kind of output desired"),
-    llvm::cl::values(clEnumValN(DumpAST, "ast", "output the AST dump")),
-    llvm::cl::values(clEnumValN(DumpASTPretty, "ast-pretty",
-                                "pretty print the AST")),
-    llvm::cl::values(clEnumValN(DumpMLIR, "mlir", "output the MLIR dump")),
-    llvm::cl::values(clEnumValN(DumpWaveMem, "wavemem",
-                                "output the waveform memory")),
-    llvm::cl::values(clEnumValN(GenQEM, "qem",
-                                "generate a quantum executable module (qem) "
-                                "for execution on hardware")),
-    llvm::cl::values(clEnumValN(
-        GenQEQEM, "qe-qem",
-        "generate a target-specific quantum executable module (qeqem) "
-        "for execution on hardware")));
 } // anonymous namespace
 
-namespace qss {
-enum FileExtension { None, AST, ASTPRETTY, QASM, QOBJ, MLIR, WMEM, QEM, QEQEM };
-} // namespace qss
-
-auto fileExtensionToStr(const qss::FileExtension &inExt) -> std::string {
-  switch (inExt) {
-  case qss::FileExtension::AST:
-    return "ast";
-    break;
-  case qss::FileExtension::ASTPRETTY:
-    return "ast-pretty";
-    break;
-  case qss::FileExtension::QASM:
-    return "qasm";
-    break;
-  case qss::FileExtension::QOBJ:
-    return "qobj";
-    break;
-  case qss::FileExtension::MLIR:
-    return "mlir";
-    break;
-  case qss::FileExtension::WMEM:
-    return "wmem";
-    break;
-  case qss::FileExtension::QEM:
-    return "qem";
-    break;
-  case qss::FileExtension::QEQEM:
-    return "qeqem";
-    break;
-  default:
-    return "none";
-    break;
-  }
-  return "none";
-}
-
-auto fileExtensionToInputType(const qss::FileExtension &inExt) -> InputType {
-  switch (inExt) {
-  case qss::FileExtension::QASM:
-    return InputType::QASM;
-    break;
-  case qss::FileExtension::QOBJ:
-    return InputType::QOBJ;
-    break;
-  case qss::FileExtension::MLIR:
-    return InputType::MLIR;
-    break;
-  default:
-    break;
-  }
-  return InputType::NONE;
-}
-
-auto fileExtensionToAction(const qss::FileExtension &inExt) -> Action {
-  switch (inExt) {
-  case qss::FileExtension::AST:
-    return Action::DumpAST;
-    break;
-  case qss::FileExtension::ASTPRETTY:
-    return Action::DumpASTPretty;
-    break;
-  case qss::FileExtension::MLIR:
-    return Action::DumpMLIR;
-    break;
-  case qss::FileExtension::WMEM:
-    return Action::DumpWaveMem;
-    break;
-  case qss::FileExtension::QEM:
-    return Action::GenQEM;
-    break;
-  case qss::FileExtension::QEQEM:
-    return Action::GenQEQEM;
-    break;
-  default:
-    break;
-  }
-  return Action::None;
-}
-
-auto strToFileExtension(const std::string &extStr) -> qss::FileExtension {
-  if (extStr == "ast" || extStr == "AST")
-    return qss::FileExtension::AST;
-  if (extStr == "ast-pretty" || extStr == "AST-PRETTY")
-    return qss::FileExtension::ASTPRETTY;
-  if (extStr == "qasm" || extStr == "QASM")
-    return qss::FileExtension::QASM;
-  if (extStr == "qobj" || extStr == "QOBJ")
-    return qss::FileExtension::QOBJ;
-  if (extStr == "mlir" || extStr == "MLIR")
-    return qss::FileExtension::MLIR;
-  if (extStr == "wmem" || extStr == "WMEM")
-    return qss::FileExtension::WMEM;
-  if (extStr == "qem" || extStr == "QEM")
-    return qss::FileExtension::QEM;
-  if (extStr == "qeqem" || extStr == "QEQEM")
-    return qss::FileExtension::QEQEM;
-  return qss::FileExtension::None;
-}
-
-// extracts the file extension and returns the enum qss::FileExtension type
-auto getExtension(const std::string &inStr) -> qss::FileExtension {
-  auto pos = inStr.find_last_of('.');
-  if (pos < inStr.length())
-    return strToFileExtension(inStr.substr(pos + 1));
-  return qss::FileExtension::None;
-}
 
 llvm::Error registerPasses() {
   // TODO: Register standalone passes here.
@@ -379,7 +182,7 @@ void printVersion(llvm::raw_ostream &out) {
 /// @param context The context to build and register the configuration for.
 /// @return The constructed configuration that has been registered for the
 /// supplied context.
-llvm::Expected<qssc::config::QSSConfig &>
+llvm::Expected<const qssc::config::QSSConfig &>
 buildConfig_(mlir::DialectRegistry &registry, mlir::MLIRContext *context) {
   // First populate the configuration from default values then
   // environment variables.
@@ -436,7 +239,7 @@ void showPayloads_() {
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
 llvm::Expected<qssc::hal::TargetSystem &>
-buildTarget_(MLIRContext *context, qssc::config::QSSConfig &config) {
+buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
   auto &targetName = config.getTargetName();
   auto &targetConfigPath = config.getTargetConfigPath();
 
@@ -688,7 +491,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   auto configResult = buildConfig_(registry, &context);
   if (auto err = configResult.takeError())
     return err;
-  qssc::config::QSSConfig &config = configResult.get();
+  const qssc::config::QSSConfig &config = configResult.get();
 
   // Populate the context
   context.appendDialectRegistry(registry);

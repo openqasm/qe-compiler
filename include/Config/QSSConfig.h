@@ -26,6 +26,36 @@
 
 namespace qssc::config {
 
+enum class  EmitAction {
+  None,
+  AST,
+  ASTPretty,
+  MLIR,
+  WaveMem,
+  QEM,
+  QEQEM
+};
+
+enum class FileExtension { None, AST, ASTPretty, QASM, MLIR, WaveMem, QEM, QEQEM };
+
+enum class InputType { None, QASM, MLIR};
+
+std::string to_string(const EmitAction &inExt);
+
+std::string to_string(const FileExtension &inExt);
+
+std::string to_string(const InputType &inExt);
+
+InputType fileExtensionToInputType(const FileExtension &inExt);
+
+EmitAction fileExtensionToAction(const FileExtension &inExt);
+
+FileExtension strToFileExtension(const std::string &extStr);
+
+FileExtension getExtension(const std::string &inStr);
+
+
+
 /// @brief The QSS configuration data structure that is to be used for global
 /// configuration of the QSS infrastructure. This is to be used for static
 /// options that are rarely changed for a system and do not need to be
@@ -39,32 +69,139 @@ struct QSSConfig : mlir::MlirOptMainConfig{
   public:
     friend class CLIConfigBuilder;
     friend class EnvVarConfigBuilder;
-    std::optional<std::string>& getTargetName() { return targetName;}
-    std::optional<std::string>&  getTargetConfigPath() { return targetConfigPath;}
 
+    QSSConfig &setTargetName(std::string name) {
+      targetName = name;
+      return *this;
+    }
+    std::optional<llvm::StringRef> getTargetName() const {
+      if (targetName.has_value())
+        return targetName.value();
+      return std::nullopt;
+    }
 
-    QSSConfig &addTargetPassess(bool add) {
-      addTargetPassesFlag = add;
+    QSSConfig &setTargetConfigPath(std::string path) {
+      targetConfigPath = path;
+      return *this;
+    }
+    std::optional<llvm::StringRef> getTargetConfigPath() const {
+      if (targetConfigPath.has_value())
+        return targetConfigPath.value();
+      return std::nullopt;
+    }
+
+    QSSConfig &setInputType(InputType type) {
+      inputType = type;
+      return *this;
+    }
+    InputType getInputType() const {
+      return inputType;
+    }
+
+    QSSConfig &setEmitAction(EmitAction action) {
+      emitAction = action;
+      return *this;
+    }
+    EmitAction getEmitAction() const {
+      return emitAction;
+    }
+
+    QSSConfig &addTargetPasses(bool flag) {
+      addTargetPassesFlag = flag;
       return *this;
     }
     bool shouldAddTargetPasses() const {
       return addTargetPassesFlag;
     }
 
+    QSSConfig &showTargets(bool flag) {
+      showTargetsFlag = flag;
+      return *this;
+    }
+    bool shouldShowTargets() const {
+      return showTargetsFlag;
+    }
+
+    QSSConfig &showPayloads(bool flag) {
+      showPayloadsFlag = flag;
+      return *this;
+    }
+    bool shouldShowPayloads() const {
+      return showPayloadsFlag;
+    }
+
+    QSSConfig &showConfig(bool flag) {
+      showConfigFlag = flag;
+      return *this;
+    }
+    bool shouldShowConfig() const {
+      return showConfigFlag;
+    }
+
+    QSSConfig &emitPlaintextPayload(bool flag) {
+      emitPlaintextPayloadFlag = flag;
+      return *this;
+    }
+    bool shouldEmitPlaintextPayload() const {
+      return emitPlaintextPayloadFlag;
+    }
+
+    QSSConfig &includeSource(bool flag) {
+      includeSourceFlag = flag;
+      return *this;
+    }
+    bool shouldIncludeSource() const {
+      return includeSourceFlag;
+    }
+
+    QSSConfig &compileTargetIR(bool flag) {
+      compileTargetIRFlag = flag;
+      return *this;
+    }
+    bool shouldCompileTargetIR() const {
+      return compileTargetIRFlag;
+    }
+
+    QSSConfig &bypassPayloadTargetCompilation(bool flag) {
+      bypassPayloadTargetCompilationFlag = flag;
+      return *this;
+    }
+    bool shouldBypassPayloadTargetCompilation() const {
+      return bypassPayloadTargetCompilationFlag;
+    }
+
   public:
     /// @brief Emit the configuration to stdout.
-    void emit(llvm::raw_ostream &out);
+    void emit(llvm::raw_ostream &out) const;
   protected:
     /// @brief The TargetSystem to target compilation for.
     std::optional<std::string> targetName = std::nullopt;
     /// @brief The path to the TargetSystem configuration information.
     std::optional<std::string> targetConfigPath = std::nullopt;
+    /// @brief Source input type
+    InputType inputType = InputType::None;
+    /// @brief Output action to take
+    EmitAction emitAction = EmitAction::None;
     /// @brief Register target passes with the compiler.
     bool addTargetPassesFlag = true;
+    /// @brief Should available targets be printed
+    bool showTargetsFlag = false;
+    /// @brief Should available payloads be printed
+    bool showPayloadsFlag = false;
+    /// @brief Should the current configuration be printed
+    bool showConfigFlag = false;
+    /// @brief Should the plaintext payload be emitted
+    bool emitPlaintextPayloadFlag = false;
+    /// @brief Should the input source be included in the payload
+    bool includeSourceFlag = false;
+    /// @brief Should the IR be compiled for the target
+    bool compileTargetIRFlag = false;
+    /// @brief Should target payload generation be bypassed
+    bool bypassPayloadTargetCompilationFlag = false;
 };
 
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, QSSConfig &config);
-std::ostream &operator<<(std::ostream &os, QSSConfig &config);
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const QSSConfig &config);
+std::ostream &operator<<(std::ostream &os, const QSSConfig &config);
 
 /// @brief Assign the input configuration to be managed by the context.
 /// @param context The context to assign the configuration to.
@@ -75,7 +212,7 @@ void setContextConfig(mlir::MLIRContext *context, const QSSConfig &config);
 /// @brief Get a constant reference to the configuration registered for this
 /// context.
 /// @param context The context to lookup the configuration for.
-llvm::Expected<QSSConfig &> getContextConfig(mlir::MLIRContext *context);
+llvm::Expected<const QSSConfig &> getContextConfig(mlir::MLIRContext *context);
 
 /// @brief A builder class for the QSSConfig. All standard configuration
 /// population should be completed through builders.

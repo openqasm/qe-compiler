@@ -28,15 +28,24 @@
 using namespace qssc::config;
 
 // For now emit in a pseudo-TOML format.
-void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) {
+void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   // Compiler configuration
   os << "[compiler]\n";
+  os << "inputType: " << to_string(getInputType()) << "\n";
+  os << "emitAction: " << to_string(getEmitAction()) << "\n";
   os << "targetName: " << (getTargetName().has_value() ? getTargetName().value() : "None")
      << "\n";
   os << "targetConfigPath: "
      << (getTargetConfigPath().has_value() ? getTargetConfigPath().value() : "None")
      << "\n";
   os << "addTargetPasses: " << shouldAddTargetPasses() << "\n";
+  os << "showTargets: " << shouldShowTargets() << "\n";
+  os << "showPayloads: " << shouldShowPayloads() << "\n";
+  os << "showConfig: " << shouldShowConfig() << "\n";
+  os << "emitPlaintextPayload: " << shouldEmitPlaintextPayload() << "\n";
+  os << "includeSource: " << shouldIncludeSource() << "\n";
+  os << "compileTargetIR: " << shouldCompileTargetIR() << "\n";
+  os << "bypassPayloadTargetCompilation: " << shouldBypassPayloadTargetCompilation() << "\n";
   os << "\n";
 
   // Mlir opt configuration
@@ -58,13 +67,13 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) {
 }
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os,
-                              qssc::config::QSSConfig &config) {
+                              const qssc::config::QSSConfig &config) {
   config.emit(os);
   return os;
 }
 
 std::ostream &operator<<(std::ostream &os,
-                         qssc::config::QSSConfig &config) {
+                         const qssc::config::QSSConfig &config) {
   llvm::raw_os_ostream raw_os(os);
   config.emit(raw_os);
   return os;
@@ -85,7 +94,7 @@ void qssc::config::setContextConfig(mlir::MLIRContext *context,
   (*contextConfigs)[context] = config;
 }
 
-llvm::Expected<QSSConfig &>
+llvm::Expected<const QSSConfig &>
 qssc::config::getContextConfig(mlir::MLIRContext *context) {
   auto it = contextConfigs->find(context);
   if (it != contextConfigs->end())
@@ -103,4 +112,141 @@ llvm::Expected<QSSConfig> QSSConfigBuilder::buildConfig() {
     // is not recognized.
     return std::move(e);
   return config;
+}
+
+std::string qssc::config::to_string(const EmitAction &inAction) {
+  switch (inAction) {
+  case qssc::config::EmitAction::AST:
+    return "ast";
+    break;
+  case EmitAction::ASTPretty:
+    return "ast-pretty";
+    break;
+  case EmitAction::MLIR:
+    return "mlir";
+    break;
+  case EmitAction::WaveMem:
+    return "wmem";
+    break;
+  case EmitAction::QEM:
+    return "qem";
+    break;
+  case EmitAction::QEQEM:
+    return "qeqem";
+    break;
+  default:
+    return "none";
+    break;
+  }
+  return "none";
+}
+
+std::string qssc::config::to_string(const FileExtension &inExt) {
+  switch (inExt) {
+  case FileExtension::AST:
+    return "ast";
+    break;
+  case FileExtension::ASTPretty:
+    return "ast-pretty";
+    break;
+  case FileExtension::QASM:
+    return "qasm";
+    break;
+  case FileExtension::MLIR:
+    return "mlir";
+    break;
+  case FileExtension::WaveMem:
+    return "wmem";
+    break;
+  case FileExtension::QEM:
+    return "qem";
+    break;
+  case FileExtension::QEQEM:
+    return "qeqem";
+    break;
+  default:
+    return "none";
+    break;
+  }
+  return "none";
+}
+
+std::string qssc::config::to_string(const InputType &inputType) {
+  switch (inputType) {
+  case InputType::QASM:
+    return "qasm";
+    break;
+  case InputType::MLIR:
+    return "mlir";
+    break;
+  default:
+    return "none";
+    break;
+  }
+  return "none";
+}
+
+InputType qssc::config::fileExtensionToInputType(const FileExtension &inExt) {
+  switch (inExt) {
+  case FileExtension::QASM:
+    return InputType::QASM;
+    break;
+  case FileExtension::MLIR:
+    return InputType::MLIR;
+    break;
+  default:
+    break;
+  }
+  return InputType::None;
+}
+
+EmitAction qssc::config::fileExtensionToAction(const FileExtension &inExt) {
+  switch (inExt) {
+  case FileExtension::AST:
+    return EmitAction::AST;
+    break;
+  case FileExtension::ASTPretty:
+    return EmitAction::ASTPretty;
+    break;
+  case FileExtension::MLIR:
+    return EmitAction::MLIR;
+    break;
+  case FileExtension::WaveMem:
+    return EmitAction::WaveMem;
+    break;
+  case FileExtension::QEM:
+    return EmitAction::QEM;
+    break;
+  case FileExtension::QEQEM:
+    return EmitAction::QEQEM;
+    break;
+  default:
+    break;
+  }
+  return EmitAction::None;
+}
+
+FileExtension qssc::config::strToFileExtension(const std::string &extStr) {
+  if (extStr == "ast" || extStr == "AST")
+    return FileExtension::AST;
+  if (extStr == "ast-pretty" || extStr == "AST-PRETTY")
+    return FileExtension::ASTPretty;
+  if (extStr == "qasm" || extStr == "QASM")
+    return FileExtension::QASM;
+  if (extStr == "mlir" || extStr == "MLIR")
+    return FileExtension::MLIR;
+  if (extStr == "wmem" || extStr == "WMEM")
+    return FileExtension::WaveMem;
+  if (extStr == "qem" || extStr == "QEM")
+    return FileExtension::QEM;
+  if (extStr == "qeqem" || extStr == "QEQEM")
+    return FileExtension::QEQEM;
+  return FileExtension::None;
+}
+
+FileExtension qssc::config::getExtension(const std::string &inStr) {
+  auto pos = inStr.find_last_of('.');
+  if (pos < inStr.length())
+    return strToFileExtension(inStr.substr(pos + 1));
+  return FileExtension::None;
 }

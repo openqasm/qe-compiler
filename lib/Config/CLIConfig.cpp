@@ -61,6 +61,33 @@ struct QSSConfigCLOptions : public QSSConfig {
   QSSConfigCLOptions() {
 
     // qss-compiler options
+
+    static llvm::cl::opt<enum InputType, /*ExternalStorage=*/true> inputType_(
+        "X", llvm::cl::location(inputType),
+        llvm::cl::desc("Specify the kind of input desired"),
+        llvm::cl::values(
+            clEnumValN(InputType::QASM, "qasm",
+                      "load the input file as an OpenQASM 3.0 source")),
+        llvm::cl::values(clEnumValN(InputType::MLIR, "mlir",
+                                    "load the input file as an MLIR file")));
+
+    static llvm::cl::opt<enum EmitAction, /*ExternalStorage=*/true> emitAction_(
+        "emit", llvm::cl::location(emitAction),
+        llvm::cl::desc("Select the kind of output desired"),
+        llvm::cl::values(clEnumValN(EmitAction::AST, "ast", "output the AST dump")),
+        llvm::cl::values(clEnumValN(EmitAction::ASTPretty, "ast-pretty",
+                                    "pretty print the AST")),
+        llvm::cl::values(clEnumValN(EmitAction::MLIR, "mlir", "output the MLIR dump")),
+        llvm::cl::values(clEnumValN(EmitAction::WaveMem, "wavemem",
+                                    "output the waveform memory")),
+        llvm::cl::values(clEnumValN(EmitAction::QEM, "qem",
+                                    "generate a quantum executable module (qem) "
+                                    "for execution on hardware")),
+        llvm::cl::values(clEnumValN(
+            EmitAction::QEQEM, "qe-qem",
+            "generate a target-specific quantum executable module (qeqem) "
+            "for execution on hardware")));
+
     static llvm::cl::opt<std::optional<std::string>, /*ExternalStorage=*/true> targetConfigPath_(
         "config",
         llvm::cl::desc("Path to configuration file or directory (depends on the "
@@ -77,6 +104,42 @@ struct QSSConfigCLOptions : public QSSConfig {
     static llvm::cl::opt<bool, /*ExternalStorage=*/true> addTargetPasses(
         "add-target-passes", llvm::cl::desc("Add target-specific passes"),
         llvm::cl::location(addTargetPassesFlag), llvm::cl::init(true), llvm::cl::cat(getQSSCCLCategory()));
+
+    static llvm::cl::opt<bool, /*ExternalStorage=*/true> showTargets(
+    "show-targets", llvm::cl::desc("Print the list of registered targets"),
+    llvm::cl::location(showTargetsFlag),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
+
+    static llvm::cl::opt<bool, /*ExternalStorage=*/true> showPayloads(
+    "show-payloads", llvm::cl::desc("Print the list of registered payloads"),
+    llvm::cl::location(showPayloadsFlag),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
+
+    static llvm::cl::opt<bool, /*ExternalStorage=*/true> showConfig(
+    "show-config", llvm::cl::desc("Print the loaded compiler configuration."),
+    llvm::cl::location(showConfigFlag),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
+
+    static llvm::cl::opt<bool, /*ExternalStorage=*/true> plaintextPayload(
+    "plaintext-payload", llvm::cl::desc("Write the payload in plaintext"),
+    llvm::cl::location(emitPlaintextPayloadFlag),
+    llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
+
+    static llvm::cl::opt<bool, /*ExternalStorage=*/true> includeSource(
+        "include-source", llvm::cl::desc("Write the input source into the payload"),
+        llvm::cl::location(includeSourceFlag),
+        llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
+
+    static llvm::cl::opt<bool, /*ExternalStorage=*/true> compileTargetIr(
+        "compile-target-ir", llvm::cl::desc("Apply the target's IR compilation"),
+        llvm::cl::location(compileTargetIRFlag),
+        llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
+
+    static llvm::cl::opt<bool, /*ExternalStorage=*/true> bypassPayloadTargetCompilation(
+        "bypass-payload-target-compilation",
+        llvm::cl::desc("Bypass target compilation during payload generation."),
+        llvm::cl::location(bypassPayloadTargetCompilationFlag),
+        llvm::cl::init(false), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
 
     // mlir-opt options
@@ -132,11 +195,16 @@ struct QSSConfigCLOptions : public QSSConfig {
                  "chunk independently"),
         llvm::cl::location(splitInputFileFlag), llvm::cl::init(false), llvm::cl::cat(getQSSOptCLCategory()));
 
+    #ifndef NOVERIFY
+      #define VERIFY_PASSES_DEFAULT true
+    #else
+      #define VERIFY_PASSES_DEFAULT false
+    #endif
     static llvm::cl::opt<bool, /*ExternalStorage=*/true> verifyDiagnostics(
         "verify-diagnostics",
         llvm::cl::desc("Check that emitted diagnostics match "
                  "expected-* lines on the corresponding line"),
-        llvm::cl::location(verifyDiagnosticsFlag), llvm::cl::init(false), llvm::cl::cat(getQSSOptCLCategory()));
+        llvm::cl::location(verifyDiagnosticsFlag), llvm::cl::init(VERIFY_PASSES_DEFAULT), llvm::cl::cat(getQSSOptCLCategory()));
 
     static llvm::cl::opt<bool, /*ExternalStorage=*/true> verifyPasses(
         "verify-each",
@@ -207,7 +275,32 @@ llvm::Expected<QSSConfig> CLIConfigBuilder::buildConfig() {
 }
 
 llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
-  config.splitInputFileFlag = clOptionsConfig->splitInputFileFlag;
+  // qss
+  config.inputType = clOptionsConfig->inputType;
+  config.emitAction = clOptionsConfig->emitAction;
+  if (clOptionsConfig->targetName.has_value())
+    config.targetName = clOptionsConfig->targetName;
+  if (clOptionsConfig->targetConfigPath.has_value())
+    config.targetConfigPath = clOptionsConfig->targetConfigPath;
 
+  config.showTargetsFlag = clOptionsConfig->showTargetsFlag;
+  config.showPayloadsFlag = clOptionsConfig->showPayloadsFlag;
+  config.showConfigFlag = clOptionsConfig->showConfigFlag;
+  config.emitPlaintextPayloadFlag = clOptionsConfig->emitPlaintextPayloadFlag;
+  config.includeSourceFlag = clOptionsConfig->includeSourceFlag;
+  config.compileTargetIRFlag = clOptionsConfig->compileTargetIRFlag;
+  config.bypassPayloadTargetCompilationFlag = clOptionsConfig->bypassPayloadTargetCompilationFlag;
+
+
+  // opt
+  config.allowUnregisteredDialectsFlag = clOptionsConfig->allowUnregisteredDialectsFlag;
+  config.dumpPassPipelineFlag = clOptionsConfig->dumpPassPipelineFlag;
+  config.emitBytecodeFlag = clOptionsConfig->emitBytecodeFlag;
+  config.irdlFileFlag = clOptionsConfig->irdlFileFlag;
+  config.enableDebuggerActionHookFlag = clOptionsConfig->enableDebuggerActionHookFlag;
+  config.useExplicitModuleFlag = clOptionsConfig->useExplicitModuleFlag;
+  config.runReproducerFlag = clOptionsConfig->runReproducerFlag;
+  config.showDialectsFlag = clOptionsConfig->showDialectsFlag;
+  config.splitInputFileFlag = clOptionsConfig->splitInputFileFlag;
   return llvm::Error::success();
 }
