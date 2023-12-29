@@ -72,6 +72,8 @@ void QUIRToPulsePass::runOnOperation() {
     op->erase();
   }
 
+  moduleOp->walk([&](mlir::quir::BarrierOp barrierOp) { barrierOp->erase(); });
+
   // erase the quir circuit operands
   LLVM_DEBUG(llvm::dbgs() << "\nErasing quir circuit operands:\n");
   for (auto *op : quirCircuitOperandEraseList) {
