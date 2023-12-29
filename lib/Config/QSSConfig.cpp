@@ -28,7 +28,7 @@
 using namespace qssc::config;
 
 // For now emit in a pseudo-TOML format.
-void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
+void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) {
   // Compiler configuration
   os << "[compiler]\n";
   os << "targetName: " << (getTargetName().has_value() ? getTargetName().value() : "None")
@@ -36,7 +36,7 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "targetConfigPath: "
      << (getTargetConfigPath().has_value() ? getTargetConfigPath().value() : "None")
      << "\n";
-  os << "addTargetPasses: " << addTargetPasses << "\n";
+  os << "addTargetPasses: " << shouldAddTargetPasses() << "\n";
   os << "\n";
 
   // Mlir opt configuration
@@ -58,13 +58,13 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
 }
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os,
-                              const qssc::config::QSSConfig &config) {
+                              qssc::config::QSSConfig &config) {
   config.emit(os);
   return os;
 }
 
 std::ostream &operator<<(std::ostream &os,
-                         const qssc::config::QSSConfig &config) {
+                         qssc::config::QSSConfig &config) {
   llvm::raw_os_ostream raw_os(os);
   config.emit(raw_os);
   return os;

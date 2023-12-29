@@ -53,7 +53,7 @@ struct QSSConfig : mlir::MlirOptMainConfig{
 
   public:
     /// @brief Emit the configuration to stdout.
-    void emit(llvm::raw_ostream &out) const;
+    void emit(llvm::raw_ostream &out);
   protected:
     /// @brief The TargetSystem to target compilation for.
     std::optional<std::string> targetName = std::nullopt;
@@ -63,8 +63,8 @@ struct QSSConfig : mlir::MlirOptMainConfig{
     bool addTargetPassesFlag = true;
 };
 
-llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const QSSConfig &config);
-std::ostream &operator<<(std::ostream &os, const QSSConfig &config);
+llvm::raw_ostream &operator<<(llvm::raw_ostream &os, QSSConfig &config);
+std::ostream &operator<<(std::ostream &os, QSSConfig &config);
 
 /// @brief Assign the input configuration to be managed by the context.
 /// @param context The context to assign the configuration to.

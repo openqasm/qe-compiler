@@ -46,13 +46,10 @@ llvm::cl::OptionCategory &getQSSOptCLCategory();
 ///
 class CLIConfigBuilder : public QSSConfigBuilder {
 public:
+  explicit CLIConfigBuilder(mlir::DialectRegistry &registry);
+  virtual llvm::Expected<QSSConfig> buildConfig() override;
   llvm::Error populateConfig(QSSConfig &config) override;
 
-private:
-  llvm::Error populateConfigurationPath_(QSSConfig &config);
-  llvm::Error populateTarget_(QSSConfig &config);
-  llvm::Error populateAllowUnregisteredDialects_(QSSConfig &config);
-  llvm::Error populateAddTargetPasses_(QSSConfig &config);
 };
 
 } // namespace qssc::config
