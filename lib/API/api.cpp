@@ -99,7 +99,7 @@ llvm::Error registerPasses() {
   return err;
 }
 
-auto registerPassManagerCLOpts() {
+auto registerCLOpts() {
   mlir::registerAsmPrinterCLOptions();
   mlir::registerMLIRContextCLOptions();
   mlir::registerPassManagerCLOptions();
@@ -417,6 +417,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   // Register all extensions
   mlir::registerAllExtensions(registry);
 
+  registerCLOpts();
   // Register CL config builder prior to parsing
   CLIConfigBuilder::registerCLOptions(registry);
   llvm::cl::SetVersionPrinter(&printVersion);
