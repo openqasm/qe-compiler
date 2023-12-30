@@ -67,9 +67,10 @@ public:
   virtual ~ThreadedCompilationManager() = default;
   virtual const std::string getName() const override;
 
-  virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) override;
+  virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp, mlir::TimingScope &timing) override;
   virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
                                      qssc::payload::Payload &payload,
+                                     mlir::TimingScope &timing,
                                      bool doCompileMLIR = true) override;
 
   bool isMultithreadingEnabled() {
@@ -93,7 +94,7 @@ private:
 
   /// Prepare pass managers in a threaded way
   /// initializing them with the mlir context safely.
-  llvm::Error buildTargetPassManagers_(Target &target);
+  llvm::Error buildTargetPassManagers_(Target &target, mlir::TimingScope &timing);
   /// Threadsafe initialization of PM to work around
   /// non-threadsafe registration of dependent dialects.
   /// I (Thomas) believe this is related to the conversation here

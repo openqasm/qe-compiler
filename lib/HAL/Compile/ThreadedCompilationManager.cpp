@@ -128,9 +128,9 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
 }
 
 llvm::Error
-ThreadedCompilationManager::buildTargetPassManagers_(Target &target) {
+ThreadedCompilationManager::buildTargetPassManagers_(Target &target, mlir::TimingScope &timing) {
 
-  auto buildPMTiming = getNestedTimingScope("build-target-pass-managers");
+  auto buildPMTiming = timing.nest("build-target-pass-managers");
 
 
   auto threadedBuildTargetPassManager =
@@ -185,15 +185,15 @@ ThreadedCompilationManager::createTargetPassManager_(Target *target) {
   return targetPassManagers_.emplace(target, getContext()).first->second;
 }
 
-llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
+llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp, mlir::TimingScope &timing) {
 
-  auto compileMLIRTiming = getNestedTimingScope("compile-mlir");
+  auto compileMLIRTiming = timing.nest("compile-mlir");
 
   auto &target = getTargetSystem();
 
   /// Build target pass managers prior to compilation
   /// to ensure thread safety
-  if (auto err = buildTargetPassManagers_(target))
+  if (auto err = buildTargetPassManagers_(target, compileMLIRTiming))
     return err;
 
   auto threadedCompileMLIRTarget =
@@ -243,15 +243,16 @@ ThreadedCompilationManager::compileMLIRTarget_(Target &target,
 llvm::Error
 ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
                                            qssc::payload::Payload &payload,
+                                           mlir::TimingScope &timing,
                                            bool doCompileMLIR) {
 
-  auto compilePayloadTiming = getNestedTimingScope("compile-payload");
+  auto compilePayloadTiming = timing.nest("compile-payload");
 
   auto &target = getTargetSystem();
 
   /// Build target pass managers prior to compilation
   /// to ensure thread safety
-  if (auto err = buildTargetPassManagers_(target))
+  if (auto err = buildTargetPassManagers_(target, compilePayloadTiming))
     return err;
 
   auto threadedCompilePayloadTarget =

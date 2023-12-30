@@ -69,8 +69,9 @@ public:
   /// @brief Compile only at the MLIR level for the full target
   /// system.
   /// @param moduleOp The root module operation to compile for.
+  /// @param timing Root timing scope for tracking timing of payload compilation.
   /// This must not be specialized to a system already.
-  virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) = 0;
+  virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp, mlir::TimingScope &timing) = 0;
 
   /// @brief Generate the full configured compilation pipeline
   /// for all targets of the base target system. This will also
@@ -78,21 +79,18 @@ public:
   /// @param moduleOp The root module operation to compile for.
   /// This must not be specialized to a system already.
   /// @param payload The payload to populate.
+  /// @param timing Root timing scope for tracking timing of payload compilation.
   /// @param doCompileMLIR Whether to call compileMLIR prior to compiling the
   /// payload. Defaults to true.
   virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
                                      qssc::payload::Payload &payload,
+                                     mlir::TimingScope &timing,
                                      bool doCompileMLIR = true) = 0;
 
   void enableIRPrinting(bool printBeforeAllTargetPasses,
                         bool printAfterAllTargetPasses,
                         bool printBeforeAllTargetPayload,
                         bool printAfterTargetCompileFailure);
-
-  /// @brief Add an instrumentation to time the execution of target compilation.
-  /// Will be automatically propagated to child pass managers.
-  void setTimingScope(mlir::TimingScope &timingScope);
-  mlir::TimingScope getNestedTimingScope(llvm::StringRef name);
 
 protected:
   bool getPrintBeforeAllTargetPasses() { return printBeforeAllTargetPasses; }
@@ -114,11 +112,6 @@ private:
   bool printAfterAllTargetPasses = false;
   bool printBeforeAllTargetPayload = false;
   bool printAfterTargetCompileFailure = false;
-
-  /// Non-owning pointer of the timing scope.
-  /// TODO: This should be replaced with a PassManager
-  /// like instrumentation.
-  mlir::TimingScope* timingScope;
 
 }; // class TargetCompilationManager
 

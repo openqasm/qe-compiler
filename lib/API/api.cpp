@@ -203,7 +203,7 @@ llvm::Error generateQEM_(
   mlir::TimingScope buildQEMTiming = timing.nest("build-qem");
 
   if (auto err = targetCompilationManager->compilePayload(
-          moduleOp, *payload,
+          moduleOp, *payload, buildQEMTiming,
           /* doCompileMLIR=*/!config.shouldBypassPayloadTargetCompilation()))
     return err;
 
@@ -276,7 +276,7 @@ llvm::Error emitMLIR_(
   if (config.shouldCompileTargetIR()) {
     // Check if we can run the target compilation scheduler.
     if (config.shouldAddTargetPasses()) {
-      if (auto err = targetCompilationManager.compileMLIR(moduleOp))
+      if (auto err = targetCompilationManager.compileMLIR(moduleOp, emitMlirTiming))
         return llvm::joinErrors(
             llvm::createStringError(llvm::inconvertibleErrorCode(),
                                     "Failure while preparing target passes"),

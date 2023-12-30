@@ -143,11 +143,3 @@ void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
   op->print(out, flags.useLocalScope());
   out << "\n";
 }
-
-// TODO: This should be replaced by a PassManager like instrumentation framework
-void TargetCompilationManager::setTimingScope(mlir::TimingScope &timing) {
-  timingScope = &timing;
-}
-mlir::TimingScope TargetCompilationManager::getNestedTimingScope(llvm::StringRef name) {
-  return timingScope->nest(name);
-}
