@@ -125,7 +125,7 @@ void printVersion(llvm::raw_ostream &out) {
 /// @return The constructed configuration that has been registered for the
 /// supplied context.
 llvm::Expected<const qssc::config::QSSConfig &>
-buildConfig_(mlir::DialectRegistry &registry, mlir::MLIRContext *context) {
+buildConfig_(mlir::MLIRContext *context) {
   // First populate the configuration from default values then
   // environment variables.
   auto config = qssc::config::EnvVarConfigBuilder().buildConfig();
@@ -135,7 +135,7 @@ buildConfig_(mlir::DialectRegistry &registry, mlir::MLIRContext *context) {
     return std::move(err);
 
   // Apply CLI options of top of the configuration constructed above.
-  if (auto err = qssc::config::CLIConfigBuilder(registry).populateConfig(*config))
+  if (auto err = qssc::config::CLIConfigBuilder().populateConfig(*config))
     // Explicit move required for some systems as automatic move
     // is not recognized.
     return std::move(err);
@@ -265,14 +265,13 @@ llvm::Error buildPassManager_(mlir::PassManager &pm, bool verifyPasses) {
   return llvm::Error::success();
 }
 
-llvm::Error buildPassManager(mlir::PassManager &pm,
-                             mlir::PassPipelineCLParser &passPipelineParser,
+llvm::Error buildPassManager(const QSSConfig &config, mlir::PassManager &pm,
                              ErrorHandler errorHandler,
                              bool verifyPasses) {
   if (auto err = buildPassManager_(pm, verifyPasses))
     return err;
   // Build the provided pipeline.
-  if (failed(passPipelineParser.addToPipeline(pm, errorHandler)))
+  if (failed(config.setupPassPipeline(pm)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problem adding passes to passPipeline!");
   return llvm::Error::success();
@@ -284,14 +283,13 @@ llvm::Error buildPassManager(mlir::PassManager &pm,
 /// @param moduleOp The module operation to process and emit
 /// @param config Compilation configuration options
 /// @param targetCompilationManager The target's compilation scheduler
-/// @param passPipelineParser The Parser for the passpipeline
 /// @param errorHandler MLIR error handler
 /// @return
 llvm::Error emitMLIR_(
     llvm::raw_ostream *ostream, mlir::MLIRContext &context,
     mlir::ModuleOp moduleOp, const QSSConfig &config,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
-    mlir::PassPipelineCLParser &passPipelineParser, ErrorHandler errorHandler) {
+    ErrorHandler errorHandler) {
   if (config.shouldCompileTargetIR()) {
     // Check if we can run the target compilation scheduler.
     if (config.shouldAddTargetPasses()) {
@@ -419,9 +417,8 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   // Register all extensions
   mlir::registerAllExtensions(registry);
 
-  // Parse the command line options.
-  mlir::PassPipelineCLParser passPipelineParser("", "Compiler passes to run");
-  registerPassManagerCLOpts();
+  // Register CL config builder prior to parsing
+  CLIConfigBuilder::registerCLOptions(registry);
   llvm::cl::SetVersionPrinter(&printVersion);
   llvm::cl::ParseCommandLineOptions(
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
@@ -431,7 +428,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   MLIRContext context{};
 
   // Build the configuration for this compilation event.
-  auto configResult = buildConfig_(registry, &context);
+  auto configResult = buildConfig_(&context);
   if (auto err = configResult.takeError())
     return err;
   const qssc::config::QSSConfig &config = configResult.get();
@@ -537,7 +534,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
     }
 
     if (auto frontendError = qssc::frontend::openqasm3::parse(
-            config.getInputSource(), !config.isDirectInput(), config.getEmitAction() == EmitAction::AST,
+            config.getInputSource().str(), !config.isDirectInput(), config.getEmitAction() == EmitAction::AST,
             config.getEmitAction() == EmitAction::ASTPretty, config.getEmitAction() >= EmitAction::MLIR,
             moduleOp, diagnosticCb))
       return frontendError;
@@ -605,7 +602,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
 
   // Run additional passes specified on the command line
   mlir::PassManager pm(&context);
-  if (auto err = buildPassManager(pm, passPipelineParser, errorHandler, verifyPasses))
+  if (auto err = buildPassManager(config, pm, errorHandler, verifyPasses))
     return err;
 
   if (pm.size() && failed(pm.run(moduleOp)))
@@ -615,7 +612,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   // Prepare outputs
   if (config.getEmitAction() == EmitAction::MLIR) {
     if (auto err = emitMLIR_(ostream, context, moduleOp, config,
-                             targetCompilationManager, passPipelineParser,
+                             targetCompilationManager,
                              errorHandler))
       return err;
   }

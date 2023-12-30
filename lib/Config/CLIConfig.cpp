@@ -231,11 +231,12 @@ struct QSSConfigCLOptions : public QSSConfig {
         llvm::cl::desc("Round-trip the IR after parsing and ensure it succeeds"),
         llvm::cl::location(verifyRoundtripFlag), llvm::cl::init(false), llvm::cl::cat(getQSSOptCLCategory()));
 
-    static llvm::cl::list<std::string> passPlugins(
-        "load-pass-plugin", llvm::cl::desc("Load passes from plugin library"), llvm::cl::cat(getQSSOptCLCategory()));
+    static llvm::cl::list<std::string> passPlugins_(
+        "load-pass-plugin", llvm::cl::desc("Load passes from plugin library. It is required that the pass be specified to be loaded before all usages of dynamic CL arguments."), llvm::cl::cat(getQSSOptCLCategory()));
     /// Set the callback to load a pass plugin.
-    passPlugins.setCallback([&](const std::string &pluginPath) {
-      auto plugin = mlir::PassPlugin::load(pluginPath);
+      passPlugins_.setCallback([&](const std::string &pluginPath) {
+        passPlugins.push_back(pluginPath);
+        auto plugin = mlir::PassPlugin::load(pluginPath);
       if (!plugin) {
         llvm::errs() << "Failed to load passes from '" << pluginPath
                << "'. Request ignored.\n";
@@ -244,30 +245,31 @@ struct QSSConfigCLOptions : public QSSConfig {
       plugin.get().registerPassRegistryCallbacks();
     });
 
-    static llvm::cl::list<std::string> dialectPlugins(
-        "load-dialect-plugin", llvm::cl::desc("Load dialects from plugin library"), llvm::cl::cat(getQSSOptCLCategory()));
-    this->dialectPlugins = std::addressof(dialectPlugins);
+    static llvm::cl::list<std::string> dialectPlugins_(
+        "load-dialect-plugin", llvm::cl::desc("Load dialects from plugin library. It is required that the dialect be specified to be loaded before all usages of dynamic CL arguments"), llvm::cl::cat(getQSSOptCLCategory()));
+    this->dialectPlugins_ = std::addressof(dialectPlugins_);
 
     static mlir::PassPipelineCLParser passPipeline("", "Compiler passes to run", "p");
     setPassPipelineParser(passPipeline);
   }
 
-  /// Set the callback to load a dialect plugin.
-  void setDialectPluginsCallback(mlir::DialectRegistry &registry) {
-  dialectPlugins->setCallback([&](const std::string &pluginPath) {
-    auto plugin = mlir::DialectPlugin::load(pluginPath);
-    if (!plugin) {
-      llvm::errs() << "Failed to load dialect plugin from '" << pluginPath
-             << "'. Request ignored.\n";
-      return;
-    };
-    plugin.get().registerDialectRegistryCallbacks(registry);
-  });
-}
-
   /// Pointer to static dialectPlugins variable in constructor, needed by
   /// setDialectPluginsCallback(DialectRegistry&).
-  llvm::cl::list<std::string> *dialectPlugins = nullptr;
+  llvm::cl::list<std::string> *dialectPlugins_ = nullptr;
+
+  void setDialectPluginsCallback(
+    mlir::DialectRegistry &registry) {
+      dialectPlugins_->setCallback([&](const std::string &pluginPath) {
+        dialectPlugins.push_back(pluginPath);
+        auto plugin = mlir::DialectPlugin::load(pluginPath);
+        if (!plugin) {
+          llvm::errs() << "Failed to load dialect plugin from '" << pluginPath
+                << "'. Request ignored.\n";
+          return;
+        };
+        plugin.get().registerDialectRegistryCallbacks(registry);
+      });
+    }
 
   llvm::Error computeInputType() {
     if (getInputType() == InputType::None) {
@@ -324,13 +326,24 @@ llvm::cl::OptionCategory &qssc::config::getQSSCCLCategory() { return qsscCat_; }
 llvm::cl::OptionCategory &qssc::config::getQSSOptCLCategory() { return optCat_; }
 
 
-CLIConfigBuilder::CLIConfigBuilder(mlir::DialectRegistry &registry) {
-  clOptionsConfig->setDialectPluginsCallback(registry);
-  mlir::tracing::DebugConfig::registerCLOptions();
+
+CLIConfigBuilder::CLIConfigBuilder() {
   clOptionsConfig->setDebugConfig(mlir::tracing::DebugConfig::createFromCLOptions());
 }
 
+void CLIConfigBuilder::registerCLOptions(mlir::DialectRegistry &registry) {
+  clOptionsConfig->shouldIncludeSource();
+  //clOptionsConfig->setDialectPluginsCallback(registry);
+  mlir::tracing::DebugConfig::registerCLOptions();
+}
+
+
 llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
+
+  config.setDebugConfig(clOptionsConfig->getDebugConfig());
+
+  config.setPassPipelineSetupFn(clOptionsConfig->passPipelineCallback);
+
   if (auto err = clOptionsConfig->computeInputType())
     return err;
 
@@ -355,6 +368,8 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   config.includeSourceFlag = clOptionsConfig->includeSourceFlag;
   config.compileTargetIRFlag = clOptionsConfig->compileTargetIRFlag;
   config.bypassPayloadTargetCompilationFlag = clOptionsConfig->bypassPayloadTargetCompilationFlag;
+  config.passPlugins.insert(config.passPlugins.end(), clOptionsConfig->passPlugins.begin(), clOptionsConfig->passPlugins.end());
+  config.dialectPlugins.insert(config.dialectPlugins.end(), clOptionsConfig->dialectPlugins.begin(), clOptionsConfig->dialectPlugins.end());
 
 
   // opt

@@ -194,6 +194,22 @@ struct QSSConfig : mlir::MlirOptMainConfig{
       return bypassPayloadTargetCompilationFlag;
     }
 
+    QSSConfig &setPassPlugins(std::vector<std::string> plugins) {
+      dialectPlugins = plugins;
+      return *this;
+    }
+    const std::vector<std::string> &getPassPlugins() {
+      return dialectPlugins;
+    }
+
+    QSSConfig &setDialectPlugins(std::vector<std::string> plugins) {
+      dialectPlugins = plugins;
+      return *this;
+    }
+    const std::vector<std::string> &getDialectPlugins() {
+      return dialectPlugins;
+    }
+
   public:
     /// @brief Emit the configuration to stdout.
     void emit(llvm::raw_ostream &out) const;
@@ -229,6 +245,11 @@ struct QSSConfig : mlir::MlirOptMainConfig{
     bool compileTargetIRFlag = false;
     /// @brief Should target payload generation be bypassed
     bool bypassPayloadTargetCompilationFlag = false;
+    /// @brief Pass plugin paths
+    std::vector<std::string> passPlugins;
+    /// @brief Dialect plugin paths
+    std::vector<std::string> dialectPlugins;
+
 };
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const QSSConfig &config);

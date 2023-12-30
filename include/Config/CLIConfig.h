@@ -38,7 +38,8 @@ llvm::cl::OptionCategory &getQSSOptCLCategory();
 /// configure the QSSConfig through the CLIConfigBuilder.
 class CLIConfigBuilder : public QSSConfigBuilder {
 public:
-  explicit CLIConfigBuilder(mlir::DialectRegistry &registry);
+  explicit CLIConfigBuilder();
+  static void registerCLOptions(mlir::DialectRegistry &registry);
   llvm::Error populateConfig(QSSConfig &config) override;
 
 };

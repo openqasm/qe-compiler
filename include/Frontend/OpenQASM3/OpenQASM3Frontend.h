@@ -44,7 +44,7 @@ namespace qssc::frontend::openqasm3 {
 /// @param diagnosticCb a callback that will receive emitted diagnostics
 /// @return an llvm::Error in case of failure, or llvm::Error::success()
 /// otherwise
-llvm::Error parse(llvm::StringRef source, bool sourceIsFilename,
+llvm::Error parse(std::string const &source, bool sourceIsFilename,
                   bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
                   mlir::ModuleOp newModule,
                   std::optional<DiagnosticCallback> diagnosticCb);
