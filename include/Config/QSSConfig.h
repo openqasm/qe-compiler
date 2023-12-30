@@ -266,6 +266,15 @@ void setContextConfig(mlir::MLIRContext *context, const QSSConfig &config);
 /// @param context The context to lookup the configuration for.
 llvm::Expected<const QSSConfig &> getContextConfig(mlir::MLIRContext *context);
 
+/// @brief Load a dynamic dialect plugin
+/// @param pluginPath Path to the plugin
+/// @param registry Dialect registry to register the plugin dialect with
+mlir::LogicalResult loadDialectPlugin(const std::string &pluginPath, mlir::DialectRegistry &registry);
+
+/// @brief Load a dynamic pass plugin
+/// @param pluginPath Path to the plugin
+mlir::LogicalResult loadPassPlugin(const std::string &pluginPath);
+
 /// @brief A builder class for the QSSConfig. All standard configuration
 /// population should be completed through builders.
 class QSSConfigBuilder {

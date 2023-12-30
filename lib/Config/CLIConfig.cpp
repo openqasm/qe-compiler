@@ -61,17 +61,17 @@ struct QSSConfigCLOptions : public QSSConfig {
   QSSConfigCLOptions() {
 
     // qss-compiler options
-    llvm::cl::opt<std::string, /*ExternalStorage=*/true> inputSource_(
+    static llvm::cl::opt<std::string, /*ExternalStorage=*/true> inputSource_(
     llvm::cl::Positional, llvm::cl::desc("Input filename or program source"),
     llvm::cl::location(inputSource), llvm::cl::init("-"), llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
-    llvm::cl::opt<std::string, /*ExternalStorage=*/true>
+    static llvm::cl::opt<std::string, /*ExternalStorage=*/true>
     outputFilename("o", llvm::cl::desc("Output filename"),
                    llvm::cl::value_desc("filename"),
                    llvm::cl::location(outputFilePath), llvm::cl::init("-"),
                    llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
-    llvm::cl::opt<bool, /*ExternalStorage=*/true>
+    static llvm::cl::opt<bool, /*ExternalStorage=*/true>
         directInput("direct",
                     llvm::cl::desc("Accept the input program directly as a string"),
                     llvm::cl::location(directInputFlag),
@@ -236,13 +236,9 @@ struct QSSConfigCLOptions : public QSSConfig {
     /// Set the callback to load a pass plugin.
       passPlugins_.setCallback([&](const std::string &pluginPath) {
         passPlugins.push_back(pluginPath);
-        auto plugin = mlir::PassPlugin::load(pluginPath);
-      if (!plugin) {
-        llvm::errs() << "Failed to load passes from '" << pluginPath
-               << "'. Request ignored.\n";
-        return;
-      }
-      plugin.get().registerPassRegistryCallbacks();
+        if(failed(loadPassPlugin(pluginPath)))
+          llvm::errs() << "Failed to load passes from '" << pluginPath
+              << "'. Request ignored.\n";
     });
 
     static llvm::cl::list<std::string> dialectPlugins_(
@@ -261,13 +257,9 @@ struct QSSConfigCLOptions : public QSSConfig {
     mlir::DialectRegistry &registry) {
       dialectPlugins_->setCallback([&](const std::string &pluginPath) {
         dialectPlugins.push_back(pluginPath);
-        auto plugin = mlir::DialectPlugin::load(pluginPath);
-        if (!plugin) {
-          llvm::errs() << "Failed to load dialect plugin from '" << pluginPath
-                << "'. Request ignored.\n";
-          return;
-        };
-        plugin.get().registerDialectRegistryCallbacks(registry);
+        if(failed(loadDialectPlugin(pluginPath, registry)))
+          llvm::errs() << "Failed to load dialect from '" << pluginPath
+              << "'. Request ignored.\n";
       });
     }
 
@@ -332,8 +324,7 @@ CLIConfigBuilder::CLIConfigBuilder() {
 }
 
 void CLIConfigBuilder::registerCLOptions(mlir::DialectRegistry &registry) {
-  clOptionsConfig->shouldIncludeSource();
-  //clOptionsConfig->setDialectPluginsCallback(registry);
+  clOptionsConfig->setDialectPluginsCallback(registry);
   mlir::tracing::DebugConfig::registerCLOptions();
 }
 

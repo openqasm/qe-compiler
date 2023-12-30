@@ -15,6 +15,8 @@
 #include "Config/QSSConfig.h"
 
 #include "mlir/IR/MLIRContext.h"
+#include "mlir/Tools/Plugins/DialectPlugin.h"
+#include "mlir/Tools/Plugins/PassPlugin.h"
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/Support/Error.h"
@@ -254,3 +256,22 @@ FileExtension qssc::config::getExtension(const llvm::StringRef inStr) {
   return FileExtension::None;
 }
 
+
+mlir::LogicalResult qssc::config::loadDialectPlugin(const std::string &pluginPath, mlir::DialectRegistry &registry) {
+  auto plugin = mlir::DialectPlugin::load(pluginPath);
+  if (!plugin) {
+    return mlir::failure();
+  };
+  plugin.get().registerDialectRegistryCallbacks(registry);
+  return mlir::success();
+}
+
+
+mlir::LogicalResult qssc::config::loadPassPlugin(const std::string &pluginPath) {
+  auto plugin = mlir::PassPlugin::load(pluginPath);
+  if (!plugin) {
+    return mlir::failure();
+  }
+  plugin.get().registerPassRegistryCallbacks();
+  return mlir::success();
+}
