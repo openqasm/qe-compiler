@@ -218,7 +218,7 @@ struct QSSConfig : mlir::MlirOptMainConfig{
     /// @brief input source (file path or direct input) to compile
     std::string inputSource = "-";
     /// @brief Whether inputSource directly contains the input source (otherwise it is a file path).
-    bool directInputFlag = true;
+    bool directInputFlag = false;
     /// @brief Output path for the compiler output if emitting to file.
     std::string outputFilePath = "-";
     /// @brief The TargetSystem to target compilation for.

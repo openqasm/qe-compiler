@@ -103,18 +103,29 @@ struct QSSConfigCLOptions : public QSSConfig {
             "generate a target-specific quantum executable module (qeqem) "
             "for execution on hardware")));
 
-    static llvm::cl::opt<std::optional<std::string>, /*ExternalStorage=*/true> targetConfigPath_(
+    static llvm::cl::opt<std::string> targetConfigPath_(
         "config",
         llvm::cl::desc("Path to configuration file or directory (depends on the "
                       "target), - means use the config service"),
-        llvm::cl::value_desc("path"), llvm::cl::location(targetConfigPath), llvm::cl::init(std::nullopt), llvm::cl::cat(getQSSCCLCategory()));
+        llvm::cl::value_desc("path"), llvm::cl::cat(getQSSCCLCategory()));
 
-    static llvm::cl::opt<std::optional<std::string>, /*ExternalStorage=*/true>
+    targetConfigPath_.setCallback([&](const std::string &config) {
+      if (config != "")
+          targetConfigPath = config;
+    });
+
+
+    static llvm::cl::opt<std::string>
         targetName_("target",
                   llvm::cl::desc(
                       "Target architecture. Required for machine code generation."),
-                  llvm::cl::value_desc("targetName"), llvm::cl::location(targetName), llvm::cl::init(std::nullopt),
+                  llvm::cl::value_desc("targetName"),
                   llvm::cl::cat(getQSSCCLCategory()));
+
+    targetName_.setCallback([&](const std::string &target) {
+      if (target != "")
+          targetName = target;
+    });
 
     static llvm::cl::opt<bool, /*ExternalStorage=*/true> addTargetPasses(
         "add-target-passes", llvm::cl::desc("Add target-specific passes"),
@@ -210,21 +221,21 @@ struct QSSConfigCLOptions : public QSSConfig {
                  "chunk independently"),
         llvm::cl::location(splitInputFileFlag), llvm::cl::init(false), llvm::cl::cat(getQSSOptCLCategory()));
 
+    static llvm::cl::opt<bool, /*ExternalStorage=*/true> verifyDiagnostics(
+        "verify-diagnostics",
+        llvm::cl::desc("Check that emitted diagnostics match "
+                 "expected-* lines on the corresponding line"),
+        llvm::cl::location(verifyDiagnosticsFlag), llvm::cl::init(false), llvm::cl::cat(getQSSOptCLCategory()));
+
     #ifndef NOVERIFY
       #define VERIFY_PASSES_DEFAULT true
     #else
       #define VERIFY_PASSES_DEFAULT false
     #endif
-    static llvm::cl::opt<bool, /*ExternalStorage=*/true> verifyDiagnostics(
-        "verify-diagnostics",
-        llvm::cl::desc("Check that emitted diagnostics match "
-                 "expected-* lines on the corresponding line"),
-        llvm::cl::location(verifyDiagnosticsFlag), llvm::cl::init(VERIFY_PASSES_DEFAULT), llvm::cl::cat(getQSSOptCLCategory()));
-
     static llvm::cl::opt<bool, /*ExternalStorage=*/true> verifyPasses(
         "verify-each",
         llvm::cl::desc("Run the verifier after each transformation pass"),
-        llvm::cl::location(verifyPassesFlag), llvm::cl::init(true), llvm::cl::cat(getQSSOptCLCategory()));
+        llvm::cl::location(verifyPassesFlag), llvm::cl::init(VERIFY_PASSES_DEFAULT), llvm::cl::cat(getQSSOptCLCategory()));
 
     static llvm::cl::opt<bool, /*ExternalStorage=*/true> verifyRoundtrip(
         "verify-roundtrip",
@@ -236,7 +247,7 @@ struct QSSConfigCLOptions : public QSSConfig {
     /// Set the callback to load a pass plugin.
       passPlugins_.setCallback([&](const std::string &pluginPath) {
         passPlugins.push_back(pluginPath);
-        if(failed(loadPassPlugin(pluginPath)))
+        if(mlir::failed(loadPassPlugin(pluginPath)))
           llvm::errs() << "Failed to load passes from '" << pluginPath
               << "'. Request ignored.\n";
     });
@@ -257,7 +268,7 @@ struct QSSConfigCLOptions : public QSSConfig {
     mlir::DialectRegistry &registry) {
       dialectPlugins_->setCallback([&](const std::string &pluginPath) {
         dialectPlugins.push_back(pluginPath);
-        if(failed(loadDialectPlugin(pluginPath, registry)))
+        if(mlir::failed(loadDialectPlugin(pluginPath, registry)))
           llvm::errs() << "Failed to load dialect from '" << pluginPath
               << "'. Request ignored.\n";
       });
@@ -272,7 +283,7 @@ struct QSSConfigCLOptions : public QSSConfig {
           "The input source format must be specified with -X for direct input.");
 
       setInputType(fileExtensionToInputType(getExtension(getInputSource())));
-      if (getInputType() == InputType::None) {
+      if (getInputSource() != "-" && getInputType() == InputType::None) {
         return llvm::createStringError(
             llvm::inconvertibleErrorCode(),
             "Unable to autodetect file extension type! Please specify the "
@@ -295,10 +306,8 @@ struct QSSConfigCLOptions : public QSSConfig {
       } else if (emitAction == EmitAction::None) {
         setEmitAction(extensionAction);
       } else if (extensionAction != getEmitAction()) {
-        return llvm::createStringError(
-            llvm::inconvertibleErrorCode(),
-            "Warning! The output type in the file extension doesn't "
-            "match the output type specified by --emit!");
+        llvm::errs() <<  "Warning! The output type in the file extension doesn't "
+            "match the output type specified by --emit!";
       }
     } else {
       if (emitAction == EmitAction::None)
@@ -352,6 +361,7 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   if (clOptionsConfig->targetConfigPath.has_value())
     config.targetConfigPath = clOptionsConfig->targetConfigPath;
 
+  config.addTargetPassesFlag = clOptionsConfig->addTargetPassesFlag;
   config.showTargetsFlag = clOptionsConfig->showTargetsFlag;
   config.showPayloadsFlag = clOptionsConfig->showPayloadsFlag;
   config.showConfigFlag = clOptionsConfig->showConfigFlag;

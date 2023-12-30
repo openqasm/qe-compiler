@@ -33,7 +33,7 @@ using namespace qssc::config;
 void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   // Compiler configuration
   os << "[compiler]\n";
-  os << "inputSource: " << getInputSource().substr(0, 100) << "\n";
+  os << "inputSource: " << getInputSource() << "\n";
   os << "directInput: " << isDirectInput() << "\n";
   os << "outputFilePath: " << getOutputFilePath() << "\n";
   os << "inputType: " << to_string(getInputType()) << "\n";
@@ -63,10 +63,10 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "runReproducer: " << shouldRunReproducer() << "\n";
   os << "showDialects: " << shouldShowDialects() << "\n";
   os << "splitInputFile: " << shouldSplitInputFile() << "\n";
-  os << "useExplicitModule" << shouldUseExplicitModule() << "\n";
-  os << "verifyDiagnostics" << shouldVerifyDiagnostics() << "\n";
-  os << "verifyPasses" << shouldVerifyPasses() << "\n";
-  os << "verifyRoundTrip" << shouldVerifyRoundtrip() << "\n";
+  os << "useExplicitModule: " << shouldUseExplicitModule() << "\n";
+  os << "verifyDiagnostics: " << shouldVerifyDiagnostics() << "\n";
+  os << "verifyPasses: " << shouldVerifyPasses() << "\n";
+  os << "verifyRoundTrip: " << shouldVerifyRoundtrip() << "\n";
   os << "\n";
 
 }

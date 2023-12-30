@@ -56,6 +56,7 @@
 #include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Support/Timing.h"
+#include "mlir/Tools/ParseUtilities.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
@@ -189,7 +190,7 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
     if (!qssc::hal::registry::TargetSystemRegistry::pluginExists(*targetName))
       // Make sure target exists if specified
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Error: Target " + *targetName +
+                                     "Target " + *targetName +
                                          " is not registered.");
     if (!targetConfigPath.has_value())
       // If the target exists we must have a configuration path.
@@ -401,6 +402,7 @@ void diagEngineHandler(mlir::Diagnostic &diagnostic,
 
 llvm::Error compile_(int argc, char const **argv, std::string *outputString,
                      std::optional<qssc::DiagnosticCallback> diagnosticCb) {
+
   // Initialize LLVM to start.
   llvm::InitLLVM const y(argc, argv);
 
@@ -423,6 +425,10 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   llvm::cl::SetVersionPrinter(&printVersion);
   llvm::cl::ParseCommandLineOptions(
       argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
+
+  DefaultTimingManager tm;
+  applyDefaultTimingManagerCLOptions(tm);
+  TimingScope timing = tm.getRootScope();
 
   // The MLIR context for this compilation event.
   // Instantiate after parsing command line options.
@@ -476,6 +482,8 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
                                      "Failed to open input file: " +
                                          errorMessage);
     }
+  } else {
+    file = llvm::MemoryBuffer::getMemBuffer(config.getInputSource(), /*bufferName=*/"direct");
   }
 
   context.getDiagEngine().registerHandler([&](mlir::Diagnostic &diagnostic) {
@@ -545,33 +553,52 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   } // if input == QASM
 
   if (config.getInputType() == InputType::MLIR) {
-    // ------------------------------------------------------------
-    // The following section was copied from processBuffer() in:
-    //      ../third_party/llvm-project/mlir/lib/Support/MlirOptMain.cpp
 
     // Tell sourceMgr about this buffer, which is what the parser will pick up.
-    llvm::SourceMgr sourceMgr;
-    sourceMgr.AddNewSourceBuffer(std::move(file), llvm::SMLoc());
+    auto sourceMgr = std::make_shared<llvm::SourceMgr>();
+    sourceMgr->AddNewSourceBuffer(std::move(file), llvm::SMLoc());
 
-    // Parse the input file.
-    // ------------------------------------------------------------
-    // The following section was copied from performActions() in:
-    //      ../third_party/llvm-project/mlir/lib/Support/MlirOptMain.cpp
+    // Implemented following -
+    // https://github.com/llvm/llvm-project/blob/llvmorg-17.0.6/mlir/lib/Tools/mlir-opt/MlirOptMain.cpp#L333-L362
 
     // Disable multi-threading when parsing the input file. This removes the
     // unnecessary/costly context synchronization when parsing.
-    bool const wasThreadingEnabled = context.isMultithreadingEnabled();
+    bool wasThreadingEnabled = context.isMultithreadingEnabled();
     context.disableMultithreading();
 
+    // Prepare the parser config, and attach any useful/necessary resource
+    // handlers. Unhandled external resources are treated as passthrough, i.e.
+    // they are not processed and will be emitted directly to the output
+    // untouched.
+    mlir::PassReproducerOptions reproOptions;
+    mlir::FallbackAsmResourceMap fallbackResourceMap;
+    mlir::ParserConfig parseConfig(&context, /*verifyAfterParse=*/true,
+                            &fallbackResourceMap);
+    if (config.shouldRunReproducer())
+      reproOptions.attachResourceParser(parseConfig);
+
     // Parse the input file and reset the context threading state.
-    mlir::OwningOpRef<mlir::ModuleOp> module =
-        mlir::parseSourceFile<mlir::ModuleOp>(sourceMgr, &context);
-    context.enableMultithreading(wasThreadingEnabled);
-    if (!module)
+    mlir::TimingScope parserTiming = timing.nest("Parser");
+    mlir::OwningOpRef<Operation *> op = mlir::parseSourceFileForTool(
+        sourceMgr, parseConfig, !config.shouldUseExplicitModule());
+
+    parserTiming.stop();
+
+    if (!op)
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                      "Problem parsing source file " +
                                          config.getInputSource());
-    moduleOp = module.release();
+
+    // Cannot currently perform round-trip verification as
+    // doVerificationRoundTrip is not part of MLIR's public
+    // API - https://github.com/llvm/llvm-project/blob/llvmorg-17.0.6/mlir/lib/Tools/mlir-opt/MlirOptMain.cpp#L250
+    if (config.shouldVerifyRoundtrip())
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "The qss-compiler does not currently support roundtrip verification. Please use the qss-opt tool instead.");
+
+    context.enableMultithreading(wasThreadingEnabled);
+
+    moduleOp = mlir::dyn_cast<mlir::ModuleOp>(op.release());
   } // if input == MLIR
 
   auto errorHandler = [&](const Twine &msg) {
@@ -580,7 +607,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
                                qssc::ErrorCategory::QSSCompilationFailure,
                                msg.str());
     emitError(UnknownLoc::get(&context)) << msg;
-    return failure();
+    return mlir::failure();
   };
 
   // at this point we have QUIR+Pulse in the moduleOp from either the

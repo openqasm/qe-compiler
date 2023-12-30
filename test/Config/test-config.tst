@@ -3,10 +3,10 @@
 
 // CLI: targetName: Mock
 // CLI: targetConfigPath: path/to/config
+// CLI: addTargetPasses: 1
 // CLI: allowUnregisteredDialects: 0
-// CLI: addTargetPasses: 0
 
 // ENV: targetName: MockEnv
 // ENV: targetConfigPath: path/to/config/Env
+// ENV: addTargetPasses: 1
 // ENV: allowUnregisteredDialects: 0
-// ENV: addTargetPasses: 0
