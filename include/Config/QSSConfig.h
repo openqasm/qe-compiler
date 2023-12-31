@@ -26,19 +26,20 @@
 
 namespace qssc::config {
 
-enum class  EmitAction {
+enum class EmitAction { None, AST, ASTPretty, MLIR, WaveMem, QEM, QEQEM };
+
+enum class FileExtension {
   None,
   AST,
   ASTPretty,
+  QASM,
   MLIR,
   WaveMem,
   QEM,
   QEQEM
 };
 
-enum class FileExtension { None, AST, ASTPretty, QASM, MLIR, WaveMem, QEM, QEQEM };
-
-enum class InputType { None, QASM, MLIR};
+enum class InputType { None, QASM, MLIR };
 
 std::string to_string(const EmitAction &inExt);
 
@@ -54,8 +55,6 @@ FileExtension strToFileExtension(const llvm::StringRef extStr);
 
 FileExtension getExtension(const llvm::StringRef inStr);
 
-
-
 /// @brief The QSS configuration data structure that is to be used for global
 /// configuration of the QSS infrastructure. This is to be used for static
 /// options that are rarely changed for a system and do not need to be
@@ -64,192 +63,164 @@ FileExtension getExtension(const llvm::StringRef inStr);
 /// as CLI, environment variables and possible configuration file formats
 /// through QSSConfigBuilder implementations which apply successive views over
 /// the configuration to produce the final configuration.
-struct QSSConfig : mlir::MlirOptMainConfig{
+struct QSSConfig : mlir::MlirOptMainConfig {
 
-  public:
-    friend class CLIConfigBuilder;
-    friend class EnvVarConfigBuilder;
+public:
+  friend class CLIConfigBuilder;
+  friend class EnvVarConfigBuilder;
 
-    QSSConfig &setInputSource(std::string source) {
-      inputSource = source;
-      return *this;
-    }
-    llvm::StringRef getInputSource() const {
-      return inputSource;
-    }
+  QSSConfig &setInputSource(std::string source) {
+    inputSource = source;
+    return *this;
+  }
+  llvm::StringRef getInputSource() const { return inputSource; }
 
-    QSSConfig &directInput(bool flag) {
-      directInputFlag = flag;
-      return *this;
-    }
-    bool isDirectInput() const {
-      return directInputFlag;
-    }
+  QSSConfig &directInput(bool flag) {
+    directInputFlag = flag;
+    return *this;
+  }
+  bool isDirectInput() const { return directInputFlag; }
 
-    QSSConfig &setOutputFilePath(std::string path) {
-      outputFilePath = path;
-      return *this;
-    }
-    llvm::StringRef getOutputFilePath() const {
-      return outputFilePath;
-    }
+  QSSConfig &setOutputFilePath(std::string path) {
+    outputFilePath = path;
+    return *this;
+  }
+  llvm::StringRef getOutputFilePath() const { return outputFilePath; }
 
-    QSSConfig &setTargetName(std::string name) {
-      targetName = name;
-      return *this;
-    }
-    std::optional<llvm::StringRef> getTargetName() const {
-      if (targetName.has_value())
-        return targetName.value();
-      return std::nullopt;
-    }
+  QSSConfig &setTargetName(std::string name) {
+    targetName = name;
+    return *this;
+  }
+  std::optional<llvm::StringRef> getTargetName() const {
+    if (targetName.has_value())
+      return targetName.value();
+    return std::nullopt;
+  }
 
-    QSSConfig &setTargetConfigPath(std::string path) {
-      targetConfigPath = path;
-      return *this;
-    }
-    std::optional<llvm::StringRef> getTargetConfigPath() const {
-      if (targetConfigPath.has_value())
-        return targetConfigPath.value();
-      return std::nullopt;
-    }
+  QSSConfig &setTargetConfigPath(std::string path) {
+    targetConfigPath = path;
+    return *this;
+  }
+  std::optional<llvm::StringRef> getTargetConfigPath() const {
+    if (targetConfigPath.has_value())
+      return targetConfigPath.value();
+    return std::nullopt;
+  }
 
-    QSSConfig &setInputType(InputType type) {
-      inputType = type;
-      return *this;
-    }
-    InputType getInputType() const {
-      return inputType;
-    }
+  QSSConfig &setInputType(InputType type) {
+    inputType = type;
+    return *this;
+  }
+  InputType getInputType() const { return inputType; }
 
-    QSSConfig &setEmitAction(EmitAction action) {
-      emitAction = action;
-      return *this;
-    }
-    EmitAction getEmitAction() const {
-      return emitAction;
-    }
+  QSSConfig &setEmitAction(EmitAction action) {
+    emitAction = action;
+    return *this;
+  }
+  EmitAction getEmitAction() const { return emitAction; }
 
-    QSSConfig &addTargetPasses(bool flag) {
-      addTargetPassesFlag = flag;
-      return *this;
-    }
-    bool shouldAddTargetPasses() const {
-      return addTargetPassesFlag;
-    }
+  QSSConfig &addTargetPasses(bool flag) {
+    addTargetPassesFlag = flag;
+    return *this;
+  }
+  bool shouldAddTargetPasses() const { return addTargetPassesFlag; }
 
-    QSSConfig &showTargets(bool flag) {
-      showTargetsFlag = flag;
-      return *this;
-    }
-    bool shouldShowTargets() const {
-      return showTargetsFlag;
-    }
+  QSSConfig &showTargets(bool flag) {
+    showTargetsFlag = flag;
+    return *this;
+  }
+  bool shouldShowTargets() const { return showTargetsFlag; }
 
-    QSSConfig &showPayloads(bool flag) {
-      showPayloadsFlag = flag;
-      return *this;
-    }
-    bool shouldShowPayloads() const {
-      return showPayloadsFlag;
-    }
+  QSSConfig &showPayloads(bool flag) {
+    showPayloadsFlag = flag;
+    return *this;
+  }
+  bool shouldShowPayloads() const { return showPayloadsFlag; }
 
-    QSSConfig &showConfig(bool flag) {
-      showConfigFlag = flag;
-      return *this;
-    }
-    bool shouldShowConfig() const {
-      return showConfigFlag;
-    }
+  QSSConfig &showConfig(bool flag) {
+    showConfigFlag = flag;
+    return *this;
+  }
+  bool shouldShowConfig() const { return showConfigFlag; }
 
-    QSSConfig &emitPlaintextPayload(bool flag) {
-      emitPlaintextPayloadFlag = flag;
-      return *this;
-    }
-    bool shouldEmitPlaintextPayload() const {
-      return emitPlaintextPayloadFlag;
-    }
+  QSSConfig &emitPlaintextPayload(bool flag) {
+    emitPlaintextPayloadFlag = flag;
+    return *this;
+  }
+  bool shouldEmitPlaintextPayload() const { return emitPlaintextPayloadFlag; }
 
-    QSSConfig &includeSource(bool flag) {
-      includeSourceFlag = flag;
-      return *this;
-    }
-    bool shouldIncludeSource() const {
-      return includeSourceFlag;
-    }
+  QSSConfig &includeSource(bool flag) {
+    includeSourceFlag = flag;
+    return *this;
+  }
+  bool shouldIncludeSource() const { return includeSourceFlag; }
 
-    QSSConfig &compileTargetIR(bool flag) {
-      compileTargetIRFlag = flag;
-      return *this;
-    }
-    bool shouldCompileTargetIR() const {
-      return compileTargetIRFlag;
-    }
+  QSSConfig &compileTargetIR(bool flag) {
+    compileTargetIRFlag = flag;
+    return *this;
+  }
+  bool shouldCompileTargetIR() const { return compileTargetIRFlag; }
 
-    QSSConfig &bypassPayloadTargetCompilation(bool flag) {
-      bypassPayloadTargetCompilationFlag = flag;
-      return *this;
-    }
-    bool shouldBypassPayloadTargetCompilation() const {
-      return bypassPayloadTargetCompilationFlag;
-    }
+  QSSConfig &bypassPayloadTargetCompilation(bool flag) {
+    bypassPayloadTargetCompilationFlag = flag;
+    return *this;
+  }
+  bool shouldBypassPayloadTargetCompilation() const {
+    return bypassPayloadTargetCompilationFlag;
+  }
 
-    QSSConfig &setPassPlugins(std::vector<std::string> plugins) {
-      dialectPlugins = plugins;
-      return *this;
-    }
-    const std::vector<std::string> &getPassPlugins() {
-      return dialectPlugins;
-    }
+  QSSConfig &setPassPlugins(std::vector<std::string> plugins) {
+    dialectPlugins = plugins;
+    return *this;
+  }
+  const std::vector<std::string> &getPassPlugins() { return dialectPlugins; }
 
-    QSSConfig &setDialectPlugins(std::vector<std::string> plugins) {
-      dialectPlugins = plugins;
-      return *this;
-    }
-    const std::vector<std::string> &getDialectPlugins() {
-      return dialectPlugins;
-    }
+  QSSConfig &setDialectPlugins(std::vector<std::string> plugins) {
+    dialectPlugins = plugins;
+    return *this;
+  }
+  const std::vector<std::string> &getDialectPlugins() { return dialectPlugins; }
 
-  public:
-    /// @brief Emit the configuration to stdout.
-    void emit(llvm::raw_ostream &out) const;
+public:
+  /// @brief Emit the configuration to stdout.
+  void emit(llvm::raw_ostream &out) const;
 
-  protected:
-    /// @brief input source (file path or direct input) to compile
-    std::string inputSource = "-";
-    /// @brief Whether inputSource directly contains the input source (otherwise it is a file path).
-    bool directInputFlag = false;
-    /// @brief Output path for the compiler output if emitting to file.
-    std::string outputFilePath = "-";
-    /// @brief The TargetSystem to target compilation for.
-    std::optional<std::string> targetName = std::nullopt;
-    /// @brief The path to the TargetSystem configuration information.
-    std::optional<std::string> targetConfigPath = std::nullopt;
-    /// @brief Source input type
-    InputType inputType = InputType::None;
-    /// @brief Output action to take
-    EmitAction emitAction = EmitAction::None;
-    /// @brief Register target passes with the compiler.
-    bool addTargetPassesFlag = true;
-    /// @brief Should available targets be printed
-    bool showTargetsFlag = false;
-    /// @brief Should available payloads be printed
-    bool showPayloadsFlag = false;
-    /// @brief Should the current configuration be printed
-    bool showConfigFlag = false;
-    /// @brief Should the plaintext payload be emitted
-    bool emitPlaintextPayloadFlag = false;
-    /// @brief Should the input source be included in the payload
-    bool includeSourceFlag = false;
-    /// @brief Should the IR be compiled for the target
-    bool compileTargetIRFlag = false;
-    /// @brief Should target payload generation be bypassed
-    bool bypassPayloadTargetCompilationFlag = false;
-    /// @brief Pass plugin paths
-    std::vector<std::string> passPlugins;
-    /// @brief Dialect plugin paths
-    std::vector<std::string> dialectPlugins;
-
+protected:
+  /// @brief input source (file path or direct input) to compile
+  std::string inputSource = "-";
+  /// @brief Whether inputSource directly contains the input source (otherwise
+  /// it is a file path).
+  bool directInputFlag = false;
+  /// @brief Output path for the compiler output if emitting to file.
+  std::string outputFilePath = "-";
+  /// @brief The TargetSystem to target compilation for.
+  std::optional<std::string> targetName = std::nullopt;
+  /// @brief The path to the TargetSystem configuration information.
+  std::optional<std::string> targetConfigPath = std::nullopt;
+  /// @brief Source input type
+  InputType inputType = InputType::None;
+  /// @brief Output action to take
+  EmitAction emitAction = EmitAction::None;
+  /// @brief Register target passes with the compiler.
+  bool addTargetPassesFlag = true;
+  /// @brief Should available targets be printed
+  bool showTargetsFlag = false;
+  /// @brief Should available payloads be printed
+  bool showPayloadsFlag = false;
+  /// @brief Should the current configuration be printed
+  bool showConfigFlag = false;
+  /// @brief Should the plaintext payload be emitted
+  bool emitPlaintextPayloadFlag = false;
+  /// @brief Should the input source be included in the payload
+  bool includeSourceFlag = false;
+  /// @brief Should the IR be compiled for the target
+  bool compileTargetIRFlag = false;
+  /// @brief Should target payload generation be bypassed
+  bool bypassPayloadTargetCompilationFlag = false;
+  /// @brief Pass plugin paths
+  std::vector<std::string> passPlugins;
+  /// @brief Dialect plugin paths
+  std::vector<std::string> dialectPlugins;
 };
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const QSSConfig &config);
@@ -269,7 +240,8 @@ llvm::Expected<const QSSConfig &> getContextConfig(mlir::MLIRContext *context);
 /// @brief Load a dynamic dialect plugin
 /// @param pluginPath Path to the plugin
 /// @param registry Dialect registry to register the plugin dialect with
-mlir::LogicalResult loadDialectPlugin(const std::string &pluginPath, mlir::DialectRegistry &registry);
+mlir::LogicalResult loadDialectPlugin(const std::string &pluginPath,
+                                      mlir::DialectRegistry &registry);
 
 /// @brief Load a dynamic pass plugin
 /// @param pluginPath Path to the plugin

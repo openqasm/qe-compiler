@@ -15,16 +15,19 @@
 #include "Config/QSSConfig.h"
 
 #include "mlir/IR/MLIRContext.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Tools/Plugins/DialectPlugin.h"
 #include "mlir/Tools/Plugins/PassPlugin.h"
 
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include <ostream>
+#include <string>
 #include <utility>
 
 using namespace qssc::config;
@@ -38,10 +41,14 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "outputFilePath: " << getOutputFilePath() << "\n";
   os << "inputType: " << to_string(getInputType()) << "\n";
   os << "emitAction: " << to_string(getEmitAction()) << "\n";
-  os << "targetName: " << (getTargetName().has_value() ? getTargetName().value() : "None")
+  os << "targetName: "
+     // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+     << (getTargetName().has_value() ? getTargetName().value() : "None")
      << "\n";
   os << "targetConfigPath: "
-     << (getTargetConfigPath().has_value() ? getTargetConfigPath().value() : "None")
+     // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+     << (getTargetConfigPath().has_value() ? getTargetConfigPath().value()
+                                           : "None")
      << "\n";
   os << "addTargetPasses: " << shouldAddTargetPasses() << "\n";
   os << "showTargets: " << shouldShowTargets() << "\n";
@@ -50,12 +57,14 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "emitPlaintextPayload: " << shouldEmitPlaintextPayload() << "\n";
   os << "includeSource: " << shouldIncludeSource() << "\n";
   os << "compileTargetIR: " << shouldCompileTargetIR() << "\n";
-  os << "bypassPayloadTargetCompilation: " << shouldBypassPayloadTargetCompilation() << "\n";
+  os << "bypassPayloadTargetCompilation: "
+     << shouldBypassPayloadTargetCompilation() << "\n";
   os << "\n";
 
   // Mlir opt configuration
   os << "[opt]\n";
-  os << "allowUnregisteredDialects: " << shouldAllowUnregisteredDialects() << "\n";
+  os << "allowUnregisteredDialects: " << shouldAllowUnregisteredDialects()
+     << "\n";
   os << "dumpPassPipeline: " << shouldDumpPassPipeline() << "\n";
   os << "emitBytecode: " << shouldEmitBytecode() << "\n";
   os << "bytecodeEmitVersion: " << bytecodeVersionToEmit() << "\n";
@@ -68,7 +77,6 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "verifyPasses: " << shouldVerifyPasses() << "\n";
   os << "verifyRoundTrip: " << shouldVerifyRoundtrip() << "\n";
   os << "\n";
-
 }
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os,
@@ -256,22 +264,22 @@ FileExtension qssc::config::getExtension(const llvm::StringRef inStr) {
   return FileExtension::None;
 }
 
-
-mlir::LogicalResult qssc::config::loadDialectPlugin(const std::string &pluginPath, mlir::DialectRegistry &registry) {
+mlir::LogicalResult
+qssc::config::loadDialectPlugin(const std::string &pluginPath,
+                                mlir::DialectRegistry &registry) {
   auto plugin = mlir::DialectPlugin::load(pluginPath);
-  if (!plugin) {
+  if (!plugin)
     return mlir::failure();
-  };
+  ;
   plugin.get().registerDialectRegistryCallbacks(registry);
   return mlir::success();
 }
 
-
-mlir::LogicalResult qssc::config::loadPassPlugin(const std::string &pluginPath) {
+mlir::LogicalResult
+qssc::config::loadPassPlugin(const std::string &pluginPath) {
   auto plugin = mlir::PassPlugin::load(pluginPath);
-  if (!plugin) {
+  if (!plugin)
     return mlir::failure();
-  }
   plugin.get().registerPassRegistryCallbacks();
   return mlir::success();
 }

@@ -80,7 +80,6 @@
 using namespace mlir;
 using namespace qssc::config;
 
-
 llvm::Error registerPasses() {
   // TODO: Register standalone passes here.
   llvm::Error err = llvm::Error::success();
@@ -226,7 +225,8 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
 /// @param ostream The output ostream to populate
 /// @return The output error if one occurred.
 llvm::Error generateQEM_(
-    const QSSConfig &config, qssc::hal::compile::TargetCompilationManager *targetCompilationManager,
+    const QSSConfig &config,
+    qssc::hal::compile::TargetCompilationManager *targetCompilationManager,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
     llvm::raw_ostream *ostream) {
 
@@ -267,8 +267,7 @@ llvm::Error buildPassManager_(mlir::PassManager &pm, bool verifyPasses) {
 }
 
 llvm::Error buildPassManager(const QSSConfig &config, mlir::PassManager &pm,
-                             ErrorHandler errorHandler,
-                             bool verifyPasses) {
+                             ErrorHandler errorHandler, bool verifyPasses) {
   if (auto err = buildPassManager_(pm, verifyPasses))
     return err;
   // Build the provided pipeline.
@@ -314,15 +313,17 @@ llvm::Error emitMLIR_(
 /// @param targetCompilationManager The target's compilation scheduler
 /// @return
 llvm::Error emitQEM_(
-    const QSSConfig &config, llvm::raw_ostream *ostream, std::unique_ptr<qssc::payload::Payload> payload,
-    mlir::ModuleOp moduleOp,
+    const QSSConfig &config, llvm::raw_ostream *ostream,
+    std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager) {
   if (config.shouldIncludeSource()) {
     if (config.isDirectInput()) {
       if (config.getInputType() == InputType::QASM)
-        payload->addFile("manifest/input.qasm", (config.getInputSource() + "\n").str());
+        payload->addFile("manifest/input.qasm",
+                         (config.getInputSource() + "\n").str());
       else if (config.getInputType() == InputType::MLIR)
-        payload->addFile("manifest/input.mlir", (config.getInputSource() + "\n").str());
+        payload->addFile("manifest/input.mlir",
+                         (config.getInputSource() + "\n").str());
       else
         llvm_unreachable("Unhandled input file type");
     } else { // just copy the input file
@@ -341,8 +342,8 @@ llvm::Error emitQEM_(
     }
   }
 
-  if (auto err = generateQEM_(config, &targetCompilationManager, std::move(payload),
-                              moduleOp, ostream))
+  if (auto err = generateQEM_(config, &targetCompilationManager,
+                              std::move(payload), moduleOp, ostream))
     return err;
 
   return llvm::Error::success();
@@ -483,7 +484,8 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
                                          errorMessage);
     }
   } else {
-    file = llvm::MemoryBuffer::getMemBuffer(config.getInputSource(), /*bufferName=*/"direct");
+    file = llvm::MemoryBuffer::getMemBuffer(config.getInputSource(),
+                                            /*bufferName=*/"direct");
   }
 
   context.getDiagEngine().registerHandler([&](mlir::Diagnostic &diagnostic) {
@@ -493,18 +495,22 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   // Set up the output.
   llvm::raw_ostream *ostream;
   std::optional<llvm::raw_string_ostream> outStringStream;
-  auto outputFile = mlir::openOutputFile(config.getOutputFilePath(), &errorMessage);
+  auto outputFile =
+      mlir::openOutputFile(config.getOutputFilePath(), &errorMessage);
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
-  if (config.getEmitAction() == EmitAction::QEQEM && !config.getTargetName().has_value())
+  if (config.getEmitAction() == EmitAction::QEQEM &&
+      !config.getTargetName().has_value())
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Unsupported target-specific payload: no target");
-  if (config.getEmitAction() == EmitAction::QEM || config.getEmitAction() == EmitAction::QEQEM) {
+  if (config.getEmitAction() == EmitAction::QEM ||
+      config.getEmitAction() == EmitAction::QEQEM) {
     const std::filesystem::path payloadPath(config.getOutputFilePath().str());
     const std::string fNamePrefix = payloadPath.stem();
-    const auto payloadName =
-        (config.getEmitAction() == EmitAction::QEM) ? "ZIP" : config.getTargetName().value();
+    const auto payloadName = (config.getEmitAction() == EmitAction::QEM)
+                                 ? "ZIP"
+                                 : config.getTargetName().value();
     auto payloadInfo =
         qssc::payload::registry::PayloadRegistry::lookupPluginInfo(payloadName);
     if (payloadInfo == std::nullopt)
@@ -539,13 +545,16 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   if (config.getInputType() == InputType::QASM) {
     if (config.getEmitAction() >= EmitAction::MLIR) {
       moduleOp = mlir::ModuleOp::create(FileLineColLoc::get(
-          &context, config.isDirectInput() ? std::string{"-"} : config.getInputSource(), 0, 0));
+          &context,
+          config.isDirectInput() ? std::string{"-"} : config.getInputSource(),
+          0, 0));
     }
 
     if (auto frontendError = qssc::frontend::openqasm3::parse(
-            config.getInputSource().str(), !config.isDirectInput(), config.getEmitAction() == EmitAction::AST,
-            config.getEmitAction() == EmitAction::ASTPretty, config.getEmitAction() >= EmitAction::MLIR,
-            moduleOp, diagnosticCb))
+            config.getInputSource().str(), !config.isDirectInput(),
+            config.getEmitAction() == EmitAction::AST,
+            config.getEmitAction() == EmitAction::ASTPretty,
+            config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb))
       return frontendError;
 
     if (config.getEmitAction() < EmitAction::MLIR)
@@ -563,7 +572,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
 
     // Disable multi-threading when parsing the input file. This removes the
     // unnecessary/costly context synchronization when parsing.
-    bool wasThreadingEnabled = context.isMultithreadingEnabled();
+    const bool wasThreadingEnabled = context.isMultithreadingEnabled();
     context.disableMultithreading();
 
     // Prepare the parser config, and attach any useful/necessary resource
@@ -573,7 +582,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
     mlir::PassReproducerOptions reproOptions;
     mlir::FallbackAsmResourceMap fallbackResourceMap;
     mlir::ParserConfig parseConfig(&context, /*verifyAfterParse=*/true,
-                            &fallbackResourceMap);
+                                   &fallbackResourceMap);
     if (config.shouldRunReproducer())
       reproOptions.attachResourceParser(parseConfig);
 
@@ -591,10 +600,13 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
 
     // Cannot currently perform round-trip verification as
     // doVerificationRoundTrip is not part of MLIR's public
-    // API - https://github.com/llvm/llvm-project/blob/llvmorg-17.0.6/mlir/lib/Tools/mlir-opt/MlirOptMain.cpp#L250
+    // API -
+    // https://github.com/llvm/llvm-project/blob/llvmorg-17.0.6/mlir/lib/Tools/mlir-opt/MlirOptMain.cpp#L250
     if (config.shouldVerifyRoundtrip())
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "The qss-compiler does not currently support roundtrip verification. Please use the qss-opt tool instead.");
+      return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "The qss-compiler does not currently support roundtrip verification. "
+          "Please use the qss-opt tool instead.");
 
     context.enableMultithreading(wasThreadingEnabled);
 
@@ -640,12 +652,12 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   // Prepare outputs
   if (config.getEmitAction() == EmitAction::MLIR) {
     if (auto err = emitMLIR_(ostream, context, moduleOp, config,
-                             targetCompilationManager,
-                             errorHandler))
+                             targetCompilationManager, errorHandler))
       return err;
   }
 
-  if (config.getEmitAction() == EmitAction::QEM || config.getEmitAction() == EmitAction::QEQEM) {
+  if (config.getEmitAction() == EmitAction::QEM ||
+      config.getEmitAction() == EmitAction::QEQEM) {
     if (auto err = emitQEM_(config, ostream, std::move(payload), moduleOp,
                             targetCompilationManager))
       return err;
