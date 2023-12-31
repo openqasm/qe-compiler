@@ -44,14 +44,15 @@ protected:
                            mlir::MLIRContext *context);
 
   using WalkTargetModulesFunction =
-      std::function<llvm::Error(hal::Target *, mlir::ModuleOp)>;
-  using WalkTargetFunction = std::function<llvm::Error(hal::Target *)>;
+      std::function<llvm::Error(hal::Target *, mlir::ModuleOp, mlir::TimingScope &timing)>;
+  using WalkTargetFunction = std::function<llvm::Error(hal::Target *, mlir::TimingScope &timing)>;
 
   // Depth first walker for a target system
-  llvm::Error walkTarget(Target *target, const WalkTargetFunction &walkFunc);
+  llvm::Error walkTarget(Target *target, mlir::TimingScope &timing, const WalkTargetFunction &walkFunc);
   // Depth first walker for a target system modules
   llvm::Error
   walkTargetModules(Target *target, mlir::ModuleOp targetModuleOp,
+                    mlir::TimingScope &timing,
                     const WalkTargetModulesFunction &walkFunc,
                     const WalkTargetModulesFunction &postChildrenCallbackFunc);
 
@@ -88,6 +89,11 @@ public:
                         bool printBeforeAllTargetPayload,
                         bool printAfterTargetCompileFailure);
 
+  /// @brief Add an instrumentation to time the execution of target compilation.
+  /// Will be automatically propagated to child pass managers.
+  void setTimingScope(mlir::TimingScope &timingScope);
+  mlir::TimingScope getNestedTimingScope(llvm::StringRef name);
+
 protected:
   bool getPrintBeforeAllTargetPasses() { return printBeforeAllTargetPasses; }
   bool getPrintAfterAllTargetPasses() { return printAfterAllTargetPasses; }
@@ -108,6 +114,11 @@ private:
   bool printAfterAllTargetPasses = false;
   bool printBeforeAllTargetPayload = false;
   bool printAfterTargetCompileFailure = false;
+
+  /// Non-owning pointer of the timing scope.
+  /// TODO: This should be replaced with a PassManager
+  /// like instrumentation.
+  mlir::TimingScope* timingScope;
 
 }; // class TargetCompilationManager
 

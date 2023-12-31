@@ -200,18 +200,22 @@ llvm::Error generateQEM_(
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
     llvm::raw_ostream *ostream, mlir::TimingScope &timing) {
 
+  mlir::TimingScope buildQEMTiming = timing.nest("build-qem");
+
   if (auto err = targetCompilationManager->compilePayload(
           moduleOp, *payload,
           /* doCompileMLIR=*/!config.shouldBypassPayloadTargetCompilation()))
     return err;
 
-  mlir::TimingScope writePayloadTiming = timing.nest("write-payload");
+  mlir::TimingScope writePayloadTiming = buildQEMTiming.nest("write-payload");
   if (config.shouldEmitPlaintextPayload())
     payload->writePlain(*ostream);
   else
     payload->write(*ostream);
 
   writePayloadTiming.stop();
+
+  buildQEMTiming.stop();
 
   return llvm::Error::success();
 }
@@ -540,7 +544,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
             config.getInputSource().str(), !config.isDirectInput(),
             config.getEmitAction() == EmitAction::AST,
             config.getEmitAction() == EmitAction::ASTPretty,
-            config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb, timing))
+            config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb, loadQASM3Timing))
       return frontendError;
 
     loadQASM3Timing.stop();

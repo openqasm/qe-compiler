@@ -52,11 +52,11 @@ const std::string ThreadedCompilationManager::getName() const {
 }
 
 llvm::Error ThreadedCompilationManager::walkTargetModulesThreaded(
-    Target *target, mlir::ModuleOp targetModuleOp,
+    Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing,
     const WalkTargetModulesFunction &walkFunc,
     const WalkTargetModulesFunction &postChildrenCallbackFunc) {
 
-  if (auto err = walkFunc(target, targetModuleOp))
+  if (auto err = walkFunc(target, targetModuleOp, timing))
     return err;
 
   // Get child modules in a non-threaded fashion to preserve
@@ -74,7 +74,7 @@ llvm::Error ThreadedCompilationManager::walkTargetModulesThreaded(
     // Recurse on this target's children in a depth first fashion.
 
     if (auto err =
-            walkTargetModulesThreaded(childTarget, childrenModules[childTarget],
+            walkTargetModulesThreaded(childTarget, childrenModules[childTarget], timing,
                                       walkFunc, postChildrenCallbackFunc)) {
       llvm::errs() << err << "\n";
       return mlir::failure();
@@ -92,22 +92,22 @@ llvm::Error ThreadedCompilationManager::walkTargetModulesThreaded(
         "Problems encountered while walking children of target " +
             target->getName());
 
-  if (auto err = postChildrenCallbackFunc(target, targetModuleOp))
+  if (auto err = postChildrenCallbackFunc(target, targetModuleOp, timing))
     return err;
 
   return llvm::Error::success();
 }
 
 llvm::Error ThreadedCompilationManager::walkTargetThreaded(
-    Target *target, const WalkTargetFunction &walkFunc) {
+    Target *target, mlir::TimingScope &timing, const WalkTargetFunction &walkFunc) {
 
-  if (auto err = walkFunc(target))
+  if (auto err = walkFunc(target, timing))
     return err;
 
   auto parallelWalkFunc = [&](Target *childTarget) {
     // Recurse on this target's children in a depth first fashion.
 
-    if (auto err = walkTargetThreaded(childTarget, walkFunc)) {
+    if (auto err = walkTargetThreaded(childTarget, timing, walkFunc)) {
       llvm::errs() << err << "\n";
       return mlir::failure();
     }
@@ -130,8 +130,11 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
 llvm::Error
 ThreadedCompilationManager::buildTargetPassManagers_(Target &target) {
 
+  auto buildPMTiming = getNestedTimingScope("build-target-pass-managers");
+
+
   auto threadedBuildTargetPassManager =
-      [&](hal::Target *target) -> llvm::Error {
+      [&](hal::Target *target, mlir::TimingScope &timing) -> llvm::Error {
     auto &pm = createTargetPassManager_(target);
 
     if (auto err = pmBuilder(pm))
@@ -146,7 +149,7 @@ ThreadedCompilationManager::buildTargetPassManagers_(Target &target) {
   };
 
   auto err =
-      walkTargetThreaded(&getTargetSystem(), threadedBuildTargetPassManager);
+      walkTargetThreaded(&getTargetSystem(), buildPMTiming, threadedBuildTargetPassManager);
   return err;
 }
 
@@ -184,6 +187,8 @@ ThreadedCompilationManager::createTargetPassManager_(Target *target) {
 
 llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
 
+  auto compileMLIRTiming = getNestedTimingScope("compile-mlir");
+
   auto &target = getTargetSystem();
 
   /// Build target pass managers prior to compilation
@@ -192,7 +197,7 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
     return err;
 
   auto threadedCompileMLIRTarget =
-      [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
     if (auto err = compileMLIRTarget_(*target, targetModuleOp))
       return err;
     return llvm::Error::success();
@@ -200,12 +205,12 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
 
   // Placeholder function
   auto postChildrenEmitToPayload =
-      [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
     return llvm::Error::success();
   };
 
   auto err = walkTargetModulesThreaded(
-      &target, moduleOp, threadedCompileMLIRTarget, postChildrenEmitToPayload);
+      &target, moduleOp, compileMLIRTiming, threadedCompileMLIRTarget, postChildrenEmitToPayload);
   return err;
 }
 
@@ -239,6 +244,9 @@ llvm::Error
 ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
                                            qssc::payload::Payload &payload,
                                            bool doCompileMLIR) {
+
+  auto compilePayloadTiming = getNestedTimingScope("compile-payload");
+
   auto &target = getTargetSystem();
 
   /// Build target pass managers prior to compilation
@@ -247,7 +255,7 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
     return err;
 
   auto threadedCompilePayloadTarget =
-      [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
     if (auto err = compilePayloadTarget_(*target, targetModuleOp, payload,
                                          doCompileMLIR))
       return err;
@@ -255,14 +263,14 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
   };
 
   auto postChildrenEmitToPayload =
-      [&](hal::Target *target, mlir::ModuleOp targetModuleOp) -> llvm::Error {
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
     if (auto err = target->emitToPayloadPostChildren(targetModuleOp, payload))
       return err;
     return llvm::Error::success();
   };
 
   auto err =
-      walkTargetModulesThreaded(&target, moduleOp, threadedCompilePayloadTarget,
+      walkTargetModulesThreaded(&target, moduleOp, compilePayloadTiming, threadedCompilePayloadTarget,
                                 postChildrenEmitToPayload);
   return err;
 }

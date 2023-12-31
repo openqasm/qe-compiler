@@ -46,12 +46,12 @@ protected:
   /// Threaded depth first walker for a target system using the current
   /// MLIRContext's threadpool.
   llvm::Error walkTargetThreaded(
-      Target *target,
+      Target *target, mlir::TimingScope &timing,
       const TargetCompilationManager::WalkTargetFunction &walkFunc);
   /// Threaded depth first walker for a target system modules using the current
   /// MLIRContext's threadpool.
   llvm::Error walkTargetModulesThreaded(
-      Target *target, mlir::ModuleOp targetModuleOp,
+      Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing,
       const TargetCompilationManager::WalkTargetModulesFunction &walkFunc,
       const TargetCompilationManager::WalkTargetModulesFunction
           &postChildrenCallbackFunc);
