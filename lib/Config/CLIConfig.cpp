@@ -382,6 +382,9 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   config.useExplicitModuleFlag = clOptionsConfig->useExplicitModuleFlag;
   config.runReproducerFlag = clOptionsConfig->runReproducerFlag;
   config.showDialectsFlag = clOptionsConfig->showDialectsFlag;
+  config.verifyDiagnosticsFlag = clOptionsConfig->verifyDiagnosticsFlag;
+  config.verifyPassesFlag = clOptionsConfig->verifyPassesFlag;
+  config.verifyRoundtripFlag = clOptionsConfig->verifyRoundtripFlag;
   config.splitInputFileFlag = clOptionsConfig->splitInputFileFlag;
   return llvm::Error::success();
 }
