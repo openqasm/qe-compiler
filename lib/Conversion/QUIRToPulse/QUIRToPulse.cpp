@@ -72,6 +72,7 @@ void QUIRToPulsePass::runOnOperation() {
     op->erase();
   }
 
+  // erase quir barriers before erasing the operands
   moduleOp->walk([&](mlir::quir::BarrierOp barrierOp) { barrierOp->erase(); });
 
   // erase the quir circuit operands
@@ -80,6 +81,11 @@ void QUIRToPulsePass::runOnOperation() {
     LLVM_DEBUG(op->dump());
     op->erase();
   }
+
+  // erase the rest of quir.declare_qubits (unused in the input program)
+  moduleOp->walk([&](mlir::quir::DeclareQubitOp declareQubitOp) {
+    declareQubitOp->erase();
+  });
 }
 
 void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
