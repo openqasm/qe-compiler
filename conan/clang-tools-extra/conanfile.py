@@ -46,7 +46,7 @@ class ClangToolsExtraConan(ConanFile):
         cache_hit = os.path.exists(f"{git_cache}/.git")
         cache_arg = f" --reference-if-able '{git_cache}' " if git_cache else ""
 
-        if git_cache and cache_hit():
+        if git_cache and cache_hit:
             self.output.info(f"Cache hit! Some Git objects will be loaded from '{git_cache}'.")
 
         self.run(
@@ -54,7 +54,7 @@ class ClangToolsExtraConan(ConanFile):
             "--single-branch https://github.com/llvm/llvm-project.git"
         )
 
-        if git_cache and not cache_hit():
+        if git_cache and not cache_hit:
             # Update cache.
             self.output.info(f"Updating cache at '{git_cache}'.")
             self.run(f"cp -r llvm-project '{git_cache}'")

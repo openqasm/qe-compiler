@@ -225,7 +225,7 @@ Note that `llvm::outs()` is not thread-safe (since it is buffered) and thus cann
 
 ### Static Code Checks
 The easiest, fastest, and most automated way to integrate the formatting into your workflow
-is via [pre-commit](https://pre-commit.com). Note that this tool requires and internet connection
+is via [pre-commit](https://pre-commit.com). Note that this tool requires an internet connection
 to initially setup because the formatting tools needs to be downloaded.
 
 **In environments without an internet connection, please see one of the other solutions documented

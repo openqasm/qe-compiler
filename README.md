@@ -52,7 +52,7 @@ Building and running the compiler is supported with [WSL](https://learn.microsof
 
 ### Static Code Checks
 The easiest, fastest, and most automated way to integrate the formatting into your workflow
-is via [pre-commit](https://pre-commit.com). Note that this tool requires and internet connection
+is via [pre-commit](https://pre-commit.com). Note that this tool requires an internet connection
 to initially setup because the formatting tools needs to be downloaded. These should be installed
 and setup prior to any development work so that they are not forgotten
 about.
