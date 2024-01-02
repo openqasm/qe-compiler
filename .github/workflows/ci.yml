@@ -20,7 +20,7 @@ jobs:
       - name: free-up-space
         run: |
           df -h
-          sudo rm -rf /usr/share/dotnet   
+          sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
@@ -28,11 +28,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      # -- REMOVE ONCE OPEN SOURCE
-      # Needed until Qiskit/qss-qasm is public.
-      - uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -41,6 +36,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
+      - name: Static checks
+        id: static_checks
+        if: github.event_name == 'pull_request'
+        run: pre-commit run --all-files --show-diff-on-failure
+      - name: Validate releasenotes
+        if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-reno')
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: ./.github/renos_updated.ch
+
       - name: Export QSSC_VERSION from Git version tag
         run: |
           version=`python -c "from setuptools_scm import get_version; print(get_version())"`
@@ -87,6 +92,8 @@ jobs:
         run: conan build .. --test
 
       # On 'pull_request' run Clang tidy
+      # Run last as clang tidy takes significantly longer
+      # than building.
       - name: Clang tidy
         uses: ZedThree/clang-tidy-review@v0.10.0
         id: clang_tidy
@@ -94,14 +101,6 @@ jobs:
         with:
           config_file: '.clang-tidy'
           build_dir: build
-
-      # On 'pull_request' run Clang format and commit the changes
-      - name: Clang format
-        id: clang_format
-        if: github.event_name == 'pull_request'
-        working-directory: build
-        run: ninja check-format
-
       # On 'main' branch, always save the cache if Conan install succeeded.
       # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
       #       cache getting LRU-evicted for every PR, since a single run uses most of the 10GB repo limit.
