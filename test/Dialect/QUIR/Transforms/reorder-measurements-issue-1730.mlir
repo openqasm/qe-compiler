@@ -39,7 +39,7 @@ module {
     %1 = quir.declare_qubit {id = 16 : i32} : !quir.qubit<1>
     %2 = quir.declare_qubit {id = 22 : i32} : !quir.qubit<1>
     %3 = quir.declare_qubit {id = 23 : i32} : !quir.qubit<1>
-    
+
     oq3.variable_assign @p001 : !quir.angle<64> = %angle
 
     // test do not reorder if variable_assign is between measures
@@ -47,24 +47,24 @@ module {
     oq3.variable_assign @p002 : !quir.angle<64> = %angle
     %5 = oq3.variable_load @p002 : !quir.angle<64>
     quir.call_gate @rz(%1, %5) : (!quir.qubit<1>, !quir.angle<64>) -> ()
-    
+
     // CHECK: %4 = quir.measure(%0) : (!quir.qubit<1>) -> i1
     // CHECK: oq3.variable_assign @p002 : !quir.angle<64> = %angle
     // CHECK: %5 = oq3.variable_load @p002 : !quir.angle<64>
     // CHECK: quir.call_gate @rz(%1, %5) : (!quir.qubit<1>, !quir.angle<64>) -> ()
-    
+
     // test re-order if:
-    // variable_assign not in block || 
+    // variable_assign not in block ||
     // variable_assign above measure in block
 
     %6 = quir.measure(%1) : (!quir.qubit<1>) -> i1
     // CHECK-NOT: %6 = quir.measure(%1) : (!quir.qubit<1>) -> i1
-    
+
     %7 = oq3.variable_load @p003 : !quir.angle<64>
     quir.call_gate @rz(%2, %7) : (!quir.qubit<1>, !quir.angle<64>) -> ()
     %8 = oq3.variable_load @p001 : !quir.angle<64>
     quir.call_gate @rz(%3, %8) : (!quir.qubit<1>, !quir.angle<64>) -> ()
-    
+
     // CHECK: %6 = oq3.variable_load @p003 : !quir.angle<64>
     // CHECK: quir.call_gate @rz(%2, %6) : (!quir.qubit<1>, !quir.angle<64>) -> ()
     // CHECK: %7 = oq3.variable_load @p001 : !quir.angle<64>
@@ -72,7 +72,7 @@ module {
     // CHECK: %8 = quir.measure(%1) : (!quir.qubit<1>) -> i1
     %9 = quir.measure(%3) : (!quir.qubit<1>) -> i1
     // CHECK: %9 = quir.measure(%3) : (!quir.qubit<1>) -> i1
-    
+
     return %c0_i32 : i32
   }
 }

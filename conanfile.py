@@ -12,7 +12,6 @@
 import os
 
 from conans import ConanFile, CMake, tools
-from conans.tools import load
 
 
 # Get version from environment variable.
@@ -38,7 +37,6 @@ class QSSCompilerConan(ConanFile):
     exports_sources = "*"
 
     def requirements(self):
-        tool_pkgs = ["llvm", "clang-tools-extra"]
         for req in self.conan_data["requirements"]:
             self.requires(req)
 
@@ -71,13 +69,12 @@ class QSSCompilerConan(ConanFile):
 
         if self.options.pythonlib:
             self.run(
-            f"cd {self.build_folder}/python_lib \
+                f"cd {self.build_folder}/python_lib \
                     && pip install -e .[test]"
             )
 
         if self.should_test:
             self.test(cmake)
-
 
     def package(self):
         cmake = self._configure_cmake()
@@ -85,7 +82,7 @@ class QSSCompilerConan(ConanFile):
 
         if self.options.pythonlib:
             self.run(
-            f"cd {self.build_folder}/python_lib \
+                f"cd {self.build_folder}/python_lib \
                     && pip install .[test]"
             )
 

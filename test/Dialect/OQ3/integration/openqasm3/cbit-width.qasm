@@ -67,6 +67,3 @@ if (assignment1[35] == 1) {
 // CHECK: [[LOADVAR:%.*]] = oq3.variable_load @assignment1_0 : !quir.cbit<32>
 // CHECK: [[LOADBIT:%.*]] = oq3.cbit_extractbit([[LOADVAR]] : !quir.cbit<32>) [0] : i1
 // CHECK: oq3.cbit_assign_bit @assignment1_1<4> [3] : i1 = [[LOADBIT]]
-
-
-

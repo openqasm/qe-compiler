@@ -279,14 +279,12 @@ void ConvertDurationUnitsPass::runOnOperation() {
 
   target.addDynamicallyLegalOp<quir::CircuitOp, mlir::FuncOp>(
       [&](mlir::FunctionOpInterface op) {
-        for (auto type : op.getArgumentTypes()) {
+        for (auto type : op.getArgumentTypes())
           if (checkTypeNeedsConversion(type, targetConvertUnits))
             return false;
-        }
-        for (auto type : op.getResultTypes()) {
+        for (auto type : op.getResultTypes())
           if (checkTypeNeedsConversion(type, targetConvertUnits))
             return false;
-        }
 
         return true;
       });
@@ -297,14 +295,12 @@ void ConvertDurationUnitsPass::runOnOperation() {
       .addDynamicallyLegalOp<quir::DelayOp, quir::ReturnOp, quir::CallCircuitOp,
                              mlir::ReturnOp, mlir::CallOp>(
           [&](mlir::Operation *op) {
-            for (auto type : op->getOperandTypes()) {
+            for (auto type : op->getOperandTypes())
               if (checkTypeNeedsConversion(type, targetConvertUnits))
                 return false;
-            }
-            for (auto type : op->getResultTypes()) {
+            for (auto type : op->getResultTypes())
               if (checkTypeNeedsConversion(type, targetConvertUnits))
                 return false;
-            }
             return true;
           });
 

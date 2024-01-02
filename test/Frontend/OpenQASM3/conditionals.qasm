@@ -21,14 +21,14 @@ OPENQASM 3.0;
 // MLIR-CIRCUITS: %angle_0 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
 // MLIR-CIRCUITS: %angle_1 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
 // MLIR-CIRCUITS: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
-// MLIR-CIRCUITS: quir.return 
+// MLIR-CIRCUITS: quir.return
 
 // MLIR-CIRCUITS: quir.circuit @circuit_2(%arg0: !quir.qubit<1>) {
 // MLIR-CIRCUITS: %angle = quir.constant #quir.angle<3.1415926000000001 : !quir.angle<64>>
 // MLIR-CIRCUITS: %angle_0 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
 // MLIR-CIRCUITS: %angle_1 = quir.constant #quir.angle<3.1415926000000001 : !quir.angle<64>>
 // MLIR-CIRCUITS: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
-// MLIR-CIRCUITS: quir.return 
+// MLIR-CIRCUITS: quir.return
 
 // AST-PRETTY: DeclarationNode(type=ASTTypeQubitContainer, QubitContainerNode(QubitNode(name=$0:0, bits=1)))
 qubit $0;

@@ -9,16 +9,11 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-from typing import Generator
 from conans.errors import ConanInvalidConfiguration
 from conans import ConanFile, CMake, tools
 
-from collections import defaultdict
-import json
-import re
 import os.path
 import os
-import shutil
 
 LLVM_TAG = "llvmorg-14.0.6"
 
@@ -48,16 +43,15 @@ class ClangToolsExtraConan(ConanFile):
 
     def source(self):
         git_cache = os.environ.get("CONAN_LLVM_GIT_CACHE")
-        cache_hit = lambda: os.path.exists(f"{git_cache}/.git")
+        cache_hit = os.path.exists(f"{git_cache}/.git")
         cache_arg = f" --reference-if-able '{git_cache}' " if git_cache else ""
 
         if git_cache and cache_hit():
-            self.output.info(
-                f"Cache hit! Some Git objects will be loaded from '{git_cache}'."
-            )
+            self.output.info(f"Cache hit! Some Git objects will be loaded from '{git_cache}'.")
 
         self.run(
-            f"git clone {cache_arg} -b {LLVM_TAG} --single-branch https://github.com/llvm/llvm-project.git"
+            f"git clone {cache_arg} -b {LLVM_TAG} "
+            "--single-branch https://github.com/llvm/llvm-project.git"
         )
 
         if git_cache and not cache_hit():
@@ -72,7 +66,7 @@ class ClangToolsExtraConan(ConanFile):
     def _supports_compiler(self):
         compiler = self.settings.compiler.value
         version = tools.Version(self.settings.compiler.version)
-        major_rev, minor_rev = int(version.major), int(version.minor)
+        major_rev, _ = int(version.major), int(version.minor)
 
         unsupported_combinations = [
             [compiler == "gcc", major_rev < 8],
@@ -95,9 +89,7 @@ class ClangToolsExtraConan(ConanFile):
 
         cmake.definitions["LLVM_TARGET_ARCH"] = "host"
         cmake.definitions["LLVM_TARGETS_TO_BUILD"] = ""
-        cmake.definitions["LLVM_ENABLE_PIC"] = self.options.get_safe(
-            "fPIC", default=False
-        )
+        cmake.definitions["LLVM_ENABLE_PIC"] = self.options.get_safe("fPIC", default=False)
 
         cmake.definitions["LLVM_ABI_BREAKING_CHECKS"] = "WITH_ASSERTS"
         cmake.definitions["LLVM_ENABLE_WARNINGS"] = True

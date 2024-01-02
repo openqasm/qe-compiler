@@ -39,7 +39,7 @@ while (n != 0) {
     if (n == 2) {
         // MLIR-NO-CIRCUITS: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
         // MLIR-NO-CIRCUITS: %cst = constant unit
-        // MLIR-CIRCUITS: quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> () 
+        // MLIR-CIRCUITS: quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> ()
         // MLIR: %c1_i32 = arith.constant 1 : i32
         // MLIR: oq3.variable_assign @n : i32 = %c1_i32
         h $0;

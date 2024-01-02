@@ -236,7 +236,7 @@ about. The setup is straight forward:
 
 ```bash
 pip install pre-commit
-pre-commit install --hook-type post-checkout --hook-type pre-commit
+pre-commit install
 ```
 
 The first time `pre-commit install` is run, it will take a minute to setup the environment.

@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --enable-circuits=true --reorder-circuits %s | FileCheck %s 
+// RUN: qss-compiler -X=mlir --enable-circuits=true --reorder-circuits %s | FileCheck %s
 
 //
 // This code is part of Qiskit.

@@ -17,7 +17,7 @@ OPENQASM 3;
 // This test case validates that input and output modifiers for variables are
 // parsed correctly and are reflected in generated QUIR.
 
-// TODO: putting resets in circuits has been disabled. The XX-tests 
+// TODO: putting resets in circuits has been disabled. The XX-tests
 // are the correct tests if it is re-enabled. The CHECK-XX should be removed
 // in that case
 
@@ -54,8 +54,8 @@ c = measure $0;
 // CHECK: quir.circuit @circuit_0(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) {
 // XX-CHECK-NEXT: quir.reset %arg0 : !quir.qubit<1>
 // CHECK-NEXT: quir.call_gate @sx(%arg0) : (!quir.qubit<1>) -> ()
-// CHECK: quir.return 
-// CHECK-NEXT: } 
+// CHECK: quir.return
+// CHECK-NEXT: }
 
 // CHECK: quir.circuit @circuit_1(%arg0: !quir.qubit<1>) -> i1 {
 // CHECK-NEXT: %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1

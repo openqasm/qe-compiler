@@ -61,7 +61,7 @@ The setup is straight forward:
 
 ```bash
 pip install pre-commit
-pre-commit install --hook-type post-checkout --hook-type pre-commit
+pre-commit install
 ```
 
 For more details on usage see the [contribution guide][CONTRIBUTION.md#static-code-checks].

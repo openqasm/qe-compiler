@@ -332,13 +332,12 @@ static void print(CircuitOp op, OpAsmPrinter &p) {
 static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
   auto fnInputTypes = op.getType().getInputs();
   Block &entryBlock = op.front();
-  for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i) {
+  for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i)
     if (fnInputTypes[i] != entryBlock.getArgument(i).getType())
       return op.emitOpError("type of entry block argument #")
              << i << '(' << entryBlock.getArgument(i).getType()
              << ") must match the type of the corresponding argument in "
              << "function signature(" << fnInputTypes[i] << ')';
-  }
   return success();
 }
 
@@ -662,11 +661,10 @@ static LogicalResult verify(quir::YieldOp op) {
   if (parentOp->getNumResults() != op.getNumOperands())
     return op.emitOpError() << "parent of yield must have same number of "
                                "results as the yield operands";
-  for (auto it : llvm::zip(results, operands)) {
+  for (auto it : llvm::zip(results, operands))
     if (std::get<0>(it).getType() != std::get<1>(it).getType())
       return op.emitOpError()
              << "types mismatch between yield op and its parent";
-  }
 
   return success();
 }

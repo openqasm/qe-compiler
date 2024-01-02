@@ -28,7 +28,7 @@ OPENQASM 3.0;
 // MLIR-CIRCUITS: [[ANGLE_2_2:%.*]] = quir.constant #quir.angle<1.100000e+00 : !quir.angle<64>>
 // MLIR-CIRCUITS: [[ANGLE_2_3:%.*]] = quir.constant #quir.angle<1.250000e+00 : !quir.angle<64>>
 // MLIR-CIRCUITS: quir.builtin_U [[ARG0]], [[ANGLE_2_1]], [[ANGLE_2_2]], [[ANGLE_2_3]]
-// MLIR-CIRCUITS: quir.return 
+// MLIR-CIRCUITS: quir.return
 
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 :
 qubit $0;

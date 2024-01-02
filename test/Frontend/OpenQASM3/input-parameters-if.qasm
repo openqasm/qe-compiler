@@ -22,7 +22,7 @@ bit is_excited;
 bit other;
 bit result;
 
-gate x q { } 
+gate x q { }
 gate rz(phi) q { }
 
 input angle theta = 3.141;

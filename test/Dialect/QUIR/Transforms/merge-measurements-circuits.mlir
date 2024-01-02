@@ -30,4 +30,3 @@ func @main() -> i32 {
   return %c0_i32 : i32
 }
 }
-

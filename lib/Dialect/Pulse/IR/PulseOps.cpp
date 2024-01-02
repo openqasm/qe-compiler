@@ -221,13 +221,12 @@ static void print(SequenceOp op, OpAsmPrinter &p) {
 static LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
   auto fnInputTypes = op.getType().getInputs();
   Block &entryBlock = op.front();
-  for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i) {
+  for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i)
     if (fnInputTypes[i] != entryBlock.getArgument(i).getType())
       return op.emitOpError("type of entry block argument #")
              << i << '(' << entryBlock.getArgument(i).getType()
              << ") must match the type of the corresponding argument in "
              << "function signature(" << fnInputTypes[i] << ')';
-  }
   return success();
 }
 

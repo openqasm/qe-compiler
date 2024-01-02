@@ -14,4 +14,6 @@
 #
 # ===----------------------------------------------------------------------===//
 
+# flake8: noqa
+
 config.substitutions.append(("%TEST_CFG", lit_config.params["TEST_CFG"]))
