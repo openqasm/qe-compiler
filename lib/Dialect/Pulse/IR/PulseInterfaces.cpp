@@ -69,6 +69,14 @@ interfaces_impl::getDuration(Operation *op, Operation *callSequenceOp) {
       "Operation does not have a pulse.duration attribute.");
 }
 
+llvm::Expected<mlir::ArrayAttr> interfaces_impl::getPorts(mlir::Operation *op) {
+  if (op->hasAttrOfType<ArrayAttr>("pulse.argPorts"))
+    return op->getAttrOfType<ArrayAttr>("pulse.argPorts");
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Operation does not have a pulse.argPorts attribute.");
+}
+
 void interfaces_impl::setDuration(Operation *op, uint64_t duration) {
   mlir::OpBuilder builder(op);
   op->setAttr("pulse.duration", builder.getI64IntegerAttr(duration));

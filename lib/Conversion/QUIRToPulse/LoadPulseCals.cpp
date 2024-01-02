@@ -253,7 +253,6 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
 void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
                                       CallCircuitOp callCircuitOp,
                                       FuncOp funcOp) {
-
   OpBuilder builder(funcOp.body());
 
   std::vector<Value> qubitOperands;
@@ -264,7 +263,7 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::DelayOp delayOp,
   delayOp->setAttr("pulse.calName", builder.getStringAttr(gateMangledName));
   if (pulseCalsNameToSequenceMap.find(gateMangledName) !=
       pulseCalsNameToSequenceMap.end()) {
-    // found a pulse calibration for the barrier gate
+    // found a pulse calibration for the delay gate
     addPulseCalToModule(funcOp, pulseCalsNameToSequenceMap[gateMangledName]);
     return;
   }
