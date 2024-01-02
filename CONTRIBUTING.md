@@ -88,7 +88,7 @@ workflow for writing and compiling release notes.
 
 Making a new release note is quite straightforward.
 
-- Ensure that you have renoinstalled with:
+- Ensure that you have reno installed with:
     ```bash
     pip install -U reno
     ```
