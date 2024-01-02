@@ -21,23 +21,43 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/RemoveQubitOperands.h"
+
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
+#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+
 #include "llvm/ADT/BitVector.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
 
 using namespace mlir;
 using namespace mlir::quir;
 
 auto RemoveQubitOperandsPass::lookupQubitId(const Value val) -> int {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
-  if (declOp)
-    return declOp.id().getValue();
-
+  if (declOp) {
+    auto id = declOp.getId();
+    if (!id.has_value()) {
+      declOp->emitOpError() << "Qubit declaration does not have id";
+      signalPassFailure();
+      return -1;
+    }
+    return id.value();
+  }
   // Must be an argument to a function
   // see if we can find an attribute with the info
   if (auto blockArg = val.dyn_cast<BlockArgument>()) {
-    unsigned argIdx = blockArg.getArgNumber();
-    auto funcOp = dyn_cast<FuncOp>(blockArg.getOwner()->getParentOp());
+    unsigned const argIdx = blockArg.getArgNumber();
+    auto funcOp =
+        dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
     if (funcOp) {
       auto argAttr = funcOp.getArgAttrOfType<IntegerAttr>(
           argIdx, quir::getPhysicalIdAttrName());
@@ -59,13 +79,13 @@ auto RemoveQubitOperandsPass::lookupQubitId(const Value val) -> int {
   return -1;
 } // lookupQubitId
 
-void RemoveQubitOperandsPass::addQubitDeclarations(FuncOp funcOp) {
+void RemoveQubitOperandsPass::addQubitDeclarations(mlir::func::FuncOp funcOp) {
   // build inside the func def body
-  OpBuilder build(funcOp.getBody());
+  OpBuilder build = OpBuilder::atBlockBegin(&funcOp.getBody().front());
 
   for (auto arg : funcOp.getArguments()) {
     if (arg.getType().isa<QubitType>()) {
-      int qId = lookupQubitId(arg);
+      int const qId = lookupQubitId(arg);
       if (qId < 0) {
         funcOp->emitOpError()
             << "Subroutine function argument does not specify physicalId, run "
@@ -75,7 +95,7 @@ void RemoveQubitOperandsPass::addQubitDeclarations(FuncOp funcOp) {
       auto newDeclOp = build.create<DeclareQubitOp>(
           funcOp->getLoc(), build.getType<QubitType>(1),
           build.getI32IntegerAttr(qId));
-      arg.replaceAllUsesWith(newDeclOp.res());
+      arg.replaceAllUsesWith(newDeclOp.getRes());
     }
   }
 } // addQubitDeclarations
@@ -88,8 +108,8 @@ void RemoveQubitOperandsPass::processCallOp(Operation *op) {
 
   // look for func def match
   Operation *findOp =
-      SymbolTable::lookupSymbolIn(moduleOperation, callOp.callee());
-  auto funcOp = dyn_cast<FuncOp>(findOp);
+      SymbolTable::lookupSymbolIn(moduleOperation, callOp.getCallee());
+  auto funcOp = dyn_cast<mlir::func::FuncOp>(findOp);
 
   if (!qIndicesBV.empty()) // some qubit args
     callOp->eraseOperands(qIndicesBV);

@@ -17,6 +17,16 @@ set (CXX_FLAGS
     -fno-omit-frame-pointer
     -Werror
 )
+
+option(DETECT_TARGET_TRIPLE "Automatically detect the target triple for clang" ON)
+if (DETECT_TARGET_TRIPLE)
+execute_process (
+    COMMAND bash -c "llvm-config --host-target | tr -d '\n'"
+    OUTPUT_VARIABLE LLVM_TARGET_TRIPLE
+)
+list(APPEND CXX_FLAGS "-target ${LLVM_TARGET_TRIPLE}")
+endif()
+
 list (JOIN CXX_FLAGS " " CXX_FLAGS_STR)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS_STR}")
 

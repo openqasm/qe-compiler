@@ -27,9 +27,9 @@ bit c1;
 qubit[8] $0;
 
 // MLIR: quir.switch %{{.*}}{
-// MLIR-NO-CIRCUITS:     %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR-NO-CIRCUITS:     %angle_0 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR-NO-CIRCUITS:     %angle_1 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS:     %angle = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// MLIR-NO-CIRCUITS:     %angle_0 = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// MLIR-NO-CIRCUITS:     %angle_1 = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
 // MLIR-NO-CIRCUITS:     quir.builtin_U %{{.*}}, %angle, %angle_0, %angle_1 : !quir.qubit<8>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS:     quir.call_circuit @circuit_0(%{{.*}}) : (!quir.qubit<8>) -> ()
 // MLIR: }[1 : {
@@ -40,9 +40,9 @@ qubit[8] $0;
 // MLIR:     %{{.*}} = "oq3.cast"(%{{.*}}) : (i32) -> f64
 // MLIR:     oq3.variable_assign @d : f64 = %{{.*}}
 // MLIR: }3 : {
-// MLIR-NO-CIRCUITS:     %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR-NO-CIRCUITS:     %angle_0 = quir.constant #quir.angle<1.000000e-01 : !quir.angle<64>>
-// MLIR-NO-CIRCUITS:     %angle_1 = quir.constant #quir.angle<2.000000e-01 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS:     %angle = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// MLIR-NO-CIRCUITS:     %angle_0 = quir.constant #quir.angle<1.000000e-01> : !quir.angle<64>
+// MLIR-NO-CIRCUITS:     %angle_1 = quir.constant #quir.angle<2.000000e-01> : !quir.angle<64>
 // MLIR-NO-CIRCUITS:     quir.builtin_U %{{.*}}, %angle, %angle_0, %angle_1 : !quir.qubit<8>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS:     quir.call_circuit @circuit_1(%{{.*}}) : (!quir.qubit<8>) -> ()
 // MLIR: }]

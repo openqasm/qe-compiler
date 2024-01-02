@@ -15,21 +15,137 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/IR/PulseOps.h"
-#include "Dialect/Pulse/IR/PulseDialect.h"
 
+#include "Dialect/Pulse/IR/PulseTraits.h"
+#include "Dialect/QUIR/IR/QUIROps.h"
+
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Complex/IR/Complex.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Block.h"
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinTypeInterfaces.h"
 #include "mlir/IR/FunctionImplementation.h"
+#include "mlir/IR/IRMapping.h"
+#include "mlir/IR/Location.h"
 #include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
-#include "mlir/Interfaces/CallInterfaces.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
+
 #include "llvm/ADT/MapVector.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/Support/Error.h"
+
+#include <cassert>
+#include <cstdint>
+#include <optional>
+#include <string>
+#include <utility>
 
 namespace mlir::pulse {
+
+//===----------------------------------------------------------------------===//
+// Waveform Ops
+//===----------------------------------------------------------------------===//
+
+mlir::LogicalResult GaussianOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).getDur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+    return emitOpError("duration must be >= 0.");
+  return success();
+}
+
+mlir::LogicalResult GaussianSquareOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).getDur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+    return emitOpError("duration must be >= 0.");
+  return success();
+}
+
+mlir::LogicalResult DragOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).getDur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+    return emitOpError("duration must be >= 0.");
+  return success();
+}
+
+mlir::LogicalResult ConstOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).getDur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+    return emitOpError("duration must be >= 0.");
+  return success();
+}
+
+//===----------------------------------------------------------------------===//
+// Waveform Ops
+//===----------------------------------------------------------------------===//
+
+mlir::LogicalResult SetFrequencyOp::verify() {
+  if (!(*this).getTarget().isa<BlockArgument>())
+    return emitOpError("Target is not a block argument; Target needs to be an "
+                       "argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult ShiftFrequencyOp::verify() {
+  if (!(*this).getTarget().isa<BlockArgument>())
+    return emitOpError("Target is not a block argument; Target needs to be an "
+                       "argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult SetPhaseOp::verify() {
+  if (!(*this).getTarget().isa<BlockArgument>())
+    return emitOpError("Target is not a block argument; Target needs to be an "
+                       "argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult ShiftPhaseOp::verify() {
+  if (!(*this).getTarget().isa<BlockArgument>())
+    return emitOpError("Target is not a block argument; Target needs to be an "
+                       "argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult SetAmplitudeOp::verify() {
+  if (!(*this).getTarget().isa<BlockArgument>())
+    return emitOpError("Target is not a block argument; Target needs to be an "
+                       "argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult CaptureOp::verify() {
+  if (!(*this).getTarget().isa<BlockArgument>())
+    return emitOpError("Target is not a block argument; Target needs to be an "
+                       "argument of pulse.sequence");
+  return success();
+}
+
+mlir::LogicalResult DelayOp::verify() {
+  auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
+      (*this).getDur().getDefiningOp());
+  if (durDeclOp && durDeclOp.value() < 0)
+    return emitOpError("duration must be >= 0.");
+
+  if (!(*this).getTarget().isa<BlockArgument>())
+    return emitOpError("Target is not a block argument; Target needs to be an "
+                       "argument of pulse.sequence");
+
+  return success();
+}
 
 //===----------------------------------------------------------------------===//
 // Waveform_CreateOp
@@ -37,7 +153,7 @@ namespace mlir::pulse {
 
 llvm::Expected<uint64_t>
 Waveform_CreateOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
-  auto shape = (*this).samples().getType().getShape();
+  auto shape = (*this).getSamples().getType().getShape();
   if (shape[0] < 0)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "duration must be >= 0.");
@@ -45,25 +161,25 @@ Waveform_CreateOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
 }
 
 /// Verifier for pulse.waveform operation.
-static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
+mlir::LogicalResult Waveform_CreateOp::verify() {
   // Check that samples has two dimensions: outer is the number of
   // samples, inner is complex numbers with two elements [real, imag]
-  auto attrType = op.samples().getType().cast<mlir::ShapedType>();
+  auto attrType = getSamples().getType().cast<mlir::ShapedType>();
   auto attrShape = attrType.getShape();
   if (attrShape.size() != 2) {
-    return op.emitOpError() << ", which declares a sample waveform, must be "
-                               "composed of a two dimensional tensor.";
+    return emitOpError() << ", which declares a sample waveform, must be "
+                            "composed of a two dimensional tensor.";
   }
   if (attrShape[1] != 2) {
-    return op.emitOpError()
+    return emitOpError()
            << ", which declares a sample waveform, must have inner dimension "
               "two corresponding to complex elements of the form [real, imag].";
   }
 
   // Check duration
-  auto durOrError = op.getDuration(nullptr /*callSequenceOp*/);
+  auto durOrError = getDuration(nullptr /*callSequenceOp*/);
   if (auto err = durOrError.takeError())
-    return op.emitOpError(toString(std::move(err)));
+    return emitOpError(toString(std::move(err)));
 
   return mlir::success();
 }
@@ -79,9 +195,9 @@ static auto verify(Waveform_CreateOp &op) -> mlir::LogicalResult {
 //===----------------------------------------------------------------------===//
 
 /// Verifier for pulse.waveform_container operation.
-static auto verify(WaveformContainerOp &wfrContainerOp) -> mlir::LogicalResult {
+LogicalResult WaveformContainerOp::verify() {
 
-  for (Block &block : wfrContainerOp.body().getBlocks()) {
+  for (Block &block : getBody().getBlocks()) {
     for (Operation &op : block.getOperations()) {
       // Check that all the operations in the body of the waveform_container are
       // of type Waveform_CreateOp
@@ -129,7 +245,7 @@ CallSequenceOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
                          << "' does not reference a valid sequence";
 
   // Verify the types match
-  auto sequenceType = sequence.getType();
+  auto sequenceType = sequence.getFunctionType();
 
   if (sequenceType.getNumInputs() != getNumOperands())
     return emitOpError("incorrect number of operands for the callee sequence");
@@ -201,25 +317,29 @@ SequenceOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
       "Operation does not have a pulse.duration attribute.");
 }
 
-static ParseResult parseSequenceOp(OpAsmParser &parser,
-                                   OperationState &result) {
-  auto buildSequenceType =
+mlir::ParseResult SequenceOp::parse(mlir::OpAsmParser &parser,
+                                    mlir::OperationState &result) {
+  auto buildFuncType =
       [](Builder &builder, ArrayRef<Type> argTypes, ArrayRef<Type> results,
          function_interface_impl::VariadicFlag,
          std::string &) { return builder.getFunctionType(argTypes, results); };
+
   return function_interface_impl::parseFunctionOp(
-      parser, result, /*allowVariadic=*/false, buildSequenceType);
+      parser, result, /*allowVariadic=*/false,
+      getFunctionTypeAttrName(result.name), buildFuncType,
+      getArgAttrsAttrName(result.name), getResAttrsAttrName(result.name));
 }
 
-static void print(SequenceOp op, OpAsmPrinter &p) {
-  FunctionType fnType = op.getType();
+void SequenceOp::print(mlir::OpAsmPrinter &printer) {
   function_interface_impl::printFunctionOp(
-      p, op, fnType.getInputs(), /*isVariadic=*/false, fnType.getResults());
+      printer, *this, /*isVariadic=*/false, getFunctionTypeAttrName(),
+      getArgAttrsAttrName(), getResAttrsAttrName());
 }
 
+namespace {
 /// Verify the argument list and entry block are in agreement.
-static LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
-  auto fnInputTypes = op.getType().getInputs();
+LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
+  auto fnInputTypes = op.getFunctionType().getInputs();
   Block &entryBlock = op.front();
   for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i)
     if (fnInputTypes[i] != entryBlock.getArgument(i).getType())
@@ -232,13 +352,12 @@ static LogicalResult verifyArgumentAndEntry_(SequenceOp op) {
 
 /// Verify that no classical values are created/used in the sequence outside of
 /// values that originate as argument values or the result of a measurement.
-static LogicalResult verifyClassical_(SequenceOp op) {
+LogicalResult verifyClassical_(SequenceOp op) {
   mlir::Operation *classicalOp = nullptr;
-  WalkResult result = op->walk([&](Operation *subOp) {
-    if (isa<mlir::ConstantOp>(subOp) || isa<mlir::arith::ConstantOp>(subOp) ||
-        isa<quir::ConstantOp>(subOp) || isa<CallSequenceOp>(subOp) ||
-        isa<pulse::ReturnOp>(subOp) || isa<SequenceOp>(subOp) ||
-        isa<mlir::complex::CreateOp>(subOp) ||
+  WalkResult const result = op->walk([&](Operation *subOp) {
+    if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
+        isa<CallSequenceOp>(subOp) || isa<pulse::ReturnOp>(subOp) ||
+        isa<SequenceOp>(subOp) || isa<mlir::complex::CreateOp>(subOp) ||
         subOp->hasTrait<mlir::pulse::SequenceAllowed>() ||
         subOp->hasTrait<mlir::pulse::SequenceRequired>())
       return WalkResult::advance();
@@ -251,24 +370,65 @@ static LogicalResult verifyClassical_(SequenceOp op) {
            << "is not valid within a real-time pulse sequence.";
   return success();
 }
+} // anonymous namespace
 
-static LogicalResult verify(SequenceOp op) {
+LogicalResult SequenceOp::verify() {
   // If external will be linked in later and nothing to do
-  if (op.isExternal())
+  if (isExternal())
     return success();
 
-  if (failed(verifyArgumentAndEntry_(op)))
+  if (failed(verifyArgumentAndEntry_(*this)))
     return mlir::failure();
 
-  if (failed(verifyClassical_(op)))
+  if (failed(verifyClassical_(*this)))
     return mlir::failure();
 
   return success();
 }
 
+SequenceOp SequenceOp::create(Location location, StringRef name,
+                              FunctionType type,
+                              ArrayRef<NamedAttribute> attrs) {
+  OpBuilder builder(location->getContext());
+  OperationState state(location, getOperationName());
+  SequenceOp::build(builder, state, name, type, attrs);
+  return cast<SequenceOp>(Operation::create(state));
+}
+SequenceOp SequenceOp::create(Location location, StringRef name,
+                              FunctionType type,
+                              Operation::dialect_attr_range attrs) {
+  SmallVector<NamedAttribute, 8> const attrRef(attrs);
+  return create(location, name, type, attrRef);
+}
+SequenceOp SequenceOp::create(Location location, StringRef name,
+                              FunctionType type, ArrayRef<NamedAttribute> attrs,
+                              ArrayRef<DictionaryAttr> argAttrs) {
+  SequenceOp circ = create(location, name, type, attrs);
+  circ.setAllArgAttrs(argAttrs);
+  return circ;
+}
+
+void SequenceOp::build(OpBuilder &builder, OperationState &state,
+                       StringRef name, FunctionType type,
+                       ArrayRef<NamedAttribute> attrs,
+                       ArrayRef<DictionaryAttr> argAttrs) {
+  state.addAttribute(SymbolTable::getSymbolAttrName(),
+                     builder.getStringAttr(name));
+  state.addAttribute(getFunctionTypeAttrName(state.name), TypeAttr::get(type));
+  state.attributes.append(attrs.begin(), attrs.end());
+  state.addRegion();
+
+  if (argAttrs.empty())
+    return;
+  assert(type.getNumInputs() == argAttrs.size());
+  function_interface_impl::addArgAndResultAttrs(
+      builder, state, argAttrs, /*resultAttrs=*/std::nullopt,
+      getArgAttrsAttrName(state.name), getResAttrsAttrName(state.name));
+}
+
 /// Clone the internal blocks and attributes from this sequence to the
 /// destination sequence.
-void SequenceOp::cloneInto(SequenceOp dest, BlockAndValueMapping &mapper) {
+void SequenceOp::cloneInto(SequenceOp dest, IRMapping &mapper) {
   // Add the attributes of this function to dest.
   llvm::MapVector<StringAttr, Attribute> newAttrMap;
   for (const auto &attr : dest->getAttrs())
@@ -291,13 +451,13 @@ void SequenceOp::cloneInto(SequenceOp dest, BlockAndValueMapping &mapper) {
 /// Using the provider mapper. Replace references to
 /// cloned sub-values with the corresponding copied value and
 /// add to the mapper
-SequenceOp SequenceOp::clone(BlockAndValueMapping &mapper) {
-  FunctionType newType = getType();
+SequenceOp SequenceOp::clone(IRMapping &mapper) {
+  FunctionType newType = getFunctionType();
 
   // If the function contains a body, then its possible arguments
   // may be deleted in the mapper. Verify this so they aren't
   // added to the input type vector.
-  bool isExternalSequence = isExternal();
+  bool const isExternalSequence = isExternal();
   if (!isExternalSequence) {
     SmallVector<Type, 4> inputTypes;
     inputTypes.reserve(newType.getNumInputs());
@@ -317,7 +477,7 @@ SequenceOp SequenceOp::clone(BlockAndValueMapping &mapper) {
 }
 
 SequenceOp SequenceOp::clone() {
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
   return clone(mapper);
 }
 
@@ -333,14 +493,14 @@ SequenceOp SequenceOp::clone() {
 //
 //===----------------------------------------------------------------------===//
 
-static LogicalResult verify(ReturnOp op) {
-  auto sequence = op->getParentOfType<SequenceOp>();
-  FunctionType sequenceType = sequence.getType();
+LogicalResult ReturnOp::verify() {
+  auto sequence = (*this)->getParentOfType<SequenceOp>();
+  FunctionType const sequenceType = sequence.getFunctionType();
 
   auto numResults = sequenceType.getNumResults();
   // Verify number of operands match type signature
-  if (numResults != op.operands().size()) {
-    return op.emitError()
+  if (numResults != getOperands().size()) {
+    return emitError()
         .append("expected ", numResults, " result operands")
         .attachNote(sequence.getLoc())
         .append("return type declared here");
@@ -348,11 +508,11 @@ static LogicalResult verify(ReturnOp op) {
 
   int i = 0;
   for (const auto [type, operand] :
-       llvm::zip(sequenceType.getResults(), op.operands())) {
+       llvm::zip(sequenceType.getResults(), getOperands())) {
     auto opType = operand.getType();
     if (type != opType) {
-      return op.emitOpError()
-             << "unexpected type `" << opType << "' for operand #" << i;
+      return emitOpError() << "unexpected type `" << opType << "' for operand #"
+                           << i;
     }
     i++;
   }
@@ -388,8 +548,8 @@ PlayOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
   // check if wfr is of type Waveform_CreateOp; this is the case if wfrOp is
   // defined in the same block as playOp e.g., if both are defined inside a
   // sequenceOp
-  if (auto castOp =
-          dyn_cast_or_null<Waveform_CreateOp>((*this).wfr().getDefiningOp())) {
+  if (auto castOp = dyn_cast_or_null<Waveform_CreateOp>(
+          (*this).getWfr().getDefiningOp())) {
     llvm::Expected<uint64_t> durOrError =
         castOp.getDuration(nullptr /*callSequenceOp*/);
     if (auto err = durOrError.takeError())
@@ -398,7 +558,7 @@ PlayOp::getDuration(mlir::Operation *callSequenceOp = nullptr) {
     return durOrError.get();
   }
 
-  auto argIndex = (*this).wfr().cast<BlockArgument>().getArgNumber();
+  auto argIndex = (*this).getWfr().cast<BlockArgument>().getArgNumber();
   auto *argOp = callOp->getOperand(argIndex).getDefiningOp();
   auto wfrOp = dyn_cast_or_null<Waveform_CreateOp>(argOp);
   if (wfrOp) {
@@ -419,14 +579,15 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
 
   Operation *wfrOp;
   Operation *targetOp;
-  wfrOp = dyn_cast_or_null<Waveform_CreateOp>(wfr().getDefiningOp());
-  targetOp = dyn_cast_or_null<MixFrameOp>(target().getDefiningOp());
+  wfrOp = dyn_cast_or_null<Waveform_CreateOp>(getWfr().getDefiningOp());
+  targetOp = dyn_cast_or_null<MixFrameOp>(getTarget().getDefiningOp());
 
   if (!wfrOp && !targetOp) {
-    auto wfrArgIndex = wfr().dyn_cast<BlockArgument>().getArgNumber();
+    auto wfrArgIndex = getWfr().dyn_cast<BlockArgument>().getArgNumber();
     wfrOp = callOp.getOperand(wfrArgIndex)
                 .getDefiningOp<mlir::pulse::Waveform_CreateOp>();
-    auto mixFrameArgIndex = target().dyn_cast<BlockArgument>().getArgNumber();
+    auto mixFrameArgIndex =
+        getTarget().dyn_cast<BlockArgument>().getArgNumber();
     targetOp = callOp.getOperand(mixFrameArgIndex)
                    .getDefiningOp<mlir::pulse::MixFrameOp>();
   }
@@ -440,6 +601,13 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
   return llvm::createStringError(
       llvm::inconvertibleErrorCode(),
       "Failed to hash waveform name from play operation");
+}
+
+mlir::LogicalResult PlayOp::verify() {
+  if (!(*this).getTarget().isa<BlockArgument>())
+    return emitOpError("Target is not a block argument; Target needs to be an "
+                       "argument of pulse.sequence");
+  return success();
 }
 
 //===----------------------------------------------------------------------===//
@@ -456,4 +624,5 @@ llvm::Expected<std::string> PlayOp::getWaveformHash(CallSequenceOp callOp) {
 } // namespace mlir::pulse
 
 #define GET_OP_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/Pulse/IR/Pulse.cpp.inc"

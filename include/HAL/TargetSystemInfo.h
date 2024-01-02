@@ -42,7 +42,7 @@ public:
   /// Create the target system and register it under the given context.
   llvm::Expected<qssc::hal::TargetSystem *>
   createTarget(mlir::MLIRContext *context,
-               llvm::Optional<PluginInfo::PluginConfiguration> configuration);
+               std::optional<PluginInfo::PluginConfiguration> configuration);
 
   /// Get the target system registered for the given context. First checks for
   /// a target registered exactly for the given context. If no such context is

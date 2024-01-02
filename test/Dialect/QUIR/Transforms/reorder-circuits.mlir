@@ -20,7 +20,7 @@ module {
     quir.return %0: i1
 
   }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     %false = arith.constant false
     %0 = memref.get_global @a : memref<i1>
     %1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>

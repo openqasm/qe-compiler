@@ -17,7 +17,7 @@
 #ifndef QUIR_DIALECT
 #define QUIR_DIALECT
 
-include "mlir/Interfaces/CallInterfaces.td"
+include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/OpBase.td"
 
 //===----------------------------------------------------------------------===//
@@ -34,11 +34,13 @@ def QUIRDialect : Dialect {
     let dependentDialects = [
         "mlir::oq3::OQ3Dialect",
         "mlir::qcs::QCSDialect",
-        "mlir::arith::ArithmeticDialect",
+        "mlir::arith::ArithDialect",
         "mlir::scf::SCFDialect",
         "mlir::LLVM::LLVMDialect"
     ];
     let hasConstantMaterializer = 1;
+    let useDefaultAttributePrinterParser = 1;
+    let useDefaultTypePrinterParser = 1;
 }
 
 //===----------------------------------------------------------------------===//

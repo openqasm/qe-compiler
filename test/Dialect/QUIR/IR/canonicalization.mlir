@@ -13,8 +13,8 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// CHECK: func @t1
-func @t1 (%arg1 : !quir.cbit<1>) -> (!quir.cbit<1>) {
+// CHECK: func.func @t1
+func.func @t1 (%arg1 : !quir.cbit<1>) -> (!quir.cbit<1>) {
 // CHECK: oq3.cbit_not %{{.*}} : !quir.cbit<1>
 // CHECK-NOT: oq3.cbit_not %{{.*}} : !quir.cbit<1>
     %c2 = oq3.cbit_not %arg1 : !quir.cbit<1>
@@ -23,8 +23,8 @@ func @t1 (%arg1 : !quir.cbit<1>) -> (!quir.cbit<1>) {
     return %c4 : !quir.cbit<1>
 }
 
-// CHECK: func @t2
-func @t2 (%arg1 : !quir.cbit<1>) -> (!quir.cbit<1>) {
+// CHECK: func.func @t2
+func.func @t2 (%arg1 : !quir.cbit<1>) -> (!quir.cbit<1>) {
 // CHECK-NOT: oq3.cbit_not %{{.*}} : !quir.cbit<1>
 // CHECK-NOT: oq3.cbit_not %{{.*}} : !quir.cbit<1>
     %c2 = oq3.cbit_not %arg1 : !quir.cbit<1>
@@ -32,8 +32,8 @@ func @t2 (%arg1 : !quir.cbit<1>) -> (!quir.cbit<1>) {
     return %c3 : !quir.cbit<1>
 }
 
-// CHECK: func @t7
-func @t7 (%arg0 : i32, %arg1 : f32) -> (i32, f32) {
+// CHECK: func.func @t7
+func.func @t7 (%arg0 : i32, %arg1 : f32) -> (i32, f32) {
     %r1 = "oq3.cast"(%arg0) : (i32) -> i32
     %r2 = "oq3.cast"(%arg1) : (f32) -> f32
     // CHECK: return %arg0, %arg1 : i32, f32

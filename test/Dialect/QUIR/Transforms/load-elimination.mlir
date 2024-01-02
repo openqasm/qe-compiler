@@ -25,7 +25,7 @@ module {
 
   // REMOVE-UNUSED-NOT: oq3.declare_variable @a
 
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     %c1 = arith.constant 1 : index
 
     // CHECK: [[CONST17_I32:%.*]] = arith.constant 17 : i32

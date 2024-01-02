@@ -21,8 +21,8 @@ oq3.declare_variable @isUsed : !quir.cbit<1>
 oq3.declare_variable {output} @isOutput : !quir.cbit<1>
 oq3.declare_variable @storeOnly : !quir.cbit<1>
 oq3.declare_variable @notUsed : !quir.cbit<1>
-// UNUSED: func @variableTests
-func @variableTests(%ref : memref<1xi1>, %ind : index) {
+// UNUSED: func.func @variableTests
+func.func @variableTests(%ref : memref<1xi1>, %ind : index) {
     %false = arith.constant false
     %false_cbit = "oq3.cast"(%false) : (i1) -> !quir.cbit<1>
 

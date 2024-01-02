@@ -29,12 +29,12 @@ module {
   oq3.declare_variable {input} @p001 : !quir.angle<64>
   oq3.declare_variable {input} @p002 : !quir.angle<64>
   oq3.declare_variable {input} @p003 : !quir.angle<64>
-  func @rz(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) attributes {quir.classicalOnly = false} {
+  func.func @rz(%arg0: !quir.qubit<1>, %arg1: !quir.angle<64>) attributes {quir.classicalOnly = false} {
     return
   }
-  func @main() -> i32 attributes {quir.classicalOnly = false} {
+  func.func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
-    %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
+    %angle = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
     %0 = quir.declare_qubit {id = 12 : i32} : !quir.qubit<1>
     %1 = quir.declare_qubit {id = 16 : i32} : !quir.qubit<1>
     %2 = quir.declare_qubit {id = 22 : i32} : !quir.qubit<1>

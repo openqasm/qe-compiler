@@ -23,6 +23,13 @@
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+
+#include <algorithm>
+#include <vector>
 
 using namespace mlir::quir;
 

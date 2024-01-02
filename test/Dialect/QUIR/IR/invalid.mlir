@@ -15,7 +15,7 @@
 
 // -----
 
-func @call_circuit_no_matching_cicuit(){
+func.func @call_circuit_no_matching_cicuit(){
 	quir.circuit @circuit_1() {
 		quir.return
 	}
@@ -31,7 +31,7 @@ quir.circuit @circuit_1(%arg1: !quir.angle<32>) {
 	quir.return
 }
 
-func @call_circuit_call_does_not_match_operands(){
+func.func @call_circuit_call_does_not_match_getOperands(){
 	// expected-error@+1 {{'quir.call_circuit' op incorrect number of operands for the callee circuit}}
 	quir.call_circuit @circuit_1 () : () -> ()
 	return
@@ -39,12 +39,13 @@ func @call_circuit_call_does_not_match_operands(){
 
 // -----
 
+// expected-note@below {{return type declared here}}
 quir.circuit @circuit_1() -> i1 {
+	// expected-error@below {{expected 1 result operands}}
 	quir.return
 }
 
-func @call_circuit_call_does_not_match_results(){
-	// expected-error@+1 {{'quir.call_circuit' op incorrect number of results for the callee circuit}}
+func.func @call_circuit_call_does_not_match_results(){
 	quir.call_circuit @circuit_1 () : () -> ()
 	return
 }
@@ -55,7 +56,7 @@ quir.circuit @circuit_1(%arg1: !quir.angle<16>) {
 	quir.return
 }
 
-func @call_circuit_call_operand_types_do_not_match(%arg1: i1){
+func.func @call_circuit_call_operand_types_do_not_match(%arg1: i1){
 	// expected-error@below {{'quir.call_circuit' op operand type mismatch at index 0}}
 	// expected-note@below {{op input types: 'i1'}}
 	// expected-note@below {{function operand types: '!quir.angle<16>'}}
@@ -65,14 +66,13 @@ func @call_circuit_call_operand_types_do_not_match(%arg1: i1){
 
 // -----
 
+// expected-note@below {{return type declared here}}
 quir.circuit @circuit_1() -> i32 {
+	// expected-error@below {{expected 1 result operands}}
 	quir.return
 }
 
-func @call_circuit_call_result_types_do_not_match() {
-	// expected-error@below {{'quir.call_circuit' op result type mismatch at index 0}}
-	// expected-note@below {{op result types: 'i1'}}
-	// expected-note@below {{function result types: 'i32'}}
+func.func @call_circuit_call_result_types_do_not_match() {
 	quir.call_circuit @circuit_1 () : () -> (i1)
 	return
 }

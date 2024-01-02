@@ -43,12 +43,17 @@ protected:
   TargetCompilationManager(hal::TargetSystem &target,
                            mlir::MLIRContext *context);
 
-  using WalkTargetFunction =
+  using WalkTargetModulesFunction =
       std::function<llvm::Error(hal::Target *, mlir::ModuleOp)>;
+  using WalkTargetFunction = std::function<llvm::Error(hal::Target *)>;
+
   // Depth first walker for a target system
-  llvm::Error walkTarget(Target *target, mlir::ModuleOp targetModuleOp,
-                         const WalkTargetFunction &walkFunc,
-                         const WalkTargetFunction &postChildrenCallbackFunc);
+  llvm::Error walkTarget(Target *target, const WalkTargetFunction &walkFunc);
+  // Depth first walker for a target system modules
+  llvm::Error
+  walkTargetModules(Target *target, mlir::ModuleOp targetModuleOp,
+                    const WalkTargetModulesFunction &walkFunc,
+                    const WalkTargetModulesFunction &postChildrenCallbackFunc);
 
 public:
   virtual ~TargetCompilationManager() = default;
@@ -91,8 +96,9 @@ protected:
     return printAfterTargetCompileFailure;
   }
 
-  void printIR(llvm::StringRef msg, mlir::Operation *op,
-               llvm::raw_ostream &out);
+  /// Thread-safe implementation
+  virtual void printIR(llvm::StringRef msg, mlir::Operation *op,
+                       llvm::raw_ostream &out);
 
 private:
   hal::TargetSystem &target;

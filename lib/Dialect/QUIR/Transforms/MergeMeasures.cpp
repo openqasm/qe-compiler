@@ -21,15 +21,28 @@
 
 #include "Dialect/QUIR/Transforms/MergeMeasures.h"
 
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/TypeRange.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/StringRef.h"
+
 #include <algorithm>
+#include <iterator>
+#include <optional>
+#include <set>
+#include <sys/types.h>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -50,19 +63,20 @@ static void mergeMeasurements(PatternRewriter &rewriter, MeasureOp measureOp,
                  measureOp.result_type_end());
   typeVec.insert(typeVec.end(), nextMeasureOp.result_type_begin(),
                  nextMeasureOp.result_type_end());
-  valVec.insert(valVec.end(), measureOp.qubits().begin(),
-                measureOp.qubits().end());
-  valVec.insert(valVec.end(), nextMeasureOp.qubits().begin(),
-                nextMeasureOp.qubits().end());
+  valVec.insert(valVec.end(), measureOp.getQubits().begin(),
+                measureOp.getQubits().end());
+  valVec.insert(valVec.end(), nextMeasureOp.getQubits().begin(),
+                nextMeasureOp.getQubits().end());
 
   auto mergedOp = rewriter.create<MeasureOp>(
       measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
 
   // dice the output so we can specify which results to replace
-  auto iterSep = mergedOp.outs().begin() + measureOp.getNumResults();
-  rewriter.replaceOp(measureOp, ResultRange(mergedOp.outs().begin(), iterSep));
+  auto iterSep = mergedOp.getOuts().begin() + measureOp.getNumResults();
+  rewriter.replaceOp(measureOp,
+                     ResultRange(mergedOp.getOuts().begin(), iterSep));
   rewriter.replaceOp(nextMeasureOp,
-                     ResultRange(iterSep, mergedOp.outs().end()));
+                     ResultRange(iterSep, mergedOp.getOuts().end()));
 }
 
 struct MeasureAndMeasureLexographicalPattern
@@ -72,7 +86,7 @@ struct MeasureAndMeasureLexographicalPattern
 
   LogicalResult matchAndRewrite(MeasureOp measureOp,
                                 PatternRewriter &rewriter) const override {
-    llvm::Optional<Operation *> nextQuantumOp = nextQuantumOpOrNull(measureOp);
+    std::optional<Operation *> nextQuantumOp = nextQuantumOpOrNull(measureOp);
     if (!nextQuantumOp)
       return failure();
 
@@ -83,14 +97,14 @@ struct MeasureAndMeasureLexographicalPattern
     // found a measure and a measure, now make sure they aren't working on the
     // same qubit and that we can resolve them both
     std::unordered_set<uint> measureIds;
-    for (auto qubit : measureOp.qubits()) {
-      llvm::Optional<uint> id = lookupQubitId(qubit);
+    for (auto qubit : measureOp.getQubits()) {
+      std::optional<uint> id = lookupQubitId(qubit);
       if (!id)
         return failure();
       measureIds.emplace(*id);
     }
-    for (auto qubit : nextMeasureOp.qubits()) {
-      llvm::Optional<uint> id = lookupQubitId(qubit);
+    for (auto qubit : nextMeasureOp.getQubits()) {
+      std::optional<uint> id = lookupQubitId(qubit);
       if (!id || measureIds.count(*id))
         return failure();
     }
@@ -143,7 +157,7 @@ struct MeasureAndMeasureTopologicalPattern
     // topological path if it exists
     auto [nextMeasureOpt, observedQubits] =
         QubitOpInterface::getNextQubitOpOfTypeWithQubits<MeasureOp>(measureOp);
-    if (!nextMeasureOpt.hasValue())
+    if (!nextMeasureOpt.has_value())
       return failure();
 
     // If any qubit along path touches the same qubits we cannot merge the next
@@ -152,7 +166,7 @@ struct MeasureAndMeasureTopologicalPattern
 
     // found a measure and a measure, now make sure they aren't working on the
     // same qubit and that we can resolve them both
-    MeasureOp nextMeasureOp = nextMeasureOpt.getValue();
+    MeasureOp nextMeasureOp = nextMeasureOpt.value();
     auto nextMeasureQubits = nextMeasureOp.getOperatedQubits();
 
     // If there is an intersection we cannot merge

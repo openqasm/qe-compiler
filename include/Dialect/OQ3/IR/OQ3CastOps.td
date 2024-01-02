@@ -15,7 +15,7 @@
 #ifndef OQ3_CAST_OPS
 #define OQ3_CAST_OPS
 
-def OQ3_CastOp : OQ3_Op<"cast", [NoSideEffect]> {
+def OQ3_CastOp : OQ3_Op<"cast", [Pure]> {
     let summary = "Cast between classical types";
     let description = [{
         The `oq3.cast` operation represents a cast between different classical types, including non-OQ3 types.

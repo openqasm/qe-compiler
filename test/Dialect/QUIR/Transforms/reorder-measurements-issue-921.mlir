@@ -30,7 +30,7 @@
 module {
   oq3.declare_variable @a : !quir.cbit<1>
   oq3.declare_variable @b : !quir.cbit<1>
-  func @main() -> i32 attributes {quir.classicalOnly = false} {
+  func.func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
     %c1_i32 = arith.constant 1 : i32
     qcs.shot_init {qcs.num_shots = 1000 : i32}

@@ -91,49 +91,49 @@ template <class CallOpTy>
 void qubitArgIndices(CallOpTy &callOp, llvm::BitVector &vec);
 
 /// Lookup a qubit id from a value.
-llvm::Optional<uint> lookupQubitId(const Value &val);
+std::optional<uint> lookupQubitId(const Value &val);
 
 /// Get the next Op that has the CPTPOp or UnitaryOp trait, or return null if
 /// none found
 // TODO: Should be replaced by an analysis compatable struct.
-llvm::Optional<Operation *> nextQuantumOpOrNull(Operation *op);
+std::optional<Operation *> nextQuantumOpOrNull(Operation *op);
 
 /// \brief Get the next Op that has the CPTPOp or UnitaryOp trait, return it if
 /// it is of type OpType, otherwise return null
 // TODO: Should be replaced by an analysis compatable struct.
 template <class OpType>
-llvm::Optional<OpType> nextQuantumOpOrNullOfType(Operation *op) {
+std::optional<OpType> nextQuantumOpOrNullOfType(Operation *op) {
   auto nextOperation = nextQuantumOpOrNull(op);
   if (nextOperation && isa<OpType>(*nextOperation))
     return dyn_cast<OpType>(*nextOperation);
-  return llvm::None;
+  return std::nullopt;
 }
 
 /// Get the previous Op that has the CPTPOp or UnitaryOp trait, or return null
 /// if none found
 // TODO: Should be replaced by an analysis compatable struct.
-llvm::Optional<Operation *> prevQuantumOpOrNull(Operation *op);
+std::optional<Operation *> prevQuantumOpOrNull(Operation *op);
 
 /// \brief Get the previous Op that has the CPTPOp or UnitaryOp trait, return
 /// it if it is of type OpType, otherwise return null
 // TODO: Should be replaced by an analysis compatable struct.
 template <class OpType>
-llvm::Optional<OpType> prevQuantumOpOrNullOfType(Operation *op) {
+std::optional<OpType> prevQuantumOpOrNullOfType(Operation *op) {
   auto prevOperation = prevQuantumOpOrNull(op);
   if (prevOperation && isa<OpType>(*prevOperation))
     return dyn_cast<OpType>(*prevOperation);
-  return llvm::None;
+  return std::nullopt;
 }
 
 /// Get the next Op that has the CPTPOp or UnitaryOp trait, or is control flow
 /// (has the RegionBranchOpInterface::Trait), or return null if none found
 // TODO: Should be replaced by an analysis compatable struct.
-llvm::Optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op);
+std::optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op);
 
 /// Get the previous Op that has the CPTPOp or UnitaryOp trait, or is control
 /// flow (has the RegionBranchOpInterface::Trait), or return null if none found
 // TODO: Should be replaced by an analysis compatable struct.
-llvm::Optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op);
+std::optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op);
 
 /// \brief Check if the operation is a quantum operation
 bool isQuantumOp(Operation *op);

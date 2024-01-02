@@ -20,19 +20,31 @@
 
 #include "FunctionLocalization.h"
 
-#include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/Dialect/SCF/SCF.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Block.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/Pass/Pass.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Region.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LLVM.h"
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <list>
+#include <memory>
+#include <string>
+#include <sys/types.h>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -54,14 +66,14 @@ void SymbolTableBuildPass::runOnOperation() {
   LLVM_DEBUG(llvm::dbgs() << "\nRunning symbol table build on "
                           << moduleOp.getName() << "\n");
 
-  OpBuilder b(moduleOp);
+  OpBuilder const b(moduleOp);
 
   // very specifically do not `walk` the region, we only want top-level FuncOps
   for (Region &region : moduleOp.getOperation()->getRegions()) {
     for (Block &block : region.getBlocks()) {
       for (Operation &op : block.getOperations()) {
-        if (auto funcOp = dyn_cast<FuncOp>(op)) {
-          std::string fName =
+        if (auto funcOp = dyn_cast<mlir::func::FuncOp>(op)) {
+          std::string const fName =
               SymbolRefAttr::get(funcOp).getLeafReference().str();
           auto origNameAttr =
               op.getAttrOfType<StringAttr>("quir.orig_func_name");
@@ -81,7 +93,7 @@ void SymbolTableBuildPass::runOnOperation() {
                                                 : funcMap) {
     llvm::dbgs() << myPair.first << " " << myPair.second.size() << " :\t";
     for (auto *op : myPair.second) {
-      auto funcOp = dyn_cast<FuncOp>(op);
+      auto funcOp = dyn_cast<mlir::func::FuncOp>(op);
       llvm::dbgs() << funcOp.getName() << " ";
     }
     llvm::dbgs() << "\n";
@@ -91,14 +103,22 @@ void SymbolTableBuildPass::runOnOperation() {
 
 auto MockFunctionLocalizationPass::lookupQubitId(const Value val) -> int {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
-  if (declOp)
-    return declOp.id().getValue();
+  if (declOp) {
+    auto id = declOp.getId();
+    if (!id.has_value()) {
+      declOp->emitOpError() << "Qubit declaration does not have id";
+      signalPassFailure();
+      return -1;
+    }
+    return id.value();
+  }
 
   // Must be an argument to a function
   // see if we can find an attribute with the info
   if (auto blockArg = val.dyn_cast<BlockArgument>()) {
-    unsigned argIdx = blockArg.getArgNumber();
-    auto funcOp = dyn_cast<FuncOp>(blockArg.getOwner()->getParentOp());
+    unsigned const argIdx = blockArg.getArgNumber();
+    auto funcOp =
+        dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
     if (funcOp) {
       auto argAttr =
           funcOp.getArgAttrOfType<IntegerAttr>(argIdx, "quir.physicalId");
@@ -123,9 +143,9 @@ auto MockFunctionLocalizationPass::lookupQubitId(const Value val) -> int {
 template <class CallOpTy>
 auto MockFunctionLocalizationPass::getCallArgIndex(CallOpTy &callOp) -> int {
   int callArgIndex = -1;
-  for (uint ii = 0; ii < callOp.operands().size(); ++ii) {
-    if (callOp.operands()[ii].getType().template isa<QubitType>()) {
-      int qId = lookupQubitId(callOp.operands()[ii]);
+  for (uint ii = 0; ii < callOp.getOperands().size(); ++ii) {
+    if (callOp.getOperands()[ii].getType().template isa<QubitType>()) {
+      int const qId = lookupQubitId(callOp.getOperands()[ii]);
       if (qId == theseIds[0]) {
         callArgIndex = ii;
         break;
@@ -140,7 +160,7 @@ auto MockFunctionLocalizationPass::getMatchedOp(CallOpTy &callOp,
                                                 int callArgIndex,
                                                 int thisIdIndex)
     -> Operation * {
-  std::string calleeName = callOp.callee().str();
+  std::string const calleeName = callOp.getCallee().str();
   FunctionType cType = callOp.getCalleeType();
 
   Operation *matchedOp = nullptr;
@@ -151,8 +171,8 @@ auto MockFunctionLocalizationPass::getMatchedOp(CallOpTy &callOp,
   // list, however, we should probably do something more intelligent here
   // with some sort of ranking system
   for (auto *op : funcMap[calleeName]) {
-    auto funcOp = dyn_cast<FuncOp>(op);
-    FunctionType fType = funcOp.getType();
+    auto funcOp = dyn_cast<mlir::func::FuncOp>(op);
+    FunctionType fType = funcOp.getFunctionType();
     if (quirFunctionTypeMatch(fType, cType)) { // types match
       auto argIdAttr =
           funcOp.getArgAttrOfType<IntegerAttr>(callArgIndex, "quir.physicalId");
@@ -169,10 +189,10 @@ auto MockFunctionLocalizationPass::getMatchedOp(CallOpTy &callOp,
 template <class CallOpTy>
 auto MockFunctionLocalizationPass::getMangledName(CallOpTy &callOp)
     -> std::string {
-  std::string newName = callOp.callee().str();
-  for (uint ii = 0; ii < callOp.operands().size(); ++ii) {
-    if (callOp.operands()[ii].getType().template isa<QubitType>()) {
-      int qId = lookupQubitId(callOp.operands()[ii]);
+  std::string newName = callOp.getCallee().str();
+  for (uint ii = 0; ii < callOp.getOperands().size(); ++ii) {
+    if (callOp.getOperands()[ii].getType().template isa<QubitType>()) {
+      int const qId = lookupQubitId(callOp.getOperands()[ii]);
       newName += "_q" + std::to_string(qId);
     }
   }
@@ -185,21 +205,21 @@ void MockFunctionLocalizationPass::cloneMatchedOp(CallOpTy &callOp,
                                                   Operation *&clonedOp,
                                                   Operation *matchedOp) {
   // first check if the op has already been copied into this module!
-  auto matchedFuncOp = dyn_cast<FuncOp>(matchedOp);
-  std::string matchedFuncName =
+  auto matchedFuncOp = dyn_cast<mlir::func::FuncOp>(matchedOp);
+  std::string const matchedFuncName =
       SymbolRefAttr::get(matchedFuncOp).getLeafReference().str();
   if (auto *lookedUpOp = SymbolTable::lookupSymbolIn(
           moduleOperation, llvm::StringRef(newName))) {
     clonedOp = lookedUpOp;
   } else { // copy the func def to this module
     clonedOp = builder->clone(*matchedOp);
-    auto newFuncOp = dyn_cast<FuncOp>(clonedOp);
+    auto newFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
     newFuncOp->setAttr(SymbolTable::getSymbolAttrName(),
                        StringAttr::get(newFuncOp.getContext(), newName));
-    for (uint ii = 0; ii < callOp.operands().size(); ++ii) {
-      if (callOp.operands()[ii].getType().template isa<QubitType>()) {
-        int qId =
-            lookupQubitId(callOp.operands()[ii]); // copy qubitId from call
+    for (uint ii = 0; ii < callOp.getOperands().size(); ++ii) {
+      if (callOp.getOperands()[ii].getType().template isa<QubitType>()) {
+        int const qId =
+            lookupQubitId(callOp.getOperands()[ii]); // copy qubitId from call
         newFuncOp.setArgAttrs(
             ii, ArrayRef({NamedAttribute(
                     StringAttr::get(newFuncOp.getContext(), "quir.physicalId"),
@@ -225,7 +245,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
   // insert just before main func def
   builder = std::make_shared<OpBuilder>(mainFunc);
 
-  llvm::StringRef nodeType =
+  llvm::StringRef const nodeType =
       moduleOp->getAttrOfType<StringAttr>("quir.nodeType").getValue();
   if (nodeType == "controller")
     return;
@@ -238,7 +258,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
   if (thisIdAttr)
     theseIds.push_back(thisIdAttr.getInt());
   if (theseIdsAttr) {
-    for (Attribute valAttr : theseIdsAttr) {
+    for (Attribute const valAttr : theseIdsAttr) {
       auto intAttr = valAttr.dyn_cast<IntegerAttr>();
       theseIds.push_back(intAttr.getInt());
     }
@@ -256,7 +276,7 @@ void MockFunctionLocalizationPass::runOnOperation() {
   toWalk.push_back(mainFunc);
 
   auto walkSubroutineCalls = [&](CallSubroutineOp callOp) {
-    std::string calleeName = callOp.callee().str();
+    std::string const calleeName = callOp.getCallee().str();
     FunctionType cType = callOp.getCalleeType();
 
     Operation *matchedOp =
@@ -266,8 +286,8 @@ void MockFunctionLocalizationPass::runOnOperation() {
                  << "Unable to find func def for " << calleeName << "\n");
       return;
     }
-    auto matchedFuncOp = dyn_cast<FuncOp>(matchedOp);
-    FunctionType fType = matchedFuncOp.getType();
+    auto matchedFuncOp = dyn_cast<mlir::func::FuncOp>(matchedOp);
+    FunctionType fType = matchedFuncOp.getFunctionType();
     if (!quirFunctionTypeMatch(fType, cType)) {
       LLVM_DEBUG(llvm::dbgs() << "The signatures for " << calleeName
                               << " and it's func def don't match!\n");
@@ -276,18 +296,18 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // specialize the function name for this application of the call
     Operation *clonedOp = nullptr;
-    std::string newName = getMangledName<CallSubroutineOp>(callOp);
+    std::string const newName = getMangledName<CallSubroutineOp>(callOp);
     cloneMatchedOp<CallSubroutineOp>(callOp, newName, clonedOp, matchedOp);
 
     // now update the callee of the callop
-    auto clonedFuncOp = dyn_cast<FuncOp>(clonedOp);
-    callOp.calleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
+    callOp.setCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkSubroutineCalls
 
   auto walkGateCalls = [&](CallGateOp callOp) {
-    std::string calleeName = callOp.callee().str();
+    std::string const calleeName = callOp.getCallee().str();
 
-    int callArgIndex = getCallArgIndex<CallGateOp>(callOp);
+    int const callArgIndex = getCallArgIndex<CallGateOp>(callOp);
     if (callArgIndex ==
         -1) { // This call does not interface with this qubit module
       callOp.getOperation()->erase();
@@ -303,18 +323,18 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // specialize the function name for this application of the call
     Operation *clonedOp = nullptr;
-    std::string newName = getMangledName<CallGateOp>(callOp);
+    std::string const newName = getMangledName<CallGateOp>(callOp);
     cloneMatchedOp<CallGateOp>(callOp, newName, clonedOp, matchedOp);
 
     // now update the callee of the callop
-    auto clonedFuncOp = dyn_cast<FuncOp>(clonedOp);
-    callOp.calleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
+    callOp.setCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkGateCalls
 
   auto walkDefcalGateCalls = [&](CallDefCalGateOp callOp) {
-    std::string calleeName = callOp.callee().str();
+    std::string const calleeName = callOp.getCallee().str();
 
-    int callArgIndex = getCallArgIndex<CallDefCalGateOp>(callOp);
+    int const callArgIndex = getCallArgIndex<CallDefCalGateOp>(callOp);
     if (callArgIndex == -1) {
       // This call does not interface with this qubit module
       callOp.getOperation()->erase();
@@ -331,18 +351,18 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // specialize the function name for this application of the call
     Operation *clonedOp = nullptr;
-    std::string newName = getMangledName<CallDefCalGateOp>(callOp);
+    std::string const newName = getMangledName<CallDefCalGateOp>(callOp);
     cloneMatchedOp<CallDefCalGateOp>(callOp, newName, clonedOp, matchedOp);
 
     // now update the callee of the callop
-    auto clonedFuncOp = dyn_cast<FuncOp>(clonedOp);
-    callOp.calleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
+    callOp.setCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkDefcalGateCalls
 
   auto walkDefcalMeasureCalls = [&](CallDefcalMeasureOp callOp) {
-    std::string calleeName = callOp.callee().str();
+    std::string const calleeName = callOp.getCallee().str();
 
-    int qId = lookupQubitId(callOp.operands()[0]);
+    int const qId = lookupQubitId(callOp.getOperands()[0]);
     int thisIdIndex = -1;
     for (uint ii = 0; ii < theseIds.size(); ++ii) {
       if (qId == theseIds[ii]) {
@@ -365,19 +385,19 @@ void MockFunctionLocalizationPass::runOnOperation() {
 
     // found a match
     // specialize the function name for this application of the call
-    std::string newName = calleeName + "_q" + std::to_string(qId);
+    std::string const newName = calleeName + "_q" + std::to_string(qId);
 
     // first check if the op has already been copied into this module!
-    auto matchedFuncOp = dyn_cast<FuncOp>(matchedOp);
+    auto matchedFuncOp = dyn_cast<mlir::func::FuncOp>(matchedOp);
     Operation *clonedOp = nullptr;
-    std::string matchedFuncName =
+    std::string const matchedFuncName =
         SymbolRefAttr::get(matchedFuncOp).getLeafReference().str();
     if (auto *lookedUpOp =
             SymbolTable::lookupSymbolIn(moduleOp, llvm::StringRef(newName))) {
       clonedOp = lookedUpOp;
     } else { // copy the func def to this module
       clonedOp = builder->clone(*matchedOp);
-      auto newFuncOp = dyn_cast<FuncOp>(clonedOp);
+      auto newFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
       newFuncOp->setAttr(SymbolTable::getSymbolAttrName(),
                          StringAttr::get(newFuncOp.getContext(), newName));
       newFuncOp.setArgAttrs(
@@ -389,8 +409,8 @@ void MockFunctionLocalizationPass::runOnOperation() {
     } // else copy the func def to this module
 
     // now update the callee of the callop
-    auto clonedFuncOp = dyn_cast<FuncOp>(clonedOp);
-    callOp.calleeAttr(SymbolRefAttr::get(clonedFuncOp));
+    auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedOp);
+    callOp.setCalleeAttr(SymbolRefAttr::get(clonedFuncOp));
   }; // walkDefcalMeasureCalls
 
   // first walk all subroutine calls
@@ -407,11 +427,11 @@ void MockFunctionLocalizationPass::runOnOperation() {
     std::unordered_set<std::string> subroutineCalls;
     // Find all subroutine calls
     moduleOp->walk([&](CallSubroutineOp callOp) {
-      subroutineCalls.emplace(callOp.callee().str());
+      subroutineCalls.emplace(callOp.getCallee().str());
     });
 
-    moduleOp->walk([&](FuncOp funcOp) {
-      llvm::StringRef funcName =
+    moduleOp->walk([&](mlir::func::FuncOp funcOp) {
+      llvm::StringRef const funcName =
           SymbolRefAttr::get(funcOp.getOperation()).getLeafReference();
       if (subroutineCalls.count(funcName.str()) == 0 && funcName != "main") {
         funcOp.getOperation()->erase();

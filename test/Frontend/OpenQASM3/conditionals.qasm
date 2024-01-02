@@ -17,16 +17,16 @@ OPENQASM 3.0;
 // that they have been altered from the originals.
 
 // MLIR-CIRCUITS: quir.circuit @circuit_1(%arg0: !quir.qubit<1>) {
-// MLIR-CIRCUITS: %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR-CIRCUITS: %angle_0 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR-CIRCUITS: %angle_1 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
+// MLIR-CIRCUITS: %angle = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// MLIR-CIRCUITS: %angle_0 = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// MLIR-CIRCUITS: %angle_1 = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
 // MLIR-CIRCUITS: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.return
 
 // MLIR-CIRCUITS: quir.circuit @circuit_2(%arg0: !quir.qubit<1>) {
-// MLIR-CIRCUITS: %angle = quir.constant #quir.angle<3.1415926000000001 : !quir.angle<64>>
-// MLIR-CIRCUITS: %angle_0 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR-CIRCUITS: %angle_1 = quir.constant #quir.angle<3.1415926000000001 : !quir.angle<64>>
+// MLIR-CIRCUITS: %angle = quir.constant #quir.angle<3.1415926000000001> : !quir.angle<64>
+// MLIR-CIRCUITS: %angle_0 = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// MLIR-CIRCUITS: %angle_1 = quir.constant #quir.angle<3.1415926000000001> : !quir.angle<64>
 // MLIR-CIRCUITS: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.return
 
@@ -46,9 +46,9 @@ bool b = false;
 // MLIR: {{.*}} = arith.cmpi ne, {{.*}}, %true : i1
 // MLIR: scf.if {{.*}} {
 if (!b) {
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
     // MLIR-CIRCUITS: quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> ()
     U(0, 0, 0) $0;
 }
@@ -58,9 +58,9 @@ if (!b) {
 // AST-PRETTY: )
 // MLIR: } else {
 else {
-    //MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926000000001 : !quir.angle<64>>
-    //MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-    //MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926000000001 : !quir.angle<64>>
+    //MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926000000001> : !quir.angle<64>
+    //MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+    //MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926000000001> : !quir.angle<64>
     // MLIR-CIRCUITS: quir.call_circuit @circuit_2(%0) : (!quir.qubit<1>) -> ()
     U(3.1415926, 0, 3.1415926) $0;
 }

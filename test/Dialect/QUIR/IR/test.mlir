@@ -14,15 +14,15 @@
 // that they have been altered from the originals.
 
 module {
-    func private @proto (%qa1 : !quir.qubit<1>) -> ()
-    // CHECK-LABEL: func @gateCall1
-    func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
-        %zero = quir.constant #quir.angle<0.0 : !quir.angle<1>>
+    func.func private @proto (%qa1 : !quir.qubit<1>) -> ()
+    // CHECK-LABEL: func.func @gateCall1
+    func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) -> () {
+        %zero = quir.constant #quir.angle<0.0> : !quir.angle<1>
         // CHECK: quir.builtin_U %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         return
     }
-    func @subroutine1(%q1 : !quir.qubit<1>, %phi : !quir.angle, %ub : index) {
+    func.func @subroutine1(%q1 : !quir.qubit<1>, %phi : !quir.angle, %ub : index) {
         %lb = arith.constant 0 : index
         %step = arith.constant 1 : index
         scf.for %iv = %lb to %ub step %step {
@@ -38,8 +38,8 @@ module {
         }
         return
     }
-    // CHECK-LABEL: func @bar()
-    func @bar() {
+    // CHECK-LABEL: func.func @bar()
+    func.func @bar() {
         // CHECK: qcs.init
         qcs.init
         // CHECK: qcs.finalize
@@ -49,14 +49,14 @@ module {
         %0 = arith.constant 1 : i32
         %val = arith.constant 1 : i1
         // quir.constant canonical form example with angle attribute
-        // CHECK: %angle{{.*}} = quir.constant #quir.angle<1.000000e+00 : !quir.angle<10>>
-        %angle1 = "quir.constant"() {"value" = #quir.angle<1.0 : !quir.angle<10>>} : () -> (!quir.angle<10>)
-        // CHECK: %angle{{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<10>>
-        %angle2 = quir.constant #quir.angle<0.0 : !quir.angle<10>>
-        // CHECK: %angle{{.*}} = quir.constant #quir.angle<1.000000e+01 : !quir.angle>
-        %angle3 = quir.constant #quir.angle<10.0 : !quir.angle>
-        // CHECK: %angle{{.*}} = quir.constant #quir.angle<3.141591 : !quir.angle<20>>
-        %angle4 = quir.constant #quir.angle<3.141591 : !quir.angle<20>>
+        // CHECK: %angle{{.*}} = quir.constant #quir.angle<1.000000e+00> : !quir.angle<10>
+        %angle1 = "quir.constant"() {"value" = #quir.angle<1.0> : !quir.angle<10>} : () -> (!quir.angle<10>)
+        // CHECK: %angle{{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<10>
+        %angle2 = quir.constant #quir.angle<0.0> : !quir.angle<10>
+        // CHECK: %angle{{.*}} = quir.constant #quir.angle<1.000000e+01> : !quir.angle
+        %angle3 = quir.constant #quir.angle<10.0> : !quir.angle
+        // CHECK: %angle{{.*}} = quir.constant #quir.angle<3.141591> : !quir.angle<20>
+        %angle4 = quir.constant #quir.angle<3.141591> : !quir.angle<20>
         // arbitrary constants can also be produced
         // CHECK: %qcst{{.*}} = quir.constant 2 : i16
         %qcst = quir.constant 2 : i16
@@ -68,8 +68,8 @@ module {
         quir.reset %qc1 : !quir.qubit<1>
         // CHECK: quir.builtin_CX %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.qubit<1>
         quir.builtin_CX %qa1, %qb1 : !quir.qubit<1>, !quir.qubit<1>
-        // CHECK: %{{.*}} = quir.constant #quir.angle<1.000000e-01 : !quir.angle<1>>
-        %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
+        // CHECK: %{{.*}} = quir.constant #quir.angle<1.000000e-01> : !quir.angle<1>
+        %theta = quir.constant #quir.angle<0.1> : !quir.angle<1>
         // CHECK: quir.builtin_U %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         quir.builtin_U %qb1, %theta, %theta, %theta : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         // CHECK: quir.call_gate @gateCall1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
@@ -97,8 +97,8 @@ module {
         %ca3 = quir.call_defcal_measure @defcalMeas1(%qa1) : (!quir.qubit<1>) -> i1
         // CHECK: %{{.*}} = "oq3.cast"(%{{.*}}) : (i1) -> !quir.angle<20>
         %ang = "oq3.cast"(%ca3) : (i1) -> !quir.angle<20>
-        // CHECK: %{{.*}} = quir.constant #quir.duration<1.000000e+01 : <ns>>
-        %len1 = quir.constant #quir.duration<10.0 : !quir.duration<ns>>
+        // CHECK: %{{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<ns>
+        %len1 = quir.constant #quir.duration<10.0> : !quir.duration<ns>
         // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch
         %s1 = "oq3.declare_stretch"() : () -> !quir.stretch
         // CHECK: %{{.*}} = oq3.declare_stretch : !quir.stretch

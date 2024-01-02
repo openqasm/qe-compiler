@@ -16,7 +16,7 @@ import os.path
 import os
 
 
-LLVM_TAG = "llvmorg-14.0.6"
+LLVM_TAG = "llvmorg-17.0.5"
 
 
 def cache_hit(cache) -> bool:
@@ -25,7 +25,7 @@ def cache_hit(cache) -> bool:
 
 class LLVMConan(ConanFile):
     name = "llvm"
-    version = "14.0.6-2"
+    version = "17.0.5-0"
     description = (
         "A toolkit for the construction of highly optimized compilers,"
         "optimizers, and runtime environments."

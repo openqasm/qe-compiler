@@ -13,7 +13,7 @@ cbit[48] wide;
 cbit[2] wide_0;
 // CHECK: oq3.declare_variable @wide_0 : !quir.cbit<2>
 
-// CHECK: func @main() -> i32
+// CHECK: func.func @main() -> i32
 
 // CHECK-DAG: %c-8_i4 = arith.constant -8 : i4
 

@@ -28,7 +28,7 @@ gate sx q { }
 gate rz(phi) q { }
 
 input angle theta = 3.141;
-// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00 : !quir.angle<64>>
+// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00> : !quir.angle<64>
 
 input float[64] theta2 = 1.56;
 // CHECK: qcs.declare_parameter @_QDDd64_6theta2EE_ : f64 = 1.560000e+00 : f64
@@ -62,7 +62,7 @@ c = measure $0;
 // CHECK-NEXT: quir.return %0 : i1
 // CHECK-NEXT: }
 
-// CHECK: func @main() -> i32 {
+// CHECK: func.func @main() -> i32 {
 // CHECK: scf.for %arg0 = %c0 to %c1000 step %c1 {
 // CHECK: %0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // CHECK: %1 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>

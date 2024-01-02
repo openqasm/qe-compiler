@@ -36,7 +36,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
     let methods = [
         InterfaceMethod<
         /*desc=*/"Get the timpoint that a pulse operation becomes effective",
-        /*retTy=*/"::llvm::Optional<int64_t>",
+        /*retTy=*/"::std::optional<int64_t>",
         /*methodName=*/"getTimepoint",
         /*args=*/(ins),
         /*methodBody=*/[{}],
@@ -58,7 +58,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
         >,
         InterfaceMethod<
         /*desc=*/"Get the setup latency of a pulse operation",
-        /*retTy=*/"::llvm::Optional<uint64_t>",
+        /*retTy=*/"::std::optional<uint64_t>",
         /*methodName=*/"getSetupLatency",
         /*args=*/(ins),
         /*methodBody=*/[{}],
@@ -114,7 +114,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
     ];
 
     let extraSharedClassDeclaration = [{
-        static llvm::Optional<int64_t> getTimepoint(mlir::Operation *op) {
+        static std::optional<int64_t> getTimepoint(mlir::Operation *op) {
             return interfaces_impl::getTimepoint(op);
         }
 
@@ -126,7 +126,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
             return interfaces_impl::setTimepoint(op, timepoint);
         }
 
-        static llvm::Optional<uint64_t> getSetupLatency(mlir::Operation *op) {
+        static std::optional<uint64_t> getSetupLatency(mlir::Operation *op) {
             return interfaces_impl::getSetupLatency(op);
         }
 
@@ -147,7 +147,7 @@ def PulseOpSchedulingInterface : OpInterface<"PulseOpSchedulingInterface"> {
         static llvm::Expected<uint64_t> getDuration(Operation *op) {
             auto castOp = dyn_cast<OpClass>(op);
             auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>(
-                castOp.dur().getDefiningOp());
+                castOp.getDur().getDefiningOp());
             if (durDeclOp) {
                 if (durDeclOp.value() < 0)
                 return llvm::createStringError(llvm::inconvertibleErrorCode(),

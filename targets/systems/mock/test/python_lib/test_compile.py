@@ -176,7 +176,7 @@ def test_compile_options(mock_config_file, example_qasm3_str):
         config_path=mock_config_file,
         shot_delay=100,
         num_shots=10000,
-        extra_args=compiler_extra_args + ["--pass-statistics"],
+        extra_args=compiler_extra_args + ["--mlir-pass-statistics"],
     )
 
     mlir = compile_str(example_qasm3_str, compile_options=compile_options)

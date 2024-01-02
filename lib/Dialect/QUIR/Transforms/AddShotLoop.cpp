@@ -19,23 +19,26 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <list>
-
 #include "Dialect/QUIR/Transforms/AddShotLoop.h"
 
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
-#include "mlir/Dialect/SCF/SCF.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/IRMapping.h"
+#include "mlir/IR/Location.h"
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <list>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -45,7 +48,8 @@ using namespace mlir::qcs;
 void AddShotLoopPass::runOnOperation() {
   // This pass is only called on module Ops
   ModuleOp moduleOp = getOperation();
-  FuncOp mainFunc = dyn_cast<FuncOp>(getMainFunction(moduleOp));
+  mlir::func::FuncOp mainFunc =
+      dyn_cast<mlir::func::FuncOp>(getMainFunction(moduleOp));
 
   if (!mainFunc) {
     signalPassFailure();
@@ -55,8 +59,8 @@ void AddShotLoopPass::runOnOperation() {
 
   // start the builder outside the main function so we aren't cloning or
   // building into the same region that we are copying from
-  OpBuilder build(moduleOp.body());
-  Location opLoc = mainFunc.getLoc();
+  OpBuilder build = OpBuilder::atBlockBegin(moduleOp.getBody());
+  Location const opLoc = mainFunc.getLoc();
 
   auto startOp = build.create<mlir::arith::ConstantOp>(
       opLoc, build.getIndexType(), build.getIndexAttr(0));
@@ -72,13 +76,14 @@ void AddShotLoopPass::runOnOperation() {
   shotInit->setAttr(getNumShotsAttrName(), build.getI32IntegerAttr(numShots));
 
   std::list<Operation *> toErase;
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
 
   Operation *lastOp = nullptr;
-  for (Operation &op : mainFunc.body().getOps()) {
+  for (Operation &op : mainFunc.getBody().getOps()) {
     if (dyn_cast<SystemInitOp>(&op))
       continue;
-    if (dyn_cast<SystemFinalizeOp>(&op) || dyn_cast<mlir::ReturnOp>(&op)) {
+    if (dyn_cast<SystemFinalizeOp>(&op) ||
+        dyn_cast<mlir::func::ReturnOp>(&op)) {
       lastOp = &op;
       break;
     }
@@ -93,7 +98,7 @@ void AddShotLoopPass::runOnOperation() {
   if (!lastOp) {
     // if last op wasn't detected while iterating
     // set it to the last op in the one block of the mainFunc body region
-    lastOp = &mainFunc.body().front().back();
+    lastOp = &mainFunc.getBody().front().back();
   }
 
   startOp->moveBefore(lastOp);

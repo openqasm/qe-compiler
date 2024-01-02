@@ -20,10 +20,17 @@
 
 #include "Dialect/Pulse/Transforms/InlineRegion.h"
 
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/DialectInterface.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/InliningUtils.h"
+
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
 
 namespace mlir::pulse {
 
@@ -37,12 +44,12 @@ class DialectAgnosticInlinerInterface : public InlinerInterface {
   }
 
   bool isLegalToInline(Region *dest, Region *src, bool wouldBeCloned,
-                       BlockAndValueMapping &) const final {
+                       IRMapping &) const final {
     return true;
   }
 
   bool isLegalToInline(Operation *op, Region *dest, bool wouldBeCloned,
-                       BlockAndValueMapping &) const final {
+                       IRMapping &) const final {
     return true;
   }
 };
@@ -51,14 +58,16 @@ void InlineRegionPass::runOnOperation() {
 
   auto module = getOperation();
 
-  for (auto function : llvm::make_early_inc_range(module.getOps<FuncOp>())) {
+  for (auto function :
+       llvm::make_early_inc_range(module.getOps<mlir::func::FuncOp>())) {
 
     // Build the inliner interface.
     DialectAgnosticInlinerInterface interface(&getContext());
 
-    for (auto caller : llvm::make_early_inc_range(function.getOps<CallOp>())) {
-      auto callee =
-          dyn_cast_or_null<FuncOp>(module.lookupSymbol(caller.getCallee()));
+    for (auto caller :
+         llvm::make_early_inc_range(function.getOps<func::CallOp>())) {
+      auto callee = dyn_cast_or_null<mlir::func::FuncOp>(
+          module.lookupSymbol(caller.getCallee()));
       if (!callee)
         continue;
 

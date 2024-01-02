@@ -22,7 +22,6 @@
 
 #include "Arguments/Arguments.h"
 
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/iterator_range.h"
 
@@ -30,6 +29,7 @@
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -160,9 +160,9 @@ public:
     children_.push_back(std::move(child));
   }
 
-  virtual llvm::Optional<qssc::arguments::BindArgumentsImplementationFactory *>
+  virtual std::optional<qssc::arguments::BindArgumentsImplementationFactory *>
   getBindArgumentsImplementationFactory() {
-    return llvm::None;
+    return std::nullopt;
   };
 
   llvm::Expected<TargetInstrument *> getInstrumentWithNodeId(uint nodeId) const;

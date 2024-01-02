@@ -19,9 +19,9 @@ OPENQASM 3.0;
 int i = 15;
 qubit $0;
 // MLIR: quir.switch %{{.*}}{
-// MLIR-NO-CIRCUITS: %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR-NO-CIRCUITS: %angle_0 = quir.constant #quir.angle<1.000000e-01 : !quir.angle<64>>
-// MLIR-NO-CIRCUITS: %angle_1 = quir.constant #quir.angle<2.000000e-01 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS: %angle = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// MLIR-NO-CIRCUITS: %angle_0 = quir.constant #quir.angle<1.000000e-01> : !quir.angle<64>
+// MLIR-NO-CIRCUITS: %angle_1 = quir.constant #quir.angle<2.000000e-01> : !quir.angle<64>
 // MLIR-NO-CIRCUITS: quir.builtin_U %{{.*}}, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS:    quir.call_circuit @circuit_0(%0) : (!quir.qubit<1>) -> ()
 // MLIR: }[1 : {

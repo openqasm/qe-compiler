@@ -15,37 +15,63 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/OQ3/IR/OQ3Ops.h"
+
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIRDialect.h"
+#include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Block.h"
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributeInterfaces.h"
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/FunctionImplementation.h"
+#include "mlir/IR/IRMapping.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/OpDefinition.h"
 #include "mlir/IR/OpImplementation.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
-#include "mlir/Interfaces/CallInterfaces.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Interfaces/ControlFlowInterfaces.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
+
 #include "llvm/ADT/MapVector.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallVector.h"
+
+#include <cassert>
+#include <cstdint>
+#include <optional>
+#include <set>
+#include <string>
+#include <sys/types.h>
+#include <utility>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;
 
-static uint lookupQubitIdHandleError_(const Value &val) {
+namespace {
+uint lookupQubitIdHandleError_(const Value &val) {
   auto id = lookupQubitId(val);
-  if (!id.hasValue()) {
+  if (!id.has_value()) {
     auto &diagEngine = val.getContext()->getDiagEngine();
     diagEngine.emit(val.getLoc(), mlir::DiagnosticSeverity::Error)
         << "Qubit does not have a valid ID.";
     val.getDefiningOp()->emitError() << "Qubit does not have a valid ID.";
+    assert(false && "Qubit does not have a valid id.");
   }
-  return id.getValue();
+  return id.value();
 } // lookupQubitIdHandleError_
+} // anonymous namespace
 
 template <class Op>
 std::set<uint32_t> getQubitIds(Op &op) {
@@ -65,8 +91,8 @@ std::set<uint32_t> getQubitIds(Op &op) {
 
 std::set<uint32_t> BuiltinCXOp::getOperatedQubits() {
   std::set<uint32_t> opQubits;
-  opQubits.insert(lookupQubitIdHandleError_(control()));
-  opQubits.insert(lookupQubitIdHandleError_(target()));
+  opQubits.insert(lookupQubitIdHandleError_(getControl()));
+  opQubits.insert(lookupQubitIdHandleError_(getTarget()));
   return opQubits;
 }
 
@@ -76,7 +102,7 @@ std::set<uint32_t> BuiltinCXOp::getOperatedQubits() {
 
 std::set<uint32_t> Builtin_UOp::getOperatedQubits() {
   std::set<uint32_t> opQubits;
-  opQubits.insert(lookupQubitIdHandleError_(target()));
+  opQubits.insert(lookupQubitIdHandleError_(getTarget()));
   return opQubits;
 }
 
@@ -86,6 +112,10 @@ std::set<uint32_t> Builtin_UOp::getOperatedQubits() {
 
 std::set<uint32_t> CallGateOp::getOperatedQubits() {
   return getQubitIds<CallGateOp>(*this);
+}
+
+auto CallGateOp::getCalleeType() -> FunctionType {
+  return FunctionType::get(getContext(), getOperandTypes(), {});
 }
 
 //===----------------------------------------------------------------------===//
@@ -144,11 +174,6 @@ std::set<uint32_t> BarrierOp::getOperatedQubits() {
 // ConstantOp
 //===----------------------------------------------------------------------===//
 
-OpFoldResult quir::ConstantOp::fold(ArrayRef<Attribute> operands) {
-  assert(operands.empty() && "constant has no operands");
-  return value();
-}
-
 void quir::ConstantOp::getAsmResultNames(
     function_ref<void(Value, StringRef)> setNameFn) {
   auto type = getType();
@@ -164,7 +189,7 @@ void quir::ConstantOp::getAsmResultNames(
 /// result type.
 bool quir::ConstantOp::isBuildableWith(Attribute value, Type type) {
   // The value's type must be the same as the provided type.
-  if (value.getType().isa<AngleType>() && !type.isa<quir::AngleType>())
+  if (value.isa<AngleAttr>() && !type.isa<quir::AngleType>())
     return false;
   // Currently only supports angle attributes to create angle constants
   return value.isa<quir::AngleAttr>();
@@ -172,62 +197,65 @@ bool quir::ConstantOp::isBuildableWith(Attribute value, Type type) {
 
 // Returns the float value from the attribute on this constant op
 APFloat quir::ConstantOp::getAngleValueFromConstant() {
-  auto attr = value().dyn_cast<quir::AngleAttr>();
+  auto attr = getValue().dyn_cast<quir::AngleAttr>();
   assert(attr && "Trying to get the angle attribute of a non-angle constantOp");
   return attr.getValue();
 }
 
-/// Return the callee of the call_gate operation, this is
-/// required by the call interface.
-auto CallGateOp::getCallableForCallee() -> CallInterfaceCallable {
-  return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+LogicalResult CallDefcalMeasureOp::verify() {
+  bool qubitFound = false;
+  for (auto arg : (*this)->getOperands()) {
+    if (qubitFound) {
+      if (arg.getType().isa<QubitType>())
+        return emitOpError("requires exactly one qubit argument");
+    } else {
+      if (arg.getType().isa<QubitType>())
+        qubitFound = true;
+    }
+  }
+  if (qubitFound)
+    return success();
+
+  return emitOpError("requires exactly one qubit");
 }
 
-/// Get the argument operands to the called function, this is required by the
-/// call interface.
-auto CallGateOp::getArgOperands() -> Operation::operand_range {
-  return operands();
+mlir::OpFoldResult ConstantOp::fold(FoldAdaptor adaptor) {
+  assert(adaptor.getOperands().empty() && "constant has no operands");
+  return getValue();
 }
 
-auto CallGateOp::getCalleeType() -> FunctionType {
-  return FunctionType::get(getContext(), getOperandTypes(), TypeRange{});
+/// Materialize a constant, can be any buildable type, used by canonicalization
+ConstantOp ConstantOp::materialize(OpBuilder &builder, Attribute value,
+                                   Type type, Location loc) {
+  return builder.create<quir::ConstantOp>(loc, cast<TypedAttr>(value));
 }
 
-// CallDefCalGateOp, CallDefcalMeasureOp
-auto CallDefCalGateOp::getCallableForCallee() -> CallInterfaceCallable {
-  return (*this)->getAttrOfType<SymbolRefAttr>("callee");
-}
-auto CallDefcalMeasureOp::getCallableForCallee() -> CallInterfaceCallable {
-  return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+/// Materialize a constant, can be any buildable type, used by canonicalization
+Operation *QUIRDialect::materializeConstant(OpBuilder &builder, Attribute value,
+                                            Type type, Location loc) {
+  return builder.create<quir::ConstantOp>(loc, type, cast<TypedAttr>(value));
 }
 
-auto CallDefCalGateOp::getArgOperands() -> Operation::operand_range {
-  return operands();
-}
-auto CallDefcalMeasureOp::getArgOperands() -> Operation::operand_range {
-  return operands();
-}
-
-auto CallDefCalGateOp::getCalleeType() -> FunctionType {
-  return FunctionType::get(getContext(), getOperandTypes(), TypeRange{});
-}
+//===----------------------------------------------------------------------===//
+// CallDefcalMeasureOp
+//===----------------------------------------------------------------------===//
 
 auto CallDefcalMeasureOp::getCalleeType() -> FunctionType {
   return FunctionType::get(getContext(), getOperandTypes(),
-                           getOperation()->getResultTypes());
+                           getResult().getType());
 }
 
-/// Return the callee of the call_gate operation, this is
-/// required by the call interface.
-auto CallSubroutineOp::getCallableForCallee() -> CallInterfaceCallable {
-  return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+//===----------------------------------------------------------------------===//
+// CallDefCalGateOp
+//===----------------------------------------------------------------------===//
+
+auto CallDefCalGateOp::getCalleeType() -> FunctionType {
+  return FunctionType::get(getContext(), getOperandTypes(), {});
 }
 
-/// Get the argument operands to the called function, this is required by the
-/// call interface.
-auto CallSubroutineOp::getArgOperands() -> Operation::operand_range {
-  return operands();
-}
+//===----------------------------------------------------------------------===//
+// CallSubroutineOp
+//===----------------------------------------------------------------------===//
 
 auto CallSubroutineOp::getCalleeType() -> FunctionType {
   return FunctionType::get(getContext(), getOperandTypes(), getResultTypes());
@@ -255,7 +283,7 @@ CallCircuitOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
                          << "' does not reference a valid circuit";
 
   // Verify the types match
-  auto circuitType = circuit.getType();
+  auto circuitType = circuit.getFunctionType();
   if (circuitType.getNumInputs() != getNumOperands())
     return emitOpError("incorrect number of operands for the callee circuit");
 
@@ -313,24 +341,29 @@ std::set<uint32_t> CallCircuitOp::getOperatedQubits() {
 //
 //===----------------------------------------------------------------------===//
 
-static ParseResult parseCircuitOp(OpAsmParser &parser, OperationState &result) {
-  auto buildCircuitType =
+mlir::ParseResult CircuitOp::parse(mlir::OpAsmParser &parser,
+                                   mlir::OperationState &result) {
+  auto buildFuncType =
       [](Builder &builder, ArrayRef<Type> argTypes, ArrayRef<Type> results,
          function_interface_impl::VariadicFlag,
          std::string &) { return builder.getFunctionType(argTypes, results); };
+
   return function_interface_impl::parseFunctionOp(
-      parser, result, /*allowVariadic=*/false, buildCircuitType);
+      parser, result, /*allowVariadic=*/false,
+      getFunctionTypeAttrName(result.name), buildFuncType,
+      getArgAttrsAttrName(result.name), getResAttrsAttrName(result.name));
 }
 
-static void print(CircuitOp op, OpAsmPrinter &p) {
-  FunctionType fnType = op.getType();
+void CircuitOp::print(mlir::OpAsmPrinter &printer) {
   function_interface_impl::printFunctionOp(
-      p, op, fnType.getInputs(), /*isVariadic=*/false, fnType.getResults());
+      printer, *this, /*isVariadic=*/false, getFunctionTypeAttrName(),
+      getArgAttrsAttrName(), getResAttrsAttrName());
 }
 
+namespace {
 /// Verify the argument list and entry block are in agreement.
-static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
-  auto fnInputTypes = op.getType().getInputs();
+LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
+  auto fnInputTypes = op.getFunctionType().getInputs();
   Block &entryBlock = op.front();
   for (unsigned i = 0; i != entryBlock.getNumArguments(); ++i)
     if (fnInputTypes[i] != entryBlock.getArgument(i).getType())
@@ -343,13 +376,12 @@ static LogicalResult verifyArgumentAndEntry_(CircuitOp op) {
 
 /// Verify that no classical values are created/used in the circuit outside of
 /// values that originate as argument values or the result of a measurement.
-static LogicalResult verifyClassical_(CircuitOp op) {
+LogicalResult verifyClassical_(CircuitOp op) {
   mlir::Operation *classicalOp = nullptr;
-  WalkResult result = op->walk([&](Operation *subOp) {
-    if (isa<mlir::ConstantOp>(subOp) || isa<mlir::arith::ConstantOp>(subOp) ||
-        isa<quir::ConstantOp>(subOp) || isa<CallCircuitOp>(subOp) ||
-        isa<quir::ReturnOp>(subOp) || isa<CircuitOp>(subOp) ||
-        subOp->hasTrait<mlir::quir::UnitaryOp>() ||
+  WalkResult const result = op->walk([&](Operation *subOp) {
+    if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
+        isa<CallCircuitOp>(subOp) || isa<quir::ReturnOp>(subOp) ||
+        isa<CircuitOp>(subOp) || subOp->hasTrait<mlir::quir::UnitaryOp>() ||
         subOp->hasTrait<mlir::quir::CPTPOp>())
       return WalkResult::advance();
     classicalOp = subOp;
@@ -361,16 +393,17 @@ static LogicalResult verifyClassical_(CircuitOp op) {
            << "is classical and should not be inside a circuit.";
   return success();
 }
+} // anonymous namespace
 
-static LogicalResult verify(CircuitOp op) {
+LogicalResult CircuitOp::verify() {
   // If external will be linked in later and nothing to do
-  if (op.isExternal())
+  if (isExternal())
     return success();
 
-  if (failed(verifyArgumentAndEntry_(op)))
+  if (failed(verifyArgumentAndEntry_(*this)))
     return mlir::failure();
 
-  if (failed(verifyClassical_(op)))
+  if (failed(verifyClassical_(*this)))
     return mlir::failure();
 
   return success();
@@ -386,8 +419,8 @@ CircuitOp CircuitOp::create(Location location, StringRef name,
 CircuitOp CircuitOp::create(Location location, StringRef name,
                             FunctionType type,
                             Operation::dialect_attr_range attrs) {
-  SmallVector<NamedAttribute, 8> attrRef(attrs);
-  return create(location, name, type, llvm::makeArrayRef(attrRef));
+  SmallVector<NamedAttribute, 8> const attrRef(attrs);
+  return create(location, name, type, attrRef);
 }
 CircuitOp CircuitOp::create(Location location, StringRef name,
                             FunctionType type, ArrayRef<NamedAttribute> attrs,
@@ -402,20 +435,21 @@ void CircuitOp::build(OpBuilder &builder, OperationState &state, StringRef name,
                       ArrayRef<DictionaryAttr> argAttrs) {
   state.addAttribute(SymbolTable::getSymbolAttrName(),
                      builder.getStringAttr(name));
-  state.addAttribute(getTypeAttrName(), TypeAttr::get(type));
+  state.addAttribute(getFunctionTypeAttrName(state.name), TypeAttr::get(type));
   state.attributes.append(attrs.begin(), attrs.end());
   state.addRegion();
 
   if (argAttrs.empty())
     return;
   assert(type.getNumInputs() == argAttrs.size());
-  function_interface_impl::addArgAndResultAttrs(builder, state, argAttrs,
-                                                /*resultAttrs=*/llvm::None);
+  function_interface_impl::addArgAndResultAttrs(
+      builder, state, argAttrs, /*resultAttrs=*/std::nullopt,
+      getArgAttrsAttrName(state.name), getResAttrsAttrName(state.name));
 }
 
 /// Clone the internal blocks and attributes from this circuit to the
 /// destination circuit.
-void CircuitOp::cloneInto(CircuitOp dest, BlockAndValueMapping &mapper) {
+void CircuitOp::cloneInto(CircuitOp dest, IRMapping &mapper) {
   // Add the attributes of this function to dest.
   llvm::MapVector<StringAttr, Attribute> newAttrMap;
   for (const auto &attr : dest->getAttrs())
@@ -438,13 +472,13 @@ void CircuitOp::cloneInto(CircuitOp dest, BlockAndValueMapping &mapper) {
 /// Using the provider mapper. Replace references to
 /// cloned sub-values with the corresponding copied value and
 /// add to the mapper
-CircuitOp CircuitOp::clone(BlockAndValueMapping &mapper) {
-  FunctionType newType = getType();
+CircuitOp CircuitOp::clone(IRMapping &mapper) {
+  FunctionType newType = getFunctionType();
 
   // If the function contains a body, then its possible arguments
   // may be deleted in the mapper. Verify this so they aren't
   // added to the input type vector.
-  bool isExternalCircuit = isExternal();
+  bool const isExternalCircuit = isExternal();
   if (!isExternalCircuit) {
     SmallVector<Type, 4> inputTypes;
     inputTypes.reserve(newType.getNumInputs());
@@ -464,7 +498,7 @@ CircuitOp CircuitOp::clone(BlockAndValueMapping &mapper) {
 }
 
 CircuitOp CircuitOp::clone() {
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
   return clone(mapper);
 }
 
@@ -481,15 +515,15 @@ CircuitOp CircuitOp::clone() {
 //
 //===----------------------------------------------------------------------===//
 
-static LogicalResult verify(mlir::quir::ReturnOp op) {
-  auto circuit = op->getParentOfType<CircuitOp>();
+LogicalResult mlir::quir::ReturnOp::verify() {
+  auto circuit = (*this)->getParentOfType<CircuitOp>();
 
-  FunctionType circuitType = circuit.getType();
+  FunctionType const circuitType = circuit.getFunctionType();
 
   auto numResults = circuitType.getNumResults();
   // Verify number of operands match type signature
-  if (numResults != op.operands().size()) {
-    return op.emitError()
+  if (numResults != getOperands().size()) {
+    return emitError()
         .append("expected ", numResults, " result operands")
         .attachNote(circuit.getLoc())
         .append("return type declared here");
@@ -497,11 +531,11 @@ static LogicalResult verify(mlir::quir::ReturnOp op) {
 
   int i = 0;
   for (const auto [type, operand] :
-       llvm::zip(circuitType.getResults(), op.operands())) {
+       llvm::zip(circuitType.getResults(), getOperands())) {
     auto opType = operand.getType();
     if (type != opType) {
-      return op.emitOpError()
-             << "unexpected type `" << opType << "' for operand #" << i;
+      return emitOpError() << "unexpected type `" << opType << "' for operand #"
+                           << i;
     }
     i++;
   }
@@ -522,11 +556,10 @@ static LogicalResult verify(mlir::quir::ReturnOp op) {
 //===----------------------------------------------------------------------===//
 // SwitchOp
 //===----------------------------------------------------------------------===//
-
-static ParseResult parseSwitchOp(OpAsmParser &parser, OperationState &result) {
-
+mlir::ParseResult SwitchOp::parse(mlir::OpAsmParser &parser,
+                                  mlir::OperationState &result) {
   Builder &builder = parser.getBuilder();
-  OpAsmParser::OperandType flag;
+  OpAsmParser::UnresolvedOperand flag;
   Region *defaultRegion;
   SmallVector<uint32_t> caseValues;
   ElementsAttr caseValuesAttr;
@@ -551,9 +584,9 @@ static ParseResult parseSwitchOp(OpAsmParser &parser, OperationState &result) {
 
   while (parser.parseOptionalRSquare()) {
     uint32_t caseVal;
-    OptionalParseResult integerParseResult =
+    OptionalParseResult const integerParseResult =
         parser.parseOptionalInteger(caseVal);
-    if (!integerParseResult.hasValue() || integerParseResult.getValue())
+    if (!integerParseResult.has_value() || integerParseResult.value())
       // getValue() returns the success() or failure()
       return failure();
     caseValues.push_back(caseVal);
@@ -580,65 +613,63 @@ static ParseResult parseSwitchOp(OpAsmParser &parser, OperationState &result) {
   return success();
 }
 
+void SwitchOp::print(mlir::OpAsmPrinter &printer) {
+  bool printBlockTerminators = false;
+
+  printer << " " << getFlag();
+  if (!getResultTypes().empty()) {
+    printer << " -> (" << getResultTypes().getTypes() << ")";
+    // Print yield explicitly if the op defines values.
+    printBlockTerminators = true;
+  }
+  printer.printRegion(getDefaultRegion(),
+                      /*printEntryBlockOperands=*/false,
+                      /*printBlockTerminators=*/printBlockTerminators);
+
+  printer << "[";
+
+  uint64_t id = 0;
+
+  for (auto &region : getCaseRegions())
+    if (!(region.empty())) {
+      printer.printAttributeWithoutType(
+          getCaseValuesAttr().getValues<Attribute>()[id]);
+      id += 1;
+      printer << " : ";
+      printer.printRegion(region,
+                          /*printEntryBlockOperands=*/false,
+                          /*printBlockTerminators=*/printBlockTerminators);
+    }
+  printer << "]";
+  printer.printOptionalAttrDict((*this)->getAttrs().drop_front(1));
+}
+
 /// Given the region at `index`, or the parent operation if `index` is None,
 /// return the successor regions. These are the regions that may be selected
 /// during the flow of control. `operands` is a set of optional attributes that
 /// correspond to a constant value for each operand, or null if that operand is
 /// not a constant.
 void quir::SwitchOp::getSuccessorRegions(
-    Optional<unsigned> index, ArrayRef<Attribute> operands,
+    std::optional<unsigned> index, ArrayRef<Attribute> operands,
     SmallVectorImpl<RegionSuccessor> &regions) {
   // regions branch back to parent operation
-  if (index.hasValue()) {
+  if (index.has_value()) {
     regions.push_back(RegionSuccessor(getResults()));
     return;
   }
 
   // all regions are possible to be the successor
-  regions.push_back(RegionSuccessor(&defaultRegion()));
-  for (auto *region = caseRegions().begin(); region != caseRegions().end();
-       region++)
+  regions.push_back(RegionSuccessor(&getDefaultRegion()));
+  for (auto *region = getCaseRegions().begin();
+       region != getCaseRegions().end(); region++)
     regions.push_back(region);
 }
 
-static void print(OpAsmPrinter &p, quir::SwitchOp op) {
-  bool printBlockTerminators = false;
-
-  p << " " << op.flag();
-  if (!op.resultTypes().empty()) {
-    p << " -> (" << op.getResultTypes() << ")";
-    // Print yield explicitly if the op defines values.
-    printBlockTerminators = true;
-  }
-  p.printRegion(op.defaultRegion(),
-                /*printEntryBlockOperands=*/false,
-                /*printBlockTerminators=*/printBlockTerminators);
-
-  p << "[";
-
-  uint64_t id = 0;
-
-  for (auto *region = (op.caseRegions()).begin();
-       region != (op.caseRegions()).end(); region++)
-    if (!(region->empty())) {
-      p.printAttributeWithoutType(
-          op.caseValuesAttr().getValues<Attribute>()[id]);
-      id += 1;
-      p << " : ";
-      p.printRegion(*region,
-                    /*printEntryBlockOperands=*/false,
-                    /*printBlockTerminators=*/printBlockTerminators);
-    }
-  p << "]";
-  p.printOptionalAttrDict(op->getAttrs().drop_front(1));
-}
-
-static LogicalResult verify(quir::SwitchOp op) {
-  if ((!op.caseValues() && !op.caseRegions().empty()) ||
-      (op.caseValues() &&
-       op.caseValues().size() != static_cast<int64_t>(op.caseRegions().size())))
-    return op.emitOpError(
-        "expects same number of case values and case regions");
+LogicalResult quir::SwitchOp::verify() {
+  if ((!getCaseValues() && !getCaseRegions().empty()) ||
+      (getCaseValues() &&
+       getCaseValues().size() != static_cast<int64_t>(getCaseRegions().size())))
+    return emitOpError("expects same number of case values and case regions");
 
   return success();
 }
@@ -651,20 +682,19 @@ static LogicalResult verify(quir::SwitchOp op) {
 // YieldOp
 //===----------------------------------------------------------------------===//
 
-static LogicalResult verify(quir::YieldOp op) {
-  auto *parentOp = op->getParentOp();
+LogicalResult quir::YieldOp::verify() {
+  auto *parentOp = (*this)->getParentOp();
   auto results = parentOp->getResults();
-  auto operands = op.getOperands();
+  auto operands = getOperands();
 
   if (!isa<quir::SwitchOp>(parentOp))
-    return op.emitOpError() << "only terminates quir.switch regions";
-  if (parentOp->getNumResults() != op.getNumOperands())
-    return op.emitOpError() << "parent of yield must have same number of "
-                               "results as the yield operands";
+    return emitOpError() << "only terminates quir.switch regions";
+  if (parentOp->getNumResults() != getNumOperands())
+    return emitOpError() << "parent of yield must have same number of "
+                            "results as the yield operands";
   for (auto it : llvm::zip(results, operands))
     if (std::get<0>(it).getType() != std::get<1>(it).getType())
-      return op.emitOpError()
-             << "types mismatch between yield op and its parent";
+      return emitOpError() << "types mismatch between yield op and its parent";
 
   return success();
 }
@@ -678,7 +708,9 @@ static LogicalResult verify(quir::YieldOp op) {
 //===----------------------------------------------------------------------===//
 
 #define GET_OP_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIR.cpp.inc"
 
 #define GET_ENUM_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIREnums.cpp.inc"

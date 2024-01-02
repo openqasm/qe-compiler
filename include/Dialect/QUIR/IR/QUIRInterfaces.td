@@ -79,7 +79,7 @@ def QubitOpInterface : OpInterface<"QubitOpInterface"> {
         }
 
         /// Get the next (lexicographically) Qubit operation implementing this interface
-        static llvm::Optional<Operation *> getNextQubitOp(Operation *op) {
+        static std::optional<Operation *> getNextQubitOp(Operation *op) {
            return interfaces_impl::getNextQubitOp(op);
         }
 
@@ -111,7 +111,7 @@ def QubitOpInterface : OpInterface<"QubitOpInterface"> {
         /// Get the next (lexicographically) Qubit operation implementing this interface
         /// Accumulating the observed qubits along this path.
         template <typename OpClass>
-        static std::tuple<llvm::Optional<OpClass>, std::set<uint32_t>> getNextQubitOpOfTypeWithQubits(Operation *op) {
+        static std::tuple<std::optional<OpClass>, std::set<uint32_t>> getNextQubitOpOfTypeWithQubits(Operation *op) {
             Operation *curOp = op;
             std::set<uint32_t> operatedQubits;
             while (Operation *nextOp = curOp->getNextNode()) {
@@ -122,14 +122,14 @@ def QubitOpInterface : OpInterface<"QubitOpInterface"> {
                 operatedQubits.insert(nextOpQubits.begin(), nextOpQubits.end());
                 curOp = nextOp;
             }
-            return {llvm::None, operatedQubits};
+            return {std::nullopt, operatedQubits};
         }
 
         /// Get the next (lexicographically) operation (not necessarily of Qubit
         /// type) implementing this interface.
         /// Accumulating the observed qubits along this path.
         template <typename OpClass>
-        static std::tuple<llvm::Optional<OpClass>, std::set<uint32_t>> getNextOpOfTypeWithQubits(Operation *op) {
+        static std::tuple<std::optional<OpClass>, std::set<uint32_t>> getNextOpOfTypeWithQubits(Operation *op) {
             Operation *curOp = op;
             std::set<uint32_t> operatedQubits;
             while (Operation *nextOp = curOp->getNextNode()) {
@@ -139,12 +139,12 @@ def QubitOpInterface : OpInterface<"QubitOpInterface"> {
                 operatedQubits.insert(nextOpQubits.begin(), nextOpQubits.end());
                 curOp = nextOp;
             }
-            return {llvm::None, operatedQubits};
+            return {std::nullopt, operatedQubits};
         }
 
         /// Get the next (lexicographically) Qubit operation implementing this interface
         template <typename OpClass>
-        static llvm::Optional<OpClass> getNextQubitOpOfType(Operation *op) {
+        static std::optional<OpClass> getNextQubitOpOfType(Operation *op) {
             auto result = getNextQubitOpOfTypeWithQubits<OpClass>(op);
             return std::get<0>(result);
         }
@@ -152,12 +152,12 @@ def QubitOpInterface : OpInterface<"QubitOpInterface"> {
         /// If the next (lexicographically) Qubit operation is the specififed
         /// type implementing this interface return it.
         template <typename OpClass>
-        static llvm::Optional<OpClass> getNextQubitOpIsType(Operation *op) {
+        static std::optional<OpClass> getNextQubitOpIsType(Operation *op) {
             auto nextOp = getNextQubitOp(op);
-            if (auto nextOpValue = nextOp.hasValue())
+            if (auto nextOpValue = nextOp.has_value())
                 if (OpClass castOp = dyn_cast<OpClass>(nextOpValue))
                     return castOp;
-            return llvm::None;
+            return std::nullopt;
         }
     }];
 }
