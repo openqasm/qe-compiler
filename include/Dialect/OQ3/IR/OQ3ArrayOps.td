@@ -41,13 +41,7 @@ def OQ3_DeclareArrayOp : OQ3_Op<"declare_array", [Symbol]> {
         attr-dict $sym_name `:` $type `[` $num_elements `]`
     }];
 
-    let verifier = [{
-        auto t = (*this).type();
-
-        if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat())
-            return success();
-        return failure();
-    }];
+    let hasVerifier = 1;
 }
 
 // -----
@@ -72,8 +66,6 @@ def OQ3_AssignArrayElementOp : OQ3_Op<"assign_array_element",
     let assemblyFormat = [{
         attr-dict $variable_name `[` $index `]` `:` type($assigned_value) `=` $assigned_value
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 // -----
@@ -103,8 +95,6 @@ def OQ3_UseArrayElementOp : OQ3_Op<"use_array_element",
     let assemblyFormat = [{
         $variable_name `[` $index `]` `:` type($res) attr-dict
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 #endif // OQ3_ARRAY_OPS

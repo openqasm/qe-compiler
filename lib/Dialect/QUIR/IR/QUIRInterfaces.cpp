@@ -20,12 +20,22 @@
 
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 
+#include "mlir/IR/Operation.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <iterator>
+#include <optional>
+#include <set>
+
 using namespace mlir::quir;
 
 //===----------------------------------------------------------------------===//
 // Tablegen Interface Definitions
 //===----------------------------------------------------------------------===//
-
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRInterfaces.cpp.inc"
 
 //===----------------------------------------------------------------------===//
@@ -49,7 +59,7 @@ std::set<uint32_t> interfaces_impl::getOperatedQubits(mlir::Operation *op,
   return opQubits;
 }
 
-llvm::Optional<mlir::Operation *>
+std::optional<mlir::Operation *>
 interfaces_impl::getNextQubitOp(mlir::Operation *op) {
   mlir::Operation *curOp = op;
   while (mlir::Operation *nextOp = curOp->getNextNode()) {
@@ -57,7 +67,7 @@ interfaces_impl::getNextQubitOp(mlir::Operation *op) {
       return nextOp;
     curOp = nextOp;
   }
-  return llvm::None;
+  return std::nullopt;
 }
 
 std::set<uint32_t>
@@ -84,7 +94,7 @@ std::set<uint32_t> interfaces_impl::getUnionQubits(std::set<uint32_t> &first,
 
 bool interfaces_impl::qubitSetsOverlap(std::set<uint32_t> &first,
                                        std::set<uint32_t> &second) {
-  std::set<uint32_t> sharedQubits = getSharedQubits(first, second);
+  std::set<uint32_t> const sharedQubits = getSharedQubits(first, second);
   return !sharedQubits.empty();
 }
 

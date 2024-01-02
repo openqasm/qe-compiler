@@ -22,15 +22,17 @@
 #include "Dialect/QUIR/Transforms/UnusedVariable.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/IR/QUIRTypes.h"
 
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+
+#include "llvm/ADT/StringRef.h"
+
+#include <utility>
 
 using namespace mlir;
 using namespace quir;

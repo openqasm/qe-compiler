@@ -13,6 +13,9 @@
 //===----------------------------------------------------------------------===//
 
 #include "Config/EnvVarConfig.h"
+#include "Config/QSSConfig.h"
+
+#include "llvm/Support/Error.h"
 
 #include <cstdlib>
 

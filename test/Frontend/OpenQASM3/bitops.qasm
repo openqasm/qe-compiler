@@ -16,7 +16,7 @@ OPENQASM 3.0;
 // that they have been altered from the originals.
 
 // MLIR: module
-// MLIR-DAG: func @main
+// MLIR-DAG: func.func @main
 
 
 bit a;

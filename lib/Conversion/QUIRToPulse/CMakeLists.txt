@@ -23,7 +23,7 @@ Core
 
 LINK_LIBS PUBLIC
 MLIRIR
-MLIRComplex
+MLIRComplexDialect
 MLIROQ3Dialect
 MLIRPulseDialect
 MLIRQUIRDialect

@@ -14,7 +14,7 @@
 // that they have been altered from the originals.
 
 module {
-    func @bar() {
+    func.func @bar() {
         %0 = arith.constant 1 : i32
         // CHECK: %{{.*}} = quir.declare_qubit : !quir.qubit<1>
         %qa1 = quir.declare_qubit : !quir.qubit<1>

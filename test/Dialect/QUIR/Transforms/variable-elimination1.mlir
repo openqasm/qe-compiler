@@ -22,10 +22,10 @@
 module {
   oq3.declare_variable @a : !quir.cbit<1>
   oq3.declare_variable @b : !quir.cbit<1>
-  func @x(%arg0: !quir.qubit<1>) {
+  func.func @x(%arg0: !quir.qubit<1>) {
     return
   }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     // CHECK: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32}
     // CHECK: [[QUBIT1:%.*]] = quir.declare_qubit {id = 1 : i32}
     %1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
@@ -55,7 +55,6 @@ module {
 
     scf.if %9 {
       quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
-      %cst = constant unit
     }
     %10 = oq3.variable_load @b : !quir.cbit<1>
     %c1_i32_1 = arith.constant 1 : i32
@@ -66,7 +65,6 @@ module {
     %12 = arith.cmpi eq, %11, %c1_i32_1 : i32
     scf.if %12 {
       quir.call_gate @x(%2) : (!quir.qubit<1>) -> ()
-      %cst = constant unit
     }
 
     %c0_i32 = arith.constant 0 : i32

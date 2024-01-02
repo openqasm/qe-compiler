@@ -18,15 +18,15 @@
 // that they have been altered from the originals.
 
 module  {
-  func @x(%arg0: !quir.qubit<1>) {
+  func.func @x(%arg0: !quir.qubit<1>) {
     return
   }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     %c0 = arith.constant 0 : index
     %c1000 = arith.constant 1000 : index
     %c1 = arith.constant 1 : index
     scf.for %arg0 = %c0 to %c1000 step %c1 {
-      %0 = quir.constant #quir.duration<1.0 : !quir.duration<ms>>
+      %0 = quir.constant #quir.duration<1.0> : !quir.duration<ms>
       quir.delay %0, () : !quir.duration<ms>, () -> ()
 
       // qubit $0;
@@ -101,7 +101,6 @@ module  {
       quir.reset %1 : !quir.qubit<1>
       // CHECK: quir.reset [[QUBIT0]] : !quir.qubit<1>
       quir.call_gate @x(%4) : (!quir.qubit<1>) -> ()
-      %cst = constant unit
       quir.reset %2 : !quir.qubit<1>
       // CHECK: quir.reset [[QUBIT1]] : !quir.qubit<1>
       // TOPO: quir.reset [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>

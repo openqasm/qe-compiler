@@ -349,14 +349,3 @@ macro(package_add_test_with_libs TESTNAME)
     package_add_test(${TESTNAME} ${ARG_UNPARSED_ARGUMENTS})
     target_link_libraries(${TESTNAME} GTest::gtest_main GTest::gtest ${ARG_LIBRARIES})
 endmacro()
-
-
-# Version adapter for add_mlir_doc during transition from LLVM 12 to newer
-# (order of parameters differs)
-function(qssc_add_mlir_doc doc_filename output_file output_directory command)
-    if("${LLVM_VERSION_MAJOR}" EQUAL "12")
-        add_mlir_doc(${doc_filename} ${command} ${output_file} ${output_directory})
-    else()
-        add_mlir_doc(${doc_filename} ${output_file} ${output_directory} ${command})
-    endif()
-endfunction()

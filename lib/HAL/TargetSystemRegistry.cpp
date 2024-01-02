@@ -14,6 +14,19 @@
 
 #include "HAL/TargetSystemRegistry.h"
 
+#include "HAL/TargetSystem.h"
+#include "HAL/TargetSystemInfo.h"
+#include "Payload/Payload.h"
+
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Pass/PassManager.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+
+#include <memory>
+#include <optional>
+
 using namespace qssc::hal::registry;
 
 namespace {
@@ -38,7 +51,7 @@ TargetSystemInfo *TargetSystemRegistry::nullTargetSystemInfo() {
   static auto nullTarget = std::make_unique<TargetSystemInfo>(
       "NullTarget",
       "A no-op target used by default unless a real target is specified.",
-      [](llvm::Optional<llvm::StringRef> config) {
+      [](std::optional<llvm::StringRef> config) {
         return std::make_unique<NullTarget>();
       },
       []() { return llvm::Error::success(); },
