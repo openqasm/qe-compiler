@@ -43,6 +43,7 @@ jobs:
       - name: Validate releasenotes
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-reno')
         env:
+          TARGET_BRANCH_NAME: ${{ github.event.pull_request.base.ref }
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
         run: ./.github/renos_updated.sh
 

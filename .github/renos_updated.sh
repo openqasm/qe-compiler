@@ -3,12 +3,9 @@
 
 reno lint
 
-CHANGED_FILES=$(git diff --name-only $BRANCH HEAD)
-echo $CHANGED_FILES
+CHANGED_FILES=$(git diff --name-only $BRANCH $TARGET_BRANCH_NAME)
 for file in $CHANGED_FILES
 do
-   echo "Debug output:"
-   echo "./$file" | awk -F/ '{print FS $2}' | cut -c2-
    root=$(echo "./$file" | awk -F/ '{print FS $2}' | cut -c2-)
    if [ "$root" = "releasenotes" ]; then
        exit 0;

@@ -4,4 +4,3 @@ default_branch: main
 collapse_pre_releases: true
 branch_name_prefix: release/
 branch_name_re: release/.+
-branch_sort_re: release/([0-9].*)
