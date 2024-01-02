@@ -22,15 +22,14 @@
 #ifndef OPENQASM3_QUIR_VARIABLE_BUILDER_H
 #define OPENQASM3_QUIR_VARIABLE_BUILDER_H
 
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
-#include <mlir/IR/Builders.h>
-#include <mlir/IR/BuiltinOps.h>
+
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringRef.h"
 
 #include <qasm/AST/ASTSymbolTable.h>
 #include <qasm/AST/ASTTypes.h>
-
-#include <llvm/ADT/ArrayRef.h>
-#include <llvm/ADT/StringRef.h>
 
 #include <unordered_map>
 
