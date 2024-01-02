@@ -1,0 +1,42 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.1.0
+  hooks:
+    - id: no-commit-to-branch
+      stages: [commit]
+      args: [--branch, main, --pattern, release/.*, --pattern, .*/release/.*]
+    - id: check-json
+      stages: [commit]
+    - id: end-of-file-fixer
+      stages: [commit]
+      exclude: '.+(\.s[ql][23])$'
+    - id: trailing-whitespace
+      stages: [commit]
+      args: [--markdown-linebreak-ext=md]
+      exclude: '.+(\.s[ql][23])$'
+    - id: check-merge-conflict
+      stages: [commit]
+    - id: debug-statements
+      stages: [commit]
+- repo: https://github.com/psf/black
+  rev: 22.3.0
+  hooks:
+    - id: black
+      stages: [commit]
+      args:
+        - "-l 100"
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v17.0.5
+  hooks:
+    - id: clang-format
+      stages: [commit]
+      args:
+        - "--style=file:compiler/qss-compiler/.clang-format"
+- repo: https://github.com/PyCQA/flake8.git
+  rev: 4.0.1
+  hooks:
+    - id: flake8
+      stages: [commit]
+      args:
+        - "--max-line-length=100"
+        - "--extend-ignore=W503"

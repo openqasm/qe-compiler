@@ -207,7 +207,7 @@ We follow the [LLVM Coding Standards](https://llvm.org/docs/CodingStandards.html
 - File Headers are required
   - Every source and header file must have a header with a copyright remark.
   - The header should describe the basic purpose of the file.
-  - See [LLVM Coding Standards](https://llvm.org/docs/CodingStandards.html#file-headers) and include/Utils/QSSCBuildContext.h as example.
+  - See [LLVM Coding Standards](https://llvm.org/docs/CodingStandards.html#file-headers)
   - Note that the second part of the header is a doxygen file comment and is prefixed with three slashes `///`.
 
 - All PRs must compile and test successfully before merging (i.e., on the last commit), as enforced by the CI.
@@ -264,7 +264,7 @@ The other checks that are performed can be seen in
 
 ## Testing and Analysis
 
-Several targets and CMake configuration options are defined as shown below to test the qss-compiler. The standard test suite consists of a format check to ensure the source follows the configured style defined in `.clang-format`, a run of `clang-tidy` to perform code analysis, and a run of the test suite. It is also possible to run additional analysis with Valgrind and the Google Sanitizers below. CMake commands should always be run from a build directory.
+Several targets and CMake configuration options are defined as shown below to test the qe-compiler. The standard test suite consists of a format check to ensure the source follows the configured style defined in `.clang-format`, a run of `clang-tidy` to perform code analysis, and a run of the test suite. It is also possible to run additional analysis with Valgrind and the Google Sanitizers below. CMake commands should always be run from a build directory.
 
 Our test suite contains both unit tests (using googletest) and integration tests that exercise the full qss-compiler or qss-opt tools (using LLVM lit).
 
@@ -297,7 +297,7 @@ For running `qss-compiler` or `qss-opt` from the build directory, you may use a 
 ```sh
 # assuming current directory is the build directory
 source qe-compiler/qssc-activate
-# now call qss-compiler as usual
+# now call qss-compiler tool as usual
 ```
 
 You may clean up your environment by calling `qssc-deactivate` (a shell function defined by the script `qssc-activate`).
@@ -389,7 +389,7 @@ To release a version a new version:
 
 ### Example release cycle
 
-For this example assume the current release of the qss-compiler is version `v0.5.1`. This will correspond to a commit
+For this example assume the current release of the qe-compiler is version `v0.5.1`. This will correspond to a commit
 on `release/0.5`. The project's development branch reflects the development state of the next release - `v0.6.0`.
 
 To trigger a bugfix release - `v0.5.2`:
