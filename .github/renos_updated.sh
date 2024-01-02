@@ -4,7 +4,7 @@
 reno lint
 
 CHANGED_FILES=$(git diff --name-only $BRANCH HEAD)
-echo $(CHANGED_FILES)
+echo $CHANGED_FILES
 for file in $CHANGED_FILES
 do
    echo "Debug output:"
