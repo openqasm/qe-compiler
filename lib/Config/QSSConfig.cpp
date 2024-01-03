@@ -287,8 +287,7 @@ qssc::config::loadPassPlugin(const std::string &pluginPath) {
   return mlir::success();
 }
 
-llvm::Expected<qssc::config::QSSConfig>
-qssc::config::buildToolConfig() {
+llvm::Expected<qssc::config::QSSConfig> qssc::config::buildToolConfig() {
   // First populate the configuration from default values then
   // environment variables.
   auto config = EnvVarConfigBuilder().buildConfig();

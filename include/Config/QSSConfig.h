@@ -269,8 +269,7 @@ public:
 /// 3. CLI arguments.
 ///
 /// @return The constructed configuration
-llvm::Expected<qssc::config::QSSConfig>
-buildToolConfig();
+llvm::Expected<qssc::config::QSSConfig> buildToolConfig();
 
 } // namespace qssc::config
 #endif // QSS_QSSCONFIG_H

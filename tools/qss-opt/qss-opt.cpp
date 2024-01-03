@@ -62,78 +62,78 @@ using namespace qssc::hal;
 static const std::string toolName = "qss-opt";
 
 namespace {
-  void registerAndParseCLIOptions(int argc, char **argv, llvm::StringRef toolName,
-                            mlir::DialectRegistry &registry) {
+void registerAndParseCLIOptions(int argc, char **argv, llvm::StringRef toolName,
+                                mlir::DialectRegistry &registry) {
 
-    // Register CL config builder prior to parsing
-    qssc::config::CLIConfigBuilder::registerCLOptions(registry);
-    mlir::registerAsmPrinterCLOptions();
-    mlir::registerMLIRContextCLOptions();
-    mlir::registerPassManagerCLOptions();
-    mlir::registerDefaultTimingManagerCLOptions();
-    mlir::tracing::DebugCounter::registerCLOptions();
+  // Register CL config builder prior to parsing
+  qssc::config::CLIConfigBuilder::registerCLOptions(registry);
+  mlir::registerAsmPrinterCLOptions();
+  mlir::registerMLIRContextCLOptions();
+  mlir::registerPassManagerCLOptions();
+  mlir::registerDefaultTimingManagerCLOptions();
+  mlir::tracing::DebugCounter::registerCLOptions();
 
-    // Build the list of dialects as a header for the --help message.
-    std::string helpHeader = (toolName + "\n").str();
-    {
-      llvm::raw_string_ostream os(helpHeader);
-      os << "Available Dialects: ";
+  // Build the list of dialects as a header for the --help message.
+  std::string helpHeader = (toolName + "\n").str();
+  {
+    llvm::raw_string_ostream os(helpHeader);
+    os << "Available Dialects: ";
 
-      interleaveComma(registry.getDialectNames(), os,
-                      [&](auto name) { os << name; });
-      os << "\nAvailable Targets:\n";
-      for (const auto &target :
-          registry::TargetSystemRegistry::registeredPlugins()) {
-        os << target.second.getName() << " - " << target.second.getDescription()
-          << "\n";
-      }
-
-      os << "\nAvailable Payloads:\n";
-      for (const auto &payload :
-          qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
-        os << payload.second.getName() << " - " << payload.second.getDescription()
-          << "\n";
-      }
+    interleaveComma(registry.getDialectNames(), os,
+                    [&](auto name) { os << name; });
+    os << "\nAvailable Targets:\n";
+    for (const auto &target :
+         registry::TargetSystemRegistry::registeredPlugins()) {
+      os << target.second.getName() << " - " << target.second.getDescription()
+         << "\n";
     }
 
-    // Parse pass names in main to ensure static initialization completed.
-    llvm::cl::ParseCommandLineOptions(argc, argv, helpHeader);
-  }
-
-  llvm::Error buildTarget_(qssc::config::QSSConfig &config) {
-    // The below must be performed after CL parsing
-
-    // Create target if one was specified.
-    const auto &targetName = config.getTargetName();
-    const auto &targetConfigPath = config.getTargetConfigPath();
-    if (targetName.has_value()) {
-      auto targetInfo =
-          registry::TargetSystemRegistry::lookupPluginInfo(*targetName);
-      if (!targetInfo)
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                      "Error: Target " + *targetName +
-                                          " is not registered.\n");
-
-      std::optional<llvm::StringRef> conf{};
-      if (targetConfigPath.has_value())
-        conf.emplace(*targetConfigPath);
-      else
-        // If the target exists we must have a configuration path.
-        return llvm::createStringError(
-            llvm::inconvertibleErrorCode(),
-            "Error: A target configuration path was not specified.");
-
-      // Passing nullptr for context here registers the created target
-      // as the default value for when an unknown MLIRContext* is passed to
-      // TargetInfo::getTarget.
-      // We do this only because MlirOptMain does not expose the MLIRContext
-      // it creates for us.
-      if (!targetInfo.value()->createTarget(nullptr, conf))
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                      "Error: Target could not be created.\n");
+    os << "\nAvailable Payloads:\n";
+    for (const auto &payload :
+         qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
+      os << payload.second.getName() << " - " << payload.second.getDescription()
+         << "\n";
     }
-    return llvm::Error::success();
   }
+
+  // Parse pass names in main to ensure static initialization completed.
+  llvm::cl::ParseCommandLineOptions(argc, argv, helpHeader);
+}
+
+llvm::Error buildTarget_(qssc::config::QSSConfig &config) {
+  // The below must be performed after CL parsing
+
+  // Create target if one was specified.
+  const auto &targetName = config.getTargetName();
+  const auto &targetConfigPath = config.getTargetConfigPath();
+  if (targetName.has_value()) {
+    auto targetInfo =
+        registry::TargetSystemRegistry::lookupPluginInfo(*targetName);
+    if (!targetInfo)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "Error: Target " + *targetName +
+                                         " is not registered.\n");
+
+    std::optional<llvm::StringRef> conf{};
+    if (targetConfigPath.has_value())
+      conf.emplace(*targetConfigPath);
+    else
+      // If the target exists we must have a configuration path.
+      return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "Error: A target configuration path was not specified.");
+
+    // Passing nullptr for context here registers the created target
+    // as the default value for when an unknown MLIRContext* is passed to
+    // TargetInfo::getTarget.
+    // We do this only because MlirOptMain does not expose the MLIRContext
+    // it creates for us.
+    if (!targetInfo.value()->createTarget(nullptr, conf))
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "Error: Target could not be created.\n");
+  }
+  return llvm::Error::success();
+}
 } // anonymous namespace
 
 mlir::LogicalResult QSSCOptMain(int argc, char **argv,
@@ -203,8 +203,7 @@ auto main(int argc, char **argv) -> int {
 
   qssc::config::QSSConfig config = configResult.get();
 
-  if (mlir::failed(
-          QSSCOptMain(argc, argv, registry, config)))
+  if (mlir::failed(QSSCOptMain(argc, argv, registry, config)))
     return 1;
 
   return 0;
