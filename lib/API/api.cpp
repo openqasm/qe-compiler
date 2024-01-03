@@ -146,7 +146,10 @@ void showPayloads_() {
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
 llvm::Expected<qssc::hal::TargetSystem &>
-buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
+buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config, mlir::TimingScope &timing) {
+
+  mlir::TimingScope buildTargetTiming = timing.nest("build-target");
+
   const auto &targetName = config.getTargetName();
   const auto &targetConfigPath = config.getTargetConfigPath();
 
@@ -180,6 +183,8 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
         std::move(err));
   }
 
+  buildTargetTiming.stop();
+
   return *created.get();
 }
 
@@ -193,17 +198,20 @@ llvm::Error generateQEM_(
     const QSSConfig &config,
     qssc::hal::compile::TargetCompilationManager *targetCompilationManager,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
-    llvm::raw_ostream *ostream) {
+    llvm::raw_ostream *ostream, mlir::TimingScope &timing) {
 
   if (auto err = targetCompilationManager->compilePayload(
           moduleOp, *payload,
           /* doCompileMLIR=*/!config.shouldBypassPayloadTargetCompilation()))
     return err;
 
+  mlir::TimingScope writePayloadTiming = timing.nest("write-payload");
   if (config.shouldEmitPlaintextPayload())
     payload->writePlain(*ostream);
   else
     payload->write(*ostream);
+
+  writePayloadTiming.stop();
 
   return llvm::Error::success();
 }
@@ -223,7 +231,6 @@ llvm::Error buildPassManager_(mlir::PassManager &pm, bool verifyPasses) {
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Unable to apply pass manager command line options");
-  mlir::applyDefaultTimingPassManagerCLOptions(pm);
 
   // Configure verifier
   pm.enableVerifier(verifyPasses);
@@ -232,9 +239,13 @@ llvm::Error buildPassManager_(mlir::PassManager &pm, bool verifyPasses) {
 }
 
 llvm::Error buildPassManager(const QSSConfig &config, mlir::PassManager &pm,
-                             ErrorHandler errorHandler, bool verifyPasses) {
+                             ErrorHandler errorHandler, bool verifyPasses, mlir::TimingScope &timing) {
   if (auto err = buildPassManager_(pm, verifyPasses))
     return err;
+
+  pm.enableTiming(timing);
+
+
   // Build the provided pipeline.
   if (failed(config.setupPassPipeline(pm)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
@@ -254,7 +265,10 @@ llvm::Error emitMLIR_(
     llvm::raw_ostream *ostream, mlir::MLIRContext &context,
     mlir::ModuleOp moduleOp, const QSSConfig &config,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
-    ErrorHandler errorHandler) {
+    ErrorHandler errorHandler, mlir::TimingScope &timing) {
+
+  mlir::TimingScope emitMlirTiming = timing.nest("emit-mlir");
+
   if (config.shouldCompileTargetIR()) {
     // Check if we can run the target compilation scheduler.
     if (config.shouldAddTargetPasses()) {
@@ -268,6 +282,8 @@ llvm::Error emitMLIR_(
 
   // Print the output.
   dumpMLIR_(ostream, moduleOp);
+
+  emitMlirTiming.stop();
   return llvm::Error::success();
 }
 
@@ -280,7 +296,7 @@ llvm::Error emitMLIR_(
 llvm::Error emitQEM_(
     const QSSConfig &config, llvm::raw_ostream *ostream,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
-    qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager) {
+    qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager, mlir::TimingScope &timing) {
   if (config.shouldIncludeSource()) {
     if (config.isDirectInput()) {
       if (config.getInputType() == InputType::QASM)
@@ -308,7 +324,7 @@ llvm::Error emitQEM_(
   }
 
   if (auto err = generateQEM_(config, &targetCompilationManager,
-                              std::move(payload), moduleOp, ostream))
+                              std::move(payload), moduleOp, ostream, timing))
     return err;
 
   return llvm::Error::success();
@@ -400,11 +416,13 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   // Instantiate after parsing command line options.
   MLIRContext context{};
 
+  mlir::TimingScope buildConfigTiming = timing.nest("build-config");
   auto configResult = qssc::config::buildToolConfig();
   if (auto err = configResult.takeError())
     return err;
   qssc::config::QSSConfig const config = configResult.get();
   qssc::config::setContextConfig(&context, config);
+  buildConfigTiming.stop();
 
   // Populate the context
   context.appendDialectRegistry(registry);
@@ -432,7 +450,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   }
 
   // Build the target for compilation
-  auto targetResult = buildTarget_(&context, config);
+  auto targetResult = buildTarget_(&context, config, timing);
   if (auto err = targetResult.takeError())
     return err;
   auto &target = targetResult.get();
@@ -508,6 +526,9 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   mlir::ModuleOp moduleOp;
 
   if (config.getInputType() == InputType::QASM) {
+
+    mlir::TimingScope loadQASM3Timing = timing.nest("load-qasm3");
+
     if (config.getEmitAction() >= EmitAction::MLIR) {
       moduleOp = mlir::ModuleOp::create(FileLineColLoc::get(
           &context,
@@ -519,14 +540,18 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
             config.getInputSource().str(), !config.isDirectInput(),
             config.getEmitAction() == EmitAction::AST,
             config.getEmitAction() == EmitAction::ASTPretty,
-            config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb))
+            config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb, timing))
       return frontendError;
+
+    loadQASM3Timing.stop();
 
     if (config.getEmitAction() < EmitAction::MLIR)
       return llvm::Error::success();
   } // if input == QASM
 
   if (config.getInputType() == InputType::MLIR) {
+
+    mlir::TimingScope mlirParserTiming = timing.nest("parse-mlir");
 
     // Tell sourceMgr about this buffer, which is what the parser will pick up.
     auto sourceMgr = std::make_shared<llvm::SourceMgr>();
@@ -552,11 +577,10 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
       reproOptions.attachResourceParser(parseConfig);
 
     // Parse the input file and reset the context threading state.
-    mlir::TimingScope parserTiming = timing.nest("Parser");
     mlir::OwningOpRef<Operation *> op = mlir::parseSourceFileForTool(
         sourceMgr, parseConfig, !config.shouldUseExplicitModule());
 
-    parserTiming.stop();
+    mlirParserTiming.stop();
 
     if (!op)
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
@@ -606,25 +630,28 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
         "Unable to apply target compilation options.");
 
   // Run additional passes specified on the command line
+
+  mlir::TimingScope commandLinePassesTiming = timing.nest("command-line-passes");
   mlir::PassManager pm(&context);
-  if (auto err = buildPassManager(config, pm, errorHandler, verifyPasses))
+  if (auto err = buildPassManager(config, pm, errorHandler, verifyPasses, commandLinePassesTiming))
     return err;
 
   if (pm.size() && failed(pm.run(moduleOp)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problems running the compiler pipeline!");
+  commandLinePassesTiming.stop();
 
   // Prepare outputs
   if (config.getEmitAction() == EmitAction::MLIR) {
     if (auto err = emitMLIR_(ostream, context, moduleOp, config,
-                             targetCompilationManager, errorHandler))
+                             targetCompilationManager, errorHandler, timing))
       return err;
   }
 
   if (config.getEmitAction() == EmitAction::QEM ||
       config.getEmitAction() == EmitAction::QEQEM) {
     if (auto err = emitQEM_(config, ostream, std::move(payload), moduleOp,
-                            targetCompilationManager))
+                            targetCompilationManager, timing))
       return err;
   }
 

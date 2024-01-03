@@ -119,7 +119,11 @@ parseDurationStr(const std::string &durationStr) {
 llvm::Error qssc::frontend::openqasm3::parse(
     std::string const &source, bool sourceIsFilename, bool emitRawAST,
     bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp newModule,
-    std::optional<qssc::DiagnosticCallback> diagnosticCallback) {
+    std::optional<qssc::DiagnosticCallback> diagnosticCallback,
+    mlir::TimingScope &timing) {
+
+
+  mlir::TimingScope qasm3ParseTiming = timing.nest("parse-qasm3");
 
   // The QASM parser can only be called from a single thread.
   std::lock_guard<std::mutex> const qasmParserLockGuard(qasmParserLock);
@@ -238,6 +242,8 @@ llvm::Error qssc::frontend::openqasm3::parse(
         llvm::Twine{"Exception while parsing OpenQASM 3 input: "} + e.what());
   }
 
+  qasm3ParseTiming.stop();
+
   if (!root)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Failed to parse OpenQASM 3 input");
@@ -254,6 +260,8 @@ llvm::Error qssc::frontend::openqasm3::parse(
   }
 
   if (emitMLIR) {
+    mlir::TimingScope qasm3ToMlirTiming = timing.nest("convert-qasm3-to-mlir");
+
     auto *context = newModule.getContext();
 
     context->loadDialect<mlir::quir::QUIRDialect>();
@@ -288,6 +296,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                      "Failed to verify generated QUIR");
     }
+    qasm3ToMlirTiming.stop();
   }
 
   return llvm::Error::success();

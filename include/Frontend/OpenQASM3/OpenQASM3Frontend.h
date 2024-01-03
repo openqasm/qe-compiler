@@ -25,6 +25,7 @@
 #include "API/errors.h"
 
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/Support/Timing.h"
 
 #include "llvm/Support/Error.h"
 
@@ -47,7 +48,7 @@ namespace qssc::frontend::openqasm3 {
 llvm::Error parse(std::string const &source, bool sourceIsFilename,
                   bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
                   mlir::ModuleOp newModule,
-                  std::optional<DiagnosticCallback> diagnosticCb);
+                  std::optional<DiagnosticCallback> diagnosticCb, mlir::TimingScope &timing);
 
 }; // namespace qssc::frontend::openqasm3
 
