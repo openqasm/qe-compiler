@@ -17,7 +17,7 @@ name: Post clang-tidy review comments
 on:
   workflow_run:
     # The name field of the lint action
-    # Defined in ci.yml workflow
+    # Defined in lint.yml workflow
     workflows: ["Static Checks"]
     types:
       - completed
