@@ -93,7 +93,7 @@ def QCS_BroadcastOp : QCS_Op<"broadcast", [NonInterferingNonDeadSideEffect]> {
 
         Example:
         ```mlir
-        %angle1 = quir.constant #quir.angle<0.2 : !quir.angle<20>>
+        %angle1 = quir.constant #quir.angle<0.2> : !quir.angle<20>
         qcs.broadcast %angle1 : !quir.angle<20>
         ```
     }];
@@ -178,7 +178,7 @@ def QCS_RecvOp : QCS_Op<"recv", [NonInterferingNonDeadSideEffect]> {
 
 def QCS_ParallelControlFlowOp : QCS_Op<"parallel_control_flow", [
                         SingleBlockImplicitTerminator<"ParallelEndOp">,
-                        RecursiveSideEffects]> {
+                        RecursiveMemoryEffects]> {
     let summary = "Contain a group of control flow ops that can run in parallel";
     let description = [{
         The `qcs.parallel_control_flow` operation has a single region and block
@@ -189,10 +189,10 @@ def QCS_ParallelControlFlowOp : QCS_Op<"parallel_control_flow", [
         ```mlir
         qcs.parallel_control_flow {
             scf.if (%c0) {
-                quir.gate_call @x(%q0) : (!quir.qubit<1>) -> ()
+                quir.gate_func.call @x(%q0) : (!quir.qubit<1>) -> ()
             } {quir.physicalIds = [0 : i32]}
             scf.if (%c1) {
-                quir.gate_call @x(%q1) : (!quir.qubit<1>) -> ()
+                quir.gate_func.call @x(%q1) : (!quir.qubit<1>) -> ()
             } {quir.physicalIds = [1 : i32]}
         }
         ```
@@ -204,15 +204,14 @@ def QCS_ParallelControlFlowOp : QCS_Op<"parallel_control_flow", [
 }
 
 def QCS_ParallelEndOp : QCS_Op<"parallel_control_flow_end", [
-    Terminator, HasParent<"ParallelControlFlowOp">, NoSideEffect]> {
+    Terminator, HasParent<"ParallelControlFlowOp">, Pure]> {
   let summary = "A pseudo-op that marks the end of a `qcs.parallel_control_flow` op.";
   let description = [{
     This op terminates the only block inside the only region of a
     `qcs.parallel_control_flow` op.
   }];
 
-  let parser = "return success();";
-  let printer = "p << getOperationName();";
+  let hasCustomAssemblyFormat = 1;
 }
 
 def QCS_ShotInitOp : QCS_Op<"shot_init", [IsolatedFromAbove]> {
@@ -230,7 +229,7 @@ def QCS_DeclareParameterOp : QCS_Op<"declare_parameter", [Symbol]> {
     let summary = "system input parameter subject to post compilation updates";
     let description = [{
         The `qcs.declare_parameter` operation adds a symbol defining an input parameter
-        which may be modified after compilation before/during program invocation. 
+        which may be modified after compilation before/during program invocation.
         The value of the input parameter
         may be obtained using the qcs.use_input_parameter operation.
 
@@ -298,8 +297,6 @@ def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
     let assemblyFormat = [{
         $parameter_name `:` type($res) attr-dict
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 

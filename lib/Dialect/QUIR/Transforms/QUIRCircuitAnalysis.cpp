@@ -17,11 +17,28 @@
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
+#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
-#include "mlir/Pass/AnalysisManager.h"
 
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Pass/AnalysisManager.h"
+#include "mlir/Pass/Pass.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+
+#include <cassert>
+#include <map>
+#include <sys/types.h>
+#include <unordered_map>
+#include <utility>
 
 using namespace mlir;
 
@@ -66,10 +83,11 @@ angleValToDouble(mlir::Value inVal,
   }
 
   if (auto castOp = inVal.getDefiningOp<mlir::oq3::CastOp>()) {
-    auto defOp = castOp.arg().getDefiningOp<mlir::qcs::ParameterLoadOp>();
+    auto defOp = castOp.getArg().getDefiningOp<mlir::qcs::ParameterLoadOp>();
     if (defOp)
       return parameterValToDouble(defOp, nameAnalysis);
-    if (auto constOp = castOp.arg().getDefiningOp<mlir::arith::ConstantOp>()) {
+    if (auto constOp =
+            castOp.getArg().getDefiningOp<mlir::arith::ConstantOp>()) {
       if (auto angleAttr = constOp.getValue().dyn_cast<mlir::quir::AngleAttr>())
         return angleAttr.getValue().convertToDouble();
       if (auto floatAttr = constOp.getValue().dyn_cast<mlir::FloatAttr>())
@@ -105,7 +123,7 @@ llvm::StringRef QUIRCircuitAnalysis::getParameterName(mlir::Value operand) {
     auto castOp = dyn_cast<mlir::oq3::CastOp>(operand.getDefiningOp());
     if (castOp)
       parameterLoad =
-          dyn_cast<qcs::ParameterLoadOp>(castOp.arg().getDefiningOp());
+          dyn_cast<qcs::ParameterLoadOp>(castOp.getArg().getDefiningOp());
   }
 
   if (parameterLoad &&
@@ -121,7 +139,7 @@ quir::DurationAttr QUIRCircuitAnalysis::getDuration(mlir::Value operand) {
   auto constantOp = dyn_cast<quir::ConstantOp>(operand.getDefiningOp());
 
   if (constantOp)
-    return constantOp.value().dyn_cast<DurationAttr>();
+    return constantOp.getValue().dyn_cast<DurationAttr>();
   return duration;
 }
 
@@ -139,8 +157,8 @@ QUIRCircuitAnalysis::QUIRCircuitAnalysis(mlir::Operation *moduleOp,
     auto nameAnalysisOptional =
         am.getCachedParentAnalysis<mlir::qcs::ParameterInitialValueAnalysis>(
             moduleOp->getParentOfType<ModuleOp>());
-    if (nameAnalysisOptional.hasValue()) {
-      nameAnalysis = &nameAnalysisOptional.getValue().get();
+    if (nameAnalysisOptional.has_value()) {
+      nameAnalysis = &nameAnalysisOptional.value().get();
       runGetAnalysis = false;
     }
   }
@@ -152,13 +170,13 @@ QUIRCircuitAnalysis::QUIRCircuitAnalysis(mlir::Operation *moduleOp,
       circuitOps;
 
   moduleOp->walk([&](CircuitOp circuitOp) {
-    circuitOps[circuitOp->getParentOfType<ModuleOp>()][circuitOp.sym_name()] =
+    circuitOps[circuitOp->getParentOfType<ModuleOp>()][circuitOp.getSymName()] =
         circuitOp.getOperation();
   });
 
   moduleOp->walk([&](CallCircuitOp callCircuitOp) {
     auto search = circuitOps[callCircuitOp->getParentOfType<ModuleOp>()].find(
-        callCircuitOp.calleeAttr().getValue());
+        callCircuitOp.getCalleeAttr().getValue());
 
     if (search ==
         circuitOps[callCircuitOp->getParentOfType<ModuleOp>()].end()) {
@@ -169,13 +187,13 @@ QUIRCircuitAnalysis::QUIRCircuitAnalysis(mlir::Operation *moduleOp,
     auto circuitOp = dyn_cast<CircuitOp>(search->second);
     auto parentModuleOp = circuitOp->getParentOfType<ModuleOp>();
 
-    for (uint ii = 0; ii < callCircuitOp.operands().size(); ++ii) {
+    for (uint ii = 0; ii < callCircuitOp.getOperands().size(); ++ii) {
 
       double value = 0;
       llvm::StringRef parameterName = {};
       quir::DurationAttr duration;
 
-      auto operand = callCircuitOp.operands()[ii];
+      auto operand = callCircuitOp.getOperands()[ii];
 
       // cache angle values and parameter names
       if (auto angType = operand.getType().dyn_cast<quir::AngleType>()) {

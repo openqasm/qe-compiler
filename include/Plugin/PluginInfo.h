@@ -26,7 +26,7 @@ public:
   using PluginConfiguration = typename PluginType::PluginConfiguration;
   using PluginFactoryFunction =
       std::function<llvm::Expected<std::unique_ptr<PluginType>>(
-          llvm::Optional<PluginConfiguration> configuration)>;
+          std::optional<PluginConfiguration> configuration)>;
 
 public:
   PluginInfo(llvm::StringRef name, llvm::StringRef description,
@@ -42,7 +42,7 @@ public:
 
   /// Returns a new instance of the registered PluginType
   llvm::Expected<std::unique_ptr<PluginType>>
-  createPluginInstance(llvm::Optional<PluginConfiguration> configuration) {
+  createPluginInstance(std::optional<PluginConfiguration> configuration) {
     return factoryFunction(configuration);
   }
 

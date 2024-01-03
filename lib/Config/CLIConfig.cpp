@@ -13,40 +13,45 @@
 //===----------------------------------------------------------------------===//
 
 #include "Config/CLIConfig.h"
+#include "Config/QSSConfig.h"
+
+#include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Error.h"
+
+#include <string>
 
 using namespace qssc::config;
 
+namespace {
 // The space below at the front of the string causes this category to be printed
 // first
-static llvm::cl::OptionCategory
+llvm::cl::OptionCategory
     qsscCat_(" QSS Compiler Options",
              "Options that control high-level behavior of QSS Compiler");
 
-llvm::cl::OptionCategory &qssc::config::getQSSCCategory() { return qsscCat_; }
-
-static llvm::cl::opt<std::string> configurationPath(
+llvm::cl::opt<std::string> configurationPath(
     "config",
     llvm::cl::desc("Path to configuration file or directory (depends on the "
                    "target), - means use the config service"),
     llvm::cl::value_desc("path"), llvm::cl::cat(qsscCat_), llvm::cl::Optional);
 
-static llvm::cl::opt<std::string>
+llvm::cl::opt<std::string>
     targetStr("target",
               llvm::cl::desc(
                   "Target architecture. Required for machine code generation."),
               llvm::cl::value_desc("targetName"),
               llvm::cl::cat(getQSSCCategory()));
 
-static llvm::cl::opt<bool> allowUnregisteredDialects(
+llvm::cl::opt<bool> allowUnregisteredDialects(
     "allow-unregistered-dialect",
     llvm::cl::desc("Allow operation with no registered dialects"),
     llvm::cl::init(false), llvm::cl::cat(getQSSCCategory()));
 
-static llvm::cl::opt<bool> addTargetPasses(
+llvm::cl::opt<bool> addTargetPasses(
     "add-target-passes", llvm::cl::desc("Add target-specific passes"),
     llvm::cl::init(true), llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-static llvm::cl::opt<enum QSSVerbosity>
+llvm::cl::opt<enum QSSVerbosity>
     verbosity("verbosity", llvm::cl::init(QSSVerbosity::_VerbosityCnt),
               llvm::cl::desc("Set verbosity level for output, default is warn"),
               llvm::cl::values(clEnumValN(QSSVerbosity::Error, "error",
@@ -59,9 +64,11 @@ static llvm::cl::opt<enum QSSVerbosity>
                                           "Also emit debug messages")),
               llvm::cl::cat(qssc::config::getQSSCCategory()));
 
-static llvm::cl::alias verbosityShort("v",
-                                      llvm::cl::desc("Alias for --verbosity"),
-                                      llvm::cl::aliasopt(verbosity));
+llvm::cl::alias verbosityShort("v", llvm::cl::desc("Alias for --verbosity"),
+                               llvm::cl::aliasopt(verbosity));
+} // anonymous namespace
+
+llvm::cl::OptionCategory &qssc::config::getQSSCCategory() { return qsscCat_; }
 
 llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   if (auto err = populateConfigurationPath_(config))

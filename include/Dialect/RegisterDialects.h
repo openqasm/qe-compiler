@@ -21,6 +21,7 @@
 #ifndef UTILS_DIALECTUTILS_H
 #define UTILS_DIALECTUTILS_H
 
+#include "mlir/IR/DialectRegistry.h"
 #include "mlir/InitAllDialects.h"
 
 #include "Dialect/OQ3/IR/OQ3Dialect.h"
@@ -31,12 +32,10 @@
 namespace qssc::dialect {
 
 /// Register all qss-compiler dialects returning a dialect registry
-inline mlir::DialectRegistry registerDialects() {
-  mlir::DialectRegistry registry;
+inline void registerDialects(mlir::DialectRegistry &registry) {
   mlir::registerAllDialects(registry);
   registry.insert<mlir::oq3::OQ3Dialect, mlir::quir::QUIRDialect,
                   mlir::pulse::PulseDialect, mlir::qcs::QCSDialect>();
-  return registry;
 }
 } // namespace qssc::dialect
 

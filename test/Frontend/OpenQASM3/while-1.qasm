@@ -25,21 +25,20 @@ int n = 1;
 
 bit is_excited;
 
-// MLIR-CIRCUITS: func @h(%arg0: !quir.qubit<1>) {
+// MLIR-CIRCUITS: func.func @h(%arg0: !quir.qubit<1>) {
 // MLIR-CIRCUITS: quir.call_circuit @circuit_0(%arg0) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: return 
+// MLIR-CIRCUITS: return
 
 // MLIR-CIRCUITS: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) {
-// MLIR-CIRCUITS: %angle = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
+// MLIR-CIRCUITS: %angle = quir.constant #quir.angle<1.57079632679> : !quir.angle<64>
 // MLIR-CIRCUITS: quir.builtin_U %arg0, %angle, %angle_0, %angle_1 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.return
-  
+
 // MLIR-CIRCUITS: quir.circuit @circuit_1(%arg0: !quir.qubit<1>) -> i1 {
 // MLIR-CIRCUITS: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
-// MLIR-CIRCUITS: %cst = constant unit
 // MLIR-CIRCUITS: %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
 // MLIR-CIRCUITS: quir.return %0 : i1
-  
+
 // MLIR-CIRCUITS: quir.circuit @circuit_2(%arg0: !quir.qubit<1>) {
 // MLIR-CIRCUITS: quir.call_gate @h(%arg0) : (!quir.qubit<1>) -> ()
 // MLIR-CIRCUITS: quir.return
@@ -57,7 +56,6 @@ while (n != 0) {
     // AST-PRETTY: ops=[
     // AST-PRETTY: UGateOpNode(params=[AngleNode(value=1.57079632679000003037, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=3.14159265359000006157, bits=64)], qubits=[], qcparams=[q])
     // MLIR-NO-CIRCUITS: quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-    // MLIR-NO-CIRCUITS: %cst = constant unit
     h $0;
     // MLIR-NO-CIRCUITS: %2 = quir.measure(%0) : (!quir.qubit<1>) -> i1
     // MLIR-CIRCUITS: %2 = quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> i1
@@ -68,15 +66,14 @@ while (n != 0) {
     // MLIR: scf.if %4 {
     if (is_excited) {
         // MLIR-NO-CIRCUITS:     quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-        // MLIR-NO-CIRCUITS:     %cst_1 = constant unit
         // MLIR-CIRCUITS: quir.call_circuit @circuit_2(%0) : (!quir.qubit<1>) -> ()
         // MLIR: }
         h $0;
     }
     // error: Binary operation ASTOpTypeSub not supported yet.
     // n = n - 1;
-    // MLIR: %c0_i32_0 = arith.constant 0 : i32
-    // MLIR: oq3.variable_assign @n : i32 = %c0_i32_0
+    // MLIR: [[REG:.*]] = arith.constant 0 : i32
+    // MLIR: oq3.variable_assign @n : i32 = [[REG]]
     n = 0;  // workaround for n = n - 1
     // MLIR: scf.yield
 }

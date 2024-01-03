@@ -17,6 +17,10 @@
 #include "HAL/PassRegistration.h"
 #include "HAL/TargetSystemRegistry.h"
 
+#include "llvm/Support/Error.h"
+
+#include <utility>
+
 using namespace qssc;
 using namespace qssc::hal;
 

@@ -20,20 +20,31 @@
 
 #include "Conversion/QUIRToStandard/TypeConversion.h"
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
+
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/Types.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/ValueRange.h"
+
+#include "llvm/Support/raw_ostream.h"
+
+#include <optional>
 
 namespace mlir {
 
 namespace {
-Optional<Type> convertCBitType(quir::CBitType t) {
+std::optional<Type> convertCBitType(quir::CBitType t) {
 
   if (t.getWidth() <= 64)
     return IntegerType::get(t.getContext(), t.getWidth());
 
-  return llvm::None;
+  return std::nullopt;
 }
 
-Optional<Type> legalizeIndexType(mlir::IndexType t) { return t; }
+std::optional<Type> legalizeIndexType(mlir::IndexType t) { return t; }
 } // anonymous namespace
 
 QuirTypeConverter::QuirTypeConverter() {
@@ -44,13 +55,13 @@ QuirTypeConverter::QuirTypeConverter() {
   addConversion(legalizeIndexType);
 }
 
-Optional<Type> QuirTypeConverter::convertAngleType(Type t) {
+std::optional<Type> QuirTypeConverter::convertAngleType(Type t) {
 
   auto *context = t.getContext();
   if (auto angleType = t.dyn_cast<quir::AngleType>()) {
     auto width = angleType.getWidth();
 
-    if (!width.hasValue()) {
+    if (!width.has_value()) {
       llvm::errs() << "Cannot lower an angle with no width!\n";
       return {};
     }
@@ -68,16 +79,16 @@ Optional<Type> QuirTypeConverter::convertAngleType(Type t) {
     // for function types in func defs and calls
     return floatType;
   }
-  return llvm::None;
+  return std::nullopt;
 } // convertAngleType
 
-Optional<Value> QuirTypeConverter::angleSourceMaterialization(
+std::optional<Value> QuirTypeConverter::angleSourceMaterialization(
     OpBuilder &builder, quir::AngleType aType, ValueRange valRange,
     Location loc) {
-  for (Value val : valRange) {
+  for (Value const val : valRange) {
     auto castOp = builder.create<oq3::CastOp>(loc, aType, val);
-    return castOp.out();
+    return castOp.getOut();
   } // for val : valRange
-  return llvm::None;
+  return std::nullopt;
 } // angleSourceMaterialization
 } // namespace mlir

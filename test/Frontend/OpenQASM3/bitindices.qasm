@@ -1,7 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false | FileCheck %s --check-prefixes MLIR,MLIR-NO-CIRCUITS
-// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --check-prefixes MLIR,MLIR-CIRCUITS 
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -17,7 +17,7 @@ OPENQASM 3.0;
 // that they have been altered from the originals.
 
 // MLIR: module
-// MLIR-DAG: func @main
+// MLIR-DAG: func.func @main
 
 // AST-PRETTY DeclarationNode(type=ASTTypeBitset, CBitNode(name=a, bits=1))
 // DeclarationNode(type=ASTTypeBitset, CBitNode(name=b, bits=2, value=10))

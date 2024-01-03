@@ -20,12 +20,12 @@ import os.path
 import os
 import shutil
 
-LLVM_TAG = "llvmorg-14.0.6"
+LLVM_TAG = "llvmorg-17.0.5"
 
 
 class ClangToolsExtraConan(ConanFile):
     name = "clang-tools-extra"
-    version = "14.0.6"
+    version = "17.0.5-0"
     description = "A toolkit for analysis of c++ projects."
     license = "Apache-2.0 WITH LLVM-exception"
     topics = ("conan", "llvm", "clang-tools-extra")

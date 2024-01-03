@@ -12,5 +12,5 @@
 
 set(SOURCES DebugIndent.cpp)
 
-add_library(Utils ${SOURCES})
-target_link_libraries(Utils ${BOOST_LIBRARIES})
+add_library(QSSCUtils ${SOURCES})
+target_link_libraries(QSSCUtils ${BOOST_LIBRARIES})

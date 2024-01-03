@@ -53,8 +53,8 @@ pulse.sequence @sequence3 () {
 // -----
 
 pulse.sequence @sequence4 () -> i1 {
-	%ub = constant 10 : index
-	%cmpval = constant 9 : index
+	%ub = arith.constant 10 : index
+	%cmpval = arith.constant 9 : index
 	// expected-error@+1 {{'arith.cmpi' op is not valid within a real-time pulse sequence.}}
 	%cond = arith.cmpi "eq", %ub, %cmpval : index
 	pulse.return
@@ -91,7 +91,7 @@ pulse.sequence @sequence7 (%port : !pulse.port, %waveform: !pulse.waveform) {
 // -----
 
 // verify MLIR sequence required error is reported when a pulse.play is not contained in a sequence
-func @invalid_sequence_required1(%mf0: !pulse.mixed_frame,%waveform: !pulse.waveform) {
+func.func @invalid_sequence_required1(%mf0: !pulse.mixed_frame,%waveform: !pulse.waveform) {
 	// expected-error@+1 {{'pulse.play' op expects parent op 'pulse.sequence'}}
     pulse.play(%mf0, %waveform) : (!pulse.mixed_frame, !pulse.waveform)
 }
@@ -100,7 +100,7 @@ func @invalid_sequence_required1(%mf0: !pulse.mixed_frame,%waveform: !pulse.wave
 
 // verify MLIR sequence required error is reported when a pulse.capture is not contained in a
 // sequence
-func @invalid_sequence_required2(%mf0: !pulse.mixed_frame) {
+func.func @invalid_sequence_required2(%mf0: !pulse.mixed_frame) {
 	// expected-error@+1 {{'pulse.capture' op expects parent op 'pulse.sequence'}}
     %res0 = pulse.capture(%mf0) : (!pulse.mixed_frame) -> i1
 }
@@ -109,7 +109,7 @@ func @invalid_sequence_required2(%mf0: !pulse.mixed_frame) {
 
 // verify MLIR sequence required error is reported when a pulse.return is not contained in a
 // sequence
-func @invalid_sequence_required3() {
+func.func @invalid_sequence_required3() {
 	%false = arith.constant 0 : i1
 	// expected-error@+1 {{'pulse.return' op expects parent op 'pulse.sequence'}}
     pulse.return %false : i1
@@ -119,7 +119,7 @@ func @invalid_sequence_required3() {
 
 // verify MLIR sequence required error is reported when a pulse.set_frequency is not contained in a
 // sequence
-func @invalid_sequence_required4(%frame: !pulse.frame, %frequency : f64) {
+func.func @invalid_sequence_required4(%frame: !pulse.frame, %frequency : f64) {
 	// expected-error@+1 {{'pulse.set_frequency' op expects parent op 'pulse.sequence'}}
     pulse.set_frequency(%frame, %frequency) : (!pulse.frame, f64)
 }
@@ -128,7 +128,7 @@ func @invalid_sequence_required4(%frame: !pulse.frame, %frequency : f64) {
 
 // verify MLIR sequence required error is reported when a pulse.shift_frequency is not contained in a
 // sequence
-func @invalid_sequence_required5(%frame: !pulse.frame, %frequency : f64) {
+func.func @invalid_sequence_required5(%frame: !pulse.frame, %frequency : f64) {
 	// expected-error@+1 {{'pulse.shift_frequency' op expects parent op 'pulse.sequence'}}
     pulse.shift_frequency(%frame, %frequency) : (!pulse.frame, f64)
 }
@@ -137,7 +137,7 @@ func @invalid_sequence_required5(%frame: !pulse.frame, %frequency : f64) {
 
 // verify MLIR sequence required error is reported when a pulse.set_phase is not contained in a
 // sequence
-func @invalid_sequence_required4(%frame: !pulse.frame, %phase : f64) {
+func.func @invalid_sequence_required4(%frame: !pulse.frame, %phase : f64) {
 	// expected-error@+1 {{'pulse.set_phase' op expects parent op 'pulse.sequence'}}
     pulse.set_phase(%frame, %phase) : (!pulse.frame, f64)
 }
@@ -146,7 +146,7 @@ func @invalid_sequence_required4(%frame: !pulse.frame, %phase : f64) {
 
 // verify MLIR sequence required error is reported when a pulse.shift_phase is not contained in a
 // sequence
-func @invalid_sequence_required5(%frame: !pulse.frame, %phase : f64) {
+func.func @invalid_sequence_required5(%frame: !pulse.frame, %phase : f64) {
 	// expected-error@+1 {{'pulse.shift_phase' op expects parent op 'pulse.sequence'}}
     pulse.shift_phase(%frame, %phase) : (!pulse.frame, f64)
 }

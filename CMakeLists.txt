@@ -246,7 +246,6 @@ list(APPEND RUN_CLANG_TIDY_BIN_ARGS
     -clang-apply-replacements-binary ${CLANG_AR_BIN}
     -style=file
     -quiet
-    -header-filter="${CMAKE_SOURCE_DIR}/[^b].*"
 )
 
 # run clang-tidy linter only when compiling with clang (compiler flags may be

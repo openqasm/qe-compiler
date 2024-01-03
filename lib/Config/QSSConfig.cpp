@@ -14,8 +14,16 @@
 
 #include "Config/QSSConfig.h"
 
+#include "mlir/IR/MLIRContext.h"
+
 #include "llvm/ADT/DenseMap.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <ostream>
+#include <utility>
 
 using namespace qssc::config;
 
@@ -53,21 +61,25 @@ std::ostream &operator<<(std::ostream &os,
   return os;
 }
 
+namespace {
 /// Mapping of registered MLIRContext configurations.
 /// QUESTION: Rather than a global registry it seems like it would be much
 /// better to inherit the MLIRContext as QSSContext and set the configuration on
 /// this? Alternatively the QSSContext could own the MLIRContext?
-static llvm::DenseMap<mlir::MLIRContext *, QSSConfig> contextConfigs{};
+static llvm::ManagedStatic<llvm::DenseMap<mlir::MLIRContext *, QSSConfig>>
+    contextConfigs{};
+
+} // anonymous namespace
 
 void qssc::config::setContextConfig(mlir::MLIRContext *context,
-                                    QSSConfig config) {
-  contextConfigs[context] = std::move(config);
+                                    const QSSConfig &config) {
+  (*contextConfigs)[context] = config;
 }
 
 llvm::Expected<const QSSConfig &>
 qssc::config::getContextConfig(mlir::MLIRContext *context) {
-  auto it = contextConfigs.find(context);
-  if (it != contextConfigs.end())
+  auto it = contextConfigs->find(context);
+  if (it != contextConfigs->end())
     return it->getSecond();
 
   return llvm::createStringError(

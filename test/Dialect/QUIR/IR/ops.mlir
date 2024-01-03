@@ -19,9 +19,9 @@
 // CHECK-LABEL: quir.circuit @circuit1(%{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.qubit<1>, %{{.*}}: !quir.angle<32>) -> i1 {
 quir.circuit @circuit1 (%q0 : !quir.qubit<1>, %q1 : !quir.qubit<1>, %theta: !quir.angle<32>) -> i1 {
 
-	%a0 = quir.constant #quir.angle<1.57079632679 : !quir.angle<20>>
-	%a1 = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-	%a2 = quir.constant #quir.angle<3.14159265359 : !quir.angle<20>>
+	%a0 = quir.constant #quir.angle<1.57079632679> : !quir.angle<20>
+	%a1 = quir.constant #quir.angle<0.0> : !quir.angle<20>
+	%a2 = quir.constant #quir.angle<3.14159265359> : !quir.angle<20>
 	quir.builtin_U %q0, %a0, %a1, %a2 : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle<20>
 	quir.builtin_CX %q0, %q1 : !quir.qubit<1>, !quir.qubit<1>
 
@@ -47,8 +47,8 @@ quir.circuit @circuit2 (%q0: !quir.qubit<1>, %omega: !quir.angle<32>) -> (i1, i1
 	quir.return %res0, %res0 : i1, i1
 }
 
-// CHECK-LABEL: func @quir_switch(%arg0: i32) -> i32
-func @quir_switch (%flag: i32) -> (i32) {
+// CHECK-LABEL: func.func @quir_switch(%arg0: i32) -> i32
+func.func @quir_switch (%flag: i32) -> (i32) {
     // CHECK: %[[y:.*]] = quir.switch %arg0 -> (i32)
     %y = quir.switch %flag -> (i32) {
             // CHECK: %[[y_def:.*]] = arith.constant 0 : i32
@@ -66,10 +66,10 @@ func @quir_switch (%flag: i32) -> (i32) {
 
     // CHECK: %[[qb1:.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
     %qb1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
-    // CHECK: %[[theta:.*]] = quir.constant #quir.angle<1.000000e-01 : !quir.angle<1>>
-    %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
-    // CHECK: %[[twotheta:.*]] = quir.constant #quir.angle<2.000000e-01 : !quir.angle<1>>
-    %twotheta = quir.constant #quir.angle<0.2 : !quir.angle<1>>
+    // CHECK: %[[theta:.*]] = quir.constant #quir.angle<1.000000e-01> : !quir.angle<1>
+    %theta = quir.constant #quir.angle<0.1> : !quir.angle<1>
+    // CHECK: %[[twotheta:.*]] = quir.constant #quir.angle<2.000000e-01> : !quir.angle<1>
+    %twotheta = quir.constant #quir.angle<0.2> : !quir.angle<1>
 
     // CHECK: quir.switch %arg0
     quir.switch %flag {
@@ -90,23 +90,23 @@ func @quir_switch (%flag: i32) -> (i32) {
     return %y : i32
 }
 
-// CHECK-LABEL: func @quir_durations()
-func @quir_durations () {
-    %duration_dt0 = quir.constant #quir.duration<10.0 : <dt>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <dt>>
-    %duration_dt1 = quir.constant #quir.duration<10.0 : !quir.duration<dt>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <dt>>
-    %duration_s = quir.constant #quir.duration<10.0 : !quir.duration<s>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <s>>
-    %duration_ms = quir.constant #quir.duration<10.0 : !quir.duration<ms>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <ms>>
-    %duration_us = quir.constant #quir.duration<10.0 : !quir.duration<us>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <us>>
-    %duration_ns = quir.constant #quir.duration<10.0 : !quir.duration<ns>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <ns>>
-    %duration_ps = quir.constant #quir.duration<10.0 : !quir.duration<ps>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <ps>>
-    %duration_fs = quir.constant #quir.duration<10.0 : !quir.duration<fs>>
-    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01 : <fs>>
+// CHECK-LABEL: func.func @quir_durations()
+func.func @quir_durations () {
+    %duration_dt0 = quir.constant #quir.duration<10.0> : !quir.duration<dt>
+    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<dt>
+    %duration_dt1 = quir.constant #quir.duration<10.0> : !quir.duration<dt>
+    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<dt>
+    %duration_s = quir.constant #quir.duration<10.0> : !quir.duration<s>
+    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<s>
+    %duration_ms = quir.constant #quir.duration<10.0> : !quir.duration<ms>
+    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<ms>
+    %duration_us = quir.constant #quir.duration<10.0> : !quir.duration<us>
+    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<us>
+    %duration_ns = quir.constant #quir.duration<10.0> : !quir.duration<ns>
+    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<ns>
+    %duration_ps = quir.constant #quir.duration<10.0> : !quir.duration<ps>
+    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<ps>
+    %duration_fs = quir.constant #quir.duration<10.0> : !quir.duration<fs>
+    // CHECK: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<fs>
     return
 }

@@ -51,9 +51,9 @@ ${qssc_api_libs}
 QSSCHAL
 MLIRExecutionEngine
 MLIROptLib
-MLIRLLVMIR
+MLIRLLVMDialect
 MLIRLLVMToLLVMIRTranslation
-MLIRStandardOpsTransforms
+MLIRFuncTransforms
 ${llvm_code_gen_libraries}
 PLUGIN_REGISTRATION_HEADERS
 ${CMAKE_CURRENT_SOURCE_DIR}/Target.inc

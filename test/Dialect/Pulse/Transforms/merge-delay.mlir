@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir -pass-pipeline='pulse.sequence(pulse-merge-delay)' %s | FileCheck %s
+// RUN: qss-compiler -X=mlir -pass-pipeline='any(pulse.sequence(pulse-merge-delay))' %s | FileCheck %s
 
 //
 // This code is part of Qiskit.
@@ -13,7 +13,7 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-func @main() -> i32 {
+func.func @main() -> i32 {
     %1 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
     %3 = "pulse.mix_frame"(%1) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame
     %5 = "pulse.mix_frame"(%1) {uid = "mf1-p0"} : (!pulse.port) -> !pulse.mixed_frame
@@ -29,10 +29,10 @@ func @main() -> i32 {
 }
 
 pulse.sequence @seq_0(%arg0: !pulse.mixed_frame, %arg1: !pulse.mixed_frame) -> i1 {
-    // CHECK: %c6_i32 = arith.constant 6 : i32
-    // CHECK-NOT: %c12_i32 = arith.constant 12 : i32
     // CHECK: %c18_i32 = arith.constant 18 : i32
     // CHECK: %c36_i32 = arith.constant 36 : i32
+    // CHECK: %c6_i32 = arith.constant 6 : i32
+    // CHECK-NOT: %c12_i32 = arith.constant 12 : i32
     %c6_i32 = arith.constant 6 : i32
     %c12_i32 = arith.constant 12 : i32
     %c18_i32 = arith.constant 18 : i32
