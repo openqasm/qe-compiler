@@ -23,7 +23,7 @@ module {
   }
   quir.circuit @circuit_2_q5_q3_circuit_3_q5(%arg0: !quir.qubit<1> {quir.physicalId = 5 : i32}, %arg1: !quir.qubit<1> {quir.physicalId = 3 : i32}) -> (i1, i1) attributes {quir.classicalOnly = false, quir.physicalIds = [3 : i32, 5 : i32]} {
   // CHECK-NOT: quir.circuit @circuit_2_q5_q3_circuit_3_q5(%arg0: !quir.qubit<1> {quir.physicalId = 5 : i32}, %arg1: !quir.qubit<1> {quir.physicalId = 3 : i32}) -> (i1, i1) attributes {quir.classicalOnly = false, quir.physicalIds = [3 : i32, 5 : i32]} {
-    %angle = quir.constant #quir.angle<1.5707963267948966 : !quir.angle<64>>
+    %angle = quir.constant #quir.angle<1.5707963267948966> : !quir.angle<64>
     quir.call_gate @rz(%arg0, %angle) {pulse.calName = "rz_5"} : (!quir.qubit<1>, !quir.angle<64>) -> ()
     quir.call_gate @sx(%arg0) {pulse.calName = "sx_5"} : (!quir.qubit<1>) -> ()
     quir.call_gate @rz(%arg0, %angle) {pulse.calName = "rz_5"} : (!quir.qubit<1>, !quir.angle<64>) -> ()
@@ -86,7 +86,7 @@ module {
     // CHECK: %4:2 = pulse.call_sequence @measure_3_5(%arg3, %arg4, %arg5, %arg6) {{{.*}} : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1, i1)
     // CHECK: pulse.return %0, %1, %2, %3, %4#0, %4#1 : i1, i1, i1, i1, i1, i1
 
-  func @main() -> i32 attributes {quir.classicalOnly = false} {
+  func.func @main() -> i32 attributes {quir.classicalOnly = false} {
     // CHECK: %0 = "pulse.create_port"() {uid = "q3-drive-port"} : () -> !pulse.port
     // CHECK: %1 = "pulse.mix_frame"(%0) {uid = "q3_drive_mixframe"} : (!pulse.port) -> !pulse.mixed_frame
     // CHECK: %2 = "pulse.create_port"() {uid = "q5-drive-port"} : () -> !pulse.port
