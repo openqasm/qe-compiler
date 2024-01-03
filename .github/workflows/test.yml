@@ -72,6 +72,7 @@ jobs:
       - name : Clear Conan cache
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && ${{ steps.check_conan_cache.outputs.cache_miss }} == '1'
         run: |
+          echo "Cache was missed: ${{ steps.check_conan_cache.outputs.cache_miss }}"
           rm -rf ./.conan
       - name: Conan install
         id: conan_install
