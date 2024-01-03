@@ -54,11 +54,19 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: .conan
-          key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
+          key: conan-${{ runner.os }}
           restore-keys: conan-${{ runner.os }}
+      # Check if all conan packages are within the cache. If not
+      # we will need to build packages (and if on main flush the cache)
+      - name : Conan deps cached
+        id: check_conan_cache
+        run: |
+          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
+          conan install .. -pr:h default -pr:b default
+          echo "cache-miss=$($?)" >> $GITHUB_OUTPUT
       - name : Print cache hit/miss
         run: |
-          echo "Cache was hit: ${{ steps.cache.outputs.cache-hit }}"
+          echo "Cache was missed: ${{ steps.check_conan_cache.outputs.cache-miss }}"
       - name: Create Conan default profile
         run: |
           conan profile new default --detect || true
@@ -81,7 +89,7 @@ jobs:
       # Workaround CI permissions for forks
       # https://github.com/ZedThree/clang-tidy-review?tab=readme-ov-file#usage-in-fork-environments-split-workflow
       # The name is sensitive make sure to also update `clang-tidy-review-comments.yml` workflow
-      - name: Clang tidy review
+      - name: Clang tidy
         uses: ZedThree/clang-tidy-review@v0.14.0
         id: clang_tidy
         if: github.event_name == 'pull_request'
@@ -89,4 +97,5 @@ jobs:
           config_file: '.clang-tidy'
           build_dir: build
           split_workflow: true
-      - uses: ZedThree/clang-tidy-review/upload@v0.14.0
+      - name: Clang tidy upload
+        uses: ZedThree/clang-tidy-review/upload@v0.14.0

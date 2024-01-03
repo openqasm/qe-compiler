@@ -45,18 +45,8 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: .conan
-          key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
+          key: conan-${{ runner.os }}
           restore-keys: conan-${{ runner.os }}
-      - name : Print cache hit/miss
-        run: |
-          echo "Cache was hit: ${{ steps.cache.outputs.cache-hit }}"
-      # If we have a cache miss on 'main', clear the cache.
-      # A dependency was updated, so we need to drop the old one
-      # to prevent unbounded cache growth over time.
-      - name : Clear Conan cache
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
-        run: |
-          rm -rf ./.conan
       - name: Create Conan default profile
         run: |
           conan profile new default --detect || true
@@ -65,6 +55,24 @@ jobs:
         run: ./conan_deps.sh
       - name: Create build dir
         run: mkdir build
+      # Check if all conan packages are within the cache. If not
+      # we will need to build packages (and if on main flush the cache)
+      - name : Conan deps cached
+        id: check_conan_cache
+        run: |
+          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
+          conan install .. -pr:h default -pr:b default
+          echo "cache-miss=$($?)" >> $GITHUB_OUTPUT
+      - name : Print cache hit/miss
+        run: |
+          echo "Cache was missed: ${{ steps.check_conan_cache.outputs.cache-miss }}"
+      # If we have a cache miss on 'main', clear the cache.
+      # A dependency was updated, so we need to drop the old one
+      # to prevent unbounded cache growth over time.
+      - name : Clear Conan cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && ${{ steps.check_conan_cache.outputs.cache-miss }} != '0'
+        run: |
+          rm -rf ./.conan
       - name: Conan install
         id: conan_install
         working-directory: build
@@ -84,7 +92,7 @@ jobs:
       # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
       #       cache getting LRU-evicted for every PR, since a single run uses most of the 10GB repo limit.
       - uses: actions/cache/save@v3
-        if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success' && steps.cache.outputs.cache-hit != 'true')
+        if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success' && steps.check_conan_cache.outputs.cache-miss != '0')
         with:
           path: .conan
-          key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
+          key: conan-${{ runner.os }}
