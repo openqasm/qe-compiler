@@ -183,8 +183,6 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config, mlir::
         std::move(err));
   }
 
-  buildTargetTiming.stop();
-
   return *created.get();
 }
 
@@ -212,10 +210,6 @@ llvm::Error generateQEM_(
     payload->writePlain(*ostream);
   else
     payload->write(*ostream);
-
-  writePayloadTiming.stop();
-
-  buildQEMTiming.stop();
 
   return llvm::Error::success();
 }
@@ -287,7 +281,6 @@ llvm::Error emitMLIR_(
   // Print the output.
   dumpMLIR_(ostream, moduleOp);
 
-  emitMlirTiming.stop();
   return llvm::Error::success();
 }
 
@@ -546,8 +539,6 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
             config.getEmitAction() == EmitAction::ASTPretty,
             config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb, loadQASM3Timing))
       return frontendError;
-
-    loadQASM3Timing.stop();
 
     if (config.getEmitAction() < EmitAction::MLIR)
       return llvm::Error::success();
