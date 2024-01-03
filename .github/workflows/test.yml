@@ -75,7 +75,7 @@ jobs:
       # A dependency was updated, so we need to drop the old one
       # to prevent unbounded cache growth over time.
       - name : Clear Conan cache
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check_conan_cache.outputs.cache_hit == '1'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check_conan_cache.outputs.cache_hit != 'true'
         run: |
           echo "Cache was hit: ${{ steps.check_conan_cache.outputs.cache_hit }}"
           rm -rf ./.conan
