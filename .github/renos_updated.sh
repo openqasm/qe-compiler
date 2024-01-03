@@ -3,7 +3,7 @@
 
 reno lint
 
-CHANGED_FILES=$(git diff --name-only $BASE_BRANCH_REF origin/$HEAD_BRANCH_REF)
+CHANGED_FILES=$(git diff --name-only $HEAD_BRANCH_REF origin/$BASE_BRANCH_REF)
 for file in $CHANGED_FILES
 do
    root=$(echo "./$file" | awk -F/ '{print FS $2}' | cut -c2-)
