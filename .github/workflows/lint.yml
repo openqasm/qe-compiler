@@ -64,9 +64,9 @@ jobs:
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
           conan install .. -pr:h default -pr:b default
-          cache-miss=$?
-          echo "cache-miss=$cache-miss" >> $GITHUB_OUTPUT
-          echo "Cache was missed: $cache-miss"
+          cache_miss=$?
+          echo "cache_miss=$cache_miss" >> $GITHUB_OUTPUT
+          echo "Cache was missed: $cache_miss"
       - name: Create Conan default profile
         run: |
           conan profile new default --detect || true
