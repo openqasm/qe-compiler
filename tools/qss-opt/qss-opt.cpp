@@ -21,7 +21,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "Config/CLIConfig.h"
-#include "Config/EnvVarConfig.h"
 #include "Config/QSSConfig.h"
 #include "Dialect/RegisterDialects.h"
 #include "Dialect/RegisterPasses.h"
@@ -52,7 +51,6 @@
 #include <optional>
 #include <stdio.h> // NOLINT: fileno is not in cstdio as suggested
 #include <string>
-#include <tuple>
 #include <utility>
 
 using namespace qssc;
@@ -192,7 +190,6 @@ auto main(int argc, char **argv) -> int {
   mlir::registerAllExtensions(registry);
 
   // Register and parse command line options.
-  std::string inputFilename, outputFilename;
   registerAndParseCLIOptions(argc, argv, toolName, registry);
 
   auto configResult = qssc::config::buildToolConfig();

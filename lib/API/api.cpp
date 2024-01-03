@@ -19,7 +19,6 @@
 #include "API/errors.h"
 #include "Arguments/Arguments.h"
 #include "Config/CLIConfig.h"
-#include "Config/EnvVarConfig.h"
 #include "Config/QSSConfig.h"
 #include "Dialect/OQ3/Transforms/Passes.h"
 #include "Dialect/Pulse/Transforms/Passes.h"
@@ -404,7 +403,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   auto configResult = qssc::config::buildToolConfig();
   if (auto err = configResult.takeError())
     return err;
-  qssc::config::QSSConfig config = configResult.get();
+  qssc::config::QSSConfig const config = configResult.get();
   qssc::config::setContextConfig(&context, config);
 
   // Populate the context
