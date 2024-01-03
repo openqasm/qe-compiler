@@ -20,11 +20,18 @@ set (CXX_FLAGS
 
 option(DETECT_TARGET_TRIPLE "Automatically detect the target triple for clang" ON)
 if (DETECT_TARGET_TRIPLE)
-execute_process (
-    COMMAND bash -c "llvm-config --host-target | tr -d '\n'"
-    OUTPUT_VARIABLE LLVM_TARGET_TRIPLE
-)
-list(APPEND CXX_FLAGS "-target ${LLVM_TARGET_TRIPLE}")
+
+    find_program(LLVM_CONFIG_BIN llvm-config)
+    if (NOT LLVM_CONFIG_BIN)
+        message(FATAL_ERROR "llvm-config not found!")
+    endif()
+    message(STATUS "Using llvm-config: " ${LLVM_CONFIG_BIN})
+
+    execute_process (
+        COMMAND bash -c "${LLVM_CONFIG_BIN} --host-target | tr -d '\n'"
+        OUTPUT_VARIABLE LLVM_TARGET_TRIPLE
+    )
+    list(APPEND CXX_FLAGS "-target ${LLVM_TARGET_TRIPLE}")
 endif()
 
 list (JOIN CXX_FLAGS " " CXX_FLAGS_STR)
