@@ -43,8 +43,8 @@ jobs:
       - name: Validate releasenotes
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-reno')
         env:
-          TARGET_BRANCH_NAME: ${{ github.event.pull_request.base.ref }}
-          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          BASE_BRANCH_REF: ${{ github.base_ref }}
+          HEAD_BRANCH_REF: ${{ github.head_ref }}
         run: ./.github/renos_updated.sh
 
       - name: Export QSSC_VERSION from Git version tag
