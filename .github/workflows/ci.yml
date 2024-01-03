@@ -44,7 +44,6 @@ jobs:
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-reno')
         env:
           BRANCH_REF: ${{ github.ref }}
-          BASE_BRANCH_REF: ${{ github.base_ref }}
         run: ./.github/renos_updated.sh
 
       - name: Export QSSC_VERSION from Git version tag
