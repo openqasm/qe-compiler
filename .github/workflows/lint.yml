@@ -89,3 +89,4 @@ jobs:
           config_file: '.clang-tidy'
           build_dir: build
           split_workflow: true
+      - uses: ZedThree/clang-tidy-review/upload@v0.14.0
