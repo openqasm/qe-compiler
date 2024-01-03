@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -29,9 +29,9 @@ class QSSCompilerConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "pythonlib": [True, False]}
     default_options = {"shared": False, "pythonlib": True}
-    license = "Proprietary"
-    author = "IBM Quantum development team"
-    topics = ("Compiler", "Scheduler", "OpenQASM3")
+    license = "Apache-2.0 WITH LLVM-exception"
+    author = "OpenQASM Organization"
+    topics = ("Compiler", "OpenQASM3", "MLIR", "Quantum", "Computing")
     description = "An LLVM- and MLIR-based Quantum compiler that consumes OpenQASM 3.0"
     generators = ["CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"]
     exports_sources = "*"

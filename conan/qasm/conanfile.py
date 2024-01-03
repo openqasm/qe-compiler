@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -29,10 +29,10 @@ class QasmConan(ConanFile):
         "mpc:shared": True,
         "mpfr:shared": True,
     }
-    license = "Proprietary"
-    author = "IBM Quantum development team"
+    license = "Apache-2.0"
+    author = "OpenQASM Organization"
     topics = ("Compiler", "Parser", "OpenQASM3")
-    description = "Compiler for OpenQASM3 language."
+    description = "A flex/bison parser for OpenQASM v3. A part of the Quantum Engine project."
 
     def source(self):
         token = os.environ.get("GITHUB_PAT")

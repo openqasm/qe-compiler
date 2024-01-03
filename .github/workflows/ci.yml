@@ -87,7 +87,6 @@ jobs:
         id: test
         working-directory: build
         run: conan build .. --test
-
       # On 'pull_request' run Clang tidy
       # Run last as clang tidy takes significantly longer
       # than building.
