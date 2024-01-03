@@ -1,0 +1,24 @@
+# Workaround CI permissions for forks
+# https://github.com/ZedThree/clang-tidy-review?tab=readme-ov-file#usage-in-fork-environments-split-workflow
+name: Post clang-tidy review comments
+
+on:
+  workflow_run:
+    # The name field of the lint action
+    # Defined in ci.yml workflow
+    workflows: ["Clang tidy review"]
+    types:
+      - completed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: ZedThree/clang-tidy-review/post@v0.14.0
+        # lgtm_comment_body, max_comments, and annotations need to be set on the posting workflow in a split setup
+        with:
+          # adjust options as necessary
+          lgtm_comment_body: ''
+          annotations: false
+          max_comments: 10
