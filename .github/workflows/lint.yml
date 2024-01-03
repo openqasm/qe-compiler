@@ -60,13 +60,13 @@ jobs:
       # we will need to build packages (and if on main flush the cache)
       - name : Conan deps cached
         id: check_conan_cache
+        working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
           conan install .. -pr:h default -pr:b default
-          echo "cache-miss=$($?)" >> $GITHUB_OUTPUT
-      - name : Print cache hit/miss
-        run: |
-          echo "Cache was missed: ${{ steps.check_conan_cache.outputs.cache-miss }}"
+          export cache-miss=$($?)
+          echo "cache-miss=$cache-miss" >> $GITHUB_OUTPUT
+          echo "Cache was missed: $cache-miss"
       - name: Create Conan default profile
         run: |
           conan profile new default --detect || true

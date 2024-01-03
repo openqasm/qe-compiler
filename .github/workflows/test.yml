@@ -59,6 +59,7 @@ jobs:
       # we will need to build packages (and if on main flush the cache)
       - name : Conan deps cached
         id: check_conan_cache
+        working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
           conan install .. -pr:h default -pr:b default
