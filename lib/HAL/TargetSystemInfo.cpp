@@ -14,10 +14,21 @@
 
 #include "HAL/TargetSystemInfo.h"
 
+#include "HAL/TargetSystem.h"
+
+#include "mlir/IR/MLIRContext.h"
+
+#include "llvm/ADT/DenseMap.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+
 #include <memory>
+#include <optional>
+#include <utility>
 
 // Inject static initialization headers from targets. We need to include them in
 // a translation unit that is not being optimized (removed) by the compiler.
+// NOLINTNEXTLINE: Required for target initializations even if not used
 #include "Targets.inc"
 
 using namespace qssc::hal::registry;
@@ -43,7 +54,7 @@ TargetSystemInfo::~TargetSystemInfo() = default;
 
 llvm::Expected<qssc::hal::TargetSystem *> TargetSystemInfo::createTarget(
     mlir::MLIRContext *context,
-    llvm::Optional<PluginInfo::PluginConfiguration> configuration) {
+    std::optional<PluginInfo::PluginConfiguration> configuration) {
   auto target = PluginInfo::createPluginInstance(configuration);
   if (!target)
     return target.takeError();

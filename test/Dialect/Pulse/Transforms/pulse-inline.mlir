@@ -14,18 +14,18 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// CHECK-NOT:   func @x0(%arg0: !pulse.port_group)
-// CHECK-NOT:   func @x0(%arg0: !pulse.port_group)
-// CHECK-NOT:   func @x0(%arg0: !pulse.port_group)
-// CHECK-NOT:   func @x0(%arg0: !pulse.port_group)
-// CHECK-NOT:   func @cx01(%arg0: !pulse.port_group, %arg1: !pulse.port_group)
-// CHECK-NOT:   func @cx10(%arg0: !pulse.port_group, %arg1: !pulse.port_group)
-// CHECK-NOT:   func @cx12(%arg0: !pulse.port_group, %arg1: !pulse.port_group)
-// CHECK-NOT:   func @rz0(%arg0: !pulse.port_group, %arg1: !quir.angle<10>)
-// CHECK-NOT:   func @rz1(%arg0: !pulse.port_group, %arg1: !quir.angle<10>)
-// CHECK-NOT:   func @sx1(%arg0: !pulse.port_group)
-// CHECK-NOT:   func @sx2(%arg0: !pulse.port_group)
-// CHECK-NOT:   func @sx3(%arg0: !pulse.port_group)
+// CHECK-NOT:   func.func @x0(%arg0: !pulse.port_group)
+// CHECK-NOT:   func.func @x0(%arg0: !pulse.port_group)
+// CHECK-NOT:   func.func @x0(%arg0: !pulse.port_group)
+// CHECK-NOT:   func.func @x0(%arg0: !pulse.port_group)
+// CHECK-NOT:   func.func @cx01(%arg0: !pulse.port_group, %arg1: !pulse.port_group)
+// CHECK-NOT:   func.func @cx10(%arg0: !pulse.port_group, %arg1: !pulse.port_group)
+// CHECK-NOT:   func.func @cx12(%arg0: !pulse.port_group, %arg1: !pulse.port_group)
+// CHECK-NOT:   func.func @rz0(%arg0: !pulse.port_group, %arg1: !quir.angle<10>)
+// CHECK-NOT:   func.func @rz1(%arg0: !pulse.port_group, %arg1: !quir.angle<10>)
+// CHECK-NOT:   func.func @sx1(%arg0: !pulse.port_group)
+// CHECK-NOT:   func.func @sx2(%arg0: !pulse.port_group)
+// CHECK-NOT:   func.func @sx3(%arg0: !pulse.port_group)
 
 // CHECK "pulse.select_port"(%arg0) {id = "d0"} : (!pulse.port_group) -> !pulse.port
 // CHECK "pulse.select_port"(%arg0) {id = "d0"} : (!pulse.port_group) -> !pulse.port
@@ -39,7 +39,7 @@
 
 
 module {
-func @x0(%arg0: !pulse.port_group) {
+func.func @x0(%arg0: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d0"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.17980737117787168 : f64
 %cst_0 = arith.constant 0.000000e+00 : f64
@@ -51,7 +51,7 @@ func @x0(%arg0: !pulse.port_group) {
 pulse.play(%0, %2) : (!pulse.port, !pulse.waveform)
 return
 }
-func @x1(%arg0: !pulse.port_group) {
+func.func @x1(%arg0: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d1"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.16946846376475716 : f64
 %cst_0 = arith.constant 0.000000e+00 : f64
@@ -63,7 +63,7 @@ func @x1(%arg0: !pulse.port_group) {
 pulse.play(%0, %2) : (!pulse.port, !pulse.waveform)
 return
 }
-func @x2(%arg0: !pulse.port_group) {
+func.func @x2(%arg0: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d2"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.18917049559967117 : f64
 %cst_0 = arith.constant 0.000000e+00 : f64
@@ -75,7 +75,7 @@ func @x2(%arg0: !pulse.port_group) {
 pulse.play(%0, %2) : (!pulse.port, !pulse.waveform)
 return
 }
-func @x3(%arg0: !pulse.port_group) {
+func.func @x3(%arg0: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d3"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.19038039184667085 : f64
 %cst_0 = arith.constant 0.000000e+00 : f64
@@ -87,7 +87,7 @@ func @x3(%arg0: !pulse.port_group) {
 pulse.play(%0, %2) : (!pulse.port, !pulse.waveform)
 return
 }
-func @cx01(%arg0: !pulse.port_group, %arg1: !pulse.port_group) {
+func.func @cx01(%arg0: !pulse.port_group, %arg1: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d0"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 1.5707963267948966 : f64
 pulse.shift_phase(%0, %cst) : (!pulse.port, f64)
@@ -174,7 +174,7 @@ pulse.play(%24, %26) : (!pulse.port, !pulse.waveform)
 pulse.shift_phase(%27, %cst_33) : (!pulse.port, f64)
 return
 }
-func @cx10(%arg0: !pulse.port_group, %arg1: !pulse.port_group) {
+func.func @cx10(%arg0: !pulse.port_group, %arg1: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d0"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant -1.5707963267948966 : f64
 pulse.shift_phase(%0, %cst) : (!pulse.port, f64)
@@ -321,7 +321,7 @@ pulse.delay(%c1344_i32_55, %46) : (i32, !pulse.port)
 pulse.shift_phase(%47, %cst_56) : (!pulse.port, f64)
 return
 }
-func @cx12(%arg0: !pulse.port_group, %arg1: !pulse.port_group) {
+func.func @cx12(%arg0: !pulse.port_group, %arg1: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d1"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 1.5707963267948966 : f64
 pulse.shift_phase(%0, %cst) : (!pulse.port, f64)
@@ -414,7 +414,7 @@ pulse.shift_phase(%28, %cst_34) : (!pulse.port, f64)
 pulse.shift_phase(%29, %cst_35) : (!pulse.port, f64)
 return
 }
-func @rz0(%arg0: !pulse.port_group, %arg1: !quir.angle<10>) {
+func.func @rz0(%arg0: !pulse.port_group, %arg1: !quir.angle<10>) {
 %0 = "pulse.select_port"(%arg0) {id = "d0"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.000000e+00 : f64
 pulse.shift_phase(%0, %cst) : (!pulse.port, f64)
@@ -423,7 +423,7 @@ pulse.shift_phase(%0, %cst) : (!pulse.port, f64)
 pulse.shift_phase(%1, %cst_0) : (!pulse.port, f64)
 return
 }
-func @rz1(%arg0: !pulse.port_group, %arg1: !quir.angle<10>) {
+func.func @rz1(%arg0: !pulse.port_group, %arg1: !quir.angle<10>) {
 %0 = "pulse.select_port"(%arg0) {id = "d1"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.000000e+00 : f64
 pulse.shift_phase(%0, %cst) : (!pulse.port, f64)
@@ -438,7 +438,7 @@ pulse.shift_phase(%2, %cst_1) : (!pulse.port, f64)
 pulse.shift_phase(%3, %cst_2) : (!pulse.port, f64)
 return
 }
-func @sx0(%arg0: !pulse.port_group) {
+func.func @sx0(%arg0: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d0"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.089776566073944741 : f64
 %cst_0 = arith.constant -3.3436108695185151E-4 : f64
@@ -450,7 +450,7 @@ func @sx0(%arg0: !pulse.port_group) {
 pulse.play(%0, %2) : (!pulse.port, !pulse.waveform)
 return
 }
-func @sx1(%arg0: !pulse.port_group) {
+func.func @sx1(%arg0: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d1"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.084483000576426853 : f64
 %cst_0 = arith.constant 5.1781053983668951E-4 : f64
@@ -462,7 +462,7 @@ func @sx1(%arg0: !pulse.port_group) {
 pulse.play(%0, %2) : (!pulse.port, !pulse.waveform)
 return
 }
-func @sx2(%arg0: !pulse.port_group) {
+func.func @sx2(%arg0: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d2"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.094540487800318596 : f64
 %cst_0 = arith.constant -3.9710888891587696E-4 : f64
@@ -474,7 +474,7 @@ func @sx2(%arg0: !pulse.port_group) {
 pulse.play(%0, %2) : (!pulse.port, !pulse.waveform)
 return
 }
-func @sx3(%arg0: !pulse.port_group) {
+func.func @sx3(%arg0: !pulse.port_group) {
 %0 = "pulse.select_port"(%arg0) {id = "d3"} : (!pulse.port_group) -> !pulse.port
 %cst = arith.constant 0.095293610036729287 : f64
 %cst_0 = arith.constant 0.0010061143295647052 : f64
@@ -486,7 +486,7 @@ func @sx3(%arg0: !pulse.port_group) {
 pulse.play(%0, %2) : (!pulse.port, !pulse.waveform)
 return
 }
-func @main() -> i32 {
+func.func @main() -> i32 {
 %0 = "pulse.create_port"() {uid = "d0"} : () -> !pulse.port
 %1 = "pulse.create_port"() {uid = "d1"} : () -> !pulse.port
 %2 = "pulse.create_port"() {uid = "u0"} : () -> !pulse.port
@@ -537,22 +537,22 @@ func @main() -> i32 {
 %47 = "pulse.create_port"() {uid = "u16"} : () -> !pulse.port
 %48 = "pulse.create_port"() {uid = "u7"} : () -> !pulse.port
 %49 = "pulse.create_port_group"(%35, %42, %36, %43, %40, %44, %46, %47, %48, %6, %8, %9, %10, %11, %12, %13, %14, %15, %16, %17, %18, %19, %20, %21, %22, %23, %24, %25, %26, %27, %28, %29, %30, %31, %32, %33, %7, %7) : (!pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port, !pulse.port) -> !pulse.port_group
-call @x0(%34) : (!pulse.port_group) -> ()
-call @x1(%41) : (!pulse.port_group) -> ()
-call @x2(%45) : (!pulse.port_group) -> ()
-call @x3(%49) : (!pulse.port_group) -> ()
-call @cx01(%34, %41) : (!pulse.port_group, !pulse.port_group) -> ()
-call @cx10(%41, %34) : (!pulse.port_group, !pulse.port_group) -> ()
-call @cx12(%41, %45) : (!pulse.port_group, !pulse.port_group) -> ()
-%50 = quir.constant #quir.angle<3.140000e+00 : !quir.angle<10>>
-%51 = quir.constant #quir.angle<1.070000e+00 : !quir.angle<10>>
-%52 = quir.constant #quir.angle<5.350000e-01 : !quir.angle<10>>
-call @rz0(%34, %50) : (!pulse.port_group, !quir.angle<10>) -> ()
-call @rz1(%41, %51) : (!pulse.port_group, !quir.angle<10>) -> ()
-call @sx0(%34) : (!pulse.port_group) -> ()
-call @sx1(%41) : (!pulse.port_group) -> ()
-call @sx2(%45) : (!pulse.port_group) -> ()
-call @sx3(%49) : (!pulse.port_group) -> ()
+func.call @x0(%34) : (!pulse.port_group) -> ()
+func.call @x1(%41) : (!pulse.port_group) -> ()
+func.call @x2(%45) : (!pulse.port_group) -> ()
+func.call @x3(%49) : (!pulse.port_group) -> ()
+func.call @cx01(%34, %41) : (!pulse.port_group, !pulse.port_group) -> ()
+func.call @cx10(%41, %34) : (!pulse.port_group, !pulse.port_group) -> ()
+func.call @cx12(%41, %45) : (!pulse.port_group, !pulse.port_group) -> ()
+%50 = quir.constant #quir.angle<3.140000e+00> : !quir.angle<10>
+%51 = quir.constant #quir.angle<1.070000e+00> : !quir.angle<10>
+%52 = quir.constant #quir.angle<5.350000e-01> : !quir.angle<10>
+func.call @rz0(%34, %50) : (!pulse.port_group, !quir.angle<10>) -> ()
+func.call @rz1(%41, %51) : (!pulse.port_group, !quir.angle<10>) -> ()
+func.call @sx0(%34) : (!pulse.port_group) -> ()
+func.call @sx1(%41) : (!pulse.port_group) -> ()
+func.call @sx2(%45) : (!pulse.port_group) -> ()
+func.call @sx3(%49) : (!pulse.port_group) -> ()
 %c0_i32 = arith.constant 0 : i32
 return %c0_i32 : i32
 }

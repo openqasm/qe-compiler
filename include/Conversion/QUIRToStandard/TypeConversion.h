@@ -33,12 +33,12 @@ struct QuirTypeConverter : public TypeConverter {
 
   QuirTypeConverter();
 
-  static Optional<Type> convertAngleType(Type t); // convertAngleType
+  static std::optional<Type> convertAngleType(Type t); // convertAngleType
 
-  static Optional<Value> angleSourceMaterialization(OpBuilder &builder,
-                                                    quir::AngleType aType,
-                                                    ValueRange valRange,
-                                                    Location loc);
+  static std::optional<Value> angleSourceMaterialization(OpBuilder &builder,
+                                                         quir::AngleType aType,
+                                                         ValueRange valRange,
+                                                         Location loc);
 
 }; // struct QuirTypeConverter
 

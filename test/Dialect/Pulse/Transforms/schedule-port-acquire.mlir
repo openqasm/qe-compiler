@@ -60,12 +60,12 @@ module @acquire_0 attributes {quir.nodeId = 7 : i32, quir.nodeType = "acquire", 
     pulse.delay(%arg0, %c1000_i32) : (!pulse.mixed_frame, i32)
     // CHECK-NOT: pulse.delay(%[[ARG1]], %c1000_i32) : (!pulse.mixed_frame, i32)
     %1 = pulse.call_sequence @seq_0(%arg0, %arg1, %arg2, %arg3, %arg4) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> i1
-    // CHECK: %1 = pulse.call_sequence @seq_0(%arg0, %arg1, %arg2, %arg3, %arg4) {pulse.duration = 18096 : i64, pulse.timepoint = 20096 : i64} 
+    // CHECK: %1 = pulse.call_sequence @seq_0(%arg0, %arg1, %arg2, %arg3, %arg4) {pulse.duration = 18096 : i64, pulse.timepoint = 20096 : i64}
     pulse.delay(%arg0, %c1000_i32) : (!pulse.mixed_frame, i32)
     // CHECK-NOT: pulse.delay(%[[ARG1]], %c1000_i32) : (!pulse.mixed_frame, i32)
     pulse.return %0, %1 : i1, i1
   }
-  func @main() -> i32 attributes {quir.classicalOnly = false} {
+  func.func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
     %2 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
     %4 = "pulse.mix_frame"(%2) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame

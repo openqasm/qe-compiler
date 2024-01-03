@@ -13,8 +13,8 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// CHECK: func @three
-func @three(%c : memref<1xi1>, %ind : index, %angle_0 : !quir.angle<64>) {
+// CHECK: func.func @three
+func.func @three(%c : memref<1xi1>, %ind : index, %angle_0 : !quir.angle<64>) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   %q2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
@@ -54,8 +54,8 @@ func @three(%c : memref<1xi1>, %ind : index, %angle_0 : !quir.angle<64>) {
 
 // Reordering should fail when there is a usage of the same qubit in a gate
 // after the measurement
-// CHECK: func @reorder_fail1
-func @reorder_fail1(%c : memref<1xi1>, %ind : index, %angle_0 : !quir.angle<64>) {
+// CHECK: func.func @reorder_fail1
+func.func @reorder_fail1(%c : memref<1xi1>, %ind : index, %angle_0 : !quir.angle<64>) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   %q2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>

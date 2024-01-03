@@ -14,10 +14,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "llvm/ADT/SmallString.h"
+#include "HAL/TargetSystem.h"
 
 #include "Dialect/QUIR/Utils/Utils.h"
-#include "HAL/TargetSystem.h"
+
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinOps.h"
+
+#include "llvm/Support/Error.h"
+
+#include <string>
+#include <sys/types.h>
+#include <utility>
 
 using namespace qssc::hal;
 using namespace qssc::payload;

@@ -18,15 +18,15 @@
 // first validate that the pulse classical-only-detection does not harm the quir pass
 // determinations
 
-func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1> attributes {quir.classicalOnly = true}
-// CHECK: func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
+func.func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1> attributes {quir.classicalOnly = true}
+// CHECK: func.func private @kernel1(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
 // CHECK-SAME: attributes {quir.classicalOnly = true}
-func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) attributes {quir.classicalOnly = false} {
-    // CHECK: func @subroutine1
+func.func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir.qubit<1>, %q2 : !quir.qubit<1>) -> (!quir.cbit<1>) attributes {quir.classicalOnly = false} {
+    // CHECK: func.func @subroutine1
     // CHECK: attributes {quir.classicalOnly = false} {
     %zero = arith.constant 0 : index
     %ang3 = oq3.angle_add %ang1, %ang2 : !quir.angle<20>
-    %ang4 = quir.constant #quir.angle<0.9 : !quir.angle<20>>
+    %ang4 = quir.constant #quir.angle<0.9> : !quir.angle<20>
     %f1 = "oq3.cast"(%ang3) : (!quir.angle<20>) -> f64
     %f2 = "oq3.cast"(%ang4) : (!quir.angle<20>) -> f64
     %cond1 = arith.cmpf "ogt", %f1, %f2 : f64
@@ -54,11 +54,11 @@ func @subroutine1 (%ang1 : !quir.angle<20>, %ang2 : !quir.angle<20>, %q1 : !quir
 // next add pulse.sequence and  validate that the pulse classical-only-detection
 // labels the sequence as quir.classicalOnly = false
 
-func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
-// CHECK: func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
+func.func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
+// CHECK: func.func private @kernel2(memref<1xi1>, memref<1xi1>, memref<1xi1>) -> memref<1xi1>
 // CHECK-SAME: attributes {quir.classicalOnly = true}
-func @subroutine2 () {
-    // CHECK: func @subroutine2()
+func.func @subroutine2 () {
+    // CHECK: func.func @subroutine2()
     // CHECK-SAME: attributes {quir.classicalOnly = false} {
 
     %c0_i32 = arith.constant 0 : i32

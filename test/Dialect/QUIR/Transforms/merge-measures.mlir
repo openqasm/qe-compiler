@@ -14,7 +14,7 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-func @one() {
+func.func @one() {
   %q = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   // LEX:  %{{.*}} = quir.measure(%{{.*}}) : (!quir.qubit<1>) -> i1
   // TOP:  %{{.*}} = quir.measure(%{{.*}}) : (!quir.qubit<1>) -> i1
@@ -22,7 +22,7 @@ func @one() {
   return
 }
 
-func @two(%c : memref<1xi1>, %ind : index) {
+func.func @two(%c : memref<1xi1>, %ind : index) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   // LEX:  %{{.*}}:2 = quir.measure(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
@@ -33,7 +33,7 @@ func @two(%c : memref<1xi1>, %ind : index) {
   return
 }
 
-func @three(%c : memref<1xi1>, %ind : index) {
+func.func @three(%c : memref<1xi1>, %ind : index) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   %q2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
@@ -47,7 +47,7 @@ func @three(%c : memref<1xi1>, %ind : index) {
   return
 }
 
-func @four(%c : memref<1xi1>, %ind : index) {
+func.func @four(%c : memref<1xi1>, %ind : index) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   %q2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
@@ -64,7 +64,7 @@ func @four(%c : memref<1xi1>, %ind : index) {
   return
 }
 
-func @four_interrupted(%c : memref<1xi1>, %ind : index) {
+func.func @four_interrupted(%c : memref<1xi1>, %ind : index) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   %q2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
@@ -90,7 +90,7 @@ func @four_interrupted(%c : memref<1xi1>, %ind : index) {
   return
 }
 
-func @inter_if(%c : memref<1xi1>, %ind : index, %cond : i1) {
+func.func @inter_if(%c : memref<1xi1>, %ind : index, %cond : i1) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   %q2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
@@ -112,7 +112,7 @@ func @inter_if(%c : memref<1xi1>, %ind : index, %cond : i1) {
   return
 }
 
-func @barrier(%c : memref<1xi1>, %ind : index) {
+func.func @barrier(%c : memref<1xi1>, %ind : index) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   %q2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
@@ -136,7 +136,7 @@ func @barrier(%c : memref<1xi1>, %ind : index) {
 }
 
 
-func @inter_switch(%flag : i32) {
+func.func @inter_switch(%flag : i32) {
   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   %q2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>

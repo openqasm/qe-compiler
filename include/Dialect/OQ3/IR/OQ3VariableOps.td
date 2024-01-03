@@ -53,21 +53,11 @@ def OQ3_DeclareVariableOp : OQ3_Op<"declare_variable", [Symbol]> {
         }]>
     ];
 
-    let verifier = [{
-        auto t = (*this).type();
-
-        if( t.isa<::mlir::quir::AngleType>() || t.isa<::mlir::quir::CBitType>() || t.isa<::mlir::quir::DurationType>() || t.isa<::mlir::quir::StretchType>() || t.isIntOrIndexOrFloat() || t.isa<ComplexType>())
-            return success();
-        std::string str;
-        llvm::raw_string_ostream os(str);
-        t.print(os);
-
-        return emitOpError("MLIR type " + str + " not supported for declarations.");
-    }];
+    let hasVerifier = 1;
 
     let extraClassDeclaration = [{
-        bool isInputVariable() { return input(); }
-        bool isOutputVariable() { return output(); }
+        bool isInputVariable() { return getInput(); }
+        bool isOutputVariable() { return getOutput(); }
     }];
 }
 
@@ -91,8 +81,6 @@ def OQ3_VariableAssignOp : OQ3_Op<"variable_assign",
     let assemblyFormat = [{
         attr-dict $variable_name `:` type($assigned_value) `=` $assigned_value
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 // -----
@@ -121,8 +109,6 @@ def OQ3_VariableLoadOp : OQ3_Op<"variable_load",
     let assemblyFormat = [{
         $variable_name `:` type($res) attr-dict
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 #endif // OQ3_VARIABLE_OPS

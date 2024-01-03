@@ -19,17 +19,34 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIRDialect.h"
+
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIREnums.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIROps.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-#include "llvm/ADT/TypeSwitch.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/Diagnostics.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/IR/Region.h"
+#include "mlir/IR/Types.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
+#include "mlir/Transforms/InliningUtils.h"
+
+#include <optional>
+#include <type_traits>
 
 /// Tablegen Definitions
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRDialect.cpp.inc"
 
 #define GET_TYPEDEF_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRTypes.cpp.inc"
 
 namespace mlir {
@@ -38,8 +55,8 @@ namespace mlir {
 // so anything that requires more precision will need an update or definition
 // for parseFloat() that takes APFloat or gnu mpfr.
 template <class FloatT>
-struct FieldParser<
-    FloatT, std::enable_if_t<std::is_same<FloatT, APFloat>::value, FloatT>> {
+struct FieldParser<FloatT,
+                   std::enable_if_t<std::is_same_v<FloatT, APFloat>, FloatT>> {
   static FailureOr<FloatT> parse(AsmParser &parser) {
     double value;
     if (parser.parseFloat(value))
@@ -47,6 +64,7 @@ struct FieldParser<
     return APFloat(value);
   }
 };
+
 } // namespace mlir
 
 //===----------------------------------------------------------------------===//
@@ -54,6 +72,7 @@ struct FieldParser<
 //===----------------------------------------------------------------------===//
 
 #define GET_ATTRDEF_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
 
 namespace mlir::quir {
@@ -76,8 +95,8 @@ struct QuirInlinerInterface : public DialectInlinerInterface {
   }
 
   /// For now all operations within quir can be inlined.
-  auto isLegalToInline(Operation *, Region *, bool,
-                       BlockAndValueMapping &) const -> bool final {
+  auto isLegalToInline(Operation *, Region *, bool, IRMapping &) const
+      -> bool final {
     return true;
   }
 };
@@ -86,16 +105,19 @@ void quir::QUIRDialect::initialize() {
 
   addTypes<
 #define GET_TYPEDEF_LIST
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRTypes.cpp.inc"
       >();
 
   addOperations<
 #define GET_OP_LIST
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIR.cpp.inc"
       >();
 
   addAttributes<
 #define GET_ATTRDEF_LIST
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QUIR/IR/QUIRAttributes.cpp.inc"
       >();
 
@@ -108,7 +130,7 @@ mlir::Type parseOptionalWidth(mlir::AsmParser &parser) {
 
   // non-parameterized Qubit type?
   if (parser.parseOptionalLess())
-    return QUIRType::get(parser.getContext(), llvm::None);
+    return QUIRType::get(parser.getContext(), std::nullopt);
 
   // incorrect syntax
   if (parser.parseInteger(width) || parser.parseGreater())
@@ -122,23 +144,6 @@ mlir::Type parseOptionalWidth(mlir::AsmParser &parser) {
   return QUIRType::get(parser.getContext(), width);
 }
 
-mlir::Type AngleType::parse(mlir::AsmParser &parser) {
-  return parseOptionalWidth<AngleType>(parser);
-}
-
-static void printOptionalWidth(llvm::Optional<int> width,
-                               mlir::AsmPrinter &printer) {
-  if (width.hasValue()) {
-    printer << "<";
-    printer.printStrippedAttrOrType(width);
-    printer << ">";
-  }
-}
-
-void AngleType::print(mlir::AsmPrinter &printer) const {
-  printOptionalWidth(getImpl()->width, printer);
-}
-
 LogicalResult QubitType::verify(function_ref<InFlightDiagnostic()> emitError,
                                 int width) {
   if (width <= 0)
@@ -147,16 +152,10 @@ LogicalResult QubitType::verify(function_ref<InFlightDiagnostic()> emitError,
 }
 
 LogicalResult AngleType::verify(function_ref<InFlightDiagnostic()> emitError,
-                                llvm::Optional<int> width) {
-  if (width.hasValue() && width.getValue() <= 0)
+                                std::optional<int> width) {
+  if (width.has_value() && width.value() <= 0)
     return emitError() << "width must be > 0";
   return success();
-}
-
-/// Materialize a constant, can be any buildable type, used by canonicalization
-Operation *QUIRDialect::materializeConstant(OpBuilder &builder, Attribute value,
-                                            Type type, Location loc) {
-  return builder.create<quir::ConstantOp>(loc, value, type);
 }
 
 } // namespace mlir::quir

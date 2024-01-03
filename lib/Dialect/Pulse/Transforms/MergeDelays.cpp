@@ -21,13 +21,19 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/MergeDelays.h"
-#include "Dialect/Pulse/IR/PulseDialect.h"
+
 #include "Dialect/Pulse/IR/PulseOps.h"
 
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+
+#include "llvm/ADT/StringRef.h"
+
+#include <utility>
 
 using namespace mlir;
 using namespace mlir::pulse;
@@ -45,7 +51,7 @@ struct DelayAndDelayPattern : public OpRewritePattern<DelayOp> {
                                 PatternRewriter &rewriter) const override {
 
     // TODO: determine how to pass ignoreTarget to the pass as an option
-    bool ignoreTarget = false;
+    bool const ignoreTarget = false;
 
     // get next operation and test for Delay
     Operation *nextOp = delayOp->getNextNode();
@@ -59,16 +65,16 @@ struct DelayAndDelayPattern : public OpRewritePattern<DelayOp> {
     // found a delay and a delay
     // verify port | frame (second operand) is the same
     // this verification will be ignored if ignoreTarget is set to true
-    auto firstDelayPortOrFrame = delayOp.target();
-    auto secondDelayPortOrFrame = nextDelayOp.target();
+    auto firstDelayPortOrFrame = delayOp.getTarget();
+    auto secondDelayPortOrFrame = nextDelayOp.getTarget();
 
     if (!ignoreTarget && (firstDelayPortOrFrame != secondDelayPortOrFrame))
       return failure();
 
     // get delay times and sum as int 32
     // TODO: check to see if int 32 is sufficient
-    auto firstDelay = delayOp.dur();
-    auto secondDelay = nextDelayOp.dur();
+    auto firstDelay = delayOp.getDur();
+    auto secondDelay = nextDelayOp.getDur();
 
     auto firstDelayOp =
         dyn_cast<mlir::arith::ConstantIntOp>(firstDelay.getDefiningOp());

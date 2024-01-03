@@ -14,10 +14,20 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/IR/OperationSupport.h"
+#include "mlir/Support/LogicalResult.h"
+
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Error.h"
 #include "llvm/Support/ManagedStatic.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include "HAL/Compile/TargetCompilationManager.h"
+#include "HAL/TargetSystem.h"
 
 using namespace qssc::hal::compile;
 
@@ -44,9 +54,10 @@ struct TargetCompilationManagerOptions {
       llvm::cl::desc("Print IR after failure of applying target compilation"),
       llvm::cl::init(false)};
 };
-} // namespace
 
-static llvm::ManagedStatic<TargetCompilationManagerOptions> options;
+llvm::ManagedStatic<TargetCompilationManagerOptions> options;
+
+} // anonymous namespace
 
 void qssc::hal::compile::registerTargetCompilationManagerCLOptions() {
   // Make sure that the options struct has been constructed.
@@ -71,10 +82,10 @@ TargetCompilationManager::TargetCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context)
     : target(target), context(context) {}
 
-llvm::Error TargetCompilationManager::walkTarget(
+llvm::Error TargetCompilationManager::walkTargetModules(
     Target *target, mlir::ModuleOp targetModuleOp,
-    const WalkTargetFunction &walkFunc,
-    const WalkTargetFunction &postChildrenCallbackFunc) {
+    const WalkTargetModulesFunction &walkFunc,
+    const WalkTargetModulesFunction &postChildrenCallbackFunc) {
   // Call the input function for the walk on the target
   if (auto err = walkFunc(target, targetModuleOp))
     return err;
@@ -84,13 +95,29 @@ llvm::Error TargetCompilationManager::walkTarget(
     auto childModuleOp = child->getModule(targetModuleOp);
     if (auto err = childModuleOp.takeError())
       return err;
-    if (auto err = walkTarget(child, *childModuleOp, walkFunc,
-                              postChildrenCallbackFunc))
+    if (auto err = walkTargetModules(child, *childModuleOp, walkFunc,
+                                     postChildrenCallbackFunc))
       return err;
   }
 
   if (auto err = postChildrenCallbackFunc(target, targetModuleOp))
     return err;
+
+  return llvm::Error::success();
+}
+
+llvm::Error
+TargetCompilationManager::walkTarget(Target *target,
+                                     const WalkTargetFunction &walkFunc) {
+  // Call the input function for the walk on the target
+  if (auto err = walkFunc(target))
+    return err;
+
+  for (auto *child : target->getChildren()) {
+    // Recurse on the target
+    if (auto err = walkTarget(child, walkFunc))
+      return err;
+  }
 
   return llvm::Error::success();
 }
@@ -110,6 +137,7 @@ void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
   out << msg;
   out << " //----- //";
   out << "\n";
-  op->print(out);
+  mlir::OpPrintingFlags flags = mlir::OpPrintingFlags();
+  op->print(out, flags.useLocalScope());
   out << "\n";
 }

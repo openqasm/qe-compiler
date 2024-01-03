@@ -15,14 +15,14 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// MLIR-NO-CIRCUITS: func @g([[QUBIT:%.*]]: !quir.qubit<1>, [[ANGLE:%.*]]: !quir.angle<{{.*}}>) {
+// MLIR-NO-CIRCUITS: func.func @g([[QUBIT:%.*]]: !quir.qubit<1>, [[ANGLE:%.*]]: !quir.angle<{{.*}}>) {
 // MLIR-CIRCUITS:quir.circuit @circuit_0([[ANGLE:%.*]]: !quir.angle<64>, [[QUBIT:%.*]]: !quir.qubit<1>) {
 // MLIR: quir.builtin_U [[QUBIT]], {{.*}}, {{.*}}, [[ANGLE]] : !quir.qubit<1>, !quir.angle<{{.*}}>, !quir.angle<{{.*}}>, !quir.angle<{{.*}}>
 gate g (theta) q {
     U(0.0, 0.0, theta) q;
 }
 
-// MLIR-NO-CIRCUITS: func @g3([[QUBIT0:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>, [[ANGLE0:%.*]]: !quir.angle<{{.*}}>, [[ANGLE1:%.*]]: !quir.angle<{{.*}}>, [[ANGLE2:%.*]]: !quir.angle<{{.*}}>) {
+// MLIR-NO-CIRCUITS: func.func @g3([[QUBIT0:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>, [[ANGLE0:%.*]]: !quir.angle<{{.*}}>, [[ANGLE1:%.*]]: !quir.angle<{{.*}}>, [[ANGLE2:%.*]]: !quir.angle<{{.*}}>) {
 // MLIR-CIRCUITS: quir.circuit @circuit_1({{.*}}: !quir.{{.*}}, {{.*}}: !quir.{{.*}}, {{.*}}: !quir.{{.*}}, {{.*}}: !quir.{{.*}}, {{.*}}: !quir.{{.*}}) {
 // NOTE can not enforce parameter ordering on the builtin_U because the order of the quir.circuit parameters changes when tested with github actions
 // MLIR: quir.builtin_U {{.*}}, {{.*}}, {{.*}}, {{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
