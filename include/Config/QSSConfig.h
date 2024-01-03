@@ -259,5 +259,18 @@ public:
   virtual ~QSSConfigBuilder() = default;
 };
 
+/// Build the default tool configuration
+/// @brief Build the QSSConfig using the standard sources and assign to the
+/// supplied context.
+///
+/// The configuration precedence order is
+/// 1. Default values
+/// 2. Environment variables
+/// 3. CLI arguments.
+///
+/// @return The constructed configuration
+llvm::Expected<qssc::config::QSSConfig>
+buildToolConfig();
+
 } // namespace qssc::config
 #endif // QSS_QSSCONFIG_H

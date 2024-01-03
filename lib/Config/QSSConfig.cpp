@@ -14,6 +14,9 @@
 
 #include "Config/QSSConfig.h"
 
+#include "Config/CLIConfig.h"
+#include "Config/EnvVarConfig.h"
+
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Tools/Plugins/DialectPlugin.h"
@@ -282,4 +285,23 @@ qssc::config::loadPassPlugin(const std::string &pluginPath) {
     return mlir::failure();
   plugin.get().registerPassRegistryCallbacks();
   return mlir::success();
+}
+
+llvm::Expected<qssc::config::QSSConfig>
+qssc::config::buildToolConfig() {
+  // First populate the configuration from default values then
+  // environment variables.
+  auto config = EnvVarConfigBuilder().buildConfig();
+  if (auto err = config.takeError())
+    // Explicit move required for some systems as automatic move
+    // is not recognized.
+    return std::move(err);
+
+  // Apply CLI options of top of the configuration constructed above.
+  if (auto err = CLIConfigBuilder().populateConfig(*config))
+    // Explicit move required for some systems as automatic move
+    // is not recognized.
+    return std::move(err);
+
+  return config;
 }

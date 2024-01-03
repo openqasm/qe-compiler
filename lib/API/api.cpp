@@ -113,40 +113,6 @@ void printVersion(llvm::raw_ostream &out) {
       << qssc::getQSSCVersion() << "\n";
 }
 
-/// @brief Build the QSSConfig using the standard sources and assign to the
-/// supplied context.
-///
-/// The configuration precedence order is
-/// 1. Default values
-/// 2. Environment variables
-/// 3. CLI arguments.
-///
-/// @param context The context to build and register the configuration for.
-/// @return The constructed configuration that has been registered for the
-/// supplied context.
-llvm::Expected<const qssc::config::QSSConfig &>
-buildConfig_(mlir::MLIRContext *context) {
-  // First populate the configuration from default values then
-  // environment variables.
-  auto config = qssc::config::EnvVarConfigBuilder().buildConfig();
-  if (auto err = config.takeError())
-    // Explicit move required for some systems as automatic move
-    // is not recognized.
-    return std::move(err);
-
-  // Apply CLI options of top of the configuration constructed above.
-  if (auto err = qssc::config::CLIConfigBuilder().populateConfig(*config))
-    // Explicit move required for some systems as automatic move
-    // is not recognized.
-    return std::move(err);
-
-  // Set this as the configuration for the current context
-  qssc::config::setContextConfig(context, *config);
-
-  // Return a constant reference to the managed configuration
-  return qssc::config::getContextConfig(context);
-}
-
 /// @brief Emit the registered dialects to llvm::outs
 void showDialects_(const mlir::DialectRegistry &registry) {
   llvm::outs() << "Registered Dialects:\n";
@@ -435,11 +401,11 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   // Instantiate after parsing command line options.
   MLIRContext context{};
 
-  // Build the configuration for this compilation event.
-  auto configResult = buildConfig_(&context);
+  auto configResult = qssc::config::buildToolConfig();
   if (auto err = configResult.takeError())
     return err;
-  const qssc::config::QSSConfig &config = configResult.get();
+  qssc::config::QSSConfig config = configResult.get();
+  qssc::config::setContextConfig(&context, config);
 
   // Populate the context
   context.appendDialectRegistry(registry);
