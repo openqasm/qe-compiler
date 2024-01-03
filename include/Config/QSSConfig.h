@@ -23,6 +23,7 @@
 #include <iostream>
 #include <optional>
 #include <string>
+#include <utility>
 
 namespace qssc::config {
 
@@ -82,13 +83,13 @@ public:
   bool isDirectInput() const { return directInputFlag; }
 
   QSSConfig &setOutputFilePath(std::string path) {
-    outputFilePath = path;
+    outputFilePath = std::move(path);
     return *this;
   }
   llvm::StringRef getOutputFilePath() const { return outputFilePath; }
 
   QSSConfig &setTargetName(std::string name) {
-    targetName = name;
+    targetName = std::move(name);
     return *this;
   }
   std::optional<llvm::StringRef> getTargetName() const {
@@ -98,7 +99,7 @@ public:
   }
 
   QSSConfig &setTargetConfigPath(std::string path) {
-    targetConfigPath = path;
+    targetConfigPath = std::move(path);
     return *this;
   }
   std::optional<llvm::StringRef> getTargetConfigPath() const {
@@ -170,13 +171,13 @@ public:
   }
 
   QSSConfig &setPassPlugins(std::vector<std::string> plugins) {
-    dialectPlugins = plugins;
+    dialectPlugins = std::move(plugins);
     return *this;
   }
   const std::vector<std::string> &getPassPlugins() { return dialectPlugins; }
 
   QSSConfig &setDialectPlugins(std::vector<std::string> plugins) {
-    dialectPlugins = plugins;
+    dialectPlugins = std::move(plugins);
     return *this;
   }
   const std::vector<std::string> &getDialectPlugins() { return dialectPlugins; }
