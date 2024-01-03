@@ -23,13 +23,13 @@ add_mlir_dialect_library(MLIRQUIRTransforms
     MergeParallelResets.cpp
     Passes.cpp
     QuantumDecoration.cpp
+    QUIRCircuitAnalysis.cpp
     RemoveQubitOperands.cpp
     ReorderMeasurements.cpp
     ReorderCircuits.cpp
     SubroutineCloning.cpp
     UnusedVariable.cpp
     VariableElimination.cpp
-    AffineScalRepCopy.cpp
 
     ADDITIONAL_HEADER_DIRS
     ${PROJECT_SOURCE_DIR}/include/QUIR

@@ -20,9 +20,17 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/IR/QUIROps.h"
+
+#include "mlir/Dialect/ControlFlow/IR/ControlFlowOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
+
+#include <cassert>
+#include <vector>
 
 namespace mlir::quir {
 
@@ -33,13 +41,13 @@ namespace mlir::quir {
 // ]
 // caseRegion_default:
 //     // gates
-//     br switchEnd
+//    cf.br switchEnd
 // caseRegion_1:
 //     // gates
-//     br switchEnd
+//    cf.br switchEnd
 // caseRegion_2:
 //     // gates
-//     br switchEnd
+//    cf.br switchEnd
 // ...
 // switchEnd:
 // ...
@@ -63,17 +71,17 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
   Block *continueBlock = rewriter.splitBlock(condBlock, opPosition);
   SmallVector<Value> results;
   results.reserve(switchOp.getNumResults());
-  for (Type resultType : switchOp.getResultTypes())
+  for (auto resultType : switchOp.getResultTypes())
     results.push_back(
-        continueBlock->addArgument(resultType, switchOp.getLoc()));
+        continueBlock->addArgument(resultType.getType(), switchOp.getLoc()));
   // Move blocks from the "default" region to the region containing
   // 'quir.switch', place it before the continuation block, and branch to it.
-  auto &defaultRegion = switchOp.defaultRegion();
+  auto &defaultRegion = switchOp.getDefaultRegion();
   auto *defaultBlock = &defaultRegion.front();
   Operation *defaultTerminator = defaultRegion.back().getTerminator();
-  ValueRange defaultTerminatorOperands = defaultTerminator->getOperands();
+  ValueRange const defaultTerminatorOperands = defaultTerminator->getOperands();
   rewriter.setInsertionPointToEnd(&defaultRegion.back());
-  rewriter.create<BranchOp>(loc, continueBlock, defaultTerminatorOperands);
+  rewriter.create<cf::BranchOp>(loc, continueBlock, defaultTerminatorOperands);
   rewriter.eraseOp(defaultTerminator);
   rewriter.inlineRegionBefore(defaultRegion, continueBlock);
 
@@ -83,24 +91,25 @@ SwitchOpLowering::matchAndRewrite(SwitchOp switchOp,
   auto caseBlocks = std::vector<Block *>();
   auto *currBlock = continueBlock;
   auto caseOperands = std::vector<mlir::ValueRange>();
-  for (auto &region : switchOp.caseRegions())
+  for (auto &region : switchOp.getCaseRegions())
     if (!region.empty()) {
-      caseOperands.emplace_back(ValueRange());
+      caseOperands.emplace_back();
       currBlock = &region.front();
       caseBlocks.push_back(currBlock);
       Operation *caseTerminator = region.back().getTerminator();
-      ValueRange caseTerminatorOperands = caseTerminator->getOperands();
+      ValueRange const caseTerminatorOperands = caseTerminator->getOperands();
       rewriter.setInsertionPointToEnd(&region.back());
-      rewriter.create<BranchOp>(loc, continueBlock, caseTerminatorOperands);
+      rewriter.create<cf::BranchOp>(loc, continueBlock, caseTerminatorOperands);
       rewriter.eraseOp(caseTerminator);
       rewriter.inlineRegionBefore(region, continueBlock);
     }
 
   rewriter.setInsertionPointToEnd(condBlock);
   rewriter.create<LLVM::SwitchOp>(
-      loc, switchOp.flag(), /*defaultOperands=*/ValueRange(),
-      /*caseOperands=*/caseOperands, switchOp.caseValues(),
-      /*branchWeights=*/ElementsAttr(), defaultBlock, caseBlocks);
+      loc, /*flag=*/switchOp.getFlag(), /*defaultDestination=*/defaultBlock,
+      /*defaultOperands=*/ValueRange(),
+      /*caseValues=*/switchOp.getCaseValues(), /*caseDestinations=*/caseBlocks,
+      /*caseOperands=*/caseOperands);
 
   // Ok, we're done!
   rewriter.replaceOp(switchOp, continueBlock->getArguments());

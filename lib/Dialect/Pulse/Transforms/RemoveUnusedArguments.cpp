@@ -20,13 +20,26 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
+
 #include "Dialect/Pulse/IR/PulseOps.h"
 
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/SymbolTable.h"
 #include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/BitVector.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <cassert>
+#include <utility>
 #include <vector>
 
 #define DEBUG_TYPE "RemoveUnusedArguments"
@@ -47,7 +60,7 @@ struct RemoveUnusedArgumentsPattern
     LLVM_DEBUG(callSequenceOp.dump());
 
     Operation *findOp = SymbolTable::lookupNearestSymbolFrom<SequenceOp>(
-        callSequenceOp, callSequenceOp.calleeAttr());
+        callSequenceOp, callSequenceOp.getCalleeAttr());
 
     if (!findOp)
       return failure();
@@ -66,7 +79,8 @@ struct RemoveUnusedArgumentsPattern
         LLVM_DEBUG(argumentResult.value().dump());
 
         auto *argOp = callSequenceOp.getOperand(index).getDefiningOp();
-        testEraseList.push_back(argOp);
+        if (argOp)
+          testEraseList.push_back(argOp);
       }
     }
 
@@ -77,6 +91,22 @@ struct RemoveUnusedArgumentsPattern
     // rewrite - removed arguments and matching operands
     sequenceOp.eraseArguments(argIndicesBV);
     callSequenceOp->eraseOperands(argIndicesBV);
+
+    // check for other CallSequenceOps calling the same sequence
+    auto moduleOp = sequenceOp->getParentOfType<mlir::ModuleOp>();
+    assert(moduleOp && "Operation outside of a Module");
+    moduleOp->walk([&](pulse::CallSequenceOp op) {
+      if (op == callSequenceOp)
+        return;
+      if (op.getCallee() != sequenceOp.getSymName())
+        return;
+      // verify that the sequence and the new callSequenceOp are in
+      // the same module
+      auto checkModuleOp = op->getParentOfType<mlir::ModuleOp>();
+      if (checkModuleOp != moduleOp)
+        return;
+      op->eraseOperands(argIndicesBV);
+    });
 
     // remove defining ops if the have no usage
     for (auto *argOp : testEraseList)

@@ -14,9 +14,10 @@
 #ifndef PLUGINREGISTRY_H
 #define PLUGINREGISTRY_H
 
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/Support/ManagedStatic.h"
+
+#include <optional>
 
 namespace qssc::plugin::registry {
 
@@ -35,12 +36,12 @@ public:
     return inserted;
   }
 
-  static llvm::Optional<PluginInfo *>
+  static std::optional<PluginInfo *>
   lookupPluginInfo(llvm::StringRef pluginName) {
     PluginRegistry &pluginRegistry = instance();
     auto it = pluginRegistry.registry.find(pluginName);
     if (it == pluginRegistry.registry.end())
-      return llvm::None;
+      return std::nullopt;
     return &it->second;
   }
 
@@ -51,7 +52,7 @@ public:
   }
 
   static const llvm::StringMap<PluginInfo> &registeredPlugins() {
-    PluginRegistry &pluginRegistry = instance();
+    PluginRegistry const &pluginRegistry = instance();
     return pluginRegistry.registry;
   }
 

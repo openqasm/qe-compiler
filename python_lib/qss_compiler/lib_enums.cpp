@@ -1,5 +1,13 @@
-#include "API/api.h"
 #include "lib_enums.h"
+#include "errors.h"
+
+#include <pybind11/attr.h>
+#include <pybind11/cast.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
+#include <stdexcept>
+#include <string>
+#include <utility>
 
 namespace py = pybind11;
 

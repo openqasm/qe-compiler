@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --subroutine-cloning --quantum-decorate --merge-circuits %s | FileCheck %s 
+// RUN: qss-compiler -X=mlir --subroutine-cloning --quantum-decorate --merge-circuits %s | FileCheck %s
 
 //
 // This code is part of Qiskit.
@@ -62,7 +62,7 @@ module {
   // CHECK: %1 = quir.measure(%arg1) : (!quir.qubit<1>) -> i1
   // CHECK: quir.return %0, %1 : i1, i1
   // CHECK: }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     %0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
     %1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
     %200 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>

@@ -19,7 +19,7 @@ OPENQASM 3.0;
 // MLIR-DAG: oq3.declare_variable @j : !quir.cbit<1>
 
 // Angle
-// MLIR: %{{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<3>>
+// MLIR: %{{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<3>
 angle[3] c = 0;
 // MLIR: %{{.*}} = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 qubit $0;

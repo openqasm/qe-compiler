@@ -15,10 +15,12 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/OQ3/Transforms/Passes.h"
-
 #include "Dialect/OQ3/Transforms/LimitCBitWidth.h"
-#include "mlir/Pass/Pass.h"
+
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Pass/PassRegistry.h"
+
+#include <memory>
 
 namespace mlir::oq3 {
 
@@ -34,7 +36,7 @@ void registerOQ3Passes() {
 }
 
 void registerOQ3PassPipeline() {
-  PassPipelineRegistration<> pipeline(
+  PassPipelineRegistration<> const pipeline(
       "oq3Opt", "Enable OQ3-specific optimizations", oq3PassPipelineBuilder);
 }
 } // end namespace mlir::oq3

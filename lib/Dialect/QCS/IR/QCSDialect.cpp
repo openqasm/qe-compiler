@@ -19,14 +19,19 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QCS/IR/QCSDialect.h"
+
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QCS/IR/QCSAttributes.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QCS/IR/QCSOps.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QCS/IR/QCSTypes.h"
 
 using namespace mlir;
 using namespace mlir::qcs;
 
 /// Tablegen Definitions
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QCS/IR/QCSOpsDialect.cpp.inc"
 
 //===----------------------------------------------------------------------===//
@@ -37,6 +42,7 @@ void QCSDialect::initialize() {
 
   addOperations<
 #define GET_OP_LIST
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QCS/IR/QCSOps.cpp.inc"
       >();
 }

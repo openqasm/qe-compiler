@@ -14,8 +14,8 @@
 // that they have been altered from the originals.
 
 %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
-%ang = quir.constant #quir.angle<0.00 : !quir.angle<20>>
-%ang_incr = quir.constant #quir.angle<0.1 : !quir.angle<20>>
+%ang = quir.constant #quir.angle<0.00> : !quir.angle<20>
+%ang_incr = quir.constant #quir.angle<0.1> : !quir.angle<20>
 %lb = arith.constant 0 : index
 %ub = arith.constant 10 : index
 %step = arith.constant 1 : index

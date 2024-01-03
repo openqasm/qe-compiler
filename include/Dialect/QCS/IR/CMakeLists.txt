@@ -11,6 +11,6 @@
 # that they have been altered from the originals.
 
 add_mlir_dialect(QCSOps qcs)
-qssc_add_mlir_doc(QCSOps QCSOps generated/Dialect/QCS/ -gen-dialect-doc)
+add_mlir_doc(QCSOps QCSOps generated/Dialect/QCS/ -gen-dialect-doc -dialect=qcs)
 
 set(LLVM_TARGET_DEFINITIONS QCSDialect.td)

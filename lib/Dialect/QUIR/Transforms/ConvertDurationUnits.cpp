@@ -21,13 +21,26 @@
 
 #include "Dialect/QUIR/Transforms/ConvertDurationUnits.h"
 
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
+#include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
-#include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
+
+#include <optional>
+#include <sys/types.h>
+#include <utility>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -43,7 +56,7 @@ public:
   DurationTypeConverter(const TimeUnits convertUnits)
       : convertUnits_(convertUnits) {
     // Convert durations to the appropriate type
-    addConversion([&](mlir::Type t) -> Optional<Type> {
+    addConversion([&](mlir::Type t) -> std::optional<Type> {
       // All non-durations are legal in the conversion.
       if (!t.isa<DurationType>())
         return t;
@@ -63,8 +76,8 @@ public:
   convertFunctionSignature(FunctionType funcTy,
                            DurationTypeConverter::SignatureConversion &result) {
     // Convert argument types one by one and check for errors.
-    for (auto &en : llvm::enumerate(funcTy.getInputs())) {
-      Type type = en.value();
+    for (const auto &en : llvm::enumerate(funcTy.getInputs())) {
+      Type const type = en.value();
       SmallVector<Type, 8> converted;
       auto convertedType = convertType(type);
       if (!convertedType)
@@ -107,7 +120,7 @@ struct DurationUnitsConstantOpConversionPattern
   matchAndRewrite(quir::ConstantOp op, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto duration = op.value().dyn_cast<quir::DurationAttr>();
+    auto duration = op.getValue().dyn_cast<quir::DurationAttr>();
     if (!duration)
       return failure();
 
@@ -118,7 +131,7 @@ struct DurationUnitsConstantOpConversionPattern
 
     auto units = dstType.cast<DurationType>().getUnits();
 
-    DurationAttr newDuration =
+    DurationAttr const newDuration =
         duration.getConvertedDurationAttr(units, dtTimestep);
     rewriter.replaceOpWithNewOp<quir::ConstantOp>(op, newDuration);
 
@@ -199,7 +212,7 @@ struct DurationUnitsFunctionOpConversionPattern
                   typename FunctionType::Adaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto funcLikeType = funcLikeOp.getType();
+    auto funcLikeType = funcLikeOp.getFunctionType();
     // Create a signature converter for our interface
     DurationTypeConverter::SignatureConversion signatureConverter(
         funcLikeType.getNumInputs());
@@ -208,13 +221,13 @@ struct DurationUnitsFunctionOpConversionPattern
     // The signatureConverter is built up which will then be
     // used below to map region types in the rewriter.
     auto newFuncLikeType = typeConverter.convertFunctionSignature(
-        funcLikeOp.getType(), signatureConverter);
+        funcLikeOp.getFunctionType(), signatureConverter);
     if (!newFuncLikeType)
       return failure();
 
     // Create a new function operation with the update signature type.
-    Location loc = funcLikeOp.getLoc();
-    StringRef name = funcLikeOp.getName();
+    Location const loc = funcLikeOp.getLoc();
+    StringRef const name = funcLikeOp.getName();
     auto newFuncLikeOp =
         rewriter.create<FunctionType>(loc, name, newFuncLikeType);
 
@@ -256,7 +269,7 @@ void ConvertDurationUnitsPass::runOnOperation() {
   // Extract conversion units
   auto targetConvertUnits = getTargetConvertUnits();
 
-  double dtConversion = getDtTimestep();
+  double const dtConversion = getDtTimestep();
 
   auto &context = getContext();
   ConversionTarget target(context);
@@ -277,34 +290,40 @@ void ConvertDurationUnitsPass::runOnOperation() {
     return true;
   });
 
-  target.addDynamicallyLegalOp<quir::CircuitOp, mlir::FuncOp>(
-      [&](mlir::FunctionOpInterface op) {
-        for (auto type : op.getArgumentTypes()) {
-          if (checkTypeNeedsConversion(type, targetConvertUnits))
-            return false;
-        }
-        for (auto type : op.getResultTypes()) {
-          if (checkTypeNeedsConversion(type, targetConvertUnits))
-            return false;
-        }
+  target.addDynamicallyLegalOp<mlir::func::FuncOp>([&](mlir::func::FuncOp op) {
+    for (auto type : op.getArgumentTypes())
+      if (checkTypeNeedsConversion(type, targetConvertUnits))
+        return false;
+    for (auto type : op.getResultTypes())
+      if (checkTypeNeedsConversion(type, targetConvertUnits))
+        return false;
 
-        return true;
-      });
+    return true;
+  });
+
+  target.addDynamicallyLegalOp<quir::CircuitOp>([&](quir::CircuitOp op) {
+    for (auto type : op.getArgumentTypes())
+      if (checkTypeNeedsConversion(type, targetConvertUnits))
+        return false;
+    for (auto type : op.getResultTypes())
+      if (checkTypeNeedsConversion(type, targetConvertUnits))
+        return false;
+
+    return true;
+  });
 
   // Only constant declared durations if their type is not
   // the target output duration type.
   target
       .addDynamicallyLegalOp<quir::DelayOp, quir::ReturnOp, quir::CallCircuitOp,
-                             mlir::ReturnOp, mlir::CallOp>(
+                             mlir::func::ReturnOp, mlir::func::CallOp>(
           [&](mlir::Operation *op) {
-            for (auto type : op->getOperandTypes()) {
+            for (auto type : op->getOperandTypes())
               if (checkTypeNeedsConversion(type, targetConvertUnits))
                 return false;
-            }
-            for (auto type : op->getResultTypes()) {
+            for (auto type : op->getResultTypes())
               if (checkTypeNeedsConversion(type, targetConvertUnits))
                 return false;
-            }
             return true;
           });
 
@@ -316,9 +335,9 @@ void ConvertDurationUnitsPass::runOnOperation() {
                DurationUnitsConversionPattern<quir::ReturnOp>,
                DurationUnitsReturnsTypeOpConversionPattern<quir::CallCircuitOp>,
                DurationUnitsFunctionOpConversionPattern<quir::CircuitOp>,
-               DurationUnitsConversionPattern<mlir::ReturnOp>,
-               DurationUnitsReturnsTypeOpConversionPattern<mlir::CallOp>,
-               DurationUnitsFunctionOpConversionPattern<mlir::FuncOp>>(
+               DurationUnitsConversionPattern<mlir::func::ReturnOp>,
+               DurationUnitsReturnsTypeOpConversionPattern<mlir::func::CallOp>,
+               DurationUnitsFunctionOpConversionPattern<mlir::func::FuncOp>>(
       &getContext(), typeConverter);
 
   if (failed(

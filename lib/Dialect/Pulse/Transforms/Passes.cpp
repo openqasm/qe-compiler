@@ -19,19 +19,18 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/Passes.h"
-#include "Dialect/Pulse/IR/PulseDialect.h"
-#include "Dialect/Pulse/IR/PulseOps.h"
-#include "Dialect/Pulse/IR/PulseTypes.h"
 
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/IR/QUIRTypes.h"
+#include "Conversion/QUIRToPulse/LoadPulseCals.h"
+#include "Conversion/QUIRToPulse/QUIRToPulse.h"
 
-#include "mlir/Dialect/SCF/SCF.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/Pass/Pass.h"
+#include "Dialect/Pulse/Transforms/ClassicalOnlyDetection.h"
+#include "Dialect/Pulse/Transforms/MergeDelays.h"
+#include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
+#include "Dialect/Pulse/Transforms/SchedulePort.h"
+
+#include "Dialect/Pulse/Transforms/Scheduling.h"
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Pass/PassRegistry.h"
 
 namespace mlir::pulse {
 
@@ -43,13 +42,14 @@ void registerPulsePasses() {
   PassRegistration<MergeDelayPass>();
   PassRegistration<RemoveUnusedArgumentsPass>();
   PassRegistration<SchedulePortPass>();
+  PassRegistration<quantumCircuitPulseSchedulingPass>();
   PassRegistration<ClassicalOnlyDetectionPass>();
 }
 
 void registerPulsePassPipeline() {
-  PassPipelineRegistration<> pipeline("pulseOpt",
-                                      "Enable Pulse IR specific optimizations",
-                                      pulse::pulsePassPipelineBuilder);
+  PassPipelineRegistration<> const pipeline(
+      "pulseOpt", "Enable Pulse IR specific optimizations",
+      pulse::pulsePassPipelineBuilder);
 }
 
 } // namespace mlir::pulse

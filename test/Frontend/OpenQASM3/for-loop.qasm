@@ -26,9 +26,9 @@ qubit $0;
 // MLIR: scf.for %arg1 = %c0_0 to %c5 step %c1_1 {
 // AST-PRETTY: ForStatementNode(start=0, end=4,
 for i in [0 : 4] {
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<1.57079632679> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926535900001> : !quir.angle<64>
     // MLIR-NO-CIRCUITS: quir.builtin_U {{.*}}, {{.*}}, {{.*}}, {{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
     // MLIR-CIRCUITS: quir.call_circuit @circuit_0(%0) : (!quir.qubit<1>) -> ()
     // AST-PRETTY: statements=
@@ -43,9 +43,9 @@ for i in [0 : 4] {
 // MLIR: scf.for %arg1 = %c0_2 to %c5_3 step %c1_4 {
 // AST-PRETTY: ForStatementNode(start=0, stepping=1, end=4,
 for i in [0 : 1 : 4] {
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<1.57079632679> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926535900001> : !quir.angle<64>
     // MLIR-NO-CIRCUITS: quir.builtin_U {{.*}}, {{.*}}, {{.*}}, {{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
     // MLIR-CIRCUITS: quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> ()
     U(1.57079632679, 0.0, 3.14159265359) $0;
@@ -57,9 +57,9 @@ for i in [0 : 1 : 4] {
 // MLIR: scf.for %arg1 = %c-1 to %c1001 step %c10 {
 // AST-PRETTY: ForStatementNode(start=-1, stepping=10, end=1000,
 for i in [-1 : 10 : 1000] {
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<1.57079632679> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS: {{.*}} = quir.constant #quir.angle<3.1415926535900001> : !quir.angle<64>
     // MLIR-NO-CIRCUITS: quir.builtin_U {{.*}}, {{.*}}, {{.*}}, {{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
     // MLIR-CIRCUITS: quir.call_circuit @circuit_2(%0) : (!quir.qubit<1>) -> ()
     U(1.57079632679, 0.0, 3.14159265359) $0;

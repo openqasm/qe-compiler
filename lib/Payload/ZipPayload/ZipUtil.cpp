@@ -22,6 +22,11 @@
 
 #include "llvm/Support/raw_ostream.h"
 
+#include <cstdio>
+#include <cstdlib>
+#include <zip.h>
+#include <zipconf.h>
+
 char *qssc::payload::read_zip_src_to_buffer(zip_source_t *zip_src,
                                             zip_int64_t &sz) {
   //===---- Reopen for copying ----===//

@@ -19,22 +19,36 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Utils/Utils.h"
+
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
-#include "mlir/Dialect/SCF/SCF.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/FunctionInterfaces.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Interfaces/ControlFlowInterfaces.h"
+#include "mlir/Support/LLVM.h"
 
 #include "llvm/ADT/BitVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <cassert>
+#include <cstdint>
+#include <optional>
+#include <set>
+#include <string>
+#include <sys/types.h>
 #include <tuple>
-#include <utility>
+#include <vector>
 
 namespace mlir::quir {
 
@@ -58,15 +72,15 @@ auto quirFunctionTypeMatch(FunctionType &ft1, FunctionType &ft2) -> bool {
     return false;
 
   for (uint ii = 0; ii < ft1.getNumInputs(); ++ii) {
-    Type t1 = ft1.getInput(ii);
-    Type t2 = ft2.getInput(ii);
+    Type const t1 = ft1.getInput(ii);
+    Type const t2 = ft2.getInput(ii);
     if (!quirTypeMatch<AngleType, QubitType>(t1, t2) && t1 != t2)
       return false;
   }
 
   for (uint ii = 0; ii < ft1.getNumResults(); ++ii) {
-    Type t1 = ft1.getResult(ii);
-    Type t2 = ft2.getResult(ii);
+    Type const t1 = ft1.getResult(ii);
+    Type const t2 = ft2.getResult(ii);
     if (!quirTypeMatch<AngleType, QubitType>(t1, t2) && t1 != t2)
       return false;
   }
@@ -76,9 +90,9 @@ auto quirFunctionTypeMatch(FunctionType &ft1, FunctionType &ft2) -> bool {
 
 // walks the module operation and searches for a func def labeled "main"
 auto getMainFunction(Operation *moduleOperation) -> Operation * {
-  OpBuilder b(moduleOperation);
+  OpBuilder const b(moduleOperation);
   Operation *mainFunc = nullptr;
-  moduleOperation->walk([&](FuncOp funcOp) {
+  moduleOperation->walk([&](mlir::func::FuncOp funcOp) {
     if (SymbolRefAttr::get(funcOp).getLeafReference() == "main") {
       mainFunc = funcOp.getOperation();
       return WalkResult::interrupt();
@@ -99,10 +113,15 @@ auto getNodeType(Operation *moduleOperation) -> std::string {
 } // getNodeType
 
 // takes a module Op and returns the quir.nodeId attribute string
-auto getNodeId(Operation *moduleOperation) -> int {
+llvm::Expected<uint32_t> getNodeId(Operation *moduleOperation) {
   auto typeAttr = moduleOperation->getAttrOfType<IntegerAttr>("quir.nodeId");
-  assert(typeAttr && "module Op lacks expected attribute quir.nodeId");
-  return typeAttr.getInt();
+
+  if (!typeAttr)
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "module Op lacks expected attribute quir.nodeId.");
+
+  return typeAttr.getUInt();
 } // getNodeType
 
 // adds the qubit Ids on the physicalId or physicalIds attributes to theseIds
@@ -114,7 +133,7 @@ void addQubitIdsFromAttr(Operation *operation, std::vector<uint> &theseIds) {
   if (thisIdAttr)
     theseIds.push_back(thisIdAttr.getInt());
   if (theseIdsAttr) {
-    for (Attribute valAttr : theseIdsAttr) {
+    for (Attribute const valAttr : theseIdsAttr) {
       auto intAttr = valAttr.dyn_cast<IntegerAttr>();
       theseIds.push_back(intAttr.getInt());
     }
@@ -130,7 +149,7 @@ void addQubitIdsFromAttr(Operation *operation, std::set<uint> &theseIds) {
   if (thisIdAttr)
     theseIds.emplace(thisIdAttr.getInt());
   if (theseIdsAttr) {
-    for (Attribute valAttr : theseIdsAttr) {
+    for (Attribute const valAttr : theseIdsAttr) {
       auto intAttr = valAttr.dyn_cast<IntegerAttr>();
       theseIds.emplace(intAttr.getInt());
     }
@@ -140,7 +159,7 @@ void addQubitIdsFromAttr(Operation *operation, std::set<uint> &theseIds) {
 // returns a vector of all of the classical arguments for a callOp
 template <class CallOpTy>
 void classicalCallOperands(CallOpTy &callOp, std::vector<Value> &vec) {
-  for (auto arg : callOp.operands())
+  for (auto arg : callOp.getOperands())
     if (!arg.getType().template isa<QubitType>())
       vec.emplace_back(arg);
 } // classicalCallOperands
@@ -189,7 +208,7 @@ template <class CallOpTy>
 void qubitArgIndices(CallOpTy &callOp, llvm::BitVector &bv) {
   uint ii = 0;
 
-  for (auto arg : callOp.operands()) {
+  for (auto arg : callOp.getOperands()) {
     if (arg.getType().template isa<QubitType>()) {
       if (bv.size() <= ii)
         bv.resize(ii + 1);
@@ -210,12 +229,12 @@ template void qubitArgIndices<CallSubroutineOp>(CallSubroutineOp &,
 
 // TODO: Determine a better way of tracing qubit identities
 // other than decorating blocks and functions.
-llvm::Optional<uint> lookupQubitId(const Value &val) {
+std::optional<uint> lookupQubitId(const Value &val) {
   auto declOp = val.getDefiningOp<DeclareQubitOp>();
   if (!declOp) { // Must be an argument to a function
     // see if we can find an attribute with the info
     if (auto blockArg = val.dyn_cast<BlockArgument>()) {
-      unsigned argIdx = blockArg.getArgNumber();
+      unsigned const argIdx = blockArg.getArgNumber();
       auto *parentOp = blockArg.getOwner()->getParentOp();
       if (FunctionOpInterface functionOpInterface =
               dyn_cast<FunctionOpInterface>(parentOp)) {
@@ -228,42 +247,49 @@ llvm::Optional<uint> lookupQubitId(const Value &val) {
         }
       } // if parentOp is funcOp
     }   // if val is blockArg
-    return llvm::None;
+    return std::nullopt;
   } // if !declOp
-  int id = declOp.id().getValue();
+  auto idOpt = declOp.getId();
+
+  int id;
+  if (idOpt.has_value())
+    id = idOpt.value();
+  else
+    id = -1;
+
   assert(id >= 0 && "Declared ID of qubit is < 0");
   return static_cast<uint>(id);
 } // lookupQubitId
 
-llvm::Optional<Operation *> nextQuantumOpOrNull(Operation *op) {
+std::optional<Operation *> nextQuantumOpOrNull(Operation *op) {
   Operation *curOp = op;
   while (Operation *nextOp = curOp->getNextNode()) {
     if (isQuantumOp(nextOp))
       return nextOp;
     if (nextOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
       // control flow found, no next quantum op
-      return llvm::None;
+      return std::nullopt;
     }
     curOp = nextOp;
   }
-  return llvm::None;
+  return std::nullopt;
 } // nextQuantumOpOrNull
 
-llvm::Optional<Operation *> prevQuantumOpOrNull(Operation *op) {
+std::optional<Operation *> prevQuantumOpOrNull(Operation *op) {
   Operation *curOp = op;
   while (Operation *prevOp = curOp->getPrevNode()) {
     if (isQuantumOp(prevOp))
       return prevOp;
     if (prevOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
       // control flow found, no prev quantum op
-      return llvm::None;
+      return std::nullopt;
     }
     curOp = prevOp;
   }
-  return llvm::None;
+  return std::nullopt;
 } // prevQuantumOpOrNull
 
-llvm::Optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op) {
+std::optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op) {
   Operation *curOp = op;
   while (Operation *nextOp = curOp->getNextNode()) {
     if (isQuantumOp(nextOp))
@@ -274,10 +300,10 @@ llvm::Optional<Operation *> nextQuantumOrControlFlowOrNull(Operation *op) {
     }
     curOp = nextOp;
   }
-  return llvm::None;
+  return std::nullopt;
 } // nextQuantumOrControlFlowOrNull
 
-llvm::Optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op) {
+std::optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op) {
   Operation *curOp = op;
   while (Operation *prevOp = curOp->getPrevNode()) {
     if (isQuantumOp(prevOp))
@@ -288,7 +314,7 @@ llvm::Optional<Operation *> prevQuantumOrControlFlowOrNull(Operation *op) {
     }
     curOp = prevOp;
   }
-  return llvm::None;
+  return std::nullopt;
 } // prevQuantumOrControlFlowOrNull
 
 bool isQuantumOp(Operation *op) {
@@ -300,13 +326,13 @@ bool isQuantumOp(Operation *op) {
 
 llvm::Expected<mlir::quir::DurationAttr>
 getDuration(mlir::quir::DelayOp &delayOp) {
-  std::string durationStr;
-  auto durationDeclare = delayOp.time().getDefiningOp<quir::ConstantOp>();
+  std::string const durationStr;
+  auto durationDeclare = delayOp.getTime().getDefiningOp<quir::ConstantOp>();
   if (durationDeclare)
-    return durationDeclare.value().dyn_cast<quir::DurationAttr>();
-  auto argNum = delayOp.time().cast<BlockArgument>().getArgNumber();
+    return durationDeclare.getValue().dyn_cast<quir::DurationAttr>();
+  auto argNum = delayOp.getTime().cast<BlockArgument>().getArgNumber();
   auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
-      delayOp.time().getParentBlock()->getParentOp());
+      delayOp.getTime().getParentBlock()->getParentOp());
   assert(circuitOp && "can only handle circuit arguments");
   auto argAttr = circuitOp.getArgAttrOfType<mlir::quir::DurationAttr>(
       argNum, mlir::quir::getDurationAttrName());
@@ -315,7 +341,7 @@ getDuration(mlir::quir::DelayOp &delayOp) {
 
 llvm::Expected<mlir::quir::DurationAttr>
 getDuration(mlir::quir::ConstantOp &duration) {
-  auto durAttr = duration.value().dyn_cast<mlir::quir::DurationAttr>();
+  auto durAttr = duration.getValue().dyn_cast<mlir::quir::DurationAttr>();
   if (!durAttr)
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Expected a ConstantOp with a DurationAttr");
@@ -325,25 +351,25 @@ getDuration(mlir::quir::ConstantOp &duration) {
 std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,
                                                  Value result) {
   auto opRes = result.cast<OpResult>();
-  uint resNum = opRes.getResultNumber();
-  return std::make_tuple(measureOp.qubits()[resNum], measureOp);
+  uint const resNum = opRes.getResultNumber();
+  return std::make_tuple(measureOp.getQubits()[resNum], measureOp);
 }
 
 std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
                                                  Value result) {
   auto opRes = result.cast<OpResult>();
-  uint resNum = opRes.getResultNumber();
+  uint const resNum = opRes.getResultNumber();
 
   Operation *findOp =
       SymbolTable::lookupNearestSymbolFrom<mlir::quir::CircuitOp>(
-          callCircuitOp, callCircuitOp.calleeAttr());
+          callCircuitOp, callCircuitOp.getCalleeAttr());
 
   auto circuitOp = dyn_cast<CircuitOp>(findOp);
   auto returnOp = dyn_cast<quir::ReturnOp>(circuitOp.back().getTerminator());
   auto circuitResult = returnOp->getOperand(resNum).cast<OpResult>();
   auto measureOp = dyn_cast<MeasureOp>(circuitResult.getDefiningOp());
 
-  return std::make_tuple(measureOp.qubits()[circuitResult.getResultNumber()],
+  return std::make_tuple(measureOp.getQubits()[circuitResult.getResultNumber()],
                          measureOp);
 }
 

@@ -23,9 +23,9 @@ module {
     // CHECK:  oq3.cbit_lshift %{{.*}}, %{{.*}} : (!quir.cbit<10>, i32) -> !quir.cbit<10>
     %lshift_res = oq3.cbit_lshift %xor_res, %const2 : (!quir.cbit<10>, i32) -> !quir.cbit<10>
 
-    // CHECK: %{{.*}} = quir.constant #quir.angle<1.000000e-01 : !quir.angle<20>>
-    %theta = quir.constant #quir.angle<0.1 : !quir.angle<20>>
-    %phi = quir.constant #quir.angle<0.2 : !quir.angle<20>>
+    // CHECK: %{{.*}} = quir.constant #quir.angle<1.000000e-01> : !quir.angle<20>
+    %theta = quir.constant #quir.angle<0.1> : !quir.angle<20>
+    %phi = quir.constant #quir.angle<0.2> : !quir.angle<20>
     // CHECK: %{{.*}} = oq3.angle_add %{{.*}}, %{{.*}} : !quir.angle<20>
     %add_res = oq3.angle_add %theta, %phi : !quir.angle<20>
     // CHECK: %{{.*}} = oq3.angle_sub %{{.*}}, %{{.*}} : !quir.angle<20>
