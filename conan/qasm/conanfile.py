@@ -10,7 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 from conans import ConanFile
-import os
 import platform
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 import subprocess
