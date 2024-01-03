@@ -107,11 +107,12 @@ private:
   mlir::PassManager &createTargetPassManager_(Target *target);
 
   /// Compiles the input module for a single target.
-  llvm::Error compileMLIRTarget_(Target &target, mlir::ModuleOp targetModuleOp);
+  llvm::Error compileMLIRTarget_(Target &target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing);
   /// Compiles the input payload for a single target.
   llvm::Error compilePayloadTarget_(Target &target,
                                     mlir::ModuleOp targetModuleOp,
                                     qssc::payload::Payload &payload,
+                                    mlir::TimingScope &timing,
                                     bool doCompileMLIR);
 
   PMBuilder pmBuilder;

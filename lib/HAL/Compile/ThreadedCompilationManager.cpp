@@ -66,42 +66,42 @@ llvm::Error ThreadedCompilationManager::walkTargetModulesThreaded(
   auto children = target->getChildren();
 
   // Check if there are children to walk. If not exit early
-  if (!children.size())
-    return llvm::Error::success();
+  if (children.size()) {
 
-  auto childrenTiming = parentTiming.nest("children");
+    auto childrenTiming = parentTiming.nest("children");
 
-  std::unordered_map<Target *, mlir::ModuleOp> childrenModules;
-  for (auto *childTarget : children) {
-    auto childModuleOp = childTarget->getModule(targetModuleOp);
-    if (auto err = childModuleOp.takeError())
-      return err;
-    childrenModules[childTarget] = *childModuleOp;
-  }
-
-  auto parallelWalkFunc = [&](Target *childTarget) {
-    // Recurse on this target's children in a depth first fashion.
-
-    if (auto err =
-            walkTargetModulesThreaded(childTarget, childrenModules[childTarget], childrenTiming,
-                                      walkFunc, postChildrenCallbackFunc)) {
-      llvm::errs() << err << "\n";
-      return mlir::failure();
+    std::unordered_map<Target *, mlir::ModuleOp> childrenModules;
+    for (auto *childTarget : children) {
+      auto childModuleOp = childTarget->getModule(targetModuleOp);
+      if (auto err = childModuleOp.takeError())
+        return err;
+      childrenModules[childTarget] = *childModuleOp;
     }
 
-    return mlir::success();
-  };
+    auto parallelWalkFunc = [&](Target *childTarget) {
+      // Recurse on this target's children in a depth first fashion.
 
-  // By utilizing the MLIR parallelism methods, we automatically inherit the
-  // multiprocessing settings from the context.
-  if (mlir::failed(mlir::failableParallelForEach(getContext(), children,
-                                                 parallelWalkFunc)))
-    return llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        "Problems encountered while walking children of target " +
-            target->getName());
+      if (auto err =
+              walkTargetModulesThreaded(childTarget, childrenModules[childTarget], childrenTiming,
+                                        walkFunc, postChildrenCallbackFunc)) {
+        llvm::errs() << err << "\n";
+        return mlir::failure();
+      }
 
-  if (auto err = postChildrenCallbackFunc(target, targetModuleOp, timing))
+      return mlir::success();
+    };
+
+    // By utilizing the MLIR parallelism methods, we automatically inherit the
+    // multiprocessing settings from the context.
+    if (mlir::failed(mlir::failableParallelForEach(getContext(), children,
+                                                  parallelWalkFunc)))
+      return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "Problems encountered while walking children of target " +
+              target->getName());
+  }
+
+  if (auto err = postChildrenCallbackFunc(target, targetModuleOp, parentTiming))
     return err;
 
   return llvm::Error::success();
@@ -222,7 +222,7 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp, mli
 
   auto threadedCompileMLIRTarget =
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
-    if (auto err = compileMLIRTarget_(*target, targetModuleOp))
+    if (auto err = compileMLIRTarget_(*target, targetModuleOp, timing))
       return err;
     return llvm::Error::success();
   };
@@ -233,7 +233,7 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp, mli
     return llvm::Error::success();
   };
 
-  auto targetsTiming = compileMLIRTiming.nest("compile-targets");
+  auto targetsTiming = compileMLIRTiming.nest("compile-system");
 
   auto err = walkTargetModulesThreaded(
       &target, moduleOp, targetsTiming, threadedCompileMLIRTarget, postChildrenEmitToPayload);
@@ -242,12 +242,15 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp, mli
 
 llvm::Error
 ThreadedCompilationManager::compileMLIRTarget_(Target &target,
-                                               mlir::ModuleOp targetModuleOp) {
+                                               mlir::ModuleOp targetModuleOp,
+                                               mlir::TimingScope &timing) {
   if (getPrintBeforeAllTargetPasses())
     printIR("IR dump before running passes for target " + target.getName(),
             targetModuleOp, llvm::outs());
 
+  auto targetPassesTiming = timing.nest("passes");
   mlir::PassManager &pm = getTargetPassManager_(&target);
+  pm.enableTiming(targetPassesTiming);
 
   if (mlir::failed(pm.run(targetModuleOp))) {
     if (getPrintAfterTargetCompileFailure())
@@ -283,7 +286,7 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
 
   auto threadedCompilePayloadTarget =
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
-    if (auto err = compilePayloadTarget_(*target, targetModuleOp, payload,
+    if (auto err = compilePayloadTarget_(*target, targetModuleOp, payload, timing,
                                          doCompileMLIR))
       return err;
     return llvm::Error::success();
@@ -291,13 +294,13 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
 
   auto postChildrenEmitToPayload =
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
+    auto emitToPayloadTiming = timing.nest("emit-to-payload-post-children");
     if (auto err = target->emitToPayloadPostChildren(targetModuleOp, payload))
       return err;
     return llvm::Error::success();
   };
 
-
-  auto targetsTiming = compilePayloadTiming .nest("compile-targets");
+  auto targetsTiming = compilePayloadTiming.nest("compile-system");
   auto err =
       walkTargetModulesThreaded(&target, moduleOp, targetsTiming, threadedCompilePayloadTarget,
                                 postChildrenEmitToPayload);
@@ -306,15 +309,17 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
 
 llvm::Error ThreadedCompilationManager::compilePayloadTarget_(
     Target &target, mlir::ModuleOp targetModuleOp,
-    qssc::payload::Payload &payload, bool doCompileMLIR) {
+    qssc::payload::Payload &payload, mlir::TimingScope &timing, bool doCompileMLIR) {
 
   if (doCompileMLIR)
-    if (auto err = compileMLIRTarget_(target, targetModuleOp))
+    if (auto err = compileMLIRTarget_(target, targetModuleOp, timing))
       return err;
 
   if (getPrintBeforeAllTargetPayload())
     printIR("IR dump before emitting payload for target " + target.getName(),
             targetModuleOp, llvm::outs());
+
+  auto emitToPayloadTiming = timing.nest("emit-to-payload");
 
   if (auto err = target.emitToPayload(targetModuleOp, payload)) {
     if (getPrintAfterTargetCompileFailure())
