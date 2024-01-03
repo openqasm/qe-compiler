@@ -71,7 +71,7 @@ public:
   friend class EnvVarConfigBuilder;
 
   QSSConfig &setInputSource(std::string source) {
-    inputSource = source;
+    inputSource = std::move(source);
     return *this;
   }
   llvm::StringRef getInputSource() const { return inputSource; }
