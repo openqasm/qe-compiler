@@ -88,7 +88,7 @@ workflow for writing and compiling release notes.
 
 Making a new release note is quite straightforward.
 
-- Ensure that you have renoinstalled with:
+- Ensure that you have reno installed with:
     ```bash
     pip install -U reno
     ```
@@ -158,7 +158,7 @@ After release notes have been added, you can use reno to see what the full outpu
 of the release notes is. In general the output from reno that we'll get is a rst
 (ReStructuredText) file that can be compiled by
 [sphinx](https://www.sphinx-doc.org/en/master/). To generate the rst file you
-use the ``reno report`` command. If you want to generate the full qw-compiler release
+use the ``reno report`` command. If you want to generate the full qe-compiler release
 notes for all releases (since we started using reno during 0.9) you just run:
 
     reno report
@@ -225,7 +225,7 @@ Note that `llvm::outs()` is not thread-safe (since it is buffered) and thus cann
 
 ### Static Code Checks
 The easiest, fastest, and most automated way to integrate the formatting into your workflow
-is via [pre-commit](https://pre-commit.com). Note that this tool requires and internet connection
+is via [pre-commit](https://pre-commit.com). Note that this tool requires an internet connection
 to initially setup because the formatting tools needs to be downloaded.
 
 **In environments without an internet connection, please see one of the other solutions documented

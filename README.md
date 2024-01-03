@@ -1,7 +1,13 @@
 
 # qe-compiler: An MLIR-based quantum compiler for quantum engines
 
+The qe-compiler is an [MLIR](https://mlir.llvm.org/)-based compiler with support for OpenQASM 3. It is designed to compile quantum programs to quantum hardware and is designed as part of the overall Quantum Engine. This repo contains the compiler front-end to convert OpenQASM 3 source files into a collection of four MLIR dialects called QUIR (QUantum Intermediate Representation), OQ3 (OpenQASM 3), Pulse (OpenPulse), and QCS (Quantum Computing System). This set of dialects allows OpenQASM programs to be converted into a form suitable to manipulate with LLVM. This repo also contains tools and compiler passes that are agnostic of details of any control system vendor. For instance, it contains localization passes to split source programs into the qubit or channel-specific groupings required by a target quantum control system.
+
+This repo does not contain a complete compiler. Rather, it is a framework for building compilers. To produce a complete compiler, one needs to implement a qe-compiler **target**. This repo comes with a ["mock" target](https://github.com/Qiskit/qss-compiler/tree/main/targets/systems/mock) to assist developers in understanding how to develop such targets.
+
+## Contents
 - [qe-compiler: An MLIR-based quantum compiler for quantum engines](#qe-compiler-an-mlir-based-quantum-compiler-for-quantum-engines)
+  - [Contents](#contents)
   - [Notice](#notice)
   - [Building](#building)
     - [Python library](#python-library)
@@ -12,11 +18,6 @@
   - [Contribution Guidelines](#contribution-guidelines)
     - [CI and Release Cycle](#ci-and-release-cycle)
   - [License](#license)
-
-
-The qe-compiler is an [MLIR](https://mlir.llvm.org/)-based compiler with support for OpenQASM 3. It is designed to compile quantum programs to quantum hardware and is designed as part of the overall Quantum Engine. This repo contains the compiler front-end to convert OpenQASM 3 source files into a collection of four MLIR dialects called QUIR (QUantum Intermediate Representation), OQ3 (OpenQASM 3), Pulse (OpenPulse), and QCS (Quantum Computing System). This set of dialects allows OpenQASM programs to be converted into a form suitable to manipulate with LLVM. This repo also contains tools and compiler passes that are agnostic of details of any control system vendor. For instance, it contains localization passes to split source programs into the qubit or channel-specific groupings required by a target quantum control system.
-
-This repo does not contain a complete compiler. Rather, it is a framework for building compilers. To produce a complete compiler, one needs to implement a qe-compiler **target**. This repo comes with a ["mock" target](https://github.com/Qiskit/qss-compiler/tree/main/targets/systems/mock) to assist developers in understanding how to develop such targets.
 
 ## Notice
 
@@ -52,7 +53,7 @@ Building and running the compiler is supported with [WSL](https://learn.microsof
 
 ### Static Code Checks
 The easiest, fastest, and most automated way to integrate the formatting into your workflow
-is via [pre-commit](https://pre-commit.com). Note that this tool requires and internet connection
+is via [pre-commit](https://pre-commit.com). Note that this tool requires an internet connection
 to initially setup because the formatting tools needs to be downloaded. These should be installed
 and setup prior to any development work so that they are not forgotten
 about.
