@@ -16,10 +16,10 @@
 #include "Config/QSSConfig.h"
 
 #include "mlir/Debug/CLOptionsSetup.h"
-#include "mlir/IR/DialectRegistry."
-#include "mlir/Tools/mlir-opt/MlirOptMain.h"
-#include "mlir/Pass/PassRegistry.h
+#include "mlir/IR/DialectRegistry.h"
+#include "mlir/Pass/PassRegistry.h"
 #include "mlir/Support/LogicalResult.h"
+#include "mlir/Tools/mlir-opt/MlirOptMain.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
@@ -307,7 +307,7 @@ struct QSSConfigCLOptions : public QSSConfig {
         llvm::cl::cat(getQSSOptCLCategory()));
     this->dialectPlugins_ = std::addressof(dialectPlugins_);
 
-    static const mlir::PassPipelineCLParser const passPipeline(
+    static mlir::PassPipelineCLParser const passPipeline(
         "", "Compiler passes to run", "p");
     setPassPipelineParser(passPipeline);
   }
