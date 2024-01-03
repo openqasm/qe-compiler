@@ -35,11 +35,7 @@ class QasmConan(ConanFile):
     description = "A flex/bison parser for OpenQASM v3. A part of the Quantum Engine project."
 
     def source(self):
-        token = os.environ.get("GITHUB_PAT")
-        if token is not None:
-            self.run(f"git clone https://{token}@github.com/openqasm/qe-qasm.git .")
-        else:
-            self.run("git clone git@github.com:openqasm/qe-qasm.git .")
+        self.run("git clone git@github.com:openqasm/qe-qasm.git .")
 
         commit_hash = self.conan_data["sources"]["hash"]
         self.run(f"git checkout {commit_hash}")
