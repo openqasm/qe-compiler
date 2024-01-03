@@ -56,17 +56,6 @@ jobs:
           path: .conan
           key: conan-${{ runner.os }}
           restore-keys: conan-${{ runner.os }}
-      # Check if all conan packages are within the cache. If not
-      # we will need to build packages (and if on main flush the cache)
-      - name : Check Conan dependencies are cached
-        id: check_conan_cache
-        working-directory: build
-        run: |
-          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan install .. -pr:h default -pr:b default
-          cache_miss=$?
-          echo "cache_miss=$cache_miss" >> $GITHUB_OUTPUT
-          echo "Cache was missed: $cache_miss"
       - name: Create Conan default profile
         run: |
           conan profile new default --detect || true
@@ -75,6 +64,22 @@ jobs:
         run: ./conan_deps.sh
       - name: Create build dir
         run: mkdir build
+      # Check if all conan packages are within the cache. If not
+      # we will need to build packages (and if on main flush the cache)
+      - name : Check Conan dependencies are cached
+        id: check_conan_cache
+        working-directory: build
+        run: |
+          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
+          conan install .. -pr:h default -pr:b default
+          if [ $? -ne 0 ]
+          then
+              cache_hit=false
+          else
+              cache_hit=true
+          fi
+          echo "cache_hit=$cache_hit" >> $GITHUB_OUTPUT
+          echo "Cache was hit: $cache_hit"
       - name: Conan install
         id: conan_install
         working-directory: build
