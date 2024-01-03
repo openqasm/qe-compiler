@@ -50,6 +50,13 @@ jobs:
       - name : Print cache hit/miss
         run: |
           echo "Cache was hit: ${{ steps.cache.outputs.cache-hit }}"
+      # If we have a cache miss on 'main', clear the cache.
+      # A dependency was updated, so we need to drop the old one
+      # to prevent unbounded cache growth over time.
+      - name : Clear Conan cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
+        run: |
+          rm -rf ./.conan
       - name: Create Conan default profile
         run: |
           conan profile new default --detect || true
