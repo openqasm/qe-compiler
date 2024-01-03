@@ -20,7 +20,6 @@ set (CXX_FLAGS
 
 option(DETECT_TARGET_TRIPLE "Automatically detect the target triple for clang" ON)
 if (DETECT_TARGET_TRIPLE)
-
     find_program(LLVM_CONFIG_BIN llvm-config)
     if (NOT LLVM_CONFIG_BIN)
         message(FATAL_ERROR "llvm-config not found!")
