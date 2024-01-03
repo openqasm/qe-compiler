@@ -49,7 +49,7 @@ jobs:
         run: |
           version=`python -c "from setuptools_scm import get_version; print(get_version())"`
           echo "QSSC_VERSION=$version" >> $GITHUB_ENV
-      - name: Try load Conan cache
+      - name: Load Conan cache
         id: cache
         uses: actions/cache/restore@v3
         with:
@@ -58,13 +58,13 @@ jobs:
           restore-keys: conan-${{ runner.os }}
       # Check if all conan packages are within the cache. If not
       # we will need to build packages (and if on main flush the cache)
-      - name : Conan deps cached
+      - name : Check Conan dependencies are cached
         id: check_conan_cache
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
           conan install .. -pr:h default -pr:b default
-          export cache-miss=$($?)
+          cache-miss=$?
           echo "cache-miss=$cache-miss" >> $GITHUB_OUTPUT
           echo "Cache was missed: $cache-miss"
       - name: Create Conan default profile
