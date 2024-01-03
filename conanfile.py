@@ -63,19 +63,24 @@ class QSSCompilerConan(ConanFile):
         # available in a typical CI worker for debug builds.
         if self.settings.build_type == "Debug":
             cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = "2"
+
+        cmake.verbose = True
         return cmake
 
     def build(self):
         cmake = self._configure_cmake()
-        cmake.verbose = True
-        cmake.configure()
-        cmake.build()
 
-        if self.options.pythonlib:
-            self.run(
-                f"cd {self.build_folder}/python_lib \
-                    && pip install -e .[test]"
-            )
+        if self.should_configure:
+            cmake.configure()
+
+        if self.should_build:
+            cmake.build()
+
+            if self.options.pythonlib:
+                self.run(
+                    f"cd {self.build_folder}/python_lib \
+                        && pip install -e .[test]"
+                )
 
         if self.should_test:
             self.test(cmake)
