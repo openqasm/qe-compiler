@@ -44,8 +44,7 @@ jobs:
         if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-reno')
         env:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-        run: ./.github/renos_updated.ch
-
+        run: ./.github/renos_updated.sh
       - name: Export QSSC_VERSION from Git version tag
         run: |
           version=`python -c "from setuptools_scm import get_version; print(get_version())"`
