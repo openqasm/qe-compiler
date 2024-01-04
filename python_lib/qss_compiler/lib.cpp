@@ -91,8 +91,8 @@ py::tuple py_compile_by_args(const std::vector<std::string> &args,
   argv.push_back(nullptr);
 
   int const status = qssc::compile(args.size(), argv.data(),
-                             outputAsStr ? &outputStr : nullptr,
-                             std::move(onDiagnostic));
+                                   outputAsStr ? &outputStr : nullptr,
+                                   std::move(onDiagnostic));
   bool const success = status == 0;
 
 #ifndef NDEBUG
@@ -102,20 +102,18 @@ py::tuple py_compile_by_args(const std::vector<std::string> &args,
   return py::make_tuple(success, py::bytes(outputStr));
 }
 
-py::tuple
-py_link_file(const std::string &input, const bool enableInMemoryInput,
-             const std::string &outputPath,
-             const std::string &target, const std::string &configPath,
-             const std::unordered_map<std::string, double> &arguments,
-             bool treatWarningsAsErrors,
-             qssc::DiagnosticCallback onDiagnostic) {
+py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
+                       const std::string &outputPath, const std::string &target,
+                       const std::string &configPath,
+                       const std::unordered_map<std::string, double> &arguments,
+                       bool treatWarningsAsErrors,
+                       qssc::DiagnosticCallback onDiagnostic) {
 
   std::string inMemoryOutput("");
 
-  int const status = qssc::bindArguments(target, configPath, input, outputPath, arguments,
-                                   treatWarningsAsErrors, enableInMemoryInput,
-                                   &inMemoryOutput,
-                                   std::move(onDiagnostic));
+  int const status = qssc::bindArguments(
+      target, configPath, input, outputPath, arguments, treatWarningsAsErrors,
+      enableInMemoryInput, &inMemoryOutput, std::move(onDiagnostic));
 
   bool const success = status == 0;
 #ifndef NDEBUG
@@ -123,7 +121,6 @@ py_link_file(const std::string &input, const bool enableInMemoryInput,
 #endif
   return py::make_tuple(success, py::bytes(inMemoryOutput));
 }
-
 
 // Pybind module
 PYBIND11_MODULE(py_qssc, m) {

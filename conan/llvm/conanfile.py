@@ -12,14 +12,9 @@
 from conans.errors import ConanInvalidConfiguration
 from conans import ConanFile, CMake, tools
 
-from collections import defaultdict
-import json
-import re
 import os.path
 import os
-import shutil
 
-from conan.tools.apple import is_apple_os
 
 LLVM_TAG = "llvmorg-17.0.5"
 
@@ -91,19 +86,18 @@ class LLVMConan(ConanFile):
 
     def source(self):
         git_cache = os.environ.get("CONAN_LLVM_GIT_CACHE")
-        cache_hit = lambda: os.path.exists(f"{git_cache}/.git")
+        cache_hit = os.path.exists(f"{git_cache}/.git")
         cache_arg = f" --reference-if-able '{git_cache}' " if git_cache else ""
 
-        if git_cache and cache_hit():
-            self.output.info(
-                f"Cache hit! Some Git objects will be loaded from '{git_cache}'."
-            )
+        if git_cache and cache_hit:
+            self.output.info(f"Cache hit! Some Git objects will be loaded from '{git_cache}'.")
 
         self.run(
-            f"git clone {cache_arg} -b {LLVM_TAG} --single-branch https://github.com/llvm/llvm-project.git"
+            f"git clone {cache_arg} -b {LLVM_TAG} "
+            "--single-branch https://github.com/llvm/llvm-project.git"
         )
 
-        if git_cache and not cache_hit():
+        if git_cache and not cache_hit:
             # Update cache.
             self.output.info(f"Updating cache at '{git_cache}'.")
             self.run(f"cp -r llvm-project '{git_cache}'")
@@ -115,7 +109,7 @@ class LLVMConan(ConanFile):
     def _supports_compiler(self):
         compiler = self.settings.compiler.value
         version = tools.Version(self.settings.compiler.version)
-        major_rev, minor_rev = int(version.major), int(version.minor)
+        major_rev, _ = int(version.major), int(version.minor)
 
         unsupported_combinations = [
             [compiler == "gcc", major_rev < 8],
@@ -148,9 +142,7 @@ class LLVMConan(ConanFile):
         cmake.definitions["LLVM_TARGETS_TO_BUILD"] = self.options.targets
         cmake.definitions["LLVM_BUILD_LLVM_DYLIB"] = self.options.shared
         cmake.definitions["LLVM_DYLIB_COMPONENTS"] = self.options.components
-        cmake.definitions["LLVM_ENABLE_PIC"] = self.options.get_safe(
-            "fPIC", default=False
-        )
+        cmake.definitions["LLVM_ENABLE_PIC"] = self.options.get_safe("fPIC", default=False)
 
         cmake.definitions["LLVM_ABI_BREAKING_CHECKS"] = "WITH_ASSERTS"
         cmake.definitions["LLVM_ENABLE_WARNINGS"] = True
@@ -185,9 +177,7 @@ class LLVMConan(ConanFile):
         cmake.definitions["LLVM_ENABLE_LTO"] = self.options.lto
         cmake.definitions["LLVM_STATIC_LINK_CXX_STDLIB"] = self.options.static_stdlib
         cmake.definitions["LLVM_ENABLE_UNWIND_TABLES"] = self.options.unwind_tables
-        cmake.definitions[
-            "LLVM_ENABLE_EXPENSIVE_CHECKS"
-        ] = self.options.expensive_checks
+        cmake.definitions["LLVM_ENABLE_EXPENSIVE_CHECKS"] = self.options.expensive_checks
         cmake.definitions["LLVM_ENABLE_ASSERTIONS"] = False
         #            self.settings.build_type == 'Debug'
 
@@ -205,12 +195,8 @@ class LLVMConan(ConanFile):
         cmake.definitions["LLVM_ENABLE_LIBPFM"] = False
         cmake.definitions["LLVM_ENABLE_LIBEDIT"] = False
         cmake.definitions["LLVM_ENABLE_FFI"] = self.options.with_ffi
-        cmake.definitions["LLVM_ENABLE_ZLIB"] = self.options.get_safe(
-            "with_zlib", False
-        )
-        cmake.definitions["LLVM_ENABLE_LIBXML2"] = self.options.get_safe(
-            "with_xml2", False
-        )
+        cmake.definitions["LLVM_ENABLE_ZLIB"] = self.options.get_safe("with_zlib", False)
+        cmake.definitions["LLVM_ENABLE_LIBXML2"] = self.options.get_safe("with_xml2", False)
 
         cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = 4
 

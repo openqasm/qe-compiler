@@ -1,0 +1,37 @@
+# (C) Copyright IBM 2024.
+#
+# This code is part of Qiskit.
+#
+# This code is licensed under the Apache License, Version 2.0 with LLVM
+# Exceptions. You may obtain a copy of this license in the LICENSE.txt
+# file in the root directory of this source tree.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+
+# Workaround CI permissions for forks
+# https://github.com/ZedThree/clang-tidy-review?tab=readme-ov-file#usage-in-fork-environments-split-workflow
+name: Post clang-tidy review comments
+
+on:
+  workflow_run:
+    # The name field of the lint action
+    # Defined in lint.yml workflow
+    workflows:
+      - Static Checks
+    types:
+      - completed
+
+jobs:
+  post-clang-tidy:
+    name: Post clang-tidy review comments
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ZedThree/clang-tidy-review/post@v0.14.0
+        # lgtm_comment_body, max_comments, and annotations need to be set on the posting workflow in a split setup
+        with:
+          # adjust options as necessary
+          lgtm_comment_body: ''
+          annotations: false
+          max_comments: 10

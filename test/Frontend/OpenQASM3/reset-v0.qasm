@@ -23,7 +23,7 @@ OPENQASM 3.0;
 // XX-MLIR-CIRCUITS: quir.circuit @circuit_0(%arg0: !quir.qubit<1>) {
 // XX-MLIR-CIRCUITS: quir.reset %arg0 : !quir.qubit<1>
 // XX-MLIR-CIRCUITS: quir.return
-  
+
 // MLIR: qcs.init
 // MLIR: [[QUBIT0:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 qubit $0;
