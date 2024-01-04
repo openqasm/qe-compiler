@@ -71,8 +71,8 @@ jobs:
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan info .. -pr:h default -pr:b default --build=outdated
-          build_requires=$(conan info .. -pr:h default -pr:b default --build=outdated)
+          conan info .. -pr:h default -pr:b default --build=outdated 2>/dev/null
+          build_requires=$(conan info .. -pr:h default -pr:b default --build=outdated 2>/dev/null)
           if [ build_requires ]
           then
               all_in_cache=false
@@ -80,7 +80,9 @@ jobs:
               all_in_cache=true
           fi
           echo "all_in_cache=$all_in_cache" >> $GITHUB_OUTPUT
-          echo "Conan build requires: \n $build_requires"
+          echo "Conan build requires:"
+          echo $build_requires
+          echo "Conan cache is complete: $all_in_cache"
           echo "Conan cache is complete: $all_in_cache"
       - name: Conan install
         id: conan_install
