@@ -71,8 +71,8 @@ jobs:
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan info .. -pr:h default -pr:b default --build=missing
-          build_requires=$(conan info .. -pr:h default -pr:b default --build=missing)
+          conan info .. -pr:h default -pr:b default --build=outdated
+          build_requires=$(conan info .. -pr:h default -pr:b default --build=outdated)
           if [ build_requires ]
           then
               all_in_cache=false
