@@ -49,13 +49,13 @@ llvm::Error EnvVarConfigBuilder::populateTarget_(QSSConfig &config) {
 llvm::Error EnvVarConfigBuilder::populateVerbosity_(QSSConfig &config) {
   if (const char *verbosity = std::getenv("QSSC_VERBOSITY")) {
     if (strcmp(verbosity, "ERROR") == 0) {
-      config.verbosity = QSSVerbosity::Error;
+      config.setVerbosityLevel(QSSVerbosity::Error);
     } else if (strcmp(verbosity, "WARN") == 0) {
-      config.verbosity = QSSVerbosity::Warn;
+      config.setVerbosityLevel(QSSVerbosity::Warn);
     } else if (strcmp(verbosity, "INFO") == 0) {
-      config.verbosity = QSSVerbosity::Info;
+      config.setVerbosityLevel(QSSVerbosity::Info);
     } else if (strcmp(verbosity, "DEBUG") == 0) {
-      config.verbosity = QSSVerbosity::Debug;
+      config.setVerbosityLevel(QSSVerbosity::Debug);
     } else {
       return llvm::createStringError(
           llvm::inconvertibleErrorCode(),

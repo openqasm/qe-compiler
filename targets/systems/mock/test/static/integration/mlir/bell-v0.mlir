@@ -1,5 +1,5 @@
 // RUN: qss-compiler %s --target mock --config %TEST_CFG --emit=qem --plaintext-payload | FileCheck %s
-// RUN: qss-compiler "`cat %s`" --include-source --direct --target mock --config %TEST_CFG --emit=qem --plaintext-payload | FileCheck %s --match-full-lines --check-prefix CHECK-SOURCE
+// RUN: qss-compiler --include-source --direct -X mlir --target mock --config %TEST_CFG --emit=qem --plaintext-payload "`cat %s`" | FileCheck %s --match-full-lines --check-prefix CHECK-SOURCE
 // (C) Copyright IBM 2023.
 //
 // This code is part of Qiskit.
@@ -26,6 +26,4 @@ func.func @main () -> i32 {
   return %zero : i32
 }
 
-// check for input file
-// this test will crash if -X=mlir so allowing to treat as qasm input
-// CHECK-SOURCE: File: manifest/input.qasm
+// CHECK-SOURCE: File: manifest/input.mlir
