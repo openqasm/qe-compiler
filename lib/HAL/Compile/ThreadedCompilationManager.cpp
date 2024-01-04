@@ -147,9 +147,9 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
 }
 
 llvm::Error
-ThreadedCompilationManager::buildTargetPassManagers_(Target &target, mlir::TimingScope &timing) {
+ThreadedCompilationManager::buildTargetPassManagers_(Target &target) {
 
-  auto buildPMTiming = timing.nest("build-target-pass-managers");
+  auto buildPMTiming = getTimer("build-target-pass-managers");
 
   // Create dummy timing scope for pass manager building
   // as this is not significant enough to report for each individual target.
@@ -209,15 +209,15 @@ ThreadedCompilationManager::createTargetPassManager_(Target *target) {
   return targetPassManagers_.emplace(target, getContext()).first->second;
 }
 
-llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp, mlir::TimingScope &timing) {
+llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
 
-  auto compileMLIRTiming = timing.nest("compile-mlir");
+  auto compileMLIRTiming = getTimer("compile-mlir");
 
   auto &target = getTargetSystem();
 
   /// Build target pass managers prior to compilation
   /// to ensure thread safety
-  if (auto err = buildTargetPassManagers_(target, compileMLIRTiming))
+  if (auto err = buildTargetPassManagers_(target))
     return err;
 
   auto threadedCompileMLIRTarget =
@@ -272,16 +272,15 @@ ThreadedCompilationManager::compileMLIRTarget_(Target &target,
 llvm::Error
 ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
                                            qssc::payload::Payload &payload,
-                                           mlir::TimingScope &timing,
                                            bool doCompileMLIR) {
 
-  auto compilePayloadTiming = timing.nest("compile-payload");
+  auto compilePayloadTiming = getTimer("compile-payload");
 
   auto &target = getTargetSystem();
 
   /// Build target pass managers prior to compilation
   /// to ensure thread safety
-  if (auto err = buildTargetPassManagers_(target, compilePayloadTiming))
+  if (auto err = buildTargetPassManagers_(target))
     return err;
 
   auto threadedCompilePayloadTarget =

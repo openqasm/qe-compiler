@@ -143,3 +143,11 @@ void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
   op->print(out, flags.useLocalScope());
   out << "\n";
 }
+
+void TargetCompilationManager::enableTiming(mlir::TimingScope &timingScope) {
+  rootTimer = timingScope;
+}
+
+mlir::TimingScope TargetCompilationManager::getTimer(llvm::StringRef name) {
+  return rootTimer.nest(name);
+}

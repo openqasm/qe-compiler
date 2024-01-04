@@ -71,7 +71,7 @@ public:
   /// @param moduleOp The root module operation to compile for.
   /// @param timing Root timing scope for tracking timing of payload compilation.
   /// This must not be specialized to a system already.
-  virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp, mlir::TimingScope &timing) = 0;
+  virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) = 0;
 
   /// @brief Generate the full configured compilation pipeline
   /// for all targets of the base target system. This will also
@@ -84,13 +84,15 @@ public:
   /// payload. Defaults to true.
   virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
                                      qssc::payload::Payload &payload,
-                                     mlir::TimingScope &timing,
                                      bool doCompileMLIR = true) = 0;
 
   void enableIRPrinting(bool printBeforeAllTargetPasses,
                         bool printAfterAllTargetPasses,
                         bool printBeforeAllTargetPayload,
                         bool printAfterTargetCompileFailure);
+
+  void enableTiming(mlir::TimingScope &timingScope);
+
 
 protected:
   bool getPrintBeforeAllTargetPasses() { return printBeforeAllTargetPasses; }
@@ -104,6 +106,9 @@ protected:
   virtual void printIR(llvm::StringRef msg, mlir::Operation *op,
                        llvm::raw_ostream &out);
 
+  /// @brief Get a nested timer instance from the root timer
+  mlir::TimingScope getTimer(llvm::StringRef name);
+
 private:
   hal::TargetSystem &target;
   mlir::MLIRContext *context;
@@ -112,6 +117,11 @@ private:
   bool printAfterAllTargetPasses = false;
   bool printBeforeAllTargetPayload = false;
   bool printAfterTargetCompileFailure = false;
+
+  mlir::TimingScope rootTimer;
+
+
+
 
 }; // class TargetCompilationManager
 
