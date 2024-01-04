@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    Support for `pre-commit <https://pre-commit.com/>`_ has been added to the
+    project. To install:
+
+      pip install pre-commit
+      pre-commit install
+
+    To run on all files:
+
+      pre-commit run --all-files
