@@ -65,13 +65,12 @@ jobs:
           build_requires=$(conan info .. -pr:h default -pr:b default --build=missing 2>/dev/null)
           if [ build_requires ]
           then
-              all_in_cache=true
-          else
               all_in_cache=false
+          else
+              all_in_cache=true
           fi
           echo "all_in_cache=$all_in_cache" >> $GITHUB_OUTPUT
-          echo "Conan build requires:"
-          echo $build_requires
+          echo "Conan build requires: \n $build_requires"
           echo "Conan cache is complete: $all_in_cache"
       # If we have a cache miss on 'main', clear the cache.
       # A dependency was updated, so we need to drop the old one
