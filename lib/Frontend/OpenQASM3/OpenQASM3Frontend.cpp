@@ -122,7 +122,6 @@ llvm::Error qssc::frontend::openqasm3::parse(
     std::optional<qssc::DiagnosticCallback> diagnosticCallback,
     mlir::TimingScope &timing) {
 
-
   mlir::TimingScope qasm3ParseTiming = timing.nest("parse-qasm3");
 
   // The QASM parser can only be called from a single thread.

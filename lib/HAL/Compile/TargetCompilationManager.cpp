@@ -83,8 +83,7 @@ TargetCompilationManager::TargetCompilationManager(
     : target(target), context(context) {}
 
 llvm::Error TargetCompilationManager::walkTargetModules(
-    Target *target, mlir::ModuleOp targetModuleOp,
-    mlir::TimingScope &timing,
+    Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing,
     const WalkTargetModulesFunction &walkFunc,
     const WalkTargetModulesFunction &postChildrenCallbackFunc) {
   // Call the input function for the walk on the target
@@ -145,8 +144,11 @@ void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
 }
 
 void TargetCompilationManager::enableTiming(mlir::TimingScope &timingScope) {
-  rootTimer = timingScope;
+  rootTimer = timingScope.nest("TargetCompilationManager");
+  rootTimer.hide();
 }
+
+void TargetCompilationManager::disableTiming() { rootTimer.stop(); }
 
 mlir::TimingScope TargetCompilationManager::getTimer(llvm::StringRef name) {
   return rootTimer.nest(name);

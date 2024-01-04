@@ -146,7 +146,8 @@ void showPayloads_() {
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
 llvm::Expected<qssc::hal::TargetSystem &>
-buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config, mlir::TimingScope &timing) {
+buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config,
+             mlir::TimingScope &timing) {
 
   mlir::TimingScope buildTargetTiming = timing.nest("build-target");
 
@@ -204,6 +205,7 @@ llvm::Error generateQEM_(
           moduleOp, *payload,
           /* doCompileMLIR=*/!config.shouldBypassPayloadTargetCompilation()))
     return err;
+  targetCompilationManager->disableTiming();
 
   mlir::TimingScope writePayloadTiming = buildQEMTiming.nest("write-payload");
   if (config.shouldEmitPlaintextPayload())
@@ -237,12 +239,12 @@ llvm::Error buildPassManager_(mlir::PassManager &pm, bool verifyPasses) {
 }
 
 llvm::Error buildPassManager(const QSSConfig &config, mlir::PassManager &pm,
-                             ErrorHandler errorHandler, bool verifyPasses, mlir::TimingScope &timing) {
+                             ErrorHandler errorHandler, bool verifyPasses,
+                             mlir::TimingScope &timing) {
   if (auto err = buildPassManager_(pm, verifyPasses))
     return err;
 
   pm.enableTiming(timing);
-
 
   // Build the provided pipeline.
   if (failed(config.setupPassPipeline(pm)))
@@ -276,6 +278,7 @@ llvm::Error emitMLIR_(
             llvm::createStringError(llvm::inconvertibleErrorCode(),
                                     "Failure while preparing target passes"),
             std::move(err));
+      targetCompilationManager.disableTiming();
     }
   }
 
@@ -294,7 +297,8 @@ llvm::Error emitMLIR_(
 llvm::Error emitQEM_(
     const QSSConfig &config, llvm::raw_ostream *ostream,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
-    qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager, mlir::TimingScope &timing) {
+    qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
+    mlir::TimingScope &timing) {
   if (config.shouldIncludeSource()) {
     if (config.isDirectInput()) {
       if (config.getInputType() == InputType::QASM)
@@ -538,7 +542,8 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
             config.getInputSource().str(), !config.isDirectInput(),
             config.getEmitAction() == EmitAction::AST,
             config.getEmitAction() == EmitAction::ASTPretty,
-            config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb, loadQASM3Timing))
+            config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb,
+            loadQASM3Timing))
       return frontendError;
 
     if (config.getEmitAction() < EmitAction::MLIR)
@@ -627,9 +632,11 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
 
   // Run additional passes specified on the command line
 
-  mlir::TimingScope commandLinePassesTiming = timing.nest("command-line-passes");
+  mlir::TimingScope commandLinePassesTiming =
+      timing.nest("command-line-passes");
   mlir::PassManager pm(&context);
-  if (auto err = buildPassManager(config, pm, errorHandler, verifyPasses, commandLinePassesTiming))
+  if (auto err = buildPassManager(config, pm, errorHandler, verifyPasses,
+                                  commandLinePassesTiming))
     return err;
 
   if (pm.size() && failed(pm.run(moduleOp)))

@@ -93,7 +93,8 @@ private:
 
   /// Prepare pass managers in a threaded way
   /// initializing them with the mlir context safely.
-  llvm::Error buildTargetPassManagers_(Target &target);
+  llvm::Error buildTargetPassManagers_(Target &target,
+                                       mlir::TimingScope &timing);
   /// Threadsafe initialization of PM to work around
   /// non-threadsafe registration of dependent dialects.
   /// I (Thomas) believe this is related to the conversation here
@@ -106,7 +107,8 @@ private:
   mlir::PassManager &createTargetPassManager_(Target *target);
 
   /// Compiles the input module for a single target.
-  llvm::Error compileMLIRTarget_(Target &target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing);
+  llvm::Error compileMLIRTarget_(Target &target, mlir::ModuleOp targetModuleOp,
+                                 mlir::TimingScope &timing);
   /// Compiles the input payload for a single target.
   llvm::Error compilePayloadTarget_(Target &target,
                                     mlir::ModuleOp targetModuleOp,

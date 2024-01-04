@@ -81,9 +81,9 @@ llvm::Error ThreadedCompilationManager::walkTargetModulesThreaded(
     auto parallelWalkFunc = [&](Target *childTarget) {
       // Recurse on this target's children in a depth first fashion.
 
-      if (auto err =
-              walkTargetModulesThreaded(childTarget, childrenModules[childTarget], childrenTiming,
-                                        walkFunc, postChildrenCallbackFunc)) {
+      if (auto err = walkTargetModulesThreaded(
+              childTarget, childrenModules[childTarget], childrenTiming,
+              walkFunc, postChildrenCallbackFunc)) {
         llvm::errs() << err << "\n";
         return mlir::failure();
       }
@@ -94,7 +94,7 @@ llvm::Error ThreadedCompilationManager::walkTargetModulesThreaded(
     // By utilizing the MLIR parallelism methods, we automatically inherit the
     // multiprocessing settings from the context.
     if (mlir::failed(mlir::failableParallelForEach(getContext(), children,
-                                                  parallelWalkFunc)))
+                                                   parallelWalkFunc)))
       return llvm::createStringError(
           llvm::inconvertibleErrorCode(),
           "Problems encountered while walking children of target " +
@@ -108,12 +108,12 @@ llvm::Error ThreadedCompilationManager::walkTargetModulesThreaded(
 }
 
 llvm::Error ThreadedCompilationManager::walkTargetThreaded(
-    Target *target, mlir::TimingScope &timing, const WalkTargetFunction &walkFunc) {
+    Target *target, mlir::TimingScope &timing,
+    const WalkTargetFunction &walkFunc) {
 
   auto parentTiming = timing.nest(target->getName());
   if (auto err = walkFunc(target, parentTiming))
     return err;
-
 
   auto children = target->getChildren();
 
@@ -136,8 +136,8 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
 
   // By utilizing the MLIR parallelism methods, we automatically inherit the
   // multiprocessing settings from the context.
-  if (mlir::failed(mlir::failableParallelForEach(
-          getContext(), children, parallelWalkFunc)))
+  if (mlir::failed(mlir::failableParallelForEach(getContext(), children,
+                                                 parallelWalkFunc)))
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Problems encountered while walking children of target " +
@@ -146,10 +146,10 @@ llvm::Error ThreadedCompilationManager::walkTargetThreaded(
   return llvm::Error::success();
 }
 
-llvm::Error
-ThreadedCompilationManager::buildTargetPassManagers_(Target &target) {
+llvm::Error ThreadedCompilationManager::buildTargetPassManagers_(
+    Target &target, mlir::TimingScope &timing) {
 
-  auto buildPMTiming = getTimer("build-target-pass-managers");
+  auto buildPMTiming = timing.nest("build-target-pass-managers");
 
   // Create dummy timing scope for pass manager building
   // as this is not significant enough to report for each individual target.
@@ -157,8 +157,6 @@ ThreadedCompilationManager::buildTargetPassManagers_(Target &target) {
 
   auto threadedBuildTargetPassManager =
       [&](hal::Target *target, mlir::TimingScope &timing) -> llvm::Error {
-
-
     auto &pm = createTargetPassManager_(target);
 
     if (auto err = pmBuilder(pm))
@@ -172,8 +170,8 @@ ThreadedCompilationManager::buildTargetPassManagers_(Target &target) {
     return llvm::Error::success();
   };
 
-  auto err =
-      walkTargetThreaded(&getTargetSystem(), targetsTiming, threadedBuildTargetPassManager);
+  auto err = walkTargetThreaded(&getTargetSystem(), targetsTiming,
+                                threadedBuildTargetPassManager);
   return err;
 }
 
@@ -217,11 +215,12 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
 
   /// Build target pass managers prior to compilation
   /// to ensure thread safety
-  if (auto err = buildTargetPassManagers_(target))
+  if (auto err = buildTargetPassManagers_(target, compileMLIRTiming))
     return err;
 
   auto threadedCompileMLIRTarget =
-      [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp,
+          mlir::TimingScope &timing) -> llvm::Error {
     if (auto err = compileMLIRTarget_(*target, targetModuleOp, timing))
       return err;
     return llvm::Error::success();
@@ -229,21 +228,21 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
 
   // Placeholder function
   auto postChildrenEmitToPayload =
-      [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp,
+          mlir::TimingScope &timing) -> llvm::Error {
     return llvm::Error::success();
   };
 
   auto targetsTiming = compileMLIRTiming.nest("compile-system");
 
-  auto err = walkTargetModulesThreaded(
-      &target, moduleOp, targetsTiming, threadedCompileMLIRTarget, postChildrenEmitToPayload);
+  auto err = walkTargetModulesThreaded(&target, moduleOp, targetsTiming,
+                                       threadedCompileMLIRTarget,
+                                       postChildrenEmitToPayload);
   return err;
 }
 
-llvm::Error
-ThreadedCompilationManager::compileMLIRTarget_(Target &target,
-                                               mlir::ModuleOp targetModuleOp,
-                                               mlir::TimingScope &timing) {
+llvm::Error ThreadedCompilationManager::compileMLIRTarget_(
+    Target &target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) {
   if (getPrintBeforeAllTargetPasses())
     printIR("IR dump before running passes for target " + target.getName(),
             targetModuleOp, llvm::outs());
@@ -280,19 +279,21 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
 
   /// Build target pass managers prior to compilation
   /// to ensure thread safety
-  if (auto err = buildTargetPassManagers_(target))
+  if (auto err = buildTargetPassManagers_(target, compilePayloadTiming))
     return err;
 
   auto threadedCompilePayloadTarget =
-      [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
-    if (auto err = compilePayloadTarget_(*target, targetModuleOp, payload, timing,
-                                         doCompileMLIR))
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp,
+          mlir::TimingScope &timing) -> llvm::Error {
+    if (auto err = compilePayloadTarget_(*target, targetModuleOp, payload,
+                                         timing, doCompileMLIR))
       return err;
     return llvm::Error::success();
   };
 
   auto postChildrenEmitToPayload =
-      [&](hal::Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing) -> llvm::Error {
+      [&](hal::Target *target, mlir::ModuleOp targetModuleOp,
+          mlir::TimingScope &timing) -> llvm::Error {
     auto emitToPayloadTiming = timing.nest("emit-to-payload-post-children");
     if (auto err = target->emitToPayloadPostChildren(targetModuleOp, payload))
       return err;
@@ -300,15 +301,16 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
   };
 
   auto targetsTiming = compilePayloadTiming.nest("compile-system");
-  auto err =
-      walkTargetModulesThreaded(&target, moduleOp, targetsTiming, threadedCompilePayloadTarget,
-                                postChildrenEmitToPayload);
+  auto err = walkTargetModulesThreaded(&target, moduleOp, targetsTiming,
+                                       threadedCompilePayloadTarget,
+                                       postChildrenEmitToPayload);
   return err;
 }
 
 llvm::Error ThreadedCompilationManager::compilePayloadTarget_(
     Target &target, mlir::ModuleOp targetModuleOp,
-    qssc::payload::Payload &payload, mlir::TimingScope &timing, bool doCompileMLIR) {
+    qssc::payload::Payload &payload, mlir::TimingScope &timing,
+    bool doCompileMLIR) {
 
   if (doCompileMLIR)
     if (auto err = compileMLIRTarget_(target, targetModuleOp, timing))
