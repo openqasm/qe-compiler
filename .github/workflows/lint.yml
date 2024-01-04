@@ -64,22 +64,22 @@ jobs:
         run: ./conan_deps.sh
       - name: Create build dir
         run: mkdir build
-      # Check if all conan packages are within the cache. If not
-      # we will need to build packages (and if on main flush the cache)
       - name : Check Conan dependencies are cached
         id: check_conan_cache
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan install .. -pr:h default -pr:b default
-          if [ $? -ne 0 ]
+          build_requires=$(conan info .. -pr:h default -pr:b default --build=missing 2>/dev/null)
+          if [ build_requires ]
           then
-              cache_hit=false
+              all_in_cache=true
           else
-              cache_hit=true
+              all_in_cache=false
           fi
-          echo "cache_hit=$cache_hit" >> $GITHUB_OUTPUT
-          echo "Cache was hit: $cache_hit"
+          echo "all_in_cache=$all_in_cache" >> $GITHUB_OUTPUT
+          echo "Conan build requires:"
+          echo $build_requires
+          echo "Conan cache is complete: $all_in_cache"
       - name: Conan install
         id: conan_install
         working-directory: build
