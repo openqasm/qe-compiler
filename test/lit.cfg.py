@@ -16,6 +16,8 @@
 # This file is used to configure both the QSS compiler core test suite
 # as well test suites for specific targets.
 
+# flake8: noqa
+
 import os
 
 import lit.formats
@@ -43,9 +45,7 @@ llvm_config.use_default_substitutions()
 config.excludes = ["Inputs", "Examples", "CMakeLists.txt", "README.txt", "LICENSE.txt"]
 
 # TODO pull from "virtual env" *activate.py?" "buildenv.py?"
-config.environment["QSSC_RESOURCES"] = os.path.join(
-    config.qss_compiler_obj_root, "resources"
-)
+config.environment["QSSC_RESOURCES"] = os.path.join(config.qss_compiler_obj_root, "resources")
 
 config.qss_compiler_tools_dir = os.path.join(config.qss_compiler_obj_root, "bin")
 
@@ -57,5 +57,5 @@ tools = os.listdir(config.qss_compiler_tools_dir)
 llvm_config.add_tool_substitutions(tools, [config.qss_compiler_tools_dir])
 
 llvm_config.feature_config(
-    [('--assertion-mode', {'ON': 'asserts'}),
-     ('--build-mode', {'[Dd][Ee][Bb][Uu][Gg]': 'debug'})])
+    [("--assertion-mode", {"ON": "asserts"}), ("--build-mode", {"[Dd][Ee][Bb][Uu][Gg]": "debug"})]
+)

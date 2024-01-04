@@ -79,4 +79,3 @@ delay[a] $0, $1;
 //       This does no harm but might potentially be fixed at some point
 //MLIR-CIRCUITS: %3 = oq3.declare_stretch : !quir.stretch
 //MLIR-CIRCUITS: quir.call_circuit @circuit_1({{.*}}, {{.*}},{{.*}}) : (!quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}) -> ()
-

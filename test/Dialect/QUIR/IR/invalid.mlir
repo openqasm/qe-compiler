@@ -76,4 +76,3 @@ func.func @call_circuit_call_result_types_do_not_match() {
 	quir.call_circuit @circuit_1 () : () -> (i1)
 	return
 }
-
