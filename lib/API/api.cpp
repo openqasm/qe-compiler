@@ -149,7 +149,7 @@ llvm::Expected<qssc::hal::TargetSystem &>
 buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config,
              mlir::TimingScope &timing) {
 
-  mlir::TimingScope buildTargetTiming = timing.nest("build-target");
+  mlir::TimingScope const buildTargetTiming = timing.nest("build-target");
 
   const auto &targetName = config.getTargetName();
   const auto &targetConfigPath = config.getTargetConfigPath();
@@ -207,7 +207,8 @@ llvm::Error generateQEM_(
     return err;
   targetCompilationManager->disableTiming();
 
-  mlir::TimingScope writePayloadTiming = buildQEMTiming.nest("write-payload");
+  mlir::TimingScope const writePayloadTiming =
+      buildQEMTiming.nest("write-payload");
   if (config.shouldEmitPlaintextPayload())
     payload->writePlain(*ostream);
   else

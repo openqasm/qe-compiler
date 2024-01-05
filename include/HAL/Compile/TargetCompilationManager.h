@@ -110,6 +110,7 @@ protected:
                        llvm::raw_ostream &out);
 
   /// @brief Get a nested timer instance from the root timer
+  /// @param name The name of the timing span
   mlir::TimingScope getTimer(llvm::StringRef name);
 
 private:

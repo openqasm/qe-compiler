@@ -33,6 +33,7 @@
 #include "mlir/IR/Verifier.h"
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Support/LogicalResult.h"
+#include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/CommandLine.h"

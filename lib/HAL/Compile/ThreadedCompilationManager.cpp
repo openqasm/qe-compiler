@@ -27,6 +27,7 @@
 #include "mlir/IR/Threading.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/LogicalResult.h"
+#include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
@@ -162,8 +163,10 @@ llvm::Error ThreadedCompilationManager::buildTargetPassManagers_(
     if (auto err = pmBuilder(pm))
       return err;
 
+    target->enableTiming(timing);
     if (auto err = target->addPasses(pm))
       return err;
+    target->disableTiming();
 
     registerPassManagerWithContext_(pm);
 
@@ -295,8 +298,11 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp,
           mlir::TimingScope &timing) -> llvm::Error {
     auto emitToPayloadTiming = timing.nest("emit-to-payload-post-children");
+    // target->enableTiming(emitToPayloadTiming);
     if (auto err = target->emitToPayloadPostChildren(targetModuleOp, payload))
       return err;
+    target->disableTiming();
+
     return llvm::Error::success();
   };
 
@@ -321,7 +327,7 @@ llvm::Error ThreadedCompilationManager::compilePayloadTarget_(
             targetModuleOp, llvm::outs());
 
   auto emitToPayloadTiming = timing.nest("emit-to-payload");
-
+  target.enableTiming(emitToPayloadTiming);
   if (auto err = target.emitToPayload(targetModuleOp, payload)) {
     if (getPrintAfterTargetCompileFailure())
       printIR("IR dump after failure emitting payload for target " +
@@ -329,6 +335,8 @@ llvm::Error ThreadedCompilationManager::compilePayloadTarget_(
               targetModuleOp, llvm::outs());
     return err;
   }
+  target.disableTiming();
+
   return llvm::Error::success();
 }
 

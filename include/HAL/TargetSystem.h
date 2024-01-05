@@ -129,7 +129,17 @@ public:
 
   virtual ~Target() = default;
 
+  /// @brief Enable timing from this point for the target and its methods
+  /// @param timingScope the root timer to nest timers from.
+  void enableTiming(mlir::TimingScope &timingScope);
+  /// @brief Disable(stop) ongoing timers
+  void disableTiming();
+
 protected:
+  /// @brief Get a nested timer instance from the root timer
+  /// @param name The name of the timing span
+  mlir::TimingScope getTimer(llvm::StringRef name);
+
   std::string name;
 
   // parent is already owned by unique_ptr
@@ -139,6 +149,9 @@ protected:
 
   /// @brief Children targets storage.
   std::vector<std::unique_ptr<Target>> children_;
+
+private:
+  mlir::TimingScope rootTimer;
 };
 
 class TargetSystem : public Target {

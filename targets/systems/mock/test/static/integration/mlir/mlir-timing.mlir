@@ -38,6 +38,13 @@ func.func @main () -> i32 {
 // CHECK:               Canonicalizer
 // CHECK:               LLVMLegalizeForExport
 // CHECK:             emit-to-payload
+// CHECK:               build-llvm-payload
+// CHECK:                  init-llvm
+// CHECK:                  translate-to-llvm-mlir-dialect
+// CHECK:                  mlir-to-llvm-ir
+// CHECK:                  optimize-llvm
+// CHECK:                  build-object-file
+// CHECK:                  emit-binary
 // CHECK:             emit-to-payload-post-children
 // CHECK:           MockDrive_0
 // CHECK:             passes

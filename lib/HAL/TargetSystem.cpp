@@ -20,7 +20,9 @@
 
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/Support/Timing.h"
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
 #include <string>
@@ -36,6 +38,17 @@ Target::Target(std::string name, Target *parent)
 llvm::Error Target::emitToPayloadPostChildren(mlir::ModuleOp targetModuleOp,
                                               payload::Payload &payload) {
   return llvm::Error::success();
+}
+
+void Target::enableTiming(mlir::TimingScope &timingScope) {
+  rootTimer = timingScope.nest(getName());
+  rootTimer.hide();
+}
+
+void Target::disableTiming() { rootTimer.stop(); }
+
+mlir::TimingScope Target::getTimer(llvm::StringRef name) {
+  return rootTimer.nest(name);
 }
 
 TargetSystem::TargetSystem(std::string name, Target *parent)

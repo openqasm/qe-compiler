@@ -267,9 +267,11 @@ llvm::Error MockController::emitToPayload(mlir::ModuleOp moduleOp,
 
 llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
                                              qssc::payload::Payload &payload) {
+  auto timer = getTimer("build-llvm-payload");
 
   // Register LLVM dialect and all infrastructure required for translation to
   // LLVM IR
+  auto initLLVMTimer = timer.nest("init-llvm");
   auto *context = controllerModule.getContext();
   mlir::registerBuiltinDialectTranslation(*context);
   mlir::registerLLVMDialectTranslation(*context);
@@ -295,11 +297,15 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
   std::unique_ptr<llvm::TargetMachine> machine(target->createTargetMachine(
       targetTriple, cpu, features.getString(), {}, {}));
   auto dataLayout = machine->createDataLayout();
+  initLLVMTimer.stop();
 
+  auto mlirToLLVMDialectTimer = timer.nest("translate-to-llvm-mlir-dialect");
   if (auto err =
           quir::translateModuleToLLVMDialect(controllerModule, dataLayout))
     return err;
+  mlirToLLVMDialectTimer.stop();
 
+  auto mlirToLLVMIRTimer = timer.nest("mlir-to-llvm-ir");
   // Build LLVM payload
   llvm::LLVMContext llvmContext;
   std::unique_ptr<llvm::Module> llvmModule =
@@ -308,7 +314,9 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Error converting LLVM module to LLVM IR!");
   }
+  mlirToLLVMIRTimer.stop();
 
+  auto llvmOptTimer = timer.nest("optimize-llvm");
   llvmModule->setDataLayout(machine->createDataLayout());
   llvmModule->setTargetTriple(targetTriple);
 
@@ -320,10 +328,13 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
                                 "Failed to optimize LLVM IR"),
         std::move(err));
   }
+  llvmOptTimer.stop();
+
   std::string *payloadStr = payload.getFile("llvmModule.ll");
   llvm::raw_string_ostream llvmOStream(*payloadStr);
   llvmOStream << *llvmModule;
 
+  auto emitObjectFileTimer = timer.nest("build-object-file");
   // generate machine code and emit object file
   llvm::SmallString<128> objPath;
   int objFd;
@@ -344,11 +355,12 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
   }
   pass.run(*llvmModule);
   obj->os().flush();
+  emitObjectFileTimer.stop();
 
+  auto emitBinaryTimer = timer.nest("emit-binary");
   // Note: an actual target will likely invoke a linker and pull in libraries to
   // generate a binary, and possibly do more postprocessing steps to create a
   // binary that can be executed on the controller
-
   // include resulting file in payload
   std::ifstream binary{objPath.c_str(), std::ios_base::binary};
 
@@ -364,6 +376,7 @@ llvm::Error MockController::buildLLVMPayload(mlir::ModuleOp controllerModule,
       /* eof representation */ std::istreambuf_iterator<char>()};
 
   payload.getFile("controller.bin")->assign(std::move(binaryContents));
+  emitBinaryTimer.stop();
 
   return llvm::Error::success();
 
