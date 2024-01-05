@@ -1,6 +1,6 @@
 //===- api.cpp --------------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -486,8 +486,8 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
       payload = std::move(
           payloadInfo.value()->createPluginInstance(std::nullopt).get());
     } else {
-      const qssc::payload::PayloadConfig payloadConfig{fNamePrefix,
-                                                       fNamePrefix};
+      const qssc::payload::PayloadConfig payloadConfig{
+          fNamePrefix, fNamePrefix, config.getVerbosityLevel()};
       payload = std::move(
           payloadInfo.value()->createPluginInstance(payloadConfig).get());
     }

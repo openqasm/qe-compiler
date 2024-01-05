@@ -29,11 +29,20 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <array>
 #include <ostream>
 #include <string>
 #include <utility>
 
 using namespace qssc::config;
+
+/// Verbosity levels for logging output
+/// Error - Only error messages will be logged
+/// Warn  - Warnings and errors *default
+/// Info  - General information on compilation progress
+/// Debug - Detailed output
+const std::array<const std::string, _VerbosityCnt> verbosityToStr = {
+    "Error", "Warn", "Info", "Debug"};
 
 // For now emit in a pseudo-TOML format.
 void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
@@ -53,6 +62,8 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
      << (getTargetConfigPath().has_value() ? getTargetConfigPath().value()
                                            : "None")
      << "\n";
+  os << "verbosity: "
+     << verbosityToStr[static_cast<unsigned int>(getVerbosityLevel())] << "\n";
   os << "addTargetPasses: " << shouldAddTargetPasses() << "\n";
   os << "showTargets: " << shouldShowTargets() << "\n";
   os << "showPayloads: " << shouldShowPayloads() << "\n";
