@@ -72,6 +72,6 @@ qssc::getTargetResourcesDir(qssc::hal::Target const *target) {
   // resource directory
   llvm::SmallString<128> path(getResourcesDir());
 
-  llvm::sys::path::append(path, "targets", target->getName());
+  llvm::sys::path::append(path, "targets", target->getResourcePath());
   return path;
 }

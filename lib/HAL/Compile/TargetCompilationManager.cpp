@@ -133,7 +133,7 @@ void TargetCompilationManager::enableIRPrinting(
   this->printAfterTargetCompileFailure = printAfterTargetCompileFailure;
 }
 
-void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
+void TargetCompilationManager::printIR(llvm::Twine msg, mlir::Operation *op,
                                        llvm::raw_ostream &out) {
   out << "// -----// ";
   out << msg;

@@ -56,7 +56,7 @@ protected:
       const TargetCompilationManager::WalkTargetModulesFunction
           &postChildrenCallbackFunc);
 
-  virtual void printIR(llvm::StringRef msg, mlir::Operation *op,
+  virtual void printIR(llvm::Twine msg, mlir::Operation *op,
                        llvm::raw_ostream &out) override;
 
 public:

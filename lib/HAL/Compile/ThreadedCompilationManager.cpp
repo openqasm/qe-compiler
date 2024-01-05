@@ -298,7 +298,7 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
       [&](hal::Target *target, mlir::ModuleOp targetModuleOp,
           mlir::TimingScope &timing) -> llvm::Error {
     auto emitToPayloadTiming = timing.nest("emit-to-payload-post-children");
-    // target->enableTiming(emitToPayloadTiming);
+    target->enableTiming(emitToPayloadTiming);
     if (auto err = target->emitToPayloadPostChildren(targetModuleOp, payload))
       return err;
     target->disableTiming();
@@ -340,8 +340,7 @@ llvm::Error ThreadedCompilationManager::compilePayloadTarget_(
   return llvm::Error::success();
 }
 
-void ThreadedCompilationManager::printIR(llvm::StringRef msg,
-                                         mlir::Operation *op,
+void ThreadedCompilationManager::printIR(llvm::Twine msg, mlir::Operation *op,
                                          llvm::raw_ostream &out) {
   const std::lock_guard<std::mutex> lock(printIRMutex_);
   TargetCompilationManager::printIR(msg, op, out);

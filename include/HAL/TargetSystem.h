@@ -51,8 +51,12 @@ protected:
   };
 
 public:
-  virtual const std::string &getName() const { return name; }
+  virtual llvm::StringRef getName() const { return name; }
   virtual llvm::StringRef getDescription() const { return ""; }
+  /// @brief Get the Target resource directory sub-path for this target
+  /// which will be used for resolving external static resources at runtime
+  /// that are configured through the build system.
+  virtual llvm::StringRef getResourcePath() const { return getName(); }
   Target *getParent() { return parent; }
   const Target *getParent() const { return parent; }
 
