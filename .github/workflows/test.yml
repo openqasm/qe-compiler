@@ -10,14 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 name: Build
-on:
-  push:
-    branches:
-      - 'main'
-      - 'release/**'
-      - '**/release/**'
-  pull_request:
-    types: [opened, reopened, labeled, unlabeled, synchronize]
+on: [push, pull_request]
 jobs:
   Build:
     runs-on: ubuntu-latest
