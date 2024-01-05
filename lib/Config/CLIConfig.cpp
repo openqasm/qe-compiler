@@ -1,6 +1,6 @@
 //===- CLIConfigBuilder.cpp - QSSConfig from the CLI ------*- C++ -*-------===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -311,6 +311,21 @@ struct QSSConfigCLOptions : public QSSConfig {
     static mlir::PassPipelineCLParser const passPipeline(
         "", "Compiler passes to run", "p");
     setPassPipelineParser(passPipeline);
+
+    static llvm::cl::opt<enum QSSVerbosity, /*ExternalStorage=*/true> const
+        verbosity(
+            "verbosity", llvm::cl::location(verbosityLevel),
+            llvm::cl::init(QSSVerbosity::_VerbosityCnt),
+            llvm::cl::desc("Set verbosity level for output, default is warn"),
+            llvm::cl::values(
+                clEnumValN(QSSVerbosity::Error, "error", "Emit only errors")),
+            llvm::cl::values(
+                clEnumValN(QSSVerbosity::Warn, "warn", "Also emit warnings")),
+            llvm::cl::values(clEnumValN(QSSVerbosity::Info, "info",
+                                        "Also emit informational messages")),
+            llvm::cl::values(clEnumValN(QSSVerbosity::Debug, "debug",
+                                        "Also emit debug messages")),
+            llvm::cl::cat(qssc::config::getQSSOptCLCategory()));
   }
 
   /// Pointer to static dialectPlugins variable in constructor, needed by
@@ -402,6 +417,9 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
 
   if (auto err = clOptionsConfig->computeOutputType())
     return err;
+
+  if (clOptionsConfig->verbosityLevel != QSSVerbosity::_VerbosityCnt)
+    config.verbosityLevel = clOptionsConfig->verbosityLevel;
 
   // qss
   config.inputSource = clOptionsConfig->inputSource;

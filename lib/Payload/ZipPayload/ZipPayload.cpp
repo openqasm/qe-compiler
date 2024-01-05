@@ -1,6 +1,6 @@
 //===- ZipPayload.cpp -------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -25,6 +25,7 @@
 
 #include "Config.h"
 #include "Payload/PayloadRegistry.h"
+#include <Config/QSSConfig.h>
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_os_ostream.h"
@@ -148,7 +149,8 @@ void setFilePermissions(zip_int64_t fileIndex, fs::path &fName,
 } // end anonymous namespace
 
 void ZipPayload::writeZip(llvm::raw_ostream &stream) {
-  llvm::outs() << "Writing zip to stream\n";
+  if (verbosity >= qssc::config::QSSVerbosity::Info)
+    llvm::outs() << "Writing zip to stream\n";
   // first add the manifest
   addManifest();
 
@@ -184,12 +186,14 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   }
   zip_error_fini(&error);
 
-  llvm::outs() << "Zip buffer created, adding files to archive\n";
+  if (verbosity >= qssc::config::QSSVerbosity::Info)
+    llvm::outs() << "Zip buffer created, adding files to archive\n";
   // archive is now allocated and created, need to fill it with files/data
   std::vector<fs::path> orderedNames = orderedFileNames();
   for (auto &fName : orderedNames) {
-    llvm::outs() << "Adding file " << fName << " to archive buffer ("
-                 << files[fName].size() << " bytes)\n";
+    if (verbosity >= qssc::config::QSSVerbosity::Info)
+      llvm::outs() << "Adding file " << fName << " to archive buffer ("
+                   << files[fName].size() << " bytes)\n";
 
     //===---- Add file ----===//
     // init the error object
@@ -230,6 +234,8 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   //===---- Reopen for copying ----===//
   zip_int64_t sz;
   char *outbuffer = read_zip_src_to_buffer(new_archive_src, sz);
+  if (verbosity >= qssc::config::QSSVerbosity::Info)
+    llvm::outs() << "Zip buffer is of size " << sz << " bytes\n";
   if (outbuffer) {
     // output the new archive to the stream
     stream.write(outbuffer, sz);
