@@ -10,7 +10,14 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 name: Build
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release/**'
+      - '**/release/**'
+  pull_request:
+    types: [opened, reopened, labeled, unlabeled, synchronize]
 jobs:
   Build:
     runs-on: ubuntu-latest
@@ -62,22 +69,22 @@ jobs:
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan install .. -pr:h default -pr:b default
-          if [ $? -ne 0 ]
+          build_requires=$(conan info .. -pr:h default -pr:b default --build=outdated 2>/dev/null)
+          if [[ "$build_requires" == *"Outdated package!"* ]];
           then
-              cache_hit=false
+              all_in_cache=false
           else
-              cache_hit=true
+              all_in_cache=true
           fi
-          echo "cache_hit=$cache_hit" >> $GITHUB_OUTPUT
-          echo "Cache was hit: $cache_hit"
+          echo "all_in_cache=$all_in_cache" >> $GITHUB_OUTPUT
+          echo "Conan build requires: $build_requires"
+          echo "Conan cache is complete: $all_in_cache"
       # If we have a cache miss on 'main', clear the cache.
       # A dependency was updated, so we need to drop the old one
       # to prevent unbounded cache growth over time.
       - name : Clear Conan cache
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check_conan_cache.outputs.cache_hit != 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check_conan_cache.outputs.all_in_cache != 'true'
         run: |
-          echo "Cache was hit: ${{ steps.check_conan_cache.outputs.cache_hit }}"
           rm -rf ./.conan
       - name: Conan install
         id: conan_install
@@ -98,7 +105,7 @@ jobs:
       # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
       #       cache getting LRU-evicted for every PR, since a single run uses most of the 10GB repo limit.
       - uses: actions/cache/save@v3
-        if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success' && steps.check_conan_cache.outputs.cache_hit != 'true')
+        if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success' && steps.check_conan_cache.outputs.all_in_cache != 'true')
         with:
           path: .conan
           key: conan-${{ runner.os }}
