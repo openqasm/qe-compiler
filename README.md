@@ -1,7 +1,7 @@
 
 # qe-compiler: An MLIR-based quantum compiler for quantum engines
 
-The qe-compiler is an [MLIR](https://mlir.llvm.org/)-based compiler with support for OpenQASM 3. It is designed to compile quantum programs to quantum hardware and is designed as part of the overall Quantum Engine. The Quantum Engine is a system comprised of low-level software components enabling the execution of quantum programs in quantum hardware.
+The qe-compiler is an [MLIR](https://mlir.llvm.org/)-based compiler with support for OpenQASM 3. The compiler is designed to compile quantum programs to quantum hardware as part of the overall Quantum Engine execution workflow. The Quantum Engine is a system comprised of low-level software components enabling the execution of quantum programs in quantum hardware.
 
 This repo contains the compiler front-end to convert OpenQASM 3 source files into a collection of four MLIR dialects called QUIR (QUantum Intermediate Representation), OQ3 (OpenQASM 3), Pulse (OpenPulse), and QCS (Quantum Computing System). This set of dialects allows OpenQASM programs to be converted into a form suitable to manipulate with LLVM. This repo also contains tools and compiler passes that are agnostic of details of any control system vendor. For instance, it contains localization passes to split source programs into the qubit or channel-specific groupings required by a target quantum control system.
 
