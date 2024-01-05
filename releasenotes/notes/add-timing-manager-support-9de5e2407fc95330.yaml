@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Support has been added for LLVM 17's TimingManager to the qss-compiler
+    tool. This includes support for timing integration in the TargetCompilationManager
+    and targets themselves. This allows fine-grained tracking of compilation
+    across targets and pass managers.
