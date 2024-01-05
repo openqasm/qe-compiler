@@ -25,6 +25,7 @@
 
 #include "Config.h"
 #include "Payload/PayloadRegistry.h"
+#include <Config/QSSConfig.h>
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_os_ostream.h"

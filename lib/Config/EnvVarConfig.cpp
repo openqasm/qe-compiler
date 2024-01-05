@@ -15,9 +15,11 @@
 #include "Config/EnvVarConfig.h"
 #include "Config/QSSConfig.h"
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
 #include <cstdlib>
+#include <cstring>
 
 using namespace qssc::config;
 

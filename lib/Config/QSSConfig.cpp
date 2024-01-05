@@ -29,6 +29,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <array>
 #include <ostream>
 #include <string>
 #include <utility>
@@ -61,8 +62,8 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
      << (getTargetConfigPath().has_value() ? getTargetConfigPath().value()
                                            : "None")
      << "\n";
-  os << "verbosity: " << verbosityToStr[static_cast<uint>(getVerbosityLevel())]
-     << "\n";
+  os << "verbosity: "
+     << verbosityToStr[static_cast<unsigned int>(getVerbosityLevel())] << "\n";
   os << "addTargetPasses: " << shouldAddTargetPasses() << "\n";
   os << "showTargets: " << shouldShowTargets() << "\n";
   os << "showPayloads: " << shouldShowPayloads() << "\n";
