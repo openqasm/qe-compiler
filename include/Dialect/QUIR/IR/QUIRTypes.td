@@ -19,6 +19,7 @@
 
 include "Dialect/QUIR/IR/QUIREnums.td"
 
+include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/BuiltinTypeInterfaces.td"
 include "mlir/IR/OpBase.td"
 
@@ -56,9 +57,11 @@ def QUIR_AngleType : QUIR_Type<"Angle", "angle"> {
         A QUIR Angle represents a classical angle as a fixed-point number.
     }];
 
-    let parameters = (ins "Optional<int>":$width);
-    // TODO in LLVM 15+, the optional width could be handled with assembly declarative syntax.
-    // let assemblyFormat = "(`<` $width^ `>`)?";
+    let parameters = (ins OptionalParameter<"std::optional<int>">:$width);
+
+
+    let assemblyFormat = "(`<` $width^ `>`)?";
+
     let genVerifyDecl = 1;
 }
 
@@ -73,7 +76,7 @@ def QUIR_DurationType : QUIR_Type<"Duration", "duration"> {
             ```mlir
                 // Defaults to units at the scheduling rate (dt)
                 %duration_dt = quir.constant #quir.duration<10.0 : !quir.duration>
-                %duration_s = quir.constant #quir.duration<3.14 : !quir.duration<s>>
+                %duration_s = quir.constant #quir.duration<3.14> : !quir.duration<s>
             ```
 
      }];

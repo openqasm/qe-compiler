@@ -43,7 +43,7 @@ module @drive_0 attributes {quir.nodeId = 0 : i32, quir.nodeType = "drive", quir
     // CHECK: pulse.return {pulse.timepoint = 15 : i64} %false : i1
     pulse.return %false : i1
   }
-  func @main() -> i32 attributes {quir.classicalOnly = false} {
+  func.func @main() -> i32 attributes {quir.classicalOnly = false} {
     %c0_i32 = arith.constant 0 : i32
     %2 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
     %4 = "pulse.mix_frame"(%2) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame

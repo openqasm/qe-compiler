@@ -21,6 +21,7 @@
 #ifndef QUIR_MERGE_PARALLEL_RESETS_H
 #define QUIR_MERGE_PARALLEL_RESETS_H
 
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
 namespace mlir::quir {

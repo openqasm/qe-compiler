@@ -21,43 +21,56 @@
 
 #include "Dialect/QUIR/Transforms/VariableElimination.h"
 
-#include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-
 #include "Conversion/OQ3ToStandard/OQ3ToStandard.h"
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
+#include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Affine/Passes.h"
 #include "mlir/Dialect/Affine/Utils.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/LLVMIR/LLVMDialect.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
-#include "mlir/Dialect/SCF/SCF.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Dominance.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Types.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
+#include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
-#include <llvm/ADT/SmallVector.h>
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringRef.h"
+
+#include <cassert>
+#include <optional>
+#include <utility>
 
 namespace mlir {
-void affineScalarReplaceCopy(FuncOp f, DominanceInfo &domInfo,
+void affineScalarReplaceCopy(mlir::func::FuncOp f, DominanceInfo &domInfo,
                              PostDominanceInfo &postDomInfo);
 } // namespace mlir
 
 namespace mlir::quir {
 
 namespace {
-Optional<Type> convertCBitType(quir::CBitType t) {
+std::optional<Type> convertCBitType(quir::CBitType t) {
 
   if (t.getWidth() <= 64)
     return IntegerType::get(t.getContext(), t.getWidth());
 
-  return llvm::None;
+  return std::nullopt;
 }
 
 template <typename T>
-Optional<Type> legalizeType(T t) {
+std::optional<Type> legalizeType(T t) {
   return t;
 }
 
@@ -96,12 +109,12 @@ struct MaterializeIntToAngleCastPattern
   matchAndRewrite(oq3::CastOp castOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    if (!adaptor.arg().getType().isIntOrIndexOrFloat() ||
-        !castOp.out().getType().isa<mlir::quir::AngleType>())
+    if (!adaptor.getArg().getType().isIntOrIndexOrFloat() ||
+        !castOp.getOut().getType().isa<mlir::quir::AngleType>())
       return failure();
 
-    rewriter.replaceOpWithNewOp<oq3::CastOp>(castOp, castOp.out().getType(),
-                                             adaptor.arg());
+    rewriter.replaceOpWithNewOp<oq3::CastOp>(castOp, castOp.getOut().getType(),
+                                             adaptor.getArg());
 
     return success();
   } // matchAndRewrite
@@ -128,11 +141,9 @@ struct MaterializeBitOpForInt : public OpConversionPattern<OperationType> {
   }
 };
 
-} // namespace
-
-static mlir::LogicalResult
-convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
-                     bool externalizeOutputVariables) {
+mlir::LogicalResult convertQuirVariables(mlir::MLIRContext &context,
+                                         mlir::Operation *top,
+                                         bool externalizeOutputVariables) {
 
   // This conversion step gets rid of QUIR variables and classical bit
   // registers. These two concepts should be in the OpenQASM 3 dialect.
@@ -144,9 +155,9 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   CBitTypeConverter typeConverter;
 
   // Only convert QUIR variable operations
-  target.addLegalDialect<arith::ArithmeticDialect, LLVM::LLVMDialect,
+  target.addLegalDialect<arith::ArithDialect, LLVM::LLVMDialect,
                          memref::MemRefDialect, scf::SCFDialect,
-                         StandardOpsDialect, AffineDialect>();
+                         mlir::func::FuncDialect, affine::AffineDialect>();
   target.addIllegalOp<oq3::DeclareVariableOp, oq3::VariableAssignOp,
                       oq3::VariableLoadOp>();
   // TODO add additional QUIR variable operations here
@@ -172,7 +183,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   // clang-format on
   target.addDynamicallyLegalOp<oq3::CastOp>([](oq3::CastOp op) {
     if (op.getType().isa<mlir::quir::CBitType>() ||
-        op.arg().getType().isa<mlir::quir::CBitType>())
+        op.getArg().getType().isa<mlir::quir::CBitType>())
       return false;
     return true;
   });
@@ -185,7 +196,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   target.addDynamicallyLegalOp<mlir::oq3::CBitExtractBitOp>(
       [](mlir::oq3::CBitExtractBitOp op) {
         if (op.getType().isa<mlir::quir::CBitType>() ||
-            op.operand().getType().isa<mlir::quir::CBitType>())
+            op.getOperand().getType().isa<mlir::quir::CBitType>())
           return false;
 
         return true;
@@ -193,7 +204,7 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   target.addDynamicallyLegalOp<mlir::oq3::CBitInsertBitOp>(
       [](mlir::oq3::CBitInsertBitOp op) {
         if (op.getType().isa<mlir::quir::CBitType>() ||
-            op.operand().getType().isa<mlir::quir::CBitType>())
+            op.getOperand().getType().isa<mlir::quir::CBitType>())
           return false;
 
         return true;
@@ -206,14 +217,13 @@ convertQuirVariables(mlir::MLIRContext &context, mlir::Operation *top,
   return applyPartialConversion(top, target, std::move(patterns));
 }
 
-namespace {
 LogicalResult MemrefGlobalToAllocaPattern::matchAndRewrite(
     mlir::memref::GetGlobalOp op, mlir::PatternRewriter &rewriter) const {
 
   // Check that the global memref is only used by this GetGlobalOp
   auto global =
       mlir::SymbolTable::lookupNearestSymbolFrom<mlir::memref::GlobalOp>(
-          op, op.nameAttr());
+          op, op.getNameAttr());
 
   if (!global)
     return failure();
@@ -225,26 +235,25 @@ LogicalResult MemrefGlobalToAllocaPattern::matchAndRewrite(
   if (!uses)
     return failure();
 
-  for (auto &use : uses.getValue()) {
-    assert(use.getSymbolRef() == op.nameAttr() && "found wrong symbol");
+  for (auto &use : uses.value()) {
+    assert(use.getSymbolRef() == op.getNameAttr() && "found wrong symbol");
     if (use.getUser() != op) // other reference to the global memref
       return failure();
   }
 
-  auto mrt = op.result().getType().dyn_cast<mlir::MemRefType>();
+  auto mrt = op.getResult().getType().dyn_cast<mlir::MemRefType>();
 
   assert(mrt && "expect result of a GetGlobalOp to be of MemRefType");
   if (!mrt)
     return failure();
 
-  rewriter.replaceOpWithNewOp<mlir::memref::AllocaOp>(op, mrt,
-                                                      global.alignmentAttr());
+  rewriter.replaceOpWithNewOp<mlir::memref::AllocaOp>(
+      op, mrt, global.getAlignmentAttr());
   rewriter.eraseOp(global);
   return success();
 }
-} // namespace
 
-static mlir::LogicalResult
+mlir::LogicalResult
 convertIsolatedMemrefGlobalToAlloca(mlir::MLIRContext &context,
                                     mlir::Operation *top) {
 
@@ -260,7 +269,6 @@ convertIsolatedMemrefGlobalToAlloca(mlir::MLIRContext &context,
   return applyPatternsAndFoldGreedily(top, std::move(patterns), config);
 }
 
-namespace {
 struct RemoveAllocaWithIsolatedStoresPattern
     : public OpRewritePattern<mlir::memref::AllocaOp> {
   RemoveAllocaWithIsolatedStoresPattern(MLIRContext *context,
@@ -283,7 +291,7 @@ LogicalResult RemoveAllocaWithIsolatedStoresPattern::matchAndRewrite(
   // push to small vector for erasing
   for (auto *user : op.getResult().getUsers()) {
     usersToErase.push_back(user);
-    if (!mlir::isa<mlir::AffineStoreOp>(user))
+    if (!mlir::isa<mlir::affine::AffineStoreOp>(user))
       return failure();
   }
 
@@ -295,10 +303,9 @@ LogicalResult RemoveAllocaWithIsolatedStoresPattern::matchAndRewrite(
   rewriter.eraseOp(op);
   return success();
 }
-} // namespace
 
-static mlir::LogicalResult
-dropAllocaWithIsolatedStores(mlir::MLIRContext &context, mlir::Operation *top) {
+mlir::LogicalResult dropAllocaWithIsolatedStores(mlir::MLIRContext &context,
+                                                 mlir::Operation *top) {
 
   RewritePatternSet patterns(&context);
 
@@ -312,6 +319,8 @@ dropAllocaWithIsolatedStores(mlir::MLIRContext &context, mlir::Operation *top) {
   return applyPatternsAndFoldGreedily(top, std::move(patterns), config);
 }
 
+} // anonymous namespace
+
 void VariableEliminationPass::runOnOperation() {
 
   if (failed(convertQuirVariables(getContext(), getOperation(),
@@ -324,10 +333,8 @@ void VariableEliminationPass::runOnOperation() {
   auto &domInfo = getAnalysis<DominanceInfo>();
   auto &postDomInfo = getAnalysis<PostDominanceInfo>();
 
-  WalkResult result = getOperation()->walk([&](mlir::FuncOp func) {
-    // TODO LLVM 15+: Use MLIR's builtin affineScalarReplace, which is fixed
-    // there
-    mlir::affineScalarReplaceCopy(func, domInfo, postDomInfo);
+  WalkResult const result = getOperation()->walk([&](mlir::func::FuncOp func) {
+    mlir::affine::affineScalarReplace(func, domInfo, postDomInfo);
 
     return WalkResult::advance();
   });

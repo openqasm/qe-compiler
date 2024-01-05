@@ -30,10 +30,10 @@ quir.reset %qa1 : !quir.qubit<1>
 quir.reset %qb1 : !quir.qubit<1>
 quir.reset %qc1 : !quir.qubit<1>
 // u3(0.3, 0.2, 0.1) q[0];
-// CHECK: %{{.*}} = quir.constant #quir.angle<3.000000e-01 : !quir.angle<1>>
-%theta  = quir.constant #quir.angle<0.3 : !quir.angle<1>>
-%phi    = quir.constant #quir.angle<0.2 : !quir.angle<1>>
-%lambda = quir.constant #quir.angle<0.1 : !quir.angle<1>>
+// CHECK: %{{.*}} = quir.constant #quir.angle<3.000000e-01> : !quir.angle<1>
+%theta  = quir.constant #quir.angle<0.3> : !quir.angle<1>
+%phi    = quir.constant #quir.angle<0.2> : !quir.angle<1>
+%lambda = quir.constant #quir.angle<0.1> : !quir.angle<1>
 // CHECK: quir.builtin_U %{{.*}}, %{{.*}}, %{{.*}}, %{{.*}} : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
 quir.builtin_U %qa1, %theta, %phi, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
 // h q[1];

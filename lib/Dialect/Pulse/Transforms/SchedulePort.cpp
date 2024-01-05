@@ -24,9 +24,28 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/SchedulePort.h"
+#include "Dialect/Pulse/IR/PulseInterfaces.h"
+#include "Dialect/Pulse/IR/PulseOps.h"
+#include "Dialect/Pulse/IR/PulseTraits.h"
+#include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/Pulse/Utils/Utils.h"
+#include "Utils/DebugIndent.h"
 
-#include "llvm/Support/Debug.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/IR/Block.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/Region.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+
+#include <cstdint>
+#include <optional>
+#include <utility>
 
 #define DEBUG_TYPE "SchedulePortPass"
 
@@ -112,8 +131,8 @@ uint64_t SchedulePortPass::updateSequence(SequenceOp sequenceOp) {
         int64_t timepoint = 0;
 
         auto existingTimepoint = PulseOpSchedulingInterface::getTimepoint(&op);
-        if (existingTimepoint.hasValue()) {
-          timepoint = existingTimepoint.getValue() + updateDelta;
+        if (existingTimepoint.has_value()) {
+          timepoint = existingTimepoint.value() + updateDelta;
           PulseOpSchedulingInterface::setTimepoint(&op, timepoint);
         }
 
@@ -123,7 +142,7 @@ uint64_t SchedulePortPass::updateSequence(SequenceOp sequenceOp) {
           // a nested sequence should only have a duration if it has been
           // updated by this method already
           if (!castOp->hasAttr("pulse.duration")) {
-            uint64_t calleeDuration =
+            uint64_t const calleeDuration =
                 processCall(castOp, /*updateNested*/ true);
             PulseOpSchedulingInterface::setDuration(castOp, calleeDuration);
             updateDelta += calleeDuration;
@@ -168,21 +187,21 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
           Value target;
           // get mixed_frames
           if (auto castOp = dyn_cast<DelayOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<PlayOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<CaptureOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<SetFrequencyOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<SetPhaseOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<ShiftFrequencyOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<ShiftPhaseOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
           else if (auto castOp = dyn_cast<SetAmplitudeOp>(op))
-            target = castOp.target();
+            target = castOp.getTarget();
 
           auto blockArg = target.cast<BlockArgument>();
           auto index = blockArg.getArgNumber();
@@ -191,7 +210,7 @@ SchedulePortPass::buildMixedFrameMap(SequenceOp &sequenceOp,
         } else if (auto castOp = dyn_cast<CallSequenceOp>(op)) {
           // add a call sequence to all mixedFrameSequences for
           // mixedFrames passed to it
-          for (auto operand : castOp.operands()) {
+          for (auto operand : castOp.getOperands()) {
             auto operandType = operand.getType();
             if (operandType.isa<MixedFrameType>()) {
               auto blockArg = operand.cast<BlockArgument>();
@@ -220,9 +239,9 @@ void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
     int64_t currentTimepoint = 0;
     for (auto *op : index.second) {
       auto existingTimepoint = PulseOpSchedulingInterface::getTimepoint(op);
-      if (existingTimepoint.hasValue())
-        if (existingTimepoint.getValue() > currentTimepoint)
-          currentTimepoint = existingTimepoint.getValue();
+      if (existingTimepoint.has_value())
+        if (existingTimepoint.value() > currentTimepoint)
+          currentTimepoint = existingTimepoint.value();
 
       // set attribute on op with current timepoint
       PulseOpSchedulingInterface::setTimepoint(op, currentTimepoint);
@@ -266,31 +285,31 @@ void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
                 !isa<arith::ConstantIntOp>(op2))
               return true;
 
-            bool testOp1 = (op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
-                            isa<CallSequenceOp>(op1));
-            bool testOp2 = (op2.hasTrait<mlir::pulse::HasTargetFrame>() ||
-                            isa<CallSequenceOp>(op2));
+            bool const testOp1 = (op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
+                                  isa<CallSequenceOp>(op1));
+            bool const testOp2 = (op2.hasTrait<mlir::pulse::HasTargetFrame>() ||
+                                  isa<CallSequenceOp>(op2));
 
             if (!testOp1 || !testOp2)
               return false;
 
-            llvm::Optional<int64_t> currentTimepoint =
+            std::optional<int64_t> currentTimepoint =
                 PulseOpSchedulingInterface::getTimepoint(&op1);
-            if (!currentTimepoint.hasValue()) {
+            if (!currentTimepoint.has_value()) {
               op1.emitError()
                   << "Operation does not have a pulse.timepoint attribute.";
               signalPassFailure();
             }
-            llvm::Optional<int64_t> nextTimepoint =
+            std::optional<int64_t> nextTimepoint =
                 PulseOpSchedulingInterface::getTimepoint(&op2);
-            if (!nextTimepoint.hasValue()) {
+            if (!nextTimepoint.has_value()) {
               op2.emitError()
                   << "Operation does not have a pulse.timepoint attribute.";
               signalPassFailure();
             }
 
             // order by timepoint
-            return currentTimepoint.getValue() < nextTimepoint.getValue();
+            return currentTimepoint.value() < nextTimepoint.value();
           }); // blockOps.sort
     }
   }
@@ -301,7 +320,7 @@ void SchedulePortPass::runOnOperation() {
   Operation *module = getOperation();
 
   module->walk(
-      [&](mlir::pulse::SequenceOp op) { sequenceOps[op.sym_name()] = op; });
+      [&](mlir::pulse::SequenceOp op) { sequenceOps[op.getSymName()] = op; });
 
   INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
 

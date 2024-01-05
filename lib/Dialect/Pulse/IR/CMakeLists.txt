@@ -12,6 +12,7 @@
 
 add_mlir_dialect_library(MLIRPulseDialect
 
+        PulseAttributes.cpp
         PulseDialect.cpp
         PulseInterfaces.cpp
         PulseOps.cpp
@@ -24,5 +25,5 @@ add_mlir_dialect_library(MLIRPulseDialect
 
 	LINK_LIBS PUBLIC
 	MLIRIR
-	Utils
+	QSSCUtils
 	)

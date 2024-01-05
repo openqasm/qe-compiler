@@ -20,7 +20,11 @@
 
 #include "MockUtils.h"
 
-#include <mlir/IR/BuiltinOps.h>
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/Visitors.h"
+
+#include <vector>
 
 using namespace qssc::targets::systems::mock;
 using namespace mlir;

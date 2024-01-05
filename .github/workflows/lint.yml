@@ -1,0 +1,107 @@
+# (C) Copyright IBM 2024.
+#
+# This code is part of Qiskit.
+#
+# This code is licensed under the Apache License, Version 2.0 with LLVM
+# Exceptions. You may obtain a copy of this license in the LICENSE.txt
+# file in the root directory of this source tree.
+#
+# Any modifications or derivative works of this code must retain this
+# copyright notice, and modified files need to carry a notice indicating
+# that they have been altered from the originals.
+name: Static Checks
+on: [push, pull_request]
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    env:
+      CONAN_USER_HOME: ${{ github.workspace }}
+    steps:
+      - name: free-up-space
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.9'
+      - name: Install pip packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Static checks
+        id: static_checks
+        if: github.event_name == 'pull_request'
+        run: pre-commit run --all-files --show-diff-on-failure
+      - name: Validate releasenotes
+        if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'no-reno')
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: ./.github/renos_updated.sh
+      - name: Export QSSC_VERSION from Git version tag
+        run: |
+          version=`python -c "from setuptools_scm import get_version; print(get_version())"`
+          echo "QSSC_VERSION=$version" >> $GITHUB_ENV
+      - name: Load Conan cache
+        id: cache
+        uses: actions/cache/restore@v3
+        with:
+          path: .conan
+          key: conan-${{ runner.os }}
+          restore-keys: conan-${{ runner.os }}
+      - name: Create Conan default profile
+        run: |
+          conan profile new default --detect || true
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+      - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
+        run: ./conan_deps.sh
+      - name: Create build dir
+        run: mkdir build
+      # Check if all conan packages are within the cache. If not
+      # we will need to build packages (and if on main flush the cache)
+      - name : Check Conan dependencies are cached
+        id: check_conan_cache
+        working-directory: build
+        run: |
+          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
+          build_requires=$(conan info .. -pr:h default -pr:b default --build=outdated 2>/dev/null)
+          if [[ "$build_requires" == *"Outdated package!"* ]];
+          then
+              all_in_cache=false
+          else
+              all_in_cache=true
+          fi
+          echo "all_in_cache=$all_in_cache" >> $GITHUB_OUTPUT
+          echo "Conan build requires: $build_requires"
+          echo "Conan cache is complete: $all_in_cache"
+      - name: Conan install
+        id: conan_install
+        working-directory: build
+        run: |
+          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
+          conan install .. --build=outdated -pr:h default -pr:b default
+      - name: Configure
+        id: configure
+        working-directory: build
+        run: |
+          conan build .. --configure
+      # Workaround CI permissions for forks
+      # https://github.com/ZedThree/clang-tidy-review?tab=readme-ov-file#usage-in-fork-environments-split-workflow
+      # The name is sensitive make sure to also update `clang-tidy-review-comments.yml` workflow
+      - name: Clang tidy
+        uses: ZedThree/clang-tidy-review@v0.14.0
+        id: clang_tidy
+        if: github.event_name == 'pull_request'
+        with:
+          config_file: '.clang-tidy'
+          build_dir: build
+          split_workflow: true
+      - name: Clang tidy upload
+        uses: ZedThree/clang-tidy-review/upload@v0.14.0

@@ -13,7 +13,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/OQ3/IR/OQ3Dialect.h"
+
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/OQ3/IR/OQ3Ops.h"
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/OQ3/IR/OQ3Types.h"
 
 #include "mlir/Transforms/InliningUtils.h"
@@ -22,6 +25,7 @@ using namespace mlir;
 using namespace mlir::oq3;
 
 /// Tablegen Definitions
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/OQ3/IR/OQ3OpsDialect.cpp.inc"
 
 //===----------------------------------------------------------------------===//
@@ -45,8 +49,8 @@ struct OQ3InlinerInterface : public DialectInlinerInterface {
   // This hook checks to see if the given `Operation` is legal to inline into
   // the given region. For OQ3, this hook can simply return true, as all OQ3
   // operations are currently inlinable.
-  auto isLegalToInline(Operation *, Region *, bool,
-                       BlockAndValueMapping &) const -> bool final {
+  auto isLegalToInline(Operation *, Region *, bool, IRMapping &) const
+      -> bool final {
     return true;
   }
 };
@@ -55,6 +59,7 @@ void OQ3Dialect::initialize() {
 
   addOperations<
 #define GET_OP_LIST
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/OQ3/IR/OQ3Ops.cpp.inc"
       >();
 

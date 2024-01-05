@@ -22,7 +22,7 @@ quir.circuit @circuit_0(%arg0: !quir.qubit<1>, %arg1: !quir.qubit<1>) -> (i1, i1
   // CHECK: [[MEASURE:%.*]]:2 = quir.measure(%arg0, %arg1) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
   // CHECK: quir.return [[MEASURE]]#0, [[MEASURE]]#1 : i1, i1
 }
-func @main() -> i32 {
+func.func @main() -> i32 {
   %0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
   %2:2 = quir.call_circuit @circuit_0(%0, %1) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
@@ -30,4 +30,3 @@ func @main() -> i32 {
   return %c0_i32 : i32
 }
 }
-

@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -9,8 +9,15 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-name: Continuous Integration
-on: [push, pull_request]
+name: Build
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release/**'
+      - '**/release/**'
+  pull_request:
+    types: [opened, reopened, labeled, unlabeled, synchronize]
 jobs:
   Build:
     runs-on: ubuntu-latest
@@ -20,7 +27,7 @@ jobs:
       - name: free-up-space
         run: |
           df -h
-          sudo rm -rf /usr/share/dotnet   
+          sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
@@ -28,11 +35,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      # -- REMOVE ONCE OPEN SOURCE
-      # Needed until Qiskit/qss-qasm is public.
-      - uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -45,23 +47,13 @@ jobs:
         run: |
           version=`python -c "from setuptools_scm import get_version; print(get_version())"`
           echo "QSSC_VERSION=$version" >> $GITHUB_ENV
-      - name: Try load Conan cache
+      - name: Load Conan cache
         id: cache
         uses: actions/cache/restore@v3
         with:
           path: .conan
-          key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
+          key: conan-${{ runner.os }}
           restore-keys: conan-${{ runner.os }}
-      - name : Print cache hit/miss
-        run: |
-          echo "Cache was hit: ${{ steps.cache.outputs.cache-hit }}"
-      # If we have a cache miss on 'main', clear the cache.
-      # A dependency was updated, so we need to drop the old one
-      # to prevent unbounded cache growth over time.
-      - name : Clear Conan cache
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.cache.outputs.cache-hit != 'true'
-        run: |
-          rm -rf ./.conan
       - name: Create Conan default profile
         run: |
           conan profile new default --detect || true
@@ -70,6 +62,30 @@ jobs:
         run: ./conan_deps.sh
       - name: Create build dir
         run: mkdir build
+      # Check if all conan packages are within the cache. If not
+      # we will need to build packages (and if on main flush the cache)
+      - name : Check Conan dependencies are cached
+        id: check_conan_cache
+        working-directory: build
+        run: |
+          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
+          build_requires=$(conan info .. -pr:h default -pr:b default --build=outdated 2>/dev/null)
+          if [[ "$build_requires" == *"Outdated package!"* ]];
+          then
+              all_in_cache=false
+          else
+              all_in_cache=true
+          fi
+          echo "all_in_cache=$all_in_cache" >> $GITHUB_OUTPUT
+          echo "Conan build requires: $build_requires"
+          echo "Conan cache is complete: $all_in_cache"
+      # If we have a cache miss on 'main', clear the cache.
+      # A dependency was updated, so we need to drop the old one
+      # to prevent unbounded cache growth over time.
+      - name : Clear Conan cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check_conan_cache.outputs.all_in_cache != 'true'
+        run: |
+          rm -rf ./.conan
       - name: Conan install
         id: conan_install
         working-directory: build
@@ -85,28 +101,11 @@ jobs:
         id: test
         working-directory: build
         run: conan build .. --test
-
-      # On 'pull_request' run Clang tidy
-      - name: Clang tidy
-        uses: ZedThree/clang-tidy-review@v0.10.0
-        id: clang_tidy
-        if: github.event_name == 'pull_request'
-        with:
-          config_file: '.clang-tidy'
-          build_dir: build
-
-      # On 'pull_request' run Clang format and commit the changes
-      - name: Clang format
-        id: clang_format
-        if: github.event_name == 'pull_request'
-        working-directory: build
-        run: ninja check-format
-
       # On 'main' branch, always save the cache if Conan install succeeded.
       # Note: we only update the cache from 'main' to avoid "cache thrashing", which would result in the 'main'
       #       cache getting LRU-evicted for every PR, since a single run uses most of the 10GB repo limit.
       - uses: actions/cache/save@v3
-        if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success' && steps.cache.outputs.cache-hit != 'true')
+        if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success' && steps.check_conan_cache.outputs.all_in_cache != 'true')
         with:
           path: .conan
-          key: conan-${{ runner.os }}-${{ hashFiles('conandata.yml', 'conanfile.py', 'conan/**/*.py', 'conan/**/*.yml') }}
+          key: conan-${{ runner.os }}

@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -9,19 +9,16 @@
 # Any modifications or derivative works of this code must retain this
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
-from conans import ConanFile, tools
-import os, platform
-from contextlib import contextmanager
-from conans.tools import load
-from conan.tools.apple import is_apple_os
+from conans import ConanFile
+import platform
 from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
 import subprocess
 
 
 class QasmConan(ConanFile):
     name = "qasm"
-    version = "0.2.16"
-    url = "https://github.com/Qiskit/qss-qasm.git"
+    version = "0.3.0"
+    url = "https://github.com/openqasm/qe-qasm.git"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "examples": [True, False]}
     default_options = {
@@ -29,19 +26,15 @@ class QasmConan(ConanFile):
         "examples": False,
         "gmp:shared": True,
         "mpc:shared": True,
-        "mpfr:shared": True
+        "mpfr:shared": True,
     }
-    license = "Proprietary"
-    author = "IBM Quantum development team"
+    license = "Apache-2.0"
+    author = "OpenQASM Organization"
     topics = ("Compiler", "Parser", "OpenQASM3")
-    description = "Compiler for OpenQASM3 language."
+    description = "A flex/bison parser for OpenQASM v3. A part of the Quantum Engine project."
 
     def source(self):
-        token = os.environ.get("GITHUB_PAT")
-        if token is not None:
-            self.run(f"git clone https://{token}@github.com/Qiskit/qss-qasm.git .")
-        else:
-            self.run(f"git clone git@github.com:Qiskit/qss-qasm.git .")
+        self.run("git clone https://github.com/openqasm/qe-qasm.git .")
 
         commit_hash = self.conan_data["sources"]["hash"]
         self.run(f"git checkout {commit_hash}")

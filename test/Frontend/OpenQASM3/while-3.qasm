@@ -52,7 +52,6 @@ while (i != 0) {
         // AST-PRETTY: ]
         // AST-PRETTY: )
         // MLIR-NO-CIRCUITS:         quir.call_gate @h(%0) : (!quir.qubit<1>) -> ()
-        // MLIR-NO-CIRCUITS:         %cst = constant unit
         // MLIR-CIRCUITS: quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> ()
         // MLIR:         [[CONSTANT1:%c0_i32_.]] = arith.constant 0 : i32
         // MLIR:         oq3.variable_assign @j : i32 = [[CONSTANT1]]
@@ -62,9 +61,9 @@ while (i != 0) {
         // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=j, bits=32), right=IntNode(signed=true, value=0, bits=32))
         j = 0;
     }
-    // MLIR-NO-CIRCUITS:     %angle = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS:     %angle_1 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-    // MLIR-NO-CIRCUITS:     %angle_2 = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
+    // MLIR-NO-CIRCUITS:     %angle = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS:     %angle_1 = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+    // MLIR-NO-CIRCUITS:     %angle_2 = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
     // MLIR-NO-CIRCUITS:     quir.builtin_U %0, %angle, %angle_1, %angle_2 : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
     U (0, 0, 0) $0;
     // MLIR-NO-CIRCUITS:     %2 = quir.measure(%0) : (!quir.qubit<1>) -> i1
