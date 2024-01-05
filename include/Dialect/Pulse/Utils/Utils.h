@@ -25,6 +25,7 @@
 
 #include "llvm/ADT/StringRef.h"
 
+#include <deque>
 #include <vector>
 
 namespace mlir {
