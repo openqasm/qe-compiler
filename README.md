@@ -67,7 +67,7 @@ pip install pre-commit
 pre-commit install
 ```
 
-For more details on usage see the [contribution guide][./CONTRIBUTION.md#static-code-checks].
+For more details on usage see the [contribution guide](CONTRIBUTING.md#static-code-checks).
 
 ## Example Use
 
