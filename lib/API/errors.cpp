@@ -118,14 +118,19 @@ std::string Diagnostic::toString() const {
 }
 
 llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
-                           Severity severity, ErrorCategory category,
-                           std::string message, std::error_code ec) {
+                           const Diagnostic &diag, std::error_code ec) {
   auto *diagnosticCallback =
       onDiagnostic.has_value() ? &onDiagnostic.value() : nullptr;
-  qssc::Diagnostic const diag{severity, category, std::move(message)};
   if (diagnosticCallback)
     (*diagnosticCallback)(diag);
   return llvm::createStringError(ec, diag.toString());
+}
+
+llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
+                           Severity severity, ErrorCategory category,
+                           std::string message, std::error_code ec) {
+  qssc::Diagnostic const diag{severity, category, std::move(message)};
+  return emitDiagnostic(onDiagnostic, diag, ec);
 }
 
 } // namespace qssc
