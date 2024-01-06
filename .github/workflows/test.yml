@@ -80,6 +80,8 @@ jobs:
         run: |
           rm -rf ./.conan
           # Re-add conan deps after flushing the conan cache before building packages.
+          conan profile new default --detect || true
+          conan profile update settings.compiler.libcxx=libstdc++11 default
           ./conan_deps.sh
       - name: Conan install
         id: conan_install
