@@ -63,7 +63,7 @@ jobs:
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
           build_requires=$(conan info .. -pr:h default -pr:b default --build=outdated 2>/dev/null)
-          if [[ "$build_requires" == *"Outdated package!"* ]];
+          if [[ "$build_requires" == *"Outdated package!"* ]] || [[ "$build_requires" == *"Not found in local cache"* ]];
           then
               all_in_cache=false
           else
