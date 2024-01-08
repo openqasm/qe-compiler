@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Compiler output can now be controlled using the --verbosity flag or via the
+    environment variable QSSC_VERBOSITY.

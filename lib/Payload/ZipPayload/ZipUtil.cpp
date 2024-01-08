@@ -1,6 +1,6 @@
 //===- ZipUtil.cpp ----------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -36,7 +36,6 @@ char *qssc::payload::read_zip_src_to_buffer(zip_source_t *zip_src,
   zip_source_seek(zip_src, 0, SEEK_END);
   // get the number of bytes
   sz = zip_source_tell(zip_src);
-  llvm::outs() << "Zip buffer is of size " << sz << " bytes\n";
 
   // allocate a new buffer to copy the archive into
   char *outbuffer = (char *)malloc(sz);

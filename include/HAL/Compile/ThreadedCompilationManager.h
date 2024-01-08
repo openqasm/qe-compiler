@@ -46,17 +46,17 @@ protected:
   /// Threaded depth first walker for a target system using the current
   /// MLIRContext's threadpool.
   llvm::Error walkTargetThreaded(
-      Target *target,
+      Target *target, mlir::TimingScope &timing,
       const TargetCompilationManager::WalkTargetFunction &walkFunc);
   /// Threaded depth first walker for a target system modules using the current
   /// MLIRContext's threadpool.
   llvm::Error walkTargetModulesThreaded(
-      Target *target, mlir::ModuleOp targetModuleOp,
+      Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing,
       const TargetCompilationManager::WalkTargetModulesFunction &walkFunc,
       const TargetCompilationManager::WalkTargetModulesFunction
           &postChildrenCallbackFunc);
 
-  virtual void printIR(llvm::StringRef msg, mlir::Operation *op,
+  virtual void printIR(llvm::Twine msg, mlir::Operation *op,
                        llvm::raw_ostream &out) override;
 
 public:
@@ -93,7 +93,8 @@ private:
 
   /// Prepare pass managers in a threaded way
   /// initializing them with the mlir context safely.
-  llvm::Error buildTargetPassManagers_(Target &target);
+  llvm::Error buildTargetPassManagers_(Target &target,
+                                       mlir::TimingScope &timing);
   /// Threadsafe initialization of PM to work around
   /// non-threadsafe registration of dependent dialects.
   /// I (Thomas) believe this is related to the conversation here
@@ -106,11 +107,13 @@ private:
   mlir::PassManager &createTargetPassManager_(Target *target);
 
   /// Compiles the input module for a single target.
-  llvm::Error compileMLIRTarget_(Target &target, mlir::ModuleOp targetModuleOp);
+  llvm::Error compileMLIRTarget_(Target &target, mlir::ModuleOp targetModuleOp,
+                                 mlir::TimingScope &timing);
   /// Compiles the input payload for a single target.
   llvm::Error compilePayloadTarget_(Target &target,
                                     mlir::ModuleOp targetModuleOp,
                                     qssc::payload::Payload &payload,
+                                    mlir::TimingScope &timing,
                                     bool doCompileMLIR);
 
   PMBuilder pmBuilder;

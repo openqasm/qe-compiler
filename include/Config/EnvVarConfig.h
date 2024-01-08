@@ -1,6 +1,6 @@
 //===- EnvVarConfig.h - EnvVar Configuration builder ----------*- C++-*----===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -37,6 +37,7 @@ public:
 private:
   llvm::Error populateConfigurationPath_(QSSConfig &config);
   llvm::Error populateTarget_(QSSConfig &config);
+  llvm::Error populateVerbosity_(QSSConfig &config);
 };
 
 } // namespace qssc::config
