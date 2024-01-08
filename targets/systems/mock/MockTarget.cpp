@@ -27,7 +27,6 @@
 #include "HAL/TargetSystem.h"
 #include "HAL/TargetSystemRegistry.h"
 #include "Payload/Payload.h"
-#include "Transforms/FunctionLocalization.h"
 #include "Transforms/QubitLocalization.h"
 
 #include "mlir/Dialect/LLVMIR/Transforms/LegalizeForExport.h"
@@ -184,7 +183,6 @@ MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
 } // MockSystem
 
 llvm::Error MockSystem::registerTargetPasses() {
-  mlir::PassRegistration<MockFunctionLocalizationPass>();
   mlir::PassRegistration<MockQubitLocalizationPass>();
   mlir::PassRegistration<conversion::MockQUIRToStdPass>(
       []() -> std::unique_ptr<conversion::MockQUIRToStdPass> {
@@ -203,9 +201,7 @@ void mockPipelineBuilder(mlir::OpPassManager &pm) {
   pm.addPass(std::make_unique<mlir::quir::RemoveQubitOperandsPass>());
   pm.addPass(std::make_unique<mlir::quir::ClassicalOnlyDetectionPass>());
   pm.addPass(std::make_unique<MockQubitLocalizationPass>());
-  pm.addPass(std::make_unique<SymbolTableBuildPass>());
   OpPassManager &nestedModulePM = pm.nest<ModuleOp>();
-  nestedModulePM.addPass(std::make_unique<MockFunctionLocalizationPass>());
   nestedModulePM.addPass(
       std::make_unique<mlir::quir::FunctionArgumentSpecializationPass>());
 } // mockPipelineBuilder
