@@ -158,13 +158,13 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
   // setting duration of the quantum call circuit
   PulseOpSchedulingInterface::setDuration(quantumCircuitCallSequenceOp,
                                           totalDurationOfQuantumCircuit);
-  // setting timepoint of the quantum circuit; at this point, we can add
+  // setting timepoint of the quantum call circuit; at this point, we can add
   // totalDurationOfQuantumCircuit to above <=0 timepoints, so that they become
   // >=0, however, that would require walking the IR again. Instead, we add a
-  // postive timepoint to the parent op, i.e., quantum circuit sequence op, and
-  // later passes would need to add this value as an offset to determine the
+  // postive timepoint to the parent op, i.e., quantum circuit call sequence op,
+  // and later passes would need to add this value as an offset to determine the
   // effective timepoints
-  PulseOpSchedulingInterface::setTimepoint(quantumCircuitSequenceOp,
+  PulseOpSchedulingInterface::setTimepoint(quantumCircuitCallSequenceOp,
                                            totalDurationOfQuantumCircuit);
 }
 
