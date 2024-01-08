@@ -44,7 +44,7 @@
 using namespace mlir;
 using namespace mlir::pulse;
 
-void quantumCircuitPulseSchedulingPass::runOnOperation() {
+void QuantumCircuitPulseSchedulingPass::runOnOperation() {
   // check for command line override of the scheduling method
   if (schedulingMethod.hasValue()) {
     if (schedulingMethod.getValue() == "alap")
@@ -72,7 +72,7 @@ void quantumCircuitPulseSchedulingPass::runOnOperation() {
   });
 }
 
-void quantumCircuitPulseSchedulingPass::scheduleAlap(
+void QuantumCircuitPulseSchedulingPass::scheduleAlap(
     mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp) {
 
   auto quantumCircuitSequenceOp = getSequenceOp(quantumCircuitCallSequenceOp);
@@ -155,9 +155,7 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
   LLVM_DEBUG(llvm::dbgs() << "\ttotal duration of quantum circuit "
                           << totalDurationOfQuantumCircuit << "\n");
 
-  // setting duration of the quantum circuit
-  PulseOpSchedulingInterface::setDuration(quantumCircuitSequenceOp,
-                                          totalDurationOfQuantumCircuit);
+  // setting duration of the quantum call circuit
   PulseOpSchedulingInterface::setDuration(quantumCircuitCallSequenceOp,
                                           totalDurationOfQuantumCircuit);
   // setting timepoint of the quantum circuit; at this point, we can add
@@ -170,7 +168,7 @@ void quantumCircuitPulseSchedulingPass::scheduleAlap(
                                            totalDurationOfQuantumCircuit);
 }
 
-int quantumCircuitPulseSchedulingPass::getNextAvailableTimeOfPorts(
+int QuantumCircuitPulseSchedulingPass::getNextAvailableTimeOfPorts(
     mlir::ArrayAttr ports) {
   int nextAvailableTimeOfAllPorts = 0;
   for (auto attr : ports) {
@@ -186,7 +184,7 @@ int quantumCircuitPulseSchedulingPass::getNextAvailableTimeOfPorts(
   return nextAvailableTimeOfAllPorts;
 }
 
-void quantumCircuitPulseSchedulingPass::updatePortAvailabilityMap(
+void QuantumCircuitPulseSchedulingPass::updatePortAvailabilityMap(
     mlir::ArrayAttr ports, int updatedAvailableTime) {
   for (auto attr : ports) {
     const std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
@@ -196,7 +194,7 @@ void quantumCircuitPulseSchedulingPass::updatePortAvailabilityMap(
   }
 }
 
-mlir::pulse::SequenceOp quantumCircuitPulseSchedulingPass::getSequenceOp(
+mlir::pulse::SequenceOp QuantumCircuitPulseSchedulingPass::getSequenceOp(
     mlir::pulse::CallSequenceOp callSequenceOp) {
   auto seqAttr = callSequenceOp->getAttrOfType<FlatSymbolRefAttr>("callee");
   assert(seqAttr && "Requires a 'callee' symbol reference attribute");
@@ -208,10 +206,10 @@ mlir::pulse::SequenceOp quantumCircuitPulseSchedulingPass::getSequenceOp(
   return sequenceOp;
 }
 
-llvm::StringRef quantumCircuitPulseSchedulingPass::getArgument() const {
+llvm::StringRef QuantumCircuitPulseSchedulingPass::getArgument() const {
   return "quantum-circuit-pulse-scheduling";
 }
 
-llvm::StringRef quantumCircuitPulseSchedulingPass::getDescription() const {
+llvm::StringRef QuantumCircuitPulseSchedulingPass::getDescription() const {
   return "Scheduling a quantum circuit at pulse level.";
 }
