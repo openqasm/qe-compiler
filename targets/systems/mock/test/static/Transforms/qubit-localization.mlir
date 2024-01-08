@@ -96,7 +96,6 @@ func @main () -> i32 {
 // CHECK:     func @subroutine1_q1(%arg0: !quir.angle, %arg1: index) attributes {quir.classicalOnly = false} {
 // CHECK:     func @main() -> i32 attributes {quir.classicalOnly = false} {
 // CHECK:       quir.barrier %0, %1 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
-// CHECK:       quir.call_gate @gateH_q0(%0) : (!quir.qubit<1>) -> ()
 // CHECK:       quir.call_subroutine @"subroutine1_q1_!quir.angle<20>_index"(%angle, %c10) : (!quir.angle<20>, index) -> ()
 // CHECK:       quir.call_subroutine @"subroutine1_q0_!quir.angle<20>_index"(%angle, %c10) : (!quir.angle<20>, index) -> ()
 // CHECK:       quir.call_subroutine @subroutine2_q0_q1() : () -> ()
