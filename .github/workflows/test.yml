@@ -62,12 +62,13 @@ jobs:
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          build_requires=$(conan info .. -pr:h default -pr:b default --build=outdated 2>/dev/null)
-          if [[ "$build_requires" == *"Outdated package!"* ]];
+          conan info .. -pr:h default -pr:b default --build=outdated --json build_requires.json
+          build_requires=$(cat build_requires.json)
+          if [[ "$build_requires" == *"[]"* ]];
           then
-              all_in_cache=false
-          else
               all_in_cache=true
+          else
+              all_in_cache=false
           fi
           echo "all_in_cache=$all_in_cache" >> $GITHUB_OUTPUT
           echo "Conan build requires: $build_requires"
