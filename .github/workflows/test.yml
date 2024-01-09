@@ -11,6 +11,7 @@
 # that they have been altered from the originals.
 name: Build
 on: [push, pull_request]
+
 jobs:
   Build:
     runs-on: ubuntu-latest
@@ -40,19 +41,20 @@ jobs:
         run: |
           version=`python -c "from setuptools_scm import get_version; print(get_version())"`
           echo "QSSC_VERSION=$version" >> $GITHUB_ENV
+      - name: Prepare Conan
+        run: |
+          conan profile new default --detect || true
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          # Add QASM, LLVM, and clang tools recipes to Conan cache.
+          ./conan_deps.sh
+          conan lock create conanfile.py -pr:h default -pr:b default --build=outdated
       - name: Load Conan cache
         id: cache
         uses: actions/cache/restore@v3
         with:
           path: .conan
           key: conan-${{ runner.os }}
-          restore-keys: conan-${{ runner.os }}
-      - name: Create Conan default profile
-        run: |
-          conan profile new default --detect || true
-          conan profile update settings.compiler.libcxx=libstdc++11 default
-      - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
-        run: ./conan_deps.sh
+          restore-keys: conan-${{ runner.os }}-${{ hashFiles('conan.lock') }}
       - name: Create build dir
         run: mkdir build
       # Check if all conan packages are within the cache. If not
@@ -61,8 +63,7 @@ jobs:
         id: check_conan_cache
         working-directory: build
         run: |
-          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan info .. -pr:h default -pr:b default --build=missing --json build_requires.json
+          conan info .. -pr:h default -pr:b default --build=outdated --json build_requires.json
           build_requires=$(cat build_requires.json)
           if [[ "$build_requires" == *"[]"* ]];
           then
@@ -84,12 +85,13 @@ jobs:
           conan profile new default --detect || true
           conan profile update settings.compiler.libcxx=libstdc++11 default
           ./conan_deps.sh
+          conan lock create conanfile.py -pr:h default -pr:b default --build=outdated
       - name: Conan install
         id: conan_install
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan install .. --build=missing -pr:h default -pr:b default
+          conan install .. --build=outdated -pr:h default -pr:b default
       - name: Build
         id: build
         working-directory: build
@@ -106,4 +108,4 @@ jobs:
         if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.conan_install.outcome == 'success' && steps.check_conan_cache.outputs.all_in_cache != 'true')
         with:
           path: .conan
-          key: conan-${{ runner.os }}
+          key: conan-${{ runner.os }}-${{ hashFiles('conan.lock') }}
