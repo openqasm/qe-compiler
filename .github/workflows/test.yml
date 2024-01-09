@@ -62,7 +62,7 @@ jobs:
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan info .. -pr:h default -pr:b default --build=outdated --json build_requires.json
+          conan info .. -pr:h default -pr:b default --build=missing --json build_requires.json
           build_requires=$(cat build_requires.json)
           if [[ "$build_requires" == *"[]"* ]];
           then
@@ -89,7 +89,7 @@ jobs:
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan install .. --build=outdated -pr:h default -pr:b default
+          conan install .. --build=missing -pr:h default -pr:b default
       - name: Build
         id: build
         working-directory: build
