@@ -29,8 +29,8 @@
 
 namespace mlir::pulse {
 
-struct quantumCircuitPulseSchedulingPass
-    : public PassWrapper<quantumCircuitPulseSchedulingPass,
+struct QuantumCircuitPulseSchedulingPass
+    : public PassWrapper<QuantumCircuitPulseSchedulingPass,
                          OperationPass<ModuleOp>> {
 public:
   enum SchedulingMethod { ALAP, ASAP };
@@ -38,11 +38,11 @@ public:
 
   // this pass can optionally receive an string specifying the scheduling
   // method; default method is alap scheduling
-  quantumCircuitPulseSchedulingPass() = default;
-  quantumCircuitPulseSchedulingPass(
-      const quantumCircuitPulseSchedulingPass &pass)
+  QuantumCircuitPulseSchedulingPass() = default;
+  QuantumCircuitPulseSchedulingPass(
+      const QuantumCircuitPulseSchedulingPass &pass)
       : PassWrapper(pass) {}
-  quantumCircuitPulseSchedulingPass(SchedulingMethod inSchedulingMethod) {
+  QuantumCircuitPulseSchedulingPass(SchedulingMethod inSchedulingMethod) {
     SCHEDULING_METHOD = inSchedulingMethod;
   }
 

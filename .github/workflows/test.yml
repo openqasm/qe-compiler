@@ -10,14 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 name: Build
-on:
-  push:
-    branches:
-      - 'main'
-      - 'release/**'
-      - '**/release/**'
-  pull_request:
-    types: [opened, reopened, labeled, unlabeled, synchronize]
+on: [push, pull_request]
 jobs:
   Build:
     runs-on: ubuntu-latest
@@ -69,12 +62,13 @@ jobs:
         working-directory: build
         run: |
           export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          build_requires=$(conan info .. -pr:h default -pr:b default --build=outdated 2>/dev/null)
-          if [[ "$build_requires" == *"Outdated package!"* ]];
+          conan info .. -pr:h default -pr:b default --build=outdated --json build_requires.json
+          build_requires=$(cat build_requires.json)
+          if [[ "$build_requires" == *"[]"* ]];
           then
-              all_in_cache=false
-          else
               all_in_cache=true
+          else
+              all_in_cache=false
           fi
           echo "all_in_cache=$all_in_cache" >> $GITHUB_OUTPUT
           echo "Conan build requires: $build_requires"
@@ -86,6 +80,10 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.check_conan_cache.outputs.all_in_cache != 'true'
         run: |
           rm -rf ./.conan
+          # Re-add conan deps after flushing the conan cache before building packages.
+          conan profile new default --detect || true
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          ./conan_deps.sh
       - name: Conan install
         id: conan_install
         working-directory: build

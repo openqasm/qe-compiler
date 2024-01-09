@@ -19,8 +19,10 @@
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/OperationSupport.h"
 #include "mlir/Support/LogicalResult.h"
+#include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/Twine.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ManagedStatic.h"
@@ -83,11 +85,11 @@ TargetCompilationManager::TargetCompilationManager(
     : target(target), context(context) {}
 
 llvm::Error TargetCompilationManager::walkTargetModules(
-    Target *target, mlir::ModuleOp targetModuleOp,
+    Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing,
     const WalkTargetModulesFunction &walkFunc,
     const WalkTargetModulesFunction &postChildrenCallbackFunc) {
   // Call the input function for the walk on the target
-  if (auto err = walkFunc(target, targetModuleOp))
+  if (auto err = walkFunc(target, targetModuleOp, timing))
     return err;
 
   for (auto *child : target->getChildren()) {
@@ -95,33 +97,34 @@ llvm::Error TargetCompilationManager::walkTargetModules(
     auto childModuleOp = child->getModule(targetModuleOp);
     if (auto err = childModuleOp.takeError())
       return err;
-    if (auto err = walkTargetModules(child, *childModuleOp, walkFunc,
+    if (auto err = walkTargetModules(child, *childModuleOp, timing, walkFunc,
                                      postChildrenCallbackFunc))
       return err;
   }
 
-  if (auto err = postChildrenCallbackFunc(target, targetModuleOp))
+  if (auto err = postChildrenCallbackFunc(target, targetModuleOp, timing))
     return err;
 
   return llvm::Error::success();
 }
 
 llvm::Error
-TargetCompilationManager::walkTarget(Target *target,
+TargetCompilationManager::walkTarget(Target *target, mlir::TimingScope &timing,
                                      const WalkTargetFunction &walkFunc) {
   // Call the input function for the walk on the target
-  if (auto err = walkFunc(target))
+  if (auto err = walkFunc(target, timing))
     return err;
 
   for (auto *child : target->getChildren()) {
     // Recurse on the target
-    if (auto err = walkTarget(child, walkFunc))
+    if (auto err = walkTarget(child, timing, walkFunc))
       return err;
   }
 
   return llvm::Error::success();
 }
 
+// TODO: This should be replaced by a PassManager like instrumentation framework
 void TargetCompilationManager::enableIRPrinting(
     bool printBeforeAllTargetPasses, bool printAfterAllTargetPasses,
     bool printBeforeAllTargetPayload, bool printAfterTargetCompileFailure) {
@@ -131,7 +134,7 @@ void TargetCompilationManager::enableIRPrinting(
   this->printAfterTargetCompileFailure = printAfterTargetCompileFailure;
 }
 
-void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
+void TargetCompilationManager::printIR(llvm::Twine msg, mlir::Operation *op,
                                        llvm::raw_ostream &out) {
   out << "// -----// ";
   out << msg;
@@ -140,4 +143,15 @@ void TargetCompilationManager::printIR(llvm::StringRef msg, mlir::Operation *op,
   mlir::OpPrintingFlags flags = mlir::OpPrintingFlags();
   op->print(out, flags.useLocalScope());
   out << "\n";
+}
+
+void TargetCompilationManager::enableTiming(mlir::TimingScope &timingScope) {
+  rootTimer = timingScope.nest("TargetCompilationManager");
+  rootTimer.hide();
+}
+
+void TargetCompilationManager::disableTiming() { rootTimer.stop(); }
+
+mlir::TimingScope TargetCompilationManager::getTimer(llvm::StringRef name) {
+  return rootTimer.nest(name);
 }

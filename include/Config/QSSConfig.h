@@ -1,6 +1,6 @@
 //===- QSSConfig.h - Global QSS config ----------------*- C++ -*-----------===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -26,6 +26,14 @@
 #include <utility>
 
 namespace qssc::config {
+
+enum QSSVerbosity {
+  Error = 0,
+  Warn = 1,
+  Info = 2,
+  Debug = 3,
+  _VerbosityCnt = 4
+};
 
 enum class EmitAction { None, AST, ASTPretty, MLIR, WaveMem, QEM, QEQEM };
 
@@ -120,6 +128,12 @@ public:
   }
   EmitAction getEmitAction() const { return emitAction; }
 
+  QSSConfig &setVerbosityLevel(QSSVerbosity level) {
+    verbosityLevel = level;
+    return *this;
+  }
+  QSSVerbosity getVerbosityLevel() const { return verbosityLevel; }
+
   QSSConfig &addTargetPasses(bool flag) {
     addTargetPassesFlag = flag;
     return *this;
@@ -202,6 +216,8 @@ protected:
   InputType inputType = InputType::None;
   /// @brief Output action to take
   EmitAction emitAction = EmitAction::None;
+  /// @brief Verbosity level for logging info
+  QSSVerbosity verbosityLevel = QSSVerbosity::Warn;
   /// @brief Register target passes with the compiler.
   bool addTargetPassesFlag = true;
   /// @brief Should available targets be printed

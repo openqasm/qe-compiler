@@ -43,15 +43,18 @@ protected:
   TargetCompilationManager(hal::TargetSystem &target,
                            mlir::MLIRContext *context);
 
-  using WalkTargetModulesFunction =
-      std::function<llvm::Error(hal::Target *, mlir::ModuleOp)>;
-  using WalkTargetFunction = std::function<llvm::Error(hal::Target *)>;
+  using WalkTargetModulesFunction = std::function<llvm::Error(
+      hal::Target *, mlir::ModuleOp, mlir::TimingScope &timing)>;
+  using WalkTargetFunction =
+      std::function<llvm::Error(hal::Target *, mlir::TimingScope &timing)>;
 
   // Depth first walker for a target system
-  llvm::Error walkTarget(Target *target, const WalkTargetFunction &walkFunc);
+  llvm::Error walkTarget(Target *target, mlir::TimingScope &timing,
+                         const WalkTargetFunction &walkFunc);
   // Depth first walker for a target system modules
   llvm::Error
   walkTargetModules(Target *target, mlir::ModuleOp targetModuleOp,
+                    mlir::TimingScope &timing,
                     const WalkTargetModulesFunction &walkFunc,
                     const WalkTargetModulesFunction &postChildrenCallbackFunc);
 
@@ -68,7 +71,8 @@ public:
   /// @brief Compile only at the MLIR level for the full target
   /// system.
   /// @param moduleOp The root module operation to compile for.
-  /// This must not be specialized to a system already.
+  /// @param timing Root timing scope for tracking timing of payload
+  /// compilation. This must not be specialized to a system already.
   virtual llvm::Error compileMLIR(mlir::ModuleOp moduleOp) = 0;
 
   /// @brief Generate the full configured compilation pipeline
@@ -77,6 +81,8 @@ public:
   /// @param moduleOp The root module operation to compile for.
   /// This must not be specialized to a system already.
   /// @param payload The payload to populate.
+  /// @param timing Root timing scope for tracking timing of payload
+  /// compilation.
   /// @param doCompileMLIR Whether to call compileMLIR prior to compiling the
   /// payload. Defaults to true.
   virtual llvm::Error compilePayload(mlir::ModuleOp moduleOp,
@@ -88,6 +94,9 @@ public:
                         bool printBeforeAllTargetPayload,
                         bool printAfterTargetCompileFailure);
 
+  void enableTiming(mlir::TimingScope &timingScope);
+  void disableTiming();
+
 protected:
   bool getPrintBeforeAllTargetPasses() { return printBeforeAllTargetPasses; }
   bool getPrintAfterAllTargetPasses() { return printAfterAllTargetPasses; }
@@ -97,8 +106,12 @@ protected:
   }
 
   /// Thread-safe implementation
-  virtual void printIR(llvm::StringRef msg, mlir::Operation *op,
+  virtual void printIR(llvm::Twine msg, mlir::Operation *op,
                        llvm::raw_ostream &out);
+
+  /// @brief Get a nested timer instance from the root timer
+  /// @param name The name of the timing span
+  mlir::TimingScope getTimer(llvm::StringRef name);
 
 private:
   hal::TargetSystem &target;
@@ -108,6 +121,8 @@ private:
   bool printAfterAllTargetPasses = false;
   bool printBeforeAllTargetPayload = false;
   bool printAfterTargetCompileFailure = false;
+
+  mlir::TimingScope rootTimer;
 
 }; // class TargetCompilationManager
 

@@ -51,8 +51,12 @@ protected:
   };
 
 public:
-  virtual const std::string &getName() const { return name; }
+  virtual llvm::StringRef getName() const { return name; }
   virtual llvm::StringRef getDescription() const { return ""; }
+  /// @brief Get the Target resource directory sub-path for this target
+  /// which will be used for resolving external static resources at runtime
+  /// that are configured through the build system.
+  virtual llvm::StringRef getResourcePath() const { return getName(); }
   Target *getParent() { return parent; }
   const Target *getParent() const { return parent; }
 
@@ -129,7 +133,17 @@ public:
 
   virtual ~Target() = default;
 
+  /// @brief Enable timing from this point for the target and its methods
+  /// @param timingScope the root timer to nest timers from.
+  void enableTiming(mlir::TimingScope &timingScope);
+  /// @brief Disable(stop) ongoing timers
+  void disableTiming();
+
 protected:
+  /// @brief Get a nested timer instance from the root timer
+  /// @param name The name of the timing span
+  mlir::TimingScope getTimer(llvm::StringRef name);
+
   std::string name;
 
   // parent is already owned by unique_ptr
@@ -139,6 +153,9 @@ protected:
 
   /// @brief Children targets storage.
   std::vector<std::unique_ptr<Target>> children_;
+
+private:
+  mlir::TimingScope rootTimer;
 };
 
 class TargetSystem : public Target {

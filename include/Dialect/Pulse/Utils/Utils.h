@@ -25,6 +25,7 @@
 
 #include "llvm/ADT/StringRef.h"
 
+#include <deque>
 #include <vector>
 
 namespace mlir {
@@ -45,6 +46,26 @@ MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
 
   auto mixFrameOp = dyn_cast<mlir::pulse::MixFrameOp>(frameOp);
 
+  if (!mixFrameOp)
+    pulseOp->emitError() << "The target argument is not a MixFrameOp.";
+  return mixFrameOp;
+}
+
+template <typename PulseOpTy>
+MixFrameOp
+getMixFrameOp(PulseOpTy pulseOp,
+              std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack) {
+
+  auto targetIndex = 0;
+  auto target = pulseOp.getTarget();
+
+  for (auto it = callSequenceOpStack.rbegin(); it != callSequenceOpStack.rend();
+       ++it) {
+    targetIndex = target.template cast<BlockArgument>().getArgNumber();
+    target = it->getOperand(targetIndex);
+  }
+
+  auto mixFrameOp = dyn_cast<mlir::pulse::MixFrameOp>(target.getDefiningOp());
   if (!mixFrameOp)
     pulseOp->emitError() << "The target argument is not a MixFrameOp.";
   return mixFrameOp;
