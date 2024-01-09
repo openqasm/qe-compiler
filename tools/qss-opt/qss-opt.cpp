@@ -112,14 +112,16 @@ llvm::Error buildTarget_(qssc::config::QSSConfig &config) {
                                      "Error: Target " + *targetName +
                                          " is not registered.\n");
 
-    std::optional<llvm::StringRef> conf{};
+    llvm::StringRef configPath = "";
     if (targetConfigPath.has_value())
-      conf.emplace(*targetConfigPath);
+      configPath = *targetConfigPath;
     else
       // If the target exists we must have a configuration path.
       return llvm::createStringError(
           llvm::inconvertibleErrorCode(),
           "Error: A target configuration path was not specified.");
+
+    auto conf = std::make_pair(configPath, std::nullopt);
 
     // Passing nullptr for context here registers the created target
     // as the default value for when an unknown MLIRContext* is passed to

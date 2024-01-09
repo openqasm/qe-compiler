@@ -14,6 +14,7 @@
 
 #include "HAL/TargetSystemRegistry.h"
 
+#include "API/errors.h"
 #include "HAL/TargetSystem.h"
 #include "HAL/TargetSystemInfo.h"
 #include "Payload/Payload.h"
@@ -26,13 +27,14 @@
 
 #include <memory>
 #include <optional>
+#include <utility>
 
 using namespace qssc::hal::registry;
 
 namespace {
 class NullTarget : public qssc::hal::TargetSystem {
 public:
-  NullTarget() : TargetSystem("NullTarget", nullptr) {}
+  NullTarget() : TargetSystem("NullTarget", nullptr, std::nullopt) {}
 
   // Do nothing.
   llvm::Error addPasses(mlir::PassManager &pm) override {
@@ -51,9 +53,8 @@ TargetSystemInfo *TargetSystemRegistry::nullTargetSystemInfo() {
   static auto nullTarget = std::make_unique<TargetSystemInfo>(
       "NullTarget",
       "A no-op target used by default unless a real target is specified.",
-      [](std::optional<llvm::StringRef> config) {
-        return std::make_unique<NullTarget>();
-      },
+      [](std::optional<std::pair<llvm::StringRef, qssc::OptDiagnosticCallback>>
+             const &config) { return std::make_unique<NullTarget>(); },
       []() { return llvm::Error::success(); },
       []() { return llvm::Error::success(); });
   return nullTarget.get();

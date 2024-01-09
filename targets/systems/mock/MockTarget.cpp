@@ -16,6 +16,7 @@
 
 #include "MockTarget.h"
 
+#include "API/errors.h"
 #include "Conversion/QUIRToLLVM/QUIRToLLVM.h"
 #include "Conversion/QUIRToStandard/QUIRToStandard.h"
 #include "Dialect/QUIR/Transforms/BreakReset.h"
@@ -86,19 +87,22 @@ llvm::cl::OptionCategory
 } // anonymous namespace
 
 int qssc::targets::systems::mock::init() {
-  bool const registered =
-      registry::TargetSystemRegistry::registerPlugin<MockSystem>(
-          "mock", "Mock system for testing the targeting infrastructure.",
-          [](std::optional<llvm::StringRef> configurationPath)
-              -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
-            if (!configurationPath)
-              return llvm::createStringError(
-                  llvm::inconvertibleErrorCode(),
-                  "Configuration file must be specified.\n");
+  bool const registered = registry::TargetSystemRegistry::registerPlugin<
+      MockSystem>(
+      "mock", "Mock system for testing the targeting infrastructure.",
+      [](std::optional<std::pair<llvm::StringRef, qssc::OptDiagnosticCallback>>
+             configurationPathAndCallback)
+          -> llvm::Expected<std::unique_ptr<hal::TargetSystem>> {
+        if (!configurationPathAndCallback.has_value())
+          return llvm::createStringError(
+              llvm::inconvertibleErrorCode(),
+              "Configuration file must be specified.\n");
 
-            auto config = std::make_unique<MockConfig>(*configurationPath);
-            return std::make_unique<MockSystem>(std::move(config));
-          });
+        auto configurationPath =
+            std::get<0>(configurationPathAndCallback.value());
+        auto config = std::make_unique<MockConfig>(configurationPath);
+        return std::make_unique<MockSystem>(std::move(config));
+      });
   return registered ? 0 : -1;
 }
 
@@ -160,7 +164,8 @@ MockConfig::MockConfig(llvm::StringRef configurationPath)
 } // MockConfig
 
 MockSystem::MockSystem(std::unique_ptr<MockConfig> config)
-    : TargetSystem("MockSystem", nullptr), mockConfig(std::move(config)) {
+    : TargetSystem("MockSystem", nullptr, std::nullopt),
+      mockConfig(std::move(config)) {
   // Create controller target
   addChild(
       std::make_unique<MockController>("MockController", this, *mockConfig));

@@ -146,7 +146,8 @@ void showPayloads_() {
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
 llvm::Expected<qssc::hal::TargetSystem &>
-buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
+buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config,
+             const qssc::OptDiagnosticCallback &onDiagnostic) {
   const auto &targetName = config.getTargetName();
   const auto &targetConfigPath = config.getTargetConfigPath();
 
@@ -168,9 +169,8 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config) {
            .value_or(qssc::hal::registry::TargetSystemRegistry::
                          nullTargetSystemInfo());
 
-  std::optional<llvm::StringRef> conf{};
-  if (targetConfigPath.has_value())
-    conf.emplace(*targetConfigPath);
+  std::optional<std::pair<llvm::StringRef, qssc::OptDiagnosticCallback>> conf;
+  conf.emplace(targetConfigPath.value_or(""), onDiagnostic);
 
   auto created = targetInfo.createTarget(context, conf);
   if (auto err = created.takeError()) {
@@ -432,7 +432,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   }
 
   // Build the target for compilation
-  auto targetResult = buildTarget_(&context, config);
+  auto targetResult = buildTarget_(&context, config, diagnosticCb);
   if (auto err = targetResult.takeError())
     return err;
   auto &target = targetResult.get();
@@ -688,7 +688,10 @@ _bindArguments(std::string_view target, std::string_view configPath,
            .value_or(qssc::hal::registry::TargetSystemRegistry::
                          nullTargetSystemInfo());
 
-  auto created = targetInfo.createTarget(&context, llvm::StringRef(configPath));
+  std::optional<std::pair<llvm::StringRef, qssc::OptDiagnosticCallback>> conf;
+  conf.emplace(configPath, onDiagnostic);
+
+  auto created = targetInfo.createTarget(&context, conf);
   if (auto err = created.takeError()) {
     return llvm::joinErrors(
         llvm::createStringError(llvm::inconvertibleErrorCode(),

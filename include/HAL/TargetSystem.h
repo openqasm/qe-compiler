@@ -143,10 +143,12 @@ protected:
 
 class TargetSystem : public Target {
 public:
-  using PluginConfiguration = llvm::StringRef;
+  using PluginConfiguration =
+      std::pair<llvm::StringRef, qssc::OptDiagnosticCallback>;
 
 protected: // Can only create subclasses.
-  TargetSystem(std::string name, Target *parent);
+  TargetSystem(std::string name, Target *parent,
+               qssc::OptDiagnosticCallback onDiagnostic);
 
 public:
   /// @brief Get the module for this system. Currently the default
@@ -169,6 +171,7 @@ public:
 
   virtual ~TargetSystem() = default;
 
+  qssc::OptDiagnosticCallback onDiagnostic_;
 }; // class TargetSystem
 
 class TargetInstrument : public Target {

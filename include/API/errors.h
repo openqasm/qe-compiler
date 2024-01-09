@@ -69,11 +69,12 @@ public:
 };
 
 using DiagnosticCallback = std::function<void(const Diagnostic &)>;
+using OptDiagnosticCallback = std::optional<DiagnosticCallback>;
 
-llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
+llvm::Error emitDiagnostic(OptDiagnosticCallback onDiagnostic,
                            const Diagnostic &diag,
                            std::error_code ec = llvm::inconvertibleErrorCode());
-llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
+llvm::Error emitDiagnostic(OptDiagnosticCallback onDiagnostic,
                            Severity severity, ErrorCategory category,
                            std::string message,
                            std::error_code ec = llvm::inconvertibleErrorCode());

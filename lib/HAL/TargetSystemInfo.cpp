@@ -55,7 +55,7 @@ TargetSystemInfo::~TargetSystemInfo() = default;
 llvm::Expected<qssc::hal::TargetSystem *> TargetSystemInfo::createTarget(
     mlir::MLIRContext *context,
     std::optional<PluginInfo::PluginConfiguration> configuration) {
-  auto target = PluginInfo::createPluginInstance(configuration);
+  auto target = PluginInfo::createPluginInstance(std::move(configuration));
   if (!target)
     return target.takeError();
   impl->managedTargets[context] = std::move(target.get());

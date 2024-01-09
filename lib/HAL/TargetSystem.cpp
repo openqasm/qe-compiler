@@ -16,6 +16,7 @@
 
 #include "HAL/TargetSystem.h"
 
+#include "API/errors.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
@@ -38,8 +39,10 @@ llvm::Error Target::emitToPayloadPostChildren(mlir::ModuleOp targetModuleOp,
   return llvm::Error::success();
 }
 
-TargetSystem::TargetSystem(std::string name, Target *parent)
-    : Target(std::move(name), parent) {}
+TargetSystem::TargetSystem(std::string name, Target *parent,
+                           qssc::OptDiagnosticCallback onDiagnostic_)
+    : onDiagnostic_(std::move(onDiagnostic_)), Target(std::move(name), parent) {
+}
 
 llvm::Expected<mlir::ModuleOp>
 TargetSystem::getModule(mlir::ModuleOp parentModuleOp) {
