@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    An error was added for possible emission for jobs/sequences that are too
+    long.
