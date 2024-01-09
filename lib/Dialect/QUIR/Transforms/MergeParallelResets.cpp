@@ -104,9 +104,8 @@ void MergeResetsLexicographicPass::runOnOperation() {
   mlir::RewritePatternSet patterns(&getContext());
   mlir::GreedyRewriteConfig config;
 
-  // use cheaper top-down traversal (in this case, bottom-up would not behave
-  // any differently)
-  config.useTopDownTraversal = true;
+  // Bottom up traversal is 3x as fast
+  config.useTopDownTraversal = false;
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
@@ -214,9 +213,8 @@ void MergeResetsTopologicalPass::runOnOperation() {
   mlir::RewritePatternSet patterns(&getContext());
   mlir::GreedyRewriteConfig config;
 
-  // use cheaper top-down traversal (in this case, bottom-up would not behave
-  // any differently)
-  config.useTopDownTraversal = true;
+  // Bottom up traversal is 3x as fast
+  config.useTopDownTraversal = false;
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
