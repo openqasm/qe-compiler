@@ -36,6 +36,9 @@ namespace mlir::pulse {
 
 Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
                                 CallSequenceOp callSequenceOp);
+Waveform_CreateOp
+getWaveformOp(PlayOp pulsePlayOp,
+              std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack);
 
 template <typename PulseOpTy>
 MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {

@@ -35,4 +35,23 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
   return wfrOp;
 }
 
+Waveform_CreateOp
+getWaveformOp(PlayOp pulsePlayOp,
+              std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack) {
+  auto wfrIndex = 0;
+  mlir::Value wfrOp = pulsePlayOp.getWfr();
+
+  for (auto it = callSequenceOpStack.rbegin(); it != callSequenceOpStack.rend();
+       ++it) {
+    wfrIndex = wfrOp.dyn_cast<BlockArgument>().getArgNumber();
+    wfrOp = it->getOperand(wfrIndex);
+  }
+
+  auto waveformOp =
+      dyn_cast<mlir::pulse::Waveform_CreateOp>(wfrOp.getDefiningOp());
+  if (!waveformOp)
+    pulsePlayOp->emitError() << "The wfr argument is not a Waveform_CreateOp.";
+  return waveformOp;
+}
+
 } // end namespace mlir::pulse
