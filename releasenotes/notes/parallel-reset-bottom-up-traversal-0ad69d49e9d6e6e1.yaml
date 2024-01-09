@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Parallel reset merging passes have been switched to a bottom up traversal
+    as this is roughly 3x faster.
