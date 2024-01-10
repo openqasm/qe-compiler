@@ -81,3 +81,7 @@ llvm::StringRef LabelPlayOpDurationsPass::getArgument() const {
 llvm::StringRef LabelPlayOpDurationsPass::getDescription() const {
   return "Label PlayOps with duration attributes";
 }
+
+llvm::StringRef LabelPlayOpDurationsPass::getName() const {
+  return "Label PlayOp Durations Pass";
+}
