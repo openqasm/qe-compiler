@@ -54,7 +54,7 @@ mlir::TimingScope Target::getTimer(llvm::StringRef name) {
 
 TargetSystem::TargetSystem(std::string name, Target *parent,
                            qssc::OptDiagnosticCallback onDiagnostic_)
-    : onDiagnostic_(std::move(onDiagnostic_)), Target(std::move(name), parent) {
+    : Target(std::move(name), parent), onDiagnostic_(std::move(onDiagnostic_)) {
 }
 
 llvm::Expected<mlir::ModuleOp>
