@@ -354,4 +354,8 @@ llvm::StringRef VariableEliminationPass::getDescription() const {
   return "Replace QUIR variables by memref and simplify with store-forwarding.";
 }
 
+llvm::StringRef VariableEliminationPass::getName() const {
+  return "Variable Elimination Pass (" + getArgument().str() + ")";
+}
+
 } // namespace mlir::quir

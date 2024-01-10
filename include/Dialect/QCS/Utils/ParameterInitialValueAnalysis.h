@@ -59,6 +59,7 @@ struct ParameterInitialValueAnalysisPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct ParameterInitialValueAnalysisPass
 
 // TODO: move registerQCSPasses to separate header if additional passes

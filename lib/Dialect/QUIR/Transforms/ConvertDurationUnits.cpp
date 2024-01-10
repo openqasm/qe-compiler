@@ -358,3 +358,7 @@ llvm::StringRef ConvertDurationUnitsPass::getDescription() const {
   return "Convert the units of all duration types within the module to the "
          "specified units.";
 }
+
+llvm::StringRef ConvertDurationUnitsPass::getName() const {
+  return "Convert Duration Units Pass (" + getArgument().str() + ")";
+}

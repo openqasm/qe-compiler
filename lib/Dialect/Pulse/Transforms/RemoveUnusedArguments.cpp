@@ -155,3 +155,7 @@ llvm::StringRef RemoveUnusedArgumentsPass::getArgument() const {
 llvm::StringRef RemoveUnusedArgumentsPass::getDescription() const {
   return "Remove sequence arguments that are unused by physical channel";
 }
+
+llvm::StringRef RemoveUnusedArgumentsPass::getName() const {
+  return "Remove Unused Argument Pass (" + getArgument().str() + ")";
+}

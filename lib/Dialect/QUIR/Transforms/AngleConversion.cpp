@@ -116,3 +116,7 @@ llvm::StringRef QUIRAngleConversionPass::getDescription() const {
   return "Convert the angle types in CallGateOp "
          "based on the corresponding mlir::func::FuncOp args";
 }
+
+llvm::StringRef QUIRAngleConversionPass::getName() const {
+  return "QUIR Angle Conversion Pass (" + getArgument().str() + ")";
+}

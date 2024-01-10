@@ -258,3 +258,7 @@ llvm::StringRef LimitCBitWidthPass::getArgument() const {
 llvm::StringRef LimitCBitWidthPass::getDescription() const {
   return "Limit classical bit register width";
 }
+
+llvm::StringRef LimitCBitWidthPass::getName() const {
+  return "Limit CBit Width Pass (" + getArgument().str() + ")";
+}

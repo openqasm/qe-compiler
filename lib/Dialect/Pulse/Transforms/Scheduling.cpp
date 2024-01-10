@@ -213,3 +213,7 @@ llvm::StringRef QuantumCircuitPulseSchedulingPass::getArgument() const {
 llvm::StringRef QuantumCircuitPulseSchedulingPass::getDescription() const {
   return "Scheduling a quantum circuit at pulse level.";
 }
+
+llvm::StringRef QuantumCircuitPulseSchedulingPass::getName() const {
+  return "Quantum Circuit Pulse Scheduling Pass (" + getArgument().str() + ")";
+}

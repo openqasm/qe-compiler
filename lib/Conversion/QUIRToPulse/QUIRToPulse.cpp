@@ -700,3 +700,7 @@ llvm::StringRef QUIRToPulsePass::getArgument() const { return "quir-to-pulse"; }
 llvm::StringRef QUIRToPulsePass::getDescription() const {
   return "Convert quir circuit to pulse sequence.";
 }
+
+llvm::StringRef QUIRToPulsePass::getName() const {
+  return "QUIR to Pulse Pass (" + getArgument().str() + ")";
+}

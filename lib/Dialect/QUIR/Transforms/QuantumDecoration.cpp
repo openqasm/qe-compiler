@@ -175,3 +175,7 @@ llvm::StringRef QuantumDecorationPass::getDescription() const {
   return "Detect and add attributes to ops describing which "
          "qubits are involved within those ops";
 }
+
+llvm::StringRef QuantumDecorationPass::getName() const {
+  return "Quantum Decoration Pass (" + getArgument().str() + ")";
+}

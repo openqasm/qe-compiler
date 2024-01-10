@@ -52,6 +52,7 @@ struct BreakResetPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct BreakResetPass
 } // namespace mlir::quir
 
