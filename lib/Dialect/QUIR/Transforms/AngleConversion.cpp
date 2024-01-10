@@ -118,5 +118,5 @@ llvm::StringRef QUIRAngleConversionPass::getDescription() const {
 }
 
 llvm::StringRef QUIRAngleConversionPass::getName() const {
-  return "QUIR Angle Conversion Pass (" + getArgument().str() + ")";
+  return "QUIR Angle Conversion Pass";
 }

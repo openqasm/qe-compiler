@@ -124,5 +124,5 @@ llvm::StringRef MergeDelayPass::getDescription() const {
 }
 
 llvm::StringRef MergeDelayPass::getName() const {
-  return "Merge Delay Pass (" + getArgument().str() + ")";
+  return "Merge Delay Pass";
 }

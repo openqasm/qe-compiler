@@ -702,5 +702,5 @@ llvm::StringRef QUIRToPulsePass::getDescription() const {
 }
 
 llvm::StringRef QUIRToPulsePass::getName() const {
-  return "QUIR to Pulse Pass (" + getArgument().str() + ")";
+  return "QUIR to Pulse Pass";
 }

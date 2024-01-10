@@ -431,5 +431,5 @@ llvm::StringRef MergeCircuitsPass::getDescription() const {
 }
 
 llvm::StringRef MergeCircuitsPass::getName() const {
-  return "Merge Circuits Pass (" + getArgument().str() + ")";
+  return "Merge Circuits Pass";
 }

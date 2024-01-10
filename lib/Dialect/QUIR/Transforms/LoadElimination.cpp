@@ -128,7 +128,7 @@ llvm::StringRef LoadEliminationPass::getDescription() const {
 }
 
 llvm::StringRef LoadEliminationPass::getName() const {
-  return "Load Elimination Pass (" + getArgument().str() + ")";
+  return "Load Elimination Pass";
 }
 
 } // namespace mlir::quir

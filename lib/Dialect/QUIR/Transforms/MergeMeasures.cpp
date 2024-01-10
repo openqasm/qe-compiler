@@ -141,7 +141,7 @@ llvm::StringRef MergeMeasuresLexographicalPass::getDescription() const {
 }
 
 llvm::StringRef MergeMeasuresLexographicalPass::getName() const {
-  return "Merge Measures Lexographical Pass (" + getArgument().str() + ")";
+  return "Merge Measures Lexographical Pass";
 }
 
 namespace {
@@ -215,5 +215,5 @@ llvm::StringRef MergeMeasuresTopologicalPass::getDescription() const {
 }
 
 llvm::StringRef MergeMeasuresTopologicalPass::getName() const {
-  return "Merge Measures Topological Pass (" + getArgument().str() + ")";
+  return "Merge Measures Topological Pass";
 }

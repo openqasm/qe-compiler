@@ -666,5 +666,5 @@ llvm::StringRef LoadPulseCalsPass::getDescription() const {
 }
 
 llvm::StringRef LoadPulseCalsPass::getName() const {
-  return "Load Pulse Calibrations Pass (" + getArgument().str() + ")";
+  return "Load Pulse Calibrations Pass";
 }

@@ -917,5 +917,5 @@ llvm::StringRef MockQubitLocalizationPass::getDescription() const {
 }
 
 llvm::StringRef MockQubitLocalizationPass::getName() const {
-  return "Mock Qubit Localization Pass (" + getArgument().str() + ")";
+  return "Mock Qubit Localization Pass";
 }

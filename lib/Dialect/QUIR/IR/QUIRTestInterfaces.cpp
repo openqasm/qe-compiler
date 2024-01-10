@@ -65,5 +65,5 @@ llvm::StringRef TestQubitOpInterfacePass::getDescription() const {
 }
 
 llvm::StringRef TestQubitOpInterfacePass::getName() const {
-  return "Test Qubit Op Interface Pass (" + getArgument().str() + ")";
+  return "Test Qubit Op Interface Pass";
 }

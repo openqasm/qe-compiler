@@ -228,5 +228,5 @@ llvm::StringRef SubroutineCloningPass::getDescription() const {
 }
 
 llvm::StringRef SubroutineCloningPass::getName() const {
-  return "Subroutine Cloning Pass (" + getArgument().str() + ")";
+  return "Subroutine Cloning Pass";
 }

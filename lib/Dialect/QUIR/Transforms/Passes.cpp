@@ -209,7 +209,7 @@ llvm::StringRef ClassicalOnlyDetectionPass::getDescription() const {
 }
 
 llvm::StringRef ClassicalOnlyDetectionPass::getName() const {
-  return "Classical Only Detection Pass (" + getArgument().str() + ")";
+  return "Classical Only Detection Pass";
 }
 
 /////////////// End ClassicalOnlyDetectionPass functions ///////////////////

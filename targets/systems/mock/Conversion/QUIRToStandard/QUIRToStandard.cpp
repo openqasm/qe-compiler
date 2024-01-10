@@ -285,7 +285,7 @@ llvm::StringRef MockQUIRToStdPass::getDescription() const {
 }
 
 llvm::StringRef MockQUIRToStdPass::getName() const {
-  return "Mock QUIR to Std Pass (" + getArgument().str() + ")";
+  return "Mock QUIR to Std Pass";
 }
 
 } // namespace qssc::targets::systems::mock::conversion

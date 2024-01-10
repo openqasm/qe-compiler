@@ -229,7 +229,7 @@ llvm::StringRef QUIRCircuitAnalysisPass::getDescription() const {
 }
 
 llvm::StringRef QUIRCircuitAnalysisPass::getName() const {
-  return "QUIR Circuit Analysis Pass (" + getArgument().str() + ")";
+  return "QUIR Circuit Analysis Pass";
 }
 
 } // namespace mlir::quir

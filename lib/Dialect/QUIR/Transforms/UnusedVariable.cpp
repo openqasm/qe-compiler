@@ -101,5 +101,5 @@ llvm::StringRef UnusedVariablePass::getDescription() const {
 }
 
 llvm::StringRef UnusedVariablePass::getName() const {
-  return "Unused Variable Pass (" + getArgument().str() + ")";
+  return "Unused Variable Pass";
 }

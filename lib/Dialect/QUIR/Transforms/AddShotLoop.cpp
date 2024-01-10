@@ -114,5 +114,5 @@ llvm::StringRef AddShotLoopPass::getDescription() const {
 }
 
 llvm::StringRef AddShotLoopPass::getName() const {
-  return "Add Shot Loop Pass (" + getArgument().str() + ")";
+  return "Add Shot Loop Pass";
 }

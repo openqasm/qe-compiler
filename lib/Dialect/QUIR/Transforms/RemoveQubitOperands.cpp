@@ -165,5 +165,5 @@ llvm::StringRef RemoveQubitOperandsPass::getDescription() const {
 }
 
 llvm::StringRef RemoveQubitOperandsPass::getName() const {
-  return "Remove Qubit Operands Pass (" + getArgument().str() + ")";
+  return "Remove Qubit Operands Pass";
 }

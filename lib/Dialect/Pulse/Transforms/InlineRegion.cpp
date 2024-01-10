@@ -96,7 +96,7 @@ llvm::StringRef InlineRegionPass::getDescription() const {
 }
 
 llvm::StringRef InlineRegionPass::getName() const {
-  return "Inline Region Pass (" + getArgument().str() + ")";
+  return "Inline Region Pass";
 }
 
 } // namespace mlir::pulse

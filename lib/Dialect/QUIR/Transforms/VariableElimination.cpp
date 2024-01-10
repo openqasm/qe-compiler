@@ -355,7 +355,7 @@ llvm::StringRef VariableEliminationPass::getDescription() const {
 }
 
 llvm::StringRef VariableEliminationPass::getName() const {
-  return "Variable Elimination Pass (" + getArgument().str() + ")";
+  return "Variable Elimination Pass";
 }
 
 } // namespace mlir::quir

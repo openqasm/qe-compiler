@@ -345,5 +345,5 @@ llvm::StringRef SchedulePortPass::getDescription() const {
 }
 
 llvm::StringRef SchedulePortPass::getName() const {
-  return "Schedule Port Pass (" + getArgument().str() + ")";
+  return "Schedule Port Pass";
 }

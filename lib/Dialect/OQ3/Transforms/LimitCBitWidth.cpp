@@ -260,5 +260,5 @@ llvm::StringRef LimitCBitWidthPass::getDescription() const {
 }
 
 llvm::StringRef LimitCBitWidthPass::getName() const {
-  return "Limit CBit Width Pass (" + getArgument().str() + ")";
+  return "Limit CBit Width Pass";
 }

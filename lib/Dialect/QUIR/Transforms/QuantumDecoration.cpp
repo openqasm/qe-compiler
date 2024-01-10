@@ -177,5 +177,5 @@ llvm::StringRef QuantumDecorationPass::getDescription() const {
 }
 
 llvm::StringRef QuantumDecorationPass::getName() const {
-  return "Quantum Decoration Pass (" + getArgument().str() + ")";
+  return "Quantum Decoration Pass";
 }

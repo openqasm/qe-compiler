@@ -237,5 +237,5 @@ llvm::StringRef ReorderMeasurementsPass::getDescription() const {
 }
 
 llvm::StringRef ReorderMeasurementsPass::getName() const {
-  return "Reorder Measurement Pass (" + getArgument().str() + ")";
+  return "Reorder Measurement Pass";
 }

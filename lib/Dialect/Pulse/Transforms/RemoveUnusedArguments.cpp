@@ -157,5 +157,5 @@ llvm::StringRef RemoveUnusedArgumentsPass::getDescription() const {
 }
 
 llvm::StringRef RemoveUnusedArgumentsPass::getName() const {
-  return "Remove Unused Argument Pass (" + getArgument().str() + ")";
+  return "Remove Unused Argument Pass";
 }

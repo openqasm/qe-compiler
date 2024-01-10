@@ -125,7 +125,7 @@ llvm::StringRef MergeResetsLexicographicPass::getDescription() const {
 }
 
 llvm::StringRef MergeResetsLexicographicPass::getName() const {
-  return "Merge Resets Lexicographical Pass (" + getArgument().str() + ")";
+  return "Merge Resets Lexicographical Pass";
 }
 
 namespace {
@@ -238,5 +238,5 @@ llvm::StringRef MergeResetsTopologicalPass::getDescription() const {
 }
 
 llvm::StringRef MergeResetsTopologicalPass::getName() const {
-  return "Merge Resets Topological Pass (" + getArgument().str() + ")";
+  return "Merge Resets Topological Pass";
 }

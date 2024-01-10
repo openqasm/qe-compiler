@@ -186,5 +186,5 @@ llvm::StringRef FunctionArgumentSpecializationPass::getDescription() const {
 }
 
 llvm::StringRef FunctionArgumentSpecializationPass::getName() const {
-  return "Function Argument Specialization Pass (" + getArgument().str() + ")";
+  return "Function Argument Specialization Pass";
 }

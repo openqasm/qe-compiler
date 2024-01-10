@@ -117,5 +117,5 @@ llvm::StringRef ReorderCircuitsPass::getDescription() const {
 }
 
 llvm::StringRef ReorderCircuitsPass::getName() const {
-  return "Reorder Circuits Pass (" + getArgument().str() + ")";
+  return "Reorder Circuits Pass";
 }

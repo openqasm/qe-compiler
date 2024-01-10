@@ -215,5 +215,5 @@ llvm::StringRef QuantumCircuitPulseSchedulingPass::getDescription() const {
 }
 
 llvm::StringRef QuantumCircuitPulseSchedulingPass::getName() const {
-  return "Quantum Circuit Pulse Scheduling Pass (" + getArgument().str() + ")";
+  return "Quantum Circuit Pulse Scheduling Pass";
 }

@@ -144,5 +144,5 @@ llvm::StringRef BreakResetPass::getDescription() const {
 }
 
 llvm::StringRef BreakResetPass::getName() const {
-  return "Break Reset Pass (" + getArgument().str() + ")";
+  return "Break Reset Pass";
 }
