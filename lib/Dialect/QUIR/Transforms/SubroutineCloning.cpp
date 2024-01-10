@@ -226,3 +226,7 @@ llvm::StringRef SubroutineCloningPass::getDescription() const {
          "the qubit arguments of the cloned def are decorated with attributes "
          "listing the id that the qubit should have";
 }
+
+llvm::StringRef SubroutineCloningPass::getName() const {
+  return "Subroutine Cloning Pass";
+}

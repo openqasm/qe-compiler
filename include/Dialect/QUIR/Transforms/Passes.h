@@ -53,6 +53,7 @@ struct ClassicalOnlyDetectionPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // end struct ClassicalOnlyDetectionPass
 
 } // namespace mlir::quir

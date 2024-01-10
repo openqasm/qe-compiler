@@ -36,6 +36,7 @@ struct QUIRAngleConversionPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
 private:
   std::unordered_map<std::string, mlir::func::FuncOp> functionOps;

@@ -34,6 +34,7 @@ struct MergeMeasuresLexographicalPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct MergeMeasuresLexographicalPass
 
 /// @brief Merge together measures in a circuit that are topologically
@@ -44,6 +45,7 @@ struct MergeMeasuresTopologicalPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct MergeMeasuresTopologicalPass
 
 } // namespace mlir::quir

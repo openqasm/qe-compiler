@@ -915,3 +915,7 @@ llvm::StringRef MockQubitLocalizationPass::getArgument() const {
 llvm::StringRef MockQubitLocalizationPass::getDescription() const {
   return "Create modules for Mock code blocks.";
 }
+
+llvm::StringRef MockQubitLocalizationPass::getName() const {
+  return "Mock Qubit Localization Pass";
+}

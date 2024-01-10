@@ -70,6 +70,7 @@ struct QUIRCircuitAnalysisPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // QUIRCircuitAnalysisPass
 
 llvm::Expected<double>

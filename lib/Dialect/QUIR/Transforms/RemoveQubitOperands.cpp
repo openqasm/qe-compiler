@@ -163,3 +163,7 @@ llvm::StringRef RemoveQubitOperandsPass::getDescription() const {
   return "Remove qubit arguments from subroutine defs and calls, replacing "
          "them with qubit declarations inside the subroutine body";
 }
+
+llvm::StringRef RemoveQubitOperandsPass::getName() const {
+  return "Remove Qubit Operands Pass";
+}

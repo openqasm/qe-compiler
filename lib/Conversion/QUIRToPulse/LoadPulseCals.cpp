@@ -664,3 +664,7 @@ llvm::StringRef LoadPulseCalsPass::getArgument() const {
 llvm::StringRef LoadPulseCalsPass::getDescription() const {
   return "Load the pulse calibrations, and add them to module";
 }
+
+llvm::StringRef LoadPulseCalsPass::getName() const {
+  return "Load Pulse Calibrations Pass";
+}

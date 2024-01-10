@@ -106,6 +106,7 @@ struct MockQubitLocalizationPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct MockQubitLocalizationPass
 
 } // namespace qssc::targets::systems::mock

@@ -43,6 +43,7 @@ struct MockQUIRToStdPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 };
 } // namespace qssc::targets::systems::mock::conversion
 
