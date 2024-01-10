@@ -15,7 +15,7 @@
 // CHECK: define i32 @main() {
 // CHECK:  ret i32 0
 // CHECK: }
-module @controller attributes {quir.nodeId = 1000 : i32, quir.nodeType = "controller"}  {
+module @controller attributes {quir.nodeId = 1000 : ui32, quir.nodeType = "controller"}  {
   func.func @main() -> i32 attributes {quir.classicalOnly = false} {
     %0 = quir.constant #quir.duration<1000.0> : !quir.duration<dt>
     %1 = qcs.recv {fromId = 0 : index} : i1
