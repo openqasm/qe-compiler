@@ -1,5 +1,5 @@
 ---
 other:
   - |
-    Add LabelPlayOpsDurationPass to add a pulse.duration label to pulse.play 
-    operations based on the duration of the waveform being played. 
+    Add LabelPlayOpsDurationPass to add a pulse.duration label to pulse.play
+    operations based on the duration of the waveform being played.
