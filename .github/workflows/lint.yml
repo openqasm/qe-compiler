@@ -56,42 +56,22 @@ jobs:
         run: |
           version=`python -c "from setuptools_scm import get_version; print(get_version())"`
           echo "QSSC_VERSION=$version" >> $GITHUB_ENV
+      - name: Prepare Conan
+        run: |
+          conan profile new default --detect || true
+          conan profile update settings.compiler.libcxx=libstdc++11 default
+          # Add QASM, LLVM, and clang tools recipes to Conan cache.
+          ./conan_deps.sh
+          conan lock create conanfile.py -pr:h default -pr:b default --build=outdated
       - name: Load Conan cache
         id: cache
         uses: actions/cache/restore@v3
         with:
           path: .conan
           key: conan-${{ runner.os }}
-          restore-keys: conan-${{ runner.os }}
-      - name: Create Conan default profile
-        run: |
-          conan profile new default --detect || true
-          conan profile update settings.compiler.libcxx=libstdc++11 default
-      - name: Add QASM, LLVM, and clang tools recipes to Conan cache.
-        run: ./conan_deps.sh
+          restore-keys: conan-${{ runner.os }}-${{ hashFiles('conan.lock') }}
       - name: Create build dir
         run: mkdir build
-      # Check if all conan packages are within the cache. If not
-      # we will need to build packages (and if on main flush the cache)
-      - name : Check Conan dependencies are cached
-        id: check_conan_cache
-        working-directory: build
-        run: |
-          export CONAN_LLVM_GIT_CACHE="${{ runner.temp }}/llvm-project"
-          conan info .. -pr:h default -pr:b default --build=outdated --json build_requires.json
-          build_requires=$(cat build_requires.json)
-          if [[ "$build_requires" == *"[]"* ]];
-          then
-              all_in_cache=true
-          else
-              all_in_cache=false
-          fi
-          echo "all_in_cache=$all_in_cache" >> $GITHUB_OUTPUT
-          echo "Conan build requires: $build_requires"
-          echo "Conan cache is complete: $all_in_cache"
-      # If we have a cache miss on 'main', clear the cache.
-      # A dependency was updated, so we need to drop the old one
-      # to prevent unbounded cache growth over time.
       - name: Conan install
         id: conan_install
         working-directory: build
