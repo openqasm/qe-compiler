@@ -54,4 +54,25 @@ getWaveformOp(PlayOp pulsePlayOp,
   return waveformOp;
 }
 
+double
+getPhaseValue(ShiftPhaseOp shiftPhaseOp,
+              std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack) {
+  auto phaseOffsetIndex = 0;
+  mlir::Value phaseOffset = shiftPhaseOp.getPhaseOffset();
+
+  for (auto it = callSequenceOpStack.rbegin(); it != callSequenceOpStack.rend();
+       ++it) {
+    if (phaseOffset.isa<BlockArgument>()) {
+      phaseOffsetIndex = phaseOffset.dyn_cast<BlockArgument>().getArgNumber();
+      phaseOffset = it->getOperand(phaseOffsetIndex);
+    } else
+      break;
+  }
+
+  auto phaseOffsetOp =
+      dyn_cast<mlir::arith::ConstantFloatOp>(phaseOffset.getDefiningOp());
+  assert(phaseOffsetOp && "phase offset is not a ConstantFloatOp");
+  return phaseOffsetOp.value().convertToDouble();
+}
+
 } // end namespace mlir::pulse
