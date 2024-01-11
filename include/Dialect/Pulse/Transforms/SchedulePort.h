@@ -45,6 +45,7 @@ public:
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
 private:
   using mixedFrameMap_t = std::map<uint32_t, std::vector<Operation *>>;

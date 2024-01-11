@@ -184,3 +184,7 @@ llvm::StringRef FunctionArgumentSpecializationPass::getDescription() const {
          "cloned, the call is updated to match the cloned def, and the "
          "original function def is left unchanged";
 }
+
+llvm::StringRef FunctionArgumentSpecializationPass::getName() const {
+  return "Function Argument Specialization Pass";
+}

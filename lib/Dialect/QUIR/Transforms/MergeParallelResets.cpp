@@ -124,6 +124,10 @@ llvm::StringRef MergeResetsLexicographicPass::getDescription() const {
          "single operation lexicographically.";
 }
 
+llvm::StringRef MergeResetsLexicographicPass::getName() const {
+  return "Merge Resets Lexicographical Pass";
+}
+
 namespace {
 // This pattern merges qubit reset operations that can be parallelized into a
 // single reset op topologically.
@@ -231,4 +235,8 @@ llvm::StringRef MergeResetsTopologicalPass::getArgument() const {
 llvm::StringRef MergeResetsTopologicalPass::getDescription() const {
   return "Merge qubit reset ops that can be parallelized into a "
          "single operation topologically.";
+}
+
+llvm::StringRef MergeResetsTopologicalPass::getName() const {
+  return "Merge Resets Topological Pass";
 }
