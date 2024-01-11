@@ -35,7 +35,7 @@ enum QSSVerbosity {
   _VerbosityCnt = 4
 };
 
-enum class EmitAction { None, AST, ASTPretty, MLIR, WaveMem, QEM, QEQEM };
+enum class EmitAction { None, AST, ASTPretty, MLIR, Bytecode, WaveMem, QEM, QEQEM };
 
 enum class FileExtension {
   None,
@@ -43,18 +43,21 @@ enum class FileExtension {
   ASTPretty,
   QASM,
   MLIR,
+  Bytecode,
   WaveMem,
   QEM,
   QEQEM
 };
 
-enum class InputType { None, QASM, MLIR };
+enum class InputType { None, QASM, MLIR, Bytecode};
 
 std::string to_string(const EmitAction &inExt);
 
 std::string to_string(const FileExtension &inExt);
 
 std::string to_string(const InputType &inType);
+
+FileExtension inputTypeToFileExtension(const InputType &inputType);
 
 InputType fileExtensionToInputType(const FileExtension &inExt);
 

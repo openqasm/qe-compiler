@@ -81,7 +81,7 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
      << "\n";
   os << "dumpPassPipeline: " << shouldDumpPassPipeline() << "\n";
   os << "emitBytecode: " << shouldEmitBytecode() << "\n";
-  os << "bytecodeEmitVersion: " << bytecodeVersionToEmit() << "\n";
+  os << "emitBytecodeVersion: " << bytecodeVersionToEmit() << "\n";
   os << "irdlFile: " << getIrdlFile() << "\n";
   os << "runReproducer: " << shouldRunReproducer() << "\n";
   os << "showDialects: " << shouldShowDialects() << "\n";
@@ -152,6 +152,9 @@ std::string qssc::config::to_string(const EmitAction &inAction) {
   case EmitAction::MLIR:
     return "mlir";
     break;
+  case EmitAction::Bytecode:
+    return "bytecode";
+    break;
   case EmitAction::WaveMem:
     return "wmem";
     break;
@@ -182,6 +185,9 @@ std::string qssc::config::to_string(const FileExtension &inExt) {
   case FileExtension::MLIR:
     return "mlir";
     break;
+  case FileExtension::Bytecode:
+    return "bc";
+    break;
   case FileExtension::WaveMem:
     return "wmem";
     break;
@@ -206,11 +212,31 @@ std::string qssc::config::to_string(const InputType &inputType) {
   case InputType::MLIR:
     return "mlir";
     break;
+  case InputType::Bytecode:
+    return "bytecode";
+    break;
   default:
     return "none";
     break;
   }
   return "none";
+}
+
+FileExtension qssc::config::inputTypeToFileExtension(const InputType &inputType) {
+  switch (inputType) {
+  case InputType::QASM:
+    return FileExtension::QASM;
+    break;
+  case InputType::MLIR:
+    return FileExtension::MLIR;
+    break;
+  case InputType::Bytecode:
+    return FileExtension::Bytecode;
+    break;
+  default:
+    break;
+  }
+  return FileExtension::None;
 }
 
 InputType qssc::config::fileExtensionToInputType(const FileExtension &inExt) {
@@ -220,6 +246,9 @@ InputType qssc::config::fileExtensionToInputType(const FileExtension &inExt) {
     break;
   case FileExtension::MLIR:
     return InputType::MLIR;
+    break;
+  case FileExtension::Bytecode:
+    return InputType::Bytecode;
     break;
   default:
     break;
@@ -237,6 +266,9 @@ EmitAction qssc::config::fileExtensionToAction(const FileExtension &inExt) {
     break;
   case FileExtension::MLIR:
     return EmitAction::MLIR;
+    break;
+  case FileExtension::Bytecode:
+    return EmitAction::Bytecode;
     break;
   case FileExtension::WaveMem:
     return EmitAction::WaveMem;
@@ -262,6 +294,8 @@ FileExtension qssc::config::strToFileExtension(const llvm::StringRef extStr) {
     return FileExtension::QASM;
   if (extStr == "mlir" || extStr == "MLIR")
     return FileExtension::MLIR;
+  if (extStr == "bytecode" || extStr == "bc")
+    return FileExtension::Bytecode;
   if (extStr == "wmem" || extStr == "WMEM")
     return FileExtension::WaveMem;
   if (extStr == "qem" || extStr == "QEM")

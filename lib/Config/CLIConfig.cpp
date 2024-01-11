@@ -206,11 +206,6 @@ struct QSSConfigCLOptions : public QSSConfig {
         llvm::cl::location(dumpPassPipelineFlag), llvm::cl::init(false),
         llvm::cl::cat(getQSSOptCLCategory()));
 
-    static llvm::cl::opt<bool, /*ExternalStorage=*/true> const emitBytecode(
-        "emit-bytecode", llvm::cl::desc("Emit bytecode when generating output"),
-        llvm::cl::location(emitBytecodeFlag), llvm::cl::init(false),
-        llvm::cl::cat(getQSSOptCLCategory()));
-
     static llvm::cl::opt<std::optional<int64_t>, /*ExternalStorage=*/true,
                          BytecodeVersionParser> const
         bytecodeVersion(
@@ -349,7 +344,11 @@ struct QSSConfigCLOptions : public QSSConfig {
                                        "The input source format must be "
                                        "specified with -X for direct input.");
 
-      setInputType(fileExtensionToInputType(getExtension(getInputSource())));
+      // Override with mlir opt config if set (it typically shouldn't be)
+      if (shouldEmitBytecode())
+        setInputType(InputType::Bytecode);
+      else
+        setInputType(fileExtensionToInputType(getExtension(getInputSource())));
       if (getInputSource() != "-" && getInputType() == InputType::None) {
         return llvm::createStringError(
             llvm::inconvertibleErrorCode(),
@@ -452,7 +451,8 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   config.allowUnregisteredDialectsFlag =
       clOptionsConfig->allowUnregisteredDialectsFlag;
   config.dumpPassPipelineFlag = clOptionsConfig->dumpPassPipelineFlag;
-  config.emitBytecodeFlag = clOptionsConfig->emitBytecodeFlag;
+  if (clOptionsConfig->emitBytecodeVersion.has_value())
+    config.emitBytecodeVersion = clOptionsConfig->emitBytecodeVersion;
   config.irdlFileFlag = clOptionsConfig->irdlFileFlag;
   config.enableDebuggerActionHookFlag =
       clOptionsConfig->enableDebuggerActionHookFlag;

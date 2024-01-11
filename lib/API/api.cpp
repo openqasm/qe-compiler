@@ -302,28 +302,19 @@ llvm::Error emitQEM_(
     mlir::TimingScope &timing) {
   if (config.shouldIncludeSource()) {
     if (config.isDirectInput()) {
-      if (config.getInputType() == InputType::QASM)
-        payload->addFile("manifest/input.qasm",
-                         (config.getInputSource() + "\n").str());
-      else if (config.getInputType() == InputType::MLIR)
-        payload->addFile("manifest/input.mlir",
-                         (config.getInputSource() + "\n").str());
-      else
-        llvm_unreachable("Unhandled input file type");
+      if (config.getInputType() != InputType::None)
+        payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(config.getInputType())), (config.getInputSource() + "\n").str());
     } else { // just copy the input file
       std::ifstream fileStream(config.getInputSource().str());
       std::stringstream fileSS;
       fileSS << fileStream.rdbuf();
 
-      if (config.getInputType() == InputType::QASM)
-        payload->addFile("manifest/input.qasm", fileSS.str());
-      else if (config.getInputType() == InputType::MLIR)
-        payload->addFile("manifest/input.mlir", fileSS.str());
-      else
-        llvm_unreachable("Unhandled input file type");
+      if (config.getInputType() != InputType::None)
+        payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(config.getInputType())), fileSS.str());
 
       fileStream.close();
     }
+    return llvm::createStringError(llvm::inconvertibleErrorCode(), "The input source type does not support embedding in the payload");
   }
 
   if (auto err = generateQEM_(config, &targetCompilationManager,
@@ -478,11 +469,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
     diagEngineHandler(diagnostic, diagnosticCb);
   });
 
-  // Set up the output.
-  llvm::raw_ostream *ostream;
-  std::optional<llvm::raw_string_ostream> outStringStream;
-  auto outputFile =
-      mlir::openOutputFile(config.getOutputFilePath(), &errorMessage);
+
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
   if (config.getEmitAction() == EmitAction::QEQEM &&
@@ -512,18 +499,6 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
       payload = std::move(
           payloadInfo.value()->createPluginInstance(payloadConfig).get());
     }
-  }
-
-  if (outputString) {
-    outStringStream.emplace(*outputString);
-    if (outStringStream.has_value())
-      ostream = std::addressof(*outStringStream);
-  } else {
-    if (!outputFile)
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Failed to open output file: " +
-                                         errorMessage);
-    ostream = &outputFile->os();
   }
 
   mlir::ModuleOp moduleOp;
@@ -644,6 +619,26 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problems running the compiler pipeline!");
   commandLinePassesTiming.stop();
+
+
+  // Set up the output.
+  llvm::raw_ostream *ostream;
+  std::optional<llvm::raw_string_ostream> outStringStream;
+
+  auto outputFile =
+    mlir::openOutputFile(config.getOutputFilePath(), &errorMessage);
+
+  if (outputString) {
+    outStringStream.emplace(*outputString);
+    if (outStringStream.has_value())
+      ostream = std::addressof(*outStringStream);
+  } else {
+    if (!outputFile)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "Failed to open output file: " +
+                                         errorMessage);
+    ostream = &outputFile->os();
+  }
 
   // Prepare outputs
   if (config.getEmitAction() == EmitAction::MLIR) {
