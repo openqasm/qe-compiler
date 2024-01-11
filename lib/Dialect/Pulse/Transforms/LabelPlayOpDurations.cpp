@@ -42,7 +42,7 @@ void LabelPlayOpDurationsPass::runOnOperation() {
   // pass builds a mapping of sequence name , argument number to duration
   // for all play operations using call_sequences
   //
-  // pass then searches for all play operations an assigns the durations using
+  // pass then searches for all play operations and assigns the durations using
   // the mapping
 
   Operation *module = getOperation();
