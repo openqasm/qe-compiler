@@ -751,7 +751,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
   controllerBuilder = new OpBuilder(controllerMainOp.getBody());
   controllerModule->setAttr(
       llvm::StringRef("quir.nodeId"),
-      controllerBuilder->getI32IntegerAttr(config->controllerNode()));
+      controllerBuilder->getUI32IntegerAttr(config->controllerNode()));
   controllerModule->setAttr(
       llvm::StringRef("quir.nodeType"),
       controllerBuilder->getStringAttr(llvm::StringRef("controller")));
@@ -772,7 +772,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         controllerBuilder->getStringAttr(llvm::StringRef("drive")));
     driveMod.getOperation()->setAttr(
         llvm::StringRef("quir.nodeId"),
-        controllerBuilder->getI32IntegerAttr(nodeId));
+        controllerBuilder->getUI32IntegerAttr(nodeId));
     driveMod.getOperation()->setAttr(
         llvm::StringRef("quir.physicalId"),
         controllerBuilder->getI32IntegerAttr(qubitIdx));
@@ -794,7 +794,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         controllerBuilder->getStringAttr(llvm::StringRef("acquire")));
     acquireMod.getOperation()->setAttr(
         llvm::StringRef("quir.nodeId"),
-        controllerBuilder->getI32IntegerAttr(nodeId));
+        controllerBuilder->getUI32IntegerAttr(nodeId));
     acquireMod.getOperation()->setAttr(
         llvm::StringRef("quir.physicalIds"),
         controllerBuilder->getI32ArrayAttr(
