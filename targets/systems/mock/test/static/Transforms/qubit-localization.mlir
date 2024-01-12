@@ -60,7 +60,7 @@ func.func @main () -> i32 {
   return %zero : i32
 }
 
-// CHECK:   module @controller attributes {quir.nodeId = 1000 : i32, quir.nodeType = "controller"} {
+// CHECK:   module @controller attributes {quir.nodeId = 1000 : ui32, quir.nodeType = "controller"} {
 // CHECK:     func.func @subroutine2_q1_q0() attributes {quir.classicalOnly = false} {
 // CHECK:       quir.call_subroutine @"subroutine1_q1_!quir.angle<20>_index"(%angle, %c5) : (!quir.angle<20>, index) -> ()
 // CHECK:     func.func @subroutine2_q0_q1() attributes {quir.classicalOnly = false} {
@@ -74,7 +74,7 @@ func.func @main () -> i32 {
 // CHECK:       quir.call_subroutine @"subroutine1_q0_!quir.angle<20>_index"(%angle, %c10) : (!quir.angle<20>, index) -> ()
 // CHECK:       quir.call_subroutine @subroutine2_q0_q1() : () -> ()
 // CHECK:       quir.call_subroutine @subroutine2_q1_q0() : () -> ()
-// CHECK:   module @mock_drive_0 attributes {quir.nodeId = 1 : i32, quir.nodeType = "drive", quir.physicalId = 0 : i32} {
+// CHECK:   module @mock_drive_0 attributes {quir.nodeId = 1 : ui32, quir.nodeType = "drive", quir.physicalId = 0 : i32} {
 // CHECK:       quir.call_subroutine @"subroutine1_q1_!quir.angle<20>_index"(%angle, %c5) : (!quir.angle<20>, index) -> ()
 // CHECK:       quir.call_gate @defcalPhase_qq(%angle, %0) : (!quir.angle<20>, !quir.qubit<1>) -> ()
 // CHECK:       quir.call_subroutine @"subroutine1_q0_!quir.angle<20>_index"(%angle, %c5) : (!quir.angle<20>, index) -> ()
@@ -98,7 +98,7 @@ func.func @main () -> i32 {
 // CHECK:       quir.call_subroutine @subroutine2_q1_q0() : () -> ()
 // CHECK:       %2 = quir.call_defcal_measure @defcalMeasure_q0(%0) : (!quir.qubit<1>) -> i1
 // CHECK:       %3 = quir.call_defcal_measure @defcalMeasure_q1(%0) : (!quir.qubit<1>) -> i1
-// CHECK:   module @mock_drive_1 attributes {quir.nodeId = 2 : i32, quir.nodeType = "drive", quir.physicalId = 1 : i32} {
+// CHECK:   module @mock_drive_1 attributes {quir.nodeId = 2 : ui32, quir.nodeType = "drive", quir.physicalId = 1 : i32} {
 // CHECK:     func @subroutine2_q1_q0() attributes {quir.classicalOnly = false} {
 // CHECK:       quir.call_gate @defcalPhase_qq(%angle, %0) : (!quir.angle<20>, !quir.qubit<1>) -> ()
 // CHECK:       quir.call_subroutine @"subroutine1_q1_!quir.angle<20>_index"(%angle, %c5) : (!quir.angle<20>, index) -> ()
@@ -123,7 +123,7 @@ func.func @main () -> i32 {
 // CHECK:       quir.call_subroutine @"subroutine1_q0_!quir.angle<20>_index"(%angle, %c10) : (!quir.angle<20>, index) -> ()
 // CHECK:       quir.call_subroutine @subroutine2_q0_q1() : () -> ()
 // CHECK:       quir.call_subroutine @subroutine2_q1_q0() : () -> ()
-// CHECK:   module @mock_acquire_0 attributes {quir.nodeId = 0 : i32, quir.nodeType = "acquire", quir.physicalIds = [0 : i32, 1 : i32]} {
+// CHECK:   module @mock_acquire_0 attributes {quir.nodeId = 0 : ui32, quir.nodeType = "acquire", quir.physicalIds = [0 : i32, 1 : i32]} {
 // CHECK:     func @subroutine2_q1_q0() attributes {quir.classicalOnly = false} {
 // CHECK:       quir.call_subroutine @"subroutine1_q1_!quir.angle<20>_index"(%angle, %c5) : (!quir.angle<20>, index) -> ()
 // CHECK:     func @subroutine2_q0_q1() attributes {quir.classicalOnly = false} {

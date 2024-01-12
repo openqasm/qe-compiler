@@ -73,6 +73,7 @@ struct ConvertDurationUnitsPass
   virtual double getDtTimestep();
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
 }; // struct ConvertDurationUnitsPass
 

@@ -57,6 +57,7 @@ struct LoadPulseCalsPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
   // optionally, one can override the path to default pulse calibrations with
   // this option; e.g., to write a LIT test one can invoke this pass with

@@ -48,6 +48,7 @@ struct FunctionArgumentSpecializationPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct FunctionArgumentSpecializationPass
 } // namespace mlir::quir
 

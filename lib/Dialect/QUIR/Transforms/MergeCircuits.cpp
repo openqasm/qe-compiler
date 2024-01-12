@@ -429,3 +429,7 @@ llvm::StringRef MergeCircuitsPass::getArgument() const {
 llvm::StringRef MergeCircuitsPass::getDescription() const {
   return "Merge back-to-back call_circuits ";
 }
+
+llvm::StringRef MergeCircuitsPass::getName() const {
+  return "Merge Circuits Pass";
+}
