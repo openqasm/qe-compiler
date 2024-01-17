@@ -12,4 +12,3 @@
 
 add_subdirectory(qss-compiler)
 add_subdirectory(qss-opt)
-add_subdirectory(qss-bind)

@@ -112,8 +112,9 @@ py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
   std::string inMemoryOutput("");
 
   int const status = qssc::bindArguments(
-      target, configPath, input, outputPath, arguments, treatWarningsAsErrors,
-      enableInMemoryInput, &inMemoryOutput, std::move(onDiagnostic));
+      target, qssc::config::EmitAction::QEM, configPath, input, outputPath,
+      arguments, treatWarningsAsErrors, enableInMemoryInput, &inMemoryOutput,
+      std::move(onDiagnostic));
 
   bool const success = status == 0;
 #ifndef NDEBUG

@@ -689,3 +689,92 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
 
   return 0;
 }
+
+class MapAngleArgumentSource : public qssc::arguments::ArgumentSource {
+
+public:
+  MapAngleArgumentSource(
+      const std::unordered_map<std::string, double> &parameterMap)
+      : parameterMap(parameterMap) {}
+
+  qssc::arguments::ArgumentType
+  getArgumentValue(llvm::StringRef name) const override {
+    std::string const name_{name};
+    auto pos = parameterMap.find(name_);
+
+    if (pos == parameterMap.end())
+      return std::nullopt;
+    return pos->second;
+  }
+
+private:
+  const std::unordered_map<std::string, double> &parameterMap;
+};
+
+llvm::Error
+_bindArguments(std::string_view target, qssc::config::EmitAction action,
+               std::string_view configPath, std::string_view moduleInput,
+               std::string_view payloadOutputPath,
+               std::unordered_map<std::string, double> const &arguments,
+               bool treatWarningsAsErrors, bool enableInMemoryInput,
+               std::string *inMemoryOutput,
+               const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
+
+  MLIRContext context{};
+
+  qssc::hal::registry::TargetSystemInfo &targetInfo =
+      *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(target)
+           .value_or(qssc::hal::registry::TargetSystemRegistry::
+                         nullTargetSystemInfo());
+
+  auto created = targetInfo.createTarget(&context, llvm::StringRef(configPath));
+  if (auto err = created.takeError()) {
+    return llvm::joinErrors(
+        llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                "Unable to create target!"),
+        std::move(err));
+  }
+
+  auto targetInst = targetInfo.getTarget(&context);
+  if (auto err = targetInst.takeError()) {
+    return llvm::joinErrors(
+        llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                "Unable to load target!"),
+        std::move(err));
+  }
+
+  MapAngleArgumentSource const source(arguments);
+
+  auto factory =
+      targetInst.get()->getBindArgumentsImplementationFactory(action);
+  if ((!factory.has_value()) || (factory.value() == nullptr)) {
+    return qssc::emitDiagnostic(
+        onDiagnostic, qssc::Severity::Error,
+        qssc::ErrorCategory::QSSLinkerNotImplemented,
+        "Unable to load bind arguments implementation for target.");
+  }
+  qssc::arguments::BindArgumentsImplementationFactory &factoryRef =
+      *factory.value();
+  return qssc::arguments::bindArguments(
+      moduleInput, payloadOutputPath, source, treatWarningsAsErrors,
+      enableInMemoryInput, inMemoryOutput, factoryRef, onDiagnostic);
+}
+
+int qssc::bindArguments(
+    std::string_view target, qssc::config::EmitAction action,
+    std::string_view configPath, std::string_view moduleInput,
+    std::string_view payloadOutputPath,
+    std::unordered_map<std::string, double> const &arguments,
+    bool treatWarningsAsErrors, bool enableInMemoryInput,
+    std::string *inMemoryOutput,
+    const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
+
+  if (auto err =
+          _bindArguments(target, action, configPath, moduleInput,
+                         payloadOutputPath, arguments, treatWarningsAsErrors,
+                         enableInMemoryInput, inMemoryOutput, onDiagnostic)) {
+    llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
+    return 1;
+  }
+  return 0;
+}

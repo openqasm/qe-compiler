@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-add_library(QSSCAPI api.cpp bind.cpp)
+add_library(QSSCAPI api.cpp)
 
 add_library(QSSCError errors.cpp)
 
