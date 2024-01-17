@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    Added a new command ``qss-bind`` that has the same capability of ``link_file``
+    in python_lib.
+upgrade:
+  - |
+    Allow target-specific parameter bindings when ``qe-qem`` is specified as
+    an emit action.
