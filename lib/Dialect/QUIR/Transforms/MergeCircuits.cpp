@@ -293,7 +293,7 @@ MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
   return circuitOp;
 }
 
-int MergeCircuitsPass::addArguments(
+void MergeCircuitsPass::addArguments(
     Operation *op, llvm::SmallVector<Value> &callInputValues,
     llvm::SmallVector<int> &insertedArguments,
     std::unordered_map<int, int> &reusedArguments) {
@@ -309,7 +309,6 @@ int MergeCircuitsPass::addArguments(
     }
     index++;
   }
-  return index;
 }
 
 void MergeCircuitsPass::mapNextCircuitArguments(
@@ -385,19 +384,16 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   llvm::SmallVector<int> insertedArguments;
   std::unordered_map<int, int> reusedArguments;
-  int index = addArguments(nextCallCircuitOp, callInputValues,
-                           insertedArguments, reusedArguments);
+  addArguments(nextCallCircuitOp, callInputValues, insertedArguments,
+               reusedArguments);
 
   llvm::SmallVector<int> insertedBarrierArguments;
   std::unordered_map<int, int> reusedBarrierArguments;
-  int barrierIndex = 0;
-
   if (barrierOps.has_value()) {
     for (auto *barrierOp : barrierOps.value()) {
       // add barrierOps to argument list for circuit
-      barrierIndex +=
-          addArguments(nextCallCircuitOp, callInputValues,
-                       insertedBarrierArguments, reusedBarrierArguments);
+      addArguments(nextCallCircuitOp, callInputValues, insertedBarrierArguments,
+                   reusedBarrierArguments);
     }
   }
 

@@ -42,10 +42,10 @@ struct MergeCircuitsPass
       llvm::StringMap<Operation *> *symbolMap,
       std::optional<llvm::SmallVector<Operation *>> barriers = std::nullopt);
 
-  static int addArguments(Operation *op,
-                          llvm::SmallVector<Value> &callInputValues,
-                          llvm::SmallVector<int> &insertedArguments,
-                          std::unordered_map<int, int> &reusedArguments);
+  static void addArguments(Operation *op,
+                           llvm::SmallVector<Value> &callInputValues,
+                           llvm::SmallVector<int> &insertedArguments,
+                           std::unordered_map<int, int> &reusedArguments);
   static void
   mapNextCircuitArguments(CircuitOp nextCircuitOp, CircuitOp newCircuitOp,
                           llvm::SmallVector<int> &insertedArguments,
