@@ -42,19 +42,21 @@ struct MergeCircuitsPass
       llvm::StringMap<Operation *> *symbolMap,
       std::optional<llvm::SmallVector<Operation *>> barriers = std::nullopt);
 
-  static void addArguments(Operation *op,
-                           llvm::SmallVector<Value> &callInputValues,
-                           llvm::SmallVector<int> &insertedArguments,
-                           std::unordered_map<int, int> &reusedArguments);
+  static int addArguments(Operation *op,
+                          llvm::SmallVector<Value> &callInputValues,
+                          llvm::SmallVector<int> &insertedArguments,
+                          std::unordered_map<int, int> &reusedArguments,
+                          int baseIndex = 0);
   static void
   mapNextCircuitArguments(CircuitOp nextCircuitOp, CircuitOp newCircuitOp,
                           llvm::SmallVector<int> &insertedArguments,
                           std::unordered_map<int, int> &reusedArguments,
                           mlir::IRMapping &mapper);
-  static void mapBarrierOperands(Operation *barrierOp, CircuitOp newCircuitOp,
-                                 llvm::SmallVector<int> &insertedArguments,
-                                 std::unordered_map<int, int> &reusedArguments,
-                                 IRMapping &mapper, MLIRContext *context);
+  static int mapBarrierOperands(Operation *barrierOp, CircuitOp newCircuitOp,
+                                llvm::SmallVector<int> &insertedArguments,
+                                std::unordered_map<int, int> &reusedArguments,
+                                IRMapping &mapper, MLIRContext *context,
+                                int baseIndex);
   static void mergePhysicalIdAttrs(CircuitOp newCircuitOp,
                                    CircuitOp nextCircuitOp,
                                    PatternRewriter &rewriter);

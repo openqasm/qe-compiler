@@ -293,11 +293,11 @@ MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
   return circuitOp;
 }
 
-void MergeCircuitsPass::addArguments(
+int MergeCircuitsPass::addArguments(
     Operation *op, llvm::SmallVector<Value> &callInputValues,
     llvm::SmallVector<int> &insertedArguments,
-    std::unordered_map<int, int> &reusedArguments) {
-  int index = 0;
+    std::unordered_map<int, int> &reusedArguments, int baseIndex) {
+  int index = baseIndex;
   for (auto inputValue : op->getOperands()) {
     auto *search = find(callInputValues, inputValue);
     if (search == callInputValues.end()) {
@@ -309,6 +309,7 @@ void MergeCircuitsPass::addArguments(
     }
     index++;
   }
+  return index;
 }
 
 void MergeCircuitsPass::mapNextCircuitArguments(
@@ -333,11 +334,11 @@ void MergeCircuitsPass::mapNextCircuitArguments(
   }
 }
 
-void MergeCircuitsPass::mapBarrierOperands(
+int MergeCircuitsPass::mapBarrierOperands(
     Operation *barrierOp, CircuitOp newCircuitOp,
     llvm::SmallVector<int> &insertedArguments,
     std::unordered_map<int, int> &reusedArguments, IRMapping &mapper,
-    MLIRContext *context) {
+    MLIRContext *context, int baseIndex) {
   assert(barrierOp && "barrierOp requires valid operation pointer");
   assert(context && "context requires valid MLIR context pointer");
   uint const baseArgNum = newCircuitOp.getNumArguments();
@@ -345,7 +346,7 @@ void MergeCircuitsPass::mapBarrierOperands(
   for (uint cnt = 0; cnt < barrierOp->getNumOperands(); cnt++) {
     auto qubit = barrierOp->getOperand(cnt);
     int argumentIndex = 0;
-    if (find(insertedArguments, cnt) != insertedArguments.end()) {
+    if (find(insertedArguments, cnt + baseIndex) != insertedArguments.end()) {
       auto physicalId = qubit.getDefiningOp()->getAttrOfType<IntegerAttr>("id");
       argumentIndex = baseArgNum + insertedCount;
       newCircuitOp.insertArgument(baseArgNum + insertedCount, qubit.getType(),
@@ -357,10 +358,12 @@ void MergeCircuitsPass::mapBarrierOperands(
               physicalId)}));
       insertedCount++;
     } else {
-      argumentIndex = reusedArguments[cnt];
+      argumentIndex = reusedArguments[cnt + baseIndex];
     }
     mapper.map(qubit, newCircuitOp.getArgument(argumentIndex));
+    baseIndex++;
   }
+  return baseIndex;
 }
 
 void MergeCircuitsPass::mergePhysicalIdAttrs(CircuitOp newCircuitOp,
@@ -425,10 +428,12 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   llvm::SmallVector<int> insertedBarrierArguments;
   std::unordered_map<int, int> reusedBarrierArguments;
   if (barrierOps.has_value()) {
+    int barrierIndex = 0;
     for (auto *barrierOp : barrierOps.value()) {
       // add barrierOps to argument list for circuit
-      addArguments(nextCallCircuitOp, callInputValues, insertedBarrierArguments,
-                   reusedBarrierArguments);
+      barrierIndex =
+          addArguments(barrierOp, callInputValues, insertedBarrierArguments,
+                       reusedBarrierArguments, barrierIndex);
     }
   }
 
@@ -442,7 +447,6 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
                         StringAttr::get(circuitOp->getContext(), newName));
 
   // store original return operations for later use
-  quir::ReturnOp const returnOp = getReturnOp(circuitOp);
   quir::ReturnOp const nextReturnOp = getReturnOp(nextCircuitOp);
 
   IRMapping mapper;
@@ -458,11 +462,13 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // clone any barrier ops and erase
   if (barrierOps.has_value()) {
+    int barrierIndex = 0;
     for (auto *barrierOp : barrierOps.value()) {
       // add barrierOps to argument list for circuit and set physicalId
       // of attribute
-      mapBarrierOperands(barrierOp, newCircuitOp, insertedBarrierArguments,
-                         reusedBarrierArguments, mapper, context);
+      barrierIndex = mapBarrierOperands(
+          barrierOp, newCircuitOp, insertedBarrierArguments,
+          reusedBarrierArguments, mapper, context, barrierIndex);
       // clone into circuit and remove from original location
       rewriter.clone(*barrierOp, mapper);
       barrierOp->erase();

@@ -66,6 +66,7 @@ module {
   // CHECK: %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
   // CHECK: %1 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
   // CHECK: quir.barrier %arg0 : (!quir.qubit<1>) -> ()
+  // CHECK: quir.barrier %arg1 : (!quir.qubit<1>) -> ()
   // CHECK: %2 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
   // CHECK: %3 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
   // CHECK: quir.return %0, %1, %2, %3 : i1, i1, i1, i1
@@ -143,8 +144,9 @@ module {
     oq3.cbit_assign_bit @qc0_meas<2> [0] : i1 = %true
     %16:2 = quir.call_circuit @circuit_8(%0) : (!quir.qubit<1>) -> (i1, i1)
     quir.barrier %0 : (!quir.qubit<1>) -> ()
+    quir.barrier %200 : (!quir.qubit<1>) -> ()
     %17:2 = quir.call_circuit @circuit_8(%0) : (!quir.qubit<1>) -> (i1, i1)
-    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_8_q0_circuit_8_q0(%0) : (!quir.qubit<1>) -> (i1, i1, i1, i1)
+    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_8_q0_circuit_8_q0(%0, %2) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
 
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32
