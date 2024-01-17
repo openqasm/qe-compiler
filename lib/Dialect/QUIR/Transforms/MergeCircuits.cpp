@@ -401,12 +401,11 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
         int argumentIndex = 0;
         if (find(insertedBarrierArguments, cnt) !=
             insertedBarrierArguments.end()) {
-          auto dictArg = nextCircuitOp.getArgAttrDict(cnt);
           auto physicalId =
               qubit.getDefiningOp()->getAttrOfType<IntegerAttr>("id");
           argumentIndex = baseArgNum + insertedCount;
           newCircuitOp.insertArgument(baseArgNum + insertedCount,
-                                      qubit.getType(), dictArg, qubit.getLoc());
+                                      qubit.getType(), {}, qubit.getLoc());
           newCircuitOp.setArgAttrs(
               argumentIndex,
               ArrayRef({NamedAttribute(
