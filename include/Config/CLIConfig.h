@@ -1,6 +1,6 @@
 //===- CLIConfig.h - CLI Configuration builder ------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // Any modifications or derivative works of this code must retain this
 // copyright notice, and modified files need to carry a notice indicating
@@ -22,7 +22,11 @@ namespace qssc::config {
 
 /// @brief Get the CLI category for the QSS compiler.
 /// @return The reference to the CLI category for the compiler.
-llvm::cl::OptionCategory &getQSSCCategory();
+llvm::cl::OptionCategory &getQSSCCLCategory();
+
+/// @brief Get the CLI category for the QSS compiler mlir-opt options.
+/// @return The reference to the CLI category for the compiler.
+llvm::cl::OptionCategory &getQSSOptCLCategory();
 
 /// @brief Build a QSSConfig from input CLI arguments.
 ///
@@ -32,23 +36,11 @@ llvm::cl::OptionCategory &getQSSCCategory();
 ///
 /// The qss-compiler adds several cli arguments to
 /// configure the QSSConfig through the CLIConfigBuilder.
-///
-/// These currently are:
-/// - `--target=<str>`: Sets QSSConfig::targetName.
-/// - `--config=<str>`: Sets QSSConfig::targetConfigPath.
-/// - `--allow-unregistered-dialect=<bool>`: Sets
-/// QSSConfig::allowUnregisteredDialects.
-/// - `--add-target-passes=<bool>`: Sets QSSConfig::addTargetPasses.
-///
 class CLIConfigBuilder : public QSSConfigBuilder {
 public:
+  explicit CLIConfigBuilder();
+  static void registerCLOptions(mlir::DialectRegistry &registry);
   llvm::Error populateConfig(QSSConfig &config) override;
-
-private:
-  llvm::Error populateConfigurationPath_(QSSConfig &config);
-  llvm::Error populateTarget_(QSSConfig &config);
-  llvm::Error populateAllowUnregisteredDialects_(QSSConfig &config);
-  llvm::Error populateAddTargetPasses_(QSSConfig &config);
 };
 
 } // namespace qssc::config

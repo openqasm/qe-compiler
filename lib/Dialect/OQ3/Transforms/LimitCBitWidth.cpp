@@ -18,17 +18,23 @@
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinAttributes.h"
-#include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/Support/LLVM.h"
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/Casting.h"
+#include "llvm/Support/raw_ostream.h"
 
+#include <cassert>
+#include <cstdint>
 #include <string>
+#include <sys/types.h>
+#include <tuple>
+#include <utility>
 
 #define DEBUG_TYPE "LimitCBitWidth"
 
@@ -39,7 +45,7 @@ void LimitCBitWidthPass::addNewDeclareVariableOps(
     uint numRemainingBits,
     llvm::SmallVector<mlir::oq3::DeclareVariableOp> &newRegisters,
     mlir::SymbolTableCollection &symbolTableCol) {
-  auto variableName = op.sym_name();
+  auto variableName = op.getSymName();
 
   // create new registers with _# added to end
   // add additional "_" if symbol name is found
@@ -52,14 +58,14 @@ void LimitCBitWidthPass::addNewDeclareVariableOps(
         symbolTableCol.getSymbolTable(module).lookup(newVariableName);
     if (findOp) {
       uint extraInt = 0;
-      std::string baseVariableName = newVariableName;
+      std::string const baseVariableName = newVariableName;
       while (findOp) {
         newVariableName = baseVariableName + std::to_string(extraInt++);
         findOp = symbolTableCol.getSymbolTable(module).lookup(newVariableName);
       }
     }
 
-    uint bitWidth =
+    uint const bitWidth =
         getNewRegisterWidth(regNum, numRegistersRequired, numRemainingBits);
     auto newCbitType = builder.getType<mlir::quir::CBitType>(bitWidth);
     newRegisters.push_back(builder.create<DeclareVariableOp>(
@@ -73,15 +79,16 @@ void LimitCBitWidthPass::processOp(
     llvm::SmallVector<mlir::oq3::DeclareVariableOp> &newRegisters) {
   uint64_t index;
   uint64_t reg;
-  std::tie(reg, index) = remapBit(cbitAssignOp.index());
-  auto width = newRegisters[reg].type().dyn_cast<quir::CBitType>().getWidth();
-  auto value = cbitAssignOp.assigned_bit();
+  std::tie(reg, index) = remapBit(cbitAssignOp.getIndex());
+  auto width =
+      newRegisters[reg].getType().dyn_cast<quir::CBitType>().getWidth();
+  auto value = cbitAssignOp.getAssignedBit();
 
   OpBuilder builder(cbitAssignOp);
   builder.create<CBitAssignBitOp>(
       cbitAssignOp->getLoc(),
       mlir::SymbolRefAttr::get(
-          builder.getStringAttr(newRegisters[reg].sym_name())),
+          builder.getStringAttr(newRegisters[reg].getSymName())),
       builder.getIndexAttr(index), builder.getIndexAttr(width), value);
 
   eraseList_.push_back(cbitAssignOp);
@@ -91,14 +98,15 @@ void LimitCBitWidthPass::processOp(
     VariableAssignOp variableAssignOp, uint orgWidth, uint numRegistersRequired,
     uint numRemainingBits,
     llvm::SmallVector<mlir::oq3::DeclareVariableOp> &newRegisters) {
-  auto castOp =
-      dyn_cast<oq3::CastOp>(variableAssignOp.assigned_value().getDefiningOp());
+  auto castOp = dyn_cast<oq3::CastOp>(
+      variableAssignOp.getAssignedValue().getDefiningOp());
   if (!castOp) {
     variableAssignOp.emitError(
         "expect assigned_value() to be defined by a CastOp");
     signalPassFailure();
   }
-  auto constantOp = dyn_cast<arith::ConstantOp>(castOp.arg().getDefiningOp());
+  auto constantOp =
+      dyn_cast<arith::ConstantOp>(castOp.getArg().getDefiningOp());
   if (!constantOp) {
     castOp.emitError("expect cast arg() to be a constant op");
     signalPassFailure();
@@ -116,10 +124,10 @@ void LimitCBitWidthPass::processOp(
     signalPassFailure();
   }
 
-  APInt apInt = intAttr.getValue();
+  APInt const apInt = intAttr.getValue();
 
   for (uint regNum = 0; regNum < numRegistersRequired; regNum++) {
-    uint bitWidth =
+    uint const bitWidth =
         getNewRegisterWidth(regNum, numRegistersRequired, numRemainingBits);
     auto subPart = apInt.extractBits(bitWidth, regNum * MAX_CBIT_WIDTH);
     auto initializerVal = builder.create<mlir::arith::ConstantOp>(
@@ -130,8 +138,9 @@ void LimitCBitWidthPass::processOp(
         constantOp->getLoc(), builder.getType<mlir::quir::CBitType>(bitWidth),
         initializerVal);
 
-    builder.create<VariableAssignOp>(
-        variableAssignOp->getLoc(), newRegisters[regNum].sym_name(), newCastOp);
+    builder.create<VariableAssignOp>(variableAssignOp->getLoc(),
+                                     newRegisters[regNum].getSymName(),
+                                     newCastOp);
   }
   eraseList_.push_back(variableAssignOp);
 }
@@ -144,12 +153,12 @@ void LimitCBitWidthPass::processOp(
   llvm::SmallVector<VariableLoadOp> newVariableLoads;
   OpBuilder builder(variableLoadOp);
   for (uint regNum = 0; regNum < numRegistersRequired; regNum++) {
-    uint bitWidth =
+    uint const bitWidth =
         getNewRegisterWidth(regNum, numRegistersRequired, numRemainingBits);
     newVariableLoads.push_back(builder.create<VariableLoadOp>(
         variableLoadOp.getLoc(),
         builder.getType<mlir::quir::CBitType>(bitWidth),
-        newRegisters[regNum].sym_name()));
+        newRegisters[regNum].getSymName()));
   }
 
   for (auto *loadUse : variableLoadOp->getUsers()) {
@@ -157,7 +166,7 @@ void LimitCBitWidthPass::processOp(
     if (extractBitOp) {
       uint64_t reg;
       uint64_t remain;
-      std::tie(reg, remain) = remapBit(extractBitOp.index());
+      std::tie(reg, remain) = remapBit(extractBitOp.getIndex());
       auto newExtract = builder.create<CBitExtractBitOp>(
           extractBitOp->getLoc(), builder.getI1Type(), newVariableLoads[reg],
           builder.getIndexAttr(remain));
@@ -175,7 +184,7 @@ void LimitCBitWidthPass::processOp(
 std::pair<uint64_t, uint64_t>
 LimitCBitWidthPass::remapBit(const llvm::APInt &indexInt) {
   uint64_t index = indexInt.getZExtValue();
-  uint64_t reg = index / MAX_CBIT_WIDTH;
+  uint64_t const reg = index / MAX_CBIT_WIDTH;
   index = index - (reg * MAX_CBIT_WIDTH);
   return std::make_pair(reg, index);
 }
@@ -183,7 +192,7 @@ LimitCBitWidthPass::remapBit(const llvm::APInt &indexInt) {
 uint LimitCBitWidthPass::getNewRegisterWidth(uint regNum,
                                              uint numRegistersRequired,
                                              uint numRemainingBits) {
-  uint bitWidth =
+  uint const bitWidth =
       regNum == (numRegistersRequired - 1) ? numRemainingBits : MAX_CBIT_WIDTH;
   return bitWidth;
 }
@@ -202,20 +211,20 @@ void LimitCBitWidthPass::runOnOperation() {
 
   module->walk([&](DeclareVariableOp op) {
     // look for declare variables of CBitType and Width > 64
-    auto cbitType = op.type().dyn_cast<quir::CBitType>();
+    auto cbitType = op.getType().dyn_cast<quir::CBitType>();
     if (!cbitType || cbitType.getWidth() <= MAX_CBIT_WIDTH)
       return;
 
-    uint orgWidth = cbitType.getWidth();
-    uint numRegistersRequired = cbitType.getWidth() / MAX_CBIT_WIDTH + 1;
-    uint numRemainingBits = cbitType.getWidth() % MAX_CBIT_WIDTH;
+    uint const orgWidth = cbitType.getWidth();
+    uint const numRegistersRequired = cbitType.getWidth() / MAX_CBIT_WIDTH + 1;
+    uint const numRemainingBits = cbitType.getWidth() % MAX_CBIT_WIDTH;
     llvm::SmallVector<mlir::oq3::DeclareVariableOp> newRegisters;
 
     addNewDeclareVariableOps(module, op, numRegistersRequired, numRemainingBits,
                              newRegisters, symbolTableCol);
 
     if (auto rangeOrNone = SymbolTable::getSymbolUses(op, module))
-      for (auto &use : rangeOrNone.getValue()) {
+      for (auto &use : rangeOrNone.value()) {
         auto *user = use.getUser();
         if (auto variableAssignOp = dyn_cast<VariableAssignOp>(user))
           processOp(variableAssignOp, orgWidth, numRegistersRequired,
@@ -248,4 +257,8 @@ llvm::StringRef LimitCBitWidthPass::getArgument() const {
 
 llvm::StringRef LimitCBitWidthPass::getDescription() const {
   return "Limit classical bit register width";
+}
+
+llvm::StringRef LimitCBitWidthPass::getName() const {
+  return "Limit CBit Width Pass";
 }

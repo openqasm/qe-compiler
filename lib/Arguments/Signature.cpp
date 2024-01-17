@@ -23,11 +23,17 @@
 
 #include "API/errors.h"
 
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <cstdint>
+#include <optional>
 #include <sstream>
+#include <string>
+#include <sys/types.h>
+#include <tuple>
 
 namespace qssc::arguments {
 
@@ -36,7 +42,7 @@ void Signature::addParameterPatchPoint(llvm::StringRef expression,
                                        llvm::StringRef binaryComponent,
                                        uint64_t offset) {
 
-  auto &patchPoints = patchPointsByBinary[binaryComponent];
+  auto &patchPoints = patchPointsByBinary[binaryComponent.str()];
 
   patchPoints.emplace_back(expression, patchType, offset);
 }
@@ -44,18 +50,18 @@ void Signature::addParameterPatchPoint(llvm::StringRef expression,
 void Signature::addParameterPatchPoint(llvm::StringRef binaryComponent,
                                        const PatchPoint &p) {
 
-  auto &patchPoints = patchPointsByBinary[binaryComponent];
+  auto &patchPoints = patchPointsByBinary[binaryComponent.str()];
   patchPoints.push_back(p);
 }
 
 void Signature::dump() {
   llvm::errs() << "Circuit Signature:\n";
 
-  for (auto const &entry : patchPointsByBinary) {
+  for (auto const &[binaryName, patchPoints] : patchPointsByBinary) {
 
-    llvm::errs() << "binary " << entry.getKey() << ":\n";
+    llvm::errs() << "binary " << binaryName << ":\n";
 
-    for (auto const &patchPoint : entry.getValue()) {
+    for (auto const &patchPoint : patchPoints) {
       llvm::errs() << "  param expression " << patchPoint.expression()
                    << " to be patched as " << patchPoint.patchType()
                    << " at offset " << patchPoint.offset() << "\n";
@@ -69,9 +75,8 @@ std::string Signature::serialize() const {
   s << "version 1\n";
   s << "num_binaries: " << patchPointsByBinary.size() << "\n";
 
-  for (auto const &entry : patchPointsByBinary) {
-    auto patchPoints = entry.getValue();
-    s << "binary: " << entry.getKey().str() << "\n";
+  for (auto const &[binaryName, patchPoints] : patchPointsByBinary) {
+    s << "binary: " << binaryName << "\n";
     s << "num_patchpoints: " << patchPoints.size() << "\n";
     for (auto const &patchPoint : patchPoints) {
       s << patchPoint.patchType().str() << " " << patchPoint.offset() << " "
@@ -131,7 +136,7 @@ llvm::Expected<Signature> Signature::deserialize(
                             qssc::ErrorCategory::QSSLinkSignatureError,
                             "Expected binary:");
     }
-    llvm::StringRef binaryName = value;
+    llvm::StringRef const binaryName = value;
 
     std::tie(line, buffer) = buffer.split("\n");
     std::tie(label, value) = line.split(' ');

@@ -24,11 +24,20 @@
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <set>
+#include <sys/types.h>
+#include <utility>
 
 #define DEBUG_TYPE "QUIRReorderMeasurements"
 
@@ -49,13 +58,13 @@ struct ReorderCircuitsAndNonCircuitPat
                                 PatternRewriter &rewriter) const override {
 
     // Accumulate qubits in measurement set
-    std::set<uint> currQubits = callCircuitOp.getOperatedQubits();
+    std::set<uint> const currQubits = callCircuitOp.getOperatedQubits();
     LLVM_DEBUG(llvm::dbgs() << "Matching on call_circuit for qubits:\t");
-    LLVM_DEBUG(for (uint id : currQubits) llvm::dbgs() << id << " ");
+    LLVM_DEBUG(for (const uint id : currQubits) llvm::dbgs() << id << " ");
     LLVM_DEBUG(llvm::dbgs() << "\n");
 
     auto nextAffineStoreOpp =
-        dyn_cast<mlir::AffineStoreOp>(callCircuitOp->getNextNode());
+        dyn_cast<mlir::affine::AffineStoreOp>(callCircuitOp->getNextNode());
     if (nextAffineStoreOpp) {
       bool moveAffine = true;
       for (auto operand : nextAffineStoreOpp->getOperands())
@@ -78,7 +87,8 @@ void ReorderCircuitsPass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   patterns.add<ReorderCircuitsAndNonCircuitPat>(&getContext());
 
-  FuncOp mainFunc = dyn_cast<FuncOp>(getMainFunction(moduleOperation));
+  mlir::func::FuncOp mainFunc =
+      dyn_cast<mlir::func::FuncOp>(getMainFunction(moduleOperation));
 
   if (!mainFunc) {
     signalPassFailure();
@@ -89,8 +99,12 @@ void ReorderCircuitsPass::runOnOperation() {
   // only run this pass on call_circuits within the main body of the program
   // there may be call_circuits within circuits that have not been properly
   // labeled with their qubit arguments
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
 
-  if (failed(applyPatternsAndFoldGreedily(mainFunc, std::move(patterns))))
+  if (failed(
+          applyPatternsAndFoldGreedily(mainFunc, std::move(patterns), config)))
     signalPassFailure();
 } // runOnOperation
 
@@ -100,4 +114,8 @@ llvm::StringRef ReorderCircuitsPass::getArgument() const {
 
 llvm::StringRef ReorderCircuitsPass::getDescription() const {
   return "Move call_circuits later if possible.";
+}
+
+llvm::StringRef ReorderCircuitsPass::getName() const {
+  return "Reorder Circuits Pass";
 }

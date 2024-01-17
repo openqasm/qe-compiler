@@ -18,7 +18,7 @@
 
 // CHECK: module
 module {
-  func @extract(%in : !quir.cbit<2>) -> i1 {
+  func.func @extract(%in : !quir.cbit<2>) -> i1 {
     // CHECK: [[BIT:%.]] = oq3.cbit_extractbit
     %1 = oq3.cbit_extractbit(%in : !quir.cbit<2>) [0] : i1
     %c1_i32 = arith.constant 1 : i32
@@ -28,7 +28,7 @@ module {
     return %3 : i1
   }
 
-  func @main() -> i1 {
+  func.func @main() -> i1 {
     %c1_i32 = arith.constant 1 : i32
 
     %1 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>

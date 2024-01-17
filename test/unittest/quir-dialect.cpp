@@ -16,9 +16,18 @@
 
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTraits.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/DialectRegistry.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/ValueRange.h"
 #include "mlir/Interfaces/SideEffectInterfaces.h"
+#include "mlir/Support/LLVM.h"
 
 #include "gtest/gtest.h"
 
@@ -83,7 +92,7 @@ TEST_F(QUIRDialect, MeasureSideEffects) {
       builder.getIntegerAttr(builder.getI32Type(), 0));
 
   auto measureOp = builder.create<mlir::quir::MeasureOp>(
-      unkownLoc, builder.getI1Type(), qubitDecl.res());
+      unkownLoc, builder.getI1Type(), qubitDecl.getRes());
 
   EXPECT_TRUE(measureOp);
 

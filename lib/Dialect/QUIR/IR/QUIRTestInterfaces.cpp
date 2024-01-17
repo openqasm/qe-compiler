@@ -23,6 +23,13 @@
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 
 #include "mlir/IR/Builders.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+
+#include <algorithm>
+#include <vector>
 
 using namespace mlir::quir;
 
@@ -55,4 +62,8 @@ llvm::StringRef TestQubitOpInterfacePass::getArgument() const {
 llvm::StringRef TestQubitOpInterfacePass::getDescription() const {
   return "Test QubitOpInterface by attributing operations with operated "
          "qubits.";
+}
+
+llvm::StringRef TestQubitOpInterfacePass::getName() const {
+  return "Test Qubit Op Interface Pass";
 }

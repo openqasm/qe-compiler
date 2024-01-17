@@ -25,7 +25,7 @@ class OQ3_ArithmeticUnaryOp<string mnemonic, list<Trait> traits = []> :
 class OQ3_ArithmeticBinaryOp<string mnemonic, list<Trait> traits = []> :
       OQ3_BinaryOp<mnemonic,
                    !listconcat(traits,
-                               [NoSideEffect, SameOperandsAndResultType])> {
+                               [Pure, SameOperandsAndResultType])> {
     let arguments = (ins AnyClassical:$lhs, AnyClassical:$rhs);
     let results = (outs AnyClassical:$result);
     let assemblyFormat = [{

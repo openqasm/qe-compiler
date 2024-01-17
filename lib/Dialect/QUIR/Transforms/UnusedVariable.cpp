@@ -22,15 +22,17 @@
 #include "Dialect/QUIR/Transforms/UnusedVariable.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/IR/QUIRTypes.h"
 
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+
+#include "llvm/ADT/StringRef.h"
+
+#include <utility>
 
 using namespace mlir;
 using namespace quir;
@@ -81,6 +83,9 @@ void UnusedVariablePass::runOnOperation() {
   // use cheaper top-down traversal (in this case, bottom-up would not behave
   // any differently)
   config.useTopDownTraversal = true;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
+
   patterns.add<UnusedVariablePat>(&getContext(), symbolUsers);
 
   if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
@@ -93,4 +98,8 @@ llvm::StringRef UnusedVariablePass::getArgument() const {
 }
 llvm::StringRef UnusedVariablePass::getDescription() const {
   return "Remove variables that are not outputs and do not have any loads/uses";
+}
+
+llvm::StringRef UnusedVariablePass::getName() const {
+  return "Unused Variable Pass";
 }

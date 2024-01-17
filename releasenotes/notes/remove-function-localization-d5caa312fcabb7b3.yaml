@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Remove function localization pass as this is not being used for any
+    compilation features as was initially planned.

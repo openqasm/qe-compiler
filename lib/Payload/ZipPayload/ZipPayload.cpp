@@ -1,6 +1,6 @@
 //===- ZipPayload.cpp -------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -18,33 +18,47 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include <algorithm>
-#include <cstdint>
-#include <fstream>
-#include <ostream>
-#include <sys/stat.h>
-#include <unordered_set>
-
-#include "nlohmann/json.hpp"
-#include <zip.h>
-
-#include "Config.h"
 #include "ZipPayload.h"
+
+#include "Payload/Payload.h"
 #include "ZipUtil.h"
 
+#include "Config.h"
 #include "Payload/PayloadRegistry.h"
+#include <Config/QSSConfig.h>
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <cstdint>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+#include <memory>
+#include <mutex>
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <optional>
+#include <ostream>
+#include <string>
+// NOLINTNEXTLINE(misc-include-cleaner)
+#include <sys/stat.h>
+#include <vector>
+#include <zip.h>
+#include <zipconf.h>
 
 using namespace qssc::payload;
 namespace fs = std::filesystem;
 
 int qssc::payload::init() {
   const char *name = "ZIP";
-  bool registered = registry::PayloadRegistry::registerPlugin(
+  bool const registered = registry::PayloadRegistry::registerPlugin(
       name, name, "Payload that generates zip file with .qem extension.",
-      [](llvm::Optional<PayloadConfig> config)
+      [](std::optional<PayloadConfig> config)
           -> llvm::Expected<std::unique_ptr<payload::Payload>> {
-        if (config.hasValue())
-          return std::make_unique<ZipPayload>(config.getValue());
+        if (config.has_value())
+          return std::make_unique<ZipPayload>(config.value());
         return std::make_unique<ZipPayload>();
       });
   return registered ? 0 : -1;
@@ -52,8 +66,8 @@ int qssc::payload::init() {
 
 // creates a manifest json file and adds it to the file map
 void ZipPayload::addManifest() {
-  std::lock_guard<std::mutex> lock(_mtx);
-  std::string manifest_fname = "manifest/manifest.json";
+  std::lock_guard<std::mutex> const lock(_mtx);
+  std::string const manifest_fname = "manifest/manifest.json";
   nlohmann::json manifest;
   manifest["version"] = QSSC_VERSION;
   manifest["contents_path"] = prefix;
@@ -61,12 +75,12 @@ void ZipPayload::addManifest() {
 }
 
 void ZipPayload::addFile(llvm::StringRef filename, llvm::StringRef str) {
-  std::lock_guard<std::mutex> lock(_mtx);
+  std::lock_guard<std::mutex> const lock(_mtx);
   files[filename.str()] = str;
 }
 
 void ZipPayload::writePlain(const std::string &dirName) {
-  std::lock_guard<std::mutex> lock(_mtx);
+  std::lock_guard<std::mutex> const lock(_mtx);
   for (const auto &filePair : files) {
     fs::path fName(dirName);
     fName /= filePair.first;
@@ -83,7 +97,7 @@ void ZipPayload::writePlain(const std::string &dirName) {
 }
 
 void ZipPayload::writePlain(llvm::raw_ostream &stream) {
-  std::vector<fs::path> orderedNames = orderedFileNames();
+  std::vector<fs::path> const orderedNames = orderedFileNames();
   stream << "------------------------------------------\n";
   stream << "Plaintext payload: " << prefix << "\n";
   stream << "------------------------------------------\n";
@@ -114,14 +128,17 @@ void setFilePermissions(zip_int64_t fileIndex, fs::path &fName,
                                    &attributes);
   if (opsys == ZIP_OPSYS_UNIX) {
     zip_uint32_t mask = UINT32_MAX; // all 1s for negative mask
-    mask ^= (S_IWGRP << 16);        // turn off write for the group
-    mask ^= (S_IWOTH << 16);        // turn off write for others
+    // NOLINTNEXTLINE(misc-include-cleaner)
+    mask ^= (S_IWGRP << 16); // turn off write for the group
+    // NOLINTNEXTLINE(misc-include-cleaner)
+    mask ^= (S_IWOTH << 16); // turn off write for others
 
     // apply negative write mask
     attributes &= mask;
 
     // if executable turn on S_IXUSR
     if (fName.has_extension() && fName.extension() == ".sh")
+      // NOLINTNEXTLINE(misc-include-cleaner)
       attributes |= (S_IXUSR << 16); // turn on execute for user
 
     // set new attributes
@@ -132,7 +149,8 @@ void setFilePermissions(zip_int64_t fileIndex, fs::path &fName,
 } // end anonymous namespace
 
 void ZipPayload::writeZip(llvm::raw_ostream &stream) {
-  llvm::outs() << "Writing zip to stream\n";
+  if (verbosity >= qssc::config::QSSVerbosity::Info)
+    llvm::outs() << "Writing zip to stream\n";
   // first add the manifest
   addManifest();
 
@@ -146,8 +164,8 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   zip_error_init(&error);
 
   // open a zip source, buffer is allocated internally to libzip
-  if ((new_archive_src = zip_source_buffer_create(nullptr, 0, 0, &error)) ==
-      nullptr) {
+  new_archive_src = zip_source_buffer_create(nullptr, 0, 0, &error);
+  if (new_archive_src == nullptr) {
     llvm::errs() << "Can't create zip source for new archive: "
                  << zip_error_strerror(&error) << "\n";
     zip_error_fini(&error);
@@ -158,8 +176,8 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   zip_source_keep(new_archive_src);
 
   // create and open an archive from the new archive source
-  if ((new_archive = zip_open_from_source(new_archive_src, ZIP_TRUNCATE,
-                                          &error)) == nullptr) {
+  new_archive = zip_open_from_source(new_archive_src, ZIP_TRUNCATE, &error);
+  if (new_archive == nullptr) {
     llvm::errs() << "Can't create/open an archive from the new archive source: "
                  << zip_error_strerror(&error) << "\n";
     zip_source_free(new_archive_src);
@@ -168,21 +186,23 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   }
   zip_error_fini(&error);
 
-  llvm::outs() << "Zip buffer created, adding files to archive\n";
+  if (verbosity >= qssc::config::QSSVerbosity::Info)
+    llvm::outs() << "Zip buffer created, adding files to archive\n";
   // archive is now allocated and created, need to fill it with files/data
   std::vector<fs::path> orderedNames = orderedFileNames();
   for (auto &fName : orderedNames) {
-    llvm::outs() << "Adding file " << fName << " to archive buffer ("
-                 << files[fName].size() << " bytes)\n";
+    if (verbosity >= qssc::config::QSSVerbosity::Info)
+      llvm::outs() << "Adding file " << fName << " to archive buffer ("
+                   << files[fName].size() << " bytes)\n";
 
     //===---- Add file ----===//
     // init the error object
     zip_error_init(&error);
 
     // first create a zip source from the file data
-    if ((file_src = zip_source_buffer_create(files[fName].c_str(),
-                                             files[fName].size(), 0, &error)) ==
-        nullptr) {
+    file_src = zip_source_buffer_create(files[fName].c_str(),
+                                        files[fName].size(), 0, &error);
+    if (file_src == nullptr) {
       llvm::errs() << "Can't create zip source for " << fName << " : "
                    << zip_error_strerror(&error) << "\n";
       zip_error_fini(&error);
@@ -191,13 +211,14 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
     zip_error_fini(&error);
 
     // now add it to the archive
-    zip_int64_t fileIndex = -1;
-    if ((fileIndex = zip_file_add(new_archive, fName.c_str(), file_src,
-                                  ZIP_FL_OVERWRITE)) < 0) {
+    zip_int64_t const fileIndex =
+        zip_file_add(new_archive, fName.c_str(), file_src, ZIP_FL_OVERWRITE);
+    if (fileIndex < 0) {
       llvm::errs() << "Problem adding file " << fName
                    << " to archive: " << zip_strerror(new_archive) << "\n";
       continue;
     }
+    zip_set_file_compression(new_archive, fileIndex, ZIP_CM_STORE, 1);
 
     setFilePermissions(fileIndex, fName, new_archive);
   }
@@ -213,6 +234,8 @@ void ZipPayload::writeZip(llvm::raw_ostream &stream) {
   //===---- Reopen for copying ----===//
   zip_int64_t sz;
   char *outbuffer = read_zip_src_to_buffer(new_archive_src, sz);
+  if (verbosity >= qssc::config::QSSVerbosity::Info)
+    llvm::outs() << "Zip buffer is of size " << sz << " bytes\n";
   if (outbuffer) {
     // output the new archive to the stream
     stream.write(outbuffer, sz);

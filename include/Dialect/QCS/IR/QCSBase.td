@@ -22,6 +22,8 @@
 #ifndef QCS_BASE_H
 #define QCS_BASE_H
 
+include "mlir/IR/AttrTypeBase.td"
+
 //===----------------------------------------------------------------------===//
 // Quantum Control System dialect definition
 //===----------------------------------------------------------------------===//

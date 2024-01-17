@@ -20,7 +20,6 @@
 
 #include "API/api.h"
 
-#include "llvm/ADT/Optional.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
@@ -43,14 +42,14 @@ using json = nlohmann::json;
 static llvm::cl::OptionCategory qsscBindCat_(" Options for parameter binding",
                                              "Options that binds parameters");
 
-static llvm::cl::opt<enum Action>
-    emitAction("emit", llvm::cl::init(Action::None),
+static llvm::cl::opt<enum qssc::config::EmitAction>
+    emitAction("emit", llvm::cl::init(qssc::config::EmitAction::None),
                llvm::cl::desc("Select method used to generate input"),
-               llvm::cl::values(clEnumValN(Action::GenQEM, "qem",
+               llvm::cl::values(clEnumValN(qssc::config::EmitAction::QEM, "qem",
                                            "a quantum executable module (qem) "
                                            "for execution on hardware")),
                llvm::cl::values(clEnumValN(
-                   Action::GenQEQEM, "qe-qem",
+                   qssc::config::EmitAction::QEQEM, "qe-qem",
                    "a target-specific quantum executable module (qeqem) "
                    "for execution on hardware")));
 
@@ -99,11 +98,11 @@ public:
 
   qssc::arguments::ArgumentType
   getArgumentValue(llvm::StringRef name) const override {
-    std::string name_{name};
+    std::string const name_{name};
     auto pos = parameterMap.find(name_);
 
     if (pos == parameterMap.end())
-      return llvm::None;
+      return std::nullopt;
     return pos->second;
   }
 
@@ -112,7 +111,7 @@ private:
 };
 
 llvm::Error
-_bindArguments(std::string_view target, Action action,
+_bindArguments(std::string_view target, qssc::config::EmitAction action,
                std::string_view configPath, std::string_view moduleInput,
                std::string_view payloadOutputPath,
                std::unordered_map<std::string, double> const &arguments,
@@ -124,8 +123,8 @@ _bindArguments(std::string_view target, Action action,
 
   qssc::hal::registry::TargetSystemInfo &targetInfo =
       *qssc::hal::registry::TargetSystemRegistry::lookupPluginInfo(target)
-           .getValueOr(qssc::hal::registry::TargetSystemRegistry::
-                           nullTargetSystemInfo());
+           .value_or(qssc::hal::registry::TargetSystemRegistry::
+                         nullTargetSystemInfo());
 
   auto created = targetInfo.createTarget(&context, llvm::StringRef(configPath));
   if (auto err = created.takeError()) {
@@ -143,18 +142,18 @@ _bindArguments(std::string_view target, Action action,
         std::move(err));
   }
 
-  MapAngleArgumentSource source(arguments);
+  MapAngleArgumentSource const source(arguments);
 
   auto factory =
       targetInst.get()->getBindArgumentsImplementationFactory(action);
-  if ((!factory.hasValue()) || (factory.getValue() == nullptr)) {
+  if ((!factory.has_value()) || (factory.value() == nullptr)) {
     return qssc::emitDiagnostic(
         onDiagnostic, qssc::Severity::Error,
         qssc::ErrorCategory::QSSLinkerNotImplemented,
         "Unable to load bind arguments implementation for target.");
   }
   qssc::arguments::BindArgumentsImplementationFactory &factoryRef =
-      *factory.getValue();
+      *factory.value();
   return qssc::arguments::bindArguments(
       moduleInput, payloadOutputPath, source, treatWarningsAsErrors,
       enableInMemoryInput, inMemoryOutput, factoryRef, onDiagnostic);
@@ -168,10 +167,10 @@ int qssc::bindArguments(
     std::string *inMemoryOutput,
     const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
 
-  if (auto err =
-          _bindArguments(target, Action::GenQEM, configPath, moduleInput,
-                         payloadOutputPath, arguments, treatWarningsAsErrors,
-                         enableInMemoryInput, inMemoryOutput, onDiagnostic)) {
+  if (auto err = _bindArguments(
+          target, qssc::config::EmitAction::QEM, configPath, moduleInput,
+          payloadOutputPath, arguments, treatWarningsAsErrors,
+          enableInMemoryInput, inMemoryOutput, onDiagnostic)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
     return 1;
   }
@@ -201,7 +200,7 @@ llvm::Error bind_(int argc, char const **argv, std::string *outputString,
   for (auto &[paramName, paramValue] : inputArgs.items())
     argsMap[paramName] = (double)paramValue;
 
-  if (emitAction == Action::None) {
+  if (emitAction == qssc::config::EmitAction::None) {
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
         "Unable to detect an emit option! Please specify the "

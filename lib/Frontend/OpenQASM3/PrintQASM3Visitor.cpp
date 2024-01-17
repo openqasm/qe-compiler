@@ -28,9 +28,43 @@
 
 #include "Frontend/OpenQASM3/PrintQASM3Visitor.h"
 
-#include "qasm/AST/ASTIdentifier.h"
+#include "Frontend/OpenQASM3/BaseQASM3Visitor.h"
 
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <qasm/AST/ASTBarrier.h>
+#include <qasm/AST/ASTCBit.h>
+#include <qasm/AST/ASTCastExpr.h>
+#include <qasm/AST/ASTDeclarationList.h>
+#include <qasm/AST/ASTDelay.h>
+#include <qasm/AST/ASTDuration.h>
+#include <qasm/AST/ASTFunctionCallExpr.h>
+#include <qasm/AST/ASTFunctions.h>
+#include <qasm/AST/ASTGateOpList.h>
+#include <qasm/AST/ASTGates.h>
+#include <qasm/AST/ASTIdentifier.h>
+#include <qasm/AST/ASTIfConditionals.h>
+#include <qasm/AST/ASTIntegerList.h>
+#include <qasm/AST/ASTKernel.h>
+#include <qasm/AST/ASTLoops.h>
+#include <qasm/AST/ASTMeasure.h>
+#include <qasm/AST/ASTQubit.h>
+#include <qasm/AST/ASTReset.h>
+#include <qasm/AST/ASTResult.h>
+#include <qasm/AST/ASTReturn.h>
+#include <qasm/AST/ASTStatement.h>
+#include <qasm/AST/ASTStretch.h>
+#include <qasm/AST/ASTSwitchStatement.h>
+#include <qasm/AST/ASTSymbolTable.h>
+#include <qasm/AST/ASTTypeEnums.h>
+#include <qasm/AST/ASTTypes.h>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 using namespace QASM;
 
@@ -56,7 +90,7 @@ void PrintQASM3Visitor::visit(const ASTForLoopNode *node) {
     }
   } else {
     vStream << "i=[";
-    for (int I : intList)
+    for (int const I : intList)
       vStream << I << " ";
     vStream << "], stepping=" << node->GetStepping();
   }
@@ -95,7 +129,7 @@ void PrintQASM3Visitor::visit(const ASTElseStatementNode *node) {
 }
 
 void PrintQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
-  ASTType quantityType = node->GetQuantityType();
+  ASTType const quantityType = node->GetQuantityType();
   vStream << "SwitchStatementNode("
           << "SwitchQuantity(";
 
@@ -342,7 +376,7 @@ void PrintQASM3Visitor::visit(const ASTDelayStatementNode *node) {
 
 void PrintQASM3Visitor::visit(const ASTDelayNode *node) {
   vStream << "DelayNode(";
-  switch (ASTType delayType = node->GetDelayType()) {
+  switch (ASTType const delayType = node->GetDelayType()) {
   case ASTTypeDuration: {
     vStream << "duration=";
     const ASTDurationNode *durationNode = node->GetDurationNode();
@@ -396,7 +430,7 @@ void PrintQASM3Visitor::visit(const ASTBarrierNode *node) {
 }
 
 void PrintQASM3Visitor::visit(const ASTDeclarationNode *node) {
-  ASTType declType = node->GetASTType();
+  ASTType const declType = node->GetASTType();
   vStream << "DeclarationNode(type=" << PrintTypeEnum(declType) << ", ";
   // if it's a function, process it directly
   if (const auto *funcDecl =
@@ -504,7 +538,7 @@ void PrintQASM3Visitor::visit(const ASTIdentifierNode *node) {
 }
 
 void PrintQASM3Visitor::visit(const ASTBinaryOpNode *node) {
-  ASTOpType opType = node->GetOpType();
+  ASTOpType const opType = node->GetOpType();
   const ASTExpressionNode *left = node->GetLeft();
   const ASTExpressionNode *right = node->GetRight();
   vStream << "BinaryOpNode(type=" << PrintOpTypeEnum(opType) << ", left=";
@@ -515,7 +549,7 @@ void PrintQASM3Visitor::visit(const ASTBinaryOpNode *node) {
 }
 
 void PrintQASM3Visitor::visit(const ASTUnaryOpNode *node) {
-  ASTOpType opType = node->GetOpType();
+  ASTOpType const opType = node->GetOpType();
   const auto *operand = node->GetExpression();
 
   vStream << "UnaryOpNode(type=" << PrintOpTypeEnum(opType) << ", operand=";
@@ -558,7 +592,7 @@ void PrintQASM3Visitor::visit(const ASTFloatNode *node) {
 
 void PrintQASM3Visitor::visit(const ASTMPDecimalNode *node) {
   const unsigned bits = node->GetIdentifier()->GetBits();
-  std::string val = node->GetValue();
+  std::string const val = node->GetValue();
   vStream << "MPDecimalNode(name=" << node->GetName();
   if (!node->IsNan())
     vStream << ", value=" << val;
@@ -569,9 +603,10 @@ void PrintQASM3Visitor::visit(const ASTMPComplexNode *node) {
   const std::string &name = node->GetName();
   const std::string val = node->GetValue();
   const unsigned bits = node->GetIdentifier()->GetBits();
-  int position = val.find(' ');
-  std::string real = val.substr(1, position - 1);
-  std::string imag = val.substr(position + 1, val.length() - position - 2);
+  int const position = val.find(' ');
+  std::string const real = val.substr(1, position - 1);
+  std::string const imag =
+      val.substr(position + 1, val.length() - position - 2);
 
   vStream << "MPComplexNode(name=" << name;
   if (!node->IsNan()) {

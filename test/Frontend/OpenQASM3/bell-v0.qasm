@@ -53,11 +53,11 @@ bit c1;
 // AST-PRETTY: UGateOpNode(params=[AngleNode(value=1.57079632679000003037, bits=64), AngleNode(value=0.0, bits=64), AngleNode(value=3.14159265359000006157, bits=64)], qubits=[], qcparams=[$0])
 // AST-PRETTY: GateDeclarationNode(name=cx, params=[], qubits=[QubitNode(name=ast-gate-qubit-param-control-0, bits=0), QubitNode(name=ast-gate-qubit-param-target-1, bits=0)], qcparams=[control, target])
 // MLIR-CIRCUITS: quir.circuit @circuit_0([[ARG0:%[A-Za-z0-9]+]]: !quir.qubit<1>) {
-// MLIR: [[a0:%angle[_0-9]*]] = quir.constant #quir.angle<1.57079632679 : !quir.angle<64>>
+// MLIR: [[a0:%angle[_0-9]*]] = quir.constant #quir.angle<1.57079632679> : !quir.angle<64>
 // MLIR-NO-CIRCUITS: quir.builtin_U [[QUBIT0]], [[a0]], {{.*}}, {{.*}} : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-NO-CIRCUITS: quir.builtin_CX [[QUBIT0]], [[QUBIT1]] : !quir.qubit<1>, !quir.qubit<1>
-// MLIR-CIRCUITS: [[a1:%angle[_0-9]*]] = quir.constant #quir.angle<0.000000e+00 : !quir.angle<64>>
-// MLIR-CIRCUITS: [[a2:%angle[_0-9]*]] = quir.constant #quir.angle<3.1415926535900001 : !quir.angle<64>>
+// MLIR-CIRCUITS: [[a1:%angle[_0-9]*]] = quir.constant #quir.angle<0.000000e+00> : !quir.angle<64>
+// MLIR-CIRCUITS: [[a2:%angle[_0-9]*]] = quir.constant #quir.angle<3.1415926535900001> : !quir.angle<64>
 // MLIR-CIRCUITS: quir.builtin_U [[ARG0]], [[a0]], [[a1]], [[a2]] : !quir.qubit<1>, !quir.angle<64>, !quir.angle<64>, !quir.angle<64>
 // MLIR-CIRCUITS: quir.circuit @circuit_1([[ARG0:%[A-Za-z0-9]+]]: !quir.qubit<1>, [[ARG1:%[A-Za-z0-9]+]]: !quir.qubit<1>) -> i1 {
 // MLIR-CIRCUITS: quir.builtin_CX [[ARG1]], [[ARG0]] : !quir.qubit<1>, !quir.qubit<1>

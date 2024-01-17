@@ -24,7 +24,6 @@
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/APInt.h"
-#include "llvm/ADT/None.h"
 
 #include <istream>
 #include <memory>

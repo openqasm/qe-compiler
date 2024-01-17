@@ -17,40 +17,40 @@ module {
     oq3.declare_variable @cb1 : !quir.cbit<1>
     oq3.declare_variable @cb2 : !quir.cbit<1>
 
-    func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) {
-        %zero = quir.constant #quir.angle<0.0 : !quir.angle<1>>
+    func.func @gateCall1(%q1 : !quir.qubit<1>, %lambda : !quir.angle<1>) {
+        %zero = quir.constant #quir.angle<0.0> : !quir.angle<1>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<1>, !quir.angle<1>, !quir.angle<1>
         "quir.call_gate"(%q1) {callee = @proto} : (!quir.qubit<1>) -> ()
         return
     }
-    func @gateCall2(%q1 : !quir.qubit<1>, %lambda : !quir.angle) {
-        %zero = quir.constant #quir.angle<0.0 : !quir.angle<20>>
+    func.func @gateCall2(%q1 : !quir.qubit<1>, %lambda : !quir.angle) {
+        %zero = quir.constant #quir.angle<0.0> : !quir.angle<20>
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
         quir.builtin_U %q1, %zero, %zero, %lambda : !quir.qubit<1>, !quir.angle<20>, !quir.angle<20>, !quir.angle
         %cb2 = "quir.measure"(%q1) : (!quir.qubit<1>) -> (i1)
-        cond_br %cb2, ^runz, ^dontrunz
+        cf.cond_br %cb2, ^runz, ^dontrunz
 
     ^runz:
         "quir.call_gate"(%q1) {callee = @Z} : (!quir.qubit<1>) -> ()
-        br ^afterz
+       cf.br ^afterz
 
     ^dontrunz:
-        br ^afterz
+       cf.br ^afterz
 
     ^afterz:
         // if(c1==1) { x q[2]; } // braces optional in this case
-        cond_br %cb2, ^runx, ^dontrunx
+        cf.cond_br %cb2, ^runx, ^dontrunx
 
     // this checks for both specialized and non-specialized intermediate qubit gate calls
     // CHECK: quir.call_gate @X(%{{.*}}) : (!quir.qubit<1>) -> ()
     ^runx:
         "quir.call_gate"(%q1) {callee = @X} : (!quir.qubit<1>) -> ()
-        br ^afterx
+       cf.br ^afterx
 
     ^dontrunx:
-        br ^afterx
+       cf.br ^afterx
 
     ^afterx:
         // post q[2]; // NOP/identity
@@ -59,9 +59,9 @@ module {
 
         return
     }
-    func @gateCall3(%q1 : !quir.qubit<1>, %phi : !quir.angle) {
-        %zero = quir.constant #quir.angle<0.0 : !quir.angle<20>>
-        %cmpval = quir.constant #quir.angle<0.3 : !quir.angle<20>>
+    func.func @gateCall3(%q1 : !quir.qubit<1>, %phi : !quir.angle) {
+        %zero = quir.constant #quir.angle<0.0> : !quir.angle<20>
+        %cmpval = quir.constant #quir.angle<0.3> : !quir.angle<20>
         %farg = "oq3.cast"(%phi) : (!quir.angle) -> f64
         %cval = "oq3.cast"(%cmpval) : (!quir.angle<20>) -> f64
         %cond = arith.cmpf "ogt", %farg, %cval : f64
@@ -72,13 +72,13 @@ module {
         }
         return
     }
-    func @main () -> i32 {
+    func.func @main () -> i32 {
         %qa1 = quir.declare_qubit { id = 1 : i32 } : !quir.qubit<1>
         %qb1 = quir.declare_qubit { id = 2 : i32 } : !quir.qubit<1>
         %qc1 = quir.declare_qubit { id = 3 : i32 } : !quir.qubit<1>
         quir.reset %qc1 : !quir.qubit<1>
         %cb1 = oq3.variable_load @cb1 : !quir.cbit<1>
-        %theta = quir.constant #quir.angle<0.1 : !quir.angle<1>>
+        %theta = quir.constant #quir.angle<0.1> : !quir.angle<1>
         // CHECK: quir.call_gate @gateCall1(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         "quir.call_gate"(%qb1, %theta) {callee = @gateCall1} : (!quir.qubit<1>, !quir.angle<1>) -> ()
         // CHECK: quir.call_gate @"gateCall2_!quir.qubit<1>_!quir.angle<1>"(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<1>) -> ()
@@ -96,7 +96,7 @@ module {
         quir.call_gate @gateCall3(%qb1, %theta) : (!quir.qubit<1>, !quir.angle<1>) -> ()
         %false = arith.constant false
         scf.if %false {
-            %theta2 = quir.constant #quir.angle<0.1 : !quir.angle<3>>
+            %theta2 = quir.constant #quir.angle<0.1> : !quir.angle<3>
             // CHECK: quir.call_gate @"gateCall3_!quir.qubit<1>_!quir.angle<3>"(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.angle<3>) -> ()
             quir.call_gate @gateCall3(%qb1, %theta2) : (!quir.qubit<1>, !quir.angle<3>) -> ()
         }

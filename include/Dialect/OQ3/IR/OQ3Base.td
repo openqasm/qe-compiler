@@ -16,6 +16,7 @@
 #ifndef OQ3_BASE_H
 #define OQ3_BASE_H
 
+include "mlir/IR/AttrTypeBase.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 
 //===----------------------------------------------------------------------===//
@@ -31,7 +32,7 @@ def OQ3_Dialect : Dialect {
     }];
     let cppNamespace = "::mlir::oq3";
     let dependentDialects = [
-        "mlir::arith::ArithmeticDialect",
+        "mlir::arith::ArithDialect",
         "mlir::LLVM::LLVMDialect"
     ];
 }
@@ -44,24 +45,18 @@ class OQ3_Op<string mnemonic, list<Trait> traits = []> :
     Op<OQ3_Dialect, mnemonic, traits>;
 
 class OQ3_UnaryOp<string mnemonic, list<Trait> traits = []> :
-      OQ3_Op<mnemonic, !listconcat(traits, [NoSideEffect])> {
+      OQ3_Op<mnemonic, !listconcat(traits, [Pure])> {
   let arguments = (ins AnyClassical:$operand);
   let results = (outs AnyClassical:$result);
-  let verifier = [{ return success(); }];
-  // In LLVM 15+,
-  // let hasVerifier = 0;
 }
 
 class OQ3_BinaryOp<string mnemonic, list<Trait> traits = []> :
-    OQ3_Op<mnemonic, !listconcat(traits, [NoSideEffect])> {
+    OQ3_Op<mnemonic, !listconcat(traits, [Pure])> {
   let arguments = (ins AnyClassical:$operand1, AnyClassical:$operand2);
   let results = (outs AnyClassical:$result);
   let assemblyFormat = [{
         attr-dict $lhs `,` $rhs `:` `(` type($lhs) `,` type($rhs) `)` `->` type($result)
   }];
-  let verifier = [{ return success(); }];
-  // In LLVM 15+,
-  // let hasVerifier = 0;
 }
 
 //===----------------------------------------------------------------------===//

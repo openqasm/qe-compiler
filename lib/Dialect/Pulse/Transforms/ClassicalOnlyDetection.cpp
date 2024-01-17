@@ -20,13 +20,21 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Transforms/ClassicalOnlyDetection.h"
+
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
-#include "Dialect/Pulse/IR/PulseTypes.h"
+#include "Dialect/QUIR/IR/QUIROps.h"
 
-#include "Dialect/QUIR/IR/QUIRTypes.h"
-#include "mlir/Dialect/SCF/SCF.h"
-#include <llvm/Support/Casting.h>
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Casting.h"
 
 using namespace mlir;
 using namespace mlir::pulse;
@@ -55,7 +63,7 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
   moduleOperation->walk([&](Operation *op) {
     if (dyn_cast<scf::IfOp>(op) || dyn_cast<scf::ForOp>(op) ||
         dyn_cast<quir::SwitchOp>(op) || dyn_cast<SequenceOp>(op) ||
-        dyn_cast<FuncOp>(op)) {
+        dyn_cast<mlir::func::FuncOp>(op)) {
       // check for a pre-existing classicalOnly attribute
       // only update if the attribute does not exist or it is true
       // indicating that no quantum ops have been identified yet
@@ -73,5 +81,9 @@ llvm::StringRef ClassicalOnlyDetectionPass::getArgument() const {
 llvm::StringRef ClassicalOnlyDetectionPass::getDescription() const {
   return "Detect control flow blocks that contain only classical (non-quantum) "
          "operations, and decorate them with a classicalOnly bool attribute";
+}
+
+llvm::StringRef ClassicalOnlyDetectionPass::getName() const {
+  return "Classical Only Detection Pass";
 }
 } // namespace mlir::pulse

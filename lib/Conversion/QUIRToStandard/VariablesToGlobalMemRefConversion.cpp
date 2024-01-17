@@ -24,36 +24,46 @@
 //===----------------------------------------------------------------------===//
 
 #include "Conversion/QUIRToStandard/VariablesToGlobalMemRefConversion.h"
+
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
-#include "Dialect/QUIR/Transforms/Passes.h"
 
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
+#include <mlir/Dialect/Func/IR/FuncOps.h>
+
+#include "llvm/ADT/ArrayRef.h"
+#include "llvm/ADT/StringRef.h"
+
+#include <cassert>
+#include <cstdint>
+#include <optional>
 
 using namespace mlir;
 using namespace mlir::oq3;
 using namespace mlir::quir;
 
 namespace {
-llvm::Optional<mlir::memref::GlobalOp>
+std::optional<mlir::memref::GlobalOp>
 createGlobalMemrefOp(mlir::OpBuilder &builder, mlir::Location loc,
                      mlir::Operation *insertionAnchor, mlir::MemRefType type,
                      llvm::StringRef name) {
 
   // place memref::GlobalOps at the top of the surrounding module.
   // (note: required by llvm.mlir.global, which this is lowered to)
-  mlir::OpBuilder::InsertionGuard g(builder);
+  mlir::OpBuilder::InsertionGuard const g(builder);
   auto containingModule = insertionAnchor->getParentOfType<mlir::ModuleOp>();
 
   if (!containingModule) {
     insertionAnchor->emitOpError("Missing a global ModuleOp container.");
-    return llvm::None;
+    return std::nullopt;
   }
 
   builder.setInsertionPoint(&containingModule.front());
@@ -85,8 +95,8 @@ struct VariableDeclarationConversionPattern
   matchAndRewrite(DeclareVariableOp declareOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto declarationType = declareOp.type();
-    auto convertedType = typeConverter->convertType(declareOp.type());
+    auto declarationType = declareOp.getType();
+    auto convertedType = typeConverter->convertType(declareOp.getType());
     if (convertedType)
       declarationType = convertedType;
 
@@ -102,7 +112,7 @@ struct VariableDeclarationConversionPattern
     if (!gmoOrNone)
       return failure();
 
-    auto gmo = gmoOrNone.getValue();
+    auto gmo = gmoOrNone.value();
 
     if (externalizeOutputVariables && declareOp.isOutputVariable()) {
       // for generating defined symbols, global memrefs need an initializer
@@ -113,7 +123,7 @@ struct VariableDeclarationConversionPattern
           rankedTensorType,
           llvm::ArrayRef<mlir::Attribute>{elementInitializerAttr});
 
-      gmo.initial_valueAttr(initializerAttr);
+      gmo.setInitialValueAttr(initializerAttr);
       gmo.setPublic();
     }
 
@@ -133,14 +143,14 @@ struct ArrayDeclarationConversionPattern
   matchAndRewrite(DeclareArrayOp declareOp, OpAdaptor adaptor,
                   ConversionPatternRewriter &rewriter) const override {
 
-    auto declarationType = declareOp.type();
-    auto convertedType = typeConverter->convertType(declareOp.type());
+    auto declarationType = declareOp.getType();
+    auto convertedType = typeConverter->convertType(declareOp.getType());
     if (convertedType)
       declarationType = convertedType;
 
-    uint64_t num_elements = declareOp.num_elements().getZExtValue();
+    uint64_t const numElements = declareOp.getNumElements().getZExtValue();
     auto const memRefType = mlir::MemRefType::get(
-        llvm::ArrayRef<int64_t>{(int64_t)num_elements}, declareOp.type());
+        llvm::ArrayRef<int64_t>{(int64_t)numElements}, declareOp.getType());
     assert(memRefType && "failed to instantiate a MemRefType, likely trying "
                          "with invalid element type");
 
@@ -162,42 +172,43 @@ struct ArrayDeclarationConversionPattern
 /// GetGlobalMemrefOp for
 /// @return a GetGlobalMemrefOp for the given variable op
 template <class QUIRVariableOp>
-llvm::Optional<mlir::memref::GetGlobalOp>
+std::optional<mlir::memref::GetGlobalOp>
 findOrCreateGetGlobalMemref(QUIRVariableOp variableOp,
                             ConversionPatternRewriter &builder) {
-  mlir::OpBuilder::InsertionGuard g(builder);
+  mlir::OpBuilder::InsertionGuard const g(builder);
 
   auto globalMemrefOp =
       SymbolTable::lookupNearestSymbolFrom<mlir::memref::GlobalOp>(
-          variableOp, variableOp.variable_nameAttr());
+          variableOp, variableOp.getVariableNameAttr());
 
   if (!globalMemrefOp) {
     variableOp.emitOpError("Cannot lookup a variable declaration for " +
-                           variableOp.variable_name());
-    return llvm::None;
+                           variableOp.getVariableName());
+    return std::nullopt;
   }
 
   auto surroundingFunction =
-      variableOp->template getParentOfType<mlir::FuncOp>();
+      variableOp->template getParentOfType<mlir::func::FuncOp>();
   if (!surroundingFunction) {
-    variableOp.emitOpError("Variable use of " + variableOp.variable_name() +
+    variableOp.emitOpError("Variable use of " + variableOp.getVariableName() +
                            " outside functions not supported");
-    return llvm::None;
+    return std::nullopt;
   }
 
   // Search for an existing memref::GetGlobalOp in the surrounding function by
   // walking all the GlobalMemref's symbol uses.
   if (auto rangeOrNone = mlir::SymbolTable::getSymbolUses(
           /* symbol */ globalMemrefOp, /* inside */ surroundingFunction))
-    for (auto &use : rangeOrNone.getValue())
+    for (auto &use : rangeOrNone.value())
       if (llvm::isa<mlir::memref::GetGlobalOp>(use.getUser()))
         return llvm::cast<mlir::memref::GetGlobalOp>(use.getUser());
 
   // Create new one at the top of the start of the function
   builder.setInsertionPointToStart(&surroundingFunction.getBody().front());
 
-  return builder.create<mlir::memref::GetGlobalOp>(
-      variableOp.getLoc(), globalMemrefOp.type(), globalMemrefOp.sym_name());
+  return builder.create<mlir::memref::GetGlobalOp>(variableOp.getLoc(),
+                                                   globalMemrefOp.getType(),
+                                                   globalMemrefOp.getSymName());
 }
 
 struct VariableUseConversionPattern
@@ -215,11 +226,11 @@ struct VariableUseConversionPattern
     if (!varRefOrNone)
       return failure();
 
-    auto varRef = varRefOrNone.getValue();
-    auto loadOp =
-        rewriter.create<mlir::AffineLoadOp>(useOp.getLoc(), varRef.getResult());
+    auto varRef = varRefOrNone.value();
+    auto loadOp = rewriter.create<mlir::affine::AffineLoadOp>(
+        useOp.getLoc(), varRef.getResult());
 
-    rewriter.replaceOp(useOp, {loadOp});
+    rewriter.replaceOp(useOp, loadOp);
     return success();
   }
 };
@@ -238,14 +249,14 @@ struct ArrayElementUseConversionPattern
     auto varRefOrNone = findOrCreateGetGlobalMemref(useOp, rewriter);
     if (!varRefOrNone)
       return failure();
-    auto varRef = varRefOrNone.getValue();
+    auto varRef = varRefOrNone.value();
 
     auto indexOp = rewriter.create<mlir::arith::ConstantOp>(
-        useOp.getLoc(), rewriter.getIndexType(), useOp.indexAttr());
+        useOp.getLoc(), rewriter.getIndexType(), useOp.getIndexAttr());
     auto loadOp = rewriter.create<mlir::memref::LoadOp>(
         useOp.getLoc(), varRef.getResult(), mlir::ValueRange{indexOp});
 
-    rewriter.replaceOp(useOp, {loadOp});
+    rewriter.replaceOp(useOp, loadOp);
     return success();
   }
 };
@@ -263,10 +274,10 @@ struct VariableAssignConversionPattern
     auto varRefOrNone = findOrCreateGetGlobalMemref(assignOp, rewriter);
     if (!varRefOrNone)
       return failure();
-    auto varRef = varRefOrNone.getValue();
+    auto varRef = varRefOrNone.value();
 
-    rewriter.create<mlir::AffineStoreOp>(
-        assignOp.getLoc(), adaptor.assigned_value(), varRef.getResult(),
+    rewriter.create<mlir::affine::AffineStoreOp>(
+        assignOp.getLoc(), adaptor.getAssignedValue(), varRef.getResult(),
         mlir::ValueRange{});
 
     rewriter.eraseOp(assignOp);
@@ -288,13 +299,13 @@ struct ArrayElementAssignConversionPattern
 
     if (!varRefOrNone)
       return failure();
-    auto varRef = varRefOrNone.getValue();
+    auto varRef = varRefOrNone.value();
 
     auto indexOp = rewriter.create<mlir::arith::ConstantOp>(
-        assignOp.getLoc(), rewriter.getIndexType(), assignOp.indexAttr());
+        assignOp.getLoc(), rewriter.getIndexType(), assignOp.getIndexAttr());
 
     rewriter.create<mlir::memref::StoreOp>(
-        assignOp.getLoc(), adaptor.assigned_value(), varRef.getResult(),
+        assignOp.getLoc(), adaptor.getAssignedValue(), varRef.getResult(),
         mlir::ValueRange{indexOp});
 
     rewriter.replaceOp(assignOp, mlir::ValueRange{});

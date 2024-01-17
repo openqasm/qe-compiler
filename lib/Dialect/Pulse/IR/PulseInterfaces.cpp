@@ -20,24 +20,31 @@
 
 #include "Dialect/Pulse/IR/PulseInterfaces.h"
 
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/Operation.h"
+
+#include "llvm/Support/Error.h"
+
+#include <cstdint>
+#include <optional>
 
 using namespace mlir::pulse;
 
 //===----------------------------------------------------------------------===//
 // Tablegen Interface Definitions
 //===----------------------------------------------------------------------===//
-
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/Pulse/IR/PulseInterfaces.cpp.inc"
 
 //===----------------------------------------------------------------------===//
 // PulseOpSchedulingInterface
 //===----------------------------------------------------------------------===//
 
-llvm::Optional<int64_t> interfaces_impl::getTimepoint(mlir::Operation *op) {
+std::optional<int64_t> interfaces_impl::getTimepoint(mlir::Operation *op) {
   if (op->hasAttr("pulse.timepoint"))
     return op->getAttrOfType<IntegerAttr>("pulse.timepoint").getInt();
-  return llvm::None;
+  return std::nullopt;
 }
 
 void interfaces_impl::setTimepoint(mlir::Operation *op, int64_t timepoint) {
@@ -47,11 +54,11 @@ void interfaces_impl::setTimepoint(mlir::Operation *op, int64_t timepoint) {
 
 // MLIR does does not have a setUI64IntegerAttr so duration and setup latency
 // are stored as I64IntegerAttr but should be treated as a uint64_t
-llvm::Optional<uint64_t> interfaces_impl::getSetupLatency(Operation *op) {
+std::optional<uint64_t> interfaces_impl::getSetupLatency(Operation *op) {
   if (op->hasAttr("pulse.setupLatency"))
     return static_cast<uint64_t>(
         op->getAttrOfType<IntegerAttr>("pulse.setupLatency").getInt());
-  return llvm::None;
+  return std::nullopt;
 }
 
 void interfaces_impl::setSetupLatency(Operation *op, uint64_t setupLatency) {
@@ -67,6 +74,14 @@ interfaces_impl::getDuration(Operation *op, Operation *callSequenceOp) {
   return llvm::createStringError(
       llvm::inconvertibleErrorCode(),
       "Operation does not have a pulse.duration attribute.");
+}
+
+llvm::Expected<mlir::ArrayAttr> interfaces_impl::getPorts(mlir::Operation *op) {
+  if (op->hasAttrOfType<ArrayAttr>("pulse.argPorts"))
+    return op->getAttrOfType<ArrayAttr>("pulse.argPorts");
+  return llvm::createStringError(
+      llvm::inconvertibleErrorCode(),
+      "Operation does not have a pulse.argPorts attribute.");
 }
 
 void interfaces_impl::setDuration(Operation *op, uint64_t duration) {

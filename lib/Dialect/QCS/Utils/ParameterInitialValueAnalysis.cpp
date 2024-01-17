@@ -19,8 +19,15 @@
 #include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
+
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/Operation.h"
+#include "mlir/Pass/PassRegistry.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
 
 #define DEBUG_TYPE "ParameterInitialValueAnalysis"
 
@@ -28,6 +35,15 @@ using namespace mlir::qcs;
 
 ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
     mlir::Operation *moduleOp) {
+
+  // ParameterInitialValueAnalysis should only process the top level
+  // module where parameters are defined
+  // find the top level module
+  auto parentOp = moduleOp->getParentOfType<mlir::ModuleOp>();
+  while (parentOp) {
+    moduleOp = parentOp;
+    parentOp = moduleOp->getParentOfType<mlir::ModuleOp>();
+  }
 
   if (not invalid_)
     return;
@@ -45,12 +61,12 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
 
         // moduleOp->walk([&](DeclareParameterOp declareParameterOp) {
         double initial_value = 0.0;
-        if (declareParameterOp.initial_value().hasValue()) {
-          auto angleAttr = declareParameterOp.initial_value()
-                               .getValue()
+        if (declareParameterOp.getInitialValue().has_value()) {
+          auto angleAttr = declareParameterOp.getInitialValue()
+                               .value()
                                .dyn_cast<mlir::quir::AngleAttr>();
-          auto floatAttr = declareParameterOp.initial_value()
-                               .getValue()
+          auto floatAttr = declareParameterOp.getInitialValue()
+                               .value()
                                .dyn_cast<FloatAttr>();
           if (!(angleAttr || floatAttr))
             declareParameterOp.emitError("Parameters are currently limited to "
@@ -62,7 +78,7 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
           if (floatAttr)
             initial_value = floatAttr.getValue().convertToDouble();
         }
-        initial_values_[declareParameterOp.sym_name()] = initial_value;
+        initial_values_[declareParameterOp.getSymName()] = initial_value;
       }
   invalid_ = false;
 }
@@ -77,6 +93,10 @@ llvm::StringRef ParameterInitialValueAnalysisPass::getArgument() const {
 
 llvm::StringRef ParameterInitialValueAnalysisPass::getDescription() const {
   return "Run ParameterInitialValueAnalysis";
+}
+
+llvm::StringRef ParameterInitialValueAnalysisPass::getName() const {
+  return "Parameters Initial Value Analysis Pass";
 }
 
 // TODO: move registerQCSPasses to separate source file if additional passes

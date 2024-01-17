@@ -19,17 +19,21 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "Dialect/OQ3/IR/OQ3Dialect.h"
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/OQ3/IR/OQ3Types.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
 
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
-#include "mlir/Dialect/SCF/SCF.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "Dialect/QUIR/IR/QUIRTypes.h"
+
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/Operation.h"
 #include "mlir/IR/PatternMatch.h"
-#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
+
+#include <cassert>
+#include <optional>
 
 using namespace mlir;
 using namespace oq3;
@@ -38,13 +42,13 @@ namespace {
 /// Include the patterns defined in the Declarative Rewrite framework.
 #include "Dialect/OQ3/IR/OQ3Patterns.inc"
 
-static llvm::Optional<mlir::Value>
+static std::optional<mlir::Value>
 getI1InputFromExtensionOp(mlir::Operation *op) {
   if (!op)
-    return llvm::None;
+    return std::nullopt;
 
   if (!mlir::isa<mlir::arith::ExtUIOp>(op) && !mlir::isa<CastOp>(op))
-    return llvm::None;
+    return std::nullopt;
 
   assert(op->getNumOperands() == 1 &&
          "Cannot extract I1 operand from operations that don't have exactly 1 "
@@ -54,7 +58,7 @@ getI1InputFromExtensionOp(mlir::Operation *op) {
   if (operand.getType().isSignlessInteger(1))
     return operand;
 
-  return llvm::None;
+  return std::nullopt;
 }
 
 // This pattern detects DAGs that result from qasm `bit x; bool y = (x==1);`
@@ -93,10 +97,10 @@ struct EqEqOnePat : public OpRewritePattern<mlir::arith::CmpIOp> {
     auto extendedI1OrNone =
         getI1InputFromExtensionOp(cmpOp.getLhs().getDefiningOp());
 
-    if (!extendedI1OrNone.hasValue())
+    if (!extendedI1OrNone.has_value())
       return failure();
 
-    rewriter.replaceOp(cmpOp, {extendedI1OrNone.getValue()});
+    rewriter.replaceOp(cmpOp, {extendedI1OrNone.value()});
     return success();
   } // matchAndRewrite
 };  // EqEqOnePat
@@ -108,10 +112,10 @@ struct CastToSameType : public OpRewritePattern<CastOp> {
       : OpRewritePattern<CastOp>(context, /*benefit=*/1) {}
   auto matchAndRewrite(CastOp castOp, mlir::PatternRewriter &rewriter) const
       -> LogicalResult override {
-    if (castOp.arg().getType() != castOp.out().getType())
+    if (castOp.getArg().getType() != castOp.getOut().getType())
       return failure();
 
-    rewriter.replaceOp(castOp, castOp.arg());
+    rewriter.replaceOp(castOp, castOp.getArg());
     return success();
   } // matchAndRewrite
 };  // struct CastToSameType
@@ -128,15 +132,15 @@ struct AssignSingleCBitToAssignVariablePattern
   matchAndRewrite(oq3::CBitAssignBitOp op,
                   mlir::PatternRewriter &rewriter) const override {
 
-    if (op.cbit_width() != 1)
+    if (op.getCbitWidth() != 1)
       return failure();
 
     auto *context = rewriter.getContext();
     auto castOp = rewriter.create<CastOp>(
-        op.getLoc(), quir::CBitType::get(context, 1), op.assigned_bit());
+        op.getLoc(), quir::CBitType::get(context, 1), op.getAssignedBit());
 
     rewriter.replaceOpWithNewOp<oq3::VariableAssignOp>(
-        op, op.variable_nameAttr(), castOp.getResult());
+        op, op.getVariableNameAttr(), castOp.getResult());
 
     return success();
   }

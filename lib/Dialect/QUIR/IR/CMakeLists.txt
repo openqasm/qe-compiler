@@ -25,6 +25,9 @@ add_mlir_dialect_library(MLIRQUIRDialect
 
 	LINK_LIBS PUBLIC
 	MLIRIR
+        MLIRArithDialect
+        MLIRLLVMDialect
         MLIROQ3Dialect
         MLIRQCSDialect
+        MLIRSCFDialect
 	)

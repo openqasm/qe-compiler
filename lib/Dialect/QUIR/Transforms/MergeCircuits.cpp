@@ -20,20 +20,40 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/MergeCircuits.h"
+
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/IRMapping.h"
+#include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/Operation.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/TypeRange.h"
+#include "mlir/IR/Types.h"
+#include "mlir/IR/Value.h"
+#include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
-#include "llvm/ADT/None.h"
+#include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <algorithm>
+#include <cassert>
+#include <optional>
+#include <set>
+#include <string>
+#include <sys/types.h>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 using namespace mlir;
@@ -65,7 +85,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 
     // find next CallCircuitOp or fail
     Operation *searchOp = callCircuitOp.getOperation();
-    llvm::Optional<Operation *> secondOp;
+    std::optional<Operation *> secondOp;
     CallCircuitOp nextCallCircuitOp;
     while (true) {
       secondOp = nextQuantumOpOrNull(searchOp);
@@ -151,14 +171,14 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 };  // struct CircuitAndCircuitPattern
 
 template <class FirstOp, class SecondOp>
-Optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
-  llvm::Optional<Operation *> secondOp = nextQuantumOpOrNull(firstOp);
+std::optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
+  std::optional<Operation *> secondOp = nextQuantumOpOrNull(firstOp);
   if (!secondOp)
-    return llvm::None;
+    return std::nullopt;
 
   auto secondOpByClass = dyn_cast<SecondOp>(*secondOp);
   if (!secondOpByClass)
-    return llvm::None;
+    return std::nullopt;
 
   // Check for overlap between currQubits and what's operated on by nextOp
   std::set<uint> firstQubits = QubitOpInterface::getOperatedQubits(firstOp);
@@ -166,7 +186,7 @@ Optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
       QubitOpInterface::getOperatedQubits(secondOpByClass);
 
   if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
-    return llvm::None;
+    return std::nullopt;
   return secondOpByClass;
 }
 
@@ -187,10 +207,10 @@ struct BarrierAndCircuitPattern : public OpRewritePattern<BarrierOp> {
 
     auto callCircuitOp =
         getNextOpAndCompareOverlap<BarrierOp, CallCircuitOp>(barrierOp);
-    if (!callCircuitOp.hasValue())
+    if (!callCircuitOp.has_value())
       return failure();
 
-    barrierOp->moveAfter(callCircuitOp.getValue().getOperation());
+    barrierOp->moveAfter(callCircuitOp.value().getOperation());
 
     return success();
   } // matchAndRewrite
@@ -207,10 +227,10 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
 
     auto barrierOp =
         getNextOpAndCompareOverlap<CallCircuitOp, BarrierOp>(callCircuitOp);
-    if (!barrierOp.hasValue())
+    if (!barrierOp.has_value())
       return failure();
 
-    auto *barrierOperation = barrierOp.getValue().getOperation();
+    auto *barrierOperation = barrierOp.value().getOperation();
     // check for circuit op to merge with
     auto nextCallCircuitOp =
         nextQuantumOpOrNullOfType<CallCircuitOp>(barrierOperation);
@@ -230,7 +250,7 @@ MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
                                 llvm::StringMap<Operation *> *symbolMap) {
   // look for func def match
   assert(symbolMap && "a valid symbolMap pointer must be provided");
-  auto search = symbolMap->find(callCircuitOp.callee());
+  auto search = symbolMap->find(callCircuitOp.getCallee());
 
   assert(search != symbolMap->end() && "matching circuit not found");
 
@@ -265,15 +285,15 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
       callInputValues.push_back(inputValue);
       insertedArguments.push_back(index);
     } else {
-      int originalIndex = search - callInputValues.begin();
+      int const originalIndex = search - callInputValues.begin();
       reusedArguments[index] = originalIndex;
     }
     index++;
   }
 
   // merge circuit names
-  std::string newName =
-      (circuitOp.sym_name() + "_" + nextCircuitOp.sym_name()).str();
+  std::string const newName =
+      (circuitOp.getSymName() + "_" + nextCircuitOp.getSymName()).str();
 
   // create new circuit operation by cloning first circuit
   CircuitOp newCircuitOp = cast<CircuitOp>(rewriter.clone(*circuitOp));
@@ -289,7 +309,7 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // map original arguments for new circuit based on original circuit
   // argument numbers
-  BlockAndValueMapping mapper;
+  IRMapping mapper;
   auto baseArgNum = newCircuitOp.getNumArguments();
   int insertedCount = 0;
   for (uint cnt = 0; cnt < nextCircuitOp.getNumArguments(); cnt++) {
@@ -331,7 +351,7 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   rewriter.create<quir::ReturnOp>(nextReturnOp->getLoc(), outputValues);
 
   // change the input / output types for the quir.circuit
-  auto opType = newCircuitOp.getType();
+  auto opType = newCircuitOp.getFunctionType();
   newCircuitOp.setType(rewriter.getFunctionType(
       /*inputs=*/opType.getInputs(),
       /*results=*/ArrayRef<Type>(outputTypes)));
@@ -345,13 +365,13 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // collect all of the first circuit's ids
   std::vector<int> allIds;
-  for (Attribute valAttr : theseIdsAttr) {
+  for (Attribute const valAttr : theseIdsAttr) {
     auto intAttr = valAttr.dyn_cast<IntegerAttr>();
     allIds.push_back(intAttr.getInt());
   }
 
   // add IDs from the second circuit if not from the first
-  for (Attribute valAttr : newIdsAttr) {
+  for (Attribute const valAttr : newIdsAttr) {
     auto intAttr = valAttr.dyn_cast<IntegerAttr>();
     auto result = std::find(begin(allIds), end(allIds), intAttr.getInt());
     if (result == end(allIds))
@@ -386,7 +406,7 @@ void MergeCircuitsPass::runOnOperation() {
   llvm::StringMap<Operation *> circuitOpsMap;
 
   moduleOperation->walk([&](CircuitOp circuitOp) {
-    circuitOpsMap[circuitOp.sym_name()] = circuitOp.getOperation();
+    circuitOpsMap[circuitOp.getSymName()] = circuitOp.getOperation();
   });
 
   RewritePatternSet patterns(&getContext());
@@ -394,8 +414,12 @@ void MergeCircuitsPass::runOnOperation() {
   patterns.add<BarrierAndCircuitPattern>(&getContext());
   patterns.add<CircuitAndBarrierPattern>(&getContext());
 
-  if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
+
+  if (failed(applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns),
+                                          config)))
     signalPassFailure();
 } // runOnOperation
 
@@ -404,4 +428,8 @@ llvm::StringRef MergeCircuitsPass::getArgument() const {
 }
 llvm::StringRef MergeCircuitsPass::getDescription() const {
   return "Merge back-to-back call_circuits ";
+}
+
+llvm::StringRef MergeCircuitsPass::getName() const {
+  return "Merge Circuits Pass";
 }

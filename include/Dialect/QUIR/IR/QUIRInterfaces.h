@@ -40,7 +40,7 @@ std::set<uint32_t> getOperatedQubits(mlir::Operation *op,
                                      bool ignoreSelf = false);
 
 /// Get the next (lexographically) Qubit operation implementing this interface
-llvm::Optional<Operation *> getNextQubitOp(Operation *op);
+std::optional<Operation *> getNextQubitOp(Operation *op);
 
 /// @brief Get qubits that are shared between the two operations
 std::set<uint32_t> getSharedQubits(std::set<uint32_t> &first,

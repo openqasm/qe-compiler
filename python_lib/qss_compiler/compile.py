@@ -96,21 +96,20 @@ class CompileOptions:
     Most correspond directly to qss-compiler CLI arguments.
     """
 
-    input_type: InputType = InputType.QASM3
     """Input source type."""
-    output_type: OutputType = OutputType.QEM
+    input_type: InputType = InputType.QASM3
     """Output source type."""
-    output_file: Union[str, None] = None
+    output_type: OutputType = OutputType.QEM
     """Output file, if not supplied raw bytes will be returned."""
-    target: Optional[str] = None
+    output_file: Union[str, None] = None
     """Hardware target to select."""
-    config_path: Union[str, None] = None
+    target: Optional[str] = None
     """Hardware configuration location."""
-    num_shots: Optional[int] = None
+    config_path: Union[str, None] = None
     """Number of shots to run each circuit for."""
-    shot_delay: Optional[float] = None
+    num_shots: Optional[int] = None
     """Repetition delay between shots in seconds."""
-    extra_args: List[str] = field(default_factory=list)
+    shot_delay: Optional[float] = None
     """Optional list of extra arguments to pass to the compiler.
 
     Individual arguments must be separate arguments in the list.
@@ -121,8 +120,9 @@ class CompileOptions:
     resulting in args being set twice, eg., `num_shots` and `--num-shots`.
     This will result in an error.
     """
-    on_diagnostic: Optional[Callable[[Diagnostic], Any]] = None
+    extra_args: List[str] = field(default_factory=list)
     """Optional callback for processing diagnostic messages from the compiler."""
+    on_diagnostic: Optional[Callable[[Diagnostic], Any]] = None
 
     def prepare_compiler_option_args(self) -> List[str]:
         """Prepare the compiler option arguments from this dataclass."""
@@ -168,7 +168,9 @@ class _CompilerExecution:
             args.append("--direct")
             args.append(str(self.input_str))
         else:
-            raise exceptions.QSSCompilerNoInputError("Neither input file nor input string provided.")
+            raise exceptions.QSSCompilerNoInputError(
+                "Neither input file nor input string provided."
+            )
 
         return args
 
@@ -219,7 +221,9 @@ def _compile_child_runner(conn: connection.Connection) -> None:
         conn.send_bytes(output)
 
 
-def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
+def _do_compile(
+    execution: _CompilerExecution, return_diagnostics: bool = False
+) -> Union[bytes, str, None]:
     assert (
         execution.input_file is not None or execution.input_str is not None
     ), "one of the compile options input_file or input_str must be set"
@@ -249,8 +253,8 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                 received = parent_side.recv()
 
                 if isinstance(received, Diagnostic):
-                    if execution.options.on_diagnostic:
-                        execution.options.on_diagnostic(received)
+                    if options.on_diagnostic:
+                        options.on_diagnostic(received)
                     else:
                         diagnostics.append(received)
                 elif isinstance(received, _CompilerStatus):
@@ -262,7 +266,8 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                     raise exceptions.QSSCompilerCommunicationFailure(
                         "The compile process delivered an unexpected object instead of status or "
                         "diagnostic information. This points to inconsistencies in the Python "
-                        "interface code between the calling process and the compile process."
+                        "interface code between the calling process and the compile process.",
+                        return_diagnostics=return_diagnostics,
                     )
 
             if options.output_file is None:
@@ -275,7 +280,9 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
             childproc.kill()
             childproc.join()
             raise exceptions.QSSCompilerEOFFailure(
-                "Compile process exited before delivering output.", diagnostics
+                "Compile process exited before delivering output.",
+                diagnostics,
+                return_diagnostics=return_diagnostics,
             )
 
         childproc.join()
@@ -287,17 +294,23 @@ def _do_compile(execution: _CompilerExecution) -> Union[bytes, str, None]:
                     + (" yet appears  still alive" if childproc.is_alive() else "")
                 ),
                 diagnostics,
+                return_diagnostics=return_diagnostics,
             )
 
         if not success:
-            raise exceptions.QSSCompilationFailure("Failure during compilation", diagnostics)
+            raise exceptions.QSSCompilationFailure(
+                "Failure during compilation",
+                diagnostics,
+                return_diagnostics=return_diagnostics,
+            )
 
     except mp.ProcessError as e:
         raise exceptions.QSSCompilerError(
             "It's likely that you've hit a bug in the QSS Compiler. Please "
             "submit an issue to the team with relevant information "
             "(https://github.com/Qiskit/qss-compiler/issues):\n"
-            f"{e}"
+            f"{e}",
+            return_diagnostics=return_diagnostics,
         )
 
     if options.output_file is None:
@@ -321,6 +334,7 @@ def _stringify_path(p):
 
 def compile_file(
     input_file: Union[Path, str],
+    return_diagnostics: bool = False,
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
 ) -> Union[bytes, str, None]:
@@ -332,6 +346,7 @@ def compile_file(
 
     Args:
         input_file: Path to the input file to compile.
+        return_diagnostics: diagnostics visibility flag
         compile_options: Optional :class:`CompileOptions` dataclass.
         kwargs: Keywords corresponding to :class:`CompileOptions`. Ignored if `compile_options`
             is provided directly.
@@ -343,11 +358,12 @@ def compile_file(
     input_file = _stringify_path(input_file)
     compile_options = _prepare_compile_options(compile_options, **kwargs)
     execution = _CompilerExecution(input_file=input_file, options=compile_options)
-    return _do_compile(execution)
+    return _do_compile(execution, return_diagnostics)
 
 
 async def compile_file_async(
     input_file: Union[Path, str],
+    return_diagnostics: bool = False,
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
 ) -> Union[bytes, str, None]:
@@ -358,6 +374,7 @@ async def compile_file_async(
 
     Args:
         input_file: Path to the input file to compile.
+        return_diagnostics: diagnostics visibility flag
         compile_options: Optional :class:`CompileOptions` dataclass.
         kwargs: Keywords corresponding to :class:`CompileOptions`. Ignored if `compile_options`
             is provided directly.
@@ -371,7 +388,7 @@ async def compile_file_async(
     execution = _CompilerExecution(input_file=input_file, options=compile_options)
     with ThreadPoolExecutor() as executor:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(executor, _do_compile, execution)
+        return await loop.run_in_executor(executor, _do_compile, execution, return_diagnostics)
     # As an alternative, ProcessPoolExecutor has somewhat higher overhead yet
     # reduces complexity of integration by not requiring the preparatory call
     # to set_start_method.
@@ -379,6 +396,7 @@ async def compile_file_async(
 
 def compile_str(
     input_str: str,
+    return_diagnostics: bool = False,
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
 ) -> Union[bytes, str, None]:
@@ -391,6 +409,7 @@ def compile_str(
 
     Args:
         input_str: input to compile as string (e.q., an OpenQASM3 program).
+        return_diagnostics: diagnostics visibility flag
         compile_options: Optional :class:`CompileOptions` dataclass.
         kwargs: Keywords corresponding to :class:`CompileOptions`. Ignored if `compile_options`
             is provided directly.
@@ -401,11 +420,12 @@ def compile_str(
     """
     compile_options = _prepare_compile_options(compile_options, **kwargs)
     execution = _CompilerExecution(input_str=input_str, options=compile_options)
-    return _do_compile(execution)
+    return _do_compile(execution, return_diagnostics=return_diagnostics)
 
 
 async def compile_str_async(
     input_str: str,
+    return_diagnostics: bool = False,
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
 ) -> Union[bytes, str, None]:
@@ -416,6 +436,7 @@ async def compile_str_async(
 
     Args:
         input_str: input to compile as string (e.q., an OpenQASM3 program).
+        return_diagnostics: diagnostics visibility flag
         compile_options: Optional :class:`CompileOptions` dataclass.
         kwargs: Keywords corresponding to :class:`CompileOptions`. Ignored if `compile_options`
             is provided directly.
@@ -429,7 +450,7 @@ async def compile_str_async(
     execution = _CompilerExecution(input_str=input_str, options=compile_options)
     with ThreadPoolExecutor() as executor:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(executor, _do_compile, execution)
+        return await loop.run_in_executor(executor, _do_compile, execution, return_diagnostics)
     # As an alternative, ProcessPoolExecutor has somewhat higher overhead yet
     # reduces complexity of integration by not requiring the preparatory call
     # to set_start_method.

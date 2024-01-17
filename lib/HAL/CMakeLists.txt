@@ -10,6 +10,8 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
+add_subdirectory(Compile)
+
 # Register targets with build system
 foreach(target_dir ${QSSC_TARGET_DIRS})
     message(STATUS "Adding QSS Target directory: ${target_dir}")
@@ -40,6 +42,8 @@ qssc_add_library(QSSCHAL
     LINK_LIBS
     ${qssc_targets}
     QSSCArguments
+    QSSCHALCompile
+
 )
 
 # Add include directory to pick up generated Targets.inc

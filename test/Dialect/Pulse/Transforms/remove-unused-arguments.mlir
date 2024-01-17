@@ -13,7 +13,7 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-func @main() -> i32 {
+func.func @main() -> i32 {
     %1 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
     %3 = "pulse.mix_frame"(%1) {uid = "mf0-p0"} : (!pulse.port) -> !pulse.mixed_frame
     %5 = "pulse.mix_frame"(%1) {uid = "mf1-p0"} : (!pulse.port) -> !pulse.mixed_frame

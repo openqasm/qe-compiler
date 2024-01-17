@@ -38,6 +38,7 @@ public:
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
   Option<uint> maxCBitWidthOption{
       *this, "max-cbit-width",

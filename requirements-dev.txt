@@ -1,11 +1,12 @@
 breathe
 cmake>=3.23
-conan==1.59.0
+conan==1.62.0
 Jinja2==3.0.3 # https://github.com/sphinx-doc/sphinx/issues/10291
 lit>=12.0.0
 markupsafe==2.0.1
 myst-parser
 ninja>=1.10
+pre-commit
 pytest
 pytest-asyncio
 setuptools_scm>=6.0,<8.0

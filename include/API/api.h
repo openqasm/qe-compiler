@@ -24,18 +24,6 @@
 #include <string_view>
 #include <unordered_map>
 
-namespace {
-enum Action {
-  None,
-  DumpAST,
-  DumpASTPretty,
-  DumpMLIR,
-  DumpWaveMem,
-  GenQEM,
-  GenQEQEM
-};
-} // anonymous namespace
-
 namespace qssc {
 
 /// @brief Call the qss-compiler

@@ -19,26 +19,30 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QCS/IR/QCSDialect.h"
+
 #include "Dialect/QCS/IR/QCSTypes.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 
-#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
-
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/SymbolTable.h"
+#include <mlir/IR/OpImplementation.h>
+#include <mlir/IR/OperationSupport.h>
+#include <mlir/Support/LogicalResult.h>
+
 #include "llvm/ADT/StringMap.h"
-#include "llvm/ADT/StringRef.h"
+
+#include <cassert>
 
 using namespace mlir;
 using namespace mlir::qcs;
 
 #define GET_OP_CLASSES
+// NOLINTNEXTLINE(misc-include-cleaner): Required for MLIR registrations
 #include "Dialect/QCS/IR/QCSOps.cpp.inc"
 
-static LogicalResult
+namespace {
+LogicalResult
 verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
                                mlir::Operation *op,
                                bool operandMustMatchSymbolType = false) {
@@ -73,7 +77,7 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
 
   // Check that type of variables matches result type of this Op
   if (op->getNumResults() == 1) {
-    if (op->getResult(0).getType() != declOp.type())
+    if (op->getResult(0).getType() != declOp.getType())
       return op->emitOpError(
           "type mismatch between variable declaration and variable use");
   }
@@ -81,12 +85,14 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
   if (op->getNumOperands() > 0 && operandMustMatchSymbolType) {
     assert(op->getNumOperands() == 1 &&
            "type check only supported for a single operand");
-    if (op->getOperand(0).getType() != declOp.type())
+    if (op->getOperand(0).getType() != declOp.getType())
       return op->emitOpError(
           "type mismatch between variable declaration and variable assignment");
   }
   return success();
 }
+
+} // anonymous namespace
 
 //===----------------------------------------------------------------------===//
 // ParameterLoadOp
@@ -122,23 +128,29 @@ ParameterType ParameterLoadOp::getInitialValue() {
 
   double retVal;
 
-  auto angleAttr =
-      declOp.initial_value().getValue().dyn_cast<mlir::quir::AngleAttr>();
-  auto floatAttr = declOp.initial_value().getValue().dyn_cast<FloatAttr>();
+  auto iniValue = declOp.getInitialValue();
+  if (iniValue.has_value()) {
+    auto angleAttr = iniValue.value().dyn_cast<mlir::quir::AngleAttr>();
 
-  if (!(angleAttr || floatAttr)) {
-    op->emitError(
-        "Parameters are currently limited to angles or float[64] only.");
-    return 0.0;
+    auto floatAttr = iniValue.value().dyn_cast<FloatAttr>();
+
+    if (!(angleAttr || floatAttr)) {
+      op->emitError(
+          "Parameters are currently limited to angles or float[64] only.");
+      return 0.0;
+    }
+
+    if (angleAttr)
+      retVal = angleAttr.getValue().convertToDouble();
+
+    if (floatAttr)
+      retVal = floatAttr.getValue().convertToDouble();
+
+    return retVal;
   }
 
-  if (angleAttr)
-    retVal = angleAttr.getValue().convertToDouble();
-
-  if (floatAttr)
-    retVal = floatAttr.getValue().convertToDouble();
-
-  return retVal;
+  op->emitError("Does not have initial value set.");
+  return 0.0;
 }
 
 // Returns the float value from the initial value of this parameter
@@ -153,7 +165,7 @@ ParameterType ParameterLoadOp::getInitialValue(
   auto paramOpEntry = declareParametersMap.find(paramRefAttr.getValue());
 
   if (paramOpEntry == declareParametersMap.end()) {
-    op->emitError("Could not find declare parameter op" +
+    op->emitError("Could not find declare parameter op " +
                   paramRefAttr.getValue().str());
     return 0.0;
   }
@@ -164,3 +176,16 @@ ParameterType ParameterLoadOp::getInitialValue(
 //===----------------------------------------------------------------------===//
 // End ParameterLoadOp
 //===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// ParallelEndOp
+//===----------------------------------------------------------------------===//
+
+mlir::ParseResult ParallelEndOp::parse(mlir::OpAsmParser &parser,
+                                       mlir::OperationState &result) {
+  return mlir::success();
+}
+
+void ParallelEndOp::print(mlir::OpAsmPrinter &printer) {
+  printer << getOperationName();
+}

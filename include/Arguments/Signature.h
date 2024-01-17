@@ -29,6 +29,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -58,7 +59,8 @@ using PatchPointVector = std::vector<PatchPoint>;
 
 struct Signature {
   // TODO consider deduplicating strings by using UniqueStringSaver
-  llvm::StringMap<std::vector<PatchPoint>> patchPointsByBinary;
+  // Use std::map instead of StringMap to preserve order
+  std::map<std::string, std::vector<PatchPoint>> patchPointsByBinary;
 
 public:
   void addParameterPatchPoint(llvm::StringRef expression,

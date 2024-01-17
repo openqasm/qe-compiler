@@ -51,20 +51,20 @@
 //  https://pybind11.readthedocs.io/en/stable/
 //===----------------------------------------------------------------------===//
 
-#include "API/api.h"
+#include "errors.h"
 #include "lib_enums.h"
 
-#include <pybind11/functional.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
-
-#include "llvm/ADT/Optional.h"
-#include <llvm/Support/Error.h>
+#include "API/api.h"
 
 #include <iostream>
+#include <optional>
+#include <pybind11/cast.h>
+#include <pybind11/detail/common.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace py = pybind11;
@@ -79,7 +79,7 @@ py::tuple py_compile_by_args(const std::vector<std::string> &args,
 #ifndef NDEBUG
   std::cout << "params passed from python to C++:\n";
   for (auto &str : args)
-    std::cout << str << std::endl;
+    std::cout << str << '\n';
 #endif
 
   // TODO: need a C++ interface into the compiler with fewer detours. the python
@@ -90,40 +90,37 @@ py::tuple py_compile_by_args(const std::vector<std::string> &args,
     argv.push_back(str.c_str());
   argv.push_back(nullptr);
 
-  int status = qssc::compile(args.size(), argv.data(),
-                             outputAsStr ? &outputStr : nullptr,
-                             std::move(onDiagnostic));
-  bool success = status == 0;
+  int const status = qssc::compile(args.size(), argv.data(),
+                                   outputAsStr ? &outputStr : nullptr,
+                                   std::move(onDiagnostic));
+  bool const success = status == 0;
 
 #ifndef NDEBUG
-  std::cerr << "Compile " << (success ? "successful" : "failed") << std::endl;
+  std::cerr << "Compile " << (success ? "successful" : "failed") << '\n';
 #endif
 
   return py::make_tuple(success, py::bytes(outputStr));
 }
 
-py::tuple
-py_link_file(const std::string &input, const bool enableInMemoryInput,
-             const std::string &outputPath,
-             const std::string &target, const std::string &configPath,
-             const std::unordered_map<std::string, double> &arguments,
-             bool treatWarningsAsErrors,
-             qssc::DiagnosticCallback onDiagnostic) {
+py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
+                       const std::string &outputPath, const std::string &target,
+                       const std::string &configPath,
+                       const std::unordered_map<std::string, double> &arguments,
+                       bool treatWarningsAsErrors,
+                       qssc::DiagnosticCallback onDiagnostic) {
 
   std::string inMemoryOutput("");
 
-  int status = qssc::bindArguments(target, configPath, input, outputPath, arguments,
-                                   treatWarningsAsErrors, enableInMemoryInput,
-                                   &inMemoryOutput,
-                                   std::move(onDiagnostic));
+  int const status = qssc::bindArguments(
+      target, configPath, input, outputPath, arguments, treatWarningsAsErrors,
+      enableInMemoryInput, &inMemoryOutput, std::move(onDiagnostic));
 
-  bool success = status == 0;
+  bool const success = status == 0;
 #ifndef NDEBUG
-  std::cerr << "Link " << (success ? "successful" : "failed") << std::endl;
+  std::cerr << "Link " << (success ? "successful" : "failed") << '\n';
 #endif
   return py::make_tuple(success, py::bytes(inMemoryOutput));
 }
-
 
 // Pybind module
 PYBIND11_MODULE(py_qssc, m) {

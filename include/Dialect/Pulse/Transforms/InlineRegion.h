@@ -21,17 +21,19 @@
 #ifndef PULSE_INLINE_REGION_H
 #define PULSE_INLINE_REGION_H
 
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
 namespace mlir::pulse {
 
 class InlineRegionPass
-    : public PassWrapper<InlineRegionPass, OperationPass<ModuleOp>> {
+    : public PassWrapper<InlineRegionPass, OperationPass<mlir::ModuleOp>> {
 public:
   void runOnOperation() override;
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 };
 
 } // namespace mlir::pulse
