@@ -363,6 +363,35 @@ void MergeCircuitsPass::mapBarrierOperands(
   }
 }
 
+void MergeCircuitsPass::mergePhysicalIdAttrs(CircuitOp newCircuitOp,
+                                             CircuitOp nextCircuitOp,
+                                             PatternRewriter &rewriter) {
+  // merge the physical ID attributes
+  auto theseIdsAttr = newCircuitOp->getAttrOfType<ArrayAttr>(
+      mlir::quir::getPhysicalIdsAttrName());
+
+  auto newIdsAttr = nextCircuitOp->getAttrOfType<ArrayAttr>(
+      mlir::quir::getPhysicalIdsAttrName());
+
+  // collect all of the first circuit's ids
+  std::vector<int> allIds;
+  for (Attribute const valAttr : theseIdsAttr) {
+    auto intAttr = valAttr.dyn_cast<IntegerAttr>();
+    allIds.push_back(intAttr.getInt());
+  }
+
+  // add IDs from the second circuit if not from the first
+  for (Attribute const valAttr : newIdsAttr) {
+    auto intAttr = valAttr.dyn_cast<IntegerAttr>();
+    auto result = std::find(begin(allIds), end(allIds), intAttr.getInt());
+    if (result == end(allIds))
+      allIds.push_back(intAttr.getInt());
+  }
+
+  newCircuitOp->setAttr(mlir::quir::getPhysicalIdsAttrName(),
+                        rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
+}
+
 LogicalResult MergeCircuitsPass::mergeCallCircuits(
     MLIRContext *context, PatternRewriter &rewriter,
     CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
@@ -420,15 +449,13 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   mapNextCircuitArguments(nextCircuitOp, newCircuitOp, insertedArguments,
                           reusedArguments, mapper);
 
-  // find return op in new circuit and copy second circuit into the
-  // new circuit
+  // find return op in new circuit
   quir::ReturnOp newReturnOp;
   newCircuitOp->walk([&](quir::ReturnOp r) { newReturnOp = r; });
   rewriter.setInsertionPointAfter(newReturnOp);
 
   // clone any barrier ops and erase
   if (barrierOps.has_value()) {
-
     for (auto *barrierOp : barrierOps.value()) {
       // add barrierOps to argument list for circuit and set physicalId
       // of attribute
@@ -440,6 +467,7 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
     }
   }
 
+  // copy second circuit into the new circuit
   for (auto &block : nextCircuitOp.getBody().getBlocks())
     for (auto &op : block.getOperations())
       rewriter.clone(op, mapper);
@@ -463,30 +491,7 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
       /*inputs=*/opType.getInputs(),
       /*results=*/ArrayRef<Type>(outputTypes)));
 
-  // merge the physical ID attributes
-  auto theseIdsAttr = newCircuitOp->getAttrOfType<ArrayAttr>(
-      mlir::quir::getPhysicalIdsAttrName());
-
-  auto newIdsAttr = nextCircuitOp->getAttrOfType<ArrayAttr>(
-      mlir::quir::getPhysicalIdsAttrName());
-
-  // collect all of the first circuit's ids
-  std::vector<int> allIds;
-  for (Attribute const valAttr : theseIdsAttr) {
-    auto intAttr = valAttr.dyn_cast<IntegerAttr>();
-    allIds.push_back(intAttr.getInt());
-  }
-
-  // add IDs from the second circuit if not from the first
-  for (Attribute const valAttr : newIdsAttr) {
-    auto intAttr = valAttr.dyn_cast<IntegerAttr>();
-    auto result = std::find(begin(allIds), end(allIds), intAttr.getInt());
-    if (result == end(allIds))
-      allIds.push_back(intAttr.getInt());
-  }
-
-  newCircuitOp->setAttr(mlir::quir::getPhysicalIdsAttrName(),
-                        rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
+  mergePhysicalIdAttrs(newCircuitOp, nextCircuitOp, rewriter);
 
   rewriter.setInsertionPointAfter(nextCallCircuitOp);
   auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(

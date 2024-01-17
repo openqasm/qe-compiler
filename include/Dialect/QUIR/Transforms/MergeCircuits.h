@@ -55,6 +55,9 @@ struct MergeCircuitsPass
                                  llvm::SmallVector<int> &insertedArguments,
                                  std::unordered_map<int, int> &reusedArguments,
                                  IRMapping &mapper, MLIRContext *context);
+  static void mergePhysicalIdAttrs(CircuitOp newCircuitOp,
+                                   CircuitOp nextCircuitOp,
+                                   PatternRewriter &rewriter);
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
