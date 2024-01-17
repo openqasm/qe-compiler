@@ -39,6 +39,7 @@ struct VariableEliminationPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
   void getDependentDialects(mlir::DialectRegistry &registry) const override {
     registry.insert<mlir::memref::MemRefDialect>();

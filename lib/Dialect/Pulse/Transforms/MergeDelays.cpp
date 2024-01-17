@@ -122,3 +122,5 @@ llvm::StringRef MergeDelayPass::getArgument() const {
 llvm::StringRef MergeDelayPass::getDescription() const {
   return "Merge sequencial delays on the same physical channel";
 }
+
+llvm::StringRef MergeDelayPass::getName() const { return "Merge Delay Pass"; }

@@ -34,7 +34,7 @@ func.func @main () -> i32 {
 // CHECK:         children
 // CHECK:           MockController
 // CHECK:             passes
-// CHECK:               qssc::targets::systems::mock::conversion::MockQUIRToStdPass
+// CHECK:               Mock QUIR to Std Pass
 // CHECK:               Canonicalizer
 // CHECK:               LLVMLegalizeForExport
 // CHECK:             emit-to-payload

@@ -55,6 +55,8 @@
 #include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Support/Timing.h"
+#include "mlir/Target/LLVMIR/Dialect/Builtin/BuiltinToLLVMIRTranslation.h"
+#include "mlir/Target/LLVMIR/Dialect/LLVMIR/LLVMToLLVMIRTranslation.h"
 #include "mlir/Tools/ParseUtilities.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -431,6 +433,11 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   context.appendDialectRegistry(registry);
   context.allowUnregisteredDialects(config.shouldAllowUnregisteredDialects());
   context.printOpOnDiagnostic(!config.shouldVerifyDiagnostics());
+
+  // Register LLVM dialect and all infrastructure required for translation to
+  // LLVM IR
+  mlir::registerBuiltinDialectTranslation(context);
+  mlir::registerLLVMDialectTranslation(context);
 
   if (config.shouldShowDialects()) {
     showDialects_(registry);

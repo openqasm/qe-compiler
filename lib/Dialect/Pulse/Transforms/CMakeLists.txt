@@ -13,6 +13,7 @@
 add_mlir_dialect_library(MLIRPulseTransforms
         ClassicalOnlyDetection.cpp
         InlineRegion.cpp
+        LabelPlayOpDurations.cpp
         MergeDelays.cpp
         Passes.cpp
         RemoveUnusedArguments.cpp

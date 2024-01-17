@@ -50,6 +50,7 @@ public:
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
   // optionally, one can override the scheduling method with this option
   Option<std::string> schedulingMethod{

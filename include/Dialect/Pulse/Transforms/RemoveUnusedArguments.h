@@ -37,6 +37,7 @@ public:
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 };
 } // namespace mlir::pulse
 

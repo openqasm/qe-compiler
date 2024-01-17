@@ -43,6 +43,7 @@ struct MergeCircuitsPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct MergeCircuitsPass
 } // namespace mlir::quir
 #endif // QUIR_MERGE_CIRCUITS_H
