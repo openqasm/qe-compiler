@@ -42,6 +42,11 @@ struct MergeCircuitsPass
       llvm::StringMap<Operation *> *symbolMap,
       std::optional<llvm::SmallVector<Operation *>> barriers = std::nullopt);
 
+  static int addArguments(Operation *op,
+                          llvm::SmallVector<Value> &callInputValues,
+                          llvm::SmallVector<int> &insertedArguments,
+                          std::unordered_map<int, int> &reusedArguments);
+
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;

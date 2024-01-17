@@ -293,6 +293,25 @@ MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
   return circuitOp;
 }
 
+int MergeCircuitsPass::addArguments(
+    Operation *op, llvm::SmallVector<Value> &callInputValues,
+    llvm::SmallVector<int> &insertedArguments,
+    std::unordered_map<int, int> &reusedArguments) {
+  int index = 0;
+  for (auto inputValue : op->getOperands()) {
+    auto *search = find(callInputValues, inputValue);
+    if (search == callInputValues.end()) {
+      callInputValues.push_back(inputValue);
+      insertedArguments.push_back(index);
+    } else {
+      int const originalIndex = search - callInputValues.begin();
+      reusedArguments[index] = originalIndex;
+    }
+    index++;
+  }
+  return index;
+}
+
 LogicalResult MergeCircuitsPass::mergeCallCircuits(
     MLIRContext *context, PatternRewriter &rewriter,
     CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
@@ -314,18 +333,8 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   llvm::SmallVector<int> insertedArguments;
   std::unordered_map<int, int> reusedArguments;
-  int index = 0;
-  for (auto inputValue : nextCallCircuitOp->getOperands()) {
-    auto *search = find(callInputValues, inputValue);
-    if (search == callInputValues.end()) {
-      callInputValues.push_back(inputValue);
-      insertedArguments.push_back(index);
-    } else {
-      int const originalIndex = search - callInputValues.begin();
-      reusedArguments[index] = originalIndex;
-    }
-    index++;
-  }
+  int index = addArguments(nextCallCircuitOp, callInputValues,
+                           insertedArguments, reusedArguments);
 
   llvm::SmallVector<int> insertedBarrierArguments;
   std::unordered_map<int, int> reusedBarrierArguments;
@@ -334,18 +343,9 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   if (barrierOps.has_value()) {
     for (auto *barrierOp : barrierOps.value()) {
       // add barrierOps to argument list for circuit
-      for (uint cnt = 0; cnt < barrierOp->getNumOperands(); cnt++) {
-        auto arg = barrierOp->getOperand(cnt);
-        auto *search = find(callInputValues, arg);
-        if (search == callInputValues.end()) {
-          callInputValues.push_back(arg);
-          insertedBarrierArguments.push_back(barrierIndex);
-        } else {
-          int const originalIndex = search - callInputValues.begin();
-          reusedBarrierArguments[barrierIndex] = originalIndex;
-        }
-        barrierIndex++;
-      }
+      barrierIndex +=
+          addArguments(nextCallCircuitOp, callInputValues,
+                       insertedBarrierArguments, reusedBarrierArguments);
     }
   }
 
