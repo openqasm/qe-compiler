@@ -392,6 +392,12 @@ void MergeCircuitsPass::mergePhysicalIdAttrs(CircuitOp newCircuitOp,
                         rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
 }
 
+quir::ReturnOp MergeCircuitsPass::getReturnOp(Operation *op) {
+  quir::ReturnOp returnOp;
+  op->walk([&](quir::ReturnOp r) { returnOp = r; });
+  return returnOp;
+}
+
 LogicalResult MergeCircuitsPass::mergeCallCircuits(
     MLIRContext *context, PatternRewriter &rewriter,
     CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
@@ -436,11 +442,8 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
                         StringAttr::get(circuitOp->getContext(), newName));
 
   // store original return operations for later use
-  quir::ReturnOp returnOp;
-  quir::ReturnOp nextReturnOp;
-
-  circuitOp->walk([&](quir::ReturnOp r) { returnOp = r; });
-  nextCircuitOp->walk([&](quir::ReturnOp r) { nextReturnOp = r; });
+  quir::ReturnOp returnOp = getReturnOp(circuitOp);
+  quir::ReturnOp nextReturnOp = getReturnOp(nextCircuitOp);
 
   IRMapping mapper;
 
@@ -450,8 +453,7 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
                           reusedArguments, mapper);
 
   // find return op in new circuit
-  quir::ReturnOp newReturnOp;
-  newCircuitOp->walk([&](quir::ReturnOp r) { newReturnOp = r; });
+  quir::ReturnOp newReturnOp = getReturnOp(newCircuitOp);
   rewriter.setInsertionPointAfter(newReturnOp);
 
   // clone any barrier ops and erase

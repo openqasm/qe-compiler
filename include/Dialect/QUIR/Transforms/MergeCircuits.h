@@ -58,6 +58,7 @@ struct MergeCircuitsPass
   static void mergePhysicalIdAttrs(CircuitOp newCircuitOp,
                                    CircuitOp nextCircuitOp,
                                    PatternRewriter &rewriter);
+  static quir::ReturnOp getReturnOp(Operation *op);
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
