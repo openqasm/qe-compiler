@@ -165,8 +165,8 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
     if (callCircuitOp->getNextNode() != nextCallCircuitOp)
       return failure();
 
-    return MergeCircuitsPass::mergeCallCircuits(rewriter, callCircuitOp,
-                                                nextCallCircuitOp, _symbolMap);
+    return MergeCircuitsPass::mergeCallCircuits(
+        getContext(), rewriter, callCircuitOp, nextCallCircuitOp, _symbolMap);
   } // matchAndRewrite
 };  // struct CircuitAndCircuitPattern
 
@@ -243,6 +243,40 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
   } // matchAndRewrite
 };  // struct CircuitAndBarrierPattern
 
+// This pattern matches on a CallCircuitOp, multiple barriers, CallCircuitOp
+struct CircuitBarrierCircuitPattern : public OpRewritePattern<CallCircuitOp> {
+  explicit CircuitBarrierCircuitPattern(MLIRContext *ctx,
+                                        llvm::StringMap<Operation *> &symbolMap)
+      : OpRewritePattern<CallCircuitOp>(ctx) {
+    _symbolMap = &symbolMap;
+  }
+
+  llvm::StringMap<Operation *> *_symbolMap;
+
+  LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
+                                PatternRewriter &rewriter) const override {
+
+    Operation *curOp = callCircuitOp->getNextNode();
+    llvm::SmallVector<Operation *> barrierOps;
+    while (isa<BarrierOp>(curOp)) {
+      barrierOps.push_back(curOp);
+      curOp = curOp->getNextNode();
+    };
+
+    if (barrierOps.size() == 0)
+      return failure();
+
+    auto nextCallCircuitOp = dyn_cast<CallCircuitOp>(curOp);
+    if (!nextCallCircuitOp)
+      return failure();
+
+    return MergeCircuitsPass::mergeCallCircuits(
+        getContext(), rewriter, callCircuitOp, nextCallCircuitOp, _symbolMap,
+        barrierOps);
+    return success();
+  } // matchAndRewrite
+};  // struct CircuitAndBarrierPattern
+
 } // end anonymous namespace
 
 CircuitOp
@@ -260,8 +294,10 @@ MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
 }
 
 LogicalResult MergeCircuitsPass::mergeCallCircuits(
-    PatternRewriter &rewriter, CallCircuitOp callCircuitOp,
-    CallCircuitOp nextCallCircuitOp, llvm::StringMap<Operation *> *symbolMap) {
+    MLIRContext *context, PatternRewriter &rewriter,
+    CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
+    llvm::StringMap<Operation *> *symbolMap,
+    std::optional<llvm::SmallVector<Operation *>> barrierOps) {
   auto circuitOp = getCircuitOp(callCircuitOp, symbolMap);
   auto nextCircuitOp = getCircuitOp(nextCallCircuitOp, symbolMap);
 
@@ -289,6 +325,28 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
       reusedArguments[index] = originalIndex;
     }
     index++;
+  }
+
+  llvm::SmallVector<int> insertedBarrierArguments;
+  std::unordered_map<int, int> reusedBarrierArguments;
+  int barrierIndex = 0;
+
+  if (barrierOps.has_value()) {
+    for (auto *barrierOp : barrierOps.value()) {
+      // add barrierOps to argument list for circuit
+      for (uint cnt = 0; cnt < barrierOp->getNumOperands(); cnt++) {
+        auto arg = barrierOp->getOperand(cnt);
+        auto *search = find(callInputValues, arg);
+        if (search == callInputValues.end()) {
+          callInputValues.push_back(arg);
+          insertedBarrierArguments.push_back(barrierIndex);
+        } else {
+          int const originalIndex = search - callInputValues.begin();
+          reusedBarrierArguments[barrierIndex] = originalIndex;
+        }
+        barrierIndex++;
+      }
+    }
   }
 
   // merge circuit names
@@ -332,6 +390,39 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   quir::ReturnOp newReturnOp;
   newCircuitOp->walk([&](quir::ReturnOp r) { newReturnOp = r; });
   rewriter.setInsertionPointAfter(newReturnOp);
+
+  // clone any barrier ops and erase
+  if (barrierOps.has_value()) {
+    for (auto *barrierOp : barrierOps.value()) {
+      // add barrierOps to argument list for circuit and set physicalId
+      // of attribute
+      for (uint cnt = 0; cnt < barrierOp->getNumOperands(); cnt++) {
+        auto qubit = barrierOp->getOperand(cnt);
+        int argumentIndex = 0;
+        if (find(insertedBarrierArguments, cnt) !=
+            insertedBarrierArguments.end()) {
+          auto dictArg = nextCircuitOp.getArgAttrDict(cnt);
+          auto physicalId =
+              qubit.getDefiningOp()->getAttrOfType<IntegerAttr>("id");
+          argumentIndex = baseArgNum + insertedCount;
+          newCircuitOp.insertArgument(baseArgNum + insertedCount,
+                                      qubit.getType(), dictArg, qubit.getLoc());
+          newCircuitOp.setArgAttrs(
+              argumentIndex,
+              ArrayRef({NamedAttribute(
+                  StringAttr::get(context, mlir::quir::getPhysicalIdAttrName()),
+                  physicalId)}));
+          insertedCount++;
+        } else {
+          argumentIndex = reusedBarrierArguments[cnt];
+        }
+        mapper.map(qubit, newCircuitOp.getArgument(argumentIndex));
+      }
+      // clone into circuit and remove from original location
+      rewriter.clone(*barrierOp, mapper);
+      barrierOp->erase();
+    }
+  }
 
   for (auto &block : nextCircuitOp.getBody().getBlocks())
     for (auto &op : block.getOperations())
@@ -413,6 +504,7 @@ void MergeCircuitsPass::runOnOperation() {
   patterns.add<CircuitAndCircuitPattern>(&getContext(), circuitOpsMap);
   patterns.add<BarrierAndCircuitPattern>(&getContext());
   patterns.add<CircuitAndBarrierPattern>(&getContext());
+  patterns.add<CircuitBarrierCircuitPattern>(&getContext(), circuitOpsMap);
 
   mlir::GreedyRewriteConfig config;
   // Disable to improve performance
