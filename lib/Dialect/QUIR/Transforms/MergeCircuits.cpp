@@ -312,6 +312,58 @@ int MergeCircuitsPass::addArguments(
   return index;
 }
 
+void MergeCircuitsPass::mapNextCircuitArguments(
+    CircuitOp nextCircuitOp, CircuitOp newCircuitOp,
+    llvm::SmallVector<int> &insertedArguments,
+    std::unordered_map<int, int> &reusedArguments, IRMapping &mapper) {
+  uint baseArgNum = newCircuitOp.getNumArguments();
+  int insertedCount = 0;
+  for (uint cnt = 0; cnt < nextCircuitOp.getNumArguments(); cnt++) {
+    auto arg = nextCircuitOp.getArgument(cnt);
+    int argumentIndex = 0;
+    if (find(insertedArguments, cnt) != insertedArguments.end()) {
+      auto dictArg = nextCircuitOp.getArgAttrDict(cnt);
+      newCircuitOp.insertArgument(baseArgNum + insertedCount, arg.getType(),
+                                  dictArg, arg.getLoc());
+      argumentIndex = baseArgNum + insertedCount;
+      insertedCount++;
+    } else {
+      argumentIndex = reusedArguments[cnt];
+    }
+    mapper.map(arg, newCircuitOp.getArgument(argumentIndex));
+  }
+}
+
+void MergeCircuitsPass::mapBarrierOperands(
+    Operation *barrierOp, CircuitOp newCircuitOp,
+    llvm::SmallVector<int> &insertedArguments,
+    std::unordered_map<int, int> &reusedArguments, IRMapping &mapper,
+    MLIRContext *context) {
+  assert(barrierOp && "barrierOp requires valid operation pointer");
+  assert(context && "context requires valid MLIR context pointer");
+  uint baseArgNum = newCircuitOp.getNumArguments();
+  int insertedCount = 0;
+  for (uint cnt = 0; cnt < barrierOp->getNumOperands(); cnt++) {
+    auto qubit = barrierOp->getOperand(cnt);
+    int argumentIndex = 0;
+    if (find(insertedArguments, cnt) != insertedArguments.end()) {
+      auto physicalId = qubit.getDefiningOp()->getAttrOfType<IntegerAttr>("id");
+      argumentIndex = baseArgNum + insertedCount;
+      newCircuitOp.insertArgument(baseArgNum + insertedCount, qubit.getType(),
+                                  {}, qubit.getLoc());
+      newCircuitOp.setArgAttrs(
+          argumentIndex,
+          ArrayRef({NamedAttribute(
+              StringAttr::get(context, mlir::quir::getPhysicalIdAttrName()),
+              physicalId)}));
+      insertedCount++;
+    } else {
+      argumentIndex = reusedArguments[cnt];
+    }
+    mapper.map(qubit, newCircuitOp.getArgument(argumentIndex));
+  }
+}
+
 LogicalResult MergeCircuitsPass::mergeCallCircuits(
     MLIRContext *context, PatternRewriter &rewriter,
     CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
@@ -365,25 +417,12 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   circuitOp->walk([&](quir::ReturnOp r) { returnOp = r; });
   nextCircuitOp->walk([&](quir::ReturnOp r) { nextReturnOp = r; });
 
+  IRMapping mapper;
+
   // map original arguments for new circuit based on original circuit
   // argument numbers
-  IRMapping mapper;
-  auto baseArgNum = newCircuitOp.getNumArguments();
-  int insertedCount = 0;
-  for (uint cnt = 0; cnt < nextCircuitOp.getNumArguments(); cnt++) {
-    auto arg = nextCircuitOp.getArgument(cnt);
-    int argumentIndex = 0;
-    if (find(insertedArguments, cnt) != insertedArguments.end()) {
-      auto dictArg = nextCircuitOp.getArgAttrDict(cnt);
-      newCircuitOp.insertArgument(baseArgNum + insertedCount, arg.getType(),
-                                  dictArg, arg.getLoc());
-      argumentIndex = baseArgNum + insertedCount;
-      insertedCount++;
-    } else {
-      argumentIndex = reusedArguments[cnt];
-    }
-    mapper.map(arg, newCircuitOp.getArgument(argumentIndex));
-  }
+  mapNextCircuitArguments(nextCircuitOp, newCircuitOp, insertedArguments,
+                          reusedArguments, mapper);
 
   // find return op in new circuit and copy second circuit into the
   // new circuit
@@ -393,30 +432,12 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // clone any barrier ops and erase
   if (barrierOps.has_value()) {
+
     for (auto *barrierOp : barrierOps.value()) {
       // add barrierOps to argument list for circuit and set physicalId
       // of attribute
-      for (uint cnt = 0; cnt < barrierOp->getNumOperands(); cnt++) {
-        auto qubit = barrierOp->getOperand(cnt);
-        int argumentIndex = 0;
-        if (find(insertedBarrierArguments, cnt) !=
-            insertedBarrierArguments.end()) {
-          auto physicalId =
-              qubit.getDefiningOp()->getAttrOfType<IntegerAttr>("id");
-          argumentIndex = baseArgNum + insertedCount;
-          newCircuitOp.insertArgument(baseArgNum + insertedCount,
-                                      qubit.getType(), {}, qubit.getLoc());
-          newCircuitOp.setArgAttrs(
-              argumentIndex,
-              ArrayRef({NamedAttribute(
-                  StringAttr::get(context, mlir::quir::getPhysicalIdAttrName()),
-                  physicalId)}));
-          insertedCount++;
-        } else {
-          argumentIndex = reusedBarrierArguments[cnt];
-        }
-        mapper.map(qubit, newCircuitOp.getArgument(argumentIndex));
-      }
+      mapBarrierOperands(barrierOp, newCircuitOp, insertedBarrierArguments,
+                         reusedBarrierArguments, mapper, context);
       // clone into circuit and remove from original location
       rewriter.clone(*barrierOp, mapper);
       barrierOp->erase();

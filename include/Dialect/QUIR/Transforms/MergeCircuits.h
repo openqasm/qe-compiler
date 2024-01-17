@@ -46,6 +46,15 @@ struct MergeCircuitsPass
                           llvm::SmallVector<Value> &callInputValues,
                           llvm::SmallVector<int> &insertedArguments,
                           std::unordered_map<int, int> &reusedArguments);
+  static void
+  mapNextCircuitArguments(CircuitOp nextCircuitOp, CircuitOp newCircuitOp,
+                          llvm::SmallVector<int> &insertedArguments,
+                          std::unordered_map<int, int> &reusedArguments,
+                          mlir::IRMapping &mapper);
+  static void mapBarrierOperands(Operation *barrierOp, CircuitOp newCircuitOp,
+                                 llvm::SmallVector<int> &insertedArguments,
+                                 std::unordered_map<int, int> &reusedArguments,
+                                 IRMapping &mapper, MLIRContext *context);
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
