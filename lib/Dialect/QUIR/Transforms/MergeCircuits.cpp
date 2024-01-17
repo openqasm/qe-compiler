@@ -315,7 +315,7 @@ void MergeCircuitsPass::mapNextCircuitArguments(
     CircuitOp nextCircuitOp, CircuitOp newCircuitOp,
     llvm::SmallVector<int> &insertedArguments,
     std::unordered_map<int, int> &reusedArguments, IRMapping &mapper) {
-  uint baseArgNum = newCircuitOp.getNumArguments();
+  uint const baseArgNum = newCircuitOp.getNumArguments();
   int insertedCount = 0;
   for (uint cnt = 0; cnt < nextCircuitOp.getNumArguments(); cnt++) {
     auto arg = nextCircuitOp.getArgument(cnt);
@@ -340,7 +340,7 @@ void MergeCircuitsPass::mapBarrierOperands(
     MLIRContext *context) {
   assert(barrierOp && "barrierOp requires valid operation pointer");
   assert(context && "context requires valid MLIR context pointer");
-  uint baseArgNum = newCircuitOp.getNumArguments();
+  uint const baseArgNum = newCircuitOp.getNumArguments();
   int insertedCount = 0;
   for (uint cnt = 0; cnt < barrierOp->getNumOperands(); cnt++) {
     auto qubit = barrierOp->getOperand(cnt);
@@ -442,8 +442,8 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
                         StringAttr::get(circuitOp->getContext(), newName));
 
   // store original return operations for later use
-  quir::ReturnOp returnOp = getReturnOp(circuitOp);
-  quir::ReturnOp nextReturnOp = getReturnOp(nextCircuitOp);
+  quir::ReturnOp const returnOp = getReturnOp(circuitOp);
+  quir::ReturnOp const nextReturnOp = getReturnOp(nextCircuitOp);
 
   IRMapping mapper;
 
@@ -453,7 +453,7 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
                           reusedArguments, mapper);
 
   // find return op in new circuit
-  quir::ReturnOp newReturnOp = getReturnOp(newCircuitOp);
+  quir::ReturnOp const newReturnOp = getReturnOp(newCircuitOp);
   rewriter.setInsertionPointAfter(newReturnOp);
 
   // clone any barrier ops and erase
