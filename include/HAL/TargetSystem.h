@@ -20,6 +20,7 @@
 #ifndef TARGETSYSTEM_H
 #define TARGETSYSTEM_H
 
+#include "API/errors.h"
 #include "Arguments/Arguments.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -29,6 +30,7 @@
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
+#include <list>
 #include <optional>
 #include <string>
 #include <vector>
@@ -139,6 +141,31 @@ public:
   /// @brief Disable(stop) ongoing timers
   void disableTiming();
 
+  // Diagnostic access
+  /// @brief Add a diagnostic to this target, not thread safe
+  void addDiagnostic(const qssc::Diagnostic &diag) {
+    diagnostics_.emplace_back(diag);
+  }
+  /// @brief Add a diagnostic to this target using mutex locks for thread safety
+  void addDiagnosticWithLock(const qssc::Diagnostic &diag) {
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
+    diagnostics_.emplace_back(diag);
+  }
+  /// @brief Get the diagnostics that this target holds
+  const qssc::DiagList &getDiagnosticList() const { return diagnostics_; }
+  /// @brief Recursively get references to the diagnostics that this target and
+  /// all of its children hold
+  qssc::DiagRefList getDiagnosticsRecursive() {
+    qssc::DiagRefList diagList;
+    for (const auto &diag : getDiagnosticList())
+      diagList.emplace_back(std::ref(diag));
+
+    for (auto &child : getChildren_())
+      diagList.splice(diagList.end(), child->getDiagnosticsRecursive());
+
+    return diagList;
+  }
+
 protected:
   /// @brief Get a nested timer instance from the root timer
   /// @param name The name of the timing span
@@ -156,6 +183,12 @@ protected:
 
 private:
   mlir::TimingScope rootTimer;
+
+  /// @brief List of diagnostics generated for this target
+  qssc::DiagList diagnostics_;
+
+  /// @brief Mutex for adding diagnostics to the diagnostic list
+  std::mutex diagnosticsMutex_;
 };
 
 class TargetSystem : public Target {

@@ -24,6 +24,7 @@
 #include "llvm/Support/Error.h"
 
 #include <functional>
+#include <list>
 #include <optional>
 #include <string>
 
@@ -68,6 +69,8 @@ public:
   std::string toString() const;
 };
 
+using DiagList = std::list<Diagnostic>;
+using DiagRefList = std::list<std::reference_wrapper<const Diagnostic>>;
 using DiagnosticCallback = std::function<void(const Diagnostic &)>;
 using OptDiagnosticCallback = std::optional<DiagnosticCallback>;
 
