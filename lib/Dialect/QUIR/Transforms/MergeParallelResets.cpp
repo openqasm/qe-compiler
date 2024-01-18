@@ -104,9 +104,8 @@ void MergeResetsLexicographicPass::runOnOperation() {
   mlir::RewritePatternSet patterns(&getContext());
   mlir::GreedyRewriteConfig config;
 
-  // use cheaper top-down traversal (in this case, bottom-up would not behave
-  // any differently)
-  config.useTopDownTraversal = true;
+  // Bottom up traversal is 3x as fast
+  config.useTopDownTraversal = false;
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
@@ -123,6 +122,10 @@ llvm::StringRef MergeResetsLexicographicPass::getArgument() const {
 llvm::StringRef MergeResetsLexicographicPass::getDescription() const {
   return "Merge qubit reset ops that can be parallelized into a "
          "single operation lexicographically.";
+}
+
+llvm::StringRef MergeResetsLexicographicPass::getName() const {
+  return "Merge Resets Lexicographical Pass";
 }
 
 namespace {
@@ -214,9 +217,8 @@ void MergeResetsTopologicalPass::runOnOperation() {
   mlir::RewritePatternSet patterns(&getContext());
   mlir::GreedyRewriteConfig config;
 
-  // use cheaper top-down traversal (in this case, bottom-up would not behave
-  // any differently)
-  config.useTopDownTraversal = true;
+  // Bottom up traversal is 3x as fast
+  config.useTopDownTraversal = false;
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
@@ -233,4 +235,8 @@ llvm::StringRef MergeResetsTopologicalPass::getArgument() const {
 llvm::StringRef MergeResetsTopologicalPass::getDescription() const {
   return "Merge qubit reset ops that can be parallelized into a "
          "single operation topologically.";
+}
+
+llvm::StringRef MergeResetsTopologicalPass::getName() const {
+  return "Merge Resets Topological Pass";
 }

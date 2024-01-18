@@ -51,6 +51,7 @@ struct SystemCreationPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 };
 
 struct SystemPlotPass : public PassWrapper<SystemPlotPass, OperationPass<>> {
@@ -67,6 +68,7 @@ struct SystemPlotPass : public PassWrapper<SystemPlotPass, OperationPass<>> {
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 };
 
 } // namespace mlir::pulse

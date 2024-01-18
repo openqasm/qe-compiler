@@ -1,6 +1,6 @@
-//===- QUIRTestInterfaces.h - QUIR Dialect interface tests -*- C++ -*-========//
+//===- LabelPlayOpDurations.cpp - Label PlayOps with Durations --*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2024.
 //
 // This code is part of Qiskit.
 //
@@ -14,30 +14,27 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  Tests for the QUIR dialect interfaces
-///
+///  This file defines the pass for labeling pulse.play operations with the
+///  duration of the waveform being played.
 //===----------------------------------------------------------------------===//
 
-#ifndef QUIR_TESTQUIRINTERFACES_H
-#define QUIR_TESTQUIRINTERFACES_H
+#ifndef PULSE_LABEL_PLAY_DURATION_H
+#define PULSE_LABEL_PLAY_DURATION_H
 
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
-namespace mlir::quir {
+namespace mlir::pulse {
 
-//===----------------------------------------------------------------------===//
-// QubitOpInterface
-//===----------------------------------------------------------------------===//
-
-struct TestQubitOpInterfacePass
-    : public PassWrapper<TestQubitOpInterfacePass, OperationPass<>> {
+class LabelPlayOpDurationsPass
+    : public PassWrapper<LabelPlayOpDurationsPass, OperationPass<ModuleOp>> {
+public:
   void runOnOperation() override;
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
 };
+} // namespace mlir::pulse
 
-} // namespace mlir::quir
-
-#endif // QUIR_QUIRTESTINTERFACES_H
+#endif // PULSE_LABEL_PLAY_DURATION_H

@@ -115,3 +115,7 @@ llvm::StringRef ReorderCircuitsPass::getArgument() const {
 llvm::StringRef ReorderCircuitsPass::getDescription() const {
   return "Move call_circuits later if possible.";
 }
+
+llvm::StringRef ReorderCircuitsPass::getName() const {
+  return "Reorder Circuits Pass";
+}
