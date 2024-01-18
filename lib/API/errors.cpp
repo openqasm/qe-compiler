@@ -130,7 +130,7 @@ llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
                            Severity severity, ErrorCategory category,
                            std::string message, std::error_code ec) {
   qssc::Diagnostic const diag{severity, category, std::move(message)};
-  return emitDiagnostic(onDiagnostic, diag, ec);
+  return emitDiagnostic(std::move(onDiagnostic), diag, ec);
 }
 
 } // namespace qssc
