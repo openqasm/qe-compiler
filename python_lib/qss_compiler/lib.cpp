@@ -55,6 +55,7 @@
 #include "lib_enums.h"
 
 #include "API/api.h"
+#include <Config/QSSConfig.h>
 
 #include <iostream>
 #include <optional>

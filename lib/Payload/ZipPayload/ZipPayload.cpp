@@ -23,6 +23,7 @@
 #include "Payload/Payload.h"
 #include "ZipUtil.h"
 
+#include "Arguments/Signature.h"
 #include "Config.h"
 #include "Payload/PayloadRegistry.h"
 #include <Config/QSSConfig.h>
