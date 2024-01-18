@@ -69,6 +69,7 @@ public:
 };
 
 using DiagnosticCallback = std::function<void(const Diagnostic &)>;
+using OptDiagnosticCallback = std::optional<DiagnosticCallback>;
 
 llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
                            const Diagnostic &diag,
