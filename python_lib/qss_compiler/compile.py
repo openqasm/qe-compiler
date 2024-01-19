@@ -302,7 +302,7 @@ def _do_compile(
         for diag in diagnostics:
             if diag.category == ErrorCategory.QSSCompilerSequenceTooLong:
                 raise exceptions.QSSCompilerSequenceTooLong(
-                    diag.message, # TODO: Code reviewers: Is this safe?
+                    diag.message,  # TODO: Code reviewers: Is this safe?
                     diagnostics,
                     return_diagnostics=return_diagnostics,
                 )
@@ -398,9 +398,7 @@ async def compile_file_async(
     execution = _CompilerExecution(input_file=input_file, options=compile_options)
     with ThreadPoolExecutor() as executor:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            executor, _do_compile, execution, return_diagnostics
-        )
+        return await loop.run_in_executor(executor, _do_compile, execution, return_diagnostics)
     # As an alternative, ProcessPoolExecutor has somewhat higher overhead yet
     # reduces complexity of integration by not requiring the preparatory call
     # to set_start_method.
@@ -462,9 +460,7 @@ async def compile_str_async(
     execution = _CompilerExecution(input_str=input_str, options=compile_options)
     with ThreadPoolExecutor() as executor:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            executor, _do_compile, execution, return_diagnostics
-        )
+        return await loop.run_in_executor(executor, _do_compile, execution, return_diagnostics)
     # As an alternative, ProcessPoolExecutor has somewhat higher overhead yet
     # reduces complexity of integration by not requiring the preparatory call
     # to set_start_method.
