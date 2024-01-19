@@ -347,7 +347,7 @@ llvm::Error emitQEM_(
 /// @param config Config data holding the verbosity level for output
 /// @return True iff target contains any error or fatal diagnostics
 bool emitAllDiagnosticsAndCheckForErrors_(
-    hal::TargetSystem &target, qssc::OptDiagnosticCallback diagnosticCb,
+    hal::TargetSystem &target, const qssc::OptDiagnosticCallback &diagnosticCb,
     const QSSConfig &config) {
   bool foundError = false;
   for (auto &diag : target.getDiagnosticsRecursive()) {
@@ -373,6 +373,7 @@ bool emitAllDiagnosticsAndCheckForErrors_(
       case Severity::Fatal:
       case Severity::Error:
         foundError = true;
+        [[fallthrough]];
       case Severity::Warning:
         (void)qssc::emitDiagnostic(diagnosticCb, diag);
         llvm::errs() << diag.get().toString() << "\n";
@@ -388,6 +389,7 @@ bool emitAllDiagnosticsAndCheckForErrors_(
       case Severity::Fatal:
       case Severity::Error:
         foundError = true;
+        [[fallthrough]];
       case Severity::Warning:
         (void)qssc::emitDiagnostic(diagnosticCb, diag);
         llvm::errs() << diag.get().toString() << "\n";
