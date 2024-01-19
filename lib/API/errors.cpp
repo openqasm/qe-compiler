@@ -54,7 +54,7 @@ std::string_view getErrorCategoryAsString(qssc::ErrorCategory category) {
     return "Errored because non-zero status is returned";
 
   case ErrorCategory::QSSCompilerSequenceTooLong:
-    return "Error because input sequence is too long";
+    return "Input sequence is too long";
 
   case ErrorCategory::QSSCompilationFailure:
     return "Failure during compilation";
