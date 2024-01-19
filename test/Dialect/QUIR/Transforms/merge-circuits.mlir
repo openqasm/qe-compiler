@@ -144,7 +144,9 @@ module {
     oq3.cbit_assign_bit @qc0_meas<2> [0] : i1 = %true
     %16:2 = quir.call_circuit @circuit_8(%0) : (!quir.qubit<1>) -> (i1, i1)
     quir.barrier %0 : (!quir.qubit<1>) -> ()
+    // CHECK-NOT: quir.barrier
     quir.barrier %200 : (!quir.qubit<1>) -> ()
+    // CHECK-NOT: quir.barrier
     %17:2 = quir.call_circuit @circuit_8(%0) : (!quir.qubit<1>) -> (i1, i1)
     // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_8_q0_circuit_8_q0(%0, %2) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
 
