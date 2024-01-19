@@ -293,77 +293,63 @@ MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
   return circuitOp;
 }
 
-int MergeCircuitsPass::addArguments(
-    Operation *op, llvm::SmallVector<Value> &callInputValues,
-    llvm::SmallVector<int> &insertedArguments,
-    std::unordered_map<int, int> &reusedArguments, int baseIndex) {
-  int index = baseIndex;
-  for (auto inputValue : op->getOperands()) {
-    auto *search = find(callInputValues, inputValue);
-    if (search == callInputValues.end()) {
-      callInputValues.push_back(inputValue);
-      insertedArguments.push_back(index);
-    } else {
-      int const originalIndex = search - callInputValues.begin();
-      reusedArguments[index] = originalIndex;
-    }
-    index++;
-  }
-  return index;
-}
+void mapNextCircuitOperands(
+    CallCircuitOp nextCallCircuitOp, CircuitOp nextCircuitOp,
+    CircuitOp newCircuitOp, llvm::SmallVector<Value> &callInputValues,
+    std::unordered_map<Operation *, uint> &inputValueIndices,
+    IRMapping &mapper) {
 
-void MergeCircuitsPass::mapNextCircuitArguments(
-    CircuitOp nextCircuitOp, CircuitOp newCircuitOp,
-    llvm::SmallVector<int> &insertedArguments,
-    std::unordered_map<int, int> &reusedArguments, IRMapping &mapper) {
-  uint const baseArgNum = newCircuitOp.getNumArguments();
-  int insertedCount = 0;
-  for (uint cnt = 0; cnt < nextCircuitOp.getNumArguments(); cnt++) {
-    auto arg = nextCircuitOp.getArgument(cnt);
-    int argumentIndex = 0;
-    if (find(insertedArguments, cnt) != insertedArguments.end()) {
-      auto dictArg = nextCircuitOp.getArgAttrDict(cnt);
-      newCircuitOp.insertArgument(baseArgNum + insertedCount, arg.getType(),
-                                  dictArg, arg.getLoc());
-      argumentIndex = baseArgNum + insertedCount;
-      insertedCount++;
+  // insert nextCircuit Operands into callInputValues if not there
+  // add argument to
+  uint insertedCount = inputValueIndices.size();
+  for (auto operandEnum : llvm::enumerate(nextCallCircuitOp.getOperands())) {
+    auto arg = nextCircuitOp.getArgument(operandEnum.index());
+    auto *defOp = operandEnum.value().getDefiningOp();
+    auto argumentIndexIter = inputValueIndices.find(defOp);
+    uint argumentIndex = 0;
+    if (argumentIndexIter == inputValueIndices.end()) {
+      argumentIndex = insertedCount++;
+      callInputValues.push_back(operandEnum.value());
+      inputValueIndices[defOp] = argumentIndex;
+      auto dictArg = nextCircuitOp.getArgAttrDict(operandEnum.index());
+      newCircuitOp.insertArgument(argumentIndex, arg.getType(), dictArg,
+                                  arg.getLoc());
     } else {
-      argumentIndex = reusedArguments[cnt];
+      argumentIndex = argumentIndexIter->second;
     }
     mapper.map(arg, newCircuitOp.getArgument(argumentIndex));
   }
 }
 
-int MergeCircuitsPass::mapBarrierOperands(
+void mapBarrierOperands(
     Operation *barrierOp, CircuitOp newCircuitOp,
-    llvm::SmallVector<int> &insertedArguments,
-    std::unordered_map<int, int> &reusedArguments, IRMapping &mapper,
-    MLIRContext *context, int baseIndex) {
+    llvm::SmallVector<Value> &callInputValues,
+    std::unordered_map<Operation *, uint> &inputValueIndices, IRMapping &mapper,
+    MLIRContext *context) {
   assert(barrierOp && "barrierOp requires valid operation pointer");
   assert(context && "context requires valid MLIR context pointer");
-  uint const baseArgNum = newCircuitOp.getNumArguments();
-  int insertedCount = 0;
-  for (uint cnt = 0; cnt < barrierOp->getNumOperands(); cnt++) {
-    auto qubit = barrierOp->getOperand(cnt);
-    int argumentIndex = 0;
-    if (find(insertedArguments, cnt + baseIndex) != insertedArguments.end()) {
-      auto physicalId = qubit.getDefiningOp()->getAttrOfType<IntegerAttr>("id");
-      argumentIndex = baseArgNum + insertedCount;
-      newCircuitOp.insertArgument(baseArgNum + insertedCount, qubit.getType(),
-                                  {}, qubit.getLoc());
+  uint insertedCount = inputValueIndices.size();
+  for (auto operand : barrierOp->getOperands()) {
+    auto *defOp = operand.getDefiningOp();
+    auto argumentIndexIter = inputValueIndices.find(defOp);
+    uint argumentIndex = 0;
+    if (argumentIndexIter == inputValueIndices.end()) {
+      auto physicalId = defOp->getAttrOfType<IntegerAttr>("id");
+      argumentIndex = insertedCount++;
+      callInputValues.push_back(operand);
+      inputValueIndices[defOp] = argumentIndex;
+      newCircuitOp.insertArgument(argumentIndex, operand.getType(), {},
+                                  operand.getLoc());
       newCircuitOp.setArgAttrs(
           argumentIndex,
           ArrayRef({NamedAttribute(
               StringAttr::get(context, mlir::quir::getPhysicalIdAttrName()),
               physicalId)}));
-      insertedCount++;
     } else {
-      argumentIndex = reusedArguments[cnt + baseIndex];
+      argumentIndex = argumentIndexIter->second;
     }
-    mapper.map(qubit, newCircuitOp.getArgument(argumentIndex));
-    baseIndex++;
+    mapper.map(operand, newCircuitOp.getArgument(argumentIndex));
   }
-  return baseIndex;
 }
 
 void MergeCircuitsPass::mergePhysicalIdAttrs(CircuitOp newCircuitOp,
@@ -417,24 +403,11 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   // merge the call_circuits
   // collect their input values
   llvm::SmallVector<Value> callInputValues;
-  callInputValues.append(callCircuitOp->getOperands().begin(),
-                         callCircuitOp.getOperands().end());
-
-  llvm::SmallVector<int> insertedArguments;
-  std::unordered_map<int, int> reusedArguments;
-  addArguments(nextCallCircuitOp, callInputValues, insertedArguments,
-               reusedArguments);
-
-  llvm::SmallVector<int> insertedBarrierArguments;
-  std::unordered_map<int, int> reusedBarrierArguments;
-  if (barrierOps.has_value()) {
-    int barrierIndex = 0;
-    for (auto *barrierOp : barrierOps.value()) {
-      // add barrierOps to argument list for circuit
-      barrierIndex =
-          addArguments(barrierOp, callInputValues, insertedBarrierArguments,
-                       reusedBarrierArguments, barrierIndex);
-    }
+  std::unordered_map<Operation *, uint> inputValueIndices;
+  for (auto inputValueEnum : llvm::enumerate(callCircuitOp->getOperands())) {
+    auto *defOp = inputValueEnum.value().getDefiningOp();
+    callInputValues.push_back(inputValueEnum.value());
+    inputValueIndices[defOp] = inputValueEnum.index();
   }
 
   // merge circuit names
@@ -453,8 +426,8 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // map original arguments for new circuit based on original circuit
   // argument numbers
-  mapNextCircuitArguments(nextCircuitOp, newCircuitOp, insertedArguments,
-                          reusedArguments, mapper);
+  mapNextCircuitOperands(nextCallCircuitOp, nextCircuitOp, newCircuitOp,
+                         callInputValues, inputValueIndices, mapper);
 
   // find return op in new circuit
   quir::ReturnOp const newReturnOp = getReturnOp(newCircuitOp);
@@ -462,13 +435,11 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // clone any barrier ops and erase
   if (barrierOps.has_value()) {
-    int barrierIndex = 0;
     for (auto *barrierOp : barrierOps.value()) {
       // add barrierOps to argument list for circuit and set physicalId
       // of attribute
-      barrierIndex = mapBarrierOperands(
-          barrierOp, newCircuitOp, insertedBarrierArguments,
-          reusedBarrierArguments, mapper, context, barrierIndex);
+      mapBarrierOperands(barrierOp, newCircuitOp, callInputValues,
+                         inputValueIndices, mapper, context);
       // clone into circuit and remove from original location
       rewriter.clone(*barrierOp, mapper);
       barrierOp->erase();
