@@ -27,6 +27,8 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
 
+#include <string>
+
 namespace mlir::pulse {
 
 struct QuantumCircuitPulseSchedulingPass
@@ -35,6 +37,7 @@ struct QuantumCircuitPulseSchedulingPass
 public:
   enum SchedulingMethod { ALAP, ASAP };
   SchedulingMethod SCHEDULING_METHOD = ALAP;
+  uint64_t PRE_MEASURE_BUFFER_DELAY = 0;
 
   // this pass can optionally receive an string specifying the scheduling
   // method; default method is alap scheduling
@@ -44,6 +47,9 @@ public:
       : PassWrapper(pass) {}
   QuantumCircuitPulseSchedulingPass(SchedulingMethod inSchedulingMethod) {
     SCHEDULING_METHOD = inSchedulingMethod;
+  }
+  QuantumCircuitPulseSchedulingPass(uint64_t inPreMeasureBufferDelay) {
+    PRE_MEASURE_BUFFER_DELAY = inPreMeasureBufferDelay;
   }
 
   void runOnOperation() override;
