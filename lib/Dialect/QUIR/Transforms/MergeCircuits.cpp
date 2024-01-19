@@ -293,6 +293,22 @@ MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
   return circuitOp;
 }
 
+uint insertOperandAndArgument(
+    Value operand, Operation *defOp, llvm::SmallVector<Value> &callInputValues,
+    std::unordered_map<Operation *, uint> &inputValueIndices,
+    uint insertedCount) {
+  auto argumentIndexIter = inputValueIndices.find(defOp);
+  uint argumentIndex = 0;
+  if (argumentIndexIter == inputValueIndices.end()) {
+    argumentIndex = insertedCount;
+    callInputValues.push_back(operand);
+    inputValueIndices[defOp] = argumentIndex;
+  } else {
+    argumentIndex = argumentIndexIter->second;
+  }
+  return argumentIndex;
+}
+
 void mapNextCircuitOperands(
     CallCircuitOp nextCallCircuitOp, CircuitOp nextCircuitOp,
     CircuitOp newCircuitOp, llvm::SmallVector<Value> &callInputValues,
@@ -305,17 +321,14 @@ void mapNextCircuitOperands(
   for (auto operandEnum : llvm::enumerate(nextCallCircuitOp.getOperands())) {
     auto arg = nextCircuitOp.getArgument(operandEnum.index());
     auto *defOp = operandEnum.value().getDefiningOp();
-    auto argumentIndexIter = inputValueIndices.find(defOp);
-    uint argumentIndex = 0;
-    if (argumentIndexIter == inputValueIndices.end()) {
-      argumentIndex = insertedCount++;
-      callInputValues.push_back(operandEnum.value());
-      inputValueIndices[defOp] = argumentIndex;
+    auto argumentIndex =
+        insertOperandAndArgument(operandEnum.value(), defOp, callInputValues,
+                                 inputValueIndices, insertedCount);
+    if (argumentIndex == insertedCount) {
       auto dictArg = nextCircuitOp.getArgAttrDict(operandEnum.index());
       newCircuitOp.insertArgument(argumentIndex, arg.getType(), dictArg,
                                   arg.getLoc());
-    } else {
-      argumentIndex = argumentIndexIter->second;
+      insertedCount++;
     }
     mapper.map(arg, newCircuitOp.getArgument(argumentIndex));
   }
@@ -331,13 +344,10 @@ void mapBarrierOperands(
   uint insertedCount = inputValueIndices.size();
   for (auto operand : barrierOp->getOperands()) {
     auto *defOp = operand.getDefiningOp();
-    auto argumentIndexIter = inputValueIndices.find(defOp);
-    uint argumentIndex = 0;
-    if (argumentIndexIter == inputValueIndices.end()) {
+    auto argumentIndex = insertOperandAndArgument(
+        operand, defOp, callInputValues, inputValueIndices, insertedCount);
+    if (argumentIndex == insertedCount) {
       auto physicalId = defOp->getAttrOfType<IntegerAttr>("id");
-      argumentIndex = insertedCount++;
-      callInputValues.push_back(operand);
-      inputValueIndices[defOp] = argumentIndex;
       newCircuitOp.insertArgument(argumentIndex, operand.getType(), {},
                                   operand.getLoc());
       newCircuitOp.setArgAttrs(
@@ -345,8 +355,7 @@ void mapBarrierOperands(
           ArrayRef({NamedAttribute(
               StringAttr::get(context, mlir::quir::getPhysicalIdAttrName()),
               physicalId)}));
-    } else {
-      argumentIndex = argumentIndexIter->second;
+      insertedCount++;
     }
     mapper.map(operand, newCircuitOp.getArgument(argumentIndex));
   }
