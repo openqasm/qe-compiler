@@ -42,11 +42,6 @@ struct MergeCircuitsPass
       llvm::StringMap<Operation *> *symbolMap,
       std::optional<llvm::SmallVector<Operation *>> barriers = std::nullopt);
 
-  static void mergePhysicalIdAttrs(CircuitOp newCircuitOp,
-                                   CircuitOp nextCircuitOp,
-                                   PatternRewriter &rewriter);
-  static quir::ReturnOp getReturnOp(Operation *op);
-
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;

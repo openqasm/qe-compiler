@@ -361,9 +361,8 @@ void mapBarrierOperands(
   }
 }
 
-void MergeCircuitsPass::mergePhysicalIdAttrs(CircuitOp newCircuitOp,
-                                             CircuitOp nextCircuitOp,
-                                             PatternRewriter &rewriter) {
+void mergePhysicalIdAttrs(CircuitOp newCircuitOp, CircuitOp nextCircuitOp,
+                          PatternRewriter &rewriter) {
   // merge the physical ID attributes
   auto theseIdsAttr = newCircuitOp->getAttrOfType<ArrayAttr>(
       mlir::quir::getPhysicalIdsAttrName());
@@ -390,7 +389,7 @@ void MergeCircuitsPass::mergePhysicalIdAttrs(CircuitOp newCircuitOp,
                         rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
 }
 
-quir::ReturnOp MergeCircuitsPass::getReturnOp(Operation *op) {
+quir::ReturnOp getReturnOp(Operation *op) {
   quir::ReturnOp returnOp;
   op->walk([&](quir::ReturnOp r) { returnOp = r; });
   return returnOp;
