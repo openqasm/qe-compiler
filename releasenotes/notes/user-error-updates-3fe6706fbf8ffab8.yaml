@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    User-facing diagnostics will now be collected from targets for forwarding
+    to the python library. The python library will raise exceptions specific to
+    user-facing diagnostics as appropriate. As an example, a new user diagnostic
+    was added for jobs that are too long.
