@@ -45,6 +45,8 @@ double
 getPhaseValue(ShiftPhaseOp shiftPhaseOp,
               std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack);
 
+void sortOpsByTimepoint(SequenceOp &sequenceOp);
+
 template <typename PulseOpTy>
 MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
 
