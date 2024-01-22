@@ -586,7 +586,10 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
       return llvm::Error::success();
   } // if input == QASM
 
-  if (config.getInputType() == InputType::MLIR) {
+  // Parse mlir::parseSourceFile automatically differentiates between MLIR and
+  // MLIR bytecode and treats them as interchangeable from the perspective of source
+  // parsing.
+  if (config.getInputType() == InputType::MLIR || config.getInputType() == InputType::Bytecode) {
 
     mlir::TimingScope mlirParserTiming = timing.nest("parse-mlir");
 

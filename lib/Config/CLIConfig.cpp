@@ -97,7 +97,10 @@ struct QSSConfigCLOptions : public QSSConfig {
                        "load the input file as an OpenQASM 3.0 source")),
                    llvm::cl::values(
                        clEnumValN(InputType::MLIR, "mlir",
-                                  "load the input file as an MLIR file")));
+                                  "load the input file as an MLIR file")),
+                   llvm::cl::values(
+                       clEnumValN(InputType::Bytecode, "bytecode",
+                                  "load the input file as an MLIR bytecode file - equivalent to -X=mlir as MLIR treats bytecode as valid MLIR during parsing.")));
 
     static llvm::cl::opt<enum EmitAction, /*ExternalStorage=*/true> const
         emitAction_(
@@ -108,7 +111,9 @@ struct QSSConfigCLOptions : public QSSConfig {
             llvm::cl::values(clEnumValN(EmitAction::ASTPretty, "ast-pretty",
                                         "pretty print the AST")),
             llvm::cl::values(
-                clEnumValN(EmitAction::MLIR, "mlir", "output the MLIR dump")),
+                clEnumValN(EmitAction::MLIR, "mlir", "output MLIR textual format")),
+            llvm::cl::values(
+                clEnumValN(EmitAction::Bytecode, "bytecode", "output MLIR bytecode")),
             llvm::cl::values(clEnumValN(EmitAction::WaveMem, "wavemem",
                                         "output the waveform memory")),
             llvm::cl::values(
