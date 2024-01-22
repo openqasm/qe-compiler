@@ -201,13 +201,28 @@ llvm::Error generateQEM(
   return llvm::Error::success();
 }
 
-/// @brief Print the output to an ostream.
-/// @param ostream The ostream to populate.
-/// @param moduleOp The ModuleOp to dump.
+/// @brief Print the MLIR output to an ostream.
 void dumpMLIR(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
   moduleOp.print(*ostream);
   *ostream << '\n';
 }
+
+/// Emit MLIR bytecode to an ostream.
+llvm::Error dumpBytecode(const QSSConfig &config, llvm::raw_ostream *os, mlir::ModuleOp moduleOp, mlir::FallbackAsmResourceMap &fallbackResourceMap) {
+
+  BytecodeWriterConfig writerConfig(fallbackResourceMap);
+  if (auto v = config.bytecodeVersionToEmit())
+    writerConfig.setDesiredBytecodeVersion(*v);
+
+  if (mlir::failed(mlir::writeBytecodeToFile(moduleOp, *os, writerConfig)))
+    return llvm::createStringError(
+        llvm::inconvertibleErrorCode(),
+        "Unable to emit module bytecode");
+
+  return llvm::Error::success();
+}
+
+
 
 using ErrorHandler = function_ref<LogicalResult(const Twine &)>;
 
@@ -248,7 +263,7 @@ llvm::Error buildPassManager(const QSSConfig &config, mlir::PassManager &pm,
 /// @return
 llvm::Error emitMLIR(
     llvm::raw_ostream *ostream, mlir::MLIRContext &context,
-    mlir::ModuleOp moduleOp, const QSSConfig &config,
+    mlir::ModuleOp moduleOp, mlir::FallbackAsmResourceMap &fallbackResourceMap, const QSSConfig &config,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
     ErrorHandler errorHandler, mlir::TimingScope &timing) {
 
@@ -268,7 +283,11 @@ llvm::Error emitMLIR(
   }
 
   // Print the output.
-  dumpMLIR(ostream, moduleOp);
+  if (config.getEmitAction() == EmitAction::MLIR)
+    dumpMLIR(ostream, moduleOp);
+  else if (config.getEmitAction() == EmitAction::Bytecode)
+    if (auto err = dumpBytecode(config, ostream, moduleOp, fallbackResourceMap))
+      return err;
 
   return llvm::Error::success();
 }
@@ -363,7 +382,7 @@ void diagEngineHandler(mlir::Diagnostic &diagnostic,
   return;
 }
 
-llvm::Error applyEmitAction(const QSSConfig &config, std::string *outputString, std::unique_ptr<qssc::payload::Payload> payload, mlir::MLIRContext &context, mlir::ModuleOp moduleOp, qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager, ErrorHandler errorHandler, mlir::TimingScope &timing) {
+llvm::Error applyEmitAction(const QSSConfig &config, std::string *outputString, std::unique_ptr<qssc::payload::Payload> payload, mlir::MLIRContext &context, mlir::ModuleOp moduleOp, mlir::FallbackAsmResourceMap &fallbackResourceMap, qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager, ErrorHandler errorHandler, mlir::TimingScope &timing) {
   // Set up the output.
   llvm::raw_ostream *ostream;
   std::optional<llvm::raw_string_ostream> outStringStream;
@@ -385,8 +404,8 @@ llvm::Error applyEmitAction(const QSSConfig &config, std::string *outputString, 
   }
 
   // Prepare outputs
-  if (config.getEmitAction() == EmitAction::MLIR) {
-    if (auto err = emitMLIR(ostream, context, moduleOp, config,
+  if (config.getEmitAction() == EmitAction::MLIR || config.getEmitAction() == EmitAction::Bytecode) {
+    if (auto err = emitMLIR(ostream, context, moduleOp, fallbackResourceMap, config,
                              targetCompilationManager, errorHandler, timing))
       return err;
   }
@@ -542,6 +561,7 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
   }
 
   mlir::ModuleOp moduleOp;
+  mlir::FallbackAsmResourceMap fallbackResourceMap;
 
   if (config.getInputType() == InputType::QASM) {
 
@@ -587,7 +607,6 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
     // they are not processed and will be emitted directly to the output
     // untouched.
     mlir::PassReproducerOptions reproOptions;
-    mlir::FallbackAsmResourceMap fallbackResourceMap;
     mlir::ParserConfig parseConfig(&context, /*verifyAfterParse=*/true,
                                    &fallbackResourceMap);
     if (config.shouldRunReproducer())
@@ -661,7 +680,7 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
   commandLinePassesTiming.stop();
 
 
-  if (auto err = applyEmitAction(config, outputString, std::move(payload), context, moduleOp, targetCompilationManager, errorHandler, timing))
+  if (auto err = applyEmitAction(config, outputString, std::move(payload), context, moduleOp, fallbackResourceMap, targetCompilationManager, errorHandler, timing))
     return err;
 
   return llvm::Error::success();
