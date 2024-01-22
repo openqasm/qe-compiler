@@ -35,7 +35,6 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
   return wfrOp;
 }
 
-
 Waveform_CreateOp
 getWaveformOp(PlayOp pulsePlayOp,
               std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack) {
