@@ -24,7 +24,7 @@
 // CLI: allowUnregisteredDialects: 0
 // CLI: dumpPassPipeline: 0
 // CLI: emitBytecode: 0
-// CLI: bytecodeEmitVersion: None
+// CLI: emitBytecodeVersion: None
 // CLI: irdlFile:
 // CLI: runReproducer: 0
 // CLI: showDialects: 0

@@ -288,6 +288,8 @@ llvm::Error emitQEM(
     if (config.isDirectInput()) {
       if (config.getInputType() != InputType::None)
         payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(config.getInputType())), (config.getInputSource() + "\n").str());
+      else
+        return llvm::createStringError(llvm::inconvertibleErrorCode(), "The input source type does not support embedding in the payload");
     } else { // just copy the input file
       std::ifstream fileStream(config.getInputSource().str());
       std::stringstream fileSS;
@@ -295,10 +297,11 @@ llvm::Error emitQEM(
 
       if (config.getInputType() != InputType::None)
         payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(config.getInputType())), fileSS.str());
+      else
+        return llvm::createStringError(llvm::inconvertibleErrorCode(), "The input source type does not support embedding in the payload");
 
       fileStream.close();
     }
-    return llvm::createStringError(llvm::inconvertibleErrorCode(), "The input source type does not support embedding in the payload");
   }
 
   if (auto err = generateQEM(config, &targetCompilationManager,
