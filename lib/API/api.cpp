@@ -115,14 +115,14 @@ void printVersion(llvm::raw_ostream &out) {
 }
 
 /// @brief Emit the registered dialects to llvm::outs
-void showDialects_(const mlir::DialectRegistry &registry) {
+void showDialects(const mlir::DialectRegistry &registry) {
   llvm::outs() << "Registered Dialects:\n";
   for (const auto &registeredDialect : registry.getDialectNames())
     llvm::outs() << registeredDialect << "\n";
 }
 
 /// @brief Emit the registered targets to llvm::outs
-void showTargets_() {
+void showTargets() {
   llvm::outs() << "Registered Targets:\n";
   for (const auto &target :
        qssc::hal::registry::TargetSystemRegistry::registeredPlugins()) {
@@ -133,7 +133,7 @@ void showTargets_() {
 }
 
 /// @brief Emit the registered payload to llvm::outs
-void showPayloads_() {
+void showPayloads() {
   llvm::outs() << "Registered Payloads:\n";
   for (const auto &payload :
        qssc::payload::registry::PayloadRegistry::registeredPlugins()) {
@@ -148,7 +148,7 @@ void showPayloads_() {
 /// @param config The configuration defining the context to build.
 /// @return The constructed TargetSystem.
 llvm::Expected<qssc::hal::TargetSystem &>
-buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config,
+buildTarget(MLIRContext *context, const qssc::config::QSSConfig &config,
              mlir::TimingScope &timing) {
 
   mlir::TimingScope const buildTargetTiming = timing.nest("build-target");
@@ -195,7 +195,7 @@ buildTarget_(MLIRContext *context, const qssc::config::QSSConfig &config,
 /// @param moduleOp The module to build for
 /// @param ostream The output ostream to populate
 /// @return The output error if one occurred.
-llvm::Error generateQEM_(
+llvm::Error generateQEM(
     const QSSConfig &config,
     qssc::hal::compile::TargetCompilationManager *targetCompilationManager,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
@@ -222,7 +222,7 @@ llvm::Error generateQEM_(
 /// @brief Print the output to an ostream.
 /// @param ostream The ostream to populate.
 /// @param moduleOp The ModuleOp to dump.
-void dumpMLIR_(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
+void dumpMLIR(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
   moduleOp.print(*ostream);
   *ostream << '\n';
 }
@@ -264,7 +264,7 @@ llvm::Error buildPassManager(const QSSConfig &config, mlir::PassManager &pm,
 /// @param targetCompilationManager The target's compilation scheduler
 /// @param errorHandler MLIR error handler
 /// @return
-llvm::Error emitMLIR_(
+llvm::Error emitMLIR(
     llvm::raw_ostream *ostream, mlir::MLIRContext &context,
     mlir::ModuleOp moduleOp, const QSSConfig &config,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
@@ -286,7 +286,7 @@ llvm::Error emitMLIR_(
   }
 
   // Print the output.
-  dumpMLIR_(ostream, moduleOp);
+  dumpMLIR(ostream, moduleOp);
 
   return llvm::Error::success();
 }
@@ -297,7 +297,7 @@ llvm::Error emitMLIR_(
 /// @param moduleOp The module operation to process and emit
 /// @param targetCompilationManager The target's compilation scheduler
 /// @return
-llvm::Error emitQEM_(
+llvm::Error emitQEM(
     const QSSConfig &config, llvm::raw_ostream *ostream,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
@@ -319,7 +319,7 @@ llvm::Error emitQEM_(
     return llvm::createStringError(llvm::inconvertibleErrorCode(), "The input source type does not support embedding in the payload");
   }
 
-  if (auto err = generateQEM_(config, &targetCompilationManager,
+  if (auto err = generateQEM(config, &targetCompilationManager,
                               std::move(payload), moduleOp, ostream, timing))
     return err;
 
@@ -378,7 +378,55 @@ void diagEngineHandler(mlir::Diagnostic &diagnostic,
   return;
 }
 
-llvm::Error compile_(int argc, char const **argv, std::string *outputString,
+llvm::Error applyEmitAction(const QSSConfig &config, std::string *outputString, std::unique_ptr<qssc::payload::Payload> payload, mlir::MLIRContext &context, mlir::ModuleOp moduleOp, qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager, ErrorHandler errorHandler, mlir::TimingScope &timing) {
+  // Set up the output.
+  llvm::raw_ostream *ostream;
+  std::optional<llvm::raw_string_ostream> outStringStream;
+
+  std::string errorMessage;
+  auto outputFile =
+    mlir::openOutputFile(config.getOutputFilePath(), &errorMessage);
+
+  if (outputString) {
+    outStringStream.emplace(*outputString);
+    if (outStringStream.has_value())
+      ostream = std::addressof(*outStringStream);
+  } else {
+    if (!outputFile)
+      return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                     "Failed to open output file: " +
+                                         errorMessage);
+    ostream = &outputFile->os();
+  }
+
+  // Prepare outputs
+  if (config.getEmitAction() == EmitAction::MLIR) {
+    if (auto err = emitMLIR(ostream, context, moduleOp, config,
+                             targetCompilationManager, errorHandler, timing))
+      return err;
+  }
+
+  if (config.getEmitAction() == EmitAction::QEM ||
+      config.getEmitAction() == EmitAction::QEQEM) {
+    if (auto err = emitQEM(config, ostream, std::move(payload), moduleOp,
+                            targetCompilationManager, timing))
+      return err;
+  }
+
+  // ------------------------------------------------------------
+
+  // Keep the output if no errors have occurred so far
+  if (outputString) {
+    if (outputFile && config.getOutputFilePath() != "-")
+      outputFile->os() << *outputString;
+  }
+  if (outputFile && config.getOutputFilePath() != "-")
+    outputFile->keep();
+
+  return llvm::Error::success();
+}
+
+llvm::Error performCompileActions(int argc, char const **argv, std::string *outputString,
                      std::optional<qssc::DiagnosticCallback> diagnosticCb) {
 
   // Initialize LLVM to start.
@@ -431,17 +479,17 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   mlir::registerLLVMDialectTranslation(context);
 
   if (config.shouldShowDialects()) {
-    showDialects_(registry);
+    showDialects(registry);
     return llvm::Error::success();
   }
 
   if (config.shouldShowTargets()) {
-    showTargets_();
+    showTargets();
     return llvm::Error::success();
   }
 
   if (config.shouldShowPayloads()) {
-    showPayloads_();
+    showPayloads();
     return llvm::Error::success();
   }
 
@@ -451,7 +499,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   }
 
   // Build the target for compilation
-  auto targetResult = buildTarget_(&context, config, timing);
+  auto targetResult = buildTarget(&context, config, timing);
   if (auto err = targetResult.takeError())
     return err;
   auto &target = targetResult.get();
@@ -628,48 +676,8 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
   commandLinePassesTiming.stop();
 
 
-  // Set up the output.
-  llvm::raw_ostream *ostream;
-  std::optional<llvm::raw_string_ostream> outStringStream;
-
-  auto outputFile =
-    mlir::openOutputFile(config.getOutputFilePath(), &errorMessage);
-
-  if (outputString) {
-    outStringStream.emplace(*outputString);
-    if (outStringStream.has_value())
-      ostream = std::addressof(*outStringStream);
-  } else {
-    if (!outputFile)
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Failed to open output file: " +
-                                         errorMessage);
-    ostream = &outputFile->os();
-  }
-
-  // Prepare outputs
-  if (config.getEmitAction() == EmitAction::MLIR) {
-    if (auto err = emitMLIR_(ostream, context, moduleOp, config,
-                             targetCompilationManager, errorHandler, timing))
-      return err;
-  }
-
-  if (config.getEmitAction() == EmitAction::QEM ||
-      config.getEmitAction() == EmitAction::QEQEM) {
-    if (auto err = emitQEM_(config, ostream, std::move(payload), moduleOp,
-                            targetCompilationManager, timing))
-      return err;
-  }
-
-  // ------------------------------------------------------------
-
-  // Keep the output if no errors have occurred so far
-  if (outputString) {
-    if (outputFile && config.getOutputFilePath() != "-")
-      outputFile->os() << *outputString;
-  }
-  if (outputFile && config.getOutputFilePath() != "-")
-    outputFile->keep();
+  if (auto err = applyEmitAction(config, outputString, std::move(payload), context, moduleOp, targetCompilationManager, errorHandler, timing))
+    return err;
 
   return llvm::Error::success();
 }
@@ -677,7 +685,7 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
 
 int qssc::compile(int argc, char const **argv, std::string *outputString,
                   std::optional<DiagnosticCallback> diagnosticCb) {
-  if (auto err = compile_(argc, argv, outputString, std::move(diagnosticCb))) {
+  if (auto err = performCompileActions(argc, argv, outputString, std::move(diagnosticCb))) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;
   }
@@ -685,6 +693,7 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
   return 0;
 }
 
+namespace {
 class MapAngleArgumentSource : public qssc::arguments::ArgumentSource {
 
 public:
@@ -707,7 +716,7 @@ private:
 };
 
 llvm::Error
-_bindArguments(std::string_view target, std::string_view configPath,
+bindArguments_(std::string_view target, std::string_view configPath,
                std::string_view moduleInput, std::string_view payloadOutputPath,
                std::unordered_map<std::string, double> const &arguments,
                bool treatWarningsAsErrors, bool enableInMemoryInput,
@@ -753,6 +762,8 @@ _bindArguments(std::string_view target, std::string_view configPath,
       enableInMemoryInput, inMemoryOutput, factoryRef, onDiagnostic);
 }
 
+} // anonymous namespace
+
 int qssc::bindArguments(
     std::string_view target, std::string_view configPath,
     std::string_view moduleInput, std::string_view payloadOutputPath,
@@ -762,7 +773,7 @@ int qssc::bindArguments(
     const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
 
   if (auto err =
-          _bindArguments(target, configPath, moduleInput, payloadOutputPath,
+          bindArguments_(target, configPath, moduleInput, payloadOutputPath,
                          arguments, treatWarningsAsErrors, enableInMemoryInput,
                          inMemoryOutput, onDiagnostic)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
