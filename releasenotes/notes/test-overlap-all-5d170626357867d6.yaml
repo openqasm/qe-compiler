@@ -3,4 +3,4 @@ fixes:
   - |
     Fixes bug related to assumption in MergeCircuitsPass that all quantum instructions
     are located in a quir.circuit when attempting to merge circuits. Applies the qubit overlap
-    test to all quantum operations in between quir.call_circuit calls. 
+    test to all quantum operations in between quir.call_circuit calls.
