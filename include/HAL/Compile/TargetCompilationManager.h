@@ -21,6 +21,7 @@
 #ifndef TARGETCOMPILATIONMANAGER_H
 #define TARGETCOMPILATIONMANAGER_H
 
+#include "API/errors.h"
 #include "HAL/TargetSystem.h"
 
 #include "mlir/IR/BuiltinOps.h"
@@ -41,7 +42,8 @@ namespace qssc::hal::compile {
 class TargetCompilationManager {
 protected:
   TargetCompilationManager(hal::TargetSystem &target,
-                           mlir::MLIRContext *context);
+                           mlir::MLIRContext *context,
+                           const qssc::OptDiagnosticCallback &callback);
 
   using WalkTargetModulesFunction = std::function<llvm::Error(
       hal::Target *, mlir::ModuleOp, mlir::TimingScope &timing)>;
@@ -116,6 +118,7 @@ protected:
 private:
   hal::TargetSystem &target;
   mlir::MLIRContext *context;
+  const qssc::OptDiagnosticCallback &diagnosticCb;
 
   bool printBeforeAllTargetPasses = false;
   bool printAfterAllTargetPasses = false;

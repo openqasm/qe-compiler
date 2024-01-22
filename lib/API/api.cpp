@@ -698,7 +698,8 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
 
   auto targetCompilationManager =
       qssc::hal::compile::ThreadedCompilationManager(
-          target, &context, [&](mlir::PassManager &pm) -> llvm::Error {
+          target, &context, diagnosticCb,
+          [&](mlir::PassManager &pm) -> llvm::Error {
             if (auto err = buildPassManager_(pm, verifyPasses))
               return err;
             return llvm::Error::success();

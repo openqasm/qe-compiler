@@ -63,7 +63,9 @@ public:
   using PMBuilder = std::function<llvm::Error(mlir::PassManager &)>;
 
   ThreadedCompilationManager(qssc::hal::TargetSystem &target,
-                             mlir::MLIRContext *context, PMBuilder pmBuilder);
+                             mlir::MLIRContext *context,
+                             const qssc::OptDiagnosticCallback &diagnosticCb,
+                             PMBuilder pmBuilder);
   virtual ~ThreadedCompilationManager() = default;
   virtual const std::string getName() const override;
 
