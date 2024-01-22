@@ -112,3 +112,7 @@ llvm::StringRef AddShotLoopPass::getDescription() const {
   return "Add a for loop wrapping the main function body iterating over the "
          "number of shots";
 }
+
+llvm::StringRef AddShotLoopPass::getName() const {
+  return "Add Shot Loop Pass";
+}

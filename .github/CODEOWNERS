@@ -1,0 +1,24 @@
+# This file defines the set of people responsible for different sections of the
+# codebase
+#
+# Being listed as a code owner on a section here means that user is empowered
+# to approve and merge pull requests for that section of code. It also comes
+# with an expected responsibility to review and maintain those subsections of
+# the repository.
+#
+# A PR can be merged when approved by at least one codeowner. For PRs that touch
+# more than one section with non-overlapping codeowners more than one codeowner
+# may be required to approve a PR.
+#
+# However, every contributor to the project can (and should!) review open PRs. This
+# file is just about outlining responsibility for maintainership and final
+# review/merging of PRs in different subsections of the repository.
+
+# Global rule, unless specialized by a later one
+* @openqasm/qe-maintainers
+
+# folders (also their corresponding tests)
+
+# Override the release notes directories to have _no_ code owners, so any review
+# from somebody with write access is acceptable.
+/releasenotes/notes

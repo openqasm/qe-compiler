@@ -24,6 +24,7 @@
 #include "Conversion/QUIRToPulse/LoadPulseCals.h"
 #include "Conversion/QUIRToPulse/QUIRToPulse.h"
 #include "Dialect/Pulse/Transforms/ClassicalOnlyDetection.h"
+#include "Dialect/Pulse/Transforms/LabelPlayOpDurations.h"
 #include "Dialect/Pulse/Transforms/MergeDelays.h"
 #include "Dialect/Pulse/Transforms/RemoveUnusedArguments.h"
 #include "Dialect/Pulse/Transforms/SchedulePort.h"

@@ -99,3 +99,7 @@ llvm::StringRef UnusedVariablePass::getArgument() const {
 llvm::StringRef UnusedVariablePass::getDescription() const {
   return "Remove variables that are not outputs and do not have any loads/uses";
 }
+
+llvm::StringRef UnusedVariablePass::getName() const {
+  return "Unused Variable Pass";
+}
