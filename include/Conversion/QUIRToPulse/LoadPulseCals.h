@@ -55,6 +55,8 @@ struct LoadPulseCalsPass
 
   void runOnOperation() override;
 
+  void getDependentDialects(mlir::DialectRegistry &registry) const override;
+
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
