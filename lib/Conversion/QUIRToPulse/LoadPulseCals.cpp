@@ -20,6 +20,7 @@
 
 #include "Conversion/QUIRToPulse/LoadPulseCals.h"
 
+#include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTraits.h"
@@ -667,4 +668,8 @@ llvm::StringRef LoadPulseCalsPass::getDescription() const {
 
 llvm::StringRef LoadPulseCalsPass::getName() const {
   return "Load Pulse Calibrations Pass";
+}
+
+void LoadPulseCalsPass::getDependentDialects(DialectRegistry &registry) const {
+  registry.insert<PulseDialect>();
 }
