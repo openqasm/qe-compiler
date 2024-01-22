@@ -81,24 +81,7 @@
 using namespace mlir;
 using namespace qssc::config;
 
-llvm::Error registerPasses() {
-  // TODO: Register standalone passes here.
-  llvm::Error err = llvm::Error::success();
-  mlir::oq3::registerOQ3Passes();
-  mlir::oq3::registerOQ3PassPipeline();
-  mlir::qcs::registerQCSPasses();
-  mlir::quir::registerQuirPasses();
-  mlir::quir::registerQuirPassPipeline();
-  mlir::pulse::registerPulsePasses();
-  mlir::pulse::registerPulsePassPipeline();
-  mlir::registerConversionPasses();
-
-  err = llvm::joinErrors(std::move(err), qssc::hal::registerTargetPasses());
-  err = llvm::joinErrors(std::move(err), qssc::hal::registerTargetPipelines());
-
-  mlir::registerAllPasses();
-  return err;
-}
+namespace {
 
 auto registerCLOpts() {
   mlir::registerAsmPrinterCLOptions();
@@ -108,7 +91,6 @@ auto registerCLOpts() {
   qssc::hal::compile::registerTargetCompilationManagerCLOptions();
 }
 
-namespace {
 void printVersion(llvm::raw_ostream &out) {
   out << "Quantum System Software (QSS) compiler version "
       << qssc::getQSSCVersion() << "\n";
