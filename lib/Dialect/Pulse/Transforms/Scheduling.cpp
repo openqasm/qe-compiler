@@ -125,27 +125,27 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
                               << quantumGateCallSequenceOpDuration << "\n");
 
       // find next available time for all the ports
-      const int nextAvailableTimeOfAllPorts =
-          getNextAvailableTimeOfPorts(ports);
+      int64_t nextAvailableTimeOfAllPorts = getNextAvailableTimeOfPorts(ports);
       LLVM_DEBUG(llvm::dbgs() << "\t\tnext availability is at "
                               << nextAvailableTimeOfAllPorts << "\n");
 
       // find the updated available time, i.e., when the current quantum gate
       // will be scheduled
-      const int updatedAvailableTime =
+      int64_t updatedAvailableTime =
           nextAvailableTimeOfAllPorts - quantumGateCallSequenceOpDuration;
+      // set the timepoint of quantum gate
+      PulseOpSchedulingInterface::setTimepoint(quantumGateCallSequenceOp,
+                                               updatedAvailableTime);
       LLVM_DEBUG(llvm::dbgs() << "\t\tcurrent gate scheduled at "
                               << updatedAvailableTime << "\n");
       // update the port availability map
+      if (quantumGateCallSequenceOp.getCallee().str().find("measure") == 0)
+        updatedAvailableTime -= PRE_MEASURE_BUFFER_DELAY;
       updatePortAvailabilityMap(ports, updatedAvailableTime);
 
       // keep track of total duration of the quantum circuit
       if (updatedAvailableTime < totalDurationOfQuantumCircuitNegative)
         totalDurationOfQuantumCircuitNegative = updatedAvailableTime;
-
-      // set the timepoint of quantum gate
-      PulseOpSchedulingInterface::setTimepoint(quantumGateCallSequenceOp,
-                                               updatedAvailableTime);
     }
   }
 
