@@ -43,8 +43,11 @@ getWaveformOp(PlayOp pulsePlayOp,
 
   for (auto it = callSequenceOpStack.rbegin(); it != callSequenceOpStack.rend();
        ++it) {
-    wfrIndex = wfrOp.dyn_cast<BlockArgument>().getArgNumber();
-    wfrOp = it->getOperand(wfrIndex);
+    if (wfrOp.isa<BlockArgument>()) {
+      wfrIndex = wfrOp.dyn_cast<BlockArgument>().getArgNumber();
+      wfrOp = it->getOperand(wfrIndex);
+    } else
+      break;
   }
 
   auto waveformOp =
