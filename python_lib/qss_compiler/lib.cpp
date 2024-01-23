@@ -71,7 +71,7 @@ namespace py = pybind11;
 
 /// Call into the qss-compiler via an interface to qss-compile's command line
 /// argument.
-py::tuple py_compile_by_args(const std::vector<std::string> &args,
+py::tuple py_compile_by_args(std::vector<std::string> &args,
                              bool outputAsStr,
                              qssc::DiagnosticCallback onDiagnostic) {
   std::string outputStr("");
@@ -84,16 +84,15 @@ py::tuple py_compile_by_args(const std::vector<std::string> &args,
 
   // TODO: need a C++ interface into the compiler with fewer detours. the python
   // api (inspired by IREE's python bindings) can be a start.
-  std::vector<char const *> argv;
+  std::vector<const char *> argv;
   argv.reserve(args.size() + 1);
   for (auto &str : args)
     argv.push_back(str.c_str());
   argv.push_back(nullptr);
 
-  int const status = qssc::compile(args.size(), argv.data(),
-                                   outputAsStr ? &outputStr : nullptr,
-                                   std::move(onDiagnostic));
-  bool const success = status == 0;
+  bool success = true;
+  if (auto err = qssc::compileMain(args.size(), argv.data(), "pyqssc\n", std::move(onDiagnostic)))
+    success = false;
 
 #ifndef NDEBUG
   std::cerr << "Compile " << (success ? "successful" : "failed") << '\n';

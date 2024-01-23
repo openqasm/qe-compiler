@@ -1,11 +1,9 @@
 // RUN: qss-compiler --target Mock --config path/to/config --allow-unregistered-dialect=false \
-// RUN:          --add-target-passes=false --verbosity=info --show-config | FileCheck %s --check-prefix CLI
+// RUN:          --add-target-passes=false --verbosity=info --show-config - | FileCheck %s --check-prefix CLI
 // RUN: QSSC_TARGET_NAME="MockEnv" QSSC_TARGET_CONFIG_PATH="path/to/config/Env" QSSC_VERBOSITY=DEBUG \
-// RUN:          qss-compiler --allow-unregistered-dialect=false --add-target-passes=false --show-config | FileCheck %s --check-prefix ENV
+// RUN:          qss-compiler --allow-unregistered-dialect=false --add-target-passes=false --show-config - | FileCheck %s --check-prefix ENV
 // REQUIRES: !asserts
 
-// CLI: inputSource: -
-// CLI: outputFilePath: -
 // CLI: inputType: none
 // CLI: emitAction: mlir
 // CLI: targetName: Mock
@@ -15,6 +13,7 @@
 // CLI: showTargets: 0
 // CLI: showPayloads: 0
 // CLI: showConfig: 1
+// CLI: payloadName: -
 // CLI: emitPlaintextPayload: 0
 // CLI: includeSource: 0
 // CLI: compileTargetIR: 0

@@ -50,11 +50,12 @@ and Pipe take care of serializing python objects and passing them across
 process boundaries with pipes.
 """
 import asyncio
+import multiprocessing as mp
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
 from importlib import resources as importlib_resources
-import multiprocessing as mp
 from multiprocessing import connection
 from os import environ as os_environ
 from pathlib import Path
@@ -166,11 +167,6 @@ class _CompilerExecution:
 
         if self.input_file is not None:
             args.append(str(self.input_file))
-        elif self.input is not None:
-            if self.options.input_type == InputType.BYTECODE:
-                args.append(self.input.hex())
-            else:
-                args.append(str(self.input))
         else:
             raise exceptions.QSSCompilerNoInputError(
                 "Neither input file nor input string provided."
@@ -194,6 +190,7 @@ def _compile_child_backend(
 
     options = execution.options
     args = execution.prepare_compiler_args()
+    sys.stdin = execution.input
     output_as_return = False if options.output_file else True
 
     # The qss-compiler expects the path to static resources in the environment

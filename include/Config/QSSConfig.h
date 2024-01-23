@@ -35,7 +35,16 @@ enum QSSVerbosity {
   _VerbosityCnt = 4
 };
 
-enum class EmitAction { None, AST, ASTPretty, MLIR, Bytecode, WaveMem, QEM, QEQEM };
+enum class EmitAction {
+  None,
+  AST,
+  ASTPretty,
+  MLIR,
+  Bytecode,
+  WaveMem,
+  QEM,
+  QEQEM
+};
 
 enum class FileExtension {
   None,
@@ -49,7 +58,7 @@ enum class FileExtension {
   QEQEM
 };
 
-enum class InputType { None, QASM, MLIR, Bytecode};
+enum class InputType { None, QASM, MLIR, Bytecode };
 
 std::string to_string(const EmitAction &inExt);
 
@@ -80,18 +89,6 @@ struct QSSConfig : mlir::MlirOptMainConfig {
 public:
   friend class CLIConfigBuilder;
   friend class EnvVarConfigBuilder;
-
-  QSSConfig &setInputSource(std::string source) {
-    inputSource = std::move(source);
-    return *this;
-  }
-  llvm::StringRef getInputSource() const { return inputSource; }
-
-  QSSConfig &setOutputFilePath(std::string path) {
-    outputFilePath = std::move(path);
-    return *this;
-  }
-  llvm::StringRef getOutputFilePath() const { return outputFilePath; }
 
   QSSConfig &setTargetName(std::string name) {
     targetName = std::move(name);
@@ -155,6 +152,12 @@ public:
   }
   bool shouldShowConfig() const { return showConfigFlag; }
 
+  QSSConfig &setPayloadName(std::string name) {
+    payloadName = name;
+    return *this;
+  }
+  llvm::StringRef getPayloadName() const { return payloadName; }
+
   QSSConfig &emitPlaintextPayload(bool flag) {
     emitPlaintextPayloadFlag = flag;
     return *this;
@@ -198,10 +201,6 @@ public:
   void emit(llvm::raw_ostream &out) const;
 
 protected:
-  /// @brief input source (file path or direct input) to compile
-  std::string inputSource = "-";
-  /// @brief Output path for the compiler output if emitting to file.
-  std::string outputFilePath = "-";
   /// @brief The TargetSystem to target compilation for.
   std::optional<std::string> targetName = std::nullopt;
   /// @brief The path to the TargetSystem configuration information.
@@ -220,6 +219,8 @@ protected:
   bool showPayloadsFlag = false;
   /// @brief Should the current configuration be printed
   bool showConfigFlag = false;
+  /// @brief Name of the payload for payload configuration
+  std::string payloadName = "-";
   /// @brief Should the plaintext payload be emitted
   bool emitPlaintextPayloadFlag = false;
   /// @brief Should the input source be included in the payload
@@ -279,8 +280,13 @@ public:
 /// 2. Environment variables
 /// 3. CLI arguments.
 ///
+/// @param inputFilename Input filename which will be used to compute input
+/// types
+/// @param outputFilename Output filename which will be used to compute input
+/// types
 /// @return The constructed configuration
-llvm::Expected<qssc::config::QSSConfig> buildToolConfig();
+llvm::Expected<qssc::config::QSSConfig>
+buildToolConfig(llvm::StringRef inputFilename, llvm::StringRef outputFilename);
 
 } // namespace qssc::config
 #endif // QSS_QSSCONFIG_H

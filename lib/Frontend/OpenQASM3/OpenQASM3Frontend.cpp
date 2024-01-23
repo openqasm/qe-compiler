@@ -118,13 +118,13 @@ parseDurationStr(const std::string &durationStr) {
 } // anonymous namespace
 
 llvm::Error qssc::frontend::openqasm3::parse(
-    llvm::SourceMgr &sourceMgr, bool emitRawAST,
-    bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp newModule,
+    llvm::SourceMgr &sourceMgr, bool emitRawAST, bool emitPrettyAST,
+    bool emitMLIR, mlir::ModuleOp newModule,
     std::optional<qssc::DiagnosticCallback> diagnosticCallback,
     mlir::TimingScope &timing) {
 
-
-  const llvm::MemoryBuffer *sourceBuffer = sourceMgr.getMemoryBuffer(sourceMgr.getMainFileID());
+  const llvm::MemoryBuffer *sourceBuffer =
+      sourceMgr.getMemoryBuffer(sourceMgr.getMainFileID());
 
   mlir::TimingScope qasm3ParseTiming = timing.nest("parse-qasm3");
 
@@ -220,15 +220,14 @@ llvm::Error qssc::frontend::openqasm3::parse(
 
     auto sourceFile = sourceBuffer->getBufferIdentifier();
 
-    // Handle stdin differently as the qasm parser does not seem to perform includes
-    // on a raw string input. This limits includes to file inputs only at the current
-    // time.
+    // Handle stdin differently as the qasm parser does not seem to perform
+    // includes on a raw string input. This limits includes to file inputs only
+    // at the current time.
     if (sourceFile != "<stdin>") {
       QASM::QasmPreprocessor::Instance().SetTranslationUnit(sourceFile.str());
       root.reset(parser.ParseAST());
-     } else
+    } else
       root.reset(parser.ParseAST(sourceBuffer->getBuffer().str()));
-
 
   } catch (std::exception &e) {
     return llvm::createStringError(

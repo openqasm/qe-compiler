@@ -8,4 +8,7 @@ features:
     specified with ``./qss-compiler -X=bytecode ...``.
     To emit bytecode from the compiler ``./qss-compiler ... -o test.bc`` or
     ``./qss-compiler ... --emit bytecode -o file.bc``
-
+  - |
+    The core qss-compiler compile API has been rewritten and refactored to align with
+    MLIROptMain. This enables better forward compatiability and integration with
+    MLIR bytecode through the compiler and its Python bindings.

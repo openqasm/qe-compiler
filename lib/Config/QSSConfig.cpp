@@ -30,6 +30,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <array>
+#include <filesystem>
 #include <ostream>
 #include <string>
 #include <utility>
@@ -48,8 +49,6 @@ const std::array<const std::string, _VerbosityCnt> verbosityToStr = {
 void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   // Compiler configuration
   os << "[compiler]\n";
-  os << "inputSource: " << getInputSource() << "\n";
-  os << "outputFilePath: " << getOutputFilePath() << "\n";
   os << "inputType: " << to_string(getInputType()) << "\n";
   os << "emitAction: " << to_string(getEmitAction()) << "\n";
   os << "targetName: "
@@ -67,6 +66,7 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "showTargets: " << shouldShowTargets() << "\n";
   os << "showPayloads: " << shouldShowPayloads() << "\n";
   os << "showConfig: " << shouldShowConfig() << "\n";
+  os << "payloadName: " << getPayloadName() << "\n";
   os << "emitPlaintextPayload: " << shouldEmitPlaintextPayload() << "\n";
   os << "includeSource: " << shouldIncludeSource() << "\n";
   os << "compileTargetIR: " << shouldCompileTargetIR() << "\n";
@@ -221,7 +221,8 @@ std::string qssc::config::to_string(const InputType &inputType) {
   return "none";
 }
 
-FileExtension qssc::config::inputTypeToFileExtension(const InputType &inputType) {
+FileExtension
+qssc::config::inputTypeToFileExtension(const InputType &inputType) {
   switch (inputType) {
   case InputType::QASM:
     return FileExtension::QASM;
@@ -331,7 +332,9 @@ qssc::config::loadPassPlugin(const std::string &pluginPath) {
   return mlir::success();
 }
 
-llvm::Expected<qssc::config::QSSConfig> qssc::config::buildToolConfig() {
+llvm::Expected<qssc::config::QSSConfig>
+qssc::config::buildToolConfig(llvm::StringRef inputFilename,
+                              llvm::StringRef outputFilename) {
   // First populate the configuration from default values then
   // environment variables.
   auto config = EnvVarConfigBuilder().buildConfig();
@@ -341,10 +344,17 @@ llvm::Expected<qssc::config::QSSConfig> qssc::config::buildToolConfig() {
     return std::move(err);
 
   // Apply CLI options of top of the configuration constructed above.
-  if (auto err = CLIConfigBuilder().populateConfig(*config))
+  if (auto err = CLIConfigBuilder().populateConfig(*config, inputFilename,
+                                                   outputFilename))
     // Explicit move required for some systems as automatic move
     // is not recognized.
     return std::move(err);
+
+  // Set the payload name based on the output name.
+  if (outputFilename != "-") {
+    const std::filesystem::path payloadPath(outputFilename.str());
+    config.get().setPayloadName(payloadPath.stem());
+  }
 
   return config;
 }

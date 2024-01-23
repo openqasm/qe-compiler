@@ -70,31 +70,20 @@ public:
 struct QSSConfigCLOptions : public QSSConfig {
   QSSConfigCLOptions() {
 
-    // qss-compiler options
-    static llvm::cl::opt<std::string, /*ExternalStorage=*/true> const
-        inputSource_(llvm::cl::Positional,
-                     llvm::cl::desc("Input filename or program source"),
-                     llvm::cl::location(inputSource), llvm::cl::init("-"),
-                     llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
-    static llvm::cl::opt<std::string, /*ExternalStorage=*/true> const
-        outputFilename("o", llvm::cl::desc("Output filename"),
-                       llvm::cl::value_desc("filename"),
-                       llvm::cl::location(outputFilePath), llvm::cl::init("-"),
-                       llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
     static llvm::cl::opt<enum InputType, /*ExternalStorage=*/true> const
-        inputType_("X", llvm::cl::location(inputType),
-                   llvm::cl::desc("Specify the kind of input desired"),
-                   llvm::cl::values(clEnumValN(
-                       InputType::QASM, "qasm",
-                       "load the input file as an OpenQASM 3.0 source")),
-                   llvm::cl::values(
-                       clEnumValN(InputType::MLIR, "mlir",
-                                  "load the input file as an MLIR file")),
-                   llvm::cl::values(
-                       clEnumValN(InputType::Bytecode, "bytecode",
-                                  "load the input file as an MLIR bytecode file - equivalent to -X=mlir as MLIR treats bytecode as valid MLIR during parsing.")));
+        inputType_(
+            "X", llvm::cl::location(inputType),
+            llvm::cl::desc("Specify the kind of input desired"),
+            llvm::cl::values(
+                clEnumValN(InputType::QASM, "qasm",
+                           "load the input file as an OpenQASM 3.0 source")),
+            llvm::cl::values(clEnumValN(InputType::MLIR, "mlir",
+                                        "load the input file as an MLIR file")),
+            llvm::cl::values(
+                clEnumValN(InputType::Bytecode, "bytecode",
+                           "load the input file as an MLIR bytecode file - "
+                           "equivalent to -X=mlir as MLIR treats bytecode as "
+                           "valid MLIR during parsing.")));
 
     static llvm::cl::opt<enum EmitAction, /*ExternalStorage=*/true> const
         emitAction_(
@@ -104,10 +93,10 @@ struct QSSConfigCLOptions : public QSSConfig {
                 clEnumValN(EmitAction::AST, "ast", "output the AST dump")),
             llvm::cl::values(clEnumValN(EmitAction::ASTPretty, "ast-pretty",
                                         "pretty print the AST")),
-            llvm::cl::values(
-                clEnumValN(EmitAction::MLIR, "mlir", "output MLIR textual format")),
-            llvm::cl::values(
-                clEnumValN(EmitAction::Bytecode, "bytecode", "output MLIR bytecode")),
+            llvm::cl::values(clEnumValN(EmitAction::MLIR, "mlir",
+                                        "output MLIR textual format")),
+            llvm::cl::values(clEnumValN(EmitAction::Bytecode, "bytecode",
+                                        "output MLIR bytecode")),
             llvm::cl::values(clEnumValN(EmitAction::WaveMem, "wavemem",
                                         "output the waveform memory")),
             llvm::cl::values(
@@ -335,15 +324,15 @@ struct QSSConfigCLOptions : public QSSConfig {
     });
   }
 
-  llvm::Error computeInputType() {
+  llvm::Error computeInputType(llvm::StringRef inputFilename) {
     if (getInputType() == InputType::None) {
 
       // Override with mlir opt config if set (it typically shouldn't be)
       if (shouldEmitBytecode())
         setInputType(InputType::Bytecode);
       else
-        setInputType(fileExtensionToInputType(getExtension(getInputSource())));
-      if (getInputSource() != "-" && getInputType() == InputType::None) {
+        setInputType(fileExtensionToInputType(getExtension(inputFilename)));
+      if (inputFilename != "-" && getInputType() == InputType::None) {
         return llvm::createStringError(
             llvm::inconvertibleErrorCode(),
             "Unable to autodetect file extension type! Please specify the "
@@ -354,22 +343,22 @@ struct QSSConfigCLOptions : public QSSConfig {
     return llvm::Error::success();
   }
 
-  llvm::Error computeOutputType() {
-    if (getOutputFilePath() != "-") {
+  llvm::Error computeOutputType(llvm::StringRef outputFilename) {
+    if (outputFilename != "-") {
       EmitAction const extensionAction =
-          fileExtensionToAction(getExtension(getOutputFilePath()));
+          fileExtensionToAction(getExtension(outputFilename));
       if (extensionAction == EmitAction::None &&
           emitAction == EmitAction::None) {
         llvm::errs() << "Cannot determine the file extension of the specified "
                         "output file "
-                     << getOutputFilePath() << " defaulting to dumping MLIR\n";
+                     << outputFilename << " defaulting to dumping MLIR\n";
         setEmitAction(EmitAction::MLIR);
       } else if (emitAction == EmitAction::None) {
         setEmitAction(extensionAction);
       } else if (extensionAction != getEmitAction()) {
         llvm::errs()
             << "Warning! The output type in the file extension doesn't "
-               "match the output type specified by --emit!";
+               "match the output type specified by --emit!\n";
       }
     } else {
       if (emitAction == EmitAction::None)
@@ -405,20 +394,10 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
 
   config.setPassPipelineSetupFn(clOptionsConfig->passPipelineCallback);
 
-  if (auto err = clOptionsConfig->computeInputType())
-    return err;
-
-  if (auto err = clOptionsConfig->computeOutputType())
-    return err;
-
   if (clOptionsConfig->verbosityLevel != QSSVerbosity::_VerbosityCnt)
     config.verbosityLevel = clOptionsConfig->verbosityLevel;
 
   // qss
-  config.inputSource = clOptionsConfig->inputSource;
-  config.outputFilePath = clOptionsConfig->outputFilePath;
-  config.inputType = clOptionsConfig->inputType;
-  config.emitAction = clOptionsConfig->emitAction;
   if (clOptionsConfig->targetName.has_value())
     config.targetName = clOptionsConfig->targetName;
   if (clOptionsConfig->targetConfigPath.has_value())
@@ -456,5 +435,23 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   config.verifyPassesFlag = clOptionsConfig->verifyPassesFlag;
   config.verifyRoundtripFlag = clOptionsConfig->verifyRoundtripFlag;
   config.splitInputFileFlag = clOptionsConfig->splitInputFileFlag;
+  return llvm::Error::success();
+}
+
+llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config,
+                                             llvm::StringRef inputFilename,
+                                             llvm::StringRef outputFilename) {
+
+  if (auto err = populateConfig(config))
+    return err;
+
+  if (auto err = clOptionsConfig->computeInputType(inputFilename))
+    return err;
+  config.inputType = clOptionsConfig->inputType;
+
+  if (auto err = clOptionsConfig->computeOutputType(outputFilename))
+    return err;
+  config.emitAction = clOptionsConfig->emitAction;
+
   return llvm::Error::success();
 }

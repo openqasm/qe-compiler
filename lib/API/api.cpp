@@ -19,7 +19,6 @@
 #include "API/errors.h"
 #include "Arguments/Arguments.h"
 #include "Config/CLIConfig.h"
-#include "Config/QSSConfig.h"
 #include "Dialect/RegisterDialects.h"
 #include "Dialect/RegisterPasses.h"
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
@@ -58,11 +57,11 @@
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/InitLLVM.h"
+#include "llvm/Support/Process.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <optional>
@@ -74,6 +73,9 @@
 
 using namespace mlir;
 using namespace qssc::config;
+
+//===----------------------------------- Compilation
+//------------------------------------------===//
 
 namespace {
 
@@ -125,7 +127,7 @@ void showPayloads() {
 /// @return The constructed TargetSystem.
 llvm::Expected<qssc::hal::TargetSystem &>
 buildTarget(MLIRContext *context, const qssc::config::QSSConfig &config,
-             mlir::TimingScope &timing) {
+            mlir::TimingScope &timing) {
 
   mlir::TimingScope const buildTargetTiming = timing.nest("build-target");
 
@@ -175,7 +177,7 @@ llvm::Error generateQEM(
     const QSSConfig &config,
     qssc::hal::compile::TargetCompilationManager *targetCompilationManager,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
-    llvm::raw_ostream *ostream, mlir::TimingScope &timing) {
+    llvm::raw_ostream &ostream, mlir::TimingScope &timing) {
 
   mlir::TimingScope buildQEMTiming = timing.nest("build-qem");
   targetCompilationManager->enableTiming(buildQEMTiming);
@@ -188,35 +190,34 @@ llvm::Error generateQEM(
   mlir::TimingScope const writePayloadTiming =
       buildQEMTiming.nest("write-payload");
   if (config.shouldEmitPlaintextPayload())
-    payload->writePlain(*ostream);
+    payload->writePlain(ostream);
   else
-    payload->write(*ostream);
+    payload->write(ostream);
 
   return llvm::Error::success();
 }
 
 /// @brief Print the MLIR output to an ostream.
-void dumpMLIR(llvm::raw_ostream *ostream, mlir::ModuleOp moduleOp) {
-  moduleOp.print(*ostream);
-  *ostream << '\n';
+void dumpMLIR(llvm::raw_ostream &ostream, mlir::ModuleOp moduleOp) {
+  moduleOp.print(ostream);
+  ostream << '\n';
 }
 
 /// Emit MLIR bytecode to an ostream.
-llvm::Error dumpBytecode(const QSSConfig &config, llvm::raw_ostream *os, mlir::ModuleOp moduleOp, mlir::FallbackAsmResourceMap &fallbackResourceMap) {
+llvm::Error dumpBytecode(const QSSConfig &config, llvm::raw_ostream &os,
+                         mlir::ModuleOp moduleOp,
+                         mlir::FallbackAsmResourceMap &fallbackResourceMap) {
 
   BytecodeWriterConfig writerConfig(fallbackResourceMap);
   if (auto v = config.bytecodeVersionToEmit())
     writerConfig.setDesiredBytecodeVersion(*v);
 
-  if (mlir::failed(mlir::writeBytecodeToFile(moduleOp, *os, writerConfig)))
-    return llvm::createStringError(
-        llvm::inconvertibleErrorCode(),
-        "Unable to emit module bytecode");
+  if (mlir::failed(mlir::writeBytecodeToFile(moduleOp, os, writerConfig)))
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Unable to emit module bytecode");
 
   return llvm::Error::success();
 }
-
-
 
 using ErrorHandler = function_ref<LogicalResult(const Twine &)>;
 
@@ -256,8 +257,9 @@ llvm::Error buildPassManager(const QSSConfig &config, mlir::PassManager &pm,
 /// @param errorHandler MLIR error handler
 /// @return
 llvm::Error emitMLIR(
-    llvm::raw_ostream *ostream, mlir::MLIRContext &context,
-    mlir::ModuleOp moduleOp, mlir::FallbackAsmResourceMap &fallbackResourceMap, const QSSConfig &config,
+    llvm::raw_ostream &ostream, mlir::MLIRContext &context,
+    mlir::ModuleOp moduleOp, mlir::FallbackAsmResourceMap &fallbackResourceMap,
+    const QSSConfig &config,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
     ErrorHandler errorHandler, mlir::TimingScope &timing) {
 
@@ -293,20 +295,23 @@ llvm::Error emitMLIR(
 /// @param targetCompilationManager The target's compilation scheduler
 /// @return
 llvm::Error emitQEM(
-    const QSSConfig &config, llvm::raw_ostream *ostream,
+    const QSSConfig &config, llvm::raw_ostream &ostream,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
-    const llvm::MemoryBuffer *sourceBuffer,
-    mlir::TimingScope &timing) {
+    const llvm::MemoryBuffer *sourceBuffer, mlir::TimingScope &timing) {
   if (config.shouldIncludeSource()) {
     if (config.getInputType() != InputType::None)
-      payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(config.getInputType())), sourceBuffer->getBuffer());
+      payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(
+                                               config.getInputType())),
+                       sourceBuffer->getBuffer());
     else
-      return llvm::createStringError(llvm::inconvertibleErrorCode(), "The input source type does not support embedding in the payload");
+      return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "The input source type does not support embedding in the payload");
   }
 
   if (auto err = generateQEM(config, &targetCompilationManager,
-                              std::move(payload), moduleOp, ostream, timing))
+                             std::move(payload), moduleOp, ostream, timing))
     return err;
 
   return llvm::Error::success();
@@ -364,95 +369,37 @@ void diagEngineHandler(mlir::Diagnostic &diagnostic,
   return;
 }
 
-llvm::Error applyEmitAction(const QSSConfig &config, std::string *outputString, std::unique_ptr<qssc::payload::Payload> payload, mlir::MLIRContext &context, mlir::ModuleOp moduleOp, const llvm::MemoryBuffer *sourceBuffer, mlir::FallbackAsmResourceMap &fallbackResourceMap, qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager, ErrorHandler errorHandler, mlir::TimingScope &timing) {
-  // Set up the output.
-  llvm::raw_ostream *ostream;
-  std::optional<llvm::raw_string_ostream> outStringStream;
-
-  std::string errorMessage;
-  auto outputFile =
-    mlir::openOutputFile(config.getOutputFilePath(), &errorMessage);
-
-  if (outputString) {
-    outStringStream.emplace(*outputString);
-    if (outStringStream.has_value())
-      ostream = std::addressof(*outStringStream);
-  } else {
-    if (!outputFile)
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Failed to open output file: " +
-                                         errorMessage);
-    ostream = &outputFile->os();
-  }
-
+llvm::Error applyEmitAction(
+    const QSSConfig &config, llvm::raw_ostream &outputStream,
+    std::unique_ptr<qssc::payload::Payload> payload, mlir::MLIRContext &context,
+    mlir::ModuleOp moduleOp, const llvm::MemoryBuffer *sourceBuffer,
+    mlir::FallbackAsmResourceMap &fallbackResourceMap,
+    qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
+    ErrorHandler errorHandler, mlir::TimingScope &timing) {
   // Prepare outputs
-  if (config.getEmitAction() == EmitAction::MLIR || config.getEmitAction() == EmitAction::Bytecode) {
-    if (auto err = emitMLIR(ostream, context, moduleOp, fallbackResourceMap, config,
-                             targetCompilationManager, errorHandler, timing))
+  if (config.getEmitAction() == EmitAction::MLIR ||
+      config.getEmitAction() == EmitAction::Bytecode) {
+    if (auto err =
+            emitMLIR(outputStream, context, moduleOp, fallbackResourceMap,
+                     config, targetCompilationManager, errorHandler, timing))
       return err;
   }
 
   if (config.getEmitAction() == EmitAction::QEM ||
       config.getEmitAction() == EmitAction::QEQEM) {
-    if (auto err = emitQEM(config, ostream, std::move(payload), moduleOp,
-                            targetCompilationManager, sourceBuffer, timing))
+    if (auto err = emitQEM(config, outputStream, std::move(payload), moduleOp,
+                           targetCompilationManager, sourceBuffer, timing))
       return err;
   }
-
-  // ------------------------------------------------------------
-
-  // Keep the output if no errors have occurred so far
-  if (outputString) {
-    if (outputFile && config.getOutputFilePath() != "-")
-      outputFile->os() << *outputString;
-  }
-  if (outputFile && config.getOutputFilePath() != "-")
-    outputFile->keep();
 
   return llvm::Error::success();
 }
 
-llvm::Error performCompileActions(int argc, char const **argv, std::string *outputString,
-                     std::optional<qssc::DiagnosticCallback> diagnosticCb) {
-
-  // Initialize LLVM to start.
-  llvm::InitLLVM const y(argc, argv);
-
-  // Register the standard passes with MLIR.
-  // Must precede the command line parsing.
-  if (auto err = qssc::dialect::registerPasses())
-    return err;
-
-  // Register the standard dialects with MLIR and prepare a registry and pass
-  // pipeline
-  mlir::DialectRegistry registry;
-  qssc::dialect::registerDialects(registry);
-
-  // Register all extensions
-  mlir::registerAllExtensions(registry);
-
-  registerCLOpts();
-  // Register CL config builder prior to parsing
-  CLIConfigBuilder::registerCLOptions(registry);
-  llvm::cl::SetVersionPrinter(&printVersion);
-  llvm::cl::ParseCommandLineOptions(
-      argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
-
-  DefaultTimingManager tm;
-  applyDefaultTimingManagerCLOptions(tm);
-  TimingScope timing = tm.getRootScope();
-
-  // The MLIR context for this compilation event.
-  // Instantiate after parsing command line options.
-  MLIRContext context{};
-
-  mlir::TimingScope buildConfigTiming = timing.nest("build-config");
-  auto configResult = qssc::config::buildToolConfig();
-  if (auto err = configResult.takeError())
-    return err;
-  qssc::config::QSSConfig const config = configResult.get();
-  qssc::config::setContextConfig(&context, config);
-  buildConfigTiming.stop();
+llvm::Error performCompileActions(
+    llvm::raw_ostream &outputStream, std::unique_ptr<llvm::MemoryBuffer> buffer,
+    DialectRegistry &registry, mlir::MLIRContext &context,
+    const qssc::config::QSSConfig &config, mlir::TimingScope &timing,
+    std::optional<qssc::DiagnosticCallback> diagnosticCb) {
 
   // Populate the context
   context.appendDialectRegistry(registry);
@@ -464,26 +411,6 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
   mlir::registerBuiltinDialectTranslation(context);
   mlir::registerLLVMDialectTranslation(context);
 
-  if (config.shouldShowDialects()) {
-    showDialects(registry);
-    return llvm::Error::success();
-  }
-
-  if (config.shouldShowTargets()) {
-    showTargets();
-    return llvm::Error::success();
-  }
-
-  if (config.shouldShowPayloads()) {
-    showPayloads();
-    return llvm::Error::success();
-  }
-
-  if (config.shouldShowConfig()) {
-    config.emit(llvm::outs());
-    return llvm::Error::success();
-  }
-
   // Build the target for compilation
   auto targetResult = buildTarget(&context, config, timing);
   if (auto err = targetResult.takeError())
@@ -492,21 +419,15 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
 
   // Set up the input, which is loaded from a file by name or stdin
   auto sourceMgr = std::make_shared<llvm::SourceMgr>();
+  auto sourceBufferID =
+      sourceMgr->AddNewSourceBuffer(std::move(buffer), llvm::SMLoc());
 
-  std::string errorMessage;
-  std::unique_ptr<llvm::MemoryBuffer> sourceBuffer_ = mlir::openInputFile(config.getInputSource(), &errorMessage);
-  if (!sourceBuffer_)
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                    "Failed to open input file: " +
-                                        errorMessage);
-  auto sourceBufferID = sourceMgr->AddNewSourceBuffer(std::move(sourceBuffer_), llvm::SMLoc());
-
-  const llvm::MemoryBuffer *sourceBuffer = sourceMgr->getMemoryBuffer(sourceBufferID);
+  const llvm::MemoryBuffer *sourceBuffer =
+      sourceMgr->getMemoryBuffer(sourceBufferID);
 
   context.getDiagEngine().registerHandler([&](mlir::Diagnostic &diagnostic) {
     diagEngineHandler(diagnostic, diagnosticCb);
   });
-
 
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
@@ -517,26 +438,25 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
         "Unsupported target-specific payload: no target");
   if (config.getEmitAction() == EmitAction::QEM ||
       config.getEmitAction() == EmitAction::QEQEM) {
-    const std::filesystem::path payloadPath(config.getOutputFilePath().str());
-    const std::string fNamePrefix = payloadPath.stem();
-    const auto payloadName = (config.getEmitAction() == EmitAction::QEM)
+    const auto payloadType = (config.getEmitAction() == EmitAction::QEM)
                                  ? "ZIP"
                                  : config.getTargetName().value();
     auto payloadInfo =
-        qssc::payload::registry::PayloadRegistry::lookupPluginInfo(payloadName);
+        qssc::payload::registry::PayloadRegistry::lookupPluginInfo(payloadType);
     if (payloadInfo == std::nullopt)
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                      "Unsupported target-specific payload: " +
-                                         payloadName);
-    if (config.getOutputFilePath() == "-") {
-      payload = std::move(
-          payloadInfo.value()->createPluginInstance(std::nullopt).get());
-    } else {
-      const qssc::payload::PayloadConfig payloadConfig{
-          fNamePrefix, fNamePrefix, config.getVerbosityLevel()};
-      payload = std::move(
-          payloadInfo.value()->createPluginInstance(payloadConfig).get());
-    }
+                                         payloadType);
+
+    auto payloadName = config.getPayloadName().str();
+    std::optional<qssc::payload::PayloadConfig> payloadConfig = std::nullopt;
+    if (payloadName != "-")
+      payloadConfig = {config.getPayloadName().str(),
+                       config.getPayloadName().str(),
+                       config.getVerbosityLevel()};
+
+    payload = std::move(
+        payloadInfo.value()->createPluginInstance(payloadConfig).get());
   }
 
   mlir::ModuleOp moduleOp;
@@ -548,14 +468,11 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
 
     if (config.getEmitAction() >= EmitAction::MLIR) {
       moduleOp = mlir::ModuleOp::create(FileLineColLoc::get(
-          &context,
-          sourceBuffer->getBufferIdentifier(),
-          0, 0));
+          &context, sourceBuffer->getBufferIdentifier(), 0, 0));
     }
 
     if (auto frontendError = qssc::frontend::openqasm3::parse(
-            *sourceMgr,
-            config.getEmitAction() == EmitAction::AST,
+            *sourceMgr, config.getEmitAction() == EmitAction::AST,
             config.getEmitAction() == EmitAction::ASTPretty,
             config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb,
             loadQASM3Timing))
@@ -566,9 +483,10 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
   } // if input == QASM
 
   // Parse mlir::parseSourceFile automatically differentiates between MLIR and
-  // MLIR bytecode and treats them as interchangeable from the perspective of source
-  // parsing.
-  if (config.getInputType() == InputType::MLIR || config.getInputType() == InputType::Bytecode) {
+  // MLIR bytecode and treats them as interchangeable from the perspective of
+  // source parsing.
+  if (config.getInputType() == InputType::MLIR ||
+      config.getInputType() == InputType::Bytecode) {
 
     mlir::TimingScope mlirParserTiming = timing.nest("parse-mlir");
 
@@ -598,8 +516,7 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
 
     if (!op)
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Problem parsing source file " +
-                                         config.getInputSource());
+                                     "Problem parsing source file to MLIR");
 
     // Cannot currently perform round-trip verification as
     // doVerificationRoundTrip is not part of MLIR's public
@@ -657,22 +574,170 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
                                    "Problems running the compiler pipeline!");
   commandLinePassesTiming.stop();
 
-
-  if (auto err = applyEmitAction(config, outputString, std::move(payload), context, moduleOp, sourceBuffer, fallbackResourceMap, targetCompilationManager, errorHandler, timing))
+  if (auto err =
+          applyEmitAction(config, outputStream, std::move(payload), context,
+                          moduleOp, sourceBuffer, fallbackResourceMap,
+                          targetCompilationManager, errorHandler, timing))
     return err;
 
   return llvm::Error::success();
 }
+
 } // anonymous namespace
 
-int qssc::compile(int argc, char const **argv, std::string *outputString,
-                  std::optional<DiagnosticCallback> diagnosticCb) {
-  if (auto err = performCompileActions(argc, argv, outputString, std::move(diagnosticCb))) {
-    llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
-    return 1;
-  }
-  return 0;
+// The following implementation is based on that of MLIROptMain in the core
+// MLIR project with the aim of standardizing CLI tooling and making forwards
+// compatiability more straightforward
+
+std::pair<std::string, std::string>
+qssc::registerAndParseCLIOptions(int argc, const char **argv,
+                                 llvm::StringRef toolName,
+                                 mlir::DialectRegistry &registry) {
+
+  static llvm::cl::opt<std::string> inputFilename(
+      llvm::cl::Positional, llvm::cl::desc("<input file>"),
+      llvm::cl::init("-"));
+
+  static llvm::cl::opt<std::string> outputFilename(
+      "o", llvm::cl::desc("Output filename"), llvm::cl::value_desc("filename"),
+      llvm::cl::init("-"));
+
+  // Register all extensions
+  mlir::registerAllExtensions(registry);
+
+  registerCLOpts();
+  // Register CL config builder prior to parsing
+  CLIConfigBuilder::registerCLOptions(registry);
+  llvm::cl::SetVersionPrinter(&printVersion);
+  llvm::cl::ParseCommandLineOptions(
+      argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
+
+  return std::make_pair(inputFilename.getValue(), outputFilename.getValue());
 }
+
+llvm::Error qssc::compileMain(llvm::raw_ostream &outputStream,
+                              std::unique_ptr<llvm::MemoryBuffer> buffer,
+                              DialectRegistry &registry,
+                              const qssc::config::QSSConfig &config,
+                              std::optional<DiagnosticCallback> diagnosticCb,
+                              mlir::TimingScope &timing) {
+
+  // The MLIR context for this compilation event.
+  // Instantiate after parsing command line options.
+  MLIRContext context{};
+
+  qssc::config::setContextConfig(&context, config);
+
+  return performCompileActions(outputStream, std::move(buffer), registry,
+                               context, config, timing,
+                               std::move(diagnosticCb));
+}
+
+llvm::Error qssc::compileMain(int argc, const char **argv,
+                              llvm::StringRef inputFilename,
+                              llvm::StringRef outputFilename,
+                              mlir::DialectRegistry &registry,
+                              std::optional<DiagnosticCallback> diagnosticCb) {
+
+  llvm::InitLLVM y(argc, argv);
+
+  DefaultTimingManager tm;
+  applyDefaultTimingManagerCLOptions(tm);
+  TimingScope timing = tm.getRootScope();
+
+  mlir::TimingScope buildConfigTiming = timing.nest("build-config");
+  auto configResult =
+      qssc::config::buildToolConfig(inputFilename, outputFilename);
+  if (auto err = configResult.takeError())
+    return err;
+  qssc::config::QSSConfig const config = configResult.get();
+  buildConfigTiming.stop();
+
+  if (config.shouldShowDialects()) {
+    showDialects(registry);
+    return llvm::Error::success();
+  }
+
+  if (config.shouldShowTargets()) {
+    showTargets();
+    return llvm::Error::success();
+  }
+
+  if (config.shouldShowPayloads()) {
+    showPayloads();
+    return llvm::Error::success();
+  }
+
+  if (config.shouldShowConfig()) {
+    config.emit(llvm::outs());
+    return llvm::Error::success();
+  }
+
+  // When reading from stdin and the input is a tty, it is often a user mistake
+  // and the process "appears to be stuck". Print a message to let the user know
+  // about it!
+  if (inputFilename == "-" &&
+      llvm::sys::Process::FileDescriptorIsDisplayed(fileno(stdin)))
+    llvm::errs() << "(processing input from stdin now, hit ctrl-c/ctrl-d to "
+                    "interrupt)\n";
+
+  // Set up the input file.
+  std::string errorMessage;
+  auto file = mlir::openInputFile(inputFilename, &errorMessage);
+  if (!file)
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Failed to open input file: " +
+                                       errorMessage);
+
+  auto output = mlir::openOutputFile(outputFilename, &errorMessage);
+  if (!output)
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Failed to open output file: " +
+                                       errorMessage);
+
+  if (auto err = compileMain(output->os(), std::move(file), registry, config,
+                             diagnosticCb, timing))
+    return err;
+
+  // Keep the output file if the invocation of MlirOptMain was successful.
+  output->keep();
+  return llvm::Error::success();
+}
+
+llvm::Error qssc::compileMain(int argc, const char **argv,
+                              llvm::StringRef toolName,
+                              mlir::DialectRegistry &registry,
+                              std::optional<DiagnosticCallback> diagnosticCb) {
+
+  // Register and parse command line options.
+  std::string inputFilename, outputFilename;
+  std::tie(inputFilename, outputFilename) =
+      registerAndParseCLIOptions(argc, argv, toolName, registry);
+
+  return compileMain(argc, argv, inputFilename, outputFilename, registry,
+                     std::move(diagnosticCb));
+}
+
+llvm::Error qssc::compileMain(int argc, const char **argv,
+                              llvm::StringRef toolName,
+                              std::optional<DiagnosticCallback> diagnosticCb) {
+  // Register the standard passes with MLIR.
+  // Must precede the command line parsing.
+  if (auto err = qssc::dialect::registerPasses())
+    return err;
+
+  mlir::DialectRegistry registry;
+
+  // Add the following to include *all* QSS core dialects, or selectively
+  // include what you need like above. You only need to register dialects that
+  // will be *parsed* by the tool, not the one generated
+  qssc::dialect::registerDialects(registry);
+
+  return compileMain(argc, argv, toolName, registry, std::move(diagnosticCb));
+}
+
+//===----------------------------- Parameter Binding
+//-----------------------------------------===//
 
 namespace {
 class MapAngleArgumentSource : public qssc::arguments::ArgumentSource {

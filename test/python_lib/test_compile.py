@@ -90,8 +90,6 @@ def test_compile_roundtrip_bytecode(example_mlir_str):
         output_file=None,
     )
 
-    import pdb;pdb.set_trace()
-
     mlir2 = compile_str(
         bytecode,
         input_type=InputType.BYTECODE,

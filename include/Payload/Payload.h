@@ -50,7 +50,7 @@ public:
   Payload()
       : prefix(""), name("exp"), verbosity(qssc::config::QSSVerbosity::Warn) {}
   explicit Payload(PayloadConfig config)
-      : prefix(std::move(config.prefix) + "/"), name(std::move(config.name)),
+      : prefix(std::move(config.prefix)), name(std::move(config.name)),
         verbosity(config.verbosity) {
     files.clear();
   }

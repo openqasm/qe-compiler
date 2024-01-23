@@ -16,6 +16,20 @@
 
 #include "API/api.h"
 
+#include "Dialect/RegisterDialects.h"
+#include "Dialect/RegisterPasses.h"
+
+#include "mlir/IR/DialectRegistry.h"
+
+#include "llvm/Support/Error.h"
+
 int main(int argc, const char **argv) {
-  return qssc::compile(argc, argv, nullptr, {});
+
+  auto err = qssc::compileMain(
+      argc, argv, "Quantum System Software (QSS) Backend Compiler\n", {});
+  if (err) {
+    llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
+    return EXIT_FAILURE;
+  }
+  return qssc::asMainReturnCode(std::move(err));
 }
