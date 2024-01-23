@@ -141,29 +141,25 @@ public:
   /// @brief Disable(stop) ongoing timers
   void disableTiming();
 
-  // Diagnostic access
-  /// @brief Add a diagnostic to this target, not thread safe
+  // Diagnostic creation and access
+  /// @brief Add a diagnostic to this target
   void addDiagnostic(const qssc::Diagnostic &diag) {
-    diagnostics_.emplace_back(diag);
-  }
-  /// @brief Add a diagnostic to this target using mutex locks for thread safety
-  void addDiagnosticWithLock(const qssc::Diagnostic &diag) {
+    // NOLINTNEXTLINE(clang-diagnostic-ctad-maybe-unsupported)
     const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
     diagnostics_.emplace_back(diag);
   }
-  /// @brief Get the diagnostics that this target holds
-  const qssc::DiagList &getDiagnosticList() const { return diagnostics_; }
-  /// @brief Recursively get references to the diagnostics that this target and
-  /// all of its children hold
-  qssc::DiagRefList getDiagnosticsRecursive() {
-    qssc::DiagRefList diagList;
-    for (const auto &diag : getDiagnosticList())
-      diagList.emplace_back(std::ref(diag));
+  /// @brief Return the diagnostics that this target and its subtargets hold
+  ///        and clear the diagnostic lists of the targets.
+  qssc::DiagList getDiagnostics() {
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
+    qssc::DiagList retDiagList;
+    // Steal the elements of the given list and move them to the calling list
+    retDiagList.splice(retDiagList.end(), diagnostics_);
 
     for (auto &child : getChildren_())
-      diagList.splice(diagList.end(), child->getDiagnosticsRecursive());
+      retDiagList.splice(retDiagList.end(), child->getDiagnostics());
 
-    return diagList;
+    return retDiagList;
   }
 
 protected:

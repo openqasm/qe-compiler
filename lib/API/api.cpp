@@ -350,8 +350,8 @@ bool emitAllDiagnosticsAndCheckForErrors_(
     hal::TargetSystem &target, const qssc::OptDiagnosticCallback &diagnosticCb,
     const QSSConfig &config) {
   bool foundError = false;
-  for (auto &diag : target.getDiagnosticsRecursive()) {
-    auto severity = diag.get().severity;
+  for (auto &diag : target.getDiagnostics()) {
+    auto severity = diag.severity;
     switch (config.getVerbosityLevel()) {
     case QSSVerbosity::Error:
       switch (severity) {
@@ -359,7 +359,7 @@ bool emitAllDiagnosticsAndCheckForErrors_(
       case Severity::Error:
         foundError = true;
         (void)qssc::emitDiagnostic(diagnosticCb, diag);
-        llvm::errs() << diag.get().toString() << "\n";
+        llvm::errs() << diag.toString() << "\n";
         break;
       case Severity::Warning:
       case Severity::Info:
@@ -376,7 +376,7 @@ bool emitAllDiagnosticsAndCheckForErrors_(
         [[fallthrough]];
       case Severity::Warning:
         (void)qssc::emitDiagnostic(diagnosticCb, diag);
-        llvm::errs() << diag.get().toString() << "\n";
+        llvm::errs() << diag.toString() << "\n";
         break;
       case Severity::Info:
       default:
@@ -392,7 +392,7 @@ bool emitAllDiagnosticsAndCheckForErrors_(
         [[fallthrough]];
       case Severity::Warning:
         (void)qssc::emitDiagnostic(diagnosticCb, diag);
-        llvm::errs() << diag.get().toString() << "\n";
+        llvm::errs() << diag.toString() << "\n";
         break;
       case Severity::Info:
       default:
