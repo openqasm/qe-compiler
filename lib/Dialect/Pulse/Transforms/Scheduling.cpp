@@ -125,7 +125,8 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
                               << quantumGateCallSequenceOpDuration << "\n");
 
       // find next available time for all the ports
-      const int64_t nextAvailableTimeOfAllPorts = getNextAvailableTimeOfPorts(ports);
+      const int64_t nextAvailableTimeOfAllPorts =
+          getNextAvailableTimeOfPorts(ports);
       LLVM_DEBUG(llvm::dbgs() << "\t\tnext availability is at "
                               << nextAvailableTimeOfAllPorts << "\n");
 
