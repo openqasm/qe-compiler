@@ -49,7 +49,6 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   // Compiler configuration
   os << "[compiler]\n";
   os << "inputSource: " << getInputSource() << "\n";
-  os << "directInput: " << isDirectInput() << "\n";
   os << "outputFilePath: " << getOutputFilePath() << "\n";
   os << "inputType: " << to_string(getInputType()) << "\n";
   os << "emitAction: " << to_string(getEmitAction()) << "\n";

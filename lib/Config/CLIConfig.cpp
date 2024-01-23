@@ -83,12 +83,6 @@ struct QSSConfigCLOptions : public QSSConfig {
                        llvm::cl::location(outputFilePath), llvm::cl::init("-"),
                        llvm::cl::cat(qssc::config::getQSSCCLCategory()));
 
-    static llvm::cl::opt<bool, /*ExternalStorage=*/true> const directInput(
-        "direct",
-        llvm::cl::desc("Accept the input program directly as a string"),
-        llvm::cl::location(directInputFlag),
-        llvm::cl::cat(qssc::config::getQSSCCLCategory()));
-
     static llvm::cl::opt<enum InputType, /*ExternalStorage=*/true> const
         inputType_("X", llvm::cl::location(inputType),
                    llvm::cl::desc("Specify the kind of input desired"),
@@ -344,11 +338,6 @@ struct QSSConfigCLOptions : public QSSConfig {
   llvm::Error computeInputType() {
     if (getInputType() == InputType::None) {
 
-      if (isDirectInput())
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                       "The input source format must be "
-                                       "specified with -X for direct input.");
-
       // Override with mlir opt config if set (it typically shouldn't be)
       if (shouldEmitBytecode())
         setInputType(InputType::Bytecode);
@@ -427,7 +416,6 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
 
   // qss
   config.inputSource = clOptionsConfig->inputSource;
-  config.directInputFlag = clOptionsConfig->directInputFlag;
   config.outputFilePath = clOptionsConfig->outputFilePath;
   config.inputType = clOptionsConfig->inputType;
   config.emitAction = clOptionsConfig->emitAction;

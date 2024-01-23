@@ -296,25 +296,13 @@ llvm::Error emitQEM(
     const QSSConfig &config, llvm::raw_ostream *ostream,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::ModuleOp moduleOp,
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
+    const llvm::MemoryBuffer *sourceBuffer,
     mlir::TimingScope &timing) {
   if (config.shouldIncludeSource()) {
-    if (config.isDirectInput()) {
-      if (config.getInputType() != InputType::None)
-        payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(config.getInputType())), (config.getInputSource() + "\n").str());
-      else
-        return llvm::createStringError(llvm::inconvertibleErrorCode(), "The input source type does not support embedding in the payload");
-    } else { // just copy the input file
-      std::ifstream fileStream(config.getInputSource().str());
-      std::stringstream fileSS;
-      fileSS << fileStream.rdbuf();
-
-      if (config.getInputType() != InputType::None)
-        payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(config.getInputType())), fileSS.str());
-      else
-        return llvm::createStringError(llvm::inconvertibleErrorCode(), "The input source type does not support embedding in the payload");
-
-      fileStream.close();
-    }
+    if (config.getInputType() != InputType::None)
+      payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(config.getInputType())), sourceBuffer->getBuffer());
+    else
+      return llvm::createStringError(llvm::inconvertibleErrorCode(), "The input source type does not support embedding in the payload");
   }
 
   if (auto err = generateQEM(config, &targetCompilationManager,
@@ -376,7 +364,7 @@ void diagEngineHandler(mlir::Diagnostic &diagnostic,
   return;
 }
 
-llvm::Error applyEmitAction(const QSSConfig &config, std::string *outputString, std::unique_ptr<qssc::payload::Payload> payload, mlir::MLIRContext &context, mlir::ModuleOp moduleOp, mlir::FallbackAsmResourceMap &fallbackResourceMap, qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager, ErrorHandler errorHandler, mlir::TimingScope &timing) {
+llvm::Error applyEmitAction(const QSSConfig &config, std::string *outputString, std::unique_ptr<qssc::payload::Payload> payload, mlir::MLIRContext &context, mlir::ModuleOp moduleOp, const llvm::MemoryBuffer *sourceBuffer, mlir::FallbackAsmResourceMap &fallbackResourceMap, qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager, ErrorHandler errorHandler, mlir::TimingScope &timing) {
   // Set up the output.
   llvm::raw_ostream *ostream;
   std::optional<llvm::raw_string_ostream> outStringStream;
@@ -407,7 +395,7 @@ llvm::Error applyEmitAction(const QSSConfig &config, std::string *outputString, 
   if (config.getEmitAction() == EmitAction::QEM ||
       config.getEmitAction() == EmitAction::QEQEM) {
     if (auto err = emitQEM(config, ostream, std::move(payload), moduleOp,
-                            targetCompilationManager, timing))
+                            targetCompilationManager, sourceBuffer, timing))
       return err;
   }
 
@@ -502,21 +490,18 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
     return err;
   auto &target = targetResult.get();
 
-  // Set up the input, which is loaded from a file by name by default. With the
-  // "--direct" option, the input program can be provided as a string to stdin.
+  // Set up the input, which is loaded from a file by name or stdin
+  auto sourceMgr = std::make_shared<llvm::SourceMgr>();
+
   std::string errorMessage;
-  std::unique_ptr<llvm::MemoryBuffer> file;
-  if (!config.isDirectInput()) {
-    file = mlir::openInputFile(config.getInputSource(), &errorMessage);
-    if (!file) {
-      return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                     "Failed to open input file: " +
-                                         errorMessage);
-    }
-  } else {
-    file = llvm::MemoryBuffer::getMemBuffer(config.getInputSource(),
-                                            /*bufferName=*/"direct");
-  }
+  std::unique_ptr<llvm::MemoryBuffer> sourceBuffer_ = mlir::openInputFile(config.getInputSource(), &errorMessage);
+  if (!sourceBuffer_)
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                    "Failed to open input file: " +
+                                        errorMessage);
+  auto sourceBufferID = sourceMgr->AddNewSourceBuffer(std::move(sourceBuffer_), llvm::SMLoc());
+
+  const llvm::MemoryBuffer *sourceBuffer = sourceMgr->getMemoryBuffer(sourceBufferID);
 
   context.getDiagEngine().registerHandler([&](mlir::Diagnostic &diagnostic) {
     diagEngineHandler(diagnostic, diagnosticCb);
@@ -564,12 +549,12 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
     if (config.getEmitAction() >= EmitAction::MLIR) {
       moduleOp = mlir::ModuleOp::create(FileLineColLoc::get(
           &context,
-          config.isDirectInput() ? std::string{"-"} : config.getInputSource(),
+          sourceBuffer->getBufferIdentifier(),
           0, 0));
     }
 
     if (auto frontendError = qssc::frontend::openqasm3::parse(
-            config.getInputSource().str(), !config.isDirectInput(),
+            *sourceMgr,
             config.getEmitAction() == EmitAction::AST,
             config.getEmitAction() == EmitAction::ASTPretty,
             config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb,
@@ -586,10 +571,6 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
   if (config.getInputType() == InputType::MLIR || config.getInputType() == InputType::Bytecode) {
 
     mlir::TimingScope mlirParserTiming = timing.nest("parse-mlir");
-
-    // Tell sourceMgr about this buffer, which is what the parser will pick up.
-    auto sourceMgr = std::make_shared<llvm::SourceMgr>();
-    sourceMgr->AddNewSourceBuffer(std::move(file), llvm::SMLoc());
 
     // Implemented following -
     // https://github.com/llvm/llvm-project/blob/llvmorg-17.0.6/mlir/lib/Tools/mlir-opt/MlirOptMain.cpp#L333-L362
@@ -677,7 +658,7 @@ llvm::Error performCompileActions(int argc, char const **argv, std::string *outp
   commandLinePassesTiming.stop();
 
 
-  if (auto err = applyEmitAction(config, outputString, std::move(payload), context, moduleOp, fallbackResourceMap, targetCompilationManager, errorHandler, timing))
+  if (auto err = applyEmitAction(config, outputString, std::move(payload), context, moduleOp, sourceBuffer, fallbackResourceMap, targetCompilationManager, errorHandler, timing))
     return err;
 
   return llvm::Error::success();
@@ -690,7 +671,6 @@ int qssc::compile(int argc, char const **argv, std::string *outputString,
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
     return 1;
   }
-
   return 0;
 }
 

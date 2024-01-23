@@ -5,7 +5,6 @@
 // REQUIRES: !asserts
 
 // CLI: inputSource: -
-// CLI: directInput: 0
 // CLI: outputFilePath: -
 // CLI: inputType: none
 // CLI: emitAction: mlir

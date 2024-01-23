@@ -87,12 +87,6 @@ public:
   }
   llvm::StringRef getInputSource() const { return inputSource; }
 
-  QSSConfig &directInput(bool flag) {
-    directInputFlag = flag;
-    return *this;
-  }
-  bool isDirectInput() const { return directInputFlag; }
-
   QSSConfig &setOutputFilePath(std::string path) {
     outputFilePath = std::move(path);
     return *this;
@@ -206,9 +200,6 @@ public:
 protected:
   /// @brief input source (file path or direct input) to compile
   std::string inputSource = "-";
-  /// @brief Whether inputSource directly contains the input source (otherwise
-  /// it is a file path).
-  bool directInputFlag = false;
   /// @brief Output path for the compiler output if emitting to file.
   std::string outputFilePath = "-";
   /// @brief The TargetSystem to target compilation for.

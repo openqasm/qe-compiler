@@ -74,6 +74,7 @@ class InputType(Enum):
     NONE = "none"
     QASM3 = "qasm"
     MLIR = "mlir"
+    BYTECODE = "bytecode"
 
     def __str__(self):
         return self.value
@@ -84,6 +85,7 @@ class OutputType(Enum):
 
     QEM = "qem"
     MLIR = "mlir"
+    BYTECODE = "bytecode"
 
     def __str__(self):
         return self.value
@@ -155,7 +157,7 @@ class CompileOptions:
 class _CompilerExecution:
     """Internal compiler execution dataclass."""
 
-    input_str: Optional[str] = None
+    input: Optional[Union[str, bytes]] = None
     input_file: Optional[Union[str, Path]] = None
     options: CompileOptions = field(default_factory=CompileOptions)
 
@@ -164,9 +166,11 @@ class _CompilerExecution:
 
         if self.input_file is not None:
             args.append(str(self.input_file))
-        elif self.input_str is not None:
-            args.append("--direct")
-            args.append(str(self.input_str))
+        elif self.input is not None:
+            if self.options.input_type == InputType.BYTECODE:
+                args.append(self.input.hex())
+            else:
+                args.append(str(self.input))
         else:
             raise exceptions.QSSCompilerNoInputError(
                 "Neither input file nor input string provided."
@@ -225,8 +229,8 @@ def _do_compile(
     execution: _CompilerExecution, return_diagnostics: bool = False
 ) -> Union[bytes, str, None]:
     assert (
-        execution.input_file is not None or execution.input_str is not None
-    ), "one of the compile options input_file or input_str must be set"
+        execution.input_file is not None or execution.input is not None
+    ), "one of the compile options input_file or input must be set"
 
     options = execution.options
 
@@ -395,7 +399,7 @@ async def compile_file_async(
 
 
 def compile_str(
-    input_str: str,
+    input: Union[str, bytes],
     return_diagnostics: bool = False,
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
@@ -408,7 +412,7 @@ def compile_str(
     output format.
 
     Args:
-        input_str: input to compile as string (e.q., an OpenQASM3 program).
+        input: input to compile as string or bytes (e.q., an OpenQASM3 program).
         return_diagnostics: diagnostics visibility flag
         compile_options: Optional :class:`CompileOptions` dataclass.
         kwargs: Keywords corresponding to :class:`CompileOptions`. Ignored if `compile_options`
@@ -419,12 +423,12 @@ def compile_str(
         output format.
     """
     compile_options = _prepare_compile_options(compile_options, **kwargs)
-    execution = _CompilerExecution(input_str=input_str, options=compile_options)
+    execution = _CompilerExecution(input=input, options=compile_options)
     return _do_compile(execution, return_diagnostics=return_diagnostics)
 
 
 async def compile_str_async(
-    input_str: str,
+    input: Union[str, bytes],
     return_diagnostics: bool = False,
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
@@ -435,7 +439,7 @@ async def compile_str_async(
     Functionally, this function behaves like compile_str and accepts the same set of parameters.
 
     Args:
-        input_str: input to compile as string (e.q., an OpenQASM3 program).
+        input: input to compile as string or bytes (e.q., an OpenQASM3 program).
         return_diagnostics: diagnostics visibility flag
         compile_options: Optional :class:`CompileOptions` dataclass.
         kwargs: Keywords corresponding to :class:`CompileOptions`. Ignored if `compile_options`
@@ -447,7 +451,7 @@ async def compile_str_async(
 
     """
     compile_options = _prepare_compile_options(compile_options, **kwargs)
-    execution = _CompilerExecution(input_str=input_str, options=compile_options)
+    execution = _CompilerExecution(input=input, options=compile_options)
     with ThreadPoolExecutor() as executor:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(executor, _do_compile, execution, return_diagnostics)

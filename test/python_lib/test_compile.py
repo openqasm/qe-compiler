@@ -72,6 +72,35 @@ def test_compile_file_to_mlir_idempotence(example_qasm3_tmpfile):
     assert mlir2 == mlir
 
 
+def test_compile_roundtrip_bytecode(example_mlir_str):
+    """Test that we can compile a file input via the interface compile_file
+    to MLIR"""
+
+    mlir1 = compile_str(
+        example_mlir_str,
+        input_type=InputType.MLIR,
+        output_type=OutputType.MLIR,
+        output_file=None,
+    )
+
+    bytecode = compile_str(
+        example_mlir_str,
+        input_type=InputType.MLIR,
+        output_type=OutputType.BYTECODE,
+        output_file=None,
+    )
+
+    import pdb;pdb.set_trace()
+
+    mlir2 = compile_str(
+        bytecode,
+        input_type=InputType.BYTECODE,
+        output_type=OutputType.MLIR,
+        output_file=None,
+    )
+    assert mlir2 == mlir1
+
+
 def test_compile_str_to_mlir(example_qasm3_str):
     """Test that we can compile a string input via the interface
     compile_str to an MLIR output"""
