@@ -23,7 +23,6 @@
 #include "Dialect/Pulse/IR/PulseInterfaces.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/Pulse/IR/PulseTraits.h"
-#include "Dialect/Pulse/IR/PulseTypes.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/BuiltinAttributes.h"
@@ -34,7 +33,6 @@
 #include <cstdint>
 #include <deque>
 #include <optional>
-#include <utility>
 
 namespace mlir::pulse {
 
@@ -86,7 +84,8 @@ getPhaseValue(ShiftPhaseOp shiftPhaseOp,
 
   auto phaseOffsetOp =
       dyn_cast<mlir::arith::ConstantFloatOp>(phaseOffset.getDefiningOp());
-  assert(phaseOffsetOp && "phase offset is not a ConstantFloatOp");
+  if (!phaseOffsetOp)
+    phaseOffsetOp->emitError() << "Phase offset is not a ConstantFloatOp.";
   return phaseOffsetOp.value().convertToDouble();
 }
 
