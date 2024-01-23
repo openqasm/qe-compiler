@@ -20,9 +20,21 @@
 
 #include "Dialect/Pulse/Utils/Utils.h"
 
+#include "Dialect/Pulse/IR/PulseInterfaces.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
+#include "Dialect/Pulse/IR/PulseTraits.h"
+#include "Dialect/Pulse/IR/PulseTypes.h"
 
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/Region.h"
 #include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+
+#include <cstdint>
+#include <deque>
+#include <optional>
+#include <utility>
 
 namespace mlir::pulse {
 
