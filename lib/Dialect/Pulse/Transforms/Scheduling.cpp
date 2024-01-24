@@ -55,7 +55,7 @@ void QuantumCircuitPulseSchedulingPass::runOnOperation() {
       llvm_unreachable("scheduling method not supported currently");
   }
 
-  // check for command line override of the scheduling method
+  // check for command line override of the pre measure buffer delay
   if (preMeasureBufferDelay.hasValue())
     PRE_MEASURE_BUFFER_DELAY = preMeasureBufferDelay.getValue();
 
