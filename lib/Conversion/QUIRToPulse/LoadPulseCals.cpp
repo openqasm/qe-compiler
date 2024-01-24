@@ -54,6 +54,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mlir/IR/DialectRegistry.h>
 #include <string>
 #include <sys/types.h>
 #include <utility>
