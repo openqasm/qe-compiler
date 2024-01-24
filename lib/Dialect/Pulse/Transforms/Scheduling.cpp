@@ -55,6 +55,10 @@ void QuantumCircuitPulseSchedulingPass::runOnOperation() {
       llvm_unreachable("scheduling method not supported currently");
   }
 
+  // check for command line override of the scheduling method
+  if (preMeasureBufferDelay.hasValue())
+    PRE_MEASURE_BUFFER_DELAY = preMeasureBufferDelay.getValue();
+
   ModuleOp const moduleOp = getOperation();
 
   // schedule all the quantum circuits which are root call sequence ops
@@ -140,7 +144,7 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
       LLVM_DEBUG(llvm::dbgs() << "\t\tcurrent gate scheduled at "
                               << updatedAvailableTime << "\n");
       // update the port availability map
-      if (quantumGateCallSequenceOp.getCallee().str().find("measure") == 0)
+      if (sequenceOpIncludeCapture(quantumGateSequenceOp))
         updatedAvailableTime -= PRE_MEASURE_BUFFER_DELAY;
       updatePortAvailabilityMap(ports, updatedAvailableTime);
 
@@ -193,6 +197,17 @@ void QuantumCircuitPulseSchedulingPass::updatePortAvailabilityMap(
       continue;
     portNameToNextAvailabilityMap[portName] = updatedAvailableTime;
   }
+}
+
+bool QuantumCircuitPulseSchedulingPass::sequenceOpIncludeCapture(
+    mlir::pulse::SequenceOp quantumGateSequenceOp) {
+  bool sequenceOpIncludeCapture = false;
+  quantumGateSequenceOp->walk([&](mlir::pulse::CaptureOp op) {
+    sequenceOpIncludeCapture = true;
+    return WalkResult::interrupt();
+  });
+
+  return sequenceOpIncludeCapture;
 }
 
 mlir::pulse::SequenceOp QuantumCircuitPulseSchedulingPass::getSequenceOp(

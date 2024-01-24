@@ -27,8 +27,6 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
 
-#include <string>
-
 namespace mlir::pulse {
 
 struct QuantumCircuitPulseSchedulingPass
@@ -45,10 +43,9 @@ public:
   QuantumCircuitPulseSchedulingPass(
       const QuantumCircuitPulseSchedulingPass &pass)
       : PassWrapper(pass) {}
-  QuantumCircuitPulseSchedulingPass(SchedulingMethod inSchedulingMethod) {
+  QuantumCircuitPulseSchedulingPass(SchedulingMethod inSchedulingMethod,
+                                    uint64_t inPreMeasureBufferDelay) {
     SCHEDULING_METHOD = inSchedulingMethod;
-  }
-  QuantumCircuitPulseSchedulingPass(uint64_t inPreMeasureBufferDelay) {
     PRE_MEASURE_BUFFER_DELAY = inPreMeasureBufferDelay;
   }
 
@@ -62,7 +59,13 @@ public:
   Option<std::string> schedulingMethod{
       *this, "scheduling-method",
       llvm::cl::desc("an string to specify scheduling method"),
-      llvm::cl::value_desc("filename"), llvm::cl::init("")};
+      llvm::cl::value_desc("scheduling method"), llvm::cl::init("alap")};
+
+  // optionally, one can override the pre measure delay value with this option
+  Option<uint64_t> preMeasureBufferDelay{
+      *this, "pre-measure-buffer-delay",
+      llvm::cl::desc("an optional delay before measurements"),
+      llvm::cl::value_desc("delay"), llvm::cl::init(0)};
 
 private:
   // map to keep track of next availability of ports
@@ -72,6 +75,7 @@ private:
   int getNextAvailableTimeOfPorts(mlir::ArrayAttr ports);
   void updatePortAvailabilityMap(mlir::ArrayAttr ports,
                                  int updatedAvailableTime);
+  bool sequenceOpIncludeCapture(mlir::pulse::SequenceOp quantumGateSequenceOp);
   static mlir::pulse::SequenceOp
   getSequenceOp(mlir::pulse::CallSequenceOp callSequenceOp);
 };
