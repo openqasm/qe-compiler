@@ -60,8 +60,7 @@ getWaveformOp(PlayOp pulsePlayOp,
       break;
   }
 
-  auto waveformOp =
-      dyn_cast<Waveform_CreateOp>(wfrOp.getDefiningOp());
+  auto waveformOp = dyn_cast<Waveform_CreateOp>(wfrOp.getDefiningOp());
   if (!waveformOp)
     pulsePlayOp->emitError() << "The wfr argument is not a Waveform_CreateOp.";
   return waveformOp;
