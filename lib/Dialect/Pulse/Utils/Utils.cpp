@@ -31,7 +31,6 @@
 #include "mlir/Support/LLVM.h"
 
 #include <cstdint>
-#include <deque>
 #include <optional>
 
 namespace mlir::pulse {
