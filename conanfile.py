@@ -12,7 +12,6 @@
 import os
 
 from conans import ConanFile, CMake, tools
-from conans.tools import load
 
 
 # Get version from environment variable.
@@ -34,11 +33,10 @@ class QSSCompilerConan(ConanFile):
     author = "IBM Quantum development team"
     topics = ("Compiler", "Scheduler", "OpenQASM3")
     description = "An LLVM- and MLIR-based Quantum compiler that consumes OpenQASM 3.0"
-    generators = ["CMakeToolchain", "CMakeDeps"]
+    generators = ["CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"]
     exports_sources = "*"
 
     def requirements(self):
-        tool_pkgs = ["llvm", "clang-tools-extra"]
         for req in self.conan_data["requirements"]:
             self.requires(req)
 
@@ -65,15 +63,18 @@ class QSSCompilerConan(ConanFile):
 
     def build(self):
         cmake = self._configure_cmake()
-        cmake.verbose = True
-        cmake.configure()
-        cmake.build()
 
-        if self.options.pythonlib:
-            self.run(
-            f"cd {self.build_folder}/python_lib \
-                    && pip install -e .[test]"
-            )
+        if self.should_configure:
+             cmake.configure()
+
+        if self.should_build:
+             cmake.build()
+
+             if self.options.pythonlib:
+                 self.run(
+                     f"cd {self.build_folder}/python_lib \
+                         && pip install -e .[test]"
+                 )
 
         if self.should_test:
             self.test(cmake)
@@ -85,7 +86,7 @@ class QSSCompilerConan(ConanFile):
 
         if self.options.pythonlib:
             self.run(
-            f"cd {self.build_folder}/python_lib \
+                f"cd {self.build_folder}/python_lib \
                     && pip install .[test]"
             )
 
