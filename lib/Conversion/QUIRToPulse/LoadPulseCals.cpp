@@ -32,6 +32,7 @@
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/IRMapping.h"
 #include "mlir/IR/OwningOpRef.h"
 #include "mlir/IR/SymbolTable.h"
@@ -40,7 +41,7 @@
 #include "mlir/Parser/Parser.h"
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Support/LLVM.h"
-#include <mlir/IR/BuiltinOps.h>
+#include "mlir/IR/BuiltinOps.h"
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/Debug.h"
@@ -54,7 +55,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <mlir/IR/DialectRegistry.h>
 #include <string>
 #include <sys/types.h>
 #include <utility>
