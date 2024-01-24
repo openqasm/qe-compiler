@@ -32,18 +32,18 @@ namespace mlir {
 class Operation;
 } // namespace mlir
 
+using CallSequenceStack_t = std::deque<mlir::pulse::CallSequenceOp>;
+
 namespace mlir::pulse {
 
 Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
                                 CallSequenceOp callSequenceOp);
 
-Waveform_CreateOp
-getWaveformOp(PlayOp pulsePlayOp,
-              std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack);
+Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
+                                CallSequenceStack_t &callSequenceOpStack);
 
-double
-getPhaseValue(ShiftPhaseOp shiftPhaseOp,
-              std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack);
+double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
+                     CallSequenceStack_t &callSequenceOpStack);
 
 void sortOpsByTimepoint(SequenceOp &sequenceOp);
 
@@ -62,9 +62,8 @@ MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
 }
 
 template <typename PulseOpTy>
-MixFrameOp
-getMixFrameOp(PulseOpTy pulseOp,
-              std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack) {
+MixFrameOp getMixFrameOp(PulseOpTy pulseOp,
+                         CallSequenceStack_t &callSequenceOpStack) {
 
   auto targetIndex = 0;
   auto target = pulseOp.getTarget();

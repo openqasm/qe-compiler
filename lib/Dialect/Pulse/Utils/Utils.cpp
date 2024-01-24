@@ -45,9 +45,8 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
   return wfrOp;
 }
 
-Waveform_CreateOp
-getWaveformOp(PlayOp pulsePlayOp,
-              std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack) {
+Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
+                                CallSequenceStack_t &callSequenceOpStack) {
   auto wfrIndex = 0;
   mlir::Value wfrOp = pulsePlayOp.getWfr();
 
@@ -66,9 +65,8 @@ getWaveformOp(PlayOp pulsePlayOp,
   return waveformOp;
 }
 
-double
-getPhaseValue(ShiftPhaseOp shiftPhaseOp,
-              std::deque<mlir::pulse::CallSequenceOp> &callSequenceOpStack) {
+double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
+                     CallSequenceStack_t &callSequenceOpStack) {
   auto phaseOffsetIndex = 0;
   mlir::Value phaseOffset = shiftPhaseOp.getPhaseOffset();
 
