@@ -27,6 +27,7 @@
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Visitor.h"
 #include "mlir/Support/LLVM.h"
 
 #include "llvm/ADT/StringRef.h"
