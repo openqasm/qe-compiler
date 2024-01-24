@@ -61,7 +61,7 @@ getWaveformOp(PlayOp pulsePlayOp,
   }
 
   auto waveformOp =
-      dyn_cast<mlir::pulse::Waveform_CreateOp>(wfrOp.getDefiningOp());
+      dyn_cast<Waveform_CreateOp>(wfrOp.getDefiningOp());
   if (!waveformOp)
     pulsePlayOp->emitError() << "The wfr argument is not a Waveform_CreateOp.";
   return waveformOp;
