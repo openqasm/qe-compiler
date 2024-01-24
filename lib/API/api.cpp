@@ -589,8 +589,23 @@ llvm::Error performCompileActions(
 // MLIR project with the aim of standardizing CLI tooling and making forwards
 // compatiability more straightforward
 
-std::pair<std::string, std::string>
+void
 qssc::registerAndParseCLIOptions(int argc, const char **argv,
+                                 llvm::StringRef toolName,
+                                 mlir::DialectRegistry &registry) {
+  // Register all extensions
+  mlir::registerAllExtensions(registry);
+
+  registerCLOpts();
+  // Register CL config builder prior to parsing
+  CLIConfigBuilder::registerCLOptions(registry);
+  llvm::cl::SetVersionPrinter(&printVersion);
+  llvm::cl::ParseCommandLineOptions(
+      argc, argv, toolName);
+}
+
+std::pair<std::string, std::string>
+qssc::registerAndParseCLIToolOptions(int argc, const char **argv,
                                  llvm::StringRef toolName,
                                  mlir::DialectRegistry &registry) {
 
@@ -602,15 +617,7 @@ qssc::registerAndParseCLIOptions(int argc, const char **argv,
       "o", llvm::cl::desc("Output filename"), llvm::cl::value_desc("filename"),
       llvm::cl::init("-"));
 
-  // Register all extensions
-  mlir::registerAllExtensions(registry);
-
-  registerCLOpts();
-  // Register CL config builder prior to parsing
-  CLIConfigBuilder::registerCLOptions(registry);
-  llvm::cl::SetVersionPrinter(&printVersion);
-  llvm::cl::ParseCommandLineOptions(
-      argc, argv, "Quantum System Software (QSS) Backend Compiler\n");
+  registerAndParseCLIOptions(argc, argv, toolName, registry);
 
   return std::make_pair(inputFilename.getValue(), outputFilename.getValue());
 }
@@ -641,9 +648,9 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
 
   llvm::InitLLVM y(argc, argv);
 
-  DefaultTimingManager tm;
-  applyDefaultTimingManagerCLOptions(tm);
-  TimingScope timing = tm.getRootScope();
+  mlir::DefaultTimingManager tm;
+  mlir::applyDefaultTimingManagerCLOptions(tm);
+  mlir::TimingScope timing = tm.getRootScope();
 
   mlir::TimingScope buildConfigTiming = timing.nest("build-config");
   auto configResult =
@@ -712,7 +719,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
   // Register and parse command line options.
   std::string inputFilename, outputFilename;
   std::tie(inputFilename, outputFilename) =
-      registerAndParseCLIOptions(argc, argv, toolName, registry);
+      registerAndParseCLIToolOptions(argc, argv, toolName, registry);
 
   return compileMain(argc, argv, inputFilename, outputFilename, registry,
                      std::move(diagnosticCb));

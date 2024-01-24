@@ -62,7 +62,7 @@ from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from . import exceptions
-from .py_qssc import _compile_with_args, Diagnostic
+from .py_qssc import _compile_bytes, _compile_file, Diagnostic
 
 # use the forkserver context to create a server process
 # for forking new compiler processes
@@ -167,10 +167,6 @@ class _CompilerExecution:
 
         if self.input_file is not None:
             args.append(str(self.input_file))
-        else:
-            raise exceptions.QSSCompilerNoInputError(
-                "Neither input file nor input string provided."
-            )
 
         return args
 
@@ -190,7 +186,6 @@ def _compile_child_backend(
 
     options = execution.options
     args = execution.prepare_compiler_args()
-    sys.stdin = execution.input
     output_as_return = False if options.output_file else True
 
     # The qss-compiler expects the path to static resources in the environment

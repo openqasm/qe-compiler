@@ -55,6 +55,15 @@
 #include "lib_enums.h"
 
 #include "API/api.h"
+#include "Dialect/RegisterDialects.h"
+#include "Dialect/RegisterPasses.h"
+
+#include "mlir/Support/FileUtilities.h"
+#include "mlir/Support/Timing.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/ToolOutputFile.h"
 
 #include <iostream>
 #include <optional>
@@ -62,6 +71,7 @@
 #include <pybind11/detail/common.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <pybind11/stl.h>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -69,37 +79,120 @@
 
 namespace py = pybind11;
 
-/// Call into the qss-compiler via an interface to qss-compile's command line
-/// argument.
-py::tuple py_compile_by_args(std::vector<std::string> &args,
-                             bool outputAsStr,
+namespace {
+
+  std::vector<const char *> buildArgv(std::vector<std::string> &args) {
+    #ifndef NDEBUG
+      std::cout << "params passed from python to C++:\n";
+      for (auto &str : args)
+        std::cout << str << '\n';
+    #endif
+
+    // TODO: need a C++ interface into the compiler with fewer detours. the python
+    // api (inspired by IREE's python bindings) can be a start.
+    std::vector<const char *> argv;
+    argv.reserve(args.size() + 1);
+    for (auto &str : args)
+      argv.push_back(str.c_str());
+    argv.push_back(nullptr);
+
+    return argv;
+  }
+
+  llvm::Expected<mlir::DialectRegistry> buildRegistry() {
+    // Register the standard passes with MLIR.
+    // Must precede the command line parsing.
+    if (auto err = qssc::dialect::registerPasses())
+      return err;
+
+    mlir::DialectRegistry registry;
+
+    // Add the following to include *all* QSS core dialects, or selectively
+    // include what you need like above. You only need to register dialects that
+    // will be *parsed* by the tool, not the one generated
+    qssc::dialect::registerDialects(registry);
+    return std::move(registry);
+  }
+
+  llvm::Error compile(llvm::raw_ostream &outputStream, std::unique_ptr<llvm::MemoryBuffer> input, std::vector<std::string> &args, qssc::DiagnosticCallback onDiagnostic) {
+
+      auto argv = buildArgv(args);
+
+      auto registry = buildRegistry();
+      if(auto err = registry.takeError())
+        return err;
+
+      /// TODO: We should not be performing argument parsing in the Python API.
+      qssc::registerAndParseCLIOptions(argv.size(), argv.data(), "pyqssc\n", *registry);
+
+      mlir::DefaultTimingManager tm;
+      mlir::applyDefaultTimingManagerCLOptions(tm);
+      mlir::TimingScope timing = tm.getRootScope();
+
+      mlir::TimingScope buildConfigTiming = timing.nest("build-config");
+      auto configResult =
+          qssc::config::buildToolConfig("-", "-");
+      if (auto err = configResult.takeError())
+        return err;
+      qssc::config::QSSConfig const config = configResult.get();
+      buildConfigTiming.stop();
+
+      if (auto err = qssc::compileMain(outputStream, std::move(input), *registry, config, std::move(onDiagnostic), timing))
+        return err;
+
+      return llvm::Error::success();
+  }
+
+  py::tuple compileOptionalOutput(std::optional<std::string> outputFile, std::unique_ptr<llvm::MemoryBuffer> input, std::vector<std::string> &args, qssc::DiagnosticCallback onDiagnostic) {
+    bool success = true;
+    if (outputFile.has_value()) {
+      std::string errorMessage;
+      auto output = mlir::openOutputFile(outputFile.value(), &errorMessage);
+      if (!output) {
+        llvm::errs() << "Failed to open output file: " << errorMessage;
+        return py::make_tuple(false, py::bytes(""));
+      }
+      if (auto err = compile(output->os(), std::move(input), args, std::move(onDiagnostic)))
+        success = false;
+
+      return py::make_tuple(success, py::bytes(""));
+    }
+
+    std::string outputString;
+    llvm::raw_string_ostream output(outputString);
+    if(auto err = compile(output, std::move(input), args, std::move(onDiagnostic)))
+      success = false;
+
+    return py::make_tuple(success, py::bytes(outputString));
+
+  }
+
+} // anonymous namespace
+
+/// Call into the qss-compiler to compile input bytes
+py::tuple py_compile_bytes(std::string bytes, std::optional<std::string> outputFile, std::vector<std::string> &args,
                              qssc::DiagnosticCallback onDiagnostic) {
-  std::string outputStr("");
 
-#ifndef NDEBUG
-  std::cout << "params passed from python to C++:\n";
-  for (auto &str : args)
-    std::cout << str << '\n';
-#endif
+  // Set up the input file.
+  std::unique_ptr<llvm::MemoryBuffer> input = llvm::MemoryBuffer::getMemBuffer(bytes);
 
-  // TODO: need a C++ interface into the compiler with fewer detours. the python
-  // api (inspired by IREE's python bindings) can be a start.
-  std::vector<const char *> argv;
-  argv.reserve(args.size() + 1);
-  for (auto &str : args)
-    argv.push_back(str.c_str());
-  argv.push_back(nullptr);
-
-  bool success = true;
-  if (auto err = qssc::compileMain(args.size(), argv.data(), "pyqssc\n", std::move(onDiagnostic)))
-    success = false;
-
-#ifndef NDEBUG
-  std::cerr << "Compile " << (success ? "successful" : "failed") << '\n';
-#endif
-
-  return py::make_tuple(success, py::bytes(outputStr));
+  return compileOptionalOutput(outputFile, std::move(input), args, std::move(onDiagnostic));
 }
+
+/// Call into the qss-compiler to compile input file
+py::tuple py_compile_file(std::string inputFile, std::optional<std::string> outputFile, std::vector<std::string> &args,
+                             qssc::DiagnosticCallback onDiagnostic) {
+  // Set up the input file.
+  std::string errorMessage;
+  auto input = mlir::openInputFile(inputFile, &errorMessage);
+  if (!input) {
+    llvm::errs() << "Failed to open input file: "  << errorMessage;
+    return py::make_tuple(false, py::bytes(""));
+  }
+
+  return compileOptionalOutput(outputFile, std::move(input), args, onDiagnostic);
+}
+
 
 py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
                        const std::string &outputPath, const std::string &target,
@@ -125,8 +218,10 @@ py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
 PYBIND11_MODULE(py_qssc, m) {
   m.doc() = "Python bindings for the QSS Compiler.";
 
-  m.def("_compile_with_args", &py_compile_by_args,
-        "Call compiler via cli qss-compile");
+  m.def("_compile_bytes", &py_compile_bytes,
+        "Call qss-compiler to compile input bytes");
+  m.def("_compile_file", &py_compile_file,
+        "Call qss-compiler to compile input file");
   m.def("_link_file", &py_link_file, "Call the linker tool");
 
   addErrorCategory(m);

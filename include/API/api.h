@@ -47,9 +47,20 @@ namespace qssc {
 /// @param toolName for the header displayed by `--help`.
 /// @param registry should contain all the dialects that can be parsed in the
 /// source.
+void
+registerAndParseCLIOptions(int argc, const char **argv,
+                           llvm::StringRef toolName,
+                           mlir::DialectRegistry &registry);
+
+/// Register and parse command line tool options.
+/// @param argc Commandline argc to parse.
+/// @param argv Commandline argv to parse.
+/// @param toolName for the header displayed by `--help`.
+/// @param registry should contain all the dialects that can be parsed in the
+/// source.
 /// @return inputFilename and outputFilename command line option values.
 std::pair<std::string, std::string>
-registerAndParseCLIOptions(int argc, const char **argv,
+registerAndParseCLIToolOptions(int argc, const char **argv,
                            llvm::StringRef toolName,
                            mlir::DialectRegistry &registry);
 
