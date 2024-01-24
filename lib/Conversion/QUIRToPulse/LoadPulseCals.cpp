@@ -42,7 +42,6 @@
 #include "mlir/Pass/Pass.h"
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Support/LLVM.h"
-#include <mlir/IR/BuiltinOps.h>
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/Debug.h"
