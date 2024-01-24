@@ -165,9 +165,6 @@ class _CompilerExecution:
     def prepare_compiler_args(self) -> List[str]:
         args = self.options.prepare_compiler_option_args()
 
-        if self.input_file is not None:
-            args.append(str(self.input_file))
-
         return args
 
 
@@ -196,7 +193,13 @@ def _compile_child_backend(
     with importlib_resources.path("qss_compiler", "_version.py") as version_py_path:
         resources_path = version_py_path.parent / "resources"
         os_environ["QSSC_RESOURCES"] = str(resources_path)
-        success, output = _compile_with_args(args, output_as_return, on_diagnostic)
+        if execution.input is not None:
+            success, output = _compile_bytes(execution.input, options.output_file, args, on_diagnostic)
+        elif execution.input_file is not None:
+            success, output = _compile_file(execution.input_file, options.output_file, args, on_diagnostic)
+        else:
+            raise exceptions.QSSCompilerNoInputError("""one of the compile options "input_file" or "input" must be set""")
+
 
     status = _CompilerStatus(success)
     if output_as_return:

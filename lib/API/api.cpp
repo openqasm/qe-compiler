@@ -410,7 +410,6 @@ llvm::Error performCompileActions(
   // LLVM IR
   mlir::registerBuiltinDialectTranslation(context);
   mlir::registerLLVMDialectTranslation(context);
-
   // Build the target for compilation
   auto targetResult = buildTarget(&context, config, timing);
   if (auto err = targetResult.takeError())
@@ -465,19 +464,25 @@ llvm::Error performCompileActions(
   if (config.getInputType() == InputType::QASM) {
 
     mlir::TimingScope loadQASM3Timing = timing.nest("load-qasm3");
-
     if (config.getEmitAction() >= EmitAction::MLIR) {
-      moduleOp = mlir::ModuleOp::create(FileLineColLoc::get(
-          &context, sourceBuffer->getBufferIdentifier(), 0, 0));
-    }
+      auto bufferIdentifier = sourceBuffer->getBufferIdentifier();
 
+      LocationAttr sourceLoc;
+      if ((bufferIdentifier == "" || bufferIdentifier == "<stdin>"))
+        sourceLoc = UnknownLoc::get(&context);
+      else
+        sourceLoc = mlir::FileLineColLoc::get(
+          &context, bufferIdentifier, 0, 0);
+
+
+      moduleOp = mlir::ModuleOp::create(sourceLoc);
+    }
     if (auto frontendError = qssc::frontend::openqasm3::parse(
             *sourceMgr, config.getEmitAction() == EmitAction::AST,
             config.getEmitAction() == EmitAction::ASTPretty,
             config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb,
             loadQASM3Timing))
       return frontendError;
-
     if (config.getEmitAction() < EmitAction::MLIR)
       return llvm::Error::success();
   } // if input == QASM
@@ -489,7 +494,6 @@ llvm::Error performCompileActions(
       config.getInputType() == InputType::Bytecode) {
 
     mlir::TimingScope mlirParserTiming = timing.nest("parse-mlir");
-
     // Implemented following -
     // https://github.com/llvm/llvm-project/blob/llvmorg-17.0.6/mlir/lib/Tools/mlir-opt/MlirOptMain.cpp#L333-L362
 
@@ -507,7 +511,6 @@ llvm::Error performCompileActions(
                                    &fallbackResourceMap);
     if (config.shouldRunReproducer())
       reproOptions.attachResourceParser(parseConfig);
-
     // Parse the input file and reset the context threading state.
     mlir::OwningOpRef<Operation *> op = mlir::parseSourceFileForTool(
         sourceMgr, parseConfig, !config.shouldUseExplicitModule());
@@ -532,7 +535,6 @@ llvm::Error performCompileActions(
 
     moduleOp = mlir::dyn_cast<mlir::ModuleOp>(op.release());
   } // if input == MLIR
-
   auto errorHandler = [&](const Twine &msg) {
     // format msg to python handler as a compilation failure
     (void)qssc::emitDiagnostic(diagnosticCb, qssc::Severity::Error,
@@ -544,7 +546,6 @@ llvm::Error performCompileActions(
 
   // at this point we have QUIR+Pulse in the moduleOp from either the
   // QASM/AST or MLIR file
-
   bool verifyPasses = config.shouldVerifyPasses();
 
   auto targetCompilationManager =
@@ -561,14 +562,12 @@ llvm::Error performCompileActions(
         "Unable to apply target compilation options.");
 
   // Run additional passes specified on the command line
-
   mlir::TimingScope commandLinePassesTiming =
       timing.nest("command-line-passes");
   mlir::PassManager pm(&context);
   if (auto err = buildPassManager(config, pm, errorHandler, verifyPasses,
                                   commandLinePassesTiming))
     return err;
-
   if (pm.size() && failed(pm.run(moduleOp)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problems running the compiler pipeline!");

@@ -91,10 +91,9 @@ namespace {
     // TODO: need a C++ interface into the compiler with fewer detours. the python
     // api (inspired by IREE's python bindings) can be a start.
     std::vector<const char *> argv;
-    argv.reserve(args.size() + 1);
+    argv.reserve(args.size());
     for (auto &str : args)
       argv.push_back(str.c_str());
-    argv.push_back(nullptr);
 
     return argv;
   }

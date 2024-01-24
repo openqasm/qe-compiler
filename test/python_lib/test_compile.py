@@ -80,21 +80,18 @@ def test_compile_roundtrip_bytecode(example_mlir_str):
         example_mlir_str,
         input_type=InputType.MLIR,
         output_type=OutputType.MLIR,
-        output_file=None,
     )
 
     bytecode = compile_str(
         example_mlir_str,
         input_type=InputType.MLIR,
         output_type=OutputType.BYTECODE,
-        output_file=None,
     )
 
     mlir2 = compile_str(
         bytecode,
         input_type=InputType.BYTECODE,
         output_type=OutputType.MLIR,
-        output_file=None,
     )
     assert mlir2 == mlir1
 

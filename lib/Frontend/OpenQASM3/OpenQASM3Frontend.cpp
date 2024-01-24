@@ -143,7 +143,6 @@ llvm::Error qssc::frontend::openqasm3::parse(
   diagnosticCallback_ =
       diagnosticCallback.has_value() ? &diagnosticCallback.value() : nullptr;
   sourceMgr_ = &sourceMgr;
-
   QASM::QasmDiagnosticEmitter::SetHandler(
       [](const std::string &File, QASM::ASTLocation Loc, // NOLINT
          const std::string &Msg, QASM::QasmDiagnosticEmitter::DiagLevel DL) {
@@ -217,13 +216,12 @@ llvm::Error qssc::frontend::openqasm3::parse(
       });
 
   try {
-
     auto sourceFile = sourceBuffer->getBufferIdentifier();
 
     // Handle stdin differently as the qasm parser does not seem to perform
     // includes on a raw string input. This limits includes to file inputs only
     // at the current time.
-    if (sourceFile != "<stdin>") {
+    if (!(sourceFile == "" || sourceFile == "<stdin>")) {
       QASM::QasmPreprocessor::Instance().SetTranslationUnit(sourceFile.str());
       root.reset(parser.ParseAST());
     } else
