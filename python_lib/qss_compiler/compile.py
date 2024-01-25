@@ -21,25 +21,25 @@ Developer notes:
 This further decouples the python package from the _execution_ of
 compile.
 
-To update the user interface, update `compile` with the new
-interface, and update the C++ function `py_compile` bound to
-`_compile` in `lib.cpp`.
+To update the user interface, update the Python functions
+with the new interface, and update the C++ functions in
+lib.cpp to call the C++ compiler via Pybind.
 
 
 Why fork a child process for compilation?
 ------------------------------------------
 
 LLVM is designed to compile one program per execution. However, we
-would like a python user to be able to reliably call `compile` as
+would like a python user to be able to reliably call `compile_str/file` as
 many times as they like with different inputs with some of the calls
 possibly occurring in parallel. Additionally, it would not be ideal if
 we try to compile some input and our python interpreter crashes because
 the input was malformed, and our code raised an error.
 
-To handle this, we call `_compile` (which is defined in the shared
+To handle this, we call `compile_file/bytes` (which is defined in the shared
 library `py_qssc` as described by `python_lib/lib.cpp`) within a
 child process. This guarantees the calling process won't be killed,
-even if the call to `_compile` results in a segmentation fault.
+even if the call results in a segmentation fault.
 
 For forking child processes and communicating with them, we use the
 Python standard library's multiprocessing package. In particular, we use
@@ -83,7 +83,7 @@ class InputType(Enum):
 
 class OutputType(Enum):
     """Enumeration of output types supported by the compiler"""
-
+    NONE = "none" # Do not generate output, useful for testing
     QEM = "qem"
     MLIR = "mlir"
     BYTECODE = "bytecode"
@@ -104,7 +104,7 @@ class CompileOptions:
     """Output source type."""
     output_type: OutputType = OutputType.QEM
     """Output file, if not supplied raw bytes will be returned."""
-    output_file: Union[str, None] = None
+    output_file: Union[Path, str, None] = None
     """Hardware target to select."""
     target: Optional[str] = None
     """Hardware configuration location."""
@@ -134,9 +134,6 @@ class CompileOptions:
             f"-X={str(self.input_type)}",
             f"--emit={str(self.output_type)}",
         ]
-        if self.output_file:
-            args.append("-o")
-            args.append(str(self.output_file))
 
         if self.target:
             args.append(f"--target={str(self.target)}")
@@ -199,7 +196,7 @@ class _CompilationManager:
             success, output = self._compile_call(args, on_diagnostic)
 
         status = _CompilerStatus(success)
-        if output_as_return:
+        if output_as_return and options.output_type is not OutputType.NONE:
             return status, output
         else:
             return status, None
@@ -257,7 +254,7 @@ class _CompilationManager:
                             return_diagnostics=self.return_diagnostics,
                         )
 
-                if self.compile_options.output_file is None:
+                if self.compile_options.output_file is None and self.compile_options.output_type is not OutputType.NONE:
                     # return compilation result via IPC instead of in a file.
                     output = parent_side.recv_bytes()
                 else:
@@ -313,7 +310,7 @@ class _CompileFile(_CompilationManager):
         self.input_file = stringify_path(input_file)
 
     def _compile_call(self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]) -> Tuple[bool, bytes]:
-        return _compile_file(self.input_file, self.compile_options.output_file, args, on_diagnostic)
+        return _compile_file(self.input_file, stringify_path(self.compile_options.output_file), args, on_diagnostic)
 
 
 class _CompileBytes(_CompilationManager):
@@ -323,7 +320,8 @@ class _CompileBytes(_CompilationManager):
         self.input = input
 
     def _compile_call(self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]) -> Tuple[bool, bytes]:
-        return _compile_bytes(self.input, self.compile_options.output_file, args, on_diagnostic)
+        output_file = self.compile_options.output_file
+        return _compile_bytes(self.input, stringify_path(self.compile_options.output_file), args, on_diagnostic)
 
 
 def _prepare_compile_options(

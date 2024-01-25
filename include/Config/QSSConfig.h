@@ -36,6 +36,7 @@ enum QSSVerbosity {
 };
 
 enum class EmitAction {
+  Undetected,
   None,
   AST,
   ASTPretty,
@@ -58,7 +59,7 @@ enum class FileExtension {
   QEQEM
 };
 
-enum class InputType { None, QASM, MLIR, Bytecode };
+enum class InputType { Undetected, QASM, MLIR, Bytecode };
 
 std::string to_string(const EmitAction &inExt);
 
@@ -206,9 +207,9 @@ protected:
   /// @brief The path to the TargetSystem configuration information.
   std::optional<std::string> targetConfigPath = std::nullopt;
   /// @brief Source input type
-  InputType inputType = InputType::None;
+  InputType inputType = InputType::Undetected;
   /// @brief Output action to take
-  EmitAction emitAction = EmitAction::None;
+  EmitAction emitAction = EmitAction::Undetected;
   /// @brief Verbosity level for logging info
   QSSVerbosity verbosityLevel = QSSVerbosity::Warn;
   /// @brief Register target passes with the compiler.

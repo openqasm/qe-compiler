@@ -106,7 +106,9 @@ struct QSSConfigCLOptions : public QSSConfig {
             llvm::cl::values(clEnumValN(
                 EmitAction::QEQEM, "qe-qem",
                 "generate a target-specific quantum executable module (qeqem) "
-                "for execution on hardware")));
+                "for execution on hardware")),
+            llvm::cl::values(clEnumValN(EmitAction::None, "none",
+                            "output nothing")));
 
     static llvm::cl::opt<std::string> targetConfigPath_(
         "config",
@@ -325,14 +327,14 @@ struct QSSConfigCLOptions : public QSSConfig {
   }
 
   llvm::Error computeInputType(llvm::StringRef inputFilename) {
-    if (getInputType() == InputType::None) {
+    if (getInputType() == InputType::Undetected) {
 
       // Override with mlir opt config if set (it typically shouldn't be)
       if (shouldEmitBytecode())
         setInputType(InputType::Bytecode);
       else
         setInputType(fileExtensionToInputType(getExtension(inputFilename)));
-      if (inputFilename != "-" && getInputType() == InputType::None) {
+      if (inputFilename != "-" && getInputType() == InputType::Undetected) {
         return llvm::createStringError(
             llvm::inconvertibleErrorCode(),
             "Unable to autodetect file extension type! Please specify the "
@@ -347,13 +349,13 @@ struct QSSConfigCLOptions : public QSSConfig {
     if (outputFilename != "-") {
       EmitAction const extensionAction =
           fileExtensionToAction(getExtension(outputFilename));
-      if (extensionAction == EmitAction::None &&
-          emitAction == EmitAction::None) {
+      if (extensionAction == EmitAction::Undetected &&
+          emitAction == EmitAction::Undetected) {
         llvm::errs() << "Cannot determine the file extension of the specified "
                         "output file "
                      << outputFilename << " defaulting to dumping MLIR\n";
         setEmitAction(EmitAction::MLIR);
-      } else if (emitAction == EmitAction::None) {
+      } else if (emitAction == EmitAction::Undetected) {
         setEmitAction(extensionAction);
       } else if (extensionAction != getEmitAction()) {
         llvm::errs()
@@ -361,7 +363,7 @@ struct QSSConfigCLOptions : public QSSConfig {
                "match the output type specified by --emit!\n";
       }
     } else {
-      if (emitAction == EmitAction::None)
+      if (emitAction == EmitAction::Undetected)
         setEmitAction(EmitAction::MLIR);
     }
 

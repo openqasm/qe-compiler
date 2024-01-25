@@ -119,6 +119,16 @@ def test_empty_str():
         output_file=None,
     )
 
+def test_compile_no_output(example_qasm3_str):
+    """Test that compilation without output functions."""
+
+    output = compile_str(
+        example_qasm3_str,
+        input_type=InputType.QASM3,
+        output_type=OutputType.NONE,
+    )
+    assert output is None
+
 
 def test_compile_invalid_file(example_invalid_qasm3_tmpfile):
     """Test that we can attempt to compile invalid OpenQASM 3 and receive an

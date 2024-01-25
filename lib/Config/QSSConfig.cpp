@@ -163,11 +163,14 @@ std::string qssc::config::to_string(const EmitAction &inAction) {
   case EmitAction::QEQEM:
     return "qeqem";
     break;
-  default:
+  case EmitAction::None:
     return "none";
     break;
+  default:
+    return "undetected";
+    break;
   }
-  return "none";
+  return "undetected";
 }
 
 std::string qssc::config::to_string(const FileExtension &inExt) {
@@ -253,7 +256,7 @@ InputType qssc::config::fileExtensionToInputType(const FileExtension &inExt) {
   default:
     break;
   }
-  return InputType::None;
+  return InputType::Undetected;
 }
 
 EmitAction qssc::config::fileExtensionToAction(const FileExtension &inExt) {
@@ -282,7 +285,7 @@ EmitAction qssc::config::fileExtensionToAction(const FileExtension &inExt) {
   default:
     break;
   }
-  return EmitAction::None;
+  return EmitAction::Undetected;
 }
 
 FileExtension qssc::config::strToFileExtension(const llvm::StringRef extStr) {

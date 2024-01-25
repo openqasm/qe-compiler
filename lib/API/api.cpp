@@ -300,7 +300,7 @@ llvm::Error emitQEM(
     qssc::hal::compile::ThreadedCompilationManager &targetCompilationManager,
     const llvm::MemoryBuffer *sourceBuffer, mlir::TimingScope &timing) {
   if (config.shouldIncludeSource()) {
-    if (config.getInputType() != InputType::None)
+    if (config.getInputType() != InputType::Undetected)
       payload->addFile("manifest/input." + to_string(inputTypeToFileExtension(
                                                config.getInputType())),
                        sourceBuffer->getBuffer());
