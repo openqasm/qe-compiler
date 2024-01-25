@@ -16,12 +16,11 @@
 
 #include "API/api.h"
 
-#include "Dialect/RegisterDialects.h"
-#include "Dialect/RegisterPasses.h"
-
-#include "mlir/IR/DialectRegistry.h"
-
 #include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <cstdlib>
+#include <utility>
 
 int main(int argc, const char **argv) {
 

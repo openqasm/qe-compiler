@@ -48,9 +48,11 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <optional>
 #include <stdio.h> // NOLINT: fileno is not in cstdio as suggested
 #include <string>
+#include <tuple>
 #include <utility>
 
 using namespace qssc;

@@ -51,6 +51,7 @@
 //  https://pybind11.readthedocs.io/en/stable/
 //===----------------------------------------------------------------------===//
 
+#include "Config/QSSConfig.h"
 #include "errors.h"
 #include "lib_enums.h"
 
@@ -58,20 +59,22 @@
 #include "Dialect/RegisterDialects.h"
 #include "Dialect/RegisterPasses.h"
 
+#include "mlir/IR/DialectRegistry.h"
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Support/Timing.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ToolOutputFile.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <pybind11/cast.h>
 #include <pybind11/detail/common.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -169,17 +172,17 @@ namespace {
 } // anonymous namespace
 
 /// Call into the qss-compiler to compile input bytes
-py::tuple py_compile_bytes(std::string bytes, std::optional<std::string> outputFile, std::vector<std::string> &args,
+py::tuple py_compile_bytes(const std::string& bytes, std::optional<std::string> outputFile, std::vector<std::string> &args,
                              qssc::DiagnosticCallback onDiagnostic) {
 
   // Set up the input file.
   std::unique_ptr<llvm::MemoryBuffer> input = llvm::MemoryBuffer::getMemBuffer(bytes);
 
-  return compileOptionalOutput(outputFile, std::move(input), args, std::move(onDiagnostic));
+  return compileOptionalOutput(std::move(outputFile), std::move(input), args, std::move(onDiagnostic));
 }
 
 /// Call into the qss-compiler to compile input file
-py::tuple py_compile_file(std::string inputFile, std::optional<std::string> outputFile, std::vector<std::string> &args,
+py::tuple py_compile_file(const std::string& inputFile, std::optional<std::string> outputFile, std::vector<std::string> &args,
                              qssc::DiagnosticCallback onDiagnostic) {
   // Set up the input file.
   std::string errorMessage;
@@ -189,7 +192,7 @@ py::tuple py_compile_file(std::string inputFile, std::optional<std::string> outp
     return py::make_tuple(false, py::bytes(""));
   }
 
-  return compileOptionalOutput(outputFile, std::move(input), args, onDiagnostic);
+  return compileOptionalOutput(std::move(outputFile), std::move(input), args, std::move(onDiagnostic));
 }
 
 

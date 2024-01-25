@@ -19,6 +19,7 @@
 #include "API/errors.h"
 #include "Arguments/Arguments.h"
 #include "Config/CLIConfig.h"
+#include "Config/QSSConfig.h"
 #include "Dialect/RegisterDialects.h"
 #include "Dialect/RegisterPasses.h"
 #include "Frontend/OpenQASM3/OpenQASM3Frontend.h"
@@ -62,12 +63,12 @@
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include <fstream>
+#include <cstdio>
 #include <memory>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 
@@ -641,7 +642,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
                               mlir::DialectRegistry &registry,
                               std::optional<DiagnosticCallback> diagnosticCb) {
 
-  llvm::InitLLVM y(argc, argv);
+  llvm::InitLLVM const y(argc, argv);
 
   mlir::DefaultTimingManager tm;
   mlir::applyDefaultTimingManagerCLOptions(tm);
@@ -698,7 +699,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
                                        errorMessage);
 
   if (auto err = compileMain(output->os(), std::move(file), registry, config,
-                             diagnosticCb, timing))
+                             std::move(diagnosticCb), timing))
     return err;
 
   // Keep the output file if the invocation of MlirOptMain was successful.
