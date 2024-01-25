@@ -107,8 +107,8 @@ struct QSSConfigCLOptions : public QSSConfig {
                 EmitAction::QEQEM, "qe-qem",
                 "generate a target-specific quantum executable module (qeqem) "
                 "for execution on hardware")),
-            llvm::cl::values(clEnumValN(EmitAction::None, "none",
-                            "output nothing")));
+            llvm::cl::values(
+                clEnumValN(EmitAction::None, "none", "output nothing")));
 
     static llvm::cl::opt<std::string> targetConfigPath_(
         "config",

@@ -471,9 +471,7 @@ llvm::Error performCompileActions(
       if ((bufferIdentifier == "" || bufferIdentifier == "<stdin>"))
         sourceLoc = UnknownLoc::get(&context);
       else
-        sourceLoc = mlir::FileLineColLoc::get(
-          &context, bufferIdentifier, 0, 0);
-
+        sourceLoc = mlir::FileLineColLoc::get(&context, bufferIdentifier, 0, 0);
 
       moduleOp = mlir::ModuleOp::create(sourceLoc);
     }
@@ -588,10 +586,9 @@ llvm::Error performCompileActions(
 // MLIR project with the aim of standardizing CLI tooling and making forwards
 // compatiability more straightforward
 
-void
-qssc::registerAndParseCLIOptions(int argc, const char **argv,
-                                 llvm::StringRef toolName,
-                                 mlir::DialectRegistry &registry) {
+void qssc::registerAndParseCLIOptions(int argc, const char **argv,
+                                      llvm::StringRef toolName,
+                                      mlir::DialectRegistry &registry) {
   // Register all extensions
   mlir::registerAllExtensions(registry);
 
@@ -599,14 +596,13 @@ qssc::registerAndParseCLIOptions(int argc, const char **argv,
   // Register CL config builder prior to parsing
   CLIConfigBuilder::registerCLOptions(registry);
   llvm::cl::SetVersionPrinter(&printVersion);
-  llvm::cl::ParseCommandLineOptions(
-      argc, argv, toolName);
+  llvm::cl::ParseCommandLineOptions(argc, argv, toolName);
 }
 
 std::pair<std::string, std::string>
 qssc::registerAndParseCLIToolOptions(int argc, const char **argv,
-                                 llvm::StringRef toolName,
-                                 mlir::DialectRegistry &registry) {
+                                     llvm::StringRef toolName,
+                                     mlir::DialectRegistry &registry) {
 
   static llvm::cl::opt<std::string> inputFilename(
       llvm::cl::Positional, llvm::cl::desc("<input file>"),
