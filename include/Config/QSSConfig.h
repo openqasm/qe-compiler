@@ -154,7 +154,7 @@ public:
   bool shouldShowConfig() const { return showConfigFlag; }
 
   QSSConfig &setPayloadName(std::string name) {
-    payloadName = name;
+    payloadName = std::move(name);
     return *this;
   }
   llvm::StringRef getPayloadName() const { return payloadName; }

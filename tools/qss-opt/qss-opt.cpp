@@ -193,6 +193,7 @@ mlir::LogicalResult QSSCOptMain(int argc, char **argv,
                                 mlir::DialectRegistry &registry) {
 
   // Register and parse command line options.
+  // NOLINTNEXTLINE(misc-const-correctness)
   std::string inputFilename, outputFilename;
   std::tie(inputFilename, outputFilename) =
       registerAndParseCLIOptions(argc, argv, toolName, registry);

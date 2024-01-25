@@ -75,8 +75,7 @@
 using namespace mlir;
 using namespace qssc::config;
 
-//===----------------------------------- Compilation
-//------------------------------------------===//
+//===----------------------------------- Compilation -----------------------------------------===//
 
 namespace {
 
@@ -646,6 +645,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
 
   mlir::DefaultTimingManager tm;
   mlir::applyDefaultTimingManagerCLOptions(tm);
+  // NOLINTNEXTLINE(misc-const-correctness)
   mlir::TimingScope timing = tm.getRootScope();
 
   mlir::TimingScope buildConfigTiming = timing.nest("build-config");

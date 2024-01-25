@@ -169,7 +169,7 @@ py::tuple compileOptionalOutput(std::optional<std::string> outputFile,
   }
 
   std::string outputString;
-  llvm::raw_string_ostream output(outputString);
+  const llvm::raw_string_ostream output(outputString);
   if (auto err =
           compile(output, std::move(input), args, std::move(onDiagnostic)))
     success = false;
@@ -181,7 +181,7 @@ py::tuple compileOptionalOutput(std::optional<std::string> outputFile,
 
 /// Call into the qss-compiler to compile input bytes
 py::tuple py_compile_bytes(const std::string &bytes,
-                           std::optional<std::string> outputFile,
+                           const std::optional<std::string> &outputFile,
                            std::vector<std::string> &args,
                            qssc::DiagnosticCallback onDiagnostic) {
 
@@ -195,7 +195,7 @@ py::tuple py_compile_bytes(const std::string &bytes,
 
 /// Call into the qss-compiler to compile input file
 py::tuple py_compile_file(const std::string &inputFile,
-                          std::optional<std::string> outputFile,
+                          const std::optional<std::string> &outputFile,
                           std::vector<std::string> &args,
                           qssc::DiagnosticCallback onDiagnostic) {
   // Set up the input file.
