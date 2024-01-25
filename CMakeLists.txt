@@ -242,12 +242,12 @@ find_program(CLANG_AR_BIN clang-apply-replacements REQUIRED)
 find_program(RUN_CLANG_TIDY_BIN run-clang-tidy)
 
 list(APPEND RUN_CLANG_TIDY_BIN_ARGS
-    -clang-tidy-binary ${CLANG_TIDY_BIN}
-    -clang-apply-replacements-binary ${CLANG_AR_BIN}
-    -style=file
+    --clang-tidy-binary ${CLANG_TIDY_BIN}
+    --clang-apply-replacements-binary ${CLANG_AR_BIN}
+    --config-file="${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy"
     # Limit clang-tidy to project headers
-    -header-filter="${CMAKE_SOURCE_DIR}/*.h"
-    -quiet
+    --header-filter="${CMAKE_SOURCE_DIR}/*.h"
+    --quiet
 )
 
 # run clang-tidy linter only when compiling with clang (compiler flags may be
