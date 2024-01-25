@@ -169,7 +169,8 @@ py::tuple compileOptionalOutput(std::optional<std::string> outputFile,
   }
 
   std::string outputString;
-  const llvm::raw_string_ostream output(outputString);
+  // NOLINTNEXTLINE(misc-const-correctness)
+  llvm::raw_string_ostream output(outputString);
   if (auto err =
           compile(output, std::move(input), args, std::move(onDiagnostic)))
     success = false;
