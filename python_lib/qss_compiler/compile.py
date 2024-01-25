@@ -401,7 +401,7 @@ async def compile_file_async(
     compilation_manager = _CompileFile(compile_options, return_diagnostics, input_file)
     with ThreadPoolExecutor() as executor:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(executor, compilation_manager.do_compile)
+        return await loop.run_in_executor(executor, compilation_manager.compile)
 
 
 def compile_str(
