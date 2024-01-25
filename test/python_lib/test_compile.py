@@ -23,7 +23,7 @@ from qss_compiler import (
     OutputType,
     Severity,
 )
-from qss_compiler.exceptions import QSSCompilationFailure
+from qss_compiler.exceptions import QSSCompilationFailure, QSSCompilerEOFFailure
 
 
 def check_mlir_string(mlir):
@@ -120,7 +120,7 @@ def test_empty_str():
     )
 
 def test_compile_no_output(example_qasm3_str):
-    """Test that compilation without output functions."""
+    """Test compiling without output."""
 
     output = compile_str(
         example_qasm3_str,
@@ -173,3 +173,15 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     # check string representation of the exception to contain diagnostic messages
     assert "OpenQASM 3 parse error" in str(compfail.value)
     assert "unknown version number" in str(compfail.value)
+
+
+def test_failure_no_hang():
+    """Test no hang on malformed inputs."""
+    with pytest.raises(QSSCompilerEOFFailure) as compfail:
+        _ = compile_str(
+            "",
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+            extra_args=["bad_arg"]
+        )
