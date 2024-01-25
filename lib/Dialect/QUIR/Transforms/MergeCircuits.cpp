@@ -76,17 +76,16 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
       if (nextCallCircuitOp)
         break;
 
-      // check for overlapping BarrierOp and fail if found
-      auto barrierOp = dyn_cast<BarrierOp>(*secondOp);
-      if (barrierOp) {
-        std::set<uint> firstQubits =
-            QubitOpInterface::getOperatedQubits(callCircuitOp);
-        std::set<uint> secondQubits =
-            QubitOpInterface::getOperatedQubits(barrierOp);
+      // check for overlap in qubits between the circuit and the
+      // next quantum circuit which is not a CallCircuit
+      // fail if there is overlap
+      std::set<uint> firstQubits =
+          QubitOpInterface::getOperatedQubits(callCircuitOp);
+      std::set<uint> secondQubits =
+          QubitOpInterface::getOperatedQubits(*secondOp);
 
-        if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
-          return failure();
-      }
+      if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
+        return failure();
 
       searchOp = *secondOp;
     }
