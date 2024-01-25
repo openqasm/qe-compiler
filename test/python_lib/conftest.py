@@ -32,6 +32,7 @@ def example_qasm3_str():
     measure $0 -> c0;
     """
 
+
 @pytest.fixture
 def example_mlir_str():
     return """

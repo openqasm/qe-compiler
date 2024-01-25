@@ -84,117 +84,131 @@ namespace py = pybind11;
 
 namespace {
 
-  std::vector<const char *> buildArgv(std::vector<std::string> &args) {
-    #ifndef NDEBUG
-      std::cout << "params passed from python to C++:\n";
-      for (auto &str : args)
-        std::cout << str << '\n';
-    #endif
+std::vector<const char *> buildArgv(std::vector<std::string> &args) {
+#ifndef NDEBUG
+  std::cout << "params passed from python to C++:\n";
+  for (auto &str : args)
+    std::cout << str << '\n';
+#endif
 
-    // TODO: need a C++ interface into the compiler with fewer detours. the python
-    // api (inspired by IREE's python bindings) can be a start.
-    std::vector<const char *> argv;
-    argv.reserve(args.size());
-    for (auto &str : args)
-      argv.push_back(str.c_str());
+  // TODO: need a C++ interface into the compiler with fewer detours. the python
+  // api (inspired by IREE's python bindings) can be a start.
+  std::vector<const char *> argv;
+  argv.reserve(args.size());
+  for (auto &str : args)
+    argv.push_back(str.c_str());
 
-    return argv;
-  }
+  return argv;
+}
 
-  llvm::Expected<mlir::DialectRegistry> buildRegistry() {
-    // Register the standard passes with MLIR.
-    // Must precede the command line parsing.
-    if (auto err = qssc::dialect::registerPasses())
-      return err;
+llvm::Expected<mlir::DialectRegistry> buildRegistry() {
+  // Register the standard passes with MLIR.
+  // Must precede the command line parsing.
+  if (auto err = qssc::dialect::registerPasses())
+    return err;
 
-    mlir::DialectRegistry registry;
+  mlir::DialectRegistry registry;
 
-    // Add the following to include *all* QSS core dialects, or selectively
-    // include what you need like above. You only need to register dialects that
-    // will be *parsed* by the tool, not the one generated
-    qssc::dialect::registerDialects(registry);
-    return std::move(registry);
-  }
+  // Add the following to include *all* QSS core dialects, or selectively
+  // include what you need like above. You only need to register dialects that
+  // will be *parsed* by the tool, not the one generated
+  qssc::dialect::registerDialects(registry);
+  return std::move(registry);
+}
 
-  llvm::Error compile(llvm::raw_ostream &outputStream, std::unique_ptr<llvm::MemoryBuffer> input, std::vector<std::string> &args, qssc::DiagnosticCallback onDiagnostic) {
+llvm::Error compile(llvm::raw_ostream &outputStream,
+                    std::unique_ptr<llvm::MemoryBuffer> input,
+                    std::vector<std::string> &args,
+                    qssc::DiagnosticCallback onDiagnostic) {
 
-      auto argv = buildArgv(args);
+  auto argv = buildArgv(args);
 
-      auto registry = buildRegistry();
-      if(auto err = registry.takeError())
-        return err;
+  auto registry = buildRegistry();
+  if (auto err = registry.takeError())
+    return err;
 
-      /// TODO: We should not be performing argument parsing in the Python API.
-      qssc::registerAndParseCLIOptions(argv.size(), argv.data(), "pyqssc\n", *registry);
+  /// TODO: We should not be performing argument parsing in the Python API.
+  qssc::registerAndParseCLIOptions(argv.size(), argv.data(), "pyqssc\n",
+                                   *registry);
 
-      mlir::DefaultTimingManager tm;
-      mlir::applyDefaultTimingManagerCLOptions(tm);
-      mlir::TimingScope timing = tm.getRootScope();
+  mlir::DefaultTimingManager tm;
+  mlir::applyDefaultTimingManagerCLOptions(tm);
+  mlir::TimingScope timing = tm.getRootScope();
 
-      mlir::TimingScope buildConfigTiming = timing.nest("build-config");
-      auto configResult =
-          qssc::config::buildToolConfig("-", "-");
-      if (auto err = configResult.takeError())
-        return err;
-      qssc::config::QSSConfig const config = configResult.get();
-      buildConfigTiming.stop();
+  mlir::TimingScope buildConfigTiming = timing.nest("build-config");
+  auto configResult = qssc::config::buildToolConfig("-", "-");
+  if (auto err = configResult.takeError())
+    return err;
+  qssc::config::QSSConfig const config = configResult.get();
+  buildConfigTiming.stop();
 
-      if (auto err = qssc::compileMain(outputStream, std::move(input), *registry, config, std::move(onDiagnostic), timing))
-        return err;
+  if (auto err = qssc::compileMain(outputStream, std::move(input), *registry,
+                                   config, std::move(onDiagnostic), timing))
+    return err;
 
-      return llvm::Error::success();
-  }
+  return llvm::Error::success();
+}
 
-  py::tuple compileOptionalOutput(std::optional<std::string> outputFile, std::unique_ptr<llvm::MemoryBuffer> input, std::vector<std::string> &args, qssc::DiagnosticCallback onDiagnostic) {
-    bool success = true;
-    if (outputFile.has_value()) {
-      std::string errorMessage;
-      auto output = mlir::openOutputFile(outputFile.value(), &errorMessage);
-      if (!output) {
-        llvm::errs() << "Failed to open output file: " << errorMessage;
-        return py::make_tuple(false, py::bytes(""));
-      }
-      if (auto err = compile(output->os(), std::move(input), args, std::move(onDiagnostic)))
-        success = false;
-
-      return py::make_tuple(success, py::bytes(""));
+py::tuple compileOptionalOutput(std::optional<std::string> outputFile,
+                                std::unique_ptr<llvm::MemoryBuffer> input,
+                                std::vector<std::string> &args,
+                                qssc::DiagnosticCallback onDiagnostic) {
+  bool success = true;
+  if (outputFile.has_value()) {
+    std::string errorMessage;
+    auto output = mlir::openOutputFile(outputFile.value(), &errorMessage);
+    if (!output) {
+      llvm::errs() << "Failed to open output file: " << errorMessage;
+      return py::make_tuple(false, py::bytes(""));
     }
-
-    std::string outputString;
-    llvm::raw_string_ostream output(outputString);
-    if(auto err = compile(output, std::move(input), args, std::move(onDiagnostic)))
+    if (auto err = compile(output->os(), std::move(input), args,
+                           std::move(onDiagnostic)))
       success = false;
 
-    return py::make_tuple(success, py::bytes(outputString));
-
+    return py::make_tuple(success, py::bytes(""));
   }
+
+  std::string outputString;
+  llvm::raw_string_ostream output(outputString);
+  if (auto err =
+          compile(output, std::move(input), args, std::move(onDiagnostic)))
+    success = false;
+
+  return py::make_tuple(success, py::bytes(outputString));
+}
 
 } // anonymous namespace
 
 /// Call into the qss-compiler to compile input bytes
-py::tuple py_compile_bytes(const std::string& bytes, std::optional<std::string> outputFile, std::vector<std::string> &args,
-                             qssc::DiagnosticCallback onDiagnostic) {
+py::tuple py_compile_bytes(const std::string &bytes,
+                           std::optional<std::string> outputFile,
+                           std::vector<std::string> &args,
+                           qssc::DiagnosticCallback onDiagnostic) {
 
   // Set up the input file.
-  std::unique_ptr<llvm::MemoryBuffer> input = llvm::MemoryBuffer::getMemBuffer(bytes);
+  std::unique_ptr<llvm::MemoryBuffer> input =
+      llvm::MemoryBuffer::getMemBuffer(bytes);
 
-  return compileOptionalOutput(std::move(outputFile), std::move(input), args, std::move(onDiagnostic));
+  return compileOptionalOutput(std::move(outputFile), std::move(input), args,
+                               std::move(onDiagnostic));
 }
 
 /// Call into the qss-compiler to compile input file
-py::tuple py_compile_file(const std::string& inputFile, std::optional<std::string> outputFile, std::vector<std::string> &args,
-                             qssc::DiagnosticCallback onDiagnostic) {
+py::tuple py_compile_file(const std::string &inputFile,
+                          std::optional<std::string> outputFile,
+                          std::vector<std::string> &args,
+                          qssc::DiagnosticCallback onDiagnostic) {
   // Set up the input file.
   std::string errorMessage;
   auto input = mlir::openInputFile(inputFile, &errorMessage);
   if (!input) {
-    llvm::errs() << "Failed to open input file: "  << errorMessage;
+    llvm::errs() << "Failed to open input file: " << errorMessage;
     return py::make_tuple(false, py::bytes(""));
   }
 
-  return compileOptionalOutput(std::move(outputFile), std::move(input), args, std::move(onDiagnostic));
+  return compileOptionalOutput(std::move(outputFile), std::move(input), args,
+                               std::move(onDiagnostic));
 }
-
 
 py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
                        const std::string &outputPath, const std::string &target,

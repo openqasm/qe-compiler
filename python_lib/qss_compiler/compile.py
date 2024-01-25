@@ -51,7 +51,6 @@ process boundaries with pipes.
 """
 import asyncio
 import multiprocessing as mp
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
@@ -83,7 +82,8 @@ class InputType(Enum):
 
 class OutputType(Enum):
     """Enumeration of output types supported by the compiler"""
-    NONE = "none" # Do not generate output, useful for testing
+
+    NONE = "none"  # Do not generate output, useful for testing
     QEM = "qem"
     MLIR = "mlir"
     BYTECODE = "bytecode"
@@ -157,8 +157,10 @@ class _CompilerStatus:
 
     success: bool
 
+
 def stringify_path(p):
     return str(p) if isinstance(p, Path) else p
+
 
 class _CompilationManager:
     """Manager class to call compiler bindings from unique python process.
@@ -171,7 +173,9 @@ class _CompilationManager:
         self.compile_options = compile_options
         self.return_diagnostics = return_diagnostics
 
-    def _compile_call(self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]) -> Tuple[bool, bytes]:
+    def _compile_call(
+        self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]
+    ) -> Tuple[bool, bytes]:
         """Implement for specific compilation pybind call."""
         raise NotImplementedError("A subclass must provide an implementation")
 
@@ -201,9 +205,8 @@ class _CompilationManager:
         else:
             return status, None
 
-
     def _compile_child_runner(self, conn: connection.Connection) -> None:
-        execution = conn.recv()
+        conn.recv()
 
         def on_diagnostic(diag):
             conn.send(diag)
@@ -248,13 +251,17 @@ class _CompilationManager:
                         childproc.kill()
                         childproc.join()
                         raise exceptions.QSSCompilerCommunicationFailure(
-                            "The compile process delivered an unexpected object instead of status or "
-                            "diagnostic information. This points to inconsistencies in the Python "
+                            "The compile process delivered an unexpected object instead of status "
+                            "or diagnostic information. "
+                            "This points to inconsistencies in the Python "
                             "interface code between the calling process and the compile process.",
                             return_diagnostics=self.return_diagnostics,
                         )
 
-                if self.compile_options.output_file is None and self.compile_options.output_type is not OutputType.NONE:
+                if (
+                    self.compile_options.output_file is None
+                    and self.compile_options.output_type is not OutputType.NONE
+                ):
                     # return compilation result via IPC instead of in a file.
                     output = parent_side.recv_bytes()
                 else:
@@ -303,25 +310,33 @@ class _CompilationManager:
                 return output.decode("utf8")
             return output
 
-class _CompileFile(_CompilationManager):
 
+class _CompileFile(_CompilationManager):
     def __init__(self, compile_options: CompileOptions, return_diagnostics: bool, input_file: str):
         super().__init__(compile_options, return_diagnostics)
         self.input_file = stringify_path(input_file)
 
-    def _compile_call(self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]) -> Tuple[bool, bytes]:
-        return _compile_file(self.input_file, stringify_path(self.compile_options.output_file), args, on_diagnostic)
+    def _compile_call(
+        self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]
+    ) -> Tuple[bool, bytes]:
+        return _compile_file(
+            self.input_file, stringify_path(self.compile_options.output_file), args, on_diagnostic
+        )
 
 
 class _CompileBytes(_CompilationManager):
-
-    def __init__(self, compile_options: CompileOptions, return_diagnostics: bool, input: Union[str, bytes]):
+    def __init__(
+        self, compile_options: CompileOptions, return_diagnostics: bool, input: Union[str, bytes]
+    ):
         super().__init__(compile_options, return_diagnostics)
         self.input = input
 
-    def _compile_call(self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]) -> Tuple[bool, bytes]:
-        output_file = self.compile_options.output_file
-        return _compile_bytes(self.input, stringify_path(self.compile_options.output_file), args, on_diagnostic)
+    def _compile_call(
+        self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]
+    ) -> Tuple[bool, bytes]:
+        return _compile_bytes(
+            self.input, stringify_path(self.compile_options.output_file), args, on_diagnostic
+        )
 
 
 def _prepare_compile_options(

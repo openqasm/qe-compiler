@@ -119,6 +119,7 @@ def test_empty_str():
         output_file=None,
     )
 
+
 def test_compile_no_output(example_qasm3_str):
     """Test compiling without output."""
 
@@ -177,11 +178,11 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
 
 def test_failure_no_hang():
     """Test no hang on malformed inputs."""
-    with pytest.raises(QSSCompilerEOFFailure) as compfail:
+    with pytest.raises(QSSCompilerEOFFailure):
         _ = compile_str(
             "",
             input_type=InputType.QASM3,
             output_type=OutputType.MLIR,
             output_file=None,
-            extra_args=["bad_arg"]
+            extra_args=["bad_arg"],
         )
