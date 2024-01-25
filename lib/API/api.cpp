@@ -75,7 +75,7 @@
 using namespace mlir;
 using namespace qssc::config;
 
-//===----------------------------------- Compilation -----------------------------------------===//
+//===--------------------------- Compilation ----------------------------===//
 
 namespace {
 
@@ -739,8 +739,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
   return compileMain(argc, argv, toolName, registry, std::move(diagnosticCb));
 }
 
-//===----------------------------- Parameter Binding
-//-----------------------------------------===//
+//===------------------------ Parameter binding -------------------------===//
 
 namespace {
 class MapAngleArgumentSource : public qssc::arguments::ArgumentSource {
