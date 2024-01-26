@@ -119,7 +119,8 @@ llvm::Expected<mlir::DialectRegistry> buildRegistry() {
 llvm::Error compile(llvm::raw_ostream &outputStream,
                     std::unique_ptr<llvm::MemoryBuffer> input,
                     std::vector<std::string> &args,
-                    qssc::DiagnosticCallback onDiagnostic) {
+                    qssc::DiagnosticCallback onDiagnostic,
+                    llvm::StringRef outputPath = "-") {
 
   auto argv = buildArgv(args);
 
@@ -136,7 +137,12 @@ llvm::Error compile(llvm::raw_ostream &outputStream,
   mlir::TimingScope timing = tm.getRootScope();
 
   mlir::TimingScope buildConfigTiming = timing.nest("build-config");
-  auto configResult = qssc::config::buildToolConfig("-", "-");
+  llvm::StringRef inputPath = "-";
+  auto bufferIdentifier = input->getBufferIdentifier();
+  if (bufferIdentifier != "<stdin>")
+    inputPath = bufferIdentifier;
+  auto configResult = qssc::config::buildToolConfig(inputPath, outputPath);
+
   if (auto err = configResult.takeError())
     return err;
   qssc::config::QSSConfig const config = configResult.get();
@@ -162,7 +168,7 @@ py::tuple compileOptionalOutput(std::optional<std::string> outputFile,
       return py::make_tuple(false, py::bytes(""));
     }
     if (auto err = compile(output->os(), std::move(input), args,
-                           std::move(onDiagnostic)))
+                           std::move(onDiagnostic), outputFile.value()))
       success = false;
 
     if (success)
