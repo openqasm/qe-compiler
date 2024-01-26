@@ -21,6 +21,7 @@
 #ifndef THREADEDCOMPILATIONMANAGER_H
 #define THREADEDCOMPILATIONMANAGER_H
 
+#include "Config/QSSConfig.h"
 #include "HAL/Compile/TargetCompilationManager.h"
 
 #include <mutex>
@@ -64,6 +65,7 @@ public:
 
   ThreadedCompilationManager(qssc::hal::TargetSystem &target,
                              mlir::MLIRContext *context,
+                             const config::QSSConfig &config,
                              const qssc::OptDiagnosticCallback &diagnosticCb,
                              PMBuilder pmBuilder);
   virtual ~ThreadedCompilationManager() = default;

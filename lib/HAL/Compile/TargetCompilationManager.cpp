@@ -82,8 +82,10 @@ mlir::LogicalResult qssc::hal::compile::applyTargetCompilationManagerCLOptions(
 
 TargetCompilationManager::TargetCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context,
+    const config::QSSConfig &config,
     const qssc::OptDiagnosticCallback &diagnosticCb_)
-    : target(target), context(context), diagnosticCb(diagnosticCb_) {}
+    : target(target), context(context), config(config),
+      diagnosticCb(diagnosticCb_) {}
 
 llvm::Error TargetCompilationManager::walkTargetModules(
     Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing,

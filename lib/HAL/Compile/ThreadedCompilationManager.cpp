@@ -45,9 +45,9 @@ using namespace qssc::hal::compile;
 
 ThreadedCompilationManager::ThreadedCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context,
-    const OptDiagnosticCallback &diagnosticCb,
+    const config::QSSConfig &config, const OptDiagnosticCallback &diagnosticCb,
     ThreadedCompilationManager::PMBuilder pmBuilder)
-    : TargetCompilationManager(target, context, diagnosticCb),
+    : TargetCompilationManager(target, context, config, diagnosticCb),
       pmBuilder(std::move(pmBuilder)) {}
 
 const std::string ThreadedCompilationManager::getName() const {
