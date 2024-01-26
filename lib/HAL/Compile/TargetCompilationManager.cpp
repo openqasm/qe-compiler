@@ -161,6 +161,7 @@ mlir::TimingScope TargetCompilationManager::getTimer(llvm::StringRef name) {
 
 bool TargetCompilationManager::emitDiagnostics() {
   using namespace qssc::config;
+  // NOLINTNEXTLINE(misc-const-correctness)
   bool foundError = false;
   DiagList diagnostics(target.getDiagnostics());
   for (auto &diag : diagnostics) {
