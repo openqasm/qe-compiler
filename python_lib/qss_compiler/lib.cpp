@@ -165,6 +165,9 @@ py::tuple compileOptionalOutput(std::optional<std::string> outputFile,
                            std::move(onDiagnostic)))
       success = false;
 
+    if (success)
+      output->keep();
+
     return py::make_tuple(success, py::bytes(""));
   }
 
@@ -174,9 +177,6 @@ py::tuple compileOptionalOutput(std::optional<std::string> outputFile,
   if (auto err =
           compile(output, std::move(input), args, std::move(onDiagnostic)))
     success = false;
-
-  if (success)
-    output->keep();
 
   return py::make_tuple(success, py::bytes(outputString));
 }
