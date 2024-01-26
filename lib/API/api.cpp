@@ -335,77 +335,6 @@ llvm::Error emitQEM_(
   return llvm::Error::success();
 }
 
-/// @brief Emit all diagnostics held by the target, retrun true if there are
-///        errors
-///
-///        Uses qssc::emitDiagnostic to forward all diagnostics held by the
-///        target to the python diagnostic callback. Also prints diagnostics to
-///        llvm::errs to provide info in logs and for the binary. Returns true
-///        iff the target contains error or fatal severity diagnostics.
-/// @param target The Target that contains the diagnostics
-/// @param diagnosticCb Handle to python diagnostic callback
-/// @param config Config data holding the verbosity level for output
-/// @return True iff target contains any error or fatal diagnostics
-bool emitAllDiagnosticsAndCheckForErrors_(
-    hal::TargetSystem &target, const qssc::OptDiagnosticCallback &diagnosticCb,
-    const QSSConfig &config) {
-  bool foundError = false;
-  for (auto &diag : target.getDiagnostics()) {
-    auto severity = diag.severity;
-    switch (config.getVerbosityLevel()) {
-    case QSSVerbosity::Error:
-      switch (severity) {
-      case Severity::Fatal:
-      case Severity::Error:
-        foundError = true;
-        (void)qssc::emitDiagnostic(diagnosticCb, diag);
-        llvm::errs() << diag.toString() << "\n";
-        break;
-      case Severity::Warning:
-      case Severity::Info:
-        break;
-      default:
-        llvm_unreachable("Unknown diagnostic severity");
-      }
-      break;
-    case QSSVerbosity::Warn:
-      switch (severity) {
-      case Severity::Fatal:
-      case Severity::Error:
-        foundError = true;
-        [[fallthrough]];
-      case Severity::Warning:
-        (void)qssc::emitDiagnostic(diagnosticCb, diag);
-        llvm::errs() << diag.toString() << "\n";
-        break;
-      case Severity::Info:
-      default:
-        llvm_unreachable("Unknown diagnostic severity");
-      }
-      break;
-    case QSSVerbosity::Info:
-    case QSSVerbosity::Debug:
-      switch (severity) {
-      case Severity::Fatal:
-      case Severity::Error:
-        foundError = true;
-        [[fallthrough]];
-      case Severity::Warning:
-        (void)qssc::emitDiagnostic(diagnosticCb, diag);
-        llvm::errs() << diag.toString() << "\n";
-        break;
-      case Severity::Info:
-      default:
-        llvm_unreachable("Unknown diagnostic severity");
-      }
-      break;
-    default:
-      llvm_unreachable("Unknown verbosity level");
-    }
-  }
-  return foundError;
-}
-
 /// @brief Handler for the Diagnostic Engine.
 ///
 ///        Uses qssc::emitDiagnostic to forward diagnostic to the python
@@ -719,40 +648,22 @@ llvm::Error compile_(int argc, char const **argv, std::string *outputString,
                                   commandLinePassesTiming))
     return err;
 
-  if (pm.size() && failed(pm.run(moduleOp))) {
-    emitAllDiagnosticsAndCheckForErrors_(target, diagnosticCb, config);
+  if (pm.size() && failed(pm.run(moduleOp)))
     return llvm::createStringError(llvm::inconvertibleErrorCode(),
                                    "Problems running the compiler pipeline!");
-  }
   commandLinePassesTiming.stop();
 
-  if (emitAllDiagnosticsAndCheckForErrors_(target, diagnosticCb, config)) {
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Problems running the compiler pipeline!");
-  }
-
   // Prepare outputs
-  if (config.getEmitAction() == EmitAction::MLIR) {
+  if (config.getEmitAction() == EmitAction::MLIR)
     if (auto err = emitMLIR_(ostream, context, moduleOp, config,
-                             targetCompilationManager, errorHandler, timing)) {
-      emitAllDiagnosticsAndCheckForErrors_(target, diagnosticCb, config);
+                             targetCompilationManager, errorHandler, timing))
       return err;
-    }
-  }
 
   if (config.getEmitAction() == EmitAction::QEM ||
-      config.getEmitAction() == EmitAction::QEQEM) {
+      config.getEmitAction() == EmitAction::QEQEM)
     if (auto err = emitQEM_(config, ostream, std::move(payload), moduleOp,
-                            targetCompilationManager, timing)) {
-      emitAllDiagnosticsAndCheckForErrors_(target, diagnosticCb, config);
+                            targetCompilationManager, timing))
       return err;
-    }
-  }
-
-  if (emitAllDiagnosticsAndCheckForErrors_(target, diagnosticCb, config)) {
-    return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                   "Problems generating payload data!");
-  }
 
   // ------------------------------------------------------------
 

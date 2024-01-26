@@ -158,3 +158,63 @@ void TargetCompilationManager::disableTiming() { rootTimer.stop(); }
 mlir::TimingScope TargetCompilationManager::getTimer(llvm::StringRef name) {
   return rootTimer.nest(name);
 }
+
+bool TargetCompilationManager::emitDiagnostics() {
+  using namespace qssc::config;
+  bool foundError = false;
+  DiagList diagnostics(target.getDiagnostics());
+  for (auto &diag : diagnostics) {
+    auto severity = diag.severity;
+    switch (config.getVerbosityLevel()) {
+    case QSSVerbosity::Error:
+      switch (severity) {
+      case Severity::Fatal:
+      case Severity::Error:
+        foundError = true;
+        (void)qssc::emitDiagnostic(diagnosticCb, diag);
+        llvm::errs() << diag.toString() << "\n";
+        break;
+      case Severity::Warning:
+      case Severity::Info:
+        break;
+      default:
+        llvm_unreachable("Unknown diagnostic severity");
+      }
+      break;
+    case QSSVerbosity::Warn:
+      switch (severity) {
+      case Severity::Fatal:
+      case Severity::Error:
+        foundError = true;
+        [[fallthrough]];
+      case Severity::Warning:
+        (void)qssc::emitDiagnostic(diagnosticCb, diag);
+        llvm::errs() << diag.toString() << "\n";
+        break;
+      case Severity::Info:
+      default:
+        llvm_unreachable("Unknown diagnostic severity");
+      }
+      break;
+    case QSSVerbosity::Info:
+    case QSSVerbosity::Debug:
+      switch (severity) {
+      case Severity::Fatal:
+      case Severity::Error:
+        foundError = true;
+        [[fallthrough]];
+      case Severity::Warning:
+        (void)qssc::emitDiagnostic(diagnosticCb, diag);
+        llvm::errs() << diag.toString() << "\n";
+        break;
+      case Severity::Info:
+      default:
+        llvm_unreachable("Unknown diagnostic severity");
+      }
+      break;
+    default:
+      llvm_unreachable("Unknown verbosity level");
+    }
+  }
+  return foundError;
+}

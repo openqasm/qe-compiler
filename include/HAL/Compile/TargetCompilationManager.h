@@ -117,6 +117,10 @@ protected:
   /// @param name The name of the timing span
   mlir::TimingScope getTimer(llvm::StringRef name);
 
+  /// @brief Emit diagnostics capatured in the Target
+  /// @return Was an error or fatal diagnostic detected
+  bool emitDiagnostics();
+
 private:
   hal::TargetSystem &target;
   mlir::MLIRContext *context;
