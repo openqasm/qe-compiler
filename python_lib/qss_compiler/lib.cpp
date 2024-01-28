@@ -105,7 +105,7 @@ llvm::Expected<mlir::DialectRegistry> buildRegistry() {
   // Register the standard passes with MLIR.
   // Must precede the command line parsing.
   if (auto err = qssc::dialect::registerPasses())
-    return err;
+    return std::move(err);
 
   mlir::DialectRegistry registry;
 
