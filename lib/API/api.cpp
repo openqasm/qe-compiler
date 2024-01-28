@@ -66,6 +66,7 @@
 #include <cstdio>
 #include <memory>
 #include <optional>
+#include <stdio.h> // NOLINT: fileno is not in cstdio as suggested
 #include <string>
 #include <string_view>
 #include <tuple>

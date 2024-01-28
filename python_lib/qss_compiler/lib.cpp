@@ -199,7 +199,7 @@ py::tuple py_compile_bytes(const std::string &bytes,
   std::unique_ptr<llvm::MemoryBuffer> input =
       llvm::MemoryBuffer::getMemBuffer(bytes);
 
-  return compileOptionalOutput(std::move(outputFile), std::move(input), args,
+  return compileOptionalOutput(outputFile, std::move(input), args,
                                std::move(onDiagnostic));
 }
 
@@ -216,7 +216,7 @@ py::tuple py_compile_file(const std::string &inputFile,
     return py::make_tuple(false, py::bytes(""));
   }
 
-  return compileOptionalOutput(std::move(outputFile), std::move(input), args,
+  return compileOptionalOutput(outputFile, std::move(input), args,
                                std::move(onDiagnostic));
 }
 
