@@ -220,9 +220,7 @@ class _CompilationManager:
         parent_side, child_side = mp_ctx.Pipe(duplex=True)
 
         try:
-            childproc = mp_ctx.Process(
-                target=self._compile_child_runner, args=(child_side,)
-            )
+            childproc = mp_ctx.Process(target=self._compile_child_runner, args=(child_side,))
             childproc.start()
 
             parent_side.send(None)
@@ -324,9 +322,7 @@ class _CompilationManager:
 
 
 class _CompileFile(_CompilationManager):
-    def __init__(
-        self, compile_options: CompileOptions, return_diagnostics: bool, input_file: str
-    ):
+    def __init__(self, compile_options: CompileOptions, return_diagnostics: bool, input_file: str):
         super().__init__(compile_options, return_diagnostics)
         self.input_file = stringify_path(input_file)
 

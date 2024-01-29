@@ -14,9 +14,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "HAL/Compile/TargetCompilationManager.h"
+
 #include "API/errors.h"
 #include "Config/QSSConfig.h"
-#include "HAL/Compile/TargetCompilationManager.h"
 #include "HAL/TargetSystem.h"
 
 #include "mlir/IR/BuiltinOps.h"
