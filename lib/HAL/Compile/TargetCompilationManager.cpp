@@ -14,6 +14,11 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "API/errors.h"
+#include "Config/QSSConfig.h"
+#include "HAL/Compile/TargetCompilationManager.h"
+#include "HAL/TargetSystem.h"
+
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/Operation.h"
@@ -25,11 +30,9 @@
 #include "llvm/ADT/Twine.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Error.h"
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/raw_ostream.h"
-
-#include "HAL/Compile/TargetCompilationManager.h"
-#include "HAL/TargetSystem.h"
 
 using namespace qssc::hal::compile;
 
@@ -163,7 +166,7 @@ bool TargetCompilationManager::emitDiagnostics() {
   using namespace qssc::config;
   // NOLINTNEXTLINE(misc-const-correctness)
   bool foundError = false;
-  DiagList diagnostics(target.getDiagnostics());
+  const DiagList diagnostics(target.getDiagnostics());
   for (auto &diag : diagnostics) {
     auto severity = diag.severity;
     switch (config.getVerbosityLevel()) {
