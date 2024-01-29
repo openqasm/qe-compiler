@@ -21,25 +21,25 @@ Developer notes:
 This further decouples the python package from the _execution_ of
 compile.
 
-To update the user interface, update `compile` with the new
-interface, and update the C++ function `py_compile` bound to
-`_compile` in `lib.cpp`.
+To update the user interface, update the Python functions
+with the new interface, and update the C++ functions in
+lib.cpp to call the C++ compiler via Pybind.
 
 
 Why fork a child process for compilation?
 ------------------------------------------
 
 LLVM is designed to compile one program per execution. However, we
-would like a python user to be able to reliably call `compile` as
+would like a python user to be able to reliably call `compile_str/file` as
 many times as they like with different inputs with some of the calls
 possibly occurring in parallel. Additionally, it would not be ideal if
 we try to compile some input and our python interpreter crashes because
 the input was malformed, and our code raised an error.
 
-To handle this, we call `_compile` (which is defined in the shared
+To handle this, we call `compile_file/bytes` (which is defined in the shared
 library `py_qssc` as described by `python_lib/lib.cpp`) within a
 child process. This guarantees the calling process won't be killed,
-even if the call to `_compile` results in a segmentation fault.
+even if the call results in a segmentation fault.
 
 For forking child processes and communicating with them, we use the
 Python standard library's multiprocessing package. In particular, we use
@@ -50,18 +50,18 @@ and Pipe take care of serializing python objects and passing them across
 process boundaries with pipes.
 """
 import asyncio
+import multiprocessing as mp
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from enum import Enum
 from importlib import resources as importlib_resources
-import multiprocessing as mp
 from multiprocessing import connection
 from os import environ as os_environ
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from . import exceptions
-from .py_qssc import _compile_with_args, Diagnostic, ErrorCategory
+from .py_qssc import _compile_bytes, _compile_file, Diagnostic, ErrorCategory
 
 # use the forkserver context to create a server process
 # for forking new compiler processes
@@ -74,6 +74,7 @@ class InputType(Enum):
     NONE = "none"
     QASM3 = "qasm"
     MLIR = "mlir"
+    BYTECODE = "bytecode"
 
     def __str__(self):
         return self.value
@@ -82,8 +83,10 @@ class InputType(Enum):
 class OutputType(Enum):
     """Enumeration of output types supported by the compiler"""
 
+    NONE = "none"  # Do not generate output, useful for testing
     QEM = "qem"
     MLIR = "mlir"
+    BYTECODE = "bytecode"
 
     def __str__(self):
         return self.value
@@ -101,7 +104,7 @@ class CompileOptions:
     """Output source type."""
     output_type: OutputType = OutputType.QEM
     """Output file, if not supplied raw bytes will be returned."""
-    output_file: Union[str, None] = None
+    output_file: Union[Path, str, None] = None
     """Hardware target to select."""
     target: Optional[str] = None
     """Hardware configuration location."""
@@ -131,9 +134,6 @@ class CompileOptions:
             f"-X={str(self.input_type)}",
             f"--emit={str(self.output_type)}",
         ]
-        if self.output_file:
-            args.append("-o")
-            args.append(str(self.output_file))
 
         if self.target:
             args.append(f"--target={str(self.target)}")
@@ -152,182 +152,214 @@ class CompileOptions:
 
 
 @dataclass
-class _CompilerExecution:
-    """Internal compiler execution dataclass."""
-
-    input_str: Optional[str] = None
-    input_file: Optional[Union[str, Path]] = None
-    options: CompileOptions = field(default_factory=CompileOptions)
-
-    def prepare_compiler_args(self) -> List[str]:
-        args = self.options.prepare_compiler_option_args()
-
-        if self.input_file is not None:
-            args.append(str(self.input_file))
-        elif self.input_str is not None:
-            args.append("--direct")
-            args.append(str(self.input_str))
-        else:
-            raise exceptions.QSSCompilerNoInputError(
-                "Neither input file nor input string provided."
-            )
-
-        return args
-
-
-@dataclass
 class _CompilerStatus:
     """Internal compiler result status dataclass."""
 
     success: bool
 
 
-def _compile_child_backend(
-    execution: _CompilerExecution,
-    on_diagnostic: Callable[[Diagnostic], Any],
-) -> Tuple[_CompilerStatus, Union[bytes, None]]:
-    # TODO: want a corresponding C++ interface to avoid overhead
-
-    options = execution.options
-    args = execution.prepare_compiler_args()
-    output_as_return = False if options.output_file else True
-
-    # The qss-compiler expects the path to static resources in the environment
-    # variable QSSC_RESOURCES. In the python package, those resources are
-    # bundled under the directory resources/. Since python's functions for
-    # looking up resources only treat files as resources, use the generated
-    # python source _version.py to look up the path to the python package.
-    with importlib_resources.path("qss_compiler", "_version.py") as version_py_path:
-        resources_path = version_py_path.parent / "resources"
-        os_environ["QSSC_RESOURCES"] = str(resources_path)
-        success, output = _compile_with_args(args, output_as_return, on_diagnostic)
-
-    status = _CompilerStatus(success)
-    if output_as_return:
-        return status, output
-    else:
-        return status, None
+def stringify_path(p):
+    return str(p) if isinstance(p, Path) else p
 
 
-def _compile_child_runner(conn: connection.Connection) -> None:
-    execution = conn.recv()
+class _CompilationManager:
+    """Manager class to call compiler bindings from unique python process.
 
-    def on_diagnostic(diag):
-        conn.send(diag)
+    TODO: It should not be necessary to call from a subprocess. This likely
+    requires removing CLI argument parsing from pybind invocations of the compiler.
+    """
 
-    status, output = _compile_child_backend(execution, on_diagnostic)
-    conn.send(status)
-    if output is not None:
-        conn.send_bytes(output)
+    def __init__(self, compile_options: CompileOptions, return_diagnostics: bool):
+        self.compile_options = compile_options
+        self.return_diagnostics = return_diagnostics
 
+    def _compile_call(
+        self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]
+    ) -> Tuple[bool, bytes]:
+        """Implement for specific compilation pybind call."""
+        raise NotImplementedError("A subclass must provide an implementation")
 
-def _do_compile(
-    execution: _CompilerExecution, return_diagnostics: bool = False
-) -> Union[bytes, str, None]:
-    assert (
-        execution.input_file is not None or execution.input_str is not None
-    ), "one of the compile options input_file or input_str must be set"
+    def _compile_child_backend(
+        self,
+        on_diagnostic: Callable[[Diagnostic], Any],
+    ) -> Tuple[_CompilerStatus, Union[bytes, None]]:
+        # TODO: want a corresponding C++ interface to avoid overhead
 
-    options = execution.options
+        options = self.compile_options
+        args = options.prepare_compiler_option_args()
+        output_as_return = False if options.output_file else True
 
-    parent_side, child_side = mp_ctx.Pipe(duplex=True)
+        # The qss-compiler expects the path to static resources in the environment
+        # variable QSSC_RESOURCES. In the python package, those resources are
+        # bundled under the directory resources/. Since python's functions for
+        # looking up resources only treat files as resources, use the generated
+        # python source _version.py to look up the path to the python package.
+        with importlib_resources.path("qss_compiler", "_version.py") as version_py_path:
+            resources_path = version_py_path.parent / "resources"
+            os_environ["QSSC_RESOURCES"] = str(resources_path)
+            success, output = self._compile_call(args, on_diagnostic)
 
-    try:
-        childproc = mp_ctx.Process(target=_compile_child_runner, args=(child_side,))
-        childproc.start()
+        status = _CompilerStatus(success)
+        if output_as_return and options.output_type is not OutputType.NONE:
+            return status, output
+        else:
+            return status, None
 
-        parent_side.send(execution)
+    def _compile_child_runner(self, conn: connection.Connection) -> None:
+        conn.recv()
 
-        # we must handle the case when the child process exits without
-        # delivering a status and (if requested) a result (e.g., when
-        # crashing). for that purpose, close the pipe's send side in the parent
-        # so that blocking receives will be interrupted if the child process
-        # exits and closes its end of the pipe.
-        child_side.close()
+        def on_diagnostic(diag):
+            conn.send(diag)
 
-        success = False
-        # when no callback was provided, collect diagnostics and return in case of error
-        diagnostics = []
+        status, output = self._compile_child_backend(on_diagnostic)
+        conn.send(status)
+        if output is not None:
+            conn.send_bytes(output)
+
+    def compile(self) -> Union[bytes, str, None]:
+        parent_side, child_side = mp_ctx.Pipe(duplex=True)
+
         try:
-            while True:
-                received = parent_side.recv()
+            childproc = mp_ctx.Process(
+                target=self._compile_child_runner, args=(child_side,)
+            )
+            childproc.start()
 
-                if isinstance(received, Diagnostic):
-                    if options.on_diagnostic:
-                        options.on_diagnostic(received)
+            parent_side.send(None)
+
+            # we must handle the case when the child process exits without
+            # delivering a status and (if requested) a result (e.g., when
+            # crashing). for that purpose, close the pipe's send side in the parent
+            # so that blocking receives will be interrupted if the child process
+            # exits and closes its end of the pipe.
+            child_side.close()
+
+            success = False
+            # when no callback was provided, collect diagnostics and return in case of error
+            diagnostics = []
+            try:
+                while True:
+                    received = parent_side.recv()
+
+                    if isinstance(received, Diagnostic):
+                        if self.compile_options.on_diagnostic:
+                            self.compile_options.on_diagnostic(received)
+                        else:
+                            diagnostics.append(received)
+                    elif isinstance(received, _CompilerStatus):
+                        success = received.success
+                        break
                     else:
-                        diagnostics.append(received)
-                elif isinstance(received, _CompilerStatus):
-                    success = received.success
-                    break
+                        childproc.kill()
+                        childproc.join()
+                        raise exceptions.QSSCompilerCommunicationFailure(
+                            "The compile process delivered an unexpected object instead of status "
+                            "or diagnostic information. "
+                            "This points to inconsistencies in the Python "
+                            "interface code between the calling process and the compile process.",
+                            return_diagnostics=self.return_diagnostics,
+                        )
+
+                if (
+                    self.compile_options.output_file is None
+                    and self.compile_options.output_type is not OutputType.NONE
+                ):
+                    # return compilation result via IPC instead of in a file.
+                    output = parent_side.recv_bytes()
                 else:
-                    childproc.kill()
-                    childproc.join()
-                    raise exceptions.QSSCompilerCommunicationFailure(
-                        "The compile process delivered an unexpected object instead of status or "
-                        "diagnostic information. This points to inconsistencies in the Python "
-                        "interface code between the calling process and the compile process.",
-                        return_diagnostics=return_diagnostics,
-                    )
-
-            if options.output_file is None:
-                # return compilation result via IPC instead of in a file.
-                output = parent_side.recv_bytes()
-            else:
-                output = None
-        except EOFError:
-            # make sure that child process terminates
-            childproc.kill()
-            childproc.join()
-            raise exceptions.QSSCompilerEOFFailure(
-                "Compile process exited before delivering output.",
-                diagnostics,
-                return_diagnostics=return_diagnostics,
-            )
-
-        childproc.join()
-        if childproc.exitcode != 0:
-            raise exceptions.QSSCompilerNonZeroStatus(
-                (
-                    "Compile process exited with non-zero status "
-                    + str(childproc.exitcode)
-                    + (" yet appears  still alive" if childproc.is_alive() else "")
-                ),
-                diagnostics,
-                return_diagnostics=return_diagnostics,
-            )
-
-        # Place all higher-level diagnostics related to user input here
-        # TODO: Best way to deal with multiple diagnostics?
-        for diag in diagnostics:
-            if diag.category == ErrorCategory.QSSCompilerSequenceTooLong:
-                raise exceptions.QSSCompilerSequenceTooLong(
-                    diag.message,  # TODO: Code reviewers: Is this safe?
+                    output = None
+            except EOFError:
+                # make sure that child process terminates
+                childproc.kill()
+                childproc.join()
+                raise exceptions.QSSCompilerEOFFailure(
+                    "Compile process exited before delivering output.",
                     diagnostics,
-                    return_diagnostics=return_diagnostics,
+                    return_diagnostics=self.return_diagnostics,
                 )
 
-        if not success:
-            raise exceptions.QSSCompilationFailure(
-                "Failure during compilation",
-                diagnostics,
-                return_diagnostics=return_diagnostics,
+            childproc.join()
+            if childproc.exitcode != 0:
+                raise exceptions.QSSCompilerNonZeroStatus(
+                    (
+                        "Compile process exited with non-zero status "
+                        + str(childproc.exitcode)
+                        + (" yet appears  still alive" if childproc.is_alive() else "")
+                    ),
+                    diagnostics,
+                    return_diagnostics=self.return_diagnostics,
+                )
+
+            # Place all higher-level diagnostics related to user input here
+            # TODO: Best way to deal with multiple diagnostics?
+            for diag in diagnostics:
+                if diag.category == ErrorCategory.QSSCompilerSequenceTooLong:
+                    raise exceptions.QSSCompilerSequenceTooLong(
+                        diag.message,  # TODO: Code reviewers: Is this safe?
+                        diagnostics,
+                        return_diagnostics=self.return_diagnostics,
+                    )
+
+            if not success:
+                raise exceptions.QSSCompilationFailure(
+                    "Failure during compilation",
+                    diagnostics,
+                    return_diagnostics=self.return_diagnostics,
+                )
+
+        except mp.ProcessError as e:
+            raise exceptions.QSSCompilerError(
+                "It's likely that you've hit a bug in the QSS Compiler. Please "
+                "submit an issue to the team with relevant information "
+                "(https://github.com/Qiskit/qss-compiler/issues):\n"
+                f"{e}",
+                return_diagnostics=self.return_diagnostics,
             )
 
-    except mp.ProcessError as e:
-        raise exceptions.QSSCompilerError(
-            "It's likely that you've hit a bug in the QSS Compiler. Please "
-            "submit an issue to the team with relevant information "
-            "(https://github.com/Qiskit/qss-compiler/issues):\n"
-            f"{e}",
-            return_diagnostics=return_diagnostics,
+        if self.compile_options.output_file is None:
+            # return compilation result
+            if self.compile_options.output_type == OutputType.MLIR:
+                return output.decode("utf8")
+            return output
+
+
+class _CompileFile(_CompilationManager):
+    def __init__(
+        self, compile_options: CompileOptions, return_diagnostics: bool, input_file: str
+    ):
+        super().__init__(compile_options, return_diagnostics)
+        self.input_file = stringify_path(input_file)
+
+    def _compile_call(
+        self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]
+    ) -> Tuple[bool, bytes]:
+        return _compile_file(
+            self.input_file,
+            stringify_path(self.compile_options.output_file),
+            args,
+            on_diagnostic,
         )
 
-    if options.output_file is None:
-        # return compilation result
-        if options.output_type == OutputType.MLIR:
-            return output.decode("utf8")
-        return output
+
+class _CompileBytes(_CompilationManager):
+    def __init__(
+        self,
+        compile_options: CompileOptions,
+        return_diagnostics: bool,
+        input: Union[str, bytes],
+    ):
+        super().__init__(compile_options, return_diagnostics)
+        self.input = input
+
+    def _compile_call(
+        self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]
+    ) -> Tuple[bool, bytes]:
+        return _compile_bytes(
+            self.input,
+            stringify_path(self.compile_options.output_file),
+            args,
+            on_diagnostic,
+        )
 
 
 def _prepare_compile_options(
@@ -336,10 +368,6 @@ def _prepare_compile_options(
     if compile_options is None:
         compile_options = CompileOptions(**kwargs)
     return compile_options
-
-
-def _stringify_path(p):
-    return str(p) if isinstance(p, Path) else p
 
 
 def compile_file(
@@ -365,10 +393,8 @@ def compile_file(
         the compiler output as byte sequence or string, depending on the requested
         output format.
     """
-    input_file = _stringify_path(input_file)
     compile_options = _prepare_compile_options(compile_options, **kwargs)
-    execution = _CompilerExecution(input_file=input_file, options=compile_options)
-    return _do_compile(execution, return_diagnostics)
+    return _CompileFile(compile_options, return_diagnostics, input_file).compile()
 
 
 async def compile_file_async(
@@ -395,17 +421,14 @@ async def compile_file_async(
 
     """
     compile_options = _prepare_compile_options(compile_options, **kwargs)
-    execution = _CompilerExecution(input_file=input_file, options=compile_options)
+    compilation_manager = _CompileFile(compile_options, return_diagnostics, input_file)
     with ThreadPoolExecutor() as executor:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(executor, _do_compile, execution, return_diagnostics)
-    # As an alternative, ProcessPoolExecutor has somewhat higher overhead yet
-    # reduces complexity of integration by not requiring the preparatory call
-    # to set_start_method.
+        return await loop.run_in_executor(executor, compilation_manager.compile)
 
 
 def compile_str(
-    input_str: str,
+    input: Union[str, bytes],
     return_diagnostics: bool = False,
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
@@ -418,7 +441,7 @@ def compile_str(
     output format.
 
     Args:
-        input_str: input to compile as string (e.q., an OpenQASM3 program).
+        input: input to compile as string or bytes (e.q., an OpenQASM3 program).
         return_diagnostics: diagnostics visibility flag
         compile_options: Optional :class:`CompileOptions` dataclass.
         kwargs: Keywords corresponding to :class:`CompileOptions`. Ignored if `compile_options`
@@ -429,12 +452,11 @@ def compile_str(
         output format.
     """
     compile_options = _prepare_compile_options(compile_options, **kwargs)
-    execution = _CompilerExecution(input_str=input_str, options=compile_options)
-    return _do_compile(execution, return_diagnostics=return_diagnostics)
+    return _CompileBytes(compile_options, return_diagnostics, input).compile()
 
 
 async def compile_str_async(
-    input_str: str,
+    input: Union[str, bytes],
     return_diagnostics: bool = False,
     compile_options: Optional[CompileOptions] = None,
     **kwargs,
@@ -445,7 +467,7 @@ async def compile_str_async(
     Functionally, this function behaves like compile_str and accepts the same set of parameters.
 
     Args:
-        input_str: input to compile as string (e.q., an OpenQASM3 program).
+        input: input to compile as string or bytes (e.q., an OpenQASM3 program).
         return_diagnostics: diagnostics visibility flag
         compile_options: Optional :class:`CompileOptions` dataclass.
         kwargs: Keywords corresponding to :class:`CompileOptions`. Ignored if `compile_options`
@@ -457,10 +479,7 @@ async def compile_str_async(
 
     """
     compile_options = _prepare_compile_options(compile_options, **kwargs)
-    execution = _CompilerExecution(input_str=input_str, options=compile_options)
+    compilation_manager = _CompileBytes(compile_options, return_diagnostics, input)
     with ThreadPoolExecutor() as executor:
         loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(executor, _do_compile, execution, return_diagnostics)
-    # As an alternative, ProcessPoolExecutor has somewhat higher overhead yet
-    # reduces complexity of integration by not requiring the preparatory call
-    # to set_start_method.
+        return await loop.run_in_executor(executor, compilation_manager.compile)

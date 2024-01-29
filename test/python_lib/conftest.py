@@ -33,6 +33,15 @@ def example_qasm3_str():
     """
 
 
+@pytest.fixture
+def example_mlir_str():
+    return """
+    func.func @dummy() {
+        return
+    }
+    """
+
+
 def __create_tmpfile(tmp_path, source):
     tmp_path = tmp_path / "example.qasm"
     with open(tmp_path, "w") as tmpfile:

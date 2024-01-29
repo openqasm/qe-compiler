@@ -16,6 +16,19 @@
 
 #include "API/api.h"
 
+#include "llvm/Support/Error.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <cstdlib>
+#include <utility>
+
 int main(int argc, const char **argv) {
-  return qssc::compile(argc, argv, nullptr, {});
+
+  auto err = qssc::compileMain(
+      argc, argv, "Quantum System Software (QSS) Backend Compiler\n", {});
+  if (err) {
+    llvm::logAllUnhandledErrors(std::move(err), llvm::errs(), "Error: ");
+    return EXIT_FAILURE;
+  }
+  return qssc::asMainReturnCode(std::move(err));
 }
