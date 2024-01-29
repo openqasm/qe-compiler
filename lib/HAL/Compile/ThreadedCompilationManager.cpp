@@ -16,6 +16,8 @@
 
 #include "HAL/Compile/ThreadedCompilationManager.h"
 
+#include "API/errors.h"
+#include "Config/QSSConfig.h"
 #include "HAL/Compile/TargetCompilationManager.h"
 #include "HAL/TargetSystem.h"
 #include "Payload/Payload.h"
