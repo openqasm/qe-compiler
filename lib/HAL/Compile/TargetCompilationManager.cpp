@@ -221,6 +221,6 @@ bool TargetCompilationManager::emitDiagnostics() {
     default:
       llvm_unreachable("Unknown verbosity level");
     } // end switch for config verbosity
-  } // end for diag in diagnostics list
+  }   // end for diag in diagnostics list
   return foundError;
 }
