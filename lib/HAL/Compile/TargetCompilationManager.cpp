@@ -197,6 +197,7 @@ bool TargetCompilationManager::emitDiagnostics() {
         llvm::errs() << diag.toString() << "\n";
         break;
       case Severity::Info:
+        break;
       default:
         llvm_unreachable("Unknown diagnostic severity");
       }
@@ -209,17 +210,17 @@ bool TargetCompilationManager::emitDiagnostics() {
         foundError = true;
         [[fallthrough]];
       case Severity::Warning:
+      case Severity::Info:
         (void)qssc::emitDiagnostic(diagnosticCb, diag);
         llvm::errs() << diag.toString() << "\n";
         break;
-      case Severity::Info:
       default:
         llvm_unreachable("Unknown diagnostic severity");
       }
       break;
     default:
       llvm_unreachable("Unknown verbosity level");
-    }
-  }
+    } // end switch for config verbosity
+  } // end for diag in diagnostics list
   return foundError;
 }
