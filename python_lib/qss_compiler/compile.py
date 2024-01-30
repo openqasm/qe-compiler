@@ -82,6 +82,7 @@ class InputType(Enum):
 class OutputType(Enum):
     """Enumeration of output types supported by the compiler"""
 
+    QEQEM = "qe-qem"
     QEM = "qem"
     MLIR = "mlir"
 
