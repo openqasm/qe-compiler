@@ -245,7 +245,7 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
   auto err = walkTargetModulesThreaded(&target, moduleOp, targetsTiming,
                                        threadedCompileMLIRTarget,
                                        postChildrenEmitToPayload);
-  emitDiagnostics();
+  emitTargetDiagnostics();
   return err;
 }
 
@@ -315,7 +315,7 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
   auto err = walkTargetModulesThreaded(&target, moduleOp, targetsTiming,
                                        threadedCompilePayloadTarget,
                                        postChildrenEmitToPayload);
-  emitDiagnostics();
+  emitTargetDiagnostics();
   return err;
 }
 

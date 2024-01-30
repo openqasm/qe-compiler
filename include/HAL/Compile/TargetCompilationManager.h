@@ -119,7 +119,7 @@ protected:
 
   /// @brief Emit diagnostics capatured in the Target
   /// @return Was an error or fatal diagnostic detected
-  bool emitDiagnostics();
+  bool emitTargetDiagnostics();
 
 private:
   hal::TargetSystem &target;

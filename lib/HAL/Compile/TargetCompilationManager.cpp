@@ -163,7 +163,7 @@ mlir::TimingScope TargetCompilationManager::getTimer(llvm::StringRef name) {
   return rootTimer.nest(name);
 }
 
-bool TargetCompilationManager::emitDiagnostics() {
+bool TargetCompilationManager::emitTargetDiagnostics() {
   using namespace qssc::config;
   // NOLINTNEXTLINE(misc-const-correctness)
   bool foundError = false;
