@@ -23,7 +23,7 @@ from qss_compiler import (
     OutputType,
     Severity,
 )
-from qss_compiler.exceptions import QSSCompilationFailure
+from qss_compiler.exceptions import QSSCompilationFailure, QSSCompilerEOFFailure
 
 
 def check_mlir_string(mlir):
@@ -72,6 +72,30 @@ def test_compile_file_to_mlir_idempotence(example_qasm3_tmpfile):
     assert mlir2 == mlir
 
 
+def test_compile_roundtrip_bytecode(example_mlir_str):
+    """Test that we can compile a file input via the interface compile_file
+    to MLIR"""
+
+    mlir1 = compile_str(
+        example_mlir_str,
+        input_type=InputType.MLIR,
+        output_type=OutputType.MLIR,
+    )
+
+    bytecode = compile_str(
+        example_mlir_str,
+        input_type=InputType.MLIR,
+        output_type=OutputType.BYTECODE,
+    )
+
+    mlir2 = compile_str(
+        bytecode,
+        input_type=InputType.BYTECODE,
+        output_type=OutputType.MLIR,
+    )
+    assert mlir2 == mlir1
+
+
 def test_compile_str_to_mlir(example_qasm3_str):
     """Test that we can compile a string input via the interface
     compile_str to an MLIR output"""
@@ -94,6 +118,17 @@ def test_empty_str():
         output_type=OutputType.MLIR,
         output_file=None,
     )
+
+
+def test_compile_no_output(example_qasm3_str):
+    """Test compiling without output."""
+
+    output = compile_str(
+        example_qasm3_str,
+        input_type=InputType.QASM3,
+        output_type=OutputType.NONE,
+    )
+    assert output is None
 
 
 def test_compile_invalid_file(example_invalid_qasm3_tmpfile):
@@ -139,3 +174,15 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     # check string representation of the exception to contain diagnostic messages
     assert "OpenQASM 3 parse error" in str(compfail.value)
     assert "unknown version number" in str(compfail.value)
+
+
+def test_failure_no_hang():
+    """Test no hang on malformed inputs."""
+    with pytest.raises(QSSCompilerEOFFailure):
+        _ = compile_str(
+            "",
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+            extra_args=["bad_arg"],
+        )

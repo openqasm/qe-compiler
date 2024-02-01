@@ -48,9 +48,11 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <cstdio>
+#include <cstdlib>
 #include <optional>
 #include <stdio.h> // NOLINT: fileno is not in cstdio as suggested
 #include <string>
+#include <tuple>
 #include <utility>
 
 using namespace qssc;
@@ -60,9 +62,17 @@ using namespace qssc::hal;
 static const std::string toolName = "qss-opt";
 
 namespace {
-void registerAndParseCLIOptions(int argc, char **argv, llvm::StringRef toolName,
-                                mlir::DialectRegistry &registry) {
+std::pair<std::string, std::string>
+registerAndParseCLIOptions(int argc, char **argv, llvm::StringRef toolName,
+                           mlir::DialectRegistry &registry) {
 
+  static llvm::cl::opt<std::string> inputFilename(
+      llvm::cl::Positional, llvm::cl::desc("<input file>"),
+      llvm::cl::init("-"));
+
+  static llvm::cl::opt<std::string> outputFilename(
+      "o", llvm::cl::desc("Output filename"), llvm::cl::value_desc("filename"),
+      llvm::cl::init("-"));
   // Register CL config builder prior to parsing
   qssc::config::CLIConfigBuilder::registerCLOptions(registry);
   mlir::registerAsmPrinterCLOptions();
@@ -96,6 +106,7 @@ void registerAndParseCLIOptions(int argc, char **argv, llvm::StringRef toolName,
 
   // Parse pass names in main to ensure static initialization completed.
   llvm::cl::ParseCommandLineOptions(argc, argv, helpHeader);
+  return std::make_pair(inputFilename.getValue(), outputFilename.getValue());
 }
 
 llvm::Error buildTarget_(qssc::config::QSSConfig &config) {
@@ -135,6 +146,8 @@ llvm::Error buildTarget_(qssc::config::QSSConfig &config) {
 } // anonymous namespace
 
 mlir::LogicalResult QSSCOptMain(int argc, char **argv,
+                                llvm::StringRef inputFilename,
+                                llvm::StringRef outputFilename,
                                 mlir::DialectRegistry &registry,
                                 qssc::config::QSSConfig &config) {
 
@@ -148,20 +161,20 @@ mlir::LogicalResult QSSCOptMain(int argc, char **argv,
   // When reading from stdin and the input is a tty, it is often a user mistake
   // and the process "appears to be stuck". Print a message to let the user know
   // about it!
-  if (config.getInputSource() == "-" &&
+  if (inputFilename == "-" &&
       llvm::sys::Process::FileDescriptorIsDisplayed(fileno(stdin)))
     llvm::errs() << "(processing input from stdin now, hit ctrl-c/ctrl-d to "
                     "interrupt)\n";
 
   // Set up the input file.
   std::string errorMessage;
-  auto file = mlir::openInputFile(config.getInputSource(), &errorMessage);
+  auto file = mlir::openInputFile(inputFilename, &errorMessage);
   if (!file) {
     llvm::errs() << errorMessage << "\n";
     return mlir::failure();
   }
 
-  auto output = mlir::openOutputFile(config.getOutputFilePath(), &errorMessage);
+  auto output = mlir::openOutputFile(outputFilename, &errorMessage);
   if (!output) {
     llvm::errs() << errorMessage << "\n";
     return mlir::failure();
@@ -176,32 +189,38 @@ mlir::LogicalResult QSSCOptMain(int argc, char **argv,
   return mlir::success();
 }
 
+mlir::LogicalResult QSSCOptMain(int argc, char **argv,
+                                mlir::DialectRegistry &registry) {
+
+  // Register and parse command line options.
+  // NOLINTNEXTLINE(misc-const-correctness)
+  std::string inputFilename, outputFilename;
+  std::tie(inputFilename, outputFilename) =
+      registerAndParseCLIOptions(argc, argv, toolName, registry);
+  auto configResult =
+      qssc::config::buildToolConfig(inputFilename, outputFilename);
+  if (auto err = configResult.takeError()) {
+    llvm::errs() << err;
+    return mlir::failure();
+  }
+  qssc::config::QSSConfig config = configResult.get();
+
+  return QSSCOptMain(argc, argv, inputFilename, outputFilename, registry,
+                     config);
+}
+
 auto main(int argc, char **argv) -> int {
 
   // Register the standard passes with MLIR.
   // Must precede the command line parsing.
   if (auto err = qssc::dialect::registerPasses()) {
     llvm::errs() << err << "\n";
-    return 1;
+    return EXIT_FAILURE;
   }
 
   mlir::DialectRegistry registry;
   qssc::dialect::registerDialects(registry);
   mlir::registerAllExtensions(registry);
 
-  // Register and parse command line options.
-  registerAndParseCLIOptions(argc, argv, toolName, registry);
-
-  auto configResult = qssc::config::buildToolConfig();
-  if (auto err = configResult.takeError()) {
-    llvm::errs() << err;
-    return 1;
-  }
-
-  qssc::config::QSSConfig config = configResult.get();
-
-  if (mlir::failed(QSSCOptMain(argc, argv, registry, config)))
-    return 1;
-
-  return 0;
+  return mlir::asMainReturnCode(QSSCOptMain(argc, argv, registry));
 }
