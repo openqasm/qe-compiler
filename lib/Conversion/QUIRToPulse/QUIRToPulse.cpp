@@ -91,6 +91,14 @@ void QUIRToPulsePass::runOnOperation() {
 
   mainFuncFirstOp = &mainFunc.getBody().front().front();
 
+  // populate/cache the symbol map
+  moduleOp->walk([&](Operation *op) {
+    if (auto castOp = dyn_cast<CircuitOp>(op))
+      symbolMap[castOp.getSymName()] = castOp.getOperation();
+    else if (auto castOp = dyn_cast<SequenceOp>(op))
+      symbolMap[castOp.getSymName()] = castOp.getOperation();
+  });
+
   // convert all QUIR circuits to Pulse sequences
   moduleOp->walk([&](CallCircuitOp callCircOp) {
     convertCircuitToSequence(callCircOp, mainFunc, moduleOp);
@@ -168,8 +176,7 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
       std::string const pulseCalName =
           quirOp->getAttrOfType<StringAttr>("pulse.calName").getValue().str();
       SmallVector<Value> pulseCalSequenceArgs;
-      Operation *findOp = SymbolTable::lookupSymbolIn(moduleOp, pulseCalName);
-      auto pulseCalSequenceOp = dyn_cast<SequenceOp>(findOp);
+      auto pulseCalSequenceOp = getSequenceOp(pulseCalName);
 
       LLVM_DEBUG(llvm::dbgs() << "Processing Pulse cal args.\n");
       LLVM_DEBUG(llvm::dbgs() << "QUIR op: ");
@@ -686,13 +693,19 @@ void QUIRToPulsePass::parsePulseWaveformContainerOps(
 
 mlir::quir::CircuitOp
 QUIRToPulsePass::getCircuitOp(CallCircuitOp callCircuitOp) {
-  auto circuitAttr = callCircuitOp->getAttrOfType<FlatSymbolRefAttr>("callee");
-  assert(circuitAttr && "Requires a 'callee' symbol reference attribute");
-
-  auto circuitOp = SymbolTable::lookupNearestSymbolFrom<mlir::quir::CircuitOp>(
-      callCircuitOp, circuitAttr);
+  auto search = symbolMap.find(callCircuitOp.getCallee());
+  assert(search != symbolMap.end() && "matching circuit not found");
+  auto circuitOp = dyn_cast<CircuitOp>(search->second);
   assert(circuitOp && "matching circuit not found");
   return circuitOp;
+}
+
+mlir::pulse::SequenceOp QUIRToPulsePass::getSequenceOp(std::string symbolName) {
+  auto search = symbolMap.find(symbolName);
+  assert(search != symbolMap.end() && "matching sequence not found");
+  auto sequenceOp = dyn_cast<SequenceOp>(search->second);
+  assert(sequenceOp && "matching sequence not found");
+  return sequenceOp;
 }
 
 llvm::StringRef QUIRToPulsePass::getArgument() const { return "quir-to-pulse"; }

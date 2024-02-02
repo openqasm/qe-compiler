@@ -62,6 +62,11 @@ void QuantumCircuitPulseSchedulingPass::runOnOperation() {
 
   ModuleOp const moduleOp = getOperation();
 
+  // populate/cache the symbol map
+  moduleOp->walk([&](SequenceOp sequenceOp) {
+    symbolMap[sequenceOp.getSymName()] = sequenceOp.getOperation();
+  });
+
   // schedule all the quantum circuits which are root call sequence ops
   moduleOp->walk([&](mlir::pulse::CallSequenceOp callSequenceOp) {
     // return if the call sequence op is not a root op
@@ -213,12 +218,9 @@ bool QuantumCircuitPulseSchedulingPass::sequenceOpIncludeCapture(
 
 mlir::pulse::SequenceOp QuantumCircuitPulseSchedulingPass::getSequenceOp(
     mlir::pulse::CallSequenceOp callSequenceOp) {
-  auto seqAttr = callSequenceOp->getAttrOfType<FlatSymbolRefAttr>("callee");
-  assert(seqAttr && "Requires a 'callee' symbol reference attribute");
-
-  auto sequenceOp =
-      SymbolTable::lookupNearestSymbolFrom<mlir::pulse::SequenceOp>(
-          callSequenceOp, seqAttr);
+  auto search = symbolMap.find(callSequenceOp.getCallee());
+  assert(search != symbolMap.end() && "matching sequence not found");
+  auto sequenceOp = dyn_cast<SequenceOp>(search->second);
   assert(sequenceOp && "matching sequence not found");
   return sequenceOp;
 }
