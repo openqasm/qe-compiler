@@ -26,7 +26,7 @@ from typing import Mapping, Any, Optional, Callable, Union
 import warnings
 
 from .py_qssc import _link_file, Diagnostic, ErrorCategory
-from .compile import _stringify_path
+from .compile import stringify_path
 
 from . import exceptions
 
@@ -81,9 +81,9 @@ def link_file(
     """
     link_options = _prepare_link_options(link_options, **kwargs)
 
-    input_file = _stringify_path(link_options.input_file)
-    output_file = _stringify_path(link_options.output_file)
-    config_path = _stringify_path(link_options.config_path)
+    input_file = stringify_path(link_options.input_file)
+    output_file = stringify_path(link_options.output_file)
+    config_path = stringify_path(link_options.config_path)
 
     diagnostics = []
 

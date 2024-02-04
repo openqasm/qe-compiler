@@ -41,6 +41,8 @@ public:
   explicit CLIConfigBuilder();
   static void registerCLOptions(mlir::DialectRegistry &registry);
   llvm::Error populateConfig(QSSConfig &config) override;
+  llvm::Error populateConfig(QSSConfig &config, llvm::StringRef inputFilename,
+                             llvm::StringRef outputFilename);
 };
 
 } // namespace qssc::config
