@@ -197,6 +197,14 @@ public:
   }
   const std::vector<std::string> &getDialectPlugins() { return dialectPlugins; }
 
+  QSSConfig &setMaxThreads(unsigned int maxThreads_) {
+    maxThreads = std::move(maxThreads_);
+    return *this;
+  }
+  std::optional<unsigned int> getMaxThreads() const {
+    return maxThreads;
+  }
+
 public:
   /// @brief Emit the configuration to stdout.
   void emit(llvm::raw_ostream &out) const;
@@ -234,6 +242,8 @@ protected:
   std::vector<std::string> passPlugins;
   /// @brief Dialect plugin paths
   std::vector<std::string> dialectPlugins;
+  /// @brief If set, enforces the maximum number of MLIR context threads
+  std::optional<unsigned int> maxThreads;
 };
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const QSSConfig &config);

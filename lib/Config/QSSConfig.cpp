@@ -72,6 +72,7 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "compileTargetIR: " << shouldCompileTargetIR() << "\n";
   os << "bypassPayloadTargetCompilation: "
      << shouldBypassPayloadTargetCompilation() << "\n";
+  os << "maxThreads: " << (getMaxThreads().has_value() ? std::to_string(getMaxThreads().value()) : "None") << "\n";
   os << "\n";
 
   // Mlir opt configuration

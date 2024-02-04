@@ -33,6 +33,9 @@ llvm::Error EnvVarConfigBuilder::populateConfig(QSSConfig &config) {
   if (auto err = populateVerbosity_(config))
     return err;
 
+  if (auto err = populateMaxThreads_(config))
+    return err;
+
   return llvm::Error::success();
 }
 
@@ -47,6 +50,22 @@ llvm::Error EnvVarConfigBuilder::populateTarget_(QSSConfig &config) {
     config.targetName = targetStr;
   return llvm::Error::success();
 }
+
+llvm::Error EnvVarConfigBuilder::populateMaxThreads_(QSSConfig &config) {
+  if (const char *maxThreads = std::getenv("QSSC_MAX_THREADS")) {
+    llvm::StringRef maxThreadsStr(maxThreads);
+    unsigned int maxThreadsInt;
+    if (maxThreadsStr.consumeInteger<unsigned int>(0, maxThreadsInt))
+      return llvm::createStringError(
+          llvm::inconvertibleErrorCode(),
+          "Unable to parse maximum threads from \"" + maxThreadsStr + "\"\n");
+
+    config.maxThreads = maxThreadsInt;
+  }
+
+  return llvm::Error::success();
+}
+
 
 llvm::Error EnvVarConfigBuilder::populateVerbosity_(QSSConfig &config) {
   if (const char *verbosity = std::getenv("QSSC_VERBOSITY")) {
