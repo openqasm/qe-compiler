@@ -71,22 +71,7 @@ public:
                               const PatchPoint &p);
   void dump();
 
-  inline std::string serialize() const {
-    std::stringstream s;
-    s << "circuit_signature\n";
-    s << "version 1\n";
-    s << "num_binaries: " << patchPointsByBinary.size() << "\n";
-
-    for (auto const &[binaryName, patchPoints] : patchPointsByBinary) {
-      s << "binary: " << binaryName << "\n";
-      s << "num_patchpoints: " << patchPoints.size() << "\n";
-      for (auto const &patchPoint : patchPoints) {
-        s << patchPoint.patchType().str() << " " << patchPoint.offset() << " "
-          << patchPoint.expression().str() << "\n";
-      }
-    }
-    return s.str();
-  }
+  std::string serialize() const;
 
   static llvm::Expected<Signature>
   deserialize(llvm::StringRef,

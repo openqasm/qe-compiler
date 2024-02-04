@@ -69,6 +69,23 @@ void Signature::dump() {
   }
 }
 
+std::string Signature::serialize() const {
+  std::stringstream s;
+  s << "circuit_signature\n";
+  s << "version 1\n";
+  s << "num_binaries: " << patchPointsByBinary.size() << "\n";
+
+  for (auto const &[binaryName, patchPoints] : patchPointsByBinary) {
+    s << "binary: " << binaryName << "\n";
+    s << "num_patchpoints: " << patchPoints.size() << "\n";
+    for (auto const &patchPoint : patchPoints) {
+      s << patchPoint.patchType().str() << " " << patchPoint.offset() << " "
+        << patchPoint.expression().str() << "\n";
+    }
+  }
+  return s.str();
+}
+
 llvm::Expected<Signature> Signature::deserialize(
     llvm::StringRef buffer,
     const std::optional<qssc::DiagnosticCallback> &onDiagnostic,
