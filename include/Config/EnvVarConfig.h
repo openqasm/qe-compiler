@@ -29,8 +29,10 @@ namespace qssc::config {
 /// These currently are:
 /// - `QSSC_TARGET_NAME`: Sets QSSConfig::targetName.
 /// - `QSSC_TARGET_CONFIG_PATH`: Sets QSSConfig::targetConfigPath.
-/// - `QSSC_VERBOSITY`: Set the compiler output verbosity. One of "ERROR/WARN/INFO/DEBUG".
-/// - `QSSC_MAX_THREADS`: Sets the maximum number of compiler threads when initializing the MLIR context's threadpool.
+/// - `QSSC_VERBOSITY`: Set the compiler output verbosity. One of
+/// "ERROR/WARN/INFO/DEBUG".
+/// - `QSSC_MAX_THREADS`: Sets the maximum number of compiler threads when
+/// initializing the MLIR context's threadpool.
 ///
 class EnvVarConfigBuilder : public QSSConfigBuilder {
 public:

@@ -313,8 +313,10 @@ struct QSSConfigCLOptions : public QSSConfig {
             llvm::cl::cat(qssc::config::getQSSOptCLCategory()));
 
     static llvm::cl::opt<int> maxThreads_(
-    "max-threads", llvm::cl::desc(
-        "Set the maximum number of threads for the MLIR context."), llvm::cl::init(-1));
+        "max-threads",
+        llvm::cl::desc(
+            "Set the maximum number of threads for the MLIR context."),
+        llvm::cl::init(-1));
 
     maxThreads_.setCallback([&](const int &cliMaxThreads) {
       if (cliMaxThreads > 0)

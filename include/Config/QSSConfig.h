@@ -201,9 +201,7 @@ public:
     maxThreads = std::move(maxThreads_);
     return *this;
   }
-  std::optional<unsigned int> getMaxThreads() const {
-    return maxThreads;
-  }
+  std::optional<unsigned int> getMaxThreads() const { return maxThreads; }
 
 public:
   /// @brief Emit the configuration to stdout.
