@@ -73,6 +73,7 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "bypassPayloadTargetCompilation: "
      << shouldBypassPayloadTargetCompilation() << "\n";
   os << "maxThreads: "
+     // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
      << (getMaxThreads().has_value() ? std::to_string(getMaxThreads().value())
                                      : "None")
      << "\n";

@@ -198,7 +198,7 @@ public:
   const std::vector<std::string> &getDialectPlugins() { return dialectPlugins; }
 
   QSSConfig &setMaxThreads(unsigned int maxThreads_) {
-    maxThreads = std::move(maxThreads_);
+    maxThreads = maxThreads_;
     return *this;
   }
   std::optional<unsigned int> getMaxThreads() const { return maxThreads; }
