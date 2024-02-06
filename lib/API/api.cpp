@@ -60,6 +60,7 @@
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/ThreadPool.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -629,6 +630,15 @@ llvm::Error qssc::compileMain(llvm::raw_ostream &outputStream,
   // The MLIR context for this compilation event.
   // Instantiate after parsing command line options.
   MLIRContext context{};
+
+  std::unique_ptr<llvm::ThreadPool> threadPool;
+  // Override default threadpool threads
+  if (context.isMultithreadingEnabled() && config.getMaxThreads().has_value()) {
+    llvm::ThreadPoolStrategy strategy;
+    strategy.ThreadsRequested = config.getMaxThreads().value();
+    threadPool = std::make_unique<llvm::ThreadPool>(strategy);
+    context.setThreadPool(*threadPool.get());
+  }
 
   qssc::config::setContextConfig(&context, config);
 
