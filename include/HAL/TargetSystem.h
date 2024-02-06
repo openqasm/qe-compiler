@@ -147,16 +147,16 @@ public:
     const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
     diagnostics_.emplace_back(diag);
   }
-  /// @brief Return the diagnostics that this target and its subtargets hold
-  ///        and clear the diagnostic lists of the targets.
-  qssc::DiagList getDiagnostics() {
+  /// @brief Return the diagnostics from this target and its sub-targets.
+  ///        Take and clear the diagnostic lists of the targets.
+  qssc::DiagList takeDiagnostics() {
     const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
     qssc::DiagList retDiagList;
-    // Steal the elements of the given list and move them to the calling list
+    // Take the elements of the given list and move them to the calling list
     retDiagList.splice(retDiagList.end(), diagnostics_);
 
     for (auto &child : getChildren_())
-      retDiagList.splice(retDiagList.end(), child->getDiagnostics());
+      retDiagList.splice(retDiagList.end(), child->takeDiagnostics());
 
     return retDiagList;
   }

@@ -43,9 +43,7 @@ namespace qssc::hal::compile {
 class TargetCompilationManager {
 protected:
   TargetCompilationManager(hal::TargetSystem &target,
-                           mlir::MLIRContext *context,
-                           const config::QSSConfig &config,
-                           const qssc::OptDiagnosticCallback &callback);
+                           mlir::MLIRContext *context);
 
   using WalkTargetModulesFunction = std::function<llvm::Error(
       hal::Target *, mlir::ModuleOp, mlir::TimingScope &timing)>;
@@ -98,6 +96,9 @@ public:
                         bool printBeforeAllTargetPayload,
                         bool printAfterTargetCompileFailure);
 
+  /// @brief Take the diagnostics capatured in the Target
+  qssc::DiagList takeTargetDiagnostics() { return target.takeDiagnostics(); }
+
   void enableTiming(mlir::TimingScope &timingScope);
   void disableTiming();
 
@@ -117,15 +118,9 @@ protected:
   /// @param name The name of the timing span
   mlir::TimingScope getTimer(llvm::StringRef name);
 
-  /// @brief Emit diagnostics capatured in the Target
-  /// @return Was an error or fatal diagnostic detected
-  bool emitTargetDiagnostics();
-
 private:
   hal::TargetSystem &target;
   mlir::MLIRContext *context;
-  const config::QSSConfig &config;
-  const qssc::OptDiagnosticCallback &diagnosticCb;
 
   bool printBeforeAllTargetPasses = false;
   bool printAfterAllTargetPasses = false;

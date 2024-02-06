@@ -398,11 +398,85 @@ llvm::Error applyEmitAction(
   return llvm::Error::success();
 }
 
-llvm::Error performCompileActions(
-    llvm::raw_ostream &outputStream, std::unique_ptr<llvm::MemoryBuffer> buffer,
-    DialectRegistry &registry, mlir::MLIRContext &context,
-    const qssc::config::QSSConfig &config, mlir::TimingScope &timing,
-    std::optional<qssc::DiagnosticCallback> diagnosticCb) {
+/// @brief Emit all given diagnostics, return true if there are errors
+///
+///        Uses qssc::emitDiagnostic to forward all diagnostics held by the
+///        target to the python diagnostic callback. Also prints diagnostics to
+///        llvm::errs to provide info in logs and for the binary. Returns true
+///        iff the target contains error or fatal severity diagnostics.
+/// @param diagnostics List of diagnostcs to emit
+/// @param diagnosticCb Handle to python diagnostic callback
+/// @param config Config data holding the verbosity level for output
+/// @return True iff target contains any error or fatal diagnostics
+bool emitDiagnosticsAndCheckForErrors(qssc::DiagList diagnostics,
+                                      qssc::OptDiagnosticCallback diagnosticCb,
+                                      const QSSConfig &config) {
+  // NOLINTNEXTLINE(misc-const-correctness)
+  bool foundError = false;
+  for (auto &diag : diagnostics) {
+    auto severity = diag.severity;
+    switch (config.getVerbosityLevel()) {
+    case QSSVerbosity::Error:
+      switch (severity) {
+      case Severity::Fatal:
+      case Severity::Error:
+        foundError = true;
+        (void)qssc::emitDiagnostic(diagnosticCb, diag);
+        llvm::errs() << diag.toString() << "\n";
+        break;
+      case Severity::Warning:
+      case Severity::Info:
+        break;
+      default:
+        llvm_unreachable("Unknown diagnostic severity");
+      }
+      break;
+    case QSSVerbosity::Warn:
+      switch (severity) {
+      case Severity::Fatal:
+      case Severity::Error:
+        foundError = true;
+        [[fallthrough]];
+      case Severity::Warning:
+        (void)qssc::emitDiagnostic(diagnosticCb, diag);
+        llvm::errs() << diag.toString() << "\n";
+        break;
+      case Severity::Info:
+        break;
+      default:
+        llvm_unreachable("Unknown diagnostic severity");
+      }
+      break;
+    case QSSVerbosity::Info:
+    case QSSVerbosity::Debug:
+      switch (severity) {
+      case Severity::Fatal:
+      case Severity::Error:
+        foundError = true;
+        [[fallthrough]];
+      case Severity::Warning:
+      case Severity::Info:
+        (void)qssc::emitDiagnostic(diagnosticCb, diag);
+        llvm::errs() << diag.toString() << "\n";
+        break;
+      default:
+        llvm_unreachable("Unknown diagnostic severity");
+      }
+      break;
+    default:
+      llvm_unreachable("Unknown verbosity level");
+    } // end switch for config verbosity
+  }   // end for diag in diagnostics list
+  return foundError;
+}
+
+llvm::Error performCompileActions(llvm::raw_ostream &outputStream,
+                                  std::unique_ptr<llvm::MemoryBuffer> buffer,
+                                  DialectRegistry &registry,
+                                  mlir::MLIRContext &context,
+                                  const qssc::config::QSSConfig &config,
+                                  mlir::TimingScope &timing,
+                                  qssc::OptDiagnosticCallback diagnosticCb) {
 
   // Populate the context
   context.appendDialectRegistry(registry);
@@ -551,8 +625,7 @@ llvm::Error performCompileActions(
 
   auto targetCompilationManager =
       qssc::hal::compile::ThreadedCompilationManager(
-          target, &context, config, diagnosticCb,
-          [&](mlir::PassManager &pm) -> llvm::Error {
+          target, &context, [&](mlir::PassManager &pm) -> llvm::Error {
             if (auto err = buildPassManager_(pm, verifyPasses))
               return err;
             return llvm::Error::success();
@@ -578,8 +651,18 @@ llvm::Error performCompileActions(
   if (auto err =
           applyEmitAction(config, outputStream, std::move(payload), context,
                           moduleOp, sourceBuffer, fallbackResourceMap,
-                          targetCompilationManager, errorHandler, timing))
+                          targetCompilationManager, errorHandler, timing)) {
+    emitDiagnosticsAndCheckForErrors(
+        targetCompilationManager.takeTargetDiagnostics(), diagnosticCb, config);
     return err;
+  }
+
+  if (emitDiagnosticsAndCheckForErrors(
+          targetCompilationManager.takeTargetDiagnostics(), diagnosticCb,
+          config)) {
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Problems generating compiler output!");
+  }
 
   return llvm::Error::success();
 }

@@ -85,11 +85,8 @@ mlir::LogicalResult qssc::hal::compile::applyTargetCompilationManagerCLOptions(
 }
 
 TargetCompilationManager::TargetCompilationManager(
-    qssc::hal::TargetSystem &target, mlir::MLIRContext *context,
-    const config::QSSConfig &config,
-    const qssc::OptDiagnosticCallback &diagnosticCb_)
-    : target(target), context(context), config(config),
-      diagnosticCb(diagnosticCb_) {}
+    qssc::hal::TargetSystem &target, mlir::MLIRContext *context)
+    : target(target), context(context) {}
 
 llvm::Error TargetCompilationManager::walkTargetModules(
     Target *target, mlir::ModuleOp targetModuleOp, mlir::TimingScope &timing,
@@ -161,66 +158,4 @@ void TargetCompilationManager::disableTiming() { rootTimer.stop(); }
 
 mlir::TimingScope TargetCompilationManager::getTimer(llvm::StringRef name) {
   return rootTimer.nest(name);
-}
-
-bool TargetCompilationManager::emitTargetDiagnostics() {
-  using namespace qssc::config;
-  // NOLINTNEXTLINE(misc-const-correctness)
-  bool foundError = false;
-  const DiagList diagnostics(target.getDiagnostics());
-  for (auto &diag : diagnostics) {
-    auto severity = diag.severity;
-    switch (config.getVerbosityLevel()) {
-    case QSSVerbosity::Error:
-      switch (severity) {
-      case Severity::Fatal:
-      case Severity::Error:
-        foundError = true;
-        (void)qssc::emitDiagnostic(diagnosticCb, diag);
-        llvm::errs() << diag.toString() << "\n";
-        break;
-      case Severity::Warning:
-      case Severity::Info:
-        break;
-      default:
-        llvm_unreachable("Unknown diagnostic severity");
-      }
-      break;
-    case QSSVerbosity::Warn:
-      switch (severity) {
-      case Severity::Fatal:
-      case Severity::Error:
-        foundError = true;
-        [[fallthrough]];
-      case Severity::Warning:
-        (void)qssc::emitDiagnostic(diagnosticCb, diag);
-        llvm::errs() << diag.toString() << "\n";
-        break;
-      case Severity::Info:
-        break;
-      default:
-        llvm_unreachable("Unknown diagnostic severity");
-      }
-      break;
-    case QSSVerbosity::Info:
-    case QSSVerbosity::Debug:
-      switch (severity) {
-      case Severity::Fatal:
-      case Severity::Error:
-        foundError = true;
-        [[fallthrough]];
-      case Severity::Warning:
-      case Severity::Info:
-        (void)qssc::emitDiagnostic(diagnosticCb, diag);
-        llvm::errs() << diag.toString() << "\n";
-        break;
-      default:
-        llvm_unreachable("Unknown diagnostic severity");
-      }
-      break;
-    default:
-      llvm_unreachable("Unknown verbosity level");
-    } // end switch for config verbosity
-  }   // end for diag in diagnostics list
-  return foundError;
 }

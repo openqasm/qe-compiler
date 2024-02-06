@@ -47,9 +47,8 @@ using namespace qssc::hal::compile;
 
 ThreadedCompilationManager::ThreadedCompilationManager(
     qssc::hal::TargetSystem &target, mlir::MLIRContext *context,
-    const config::QSSConfig &config, const OptDiagnosticCallback &diagnosticCb,
     ThreadedCompilationManager::PMBuilder pmBuilder)
-    : TargetCompilationManager(target, context, config, diagnosticCb),
+    : TargetCompilationManager(target, context),
       pmBuilder(std::move(pmBuilder)) {}
 
 const std::string ThreadedCompilationManager::getName() const {
@@ -245,7 +244,6 @@ llvm::Error ThreadedCompilationManager::compileMLIR(mlir::ModuleOp moduleOp) {
   auto err = walkTargetModulesThreaded(&target, moduleOp, targetsTiming,
                                        threadedCompileMLIRTarget,
                                        postChildrenEmitToPayload);
-  emitTargetDiagnostics();
   return err;
 }
 
@@ -315,7 +313,6 @@ ThreadedCompilationManager::compilePayload(mlir::ModuleOp moduleOp,
   auto err = walkTargetModulesThreaded(&target, moduleOp, targetsTiming,
                                        threadedCompilePayloadTarget,
                                        postChildrenEmitToPayload);
-  emitTargetDiagnostics();
   return err;
 }
 
