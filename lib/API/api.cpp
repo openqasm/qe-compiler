@@ -328,7 +328,7 @@ llvm::Error emitQEM(
 ///  @param diagnostic MLIR diagnostic from the Diagnostic Engine
 ///  @param diagnosticCb Handle to python diagnostic callback
 void diagEngineHandler(mlir::Diagnostic &diagnostic,
-                       qssc::OptDiagnosticCallback diagnosticCb) {
+                       const qssc::OptDiagnosticCallback &diagnosticCb) {
 
   // map diagnostic severity to qssc severity
   auto severity = diagnostic.getSeverity();
@@ -346,7 +346,7 @@ void diagEngineHandler(mlir::Diagnostic &diagnostic,
   }
   // emit diagnostic cast to void to discard result as it is not needed here
   if (qssc_severity == qssc::Severity::Error) {
-    (void)qssc::emitDiagnostic(std::move(diagnosticCb), qssc_severity,
+    (void)qssc::emitDiagnostic(diagnosticCb, qssc_severity,
                                qssc::ErrorCategory::QSSCompilationFailure,
                                diagnostic.str());
   }
@@ -708,7 +708,7 @@ llvm::Error qssc::compileMain(llvm::raw_ostream &outputStream,
                               std::unique_ptr<llvm::MemoryBuffer> buffer,
                               DialectRegistry &registry,
                               const qssc::config::QSSConfig &config,
-                              std::optional<DiagnosticCallback> diagnosticCb,
+                              OptDiagnosticCallback diagnosticCb,
                               mlir::TimingScope &timing) {
 
   // The MLIR context for this compilation event.
@@ -736,7 +736,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
                               llvm::StringRef inputFilename,
                               llvm::StringRef outputFilename,
                               mlir::DialectRegistry &registry,
-                              std::optional<DiagnosticCallback> diagnosticCb) {
+                              OptDiagnosticCallback diagnosticCb) {
 
   llvm::InitLLVM const y(argc, argv);
 
@@ -807,7 +807,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
 llvm::Error qssc::compileMain(int argc, const char **argv,
                               llvm::StringRef toolName,
                               mlir::DialectRegistry &registry,
-                              std::optional<DiagnosticCallback> diagnosticCb) {
+                              OptDiagnosticCallback diagnosticCb) {
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;
@@ -820,7 +820,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
 
 llvm::Error qssc::compileMain(int argc, const char **argv,
                               llvm::StringRef toolName,
-                              std::optional<DiagnosticCallback> diagnosticCb) {
+                              OptDiagnosticCallback diagnosticCb) {
   // Register the standard passes with MLIR.
   // Must precede the command line parsing.
   if (auto err = qssc::dialect::registerPasses())

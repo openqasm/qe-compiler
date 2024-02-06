@@ -24,7 +24,6 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include <optional>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -117,7 +116,7 @@ std::string Diagnostic::toString() const {
   return str;
 }
 
-llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
+llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
                            const Diagnostic &diag, std::error_code ec) {
   auto *diagnosticCallback =
       onDiagnostic.has_value() ? &onDiagnostic.value() : nullptr;
@@ -126,11 +125,11 @@ llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
   return llvm::createStringError(ec, diag.toString());
 }
 
-llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
+llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
                            Severity severity, ErrorCategory category,
                            std::string message, std::error_code ec) {
   qssc::Diagnostic const diag{severity, category, std::move(message)};
-  return emitDiagnostic(std::move(onDiagnostic), diag, ec);
+  return emitDiagnostic(onDiagnostic, diag, ec);
 }
 
 } // namespace qssc
