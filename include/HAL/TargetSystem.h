@@ -144,7 +144,6 @@ public:
   // Diagnostic creation and access
   /// @brief Add a diagnostic to this target
   void addDiagnostic(const qssc::Diagnostic &diag) {
-    // NOLINTNEXTLINE(clang-diagnostic-ctad-maybe-unsupported)
     const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
     diagnostics_.emplace_back(diag);
   }
