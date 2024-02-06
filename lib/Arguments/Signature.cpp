@@ -86,10 +86,10 @@ std::string Signature::serialize() {
   return s.str();
 }
 
-llvm::Expected<Signature> Signature::deserialize(
-    llvm::StringRef buffer,
-    const std::optional<qssc::DiagnosticCallback> &onDiagnostic,
-    bool treatWarningsAsErrors) {
+llvm::Expected<Signature>
+Signature::deserialize(llvm::StringRef buffer,
+                       const qssc::OptDiagnosticCallback &onDiagnostic,
+                       bool treatWarningsAsErrors) {
 
   Signature sig;
 

@@ -120,8 +120,7 @@ parseDurationStr(const std::string &durationStr) {
 llvm::Error qssc::frontend::openqasm3::parse(
     llvm::SourceMgr &sourceMgr, bool emitRawAST, bool emitPrettyAST,
     bool emitMLIR, mlir::ModuleOp newModule,
-    std::optional<qssc::DiagnosticCallback> diagnosticCallback,
-    mlir::TimingScope &timing) {
+    qssc::OptDiagnosticCallback diagnosticCallback, mlir::TimingScope &timing) {
 
   const llvm::MemoryBuffer *sourceBuffer =
       sourceMgr.getMemoryBuffer(sourceMgr.getMainFileID());
