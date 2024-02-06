@@ -61,6 +61,7 @@
 #include "llvm/Support/Process.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/ThreadPool.h"
+#include "llvm/Support/Threading.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -635,6 +636,7 @@ llvm::Error qssc::compileMain(llvm::raw_ostream &outputStream,
   // Override default threadpool threads
   if (context.isMultithreadingEnabled() && config.getMaxThreads().has_value()) {
     llvm::ThreadPoolStrategy strategy;
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
     strategy.ThreadsRequested = config.getMaxThreads().value();
     threadPool = std::make_unique<llvm::ThreadPool>(strategy);
     context.setThreadPool(*threadPool.get());
