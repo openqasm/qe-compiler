@@ -408,9 +408,9 @@ llvm::Error applyEmitAction(
 /// @param diagnosticCb Handle to python diagnostic callback
 /// @param config Config data holding the verbosity level for output
 /// @return True iff target contains any error or fatal diagnostics
-bool emitDiagnosticsAndCheckForErrors(qssc::DiagList diagnostics,
-                                      qssc::OptDiagnosticCallback diagnosticCb,
-                                      const QSSConfig &config) {
+bool emitDiagnosticsAndCheckForErrors(
+    const qssc::DiagList &diagnostics,
+    const qssc::OptDiagnosticCallback &diagnosticCb, const QSSConfig &config) {
   // NOLINTNEXTLINE(misc-const-correctness)
   bool foundError = false;
   for (auto &diag : diagnostics) {
