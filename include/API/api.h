@@ -76,7 +76,7 @@ llvm::Error compileMain(llvm::raw_ostream &outputStream,
                         std::unique_ptr<llvm::MemoryBuffer> buffer,
                         mlir::DialectRegistry &registry,
                         const qssc::config::QSSConfig &config,
-                        std::optional<DiagnosticCallback> diagnosticCb,
+                        OptDiagnosticCallback diagnosticCb,
                         mlir::TimingScope &timing);
 
 /// Implementation for tools like `qss-compiler`.
@@ -91,7 +91,7 @@ llvm::Error compileMain(int argc, const char **argv,
                         llvm::StringRef inputFilename,
                         llvm::StringRef outputFilename,
                         mlir::DialectRegistry &registry,
-                        std::optional<DiagnosticCallback> diagnosticCb);
+                        OptDiagnosticCallback diagnosticCb);
 
 /// Implementation for tools like `qss-compiler`.
 /// @param argc Commandline argc to parse.
@@ -101,7 +101,7 @@ llvm::Error compileMain(int argc, const char **argv,
 /// @param diagnosticCb callback for error diagnostic processsing.
 llvm::Error compileMain(int argc, const char **argv, llvm::StringRef toolName,
                         mlir::DialectRegistry &registry,
-                        std::optional<DiagnosticCallback> diagnosticCb);
+                        OptDiagnosticCallback diagnosticCb);
 
 /// Implementation for tools like `qss-compiler` with provided registry with
 /// default project dialects loaded
@@ -109,7 +109,7 @@ llvm::Error compileMain(int argc, const char **argv, llvm::StringRef toolName,
 /// @param argv Commandline argv to parse.
 /// @param diagnosticCb callback for error diagnostic processsing.
 llvm::Error compileMain(int argc, const char **argv, llvm::StringRef toolName,
-                        std::optional<DiagnosticCallback> diagnosticCb);
+                        OptDiagnosticCallback diagnosticCb);
 
 /// Helper wrapper to return the result of compileMain directly from main
 inline int asMainReturnCode(llvm::Error err) {
@@ -132,7 +132,7 @@ int bindArguments(std::string_view target, qssc::config::EmitAction action,
                   std::unordered_map<std::string, double> const &arguments,
                   bool treatWarningsAsErrors, bool enableInMemoryInput,
                   std::string *inMemoryOutput,
-                  const std::optional<DiagnosticCallback> &onDiagnostic);
+                  const OptDiagnosticCallback &onDiagnostic);
 
 } // namespace qssc
 #endif // QSS_COMPILER_LIB_H
