@@ -777,8 +777,9 @@ private:
 };
 
 llvm::Error
-bindArguments_(std::string_view target, std::string_view configPath,
-               std::string_view moduleInput, std::string_view payloadOutputPath,
+bindArguments_(std::string_view target, qssc::config::EmitAction action,
+               std::string_view configPath, std::string_view moduleInput,
+               std::string_view payloadOutputPath,
                std::unordered_map<std::string, double> const &arguments,
                bool treatWarningsAsErrors, bool enableInMemoryInput,
                std::string *inMemoryOutput,
@@ -809,7 +810,8 @@ bindArguments_(std::string_view target, std::string_view configPath,
 
   MapAngleArgumentSource const source(arguments);
 
-  auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
+  auto factory =
+      targetInst.get()->getBindArgumentsImplementationFactory(action);
   if ((!factory.has_value()) || (factory.value() == nullptr)) {
     return qssc::emitDiagnostic(
         onDiagnostic, qssc::Severity::Error,
@@ -826,17 +828,18 @@ bindArguments_(std::string_view target, std::string_view configPath,
 } // anonymous namespace
 
 int qssc::bindArguments(
-    std::string_view target, std::string_view configPath,
-    std::string_view moduleInput, std::string_view payloadOutputPath,
+    std::string_view target, qssc::config::EmitAction action,
+    std::string_view configPath, std::string_view moduleInput,
+    std::string_view payloadOutputPath,
     std::unordered_map<std::string, double> const &arguments,
     bool treatWarningsAsErrors, bool enableInMemoryInput,
     std::string *inMemoryOutput,
     const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
 
   if (auto err =
-          bindArguments_(target, configPath, moduleInput, payloadOutputPath,
-                         arguments, treatWarningsAsErrors, enableInMemoryInput,
-                         inMemoryOutput, onDiagnostic)) {
+          bindArguments_(target, action, configPath, moduleInput,
+                         payloadOutputPath, arguments, treatWarningsAsErrors,
+                         enableInMemoryInput, inMemoryOutput, onDiagnostic)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
     return 1;
   }

@@ -69,7 +69,7 @@ void Signature::dump() {
   }
 }
 
-std::string Signature::serialize() {
+std::string Signature::serialize() const {
   std::stringstream s;
   s << "circuit_signature\n";
   s << "version 1\n";

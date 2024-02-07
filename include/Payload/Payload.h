@@ -33,6 +33,8 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "Arguments/Signature.h"
+
 namespace qssc::payload {
 
 struct PayloadConfig {
@@ -68,6 +70,7 @@ public:
   virtual void writePlain(std::ostream &stream) = 0;
   virtual void writePlain(llvm::raw_ostream &stream) = 0;
   virtual void addFile(llvm::StringRef filename, llvm::StringRef str) = 0;
+  virtual void writeArgumentSignature(qssc::arguments::Signature &&sig){};
 
   const std::string &getName() const { return name; }
   const std::string &getPrefix() const { return prefix; }
