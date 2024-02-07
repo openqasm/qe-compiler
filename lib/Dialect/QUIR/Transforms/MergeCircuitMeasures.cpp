@@ -268,8 +268,8 @@ struct CallCircuitAndCallCircuitTopologicalPattern
       currMeasureQubits = firstMeasureOp.getOperatedQubits();
     }
 
-    auto nextCallCircuitOp =
-        QubitOpInterface::getNextQubitOpOfType<CallCircuitOp>(callCircuitOp);
+    auto [nextCallCircuitOp, observedQubits]  =
+        QubitOpInterface::getNextQubitOpOfTypeWithQubits<CallCircuitOp>(callCircuitOp);
 
     if (!nextCallCircuitOp.has_value())
       return failure();
@@ -285,15 +285,14 @@ struct CallCircuitAndCallCircuitTopologicalPattern
     firstOp = &secondCircuit.getBody().front().front();
 
     MeasureOp nextMeasureOp;
-    std::set<uint32_t> observedQubits;
 
     if (isa<MeasureOp>(firstOp)) {
       nextMeasureOp = dyn_cast<MeasureOp>(firstOp);
     } else {
-      std::optional<MeasureOp> nextMeasureOpt;
-      std::tie(nextMeasureOpt, observedQubits) =
+      auto [nextMeasureOpt, additionalObservedQubits] =
           QubitOpInterface::getNextQubitOpOfTypeWithQubits<MeasureOp>(firstOp);
 
+      observedQubits.insert(additionalObservedQubits.begin(), additionalObservedQubits.end());
       if (!nextMeasureOpt.has_value())
         return failure();
       nextMeasureOp = nextMeasureOpt.value();
@@ -310,7 +309,7 @@ struct CallCircuitAndCallCircuitTopologicalPattern
       llvm::errs() << qubit << "\n";
 
     llvm::errs() << "Second Circuit: \n";
-    // secondCircuit.dump();
+    secondCircuit.dump();
 
     llvm::errs() << "Next Measure: \n";
     nextMeasureOp->dump();
