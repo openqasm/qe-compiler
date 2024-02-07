@@ -18,6 +18,7 @@
 #define QSS_COMPILER_LIB_H
 
 #include "API/errors.h"
+#include "Config/QSSConfig.h"
 
 #include "Config/QSSConfig.h"
 
@@ -117,6 +118,7 @@ inline int asMainReturnCode(llvm::Error err) {
 
 /// @brief Call the parameter binder
 /// @param target name of the target to employ
+/// @param action name of the emit action of input and output
 /// @param moduleInputPath path of the module to use as input
 /// @param payloadOutputPath path of the payload to generate as output
 /// @param arguments bindings for the parameters in the module to apply
@@ -124,8 +126,8 @@ inline int asMainReturnCode(llvm::Error err) {
 /// @param diagnosticCb an optional callback that will receive emitted
 /// diagnostics
 /// @return 0 on success
-int bindArguments(std::string_view target, std::string_view configPath,
-                  std::string_view moduleInput,
+int bindArguments(std::string_view target, qssc::config::EmitAction action,
+                  std::string_view configPath, std::string_view moduleInput,
                   std::string_view payloadOutputPath,
                   std::unordered_map<std::string, double> const &arguments,
                   bool treatWarningsAsErrors, bool enableInMemoryInput,

@@ -20,6 +20,7 @@
 #ifndef TARGETSYSTEM_H
 #define TARGETSYSTEM_H
 
+#include "API/api.h"
 #include "API/errors.h"
 #include "Arguments/Arguments.h"
 
@@ -206,7 +207,7 @@ public:
   }
 
   virtual std::optional<qssc::arguments::BindArgumentsImplementationFactory *>
-  getBindArgumentsImplementationFactory() {
+  getBindArgumentsImplementationFactory(config::EmitAction action) {
     return std::nullopt;
   };
 
