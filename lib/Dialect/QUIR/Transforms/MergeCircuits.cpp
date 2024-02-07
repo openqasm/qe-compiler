@@ -120,6 +120,12 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
     while (curOp != *secondOp) {
       moveList.clear();
       bool okToMoveUsers = false;
+
+      // check if curOp is parent of a user of callCircuitOp
+      for (auto user : callCircuitOp->getUsers())
+        if (curOp->isAncestor(user))
+          return failure();
+
       if (std::find(callCircuitOp->user_begin(), callCircuitOp->user_end(),
                     curOp) != callCircuitOp->user_end())
 
