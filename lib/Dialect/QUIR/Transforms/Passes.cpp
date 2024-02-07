@@ -25,6 +25,7 @@
 #include "Dialect/QUIR/Transforms/ConvertDurationUnits.h"
 #include "Dialect/QUIR/Transforms/FunctionArgumentSpecialization.h"
 #include "Dialect/QUIR/Transforms/LoadElimination.h"
+#include "Dialect/QUIR/Transforms/MergeCircuitMeasures.h"
 #include "Dialect/QUIR/Transforms/MergeCircuits.h"
 #include "Dialect/QUIR/Transforms/MergeMeasures.h"
 #include "Dialect/QUIR/Transforms/MergeParallelResets.h"
@@ -290,6 +291,7 @@ void registerQuirPasses() {
   PassRegistration<quir::ReorderMeasurementsPass>();
   PassRegistration<quir::ReorderCircuitsPass>();
   PassRegistration<quir::MergeCircuitsPass>();
+  PassRegistration<quir::MergeCircuitMeasuresTopologicalPass>();
   PassRegistration<quir::MergeMeasuresLexographicalPass>();
   PassRegistration<quir::MergeMeasuresTopologicalPass>();
   PassRegistration<quir::QUIRAngleConversionPass>();

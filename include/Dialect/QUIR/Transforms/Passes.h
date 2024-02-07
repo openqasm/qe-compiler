@@ -23,6 +23,7 @@
 #include "ConvertDurationUnits.h"
 #include "FunctionArgumentSpecialization.h"
 #include "LoadElimination.h"
+#include "MergeCircuitMeasures.h"
 #include "MergeCircuits.h"
 #include "MergeMeasures.h"
 #include "MergeParallelResets.h"
