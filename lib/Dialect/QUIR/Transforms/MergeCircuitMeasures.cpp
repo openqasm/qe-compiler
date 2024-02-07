@@ -268,8 +268,9 @@ struct CallCircuitAndCallCircuitTopologicalPattern
       currMeasureQubits = firstMeasureOp.getOperatedQubits();
     }
 
-    auto [nextCallCircuitOp, observedQubits]  =
-        QubitOpInterface::getNextQubitOpOfTypeWithQubits<CallCircuitOp>(callCircuitOp);
+    auto [nextCallCircuitOp, observedQubits] =
+        QubitOpInterface::getNextQubitOpOfTypeWithQubits<CallCircuitOp>(
+            callCircuitOp);
 
     if (!nextCallCircuitOp.has_value())
       return failure();
@@ -292,7 +293,8 @@ struct CallCircuitAndCallCircuitTopologicalPattern
       auto [nextMeasureOpt, additionalObservedQubits] =
           QubitOpInterface::getNextQubitOpOfTypeWithQubits<MeasureOp>(firstOp);
 
-      observedQubits.insert(additionalObservedQubits.begin(), additionalObservedQubits.end());
+      observedQubits.insert(additionalObservedQubits.begin(),
+                            additionalObservedQubits.end());
       if (!nextMeasureOpt.has_value())
         return failure();
       nextMeasureOp = nextMeasureOpt.value();
