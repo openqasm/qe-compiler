@@ -293,7 +293,7 @@ class _CompilationManager:
             for diag in diagnostics:
                 if diag.category == ErrorCategory.QSSCompilerSequenceTooLong:
                     raise exceptions.QSSCompilerSequenceTooLong(
-                        diag.message,  # TODO: Code reviewers: Is this safe?
+                        diag.message,
                         diagnostics,
                         return_diagnostics=self.return_diagnostics,
                     )
