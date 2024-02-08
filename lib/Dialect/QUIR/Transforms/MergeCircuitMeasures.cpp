@@ -118,6 +118,16 @@ static void mergeMeasurements(PatternRewriter &rewriter,
 
   auto maxArgument = circuitOp.getNumArguments();
 
+  auto theseIdsAttr = circuitOp->getAttrOfType<ArrayAttr>(
+      mlir::quir::getPhysicalIdsAttrName());
+
+  // collect all of the first circuit's ids
+  std::vector<int> allIds;
+  for (Attribute const valAttr : theseIdsAttr) {
+    auto intAttr = valAttr.dyn_cast<IntegerAttr>();
+    allIds.push_back(intAttr.getInt());
+  }
+
   // // - remap arguments
   for (auto argument : nextMeasureOp.getQubits()) {
     auto blockArgument = dyn_cast<BlockArgument>(argument);
@@ -135,11 +145,15 @@ static void mergeMeasurements(PatternRewriter &rewriter,
       auto newArg = circuitOp.getArgument(maxArgument);
       circuitArguments[argAttr.getInt()] = newArg;
       valVec.push_back(newArg);
+      allIds.push_back(argAttr.getInt());
       maxArgument++;
     } else {
       valVec.push_back(search->second);
     }
   }
+
+  circuitOp->setAttr(mlir::quir::getPhysicalIdsAttrName(),
+                      rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
 
   // find return and update
   auto returnOp = dyn_cast<quir::ReturnOp>(&circuitOp.back().back());
