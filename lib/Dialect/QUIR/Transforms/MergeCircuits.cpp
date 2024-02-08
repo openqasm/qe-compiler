@@ -122,7 +122,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
       bool okToMoveUsers = false;
 
       // check if curOp is parent of a user of callCircuitOp
-      for (auto user : callCircuitOp->getUsers())
+      for (auto *user : callCircuitOp->getUsers())
         if (curOp->isAncestor(user))
           return failure();
 
