@@ -65,6 +65,10 @@ class QSSCompilerNonZeroStatus(QSSCompilerError):
     """Raised when non-zero status is returned."""
 
 
+class QSSCompilerSequenceTooLong(QSSCompilerError):
+    """Raised when input sequence is too long."""
+
+
 class QSSCompilationFailure(QSSCompilerError):
     """Raised during other compilation failure."""
 

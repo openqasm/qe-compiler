@@ -21,6 +21,7 @@
 #ifndef THREADEDCOMPILATIONMANAGER_H
 #define THREADEDCOMPILATIONMANAGER_H
 
+#include "Config/QSSConfig.h"
 #include "HAL/Compile/TargetCompilationManager.h"
 
 #include <mutex>

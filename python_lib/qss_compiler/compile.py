@@ -61,7 +61,7 @@ from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from . import exceptions
-from .py_qssc import _compile_bytes, _compile_file, Diagnostic
+from .py_qssc import _compile_bytes, _compile_file, Diagnostic, ErrorCategory
 
 # use the forkserver context to create a server process
 # for forking new compiler processes
@@ -289,6 +289,16 @@ class _CompilationManager:
                     return_diagnostics=self.return_diagnostics,
                 )
 
+            # Place all higher-level diagnostics related to user input here
+            # TODO: Best way to deal with multiple diagnostics?
+            for diag in diagnostics:
+                if diag.category == ErrorCategory.QSSCompilerSequenceTooLong:
+                    raise exceptions.QSSCompilerSequenceTooLong(
+                        diag.message,
+                        diagnostics,
+                        return_diagnostics=self.return_diagnostics,
+                    )
+
             if not success:
                 raise exceptions.QSSCompilationFailure(
                     "Failure during compilation",
@@ -321,13 +331,19 @@ class _CompileFile(_CompilationManager):
         self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]
     ) -> Tuple[bool, bytes]:
         return _compile_file(
-            self.input_file, stringify_path(self.compile_options.output_file), args, on_diagnostic
+            self.input_file,
+            stringify_path(self.compile_options.output_file),
+            args,
+            on_diagnostic,
         )
 
 
 class _CompileBytes(_CompilationManager):
     def __init__(
-        self, compile_options: CompileOptions, return_diagnostics: bool, input: Union[str, bytes]
+        self,
+        compile_options: CompileOptions,
+        return_diagnostics: bool,
+        input: Union[str, bytes],
     ):
         super().__init__(compile_options, return_diagnostics)
         self.input = input
@@ -336,7 +352,10 @@ class _CompileBytes(_CompilationManager):
         self, args: List[str], on_diagnostic: Callable[[Diagnostic], Any]
     ) -> Tuple[bool, bytes]:
         return _compile_bytes(
-            self.input, stringify_path(self.compile_options.output_file), args, on_diagnostic
+            self.input,
+            stringify_path(self.compile_options.output_file),
+            args,
+            on_diagnostic,
         )
 
 

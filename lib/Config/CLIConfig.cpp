@@ -311,6 +311,17 @@ struct QSSConfigCLOptions : public QSSConfig {
             llvm::cl::values(clEnumValN(QSSVerbosity::Debug, "debug",
                                         "Also emit debug messages")),
             llvm::cl::cat(qssc::config::getQSSOptCLCategory()));
+
+    static llvm::cl::opt<int> maxThreads_(
+        "max-threads",
+        llvm::cl::desc(
+            "Set the maximum number of threads for the MLIR context."),
+        llvm::cl::init(-1));
+
+    maxThreads_.setCallback([&](const int &cliMaxThreads) {
+      if (cliMaxThreads > 0)
+        maxThreads = cliMaxThreads;
+    });
   }
 
   /// Pointer to static dialectPlugins variable in constructor, needed by
@@ -420,6 +431,9 @@ llvm::Error CLIConfigBuilder::populateConfig(QSSConfig &config) {
   config.dialectPlugins.insert(config.dialectPlugins.end(),
                                clOptionsConfig->dialectPlugins.begin(),
                                clOptionsConfig->dialectPlugins.end());
+
+  if (clOptionsConfig->maxThreads.has_value())
+    config.maxThreads = clOptionsConfig->maxThreads;
 
   // opt
   config.allowUnregisteredDialectsFlag =
