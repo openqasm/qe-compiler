@@ -29,7 +29,6 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <cstdint>
-#include <optional>
 #include <sstream>
 #include <string>
 #include <sys/types.h>
@@ -69,7 +68,7 @@ void Signature::dump() {
   }
 }
 
-std::string Signature::serialize() {
+std::string Signature::serialize() const {
   std::stringstream s;
   s << "circuit_signature\n";
   s << "version 1\n";
@@ -86,10 +85,10 @@ std::string Signature::serialize() {
   return s.str();
 }
 
-llvm::Expected<Signature> Signature::deserialize(
-    llvm::StringRef buffer,
-    const std::optional<qssc::DiagnosticCallback> &onDiagnostic,
-    bool treatWarningsAsErrors) {
+llvm::Expected<Signature>
+Signature::deserialize(llvm::StringRef buffer,
+                       const qssc::OptDiagnosticCallback &onDiagnostic,
+                       bool treatWarningsAsErrors) {
 
   Signature sig;
 
