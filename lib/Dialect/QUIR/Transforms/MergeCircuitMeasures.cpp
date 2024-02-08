@@ -116,6 +116,8 @@ static void mergeMeasurements(PatternRewriter &rewriter,
     circuitArguments[argAttr.getInt()].dump();
   }
 
+  auto maxArgument = circuitOp.getNumArguments();
+
   // // - remap arguments
   for (auto argument : nextMeasureOp.getQubits()) {
     auto blockArgument = dyn_cast<BlockArgument>(argument);
@@ -124,9 +126,19 @@ static void mergeMeasurements(PatternRewriter &rewriter,
     auto argAttr = nextCircuitOp.getArgAttrOfType<IntegerAttr>(
         argNum, mlir::quir::getPhysicalIdAttrName());
     auto search = circuitArguments.find(argAttr.getInt());
-    if (search == circuitArguments.end())
-      assert(false && "TODO: need to append argument");
-    valVec.push_back(search->second);
+    if (search == circuitArguments.end()) {
+      auto operand = nextCallCircuitOp.getOperand(argNum);
+      callCircuitOp->insertOperands(maxArgument, ValueRange{operand});
+      auto dictArg = nextCircuitOp.getArgAttrDict(argNum);
+      circuitOp.insertArgument(maxArgument, argument.getType(), dictArg,
+                               argument.getLoc());
+      auto newArg = circuitOp.getArgument(maxArgument);
+      circuitArguments[argAttr.getInt()] = newArg;
+      valVec.push_back(newArg);
+      maxArgument++;
+    } else {
+      valVec.push_back(search->second);
+    }
   }
 
   // find return and update
