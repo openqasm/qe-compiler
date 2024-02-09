@@ -61,13 +61,17 @@ using namespace mlir::quir;
 
 namespace {
 
-static std::string duplicateCircuit(PatternRewriter &rewriter, CircuitOp circuitOp, llvm::StringMap<Operation *> &symbolMap, std::string newNameTemplate, std::string salt) {
+static std::string duplicateCircuit(PatternRewriter &rewriter,
+                                    CircuitOp circuitOp,
+                                    llvm::StringMap<Operation *> &symbolMap,
+                                    std::string newNameTemplate,
+                                    std::string salt) {
   rewriter.setInsertionPoint(circuitOp);
   auto oldCircuitOp = rewriter.clone(*circuitOp);
   symbolMap[circuitOp.getSymName()] = oldCircuitOp;
 
   // merge circuit names with an additional salt for the merge
-  
+
   std::string newName = newNameTemplate + salt;
   std::string testName = newName;
   int cnt = 0;
@@ -82,25 +86,10 @@ static std::string duplicateCircuit(PatternRewriter &rewriter, CircuitOp circuit
   return newName;
 }
 
-static void mergeMeasurements(PatternRewriter &rewriter,
-                              CallCircuitOp callCircuitOp,
-                              CallCircuitOp nextCallCircuitOp,
-                              CircuitOp circuitOp, CircuitOp nextCircuitOp,
-                              MeasureOp measureOp, MeasureOp nextMeasureOp,
-                              llvm::StringMap<Operation *> &symbolMap) {
-
-  // copy circuitOp in case there are multiple calls
-  std::string newNameTemplate =
-      (circuitOp.getSymName() + "_" + nextCircuitOp.getSymName()).str();
-  auto newName1 = duplicateCircuit(rewriter, circuitOp, symbolMap, newNameTemplate,  "+m");
-
-  // copy nextCircuitOp in case there are multiple calls
-  auto newName2 = duplicateCircuit(rewriter, nextCircuitOp, symbolMap, newNameTemplate, "-m");
-
-
-  // merge measurements
-  std::vector<Type> typeVec;
-  std::vector<Value> valVec;
+static void initTypeAndValVectors(std::vector<Type> &typeVec,
+                                  std::vector<Value> &valVec,
+                                  MeasureOp measureOp,
+                                  MeasureOp nextMeasureOp) {
   typeVec.reserve(measureOp.getNumResults() + nextMeasureOp.getNumResults());
   valVec.reserve(measureOp.getNumResults() + nextMeasureOp.getNumResults());
 
@@ -110,6 +99,13 @@ static void mergeMeasurements(PatternRewriter &rewriter,
                  nextMeasureOp.result_type_end());
   valVec.insert(valVec.end(), measureOp.getQubits().begin(),
                 measureOp.getQubits().end());
+}
+
+static void remapArguments(PatternRewriter &rewriter,
+                           std::vector<Value> &valVec,
+                           CallCircuitOp callCircuitOp,
+                           CallCircuitOp nextCallCircuitOp, CircuitOp circuitOp,
+                           CircuitOp nextCircuitOp, MeasureOp nextMeasureOp) {
 
   // remap measurement arguments
   // - build list of arguments to map to
@@ -118,7 +114,6 @@ static void mergeMeasurements(PatternRewriter &rewriter,
     auto argAttr = circuitOp.getArgAttrOfType<IntegerAttr>(
         argNum, mlir::quir::getPhysicalIdAttrName());
     circuitArguments[argAttr.getInt()] = circuitOp.getArgument(argNum);
-    // circuitArguments[argAttr.getInt()].dump();
   }
 
   auto maxArgument = circuitOp.getNumArguments();
@@ -159,6 +154,32 @@ static void mergeMeasurements(PatternRewriter &rewriter,
 
   circuitOp->setAttr(mlir::quir::getPhysicalIdsAttrName(),
                      rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
+}
+
+static void mergeMeasurements(PatternRewriter &rewriter,
+                              CallCircuitOp callCircuitOp,
+                              CallCircuitOp nextCallCircuitOp,
+                              CircuitOp circuitOp, CircuitOp nextCircuitOp,
+                              MeasureOp measureOp, MeasureOp nextMeasureOp,
+                              llvm::StringMap<Operation *> &symbolMap) {
+
+  // copy circuitOp in case there are multiple calls
+  std::string newNameTemplate =
+      (circuitOp.getSymName() + "_" + nextCircuitOp.getSymName()).str();
+  auto newName1 =
+      duplicateCircuit(rewriter, circuitOp, symbolMap, newNameTemplate, "+m");
+
+  // copy nextCircuitOp in case there are multiple calls
+  auto newName2 = duplicateCircuit(rewriter, nextCircuitOp, symbolMap,
+                                   newNameTemplate, "-m");
+
+  // merge measurements
+  std::vector<Type> typeVec;
+  std::vector<Value> valVec;
+  initTypeAndValVectors(typeVec, valVec, measureOp, nextMeasureOp);
+
+  remapArguments(rewriter, valVec, callCircuitOp, nextCallCircuitOp, circuitOp,
+                 nextCircuitOp, nextMeasureOp);
 
   // find return and update
   auto returnOp = dyn_cast<quir::ReturnOp>(&circuitOp.back().back());
