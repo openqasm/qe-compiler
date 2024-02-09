@@ -156,6 +156,81 @@ static void remapArguments(PatternRewriter &rewriter,
                      rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
 }
 
+static void buildOutputs(llvm::SmallVector<Type> &outputTypes,
+                         llvm::SmallVector<Value> &outputValues,
+                         quir::ReturnOp returnOp, MeasureOp measureOp,
+                         MeasureOp mergedOp) {
+  outputTypes.append(returnOp->getOperandTypes().begin(),
+                     returnOp->getOperandTypes().end());
+
+  outputValues.append(returnOp->getOperands().begin(),
+                      returnOp->getOperands().end());
+
+  auto resultType =
+      mergedOp->getResultTypes().begin() + measureOp.getNumResults() + 1;
+  for (; resultType != mergedOp->getResultTypes().end(); ++resultType)
+    outputTypes.push_back(*resultType);
+
+  auto result = mergedOp->getResults().begin() + measureOp.getNumResults() + 1;
+  for (; result != mergedOp->getResults().end(); ++result)
+    outputValues.push_back(*result);
+}
+
+static CallCircuitOp
+createNewCallOp(PatternRewriter &rewriter, llvm::SmallVector<Type> &outputTypes,
+                llvm::SmallVector<Value> &outputValues, quir::ReturnOp returnOp,
+                CallCircuitOp callCircuitOp, CircuitOp circuitOp,
+                llvm::StringRef newName1) {
+  rewriter.setInsertionPointAfter(returnOp);
+  auto newReturnOp =
+      rewriter.create<quir::ReturnOp>(returnOp->getLoc(), outputValues);
+  // newReturnOp.dump();
+  rewriter.replaceOp(returnOp, newReturnOp->getResults());
+
+  // change the input / output types for the quir.circuit
+  auto opType = circuitOp.getFunctionType();
+  circuitOp.setType(rewriter.getFunctionType(
+      /*inputs=*/opType.getInputs(),
+      /*results=*/ArrayRef<Type>(outputTypes)));
+
+  // new call circuit ops
+  rewriter.setInsertionPointAfter(callCircuitOp);
+  auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
+      callCircuitOp->getLoc(), newName1, TypeRange(outputTypes),
+      ValueRange(callCircuitOp->getOperands()));
+  return newCallOp;
+}
+
+static void dropNextMeasure(PatternRewriter &rewriter,
+                            llvm::SmallVector<Type> &outputTypes,
+                            llvm::SmallVector<Value> &outputValues,
+                            CircuitOp nextCircuitOp, MeasureOp nextMeasureOp) {
+  auto nextReturnOp = dyn_cast<quir::ReturnOp>(&nextCircuitOp.back().back());
+  assert(nextReturnOp && "quir.circuit must end end a quir.return");
+  outputTypes.clear();
+  outputValues.clear();
+  std::vector<int> eraseList;
+  for (uint idx = 0; idx < nextReturnOp.getNumOperands(); idx++)
+    if (nextReturnOp->getOperand(idx).getDefiningOp() ==
+        nextMeasureOp.getOperation())
+      eraseList.push_back(idx);
+
+  while (!eraseList.empty()) {
+    nextReturnOp->eraseOperand(eraseList.back());
+    eraseList.pop_back();
+  }
+
+  rewriter.eraseOp(nextMeasureOp);
+
+  outputTypes.append(nextReturnOp->getOperandTypes().begin(),
+                     nextReturnOp->getOperandTypes().end());
+
+  auto opType = nextCircuitOp.getFunctionType();
+  nextCircuitOp.setType(rewriter.getFunctionType(
+      /*inputs=*/opType.getInputs(),
+      /*results=*/ArrayRef<Type>(outputTypes)));
+}
+
 static void mergeMeasurements(PatternRewriter &rewriter,
                               CallCircuitOp callCircuitOp,
                               CallCircuitOp nextCallCircuitOp,
@@ -195,65 +270,15 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Value> outputValues;
 
-  outputTypes.append(returnOp->getOperandTypes().begin(),
-                     returnOp->getOperandTypes().end());
+  buildOutputs(outputTypes, outputValues, returnOp, measureOp, mergedOp);
 
-  outputValues.append(returnOp->getOperands().begin(),
-                      returnOp->getOperands().end());
+  auto newCallOp =
+      createNewCallOp(rewriter, outputTypes, outputValues, returnOp,
+                      callCircuitOp, circuitOp, newName1);
 
-  auto resultType =
-      mergedOp->getResultTypes().begin() + measureOp.getNumResults() + 1;
-  for (; resultType != mergedOp->getResultTypes().end(); ++resultType)
-    outputTypes.push_back(*resultType);
-
-  auto result = mergedOp->getResults().begin() + measureOp.getNumResults() + 1;
-  for (; result != mergedOp->getResults().end(); ++result)
-    outputValues.push_back(*result);
-
-  rewriter.setInsertionPointAfter(returnOp);
-  auto newReturnOp =
-      rewriter.create<quir::ReturnOp>(returnOp->getLoc(), outputValues);
-  // newReturnOp.dump();
-  rewriter.replaceOp(returnOp, newReturnOp->getResults());
-
-  // change the input / output types for the quir.circuit
-  auto opType = circuitOp.getFunctionType();
-  circuitOp.setType(rewriter.getFunctionType(
-      /*inputs=*/opType.getInputs(),
-      /*results=*/ArrayRef<Type>(outputTypes)));
-
-  // new call circuit ops
-  rewriter.setInsertionPointAfter(callCircuitOp);
-  auto newCallOp = rewriter.create<mlir::quir::CallCircuitOp>(
-      callCircuitOp->getLoc(), newName1, TypeRange(outputTypes),
-      ValueRange(callCircuitOp->getOperands()));
-
-  // drop nextMeasure
-  auto nextReturnOp = dyn_cast<quir::ReturnOp>(&nextCircuitOp.back().back());
-  assert(nextReturnOp && "quir.circuit must end end a quir.return");
-  outputTypes.clear();
-  outputValues.clear();
-  std::vector<int> eraseList;
-  for (uint idx = 0; idx < nextReturnOp.getNumOperands(); idx++)
-    if (nextReturnOp->getOperand(idx).getDefiningOp() ==
-        nextMeasureOp.getOperation())
-      eraseList.push_back(idx);
-
-  while (!eraseList.empty()) {
-    nextReturnOp->eraseOperand(eraseList.back());
-    eraseList.pop_back();
-  }
-
-  rewriter.eraseOp(nextMeasureOp);
-
-  outputTypes.append(nextReturnOp->getOperandTypes().begin(),
-                     nextReturnOp->getOperandTypes().end());
-
-  opType = nextCircuitOp.getFunctionType();
-  nextCircuitOp.setType(rewriter.getFunctionType(
-      /*inputs=*/opType.getInputs(),
-      /*results=*/ArrayRef<Type>(outputTypes)));
-
+  dropNextMeasure(rewriter, outputTypes, outputValues, nextCircuitOp,
+                  nextMeasureOp);
+                  
   // dice the output so we can specify which results to replace
   auto iterSep = newCallOp.result_begin() + callCircuitOp.getNumResults();
   rewriter.replaceOp(callCircuitOp,
