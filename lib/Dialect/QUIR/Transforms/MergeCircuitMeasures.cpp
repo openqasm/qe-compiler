@@ -42,7 +42,6 @@
 #include <iterator>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/StringMap.h>
-#include <llvm/Support/raw_ostream.h>
 #include <mlir/IR/Block.h>
 #include <mlir/IR/BuiltinAttributes.h>
 #include <mlir/IR/SymbolTable.h>
@@ -113,13 +112,13 @@ static void mergeMeasurements(PatternRewriter &rewriter,
     auto argAttr = circuitOp.getArgAttrOfType<IntegerAttr>(
         argNum, mlir::quir::getPhysicalIdAttrName());
     circuitArguments[argAttr.getInt()] = circuitOp.getArgument(argNum);
-    circuitArguments[argAttr.getInt()].dump();
+    // circuitArguments[argAttr.getInt()].dump();
   }
 
   auto maxArgument = circuitOp.getNumArguments();
 
-  auto theseIdsAttr = circuitOp->getAttrOfType<ArrayAttr>(
-      mlir::quir::getPhysicalIdsAttrName());
+  auto theseIdsAttr =
+      circuitOp->getAttrOfType<ArrayAttr>(mlir::quir::getPhysicalIdsAttrName());
 
   // collect all of the first circuit's ids
   std::vector<int> allIds;
@@ -153,7 +152,7 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   }
 
   circuitOp->setAttr(mlir::quir::getPhysicalIdsAttrName(),
-                      rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
+                     rewriter.getI32ArrayAttr(ArrayRef<int>(allIds)));
 
   // find return and update
   auto returnOp = dyn_cast<quir::ReturnOp>(&circuitOp.back().back());
@@ -163,7 +162,7 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   auto mergedOp = rewriter.create<MeasureOp>(
       measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
 
-  returnOp->dump();
+  // returnOp->dump();
 
   rewriter.replaceOp(measureOp, ResultRange(mergedOp.getOuts().begin(),
                                             mergedOp.getOuts().end()));
@@ -189,7 +188,7 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   rewriter.setInsertionPointAfter(returnOp);
   auto newReturnOp =
       rewriter.create<quir::ReturnOp>(returnOp->getLoc(), outputValues);
-  newReturnOp.dump();
+  // newReturnOp.dump();
   rewriter.replaceOp(returnOp, newReturnOp->getResults());
 
   // change the input / output types for the quir.circuit
@@ -237,13 +236,13 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   rewriter.replaceOp(nextCallCircuitOp,
                      ResultRange(iterSep, newCallOp.result_end()));
 
-  llvm::errs() << "First Circuit:\n";
-  circuitOp.dump();
+  // llvm::errs() << "First Circuit:\n";
+  // circuitOp.dump();
 
-  llvm::errs() << "Second Circuit:\n";
-  nextCircuitOp.dump();
+  // llvm::errs() << "Second Circuit:\n";
+  // nextCircuitOp.dump();
 
-  llvm::errs() << "\n\n\n\n\n";
+  // llvm::errs() << "\n\n\n\n\n";
 
   // delete the nextCircuit if it is now empty (starts with a return)
   auto firstReturnOp = dyn_cast<quir::ReturnOp>(&nextCircuitOp.front().front());
@@ -326,27 +325,27 @@ struct CallCircuitAndCallCircuitTopologicalPattern
       nextMeasureOp = nextMeasureOpt.value();
     }
 
-    llvm::errs() << "First Circuit: \n";
-    firstCircuit.dump();
+    // llvm::errs() << "First Circuit: \n";
+    // firstCircuit.dump();
 
-    llvm::errs() << "First Measure: \n";
-    firstMeasureOp.dump();
+    // llvm::errs() << "First Measure: \n";
+    // firstMeasureOp.dump();
 
-    llvm::errs() << "Operated Qubits = \n";
-    for (auto qubit : currMeasureQubits)
-      llvm::errs() << qubit << "\n";
+    // llvm::errs() << "Operated Qubits = \n";
+    // for (auto qubit : currMeasureQubits)
+    //   llvm::errs() << qubit << "\n";
 
-    llvm::errs() << "Second Circuit: \n";
-    secondCircuit.dump();
+    // llvm::errs() << "Second Circuit: \n";
+    // secondCircuit.dump();
 
-    llvm::errs() << "Next Measure: \n";
-    nextMeasureOp->dump();
+    // llvm::errs() << "Next Measure: \n";
+    // nextMeasureOp->dump();
 
-    llvm::errs() << "Observed Qubits = \n";
-    for (auto qubit : observedQubits)
-      llvm::errs() << qubit << "\n";
+    // llvm::errs() << "Observed Qubits = \n";
+    // for (auto qubit : observedQubits)
+    //   llvm::errs() << qubit << "\n";
 
-    llvm::errs() << "Found circuits to try an merge\n";
+    // llvm::errs() << "Found circuits to try an merge\n";
 
     // If any qubit along path touches the same qubits we cannot merge the next
     // measurement.
@@ -363,15 +362,15 @@ struct CallCircuitAndCallCircuitTopologicalPattern
                           std::inserter(mergeMeasureIntersection,
                                         mergeMeasureIntersection.begin()));
 
-    llvm::errs() << "Test Intersection = \n";
-    for (auto qubit : mergeMeasureIntersection)
-      llvm::errs() << qubit << "\n";
+    // llvm::errs() << "Test Intersection = \n";
+    // for (auto qubit : mergeMeasureIntersection)
+    //   llvm::errs() << qubit << "\n";
 
     if (!mergeMeasureIntersection.empty())
       return failure();
 
     // good to merge
-    llvm::errs() << "Good to Merge\n";
+    // llvm::errs() << "Good to Merge\n";
     mergeMeasurements(rewriter, callCircuitOp, *nextCallCircuitOp, firstCircuit,
                       secondCircuit, firstMeasureOp, nextMeasureOp,
                       *_symbolMap);
