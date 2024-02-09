@@ -70,8 +70,8 @@ static void mergeMeasurements(PatternRewriter &rewriter,
 
   // copy circuitOp in case there are multiple calls
   rewriter.setInsertionPoint(circuitOp);
-  rewriter.clone(*circuitOp);
-  symbolMap[nextCircuitOp.getSymName()] = circuitOp;
+  auto oldCircuitOp = rewriter.clone(*circuitOp);
+  symbolMap[circuitOp.getSymName()] = oldCircuitOp;
 
   // merge circuit names with an additional m for the merge
   std::string const newName1 =
@@ -84,8 +84,8 @@ static void mergeMeasurements(PatternRewriter &rewriter,
 
   // copy nextCircuitOp in case there are multiple calls
   rewriter.setInsertionPoint(nextCircuitOp);
-  rewriter.clone(*nextCircuitOp);
-  symbolMap[nextCircuitOp.getSymName()] = nextCircuitOp;
+  auto oldNexCircuitOp = rewriter.clone(*nextCircuitOp);
+  symbolMap[nextCircuitOp.getSymName()] = oldNexCircuitOp;
 
   // merge circuit names with an additional m for the merge
   auto newName = nextCircuitOp.getSymName().str() + "-m";
@@ -237,8 +237,10 @@ static void mergeMeasurements(PatternRewriter &rewriter,
 
   // delete the nextCircuit if it is now empty (starts with a return)
   auto firstReturnOp = dyn_cast<quir::ReturnOp>(&nextCircuitOp.front().front());
-  if (firstReturnOp)
+  if (firstReturnOp) {
+    symbolMap.erase(nextCircuitOp.getSymName());
     rewriter.eraseOp(nextCircuitOp);
+  }
 }
 
 // This pattern matches on two MeasureOps that are only interspersed by
@@ -260,7 +262,7 @@ struct CallCircuitAndCallCircuitTopologicalPattern
     // functions do not label their qubit physical ids this causes later
     // getOperatedQubits to fail
     auto funcOp = dyn_cast<func::FuncOp>(callCircuitOp->getParentOp());
-    if (funcOp)
+    if (funcOp && (SymbolRefAttr::get(funcOp).getLeafReference() != "main"))
       return failure();
 
     // is there a measure in the current circuit
