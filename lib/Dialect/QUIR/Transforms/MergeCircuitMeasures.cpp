@@ -1,6 +1,6 @@
-//===- MergeMeasures.cpp - Merge measurement ops ----------------*- C++ -*-===//
+//===- MergeCircuitMeasures.cpp - Merge measurements in circuits *- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2024.
 //
 // This code is part of Qiskit.
 //
@@ -14,8 +14,8 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-///  This file implements the pass for merging measurements into a single
-///  measure op
+///  This file implements the pass for merging measurements located in circuits
+///  into a single measure op
 ///
 //===----------------------------------------------------------------------===//
 
@@ -26,31 +26,32 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Block.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/SymbolTable.h"
 #include "mlir/IR/TypeRange.h"
+#include "mlir/IR/Types.h"
+#include "mlir/IR/Value.h"
 #include "mlir/IR/ValueRange.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
-#include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <iterator>
-#include <llvm/ADT/STLExtras.h>
-#include <llvm/ADT/StringMap.h>
-#include <mlir/IR/Block.h>
-#include <mlir/IR/BuiltinAttributes.h>
-#include <mlir/IR/SymbolTable.h>
-#include <mlir/IR/Value.h>
-#include <optional>
 #include <set>
 #include <string>
 #include <sys/types.h>
-#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -265,10 +266,12 @@ struct CallCircuitAndCallCircuitTopologicalPattern
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
 
-    // Two types of measurements to merge
-    // 1. Two measurements in the same circuit (possibly covered by
-    // MergeMeasuresTopologicalPass)
-    // 2. Two measurements in different circuits
+    // check to see if CallCircuit is inside a function and ignore as
+    // functions do not label their qubit physical ids this causes later
+    // getOperatedQubits to fail
+    auto funcOp = callCircuitOp->getParentOfType<func::FuncOp>();
+    if (funcOp)
+      return failure();
 
     // is there a measure in the current circuit
     auto search1 = _symbolMap->find(callCircuitOp.getCallee());
