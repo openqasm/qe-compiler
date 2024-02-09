@@ -128,7 +128,7 @@ static void mergeMeasurements(PatternRewriter &rewriter,
     allIds.push_back(intAttr.getInt());
   }
 
-  // // - remap arguments
+  // remap arguments
   for (auto argument : nextMeasureOp.getQubits()) {
     auto blockArgument = dyn_cast<BlockArgument>(argument);
     assert(blockArgument && "expect qubit to be a block argument");
@@ -162,8 +162,6 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   rewriter.setInsertionPoint(measureOp);
   auto mergedOp = rewriter.create<MeasureOp>(
       measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
-
-  // returnOp->dump();
 
   rewriter.replaceOp(measureOp, ResultRange(mergedOp.getOuts().begin(),
                                             mergedOp.getOuts().end()));
@@ -237,14 +235,6 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   rewriter.replaceOp(nextCallCircuitOp,
                      ResultRange(iterSep, newCallOp.result_end()));
 
-  // llvm::errs() << "First Circuit:\n";
-  // circuitOp.dump();
-
-  // llvm::errs() << "Second Circuit:\n";
-  // nextCircuitOp.dump();
-
-  // llvm::errs() << "\n\n\n\n\n";
-
   // delete the nextCircuit if it is now empty (starts with a return)
   auto firstReturnOp = dyn_cast<quir::ReturnOp>(&nextCircuitOp.front().front());
   if (firstReturnOp)
@@ -269,7 +259,7 @@ struct CallCircuitAndCallCircuitTopologicalPattern
     // check to see if CallCircuit is inside a function and ignore as
     // functions do not label their qubit physical ids this causes later
     // getOperatedQubits to fail
-    auto funcOp = callCircuitOp->getParentOfType<func::FuncOp>();
+    auto funcOp = dyn_cast<func::FuncOp>(callCircuitOp->getParentOp());
     if (funcOp)
       return failure();
 
@@ -328,28 +318,6 @@ struct CallCircuitAndCallCircuitTopologicalPattern
       nextMeasureOp = nextMeasureOpt.value();
     }
 
-    // llvm::errs() << "First Circuit: \n";
-    // firstCircuit.dump();
-
-    // llvm::errs() << "First Measure: \n";
-    // firstMeasureOp.dump();
-
-    // llvm::errs() << "Operated Qubits = \n";
-    // for (auto qubit : currMeasureQubits)
-    //   llvm::errs() << qubit << "\n";
-
-    // llvm::errs() << "Second Circuit: \n";
-    // secondCircuit.dump();
-
-    // llvm::errs() << "Next Measure: \n";
-    // nextMeasureOp->dump();
-
-    // llvm::errs() << "Observed Qubits = \n";
-    // for (auto qubit : observedQubits)
-    //   llvm::errs() << qubit << "\n";
-
-    // llvm::errs() << "Found circuits to try an merge\n";
-
     // If any qubit along path touches the same qubits we cannot merge the next
     // measurement.
     currMeasureQubits.insert(observedQubits.begin(), observedQubits.end());
@@ -365,15 +333,10 @@ struct CallCircuitAndCallCircuitTopologicalPattern
                           std::inserter(mergeMeasureIntersection,
                                         mergeMeasureIntersection.begin()));
 
-    // llvm::errs() << "Test Intersection = \n";
-    // for (auto qubit : mergeMeasureIntersection)
-    //   llvm::errs() << qubit << "\n";
-
     if (!mergeMeasureIntersection.empty())
       return failure();
 
     // good to merge
-    // llvm::errs() << "Good to Merge\n";
     mergeMeasurements(rewriter, callCircuitOp, *nextCallCircuitOp, firstCircuit,
                       secondCircuit, firstMeasureOp, nextMeasureOp,
                       *_symbolMap);
