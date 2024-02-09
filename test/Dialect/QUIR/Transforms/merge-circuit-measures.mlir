@@ -13,35 +13,7 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// func.func @one() {
-//   %q = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
-//   // TOP:  %{{.*}} = quir.measure(%{{.*}}) : (!quir.qubit<1>) -> i1
-//   %res = quir.measure(%q) : (!quir.qubit<1>) -> (i1)
-//   return
-// }
-
-// func.func @two(%c : memref<1xi1>, %ind : index) {
-//   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
-//   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
-//   // TOP:  %{{.*}}:2 = quir.measure(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
-//   %res0 = quir.measure(%q0) : (!quir.qubit<1>) -> (i1)
-//   memref.store %res0, %c[%ind] : memref<1xi1>
-//   %res1 = quir.measure(%q1) : (!quir.qubit<1>) -> (i1)
-//   return
-// }
-
-// func.func @three(%c : memref<1xi1>, %ind : index) {
-//   %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
-//   %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
-//   %q2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
-//   // TOP:  %{{.*}}:3 = quir.measure(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1)
-//   %res0 = quir.measure(%q0) : (!quir.qubit<1>) -> (i1)
-//   memref.store %res0, %c[%ind] : memref<1xi1>
-//   %res1 = quir.measure(%q1) : (!quir.qubit<1>) -> (i1)
-//   memref.store %res1, %c[%ind] : memref<1xi1>
-//   %res2 = quir.measure(%q2) : (!quir.qubit<1>) -> (i1)
-//   return
-// }
+// This test is based om merge-measures.mlir but uses circuits 
 
 module {
   oq3.declare_variable @c0 : !quir.cbit<1>
@@ -83,6 +55,36 @@ module {
     %q3 = quir.declare_qubit {id = 3 : i32} : !quir.qubit<1>
     %q4 = quir.declare_qubit {id = 4 : i32} : !quir.qubit<1>
     %q5 = quir.declare_qubit {id = 5 : i32} : !quir.qubit<1>
+
+    // one
+    // CHECK:  %{{.*}} = quir.call_circuit @circuit_0_q0(%{{.*}}) : (!quir.qubit<1>) -> i1
+    %res = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
+
+    // CHECK:  quir.barrier %0, %1, %2, %3, %4, %5
+    quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+
+    // two
+    // CHECK:  %{{.*}}:2 = quir.call_circuit @"circuit_0_q0_circuit_1_q1+m"(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
+    %res7_0 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
+    %cast7_0 = "oq3.cast"(%res7_0) : (i1) -> !quir.cbit<1>
+    oq3.variable_assign @c0 : !quir.cbit<1> = %cast7_0
+    %res7_1 = quir.call_circuit @circuit_1(%q1) : (!quir.qubit<1>) -> (i1)
+
+    // CHECK:  quir.barrier %0, %1, %2, %3, %4, %5
+    quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+
+    // three
+    // CHECK:  %{{.*}}:3 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2+m01+m"(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1)
+    %res6_0 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
+    %cast6_0 = "oq3.cast"(%res6_0) : (i1) -> !quir.cbit<1>
+    oq3.variable_assign @c0 : !quir.cbit<1> = %cast6_0
+    %res1 = quir.call_circuit @circuit_1(%q1) : (!quir.qubit<1>) -> (i1)
+    %cast6_1 = "oq3.cast"(%res6_0) : (i1) -> !quir.cbit<1>
+    oq3.variable_assign @c0 : !quir.cbit<1> = %cast6_1
+    %res2 = quir.call_circuit @circuit_2(%q2) : (!quir.qubit<1>) -> (i1)
+
+    // CHECK:  quir.barrier %0, %1, %2, %3, %4, %5
+    quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
     // four
     // CHECK:  %{{.*}}:4 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2_circuit_3_q3+m0+m+m"(%{{.*}}, %{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
