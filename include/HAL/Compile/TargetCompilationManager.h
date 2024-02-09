@@ -21,6 +21,8 @@
 #ifndef TARGETCOMPILATIONMANAGER_H
 #define TARGETCOMPILATIONMANAGER_H
 
+#include "API/errors.h"
+#include "Config/QSSConfig.h"
 #include "HAL/TargetSystem.h"
 
 #include "mlir/IR/BuiltinOps.h"
@@ -93,6 +95,9 @@ public:
                         bool printAfterAllTargetPasses,
                         bool printBeforeAllTargetPayload,
                         bool printAfterTargetCompileFailure);
+
+  /// @brief Take the diagnostics capatured in the Target
+  qssc::DiagList takeTargetDiagnostics() { return target.takeDiagnostics(); }
 
   void enableTiming(mlir::TimingScope &timingScope);
   void disableTiming();
