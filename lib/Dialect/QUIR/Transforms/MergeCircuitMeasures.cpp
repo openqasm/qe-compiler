@@ -20,8 +20,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/MergeCircuitMeasures.h"
-#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
@@ -64,10 +64,10 @@ namespace {
 static std::string duplicateCircuit(PatternRewriter &rewriter,
                                     CircuitOp circuitOp,
                                     llvm::StringMap<Operation *> &symbolMap,
-                                    std::string newNameTemplate,
-                                    std::string salt) {
+                                    const std::string& newNameTemplate,
+                                    const std::string& salt) {
   rewriter.setInsertionPoint(circuitOp);
-  auto oldCircuitOp = rewriter.clone(*circuitOp);
+  auto *oldCircuitOp = rewriter.clone(*circuitOp);
   symbolMap[circuitOp.getSymName()] = oldCircuitOp;
 
   // merge circuit names with an additional salt for the merge
@@ -239,7 +239,7 @@ static void mergeMeasurements(PatternRewriter &rewriter,
                               llvm::StringMap<Operation *> &symbolMap) {
 
   // copy circuitOp in case there are multiple calls
-  std::string newNameTemplate =
+  std::string const newNameTemplate =
       (circuitOp.getSymName() + "_" + nextCircuitOp.getSymName()).str();
   auto newName1 =
       duplicateCircuit(rewriter, circuitOp, symbolMap, newNameTemplate, "+m");
@@ -278,7 +278,7 @@ static void mergeMeasurements(PatternRewriter &rewriter,
 
   dropNextMeasure(rewriter, outputTypes, outputValues, nextCircuitOp,
                   nextMeasureOp);
-                  
+
   // dice the output so we can specify which results to replace
   auto iterSep = newCallOp.result_begin() + callCircuitOp.getNumResults();
   rewriter.replaceOp(callCircuitOp,
