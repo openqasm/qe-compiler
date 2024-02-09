@@ -81,11 +81,12 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   int cnt = 0;
   while (symbolMap.contains(testName))
     testName += std::to_string(cnt++);
+  newName1 = testName;
 
   // rename first circuit to the new name
   circuitOp->setAttr(SymbolTable::getSymbolAttrName(),
-                     StringAttr::get(circuitOp->getContext(), testName));
-  symbolMap[testName] = circuitOp;
+                     StringAttr::get(circuitOp->getContext(), newName1));
+  symbolMap[newName1] = circuitOp;
 
   // copy nextCircuitOp in case there are multiple calls
   rewriter.setInsertionPoint(nextCircuitOp);
@@ -93,15 +94,16 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   symbolMap[nextCircuitOp.getSymName()] = oldNexCircuitOp;
 
   // merge circuit names with an additional m for the merge
-  auto newName2= nextCircuitOp.getSymName().str() + "-m";
+  auto newName2 = nextCircuitOp.getSymName().str() + "-m";
   testName = newName2;
   cnt = 0;
   while (symbolMap.contains(testName))
     testName += std::to_string(cnt++);
+  newName2 = testName;
 
   nextCircuitOp->setAttr(SymbolTable::getSymbolAttrName(),
-                         StringAttr::get(circuitOp->getContext(), testName));
-  symbolMap[testName] = nextCircuitOp;
+                         StringAttr::get(circuitOp->getContext(), newName2));
+  symbolMap[newName2] = nextCircuitOp;
 
   // merge measurements
   std::vector<Type> typeVec;
