@@ -61,6 +61,27 @@ using namespace mlir::quir;
 
 namespace {
 
+static std::string duplicateCircuit(PatternRewriter &rewriter, CircuitOp circuitOp, llvm::StringMap<Operation *> &symbolMap, std::string newNameTemplate, std::string salt) {
+  rewriter.setInsertionPoint(circuitOp);
+  auto oldCircuitOp = rewriter.clone(*circuitOp);
+  symbolMap[circuitOp.getSymName()] = oldCircuitOp;
+
+  // merge circuit names with an additional salt for the merge
+  
+  std::string newName = newNameTemplate + salt;
+  std::string testName = newName;
+  int cnt = 0;
+  while (symbolMap.contains(testName))
+    testName = newName + std::to_string(cnt++);
+  newName = testName;
+
+  circuitOp->setAttr(SymbolTable::getSymbolAttrName(),
+                     StringAttr::get(circuitOp->getContext(), newName));
+  symbolMap[newName] = circuitOp;
+
+  return newName;
+}
+
 static void mergeMeasurements(PatternRewriter &rewriter,
                               CallCircuitOp callCircuitOp,
                               CallCircuitOp nextCallCircuitOp,
@@ -69,41 +90,13 @@ static void mergeMeasurements(PatternRewriter &rewriter,
                               llvm::StringMap<Operation *> &symbolMap) {
 
   // copy circuitOp in case there are multiple calls
-  rewriter.setInsertionPoint(circuitOp);
-  auto oldCircuitOp = rewriter.clone(*circuitOp);
-  symbolMap[circuitOp.getSymName()] = oldCircuitOp;
-
-  // merge circuit names with an additional m for the merge
-  std::string newName1 =
-      (circuitOp.getSymName() + "_" + nextCircuitOp.getSymName()).str() + "+m";
-
-  std::string testName = newName1;
-  int cnt = 0;
-  while (symbolMap.contains(testName))
-    testName += std::to_string(cnt++);
-  newName1 = testName;
-
-  // rename first circuit to the new name
-  circuitOp->setAttr(SymbolTable::getSymbolAttrName(),
-                     StringAttr::get(circuitOp->getContext(), newName1));
-  symbolMap[newName1] = circuitOp;
+  std::string newNameTemplate =
+      (circuitOp.getSymName() + "_" + nextCircuitOp.getSymName()).str();
+  auto newName1 = duplicateCircuit(rewriter, circuitOp, symbolMap, newNameTemplate,  "+m");
 
   // copy nextCircuitOp in case there are multiple calls
-  rewriter.setInsertionPoint(nextCircuitOp);
-  auto oldNexCircuitOp = rewriter.clone(*nextCircuitOp);
-  symbolMap[nextCircuitOp.getSymName()] = oldNexCircuitOp;
+  auto newName2 = duplicateCircuit(rewriter, nextCircuitOp, symbolMap, newNameTemplate, "-m");
 
-  // merge circuit names with an additional m for the merge
-  auto newName2 = nextCircuitOp.getSymName().str() + "-m";
-  testName = newName2;
-  cnt = 0;
-  while (symbolMap.contains(testName))
-    testName += std::to_string(cnt++);
-  newName2 = testName;
-
-  nextCircuitOp->setAttr(SymbolTable::getSymbolAttrName(),
-                         StringAttr::get(circuitOp->getContext(), newName2));
-  symbolMap[newName2] = nextCircuitOp;
 
   // merge measurements
   std::vector<Type> typeVec;

@@ -74,7 +74,7 @@ module {
     quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
     // three
-    // CHECK:  %{{.*}}:3 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2+m01+m"(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1)
+    // CHECK:  %{{.*}}:3 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2+m1+m"(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1)
     %res6_0 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
     %cast6_0 = "oq3.cast"(%res6_0) : (i1) -> !quir.cbit<1>
     oq3.variable_assign @c0 : !quir.cbit<1> = %cast6_0
