@@ -13,7 +13,7 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// This test is based om merge-measures.mlir but uses circuits 
+// This test is based om merge-measures.mlir but uses circuits
 
 module {
   oq3.declare_variable @c0 : !quir.cbit<1>
@@ -155,7 +155,7 @@ module {
 
     // CHECK:  quir.barrier %0, %1, %2, %3, %4, %5
     quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
-    
+
     // inter_switch
     // CHECK:  %{{.*}} = quir.call_circuit @circuit_0_q0(%0) : (!quir.qubit<1>) -> i1
     %res1_0 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> i1
@@ -190,4 +190,3 @@ module {
     return %c0_i32 : i32
   }
 }
-

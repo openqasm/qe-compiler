@@ -64,8 +64,8 @@ namespace {
 static std::string duplicateCircuit(PatternRewriter &rewriter,
                                     CircuitOp circuitOp,
                                     llvm::StringMap<Operation *> &symbolMap,
-                                    const std::string& newNameTemplate,
-                                    const std::string& salt) {
+                                    const std::string &newNameTemplate,
+                                    const std::string &salt) {
   rewriter.setInsertionPoint(circuitOp);
   auto *oldCircuitOp = rewriter.clone(*circuitOp);
   symbolMap[circuitOp.getSymName()] = oldCircuitOp;
