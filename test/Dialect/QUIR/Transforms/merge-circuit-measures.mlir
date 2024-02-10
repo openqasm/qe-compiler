@@ -13,7 +13,7 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// This test is based om merge-measures.mlir but uses circuits
+// This test is based on merge-measures.mlir but uses circuits
 
 module {
   oq3.declare_variable @c0 : !quir.cbit<1>
