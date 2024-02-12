@@ -37,11 +37,11 @@ module {
   func.func @main() -> i32  {
     %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
     %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
-    
+
     %res1 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
 
     %res2 = quir.call_circuit @circuit_1(%q1) : (!quir.qubit<1>) -> (i1)
-    
+
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32
   }
