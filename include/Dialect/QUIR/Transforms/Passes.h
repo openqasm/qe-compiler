@@ -29,6 +29,7 @@
 #include "MergeParallelResets.h"
 #include "QuantumDecoration.h"
 #include "RemoveQubitOperands.h"
+#include "RemoveUnusedCircuits.h"
 #include "ReorderCircuits.h"
 #include "ReorderMeasurements.h"
 #include "SubroutineCloning.h"

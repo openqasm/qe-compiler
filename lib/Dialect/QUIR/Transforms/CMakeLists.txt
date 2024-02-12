@@ -26,6 +26,7 @@ add_mlir_dialect_library(MLIRQUIRTransforms
     QuantumDecoration.cpp
     QUIRCircuitAnalysis.cpp
     RemoveQubitOperands.cpp
+    RemoveUnusedCircuits.cpp
     ReorderMeasurements.cpp
     ReorderCircuits.cpp
     SubroutineCloning.cpp

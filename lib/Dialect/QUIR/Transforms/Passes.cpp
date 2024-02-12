@@ -31,6 +31,7 @@
 #include "Dialect/QUIR/Transforms/MergeParallelResets.h"
 #include "Dialect/QUIR/Transforms/QuantumDecoration.h"
 #include "Dialect/QUIR/Transforms/RemoveQubitOperands.h"
+#include "Dialect/QUIR/Transforms/RemoveUnusedCircuits.h"
 #include "Dialect/QUIR/Transforms/ReorderCircuits.h"
 #include "Dialect/QUIR/Transforms/ReorderMeasurements.h"
 #include "Dialect/QUIR/Transforms/SubroutineCloning.h"
@@ -285,6 +286,7 @@ void registerQuirPasses() {
   PassRegistration<quir::MergeResetsTopologicalPass>();
   PassRegistration<quir::SubroutineCloningPass>();
   PassRegistration<quir::RemoveQubitOperandsPass>();
+  PassRegistration<quir::RemoveUnusedCircuitsPass>();
   PassRegistration<quir::UnusedVariablePass>();
   PassRegistration<quir::AddShotLoopPass>();
   PassRegistration<quir::QuantumDecorationPass>();
