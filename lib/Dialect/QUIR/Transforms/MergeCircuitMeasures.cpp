@@ -158,7 +158,7 @@ static void remapArguments(PatternRewriter &rewriter,
 
 static void buildOutputs(llvm::SmallVector<Type> &outputTypes,
                          llvm::SmallVector<Value> &outputValues,
-                         quir::ReturnOp returnOp, MeasureOp measureOp,
+                         quir::ReturnOp returnOp, unsigned int resultOffset,
                          MeasureOp mergedOp) {
   outputTypes.append(returnOp->getOperandTypes().begin(),
                      returnOp->getOperandTypes().end());
@@ -166,14 +166,11 @@ static void buildOutputs(llvm::SmallVector<Type> &outputTypes,
   outputValues.append(returnOp->getOperands().begin(),
                       returnOp->getOperands().end());
 
-  auto resultType =
-      mergedOp->getResultTypes().begin() + measureOp.getNumResults();
-  for (; resultType != mergedOp->getResultTypes().end(); ++resultType)
-    outputTypes.push_back(*resultType);
-
-  auto result = mergedOp->getResults().begin() + measureOp.getNumResults();
-  for (; result != mergedOp->getResults().end(); ++result)
+  auto result = mergedOp.getOuts().begin() + resultOffset;
+  for (; result != mergedOp.getResults().end(); result++) {
+    outputTypes.push_back((*result).getType());
     outputValues.push_back(*result);
+  }
 }
 
 static CallCircuitOp
@@ -264,13 +261,15 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   auto mergedOp = rewriter.create<MeasureOp>(
       measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
 
+  auto originalNumResults = measureOp->getNumResults();
   rewriter.replaceOp(measureOp, ResultRange(mergedOp.getOuts().begin(),
                                             mergedOp.getOuts().end()));
 
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Value> outputValues;
 
-  buildOutputs(outputTypes, outputValues, returnOp, measureOp, mergedOp);
+  buildOutputs(outputTypes, outputValues, returnOp, originalNumResults,
+               mergedOp);
 
   auto newCallOp =
       createNewCallOp(rewriter, outputTypes, outputValues, returnOp,
