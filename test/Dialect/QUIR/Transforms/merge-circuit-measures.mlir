@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --canonicalize --subroutine-cloning --quantum-decorate --merge-circuit-measures-topological %s | FileCheck %s
+// RUN: qss-compiler -X=mlir --canonicalize --subroutine-cloning --quantum-decorate --merge-circuit-measures-topological %s | FileCheck %s --dump-input always
 
 //
 // This code is part of Qiskit.
