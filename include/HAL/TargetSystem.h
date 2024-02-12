@@ -148,6 +148,12 @@ public:
     const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
     diagnostics_.emplace_back(diag);
   }
+  /// @brief Construct a diagnostic and add to this target
+  void addDiagnostic(Severity severity, ErrorCategory category,
+                     std::string message) {
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
+    diagnostics_.emplace_back(severity, category, message);
+  }
   /// @brief Return the diagnostics from this target and its sub-targets.
   ///        Take and clear the diagnostic lists of the targets.
   qssc::DiagList takeDiagnostics() {
