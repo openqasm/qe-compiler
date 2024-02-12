@@ -167,11 +167,11 @@ static void buildOutputs(llvm::SmallVector<Type> &outputTypes,
                       returnOp->getOperands().end());
 
   auto resultType =
-      mergedOp->getResultTypes().begin() + measureOp.getNumResults() + 1;
+      mergedOp->getResultTypes().begin() + measureOp.getNumResults();
   for (; resultType != mergedOp->getResultTypes().end(); ++resultType)
     outputTypes.push_back(*resultType);
 
-  auto result = mergedOp->getResults().begin() + measureOp.getNumResults() + 1;
+  auto result = mergedOp->getResults().begin() + measureOp.getNumResults();
   for (; result != mergedOp->getResults().end(); ++result)
     outputValues.push_back(*result);
 }
