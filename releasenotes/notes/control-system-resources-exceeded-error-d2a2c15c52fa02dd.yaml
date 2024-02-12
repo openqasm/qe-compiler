@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    A new QSSControlSystemResourcesExceeded error has been added as an error
+    category. This can be raised as an error whenever the compiler detects that
+    an input circuit will exceed the capabilities of the control system.
