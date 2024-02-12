@@ -150,7 +150,7 @@ public:
   }
   /// @brief Construct a diagnostic and add to this target
   void addDiagnostic(Severity severity, ErrorCategory category,
-                     std::string message) {
+                     const std::string &message) {
     const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
     diagnostics_.emplace_back(severity, category, message);
   }
