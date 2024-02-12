@@ -41,6 +41,8 @@ void addErrorCategory(py::module &m) {
              qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
       .value("QSSLinkInvalidPatchTypeError",
              qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
+      .value("QSSControlSystemResourcesExceeded",
+             qssc::ErrorCategory::QSSControlSystemResourcesExceeded)
       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
       .export_values();
 }
