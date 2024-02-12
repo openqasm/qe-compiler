@@ -69,6 +69,8 @@ module {
     %cast7_0 = "oq3.cast"(%res7_0) : (i1) -> !quir.cbit<1>
     oq3.variable_assign @c0 : !quir.cbit<1> = %cast7_0
     %res7_1 = quir.call_circuit @circuit_1(%q1) : (!quir.qubit<1>) -> (i1)
+    %cast7_1 = "oq3.cast"(%res7_0) : (i1) -> !quir.cbit<1>
+    oq3.variable_assign @c0 : !quir.cbit<1> = %cast7_1
 
     // CHECK:  quir.barrier %0, %1, %2, %3, %4, %5
     quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
