@@ -67,6 +67,9 @@ void LabelPlayOpDurationsPass::runOnOperation() {
   module->walk([&](PlayOp playOp) {
     auto sequenceOp = playOp->getParentOfType<mlir::pulse::SequenceOp>();
     auto sequenceStr = sequenceOp.getSymName().str();
+    // sequenceStr may not be in argumentToDuration if the sequence is not actually called
+    if (argumentToDuration.find(sequenceStr) == argumentToDuration.end())
+      return;
     auto wfArgNumber = playOp.getWfr().dyn_cast<BlockArgument>().getArgNumber();
     auto duration = argumentToDuration[sequenceStr][wfArgNumber];
     mlir::pulse::PulseOpSchedulingInterface::setDuration(playOp, duration);
