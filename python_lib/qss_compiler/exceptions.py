@@ -31,14 +31,22 @@ class QSSCompilerError(Exception):
     """Raised on errors invoking the compiler or when the interaction between
     Python interface and native backend code fails."""
 
-    def __init__(self, message: str, diagnostics: Optional[List[Diagnostic]] = None):
+    def __init__(
+        self,
+        message: str,
+        diagnostics: Optional[List[Diagnostic]] = None,
+        return_diagnostics: bool = False,
+    ):
         """Set the error message."""
         self.message = message
         self.diagnostics = [] if diagnostics is None else diagnostics
+        self.return_diagnostics = return_diagnostics
 
     def __str__(self):
         """Return the message."""
-        return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
+        if self.return_diagnostics:
+            return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
+        return "\n".join([self.message])
 
 
 class QSSCompilerNoInputError(QSSCompilerError):
@@ -57,36 +65,53 @@ class QSSCompilerNonZeroStatus(QSSCompilerError):
     """Raised when non-zero status is returned."""
 
 
+class QSSCompilerSequenceTooLong(QSSCompilerError):
+    """Raised when input sequence is too long."""
+
+
 class QSSCompilationFailure(QSSCompilerError):
     """Raised during other compilation failure."""
+
 
 class QSSLinkingFailure(QSSCompilerError):
     """Raised on linking failure."""
 
+
 class QSSLinkerNotImplemented(QSSCompilerError):
     """Raised on linking failure."""
+
 
 class QSSArgumentInputTypeError(QSSLinkingFailure):
     """Raised when argument type is invalid"""
 
+
 class QSSLinkSignatureError(QSSLinkingFailure):
     """Raised when signature file format is invalid"""
+
 
 class QSSLinkSignatureWarning(QSSLinkingFailure, Warning):
     """Raised when signature file format is invalid but may still be processed"""
 
+
 class QSSLinkAddressError(QSSLinkingFailure):
     """Raised when signature link address is invalid"""
+
 
 class QSSLinkSignatureNotFound(QSSLinkingFailure):
     """Raised when argument signature file is not found"""
 
+
 class QSSLinkArgumentNotFoundWarning(QSSLinkingFailure, Warning):
     """Raised when parameter name in signature is not found in arguments"""
+
 
 class QSSLinkInvalidPatchTypeError(QSSLinkingFailure):
     """Raised when parameter patch type is invalid"""
 
+
 class QSSLinkInvalidArgumentError(QSSLinkingFailure):
     """Raised when argument is invalid"""
 
+
+class QSSControlSystemResourcesExceeded(QSSCompilerError):
+    """Raised when control system resources (such as instruction memory) are exceeded."""

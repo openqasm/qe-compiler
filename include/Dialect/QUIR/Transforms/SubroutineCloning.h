@@ -35,6 +35,9 @@ class Operation;
 } // namespace mlir
 
 namespace mlir::quir {
+
+using SymbolOpMap = llvm::StringMap<Operation *>;
+
 struct SubroutineCloningPass
     : public PassWrapper<SubroutineCloningPass, OperationPass<>> {
   auto lookupQubitId(const Value val) -> int;
@@ -42,7 +45,7 @@ struct SubroutineCloningPass
   template <class CallLikeOp>
   auto getMangledName(Operation *op) -> std::string;
   template <class CallLikeOp, class FuncLikeOp>
-  void processCallOp(Operation *op);
+  void processCallOp(Operation *op, SymbolOpMap &symbolOpMap);
 
   void runOnOperation() override;
 
@@ -52,6 +55,7 @@ struct SubroutineCloningPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct SubroutineCloningPass
 } // namespace mlir::quir
 

@@ -31,6 +31,7 @@ struct LoadEliminationPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct LoadEliminationPass
 
 } // namespace mlir::quir

@@ -17,7 +17,9 @@
 #ifndef PULSE_TYPES
 #define PULSE_TYPES
 
+include "mlir/IR/AttrTypeBase.td"
 include "mlir/IR/OpBase.td"
+
 
 class Pulse_Type<string name, string typeMnemonic, list<Trait> traits = []>
     : TypeDef<PulseDialect, name, traits> {

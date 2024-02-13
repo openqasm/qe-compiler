@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -12,7 +12,6 @@
 import os
 
 from conans import ConanFile, CMake, tools
-from conans.tools import load
 
 
 # Get version from environment variable.
@@ -30,21 +29,24 @@ class QSSCompilerConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "pythonlib": [True, False]}
     default_options = {"shared": False, "pythonlib": True}
-    license = "Proprietary"
-    author = "IBM Quantum development team"
-    topics = ("Compiler", "Scheduler", "OpenQASM3")
+    license = "Apache-2.0 WITH LLVM-exception"
+    author = "OpenQASM Organization"
+    topics = ("Compiler", "OpenQASM3", "MLIR", "Quantum", "Computing")
     description = "An LLVM- and MLIR-based Quantum compiler that consumes OpenQASM 3.0"
-    generators = ["CMakeToolchain", "CMakeDeps"]
+    generators = ["CMakeToolchain", "CMakeDeps", "VirtualBuildEnv"]
     exports_sources = "*"
 
     def requirements(self):
-        tool_pkgs = ["llvm", "clang-tools-extra"]
         for req in self.conan_data["requirements"]:
             self.requires(req)
 
     def configure(self):
         if self.settings.os == "Macos":
             self.options["qasm"].shared = True
+
+        # LLVM prefers ZSTD shared libraries by default now so we force building
+        # https://github.com/llvm/llvm-project/commit/fc1da043f4f9198303abd6f643cf23439115ce73
+        self.options["zstd"].shared = True
 
     def build_requirements(self):
         tool_pkgs = ["llvm", "clang-tools-extra"]
@@ -61,23 +63,27 @@ class QSSCompilerConan(ConanFile):
         # available in a typical CI worker for debug builds.
         if self.settings.build_type == "Debug":
             cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = "2"
+
+        cmake.verbose = True
         return cmake
 
     def build(self):
         cmake = self._configure_cmake()
-        cmake.verbose = True
-        cmake.configure()
-        cmake.build()
 
-        if self.options.pythonlib:
-            self.run(
-            f"cd {self.build_folder}/python_lib \
-                    && pip install -e .[test]"
-            )
+        if self.should_configure:
+            cmake.configure()
+
+        if self.should_build:
+            cmake.build()
+
+            if self.options.pythonlib:
+                self.run(
+                    f"cd {self.build_folder}/python_lib \
+                        && pip install -e .[test]"
+                )
 
         if self.should_test:
             self.test(cmake)
-
 
     def package(self):
         cmake = self._configure_cmake()
@@ -85,7 +91,7 @@ class QSSCompilerConan(ConanFile):
 
         if self.options.pythonlib:
             self.run(
-            f"cd {self.build_folder}/python_lib \
+                f"cd {self.build_folder}/python_lib \
                     && pip install .[test]"
             )
 

@@ -26,9 +26,10 @@ from typing import Mapping, Any, Optional, Callable, Union
 import warnings
 
 from .py_qssc import _link_file, Diagnostic, ErrorCategory
-from .compile import _stringify_path
+from .compile import stringify_path
 
 from . import exceptions
+
 
 @dataclass
 class LinkOptions:
@@ -43,7 +44,9 @@ class LinkOptions:
     target: str = None
     """Hardware target to select."""
     arguments: Mapping[str, Any] = field(default_factory=lambda: {})
-    """Set the specific execution arguments of a pre-compiled program as a mapping of name to value."""
+    """Set the specific execution arguments of a pre-compiled program
+        as a mapping of name to value.
+    """
     config_path: str = ""
     """Target configuration path."""
     treat_warnings_as_errors: bool = True
@@ -52,9 +55,7 @@ class LinkOptions:
     """Optional callback for processing diagnostic messages from the linker."""
 
 
-def _prepare_link_options(
-    link_options: Optional[LinkOptions] = None, **kwargs
-) -> LinkOptions:
+def _prepare_link_options(link_options: Optional[LinkOptions] = None, **kwargs) -> LinkOptions:
     if link_options is None:
         link_options = LinkOptions(**kwargs)
     return link_options
@@ -80,33 +81,36 @@ def link_file(
     """
     link_options = _prepare_link_options(link_options, **kwargs)
 
-    input_file = _stringify_path(link_options.input_file)
-    output_file = _stringify_path(link_options.output_file)
-    config_path = _stringify_path(link_options.config_path)
+    input_file = stringify_path(link_options.input_file)
+    output_file = stringify_path(link_options.output_file)
+    config_path = stringify_path(link_options.config_path)
 
     diagnostics = []
+
     def on_diagnostic(diag):
         diagnostics.append(diag)
 
     if link_options.on_diagnostic is None:
         link_options.on_diagnostic = on_diagnostic
 
-    for _, value in link_options.arguments.items():
+    for key, value in link_options.arguments.items():
         if not isinstance(value, float):
-            raise exceptions.QSSArgumentInputTypeError(
-                f"Only double arguments are supported, not {type(value)}"
-            )
+            if isinstance(value, int):
+                link_options.arguments[key] = float(value)
+            else:
+                raise exceptions.QSSArgumentInputTypeError(
+                    f"Only int & double arguments are supported, not {type(value)}"
+                )
 
     if link_options.input_file is not None and link_options.input_bytes is not None:
         raise ValueError("only one of input_file or input_bytes should have a value")
-    
+
     enable_in_memory = link_options.input_bytes is not None
     if enable_in_memory:
         input_file = link_options.input_bytes
 
-    if output_file is None: 
+    if output_file is None:
         output_file = ""
-
 
     # keep in mind that most of the infrastructure in the compile paths is for
     # taking care of the execution in a separate process. For the linker tool,
@@ -121,8 +125,15 @@ def link_file(
         resources_path = version_py_path.parent / "resources"
         os_environ["QSSC_RESOURCES"] = str(resources_path)
         success, output = _link_file(
-            input_file, enable_in_memory, output_file, link_options.target, config_path,
-            link_options.arguments, link_options.treat_warnings_as_errors, link_options.on_diagnostic)
+            input_file,
+            enable_in_memory,
+            output_file,
+            link_options.target,
+            config_path,
+            link_options.arguments,
+            link_options.treat_warnings_as_errors,
+            link_options.on_diagnostic,
+        )
         if not success:
 
             exception_mapping = {
@@ -131,19 +142,21 @@ def link_file(
                 ErrorCategory.QSSLinkSignatureError: exceptions.QSSLinkSignatureError,
                 ErrorCategory.QSSLinkAddressError: exceptions.QSSLinkAddressError,
                 ErrorCategory.QSSLinkSignatureNotFound: exceptions.QSSLinkSignatureNotFound,
-                ErrorCategory.QSSLinkArgumentNotFoundWarning: exceptions.QSSLinkArgumentNotFoundWarning,
+                ErrorCategory.QSSLinkArgumentNotFoundWarning: exceptions.QSSLinkArgumentNotFoundWarning,  # noqa
                 ErrorCategory.QSSLinkInvalidPatchTypeError: exceptions.QSSLinkInvalidPatchTypeError,
             }
 
             if diagnostics == [] or not isinstance(diagnostics[0], Diagnostic):
                 pass
             elif diagnostics[0].category in exception_mapping.keys():
-                raise exception_mapping[diagnostics[0].category](diagnostics[0].message, diagnostics)
+                raise exception_mapping[diagnostics[0].category](
+                    diagnostics[0].message, diagnostics
+                )
             raise exceptions.QSSLinkingFailure("Unknown linking failure", diagnostics)
         else:
             warning_mapping = {
                 ErrorCategory.QSSLinkSignatureWarning: exceptions.QSSLinkSignatureWarning,
-                ErrorCategory.QSSLinkArgumentNotFoundWarning: exceptions.QSSLinkArgumentNotFoundWarning,
+                ErrorCategory.QSSLinkArgumentNotFoundWarning: exceptions.QSSLinkArgumentNotFoundWarning,  # noqa
             }
             if diagnostics == [] or not isinstance(diagnostics[0], Diagnostic):
                 pass
@@ -155,4 +168,3 @@ def link_file(
         # return in-memory raw bytes if output file is not specified
         if link_options.output_file is None:
             return output
-

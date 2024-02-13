@@ -91,6 +91,7 @@ message(STATUS "QSS Compiler Version: ${QSSC_VERSION}")
 
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
 # Compiler options
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -244,8 +245,9 @@ list(APPEND RUN_CLANG_TIDY_BIN_ARGS
     -clang-tidy-binary ${CLANG_TIDY_BIN}
     -clang-apply-replacements-binary ${CLANG_AR_BIN}
     -style=file
+    # Limit clang-tidy to project headers
+    -header-filter="${CMAKE_SOURCE_DIR}/*.h"
     -quiet
-    -header-filter="${CMAKE_SOURCE_DIR}/[^b].*"
 )
 
 # run clang-tidy linter only when compiling with clang (compiler flags may be

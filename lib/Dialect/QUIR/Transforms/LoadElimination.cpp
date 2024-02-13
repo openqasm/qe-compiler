@@ -21,10 +21,16 @@
 #include "Dialect/QUIR/Transforms/LoadElimination.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/IR/Dominance.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+
+#include <algorithm>
 
 namespace mlir::quir {
 
@@ -83,7 +89,7 @@ void LoadEliminationPass::runOnOperation() {
     // constants). For now and for angle constants, this approach is good-enough
     // while not satisfying.
     if (decl.isInputVariable())
-      varAssignmentOp.assigned_value().getDefiningOp()->setAttr(
+      varAssignmentOp.getAssignedValue().getDefiningOp()->setAttr(
           mlir::quir::getInputParameterAttrName(), decl.getNameAttr());
 
     for (auto *userOp : symbolUses) {
@@ -101,7 +107,7 @@ void LoadEliminationPass::runOnOperation() {
       if (!domInfo.dominates(assignment, variableUse)) // that is not the case
         continue;
 
-      variableUse.replaceAllUsesWith(varAssignmentOp.assigned_value());
+      variableUse.replaceAllUsesWith(varAssignmentOp.getAssignedValue());
       varUsesToErase.push_back(variableUse);
     }
 
@@ -119,6 +125,10 @@ llvm::StringRef LoadEliminationPass::getArgument() const {
 llvm::StringRef LoadEliminationPass::getDescription() const {
   return "Eliminate variable loads by forwarding the operands of assignments "
          "to a variable to subsequent uses of the variable.";
+}
+
+llvm::StringRef LoadEliminationPass::getName() const {
+  return "Load Elimination Pass";
 }
 
 } // namespace mlir::quir

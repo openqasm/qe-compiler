@@ -33,7 +33,7 @@ include "mlir/IR/OpBase.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 
-def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed]> {
+def Pulse_GaussianOp : Pulse_Op<"gaussian", [Pure, SequenceAllowed]> {
     let summary = "Create a Gaussian waveform.";
     let description = [{
         The `pulse.gaussian` operation creates a Gaussian waveform.
@@ -51,16 +51,11 @@ def Pulse_GaussianOp : Pulse_Op<"gaussian", [NoSideEffect, SequenceAllowed]> {
         attr-dict `(` $dur `,` $amp `,` $sigma `)` `:` `(` type($dur) `,` type($amp) `,` type($sigma) `)` `->` type($wfr)
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 
-def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, SequenceAllowed]> {
+def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [Pure, SequenceAllowed]> {
     let summary = "Create a Gaussian Square waveform.";
     let description = [{
         The `pulse.gaussian_square` operation creates a Gaussian Square waveform. It is a Gaussian
@@ -81,15 +76,11 @@ def Pulse_GaussianSquareOp : Pulse_Op<"gaussian_square", [NoSideEffect, Sequence
         attr-dict `(` $dur `,` $amp `,` $sigma `,` $width `)` `:` `(` type($dur) `,` type($amp) `,` type($sigma) `,` type($width) `)` `->` type($wfr)
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-        return success();
-    }];
+    let hasVerifier = 1;
+
 }
 
-def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed]> {
+def Pulse_DragOp : Pulse_Op<"drag", [Pure, SequenceAllowed]> {
     let summary = "Create a Drag waveform.";
     let description = [{
         The `pulse.drag` operation creates a DRAG waveform. The DRAG waveform is composed of a
@@ -111,15 +102,10 @@ def Pulse_DragOp : Pulse_Op<"drag", [NoSideEffect, SequenceAllowed]> {
         attr-dict `(` $dur `,` $amp `,` $sigma `,` $beta `)` `:` `(` type($dur) `,` type($amp) `,` type($sigma) `,` type($beta) `)` `->` type($wfr)
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
-def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed]> {
+def Pulse_ConstOp : Pulse_Op<"const_waveform", [Pure, SequenceAllowed]> {
     let summary = "Create a Constant waveform.";
     let description = [{
         The `pulse.const_waveform` operation creates a constant waveform. This is a flat top waveform
@@ -139,15 +125,10 @@ def Pulse_ConstOp : Pulse_Op<"const_waveform", [NoSideEffect, SequenceAllowed]> 
         attr-dict `(` $dur `,` $amp `)` `:` `(` type($dur) `,` type($amp) `)` `->` type($wfr)
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
-def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, SequenceAllowed,
+def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [Pure, SequenceAllowed,
     DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getDuration"]>]> {
     let summary = "Creates a pulse waveform from a list of complex numbers.";
     let description = [{
@@ -168,11 +149,10 @@ def Pulse_Waveform_CreateOp : Pulse_Op<"create_waveform", [NoSideEffect, Sequenc
         attr-dict $samples `->` type($wfr)
     }];
 
-    // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-    let verifier = [{ return ::mlir::pulse::verify(*this); }];
+    let hasVerifier = 1;
 }
 
-def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [NoSideEffect, NoTerminator]> {
+def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [Pure, NoTerminator]> {
     let summary = "Creates a container for pulse waveforms.";
     let description = [{
         The `pulse.waveform_container` is a container for `pulse.create_waveform` operations. All the `pulse.create_waveform`
@@ -191,13 +171,13 @@ def Pulse_WaveformContainerOp : Pulse_Op<"waveform_container", [NoSideEffect, No
     let regions = (region AnyRegion:$body);
 
     let assemblyFormat = [{
-        attr-dict $body
+        attr-dict-with-keyword $body
     }];
 
-    let verifier = [{ return ::mlir::pulse::verify(*this); }];
+    let hasVerifier = 1;
 }
 
-def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllowed, SameVariadicOperandSize]> {
+def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [Pure, SequenceAllowed, SameVariadicOperandSize]> {
     let summary = "Creates a frame with a frequency and a phase.";
     let description = [{
         The `pulse.frame` operation creates a frame with optional arguments to initialize amplitude, frequency, and phase. One can also
@@ -214,7 +194,7 @@ def Pulse_Frame_CreateOp : Pulse_Op<"create_frame", [NoSideEffect, SequenceAllow
     let results = (outs Pulse_FrameType:$out);
 }
 
-def Pulse_Port_CreateOp : Pulse_Op<"create_port", [NoSideEffect]> {
+def Pulse_Port_CreateOp : Pulse_Op<"create_port", [Pure]> {
     let summary = "Creates a port for stimulus pulses or acquiring measurement output.";
     let description = [{
         The `pulse.create_port` operation creates a port which acts as a host for
@@ -227,7 +207,7 @@ def Pulse_Port_CreateOp : Pulse_Op<"create_port", [NoSideEffect]> {
         Example:
 
         ```mlir
-        %port = pulse.port() {uid = "a unique identifier"} : () -> !pulse.port
+        %port = pulse.getPort() {uid = "a unique identifier"} : () -> !pulse.port
         ```
     }];
 
@@ -235,7 +215,7 @@ def Pulse_Port_CreateOp : Pulse_Op<"create_port", [NoSideEffect]> {
     let results = (outs Pulse_PortType:$out);
 }
 
-def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed, SameVariadicOperandSize]> {
+def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [Pure, SequenceAllowed, SameVariadicOperandSize]> {
     let summary = "Mixes a frame with a port.";
     let description = [{
         The `pulse.mix_frame` operation creates a frame mixed with a port, with optional arguments to initialize amplitude, frequency, and phase. One can also
@@ -256,7 +236,7 @@ def Pulse_MixFrameOp : Pulse_Op<"mix_frame", [NoSideEffect, SequenceAllowed, Sam
     let results = (outs Pulse_MixedFrameType:$out);
 }
 
-def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [NoSideEffect, SequenceAllowed]> {
+def Pulse_Kernel_CreateOp : Pulse_Op<"create_kernel", [Pure, SequenceAllowed]> {
     let summary = "Creates a kernel which defines the integration window.";
     let description = [{
         The `pulse.create_kernel` operation creates  a kernel which defines
@@ -315,11 +295,7 @@ def Pulse_PlayOp : Pulse_Op<"play", [SequenceRequired, HasTargetFrame,
         llvm::Expected<std::string> getWaveformHash(CallSequenceOp callOp);
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTargetFrame]> {
@@ -345,19 +321,15 @@ def Pulse_SetFrequencyOp : Pulse_Op<"set_frequency", [SequenceRequired, HasTarge
     }];
 
     let extraClassDeclaration = [{
-        double getFreq() {
+        double getFreqFromDefiningOp() {
             // get op that defines frequency and return its value
-            auto freqConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequency().getDefiningOp());
+            auto freqConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getFrequency().getDefiningOp());
             assert (freqConstOp && "assume frequency to be defined by ConstantFloatOp");
             return freqConstOp.value().convertToDouble();
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasTargetFrame]> {
@@ -383,19 +355,15 @@ def Pulse_ShiftFrequencyOp : Pulse_Op<"shift_frequency", [SequenceRequired, HasT
     }];
 
     let extraClassDeclaration = [{
-        double getFreqOffset() {
+        double getFreqOffsetFromDefiningOp() {
             // get op that defines frequency offset and return its value
-            auto freqOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).frequencyOffset().getDefiningOp());
+            auto freqOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getFrequencyOffset().getDefiningOp());
             assert (freqOffsetConstOp && "assume frequency offset to be defined by ConstantFloatOp");
             return freqOffsetConstOp.value().convertToDouble();
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]> {
@@ -421,19 +389,15 @@ def Pulse_SetPhaseOp : Pulse_Op<"set_phase", [SequenceRequired, HasTargetFrame]>
     }];
 
     let extraClassDeclaration = [{
-        double getPhase() {
+        double getPhaseFromDefiningOp() {
             // get op that defines phase and return its value
-            auto phaseConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phase().getDefiningOp());
+            auto phaseConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getPhase().getDefiningOp());
             assert (phaseConstOp && "assume phase to be defined by ConstantFloatOp");
             return phaseConstOp.value().convertToDouble();
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFrame]> {
@@ -459,19 +423,15 @@ def Pulse_ShiftPhaseOp : Pulse_Op<"shift_phase", [SequenceRequired, HasTargetFra
     }];
 
     let extraClassDeclaration = [{
-        double getPhaseOffset() {
+        double getPhaseFromDefiningOpOffset() {
             // get op that defines phase offset and return its value
-            auto phaseOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).phaseOffset().getDefiningOp());
+            auto phaseOffsetConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getPhaseOffset().getDefiningOp());
             assert (phaseOffsetConstOp && "assume phase offset to be defined by ConstantFloatOp");
             return phaseOffsetConstOp.value().convertToDouble();
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_SetAmplitudeOp : Pulse_Op<"set_amplitude", [SequenceRequired, HasTargetFrame]> {
@@ -494,19 +454,15 @@ let summary = "Set a scaling factor for pulses of a frame.";
     }];
 
     let extraClassDeclaration = [{
-        double getAmp() {
+        double getAmpFromDefiningOp() {
             // get op that defines amp and return its value
-            auto ampConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).amp().getDefiningOp());
+            auto ampConstOp = dyn_cast<mlir::arith::ConstantFloatOp>((*this).getAmp().getDefiningOp());
             assert (ampConstOp && "assume amplitude to be defined by ConstantFloatOp");
             return ampConstOp.value().convertToDouble();
         }
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
@@ -533,11 +489,7 @@ def Pulse_CaptureOp : Pulse_Op<"capture", [SequenceRequired, HasTargetFrame]> {
         attr-dict `(` $target `)` `:` `(` type($target) `)` `->` type($out)
     }];
 
-    let verifier = [{
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
 def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
@@ -563,19 +515,10 @@ def Pulse_DelayOp : Pulse_Op<"delay", [SequenceAllowed, HasTargetFrame]> {
         attr-dict `(` $target `,` $dur `)` `:` `(` type($target) `,` type($dur) `)`
     }];
 
-    let verifier = [{
-        auto durDeclOp = dyn_cast_or_null<mlir::arith::ConstantIntOp>((*this).dur().getDefiningOp());
-        if (durDeclOp && durDeclOp.value() < 0)
-           return emitOpError("duration must be >= 0.");
-
-        if (!(*this).target().isa<BlockArgument>())
-            return emitOpError("Target is not a block argument; Target needs to be an argument of pulse.sequence");
-
-        return success();
-    }];
+    let hasVerifier = 1;
 }
 
-def Pulse_BarrierOp : Pulse_Op<"barrier", [NoSideEffect, SequenceAllowed]> {
+def Pulse_BarrierOp : Pulse_Op<"barrier", [Pure, SequenceAllowed]> {
     let summary = "Add a barrier operation on a set of pulse frames.";
     let description =   [{
         The `pulse.barrier` operation synchronizes the timing of all frames. It does this by inserting
@@ -669,7 +612,7 @@ def Pulse_CallSequenceOp : Pulse_Op<"call_sequence", [CallOpInterface, MemRefsNo
         OpBuilder<(ins "SequenceOp":$callee, CArg<"ValueRange", "{}">:$operands), [{
             $_state.addOperands(operands);
             $_state.addAttribute("callee",SymbolRefAttr::get(callee));
-            $_state.addTypes(callee.getType().getResults());
+            $_state.addTypes(callee.getFunctionType().getResults());
         }]>,
         OpBuilder<(ins "SymbolRefAttr":$callee, "TypeRange":$res,
         CArg<"ValueRange", "{}">:$operands), [{
@@ -684,18 +627,28 @@ def Pulse_CallSequenceOp : Pulse_Op<"call_sequence", [CallOpInterface, MemRefsNo
         }]>];
 
     let extraClassDeclaration = [{
-        StringRef getCallee() { return callee(); }
         FunctionType getCalleeType();
 
+        /// Get the argument operands to the called function.
         operand_range getArgOperands() {
             return {arg_operand_begin(), arg_operand_end()};
+        }
+
+        MutableOperandRange getArgOperandsMutable() {
+            return getOperandsMutable();
         }
 
         operand_iterator arg_operand_begin() { return operand_begin(); }
         operand_iterator arg_operand_end() { return operand_end(); }
 
+        /// Return the callee of this operation.
         CallInterfaceCallable getCallableForCallee() {
             return (*this)->getAttrOfType<SymbolRefAttr>("callee");
+        }
+
+        /// Set the callee for this operation.
+        void setCalleeFromCallable(CallInterfaceCallable callee) {
+            (*this)->setAttr("callee", callee.get<SymbolRefAttr>());
         }
     }];
 }
@@ -712,6 +665,7 @@ def Pulse_CallSequenceOp : Pulse_Op<"call_sequence", [CallOpInterface, MemRefsNo
 
 def Pulse_SequenceOp : Pulse_Op<"sequence", [
   AutomaticAllocationScope, CallableOpInterface,
+  DeclareOpInterfaceMethods<PulseOpSchedulingInterface, ["getDuration"]>,
   FunctionOpInterface, IsolatedFromAbove, Symbol, SequenceAllowed
 ]> {
   let summary = "An operation with a name containing a single `SSACFG` region corresponding to a pulse sequence execution";
@@ -768,15 +722,25 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
   }];
 
   let arguments = (ins SymbolNameAttr:$sym_name,
-                       TypeAttr:$type,
-                       OptionalAttr<StrAttr>:$sym_visibility);
+                       TypeAttrOf<FunctionType>:$function_type,
+                       OptionalAttr<StrAttr>:$sym_visibility,
+                       OptionalAttr<DictArrayAttr>:$arg_attrs,
+                       OptionalAttr<DictArrayAttr>:$res_attrs);
   let regions = (region AnyRegion:$body);
 
   let builders = [OpBuilder<(ins
     "StringRef":$name, "FunctionType":$type,
-    CArg<"ArrayRef<NamedAttribute>", "{}">:$attrs
-    )>];
+    CArg<"ArrayRef<NamedAttribute>", "{}">:$attrs,
+    CArg<"ArrayRef<DictionaryAttr>", "{}">:$argAttrs)
+    >];
   let extraClassDeclaration = [{
+    static SequenceOp create(Location location, StringRef name, FunctionType type,
+                         ArrayRef<NamedAttribute> attrs = {});
+    static SequenceOp create(Location location, StringRef name, FunctionType type,
+                         Operation::dialect_attr_range attrs);
+    static SequenceOp create(Location location, StringRef name, FunctionType type,
+                         ArrayRef<NamedAttribute> attrs,
+                         ArrayRef<DictionaryAttr> argAttrs);
 
     /// Create a deep copy of this sequence and all of its blocks, remapping any
     /// operands that use values outside of the sequence using the map that is
@@ -785,18 +749,14 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
     /// included in the new sequence. Replaces references to cloned sub-values
     /// with the corresponding value that is copied, and adds those mappings to
     /// the mapper.
-    SequenceOp clone(BlockAndValueMapping &mapper);
+    SequenceOp clone(IRMapping &mapper);
     SequenceOp clone();
 
     /// Clone the internal blocks and attributes from this sequence into dest.
     /// Any cloned blocks are appended to the back of dest. This sequence
     /// asserts that the attributes of the current sequence and dest are
     /// compatible.
-    void cloneInto(SequenceOp dest, BlockAndValueMapping &mapper);
-
-    FunctionType getType() {
-        return getTypeAttr().getValue().cast<FunctionType>();
-    }
+    void cloneInto(SequenceOp dest, IRMapping &mapper);
 
     //===------------------------------------------------------------------===//
     // CallableOpInterface
@@ -809,27 +769,29 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
 
     /// Returns the results types that the callable region produces when
     /// executed.
-    ArrayRef<Type> getCallableResults() { return getType().cast<::mlir::FunctionType>().getResults(); }
+    ArrayRef<Type> getCallableResults() { return getFunctionType().getResults(); }
+
+    /// Returns the argument attributes for all callable region arguments or
+    /// null if there are none.
+    ::mlir::ArrayAttr getCallableArgAttrs() {
+      return getArgAttrs().value_or(nullptr);
+    }
+
+    /// Returns the result attributes for all callable region results or
+    /// null if there are none.
+    ::mlir::ArrayAttr getCallableResAttrs() {
+      return getResAttrs().value_or(nullptr);
+    }
 
     //===------------------------------------------------------------------===//
     // FunctionOpInterface Methods
     //===------------------------------------------------------------------===//
 
     /// Returns the argument types of this function.
-    ArrayRef<Type> getArgumentTypes() { return getType().getInputs(); }
+    ArrayRef<Type> getArgumentTypes() { return getFunctionType().getInputs(); }
 
     /// Returns the result types of this function.
-    ArrayRef<Type> getResultTypes() { return getType().getResults(); }
-
-    /// Verify the type attribute of this function. Returns failure and emits
-    /// an error if the attribute is invalid.
-    LogicalResult verifyType() {
-      auto type = getTypeAttr().getValue();
-      if (!type.isa<FunctionType>())
-        return emitOpError("requires '" + getTypeAttrName() +
-                           "' attribute of function type");
-      return success();
-    }
+    ArrayRef<Type> getResultTypes() { return getFunctionType().getResults(); }
 
     //===------------------------------------------------------------------===//
     // SymbolOpInterface Methods
@@ -837,13 +799,12 @@ def Pulse_SequenceOp : Pulse_Op<"sequence", [
 
     bool isDeclaration() { return isExternal(); }
   }];
-  let parser = [{ return ::mlir::pulse::parseSequenceOp(parser, result); }];
-  let printer = [{ return ::mlir::pulse::print(*this, p); }];
-  // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-  let verifier = [{ return ::mlir::pulse::verify(*this); }];
+  let hasCustomAssemblyFormat = 1;
+  let hasVerifier = 1;
+
 }
 
-def Pulse_ReturnOp : Pulse_Op<"return", [NoSideEffect, ReturnLike, SequenceRequired, Terminator]>,
+def Pulse_ReturnOp : Pulse_Op<"return", [Pure, Terminator, ReturnLike, SequenceRequired]>,
     Arguments<(ins Variadic<AnyClassical>:$operands)>, Results<(outs)> {
         let summary = "Terminator for pulse.sequence.";
         let description = [{
@@ -859,10 +820,9 @@ def Pulse_ReturnOp : Pulse_Op<"return", [NoSideEffect, ReturnLike, SequenceRequi
                     pulse.return %0, %1: i1, i1
                 }
             }];
-        let builders = [OpBuilder<(ins), [{ build($_builder, $_state, llvm::None); }]>];
+        let builders = [OpBuilder<(ins), [{ build($_builder, $_state, std::nullopt); }]>];
         let assemblyFormat = "attr-dict ($operands^ `:` type($operands))?";
-        // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-        let verifier = [{ return ::mlir::pulse::verify(*this); }];
+        let hasVerifier = 1;
 }
 
 //===----------------------------------------------------------------------===//

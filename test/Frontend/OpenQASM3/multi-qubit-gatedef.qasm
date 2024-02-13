@@ -15,7 +15,7 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// MLIR: func @g([[QUBIT0:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>) {
+// MLIR: func.func @g([[QUBIT0:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>) {
 // MLIR-CIRCUITS: quir.circuit @circuit_0([[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT0:%.*]]: !quir.qubit<1>) {
 gate g qa, qb {
     // MLIR: quir.builtin_U [[QUBIT0]]{{.*}}
@@ -24,7 +24,7 @@ gate g qa, qb {
     U(1.57079632679, 0.0, 3.14159265359) qb;
 }
 
-// MLIR: func @g4(%arg0: !quir.qubit<1>, %arg1: !quir.qubit<1>, %arg2: !quir.qubit<1>) {
+// MLIR: func.func @g4(%arg0: !quir.qubit<1>, %arg1: !quir.qubit<1>, %arg2: !quir.qubit<1>) {
 // MLIR-CIRCUITS: quir.circuit @circuit_1([[QUBIT0:%.*]]: !quir.qubit<1>, [[QUBIT1:%.*]]: !quir.qubit<1>, [[QUBIT2:%.*]]: !quir.qubit<1>) {
 gate g4 qa, qb, qc {
     U(1.57079632679, 0.0, 3.14159265359) qa;

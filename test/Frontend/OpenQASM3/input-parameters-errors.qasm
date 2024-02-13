@@ -1,6 +1,6 @@
 OPENQASM 3;
 // RUN: (! qss-compiler -X=qasm --emit=mlir --enable-parameters %s 2>&1 ) | FileCheck %s --check-prefixes NO-CIRCUITS,CIRCUITS
-// RUN: (! qss-compiler -X=qasm --emit=mlir --enable-parameters --enable-circuits %s 2>&1 ) | FileCheck %s --check-prefix CIRCUITS 
+// RUN: (! qss-compiler -X=qasm --emit=mlir --enable-parameters --enable-circuits %s 2>&1 ) | FileCheck %s --check-prefix CIRCUITS
 
 //
 // This code is part of Qiskit.

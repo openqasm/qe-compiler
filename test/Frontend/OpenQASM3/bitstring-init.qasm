@@ -40,20 +40,12 @@ cbit[8] b = 8;
 // MLIR: oq3.variable_assign @c : !quir.cbit<4> = [[CAST5]]
 cbit[4] c = 83957;
 
-// initializer string shorter than the register
-// Not yet supported: modeling the initializer value as a single 137-bit integer
+// initializer strings are required by the spec to be the same size as the cbit
+// Not yet supported: modeling the initializer value as a single 100-bit integer
 // is conceptually fine, yet MLIR's asm printer code hits an assertion when
 // turning the long integer into part of the value's name.
-// MLIR: [[LONGBITREG_CONST:%.*]] = arith.constant 621124011108895393450852865781 : i137
-// MLIR: [[LONGBITREG_CBIT:%.*]] = "oq3.cast"([[LONGBITREG_CONST]]) : (i137) -> !quir.cbit<137>
-// MLIR: oq3.variable_assign @longbitreg : !quir.cbit<137> = [[LONGBITREG_CBIT]]
-cbit[137] longbitreg = "0111110101101111010110111101011011110101101111010110111101011011110101101111010110111101011011110101";
+// MLIR: [[LONGBITREG_CONST:%.*]] = arith.constant 621124011108895393450852865781 : i100
+// MLIR: [[LONGBITREG_CBIT:%.*]] = "oq3.cast"([[LONGBITREG_CONST]]) : (i100) -> !quir.cbit<100>
+// MLIR: oq3.variable_assign @longbitreg : !quir.cbit<100> = [[LONGBITREG_CBIT]]
+cbit[100] longbitreg = "0111110101101111010110111101011011110101101111010110111101011011110101101111010110111101011011110101";
 // compare python int("0b0111110101101111010110111101011011110101101111010110111101011011110101101111010110111101011011110101", 0)
-
-// initializer string is longer than the register
-// As above
-// MLIR: [[LONGBITREG2_CONST:%.*]] = arith.constant 73147070982778154320087907793426741712629 : i137
-// MLIR: [[LONGBITREG2_CBIT:%.*]] = "oq3.cast"([[LONGBITREG2_CONST]]) : (i137) -> !quir.cbit<137>
-// MLIR: oq3.variable_assign @longbitreg2 : !quir.cbit<137> = [[LONGBITREG2_CBIT]]
-cbit[137] longbitreg2 = "10101101011011110101101111010110111101011011110101101111010110111101011011110101101111010110111101011011110101101111010110111101011011110101";
-// compare python int("0b<bitstring>", 0) & ((1<<137) - 1)

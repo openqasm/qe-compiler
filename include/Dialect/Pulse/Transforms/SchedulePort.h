@@ -45,12 +45,15 @@ public:
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
 private:
   using mixedFrameMap_t = std::map<uint32_t, std::vector<Operation *>>;
 
-  uint64_t processCall(Operation *module, CallSequenceOp &callSequenceOp);
+  uint64_t processCall(CallSequenceOp &callSequenceOp,
+                       bool updateNestedSequences);
   uint64_t processSequence(SequenceOp sequenceOp);
+  uint64_t updateSequence(SequenceOp sequenceOp);
 
   mixedFrameMap_t buildMixedFrameMap(SequenceOp &sequenceOp,
                                      uint32_t &numMixedFrames);
@@ -58,6 +61,7 @@ private:
   void addTimepoints(mlir::OpBuilder &builder,
                      mixedFrameMap_t &mixedFrameSequences, int64_t &maxTime);
   void sortOpsByTimepoint(SequenceOp &sequenceOp);
+  llvm::StringMap<mlir::pulse::SequenceOp> sequenceOps;
 };
 } // namespace mlir::pulse
 

@@ -14,17 +14,17 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// CHECK:  func @d0
-// CHECK:  func @d1
-// CHECK:  func @u0
-// CHECK:  func @u1
-// CHECK:  func @u4
-// CHECK:  func @u8
-// CHECK:  func @d2
-// CHECK:  func @d3
-// CHECK:  func @main
+// CHECK:  func.func @d0
+// CHECK:  func.func @d1
+// CHECK:  func.func @u0
+// CHECK:  func.func @u1
+// CHECK:  func.func @u4
+// CHECK:  func.func @u8
+// CHECK:  func.func @d2
+// CHECK:  func.func @d3
+// CHECK:  func.func @main
 
-func @main() -> i32 {
+func.func @main() -> i32 {
 %0 = "pulse.create_port"() {uid = "d0"} : () -> !pulse.port
 %1 = "pulse.create_port"() {uid = "d1"} : () -> !pulse.port
 %2 = "pulse.create_port"() {uid = "u0"} : () -> !pulse.port
@@ -361,9 +361,9 @@ pulse.play(%35, %99) : (!pulse.port, !pulse.waveform)
 pulse.shift_phase(%4, %cst_157) : (!pulse.port, f64)
 %cst_158 = arith.constant 1.5707963267948966 : f64
 pulse.shift_phase(%5, %cst_158) : (!pulse.port, f64)
-%100 = quir.constant #quir.angle<3.140000e+00 : !quir.angle<10>>
-%101 = quir.constant #quir.angle<1.070000e+00 : !quir.angle<10>>
-%102 = quir.constant #quir.angle<5.350000e-01 : !quir.angle<10>>
+%100 = quir.constant #quir.angle<3.140000e+00> : !quir.angle<10>
+%101 = quir.constant #quir.angle<1.070000e+00> : !quir.angle<10>
+%102 = quir.constant #quir.angle<5.350000e-01> : !quir.angle<10>
 %cst_159 = arith.constant 0.000000e+00 : f64
 pulse.shift_phase(%0, %cst_159) : (!pulse.port, f64)
 %cst_160 = arith.constant 0.000000e+00 : f64

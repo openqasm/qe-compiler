@@ -14,26 +14,49 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <algorithm>
-#include <list>
-#include <queue>
-#include <unordered_map>
-#include <unordered_set>
-
+#include "Dialect/QUIR/Transforms/Passes.h"
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTestInterfaces.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
-#include "Dialect/QUIR/Transforms/Passes.h"
+#include "Dialect/QUIR/Transforms/AddShotLoop.h"
+#include "Dialect/QUIR/Transforms/AngleConversion.h"
+#include "Dialect/QUIR/Transforms/BreakReset.h"
+#include "Dialect/QUIR/Transforms/ConvertDurationUnits.h"
+#include "Dialect/QUIR/Transforms/FunctionArgumentSpecialization.h"
+#include "Dialect/QUIR/Transforms/LoadElimination.h"
+#include "Dialect/QUIR/Transforms/MergeCircuits.h"
+#include "Dialect/QUIR/Transforms/MergeMeasures.h"
+#include "Dialect/QUIR/Transforms/MergeParallelResets.h"
+#include "Dialect/QUIR/Transforms/QuantumDecoration.h"
+#include "Dialect/QUIR/Transforms/RemoveQubitOperands.h"
+#include "Dialect/QUIR/Transforms/ReorderCircuits.h"
+#include "Dialect/QUIR/Transforms/ReorderMeasurements.h"
+#include "Dialect/QUIR/Transforms/SubroutineCloning.h"
+#include "Dialect/QUIR/Transforms/UnusedVariable.h"
+#include "Dialect/QUIR/Transforms/VariableElimination.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/Block.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/Dominance.h"
+#include "mlir/IR/Region.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Visitors.h"
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Pass/PassRegistry.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <memory>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -65,7 +88,7 @@ struct TestPrintNestingPass
     // Print the operation attributes
     if (!op->getAttrs().empty()) {
       printIndent() << op->getAttrs().size() << " attributes:\n";
-      for (NamedAttribute attr : op->getAttrs())
+      for (NamedAttribute const attr : op->getAttrs())
         printIndent() << " - '" << attr.getName() << "' : '" << attr.getValue()
                       << "'\n";
     }
@@ -155,10 +178,11 @@ void ClassicalOnlyDetectionPass::runOnOperation() {
         dyn_cast<quir::CircuitOp>(op))
       op->setAttr(llvm::StringRef("quir.classicalOnly"),
                   b.getBoolAttr(hasQuantumSubOps(op)));
-    if (auto funcOp = dyn_cast<FuncOp>(op)) {
+    if (auto funcOp = dyn_cast<mlir::func::FuncOp>(op)) {
       // just check the arguments for qubitType values
-      FunctionType fType = funcOp.getType();
-      bool isMain = SymbolRefAttr::get(funcOp).getLeafReference() == "main";
+      FunctionType const fType = funcOp.getFunctionType();
+      bool const isMain =
+          SymbolRefAttr::get(funcOp).getLeafReference() == "main";
       bool quantumOperands = false;
       for (auto argType : fType.getInputs()) {
         if (argType.isa<QubitType>()) {
@@ -183,6 +207,11 @@ llvm::StringRef ClassicalOnlyDetectionPass::getDescription() const {
   return "Detect control flow blocks that contain only classical (non-quantum) "
          "operations, and decorate them with a classicalOnly bool attribute";
 }
+
+llvm::StringRef ClassicalOnlyDetectionPass::getName() const {
+  return "Classical Only Detection Pass";
+}
+
 /////////////// End ClassicalOnlyDetectionPass functions ///////////////////
 
 struct DumpVariableDominanceInfoPass
@@ -217,7 +246,7 @@ struct DumpVariableDominanceInfoPass
         assignment->dump();
 
         for (Operation *use : varUses) {
-          bool dominates = domInfo.dominates(assignment, use);
+          bool const dominates = domInfo.dominates(assignment, use);
           llvm::errs() << "    "
                        << (dominates ? "dominates" : "no dominance over")
                        << " ";
@@ -276,8 +305,8 @@ void registerQuirPasses() {
 }
 
 void registerQuirPassPipeline() {
-  PassPipelineRegistration<> pipeline("quirOpt",
-                                      "Enable QUIR-specific optimizations",
-                                      quir::quirPassPipelineBuilder);
+  PassPipelineRegistration<> const pipeline(
+      "quirOpt", "Enable QUIR-specific optimizations",
+      quir::quirPassPipelineBuilder);
 }
 } // end namespace mlir::quir

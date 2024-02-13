@@ -1,6 +1,6 @@
 //===- Payload.h ------------------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -21,6 +21,8 @@
 #ifndef PAYLOAD_PAYLOAD_H
 #define PAYLOAD_PAYLOAD_H
 
+#include <Config/QSSConfig.h>
+
 #include <filesystem>
 #include <iostream>
 #include <mutex>
@@ -31,11 +33,14 @@
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "Arguments/Signature.h"
+
 namespace qssc::payload {
 
 struct PayloadConfig {
   std::string prefix;
   std::string name;
+  qssc::config::QSSVerbosity verbosity;
 };
 
 // Payload class will wrap the QSS Payload and interface with the qss-compiler
@@ -44,9 +49,11 @@ public:
   using PluginConfiguration = PayloadConfig;
 
 public:
-  Payload() : prefix(""), name("exp") {}
+  Payload()
+      : prefix(""), name("exp"), verbosity(qssc::config::QSSVerbosity::Warn) {}
   explicit Payload(PayloadConfig config)
-      : prefix(std::move(config.prefix) + "/"), name(std::move(config.name)) {
+      : prefix(std::move(config.prefix) + "/"), name(std::move(config.name)),
+        verbosity(config.verbosity) {
     files.clear();
   }
   virtual ~Payload() = default;
@@ -63,6 +70,7 @@ public:
   virtual void writePlain(std::ostream &stream) = 0;
   virtual void writePlain(llvm::raw_ostream &stream) = 0;
   virtual void addFile(llvm::StringRef filename, llvm::StringRef str) = 0;
+  virtual void writeArgumentSignature(qssc::arguments::Signature &&sig){};
 
   const std::string &getName() const { return name; }
   const std::string &getPrefix() const { return prefix; }
@@ -83,6 +91,7 @@ protected:
 
   std::string prefix;
   std::string name;
+  qssc::config::QSSVerbosity verbosity;
   std::unordered_map<std::filesystem::path, std::string, PathHash> files;
 }; // class Payload
 

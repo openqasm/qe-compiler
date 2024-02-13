@@ -82,9 +82,7 @@ def test_compile_str_to_qem(mock_config_file, example_qasm3_str, check_payload):
     check_payload(payload_filelike)
 
 
-def test_compile_file_to_qem_file(
-    example_qasm3_tmpfile, mock_config_file, tmp_path, check_payload
-):
+def test_compile_file_to_qem_file(example_qasm3_tmpfile, mock_config_file, tmp_path, check_payload):
     """Test that we can compile a file input via the interface compile_file
     to a QEM payload into a file"""
     tmpfile = tmp_path / "payload.qem"
@@ -108,9 +106,7 @@ def test_compile_file_to_qem_file(
         check_payload(payload)
 
 
-def test_compile_str_to_qem_file(
-    mock_config_file, tmp_path, example_qasm3_str, check_payload
-):
+def test_compile_str_to_qem_file(mock_config_file, tmp_path, example_qasm3_str, check_payload):
     """Test that we can compile an OpenQASM3 string via the interface
     compile_file to a QEM payload in an output file"""
     tmpfile = tmp_path / "payload.qem"
@@ -180,7 +176,7 @@ def test_compile_options(mock_config_file, example_qasm3_str):
         config_path=mock_config_file,
         shot_delay=100,
         num_shots=10000,
-        extra_args=compiler_extra_args + ["--pass-statistics"],
+        extra_args=compiler_extra_args + ["--mlir-pass-statistics"],
     )
 
     mlir = compile_str(example_qasm3_str, compile_options=compile_options)
@@ -228,9 +224,7 @@ async def test_async_compile_str(mock_config_file, example_qasm3_str, check_payl
 
 
 @pytest.mark.asyncio
-async def test_async_compile_file(
-    example_qasm3_tmpfile, mock_config_file, check_payload
-):
+async def test_async_compile_file(example_qasm3_tmpfile, mock_config_file, check_payload):
     """Test that async wrapper produces correct output and does not block the even loop."""
     async_compile = compile_file_async(
         example_qasm3_tmpfile,

@@ -23,12 +23,14 @@
 #ifndef ARGUMENTS_SIGNATURE_H
 #define ARGUMENTS_SIGNATURE_H
 
-#include "API/error.h"
+#include "API/errors.h"
 
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -58,7 +60,8 @@ using PatchPointVector = std::vector<PatchPoint>;
 
 struct Signature {
   // TODO consider deduplicating strings by using UniqueStringSaver
-  llvm::StringMap<std::vector<PatchPoint>> patchPointsByBinary;
+  // Use std::map instead of StringMap to preserve order
+  std::map<std::string, std::vector<PatchPoint>> patchPointsByBinary;
 
 public:
   void addParameterPatchPoint(llvm::StringRef expression,
@@ -68,14 +71,13 @@ public:
                               const PatchPoint &p);
   void dump();
 
-  std::string serialize();
+  std::string serialize() const;
 
   static llvm::Expected<Signature>
-  deserialize(llvm::StringRef,
-              const std::optional<qssc::DiagnosticCallback> &onDiagnostic,
+  deserialize(llvm::StringRef, const qssc::OptDiagnosticCallback &onDiagnostic,
               bool treatWarningsAsError = false);
 
-  bool isEmpty() { return patchPointsByBinary.size() == 0; }
+  bool isEmpty() const { return patchPointsByBinary.size() == 0; }
 };
 
 } // namespace qssc::arguments

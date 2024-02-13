@@ -20,13 +20,21 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/QUIR/Transforms/QuantumDecoration.h"
+
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/Dialect/SCF/SCF.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/StringRef.h"
 
 #include <algorithm>
+#include <unordered_set>
 #include <vector>
 
 using namespace mlir;
@@ -67,18 +75,18 @@ void QuantumDecorationPass::processOp(Operation *op,
 
 void QuantumDecorationPass::processOp(Builtin_UOp builtinUOp,
                                       std::unordered_set<int> &retSet) {
-  retSet.emplace(lookupOrMinus1(builtinUOp.target()));
+  retSet.emplace(lookupOrMinus1(builtinUOp.getTarget()));
 } // processOp Builtin_UOp
 
 void QuantumDecorationPass::processOp(BuiltinCXOp builtinCXOp,
                                       std::unordered_set<int> &retSet) {
-  retSet.emplace(lookupOrMinus1(builtinCXOp.control()));
-  retSet.emplace(lookupOrMinus1(builtinCXOp.target()));
+  retSet.emplace(lookupOrMinus1(builtinCXOp.getControl()));
+  retSet.emplace(lookupOrMinus1(builtinCXOp.getTarget()));
 } // processOp BuiltinCXOp
 
 void QuantumDecorationPass::processOp(MeasureOp measureOp,
                                       std::unordered_set<int> &retSet) {
-  for (auto qubit : measureOp.qubits())
+  for (auto qubit : measureOp.getQubits())
     retSet.emplace(lookupOrMinus1(qubit));
 } // processOp MeasureOp
 
@@ -87,19 +95,19 @@ void QuantumDecorationPass::processOp(CallDefcalMeasureOp measureOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(measureOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value const &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp MeasureOp
 
 void QuantumDecorationPass::processOp(DelayOp delayOp,
                                       std::unordered_set<int> &retSet) {
-  for (auto qubit_operand : delayOp.qubits())
+  for (auto qubit_operand : delayOp.getQubits())
     retSet.emplace(lookupOrMinus1(qubit_operand));
 } // processOp MeasureOp
 
 void QuantumDecorationPass::processOp(ResetQubitOp resetOp,
                                       std::unordered_set<int> &retSet) {
-  for (auto qubit : resetOp.qubits())
+  for (auto qubit : resetOp.getQubits())
     retSet.emplace(lookupOrMinus1(qubit));
 } // processOp MeasureOp
 
@@ -108,7 +116,7 @@ void QuantumDecorationPass::processOp(CallDefCalGateOp callOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(callOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value const &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp CallGateOp
 
@@ -117,7 +125,7 @@ void QuantumDecorationPass::processOp(CallGateOp callOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(callOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value const &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp CallGateOp
 
@@ -126,7 +134,7 @@ void QuantumDecorationPass::processOp(BarrierOp barrierOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(barrierOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value const &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp BarrierOp
 
@@ -135,12 +143,12 @@ void QuantumDecorationPass::processOp(CallCircuitOp callOp,
   std::vector<Value> qubitOperands;
   qubitCallOperands(callOp, qubitOperands);
 
-  for (Value &val : qubitOperands)
+  for (Value const &val : qubitOperands)
     retSet.emplace(lookupOrMinus1(val));
 } // processOp CallGateOp
 
 void QuantumDecorationPass::runOnOperation() {
-  ModuleOp moduleOp = getOperation();
+  ModuleOp const moduleOp = getOperation();
   OpBuilder build(moduleOp);
 
   moduleOp->walk([&](Operation *op) {
@@ -166,4 +174,8 @@ llvm::StringRef QuantumDecorationPass::getArgument() const {
 llvm::StringRef QuantumDecorationPass::getDescription() const {
   return "Detect and add attributes to ops describing which "
          "qubits are involved within those ops";
+}
+
+llvm::StringRef QuantumDecorationPass::getName() const {
+  return "Quantum Decoration Pass";
 }

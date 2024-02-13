@@ -20,11 +20,11 @@ OPENQASM 3.0;
 // angle parameters.
 
 // MLIR-CIRCUITS: quir.circuit @circuit_0([[QUBIT0:%.*]]: !quir.qubit<1>) {
-// MLIR-CIRCUITS: [[ANGLE1:%.*]] = quir.constant #quir.angle<1.000000e+00 : !quir.angle<64>>
+// MLIR-CIRCUITS: [[ANGLE1:%.*]] = quir.constant #quir.angle<1.000000e+00> : !quir.angle<64>
 // MLIR-CIRCUITS: quir.call_gate @rz([[QUBIT0]], [[ANGLE1]])
-// MLIR-CIRCUITS: [[ANGLE2:%.*]] = quir.constant #quir.angle<2.000000e+00 : !quir.angle<64>>
+// MLIR-CIRCUITS: [[ANGLE2:%.*]] = quir.constant #quir.angle<2.000000e+00> : !quir.angle<64>
 // MLIR-CIRCUITS: quir.call_gate @rz([[QUBIT0]], [[ANGLE2]])
-// MLIR-CIRCUITS: [[ANGLE3:%.*]] = quir.constant #quir.angle<3.000000e+00 : !quir.angle<64>>
+// MLIR-CIRCUITS: [[ANGLE3:%.*]] = quir.constant #quir.angle<3.000000e+00> : !quir.angle<64>
 // MLIR-CIRCUITS: quir.call_gate @rz([[QUBIT0]], [[ANGLE3]])
 // MLIR-CIRCUITS: quir.return
 
@@ -34,17 +34,17 @@ qubit $0;
 gate rz(theta) q {}
 
 // AST-PRETTY: GateGenericNode(name=rz, params=[AngleNode(value=1.0, bits=64)], qubits=[], qcparams=[$0])
-// MLIR-NO-CIRCUITS: [[ANGLE1:%.*]] = quir.constant #quir.angle<1.000000e+00 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS: [[ANGLE1:%.*]] = quir.constant #quir.angle<1.000000e+00> : !quir.angle<64>
 // MLIR-NO-CIRCUITS: quir.call_gate @rz([[QUBIT0]], [[ANGLE1]])
 rz(1.0) $0;
 
 // AST-PRETTY: GateGenericNode(name=rz, params=[AngleNode(value=2.0, bits=64)], qubits=[], qcparams=[$0])
-// MLIR-NO-CIRCUITS: [[ANGLE2:%.*]] = quir.constant #quir.angle<2.000000e+00 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS: [[ANGLE2:%.*]] = quir.constant #quir.angle<2.000000e+00> : !quir.angle<64>
 // MLIR-NO-CIRCUITS: quir.call_gate @rz([[QUBIT0]], [[ANGLE2]])
 rz(2.0) $0;
 
 // AST-PRETTY: GateGenericNode(name=rz, params=[AngleNode(value=3.0, bits=64)], qubits=[], qcparams=[$0])
-// MLIR-NO-CIRCUITS: [[ANGLE3:%.*]] = quir.constant #quir.angle<3.000000e+00 : !quir.angle<64>>
+// MLIR-NO-CIRCUITS: [[ANGLE3:%.*]] = quir.constant #quir.angle<3.000000e+00> : !quir.angle<64>
 // MLIR-NO-CIRCUITS: quir.call_gate @rz([[QUBIT0]], [[ANGLE3]])
 // MLIR-CIRCUITS: quir.call_circuit @circuit_0(%0) : (!quir.qubit<1>) -> ()
 rz(3.0) $0;

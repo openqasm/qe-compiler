@@ -12,7 +12,7 @@
 
 add_library(QSSCAPI api.cpp)
 
-add_library(QSSCError error.cpp)
+add_library(QSSCError errors.cpp)
 
 set(LIBS
         qasm::qasm
@@ -20,10 +20,10 @@ set(LIBS
 target_link_libraries(QSSCAPI ${LIBS} QSSCError)
 
 target_sources(QSSCAPI
-    PRIVATE api.cpp error.cpp
+    PRIVATE api.cpp errors.cpp
     INTERFACE FILE_SET HEADERS
     BASE_DIRS ${QSSC_INCLUDE_DIR}/API
-    FILES ${QSSC_INCLUDE_DIR}/API/api.h ${QSSC_INCLUDE_DIR}/API/error.h
+    FILES ${QSSC_INCLUDE_DIR}/API/api.h ${QSSC_INCLUDE_DIR}/API/errors.h
     )
 
 add_dependencies(QSSCAPI QSSCError MLIROQ3Dialect MLIRQCSDialect MLIRQUIRDialect mlir-headers)

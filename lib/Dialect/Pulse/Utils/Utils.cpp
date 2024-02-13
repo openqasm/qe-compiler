@@ -19,13 +19,17 @@
 //===----------------------------------------------------------------------===//
 
 #include "Dialect/Pulse/Utils/Utils.h"
+
 #include "Dialect/Pulse/IR/PulseOps.h"
+
+#include "mlir/IR/Value.h"
 
 namespace mlir::pulse {
 
 Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
                                 CallSequenceOp callSequenceOp) {
-  auto wfrArgIndex = pulsePlayOp.wfr().dyn_cast<BlockArgument>().getArgNumber();
+  auto wfrArgIndex =
+      pulsePlayOp.getWfr().dyn_cast<BlockArgument>().getArgNumber();
   auto wfrOp = callSequenceOp.getOperand(wfrArgIndex)
                    .getDefiningOp<mlir::pulse::Waveform_CreateOp>();
   return wfrOp;

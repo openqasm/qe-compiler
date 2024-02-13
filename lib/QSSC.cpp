@@ -21,14 +21,12 @@
 
 #include "QSSC.h"
 
-#include "llvm/ADT/StringRef.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Error.h"
-#include "llvm/Support/ManagedStatic.h"
-#include "llvm/Support/Path.h"
-
 #include "Config.h"
 #include "HAL/TargetSystem.h"
+
+#include "llvm/ADT/SmallString.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Path.h"
 
 #include <cstdlib>
 #include <string>
@@ -53,7 +51,7 @@ namespace {
 llvm::StringRef _getResourcesDir() {
   if (char *env = getenv("QSSC_RESOURCES")) {
     /* strings returned by getenv may be invalidated, so keep a copy */
-    static std::string resourcesDir{env};
+    static std::string const resourcesDir{env};
     return resourcesDir;
   }
 
@@ -64,7 +62,7 @@ llvm::StringRef _getResourcesDir() {
 }; // namespace
 
 llvm::StringRef qssc::getResourcesDir() {
-  static llvm::StringRef resourcesDir = _getResourcesDir();
+  static llvm::StringRef const resourcesDir = _getResourcesDir();
   return resourcesDir;
 }
 
@@ -74,6 +72,6 @@ qssc::getTargetResourcesDir(qssc::hal::Target const *target) {
   // resource directory
   llvm::SmallString<128> path(getResourcesDir());
 
-  llvm::sys::path::append(path, "targets", target->getName());
+  llvm::sys::path::append(path, "targets", target->getResourcePath());
   return path;
 }

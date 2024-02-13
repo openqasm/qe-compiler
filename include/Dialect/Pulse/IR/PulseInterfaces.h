@@ -21,7 +21,7 @@
 #ifndef PULSE_INTERFACES_H
 #define PULSE_INTERFACES_H
 
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/OpDefinition.h"
 
 #include "llvm/Support/Error.h"
@@ -36,12 +36,13 @@ namespace mlir::pulse::interfaces_impl {
 // PulseOpSchedulingInterface
 //===----------------------------------------------------------------------===//
 
-llvm::Optional<int64_t> getTimepoint(mlir::Operation *op);
+std::optional<int64_t> getTimepoint(mlir::Operation *op);
 void setTimepoint(mlir::Operation *op, int64_t timepoint);
-llvm::Optional<uint64_t> getSetupLatency(mlir::Operation *op);
+std::optional<uint64_t> getSetupLatency(mlir::Operation *op);
 void setSetupLatency(mlir::Operation *op, uint64_t setupLatency);
 llvm::Expected<uint64_t> getDuration(mlir::Operation *op,
                                      mlir::Operation *callSequenceOp = nullptr);
+llvm::Expected<mlir::ArrayAttr> getPorts(mlir::Operation *op);
 void setDuration(mlir::Operation *op, uint64_t duration);
 
 } // namespace mlir::pulse::interfaces_impl

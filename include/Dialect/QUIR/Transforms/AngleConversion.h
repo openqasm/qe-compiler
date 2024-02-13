@@ -21,6 +21,7 @@
 #ifndef QUIR_ANGLE_CONVERSION_H
 #define QUIR_ANGLE_CONVERSION_H
 
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Pass/Pass.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -35,9 +36,10 @@ struct QUIRAngleConversionPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
 private:
-  std::unordered_map<std::string, FuncOp> functionOps;
+  std::unordered_map<std::string, mlir::func::FuncOp> functionOps;
 }; // struct QUIRAngleConversionPass
 
 } // end namespace mlir::quir

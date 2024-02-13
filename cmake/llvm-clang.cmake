@@ -19,6 +19,16 @@ set (CXX_FLAGS
 
     -Werror
 )
+
+option(DETECT_TARGET_TRIPLE "Automatically detect the target triple for clang" ON)
+if (DETECT_TARGET_TRIPLE)
+execute_process (
+    COMMAND bash -c "llvm-config --host-target | tr -d '\n'"
+    OUTPUT_VARIABLE LLVM_TARGET_TRIPLE
+)
+list(APPEND CXX_FLAGS "-target ${LLVM_TARGET_TRIPLE}")
+endif()
+
 list (JOIN CXX_FLAGS " " CXX_FLAGS_STR)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX_FLAGS_STR}")
 
@@ -42,7 +52,7 @@ if(ENABLE_ADDRESS_SANITIZER OR ENABLE_UNDEFINED_SANITIZER OR ENABLE_THREAD_SANIT
 endif()
 
 set (CMAKE_CXX_FLAGS_DEBUG "-g3 -O0")
-set (CMAKE_CXX_FLAGS_RELEASE "-g -O2")
+set (CMAKE_CXX_FLAGS_RELEASE "-g -O2 -DNOVERIFY")
 
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=gold")
 set (CMAKE_CXX_STANDARD_LIBRARIES "-lstdc++fs -lpthread")

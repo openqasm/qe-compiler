@@ -24,8 +24,8 @@
 #define QUIR_FUNCTION_ARGUMENT_SPECIALIZATION_H
 
 #include "Dialect/QUIR/IR/QUIROps.h"
-#include "mlir/Dialect/SCF/SCF.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
 #include <deque>
@@ -41,13 +41,14 @@ struct FunctionArgumentSpecializationPass
   void processCallOp(Operation *op, std::deque<Operation *> &callWorkList);
 
   template <class CallOpTy>
-  void copyFuncAndSpecialize(FuncOp inFunc, CallOpTy callOp,
+  void copyFuncAndSpecialize(mlir::func::FuncOp inFunc, CallOpTy callOp,
                              std::deque<Operation *> &callWorkList);
 
   void runOnOperation() override;
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct FunctionArgumentSpecializationPass
 } // namespace mlir::quir
 

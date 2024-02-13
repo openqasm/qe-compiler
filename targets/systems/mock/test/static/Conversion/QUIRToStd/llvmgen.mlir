@@ -12,12 +12,12 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// CHECK: define i32 @main() !dbg !3 {
-// CHECK:  ret i32 0, !dbg !7
+// CHECK: define i32 @main() {
+// CHECK:  ret i32 0
 // CHECK: }
-module @controller attributes {quir.nodeId = 1000 : i32, quir.nodeType = "controller"}  {
-  func @main() -> i32 attributes {quir.classicalOnly = false} {
-    %0 = quir.constant #quir.duration<1000.0 : !quir.duration<dt>>
+module @controller attributes {quir.nodeId = 1000 : ui32, quir.nodeType = "controller"}  {
+  func.func @main() -> i32 attributes {quir.classicalOnly = false} {
+    %0 = quir.constant #quir.duration<1000.0> : !quir.duration<dt>
     %1 = qcs.recv {fromId = 0 : index} : i1
     qcs.broadcast %1 : i1
     scf.if %1 {
@@ -30,9 +30,9 @@ module @controller attributes {quir.nodeId = 1000 : i32, quir.nodeType = "contro
     qcs.broadcast %3 : i1
     scf.if %3 {
     } {quir.classicalOnly = false}
-    %4 = llvm.mlir.constant(1.0) : i32
-    %5 = llvm.mlir.constant(2.0) : i32
-    %6 = "llvm.intr.pow"(%4, %5) : (i32, i32) -> i32
+    %4 = llvm.mlir.constant(1.0) : f32
+    %5 = llvm.mlir.constant(2.0) : f32
+    %6 = "llvm.intr.pow"(%4, %5) : (f32, f32) -> f32
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32
   }

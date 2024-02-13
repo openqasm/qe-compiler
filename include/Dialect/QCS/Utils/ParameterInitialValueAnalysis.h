@@ -20,10 +20,13 @@
 #define QCS_PARAMETER_INITIAL_VALUE_ANALYSIS_H
 
 #include "Dialect/QCS/IR/QCSOps.h"
+#include "HAL/SystemConfiguration.h"
 
 #include "mlir/Pass/AnalysisManager.h"
 #include "mlir/Pass/Pass.h"
 
+#include "llvm/ADT/StringMap.h"
+#include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
 #include <string>
@@ -33,16 +36,16 @@ namespace mlir::qcs {
 
 using namespace mlir;
 
+using InitialValueType = llvm::StringMap<ParameterType>;
+
 class ParameterInitialValueAnalysis {
 private:
-  std::unordered_map<std::string, ParameterType> initial_values_;
-  bool invalid_;
+  InitialValueType initial_values_;
+  bool invalid_{true};
 
 public:
   ParameterInitialValueAnalysis(mlir::Operation *op);
-  std::unordered_map<std::string, ParameterType> &getNames() {
-    return initial_values_;
-  }
+  InitialValueType &getNames() { return initial_values_; }
   void invalidate() { invalid_ = true; }
   bool isInvalidated(const AnalysisManager::PreservedAnalyses &pa) {
     return invalid_;
@@ -56,6 +59,7 @@ struct ParameterInitialValueAnalysisPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct ParameterInitialValueAnalysisPass
 
 // TODO: move registerQCSPasses to separate header if additional passes

@@ -21,6 +21,7 @@
 #ifndef QUIR_MERGE_PARALLEL_RESETS_H
 #define QUIR_MERGE_PARALLEL_RESETS_H
 
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
 namespace mlir::quir {
@@ -37,6 +38,7 @@ struct MergeResetsLexicographicPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct MergeResetsLexicographicPass
 
 /// This pass merges qubit reset operations that can be parallelized into a
@@ -51,6 +53,7 @@ struct MergeResetsTopologicalPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 }; // struct MergeResetsTopologicalPass
 
 } // namespace mlir::quir

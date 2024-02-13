@@ -14,7 +14,7 @@ OPENQASM 3.0;
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-// CHECK: func @rz
+// CHECK: func.func @rz
 include "test-include.inc";
 qubit $0;
 rz(0) $0;

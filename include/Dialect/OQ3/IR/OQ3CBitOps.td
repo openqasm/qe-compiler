@@ -64,8 +64,6 @@ def OQ3_CBitAssignBitOp : OQ3_Op<"cbit_assign_bit",
     let assemblyFormat = [{
         attr-dict $variable_name `<` $cbit_width `>` `[` $index `]` `:` type($assigned_bit) `=` $assigned_bit
     }];
-    // op is verified by its traits
-    let verifier = ?;
 }
 
 // -----
@@ -180,7 +178,7 @@ def OQ3_CBitLShiftOp : OQ3_BinaryOp<"cbit_lshift"> {
 
 // -----
 
-def OQ3_CBitExtractBitOp : OQ3_Op<"cbit_extractbit", [NoSideEffect]> {
+def OQ3_CBitExtractBitOp : OQ3_Op<"cbit_extractbit", [Pure]> {
     let summary = "extract single bit from a bitmap";
     let description = [{
         The `oq3.cbit_extractbit` operations takes a bitmap operand (cbit or
@@ -205,14 +203,13 @@ def OQ3_CBitExtractBitOp : OQ3_Op<"cbit_extractbit", [NoSideEffect]> {
 
     let hasFolder = 1;
 
-    // TODO in LLVM 15 + this can become just let hasVerifier = 1;
-    let verifier = [{ return ::verify(*this);}];
+    let hasVerifier = 1;
 }
 
 // -----
 
 def OQ3_CBitInsertBitOp : OQ3_Op<"cbit_insertbit", [
-            NoSideEffect,
+            Pure,
             TypesMatchWith<
                 "first operand and result have the same type",
                 "operand", "result", "$_self">]> {

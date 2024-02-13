@@ -20,20 +20,45 @@
 
 #include "QubitLocalization.h"
 
+#include "MockTarget.h"
+
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/Dialect/Arithmetic/IR/Arithmetic.h"
-#include "mlir/Dialect/SCF/SCF.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/BlockAndValueMapping.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Block.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/Pass/Pass.h"
+#include "mlir/IR/IRMapping.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/Region.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/TypeRange.h"
+#include "mlir/IR/Types.h"
+#include "mlir/IR/Value.h"
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LLVM.h"
+
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <cassert>
+#include <deque>
+#include <memory>
+#include <string>
+#include <sys/types.h>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -60,8 +85,9 @@ auto mock::MockQubitLocalizationPass::lookupQubitId(const Value &val) -> int {
   if (!declOp) { // Must be an argument to a function
     // see if we can find an attribute with the info
     if (auto blockArg = val.dyn_cast<BlockArgument>()) {
-      unsigned argIdx = blockArg.getArgNumber();
-      auto funcOp = dyn_cast<FuncOp>(blockArg.getOwner()->getParentOp());
+      unsigned const argIdx = blockArg.getArgNumber();
+      auto funcOp =
+          dyn_cast<mlir::func::FuncOp>(blockArg.getOwner()->getParentOp());
       if (funcOp) {
         auto argAttr =
             funcOp.getArgAttrOfType<IntegerAttr>(argIdx, "quir.physicalId");
@@ -71,7 +97,12 @@ auto mock::MockQubitLocalizationPass::lookupQubitId(const Value &val) -> int {
     }   // if val is blockArg
     return -1;
   } // if !declOp
-  return declOp.id().getValue();
+
+  auto id = declOp.getId();
+  if (id.has_value())
+    return id.value();
+
+  return -1;
 } // lookupQubitId
 
 /// Creates a broadcast op on Controller and recvOp on all other mocks
@@ -85,16 +116,16 @@ void mock::MockQubitLocalizationPass::broadcastAndReceiveValue(
       if (dyn_cast<mlir::arith::ConstantOp>(parentOp) ||
           dyn_cast<quir::ConstantOp>(parentOp)) {
         // Just clone this op to the mocks
-        for (uint id : toNodeIds)
+        for (uint const id : toNodeIds)
           (*mockBuilders)[id]->clone(*parentOp, mockMapping[id]);
       } else {
         controllerBuilder->create<BroadcastOp>(
             loc, controllerMapping.lookupOrNull(val));
-        for (uint id : toNodeIds) {
+        for (uint const id : toNodeIds) {
           auto recvOp = (*mockBuilders)[id]->create<RecvOp>(
               loc, TypeRange(val.getType()),
               controllerBuilder->getIndexArrayAttr(config->controllerNode()));
-          mockMapping[id].map(val, recvOp.vals().front());
+          mockMapping[id].map(val, recvOp.getVals().front());
         }
       }
       alreadyBroadcastValues.insert(val);
@@ -104,16 +135,16 @@ void mock::MockQubitLocalizationPass::broadcastAndReceiveValue(
   } // if alreadyBroadcastValues.count(val) == 0
 } // broadcastValue
 
-void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
-    Region *from, Region *dest, BlockAndValueMapping &mapper) {
+void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(Region *from,
+                                                            Region *dest,
+                                                            IRMapping &mapper) {
   assert(dest && "expected valid region to clone into");
   cloneRegionWithoutOps(from, dest, dest->end(), mapper);
 } // cloneRegionWithoutOps
 
 // clone region (from) into region (dest) before the given position
 void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
-    Region *from, Region *dest, Region::iterator destPos,
-    BlockAndValueMapping &mapper) {
+    Region *from, Region *dest, Region::iterator destPos, IRMapping &mapper) {
   assert(dest && "expected valid region to clone into");
   assert(from != dest && "cannot clone region into itself");
 
@@ -151,13 +182,13 @@ void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
 } // cloneRegionWithoutOps
 
 auto mock::MockQubitLocalizationPass::addMainFunction(
-    Operation *moduleOperation, const Location &loc) -> FuncOp {
+    Operation *moduleOperation, const Location &loc) -> mlir::func::FuncOp {
   OpBuilder b(moduleOperation->getRegion(0));
-  auto funcOp =
-      b.create<FuncOp>(loc, "main",
-                       b.getFunctionType(
-                           /*inputs=*/ArrayRef<Type>(),
-                           /*results=*/ArrayRef<Type>(b.getI32Type())));
+  auto funcOp = b.create<mlir::func::FuncOp>(
+      loc, "main",
+      b.getFunctionType(
+          /*inputs=*/ArrayRef<Type>(),
+          /*results=*/ArrayRef<Type>(b.getI32Type())));
   funcOp.getOperation()->setAttr(llvm::StringRef("quir.classicalOnly"),
                                  b.getBoolAttr(false));
   funcOp.addEntryBlock();
@@ -171,20 +202,20 @@ void mock::MockQubitLocalizationPass::processOp(DeclareQubitOp &qubitOp) {
   // declare every qubit on each mock for multi-qubit gates purposes
   for (auto nodeId : seenNodeIds) {
     auto *clonedOp = (*mockBuilders)[nodeId]->clone(*op);
-    mockMapping[nodeId].map(qubitOp.res(),
-                            dyn_cast<DeclareQubitOp>(clonedOp).res());
+    mockMapping[nodeId].map(qubitOp.getRes(),
+                            dyn_cast<DeclareQubitOp>(clonedOp).getRes());
   }
 } // processOp DeclareQubitOp
 
 void mock::MockQubitLocalizationPass::processOp(ResetQubitOp &resetOp) {
-  if (resetOp.qubits().size() != 1) {
+  if (resetOp.getQubits().size() != 1) {
     signalPassFailure(); // only support single-qubit resets"
     return;
   }
 
   Operation *op = resetOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
-  int qubitId = lookupQubitId(resetOp.qubits().front());
+  int const qubitId = lookupQubitId(resetOp.getQubits().front());
   if (qubitId < 0) {
     resetOp->emitOpError() << "Can't resolve qubit ID for resetOp\n";
     return signalPassFailure();
@@ -195,9 +226,9 @@ void mock::MockQubitLocalizationPass::processOp(ResetQubitOp &resetOp) {
       *op, mockMapping[config->acquireNode(qubitId)]);
 } // processOp ResetQubitOp
 
-void mock::MockQubitLocalizationPass::processOp(FuncOp &funcOp) {
+void mock::MockQubitLocalizationPass::processOp(mlir::func::FuncOp &funcOp) {
   Operation *op = funcOp.getOperation();
-  OpBuilder fBuild(funcOp);
+  OpBuilder const fBuild(funcOp);
   llvm::outs() << "Cloning FuncOp " << SymbolRefAttr::get(funcOp)
                << " to Controller\n";
   controllerBuilder->clone(*op, controllerMapping);
@@ -206,13 +237,13 @@ void mock::MockQubitLocalizationPass::processOp(FuncOp &funcOp) {
 void mock::MockQubitLocalizationPass::processOp(Builtin_UOp &uOp) {
   Operation *op = uOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
-  int qubitId = lookupQubitId(uOp.target());
+  int const qubitId = lookupQubitId(uOp.getTarget());
 
   // broadcast all classical values from Controller to all Mockss
   // recv all classical values on all Mockss
-  broadcastAndReceiveValue(uOp.theta(), op->getLoc(), seenNodeIds);
-  broadcastAndReceiveValue(uOp.phi(), op->getLoc(), seenNodeIds);
-  broadcastAndReceiveValue(uOp.lambda(), op->getLoc(), seenNodeIds);
+  broadcastAndReceiveValue(uOp.getTheta(), op->getLoc(), seenNodeIds);
+  broadcastAndReceiveValue(uOp.getPhi(), op->getLoc(), seenNodeIds);
+  broadcastAndReceiveValue(uOp.getLambda(), op->getLoc(), seenNodeIds);
 
   if (qubitId < 0) {
     uOp->emitOpError() << "Can't resolve qubit ID for uOp\n";
@@ -226,8 +257,8 @@ void mock::MockQubitLocalizationPass::processOp(Builtin_UOp &uOp) {
 void mock::MockQubitLocalizationPass::processOp(BuiltinCXOp &cxOp) {
   Operation *op = cxOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
-  int qubitId1 = lookupQubitId(cxOp.control());
-  int qubitId2 = lookupQubitId(cxOp.target());
+  int const qubitId1 = lookupQubitId(cxOp.getControl());
+  int const qubitId2 = lookupQubitId(cxOp.getTarget());
 
   if (qubitId1 < 0 || qubitId2 < 0) {
     cxOp->emitOpError() << "Can't resolve qubit ID for cxOp\n";
@@ -244,7 +275,7 @@ void mock::MockQubitLocalizationPass::processOp(MeasureOp &measureOp) {
   Operation *op = measureOp.getOperation();
   llvm::outs() << "Localizing a " << op->getName() << "\n";
   // figure out which qubit this gate operates on
-  int qubitId = lookupQubitId(measureOp.qubits().front());
+  int const qubitId = lookupQubitId(measureOp.getQubits().front());
   // clone the measure call to the drive and acquire mocks
   (*mockBuilders)[config->driveNode(qubitId)]->clone(
       *op, mockMapping[config->driveNode(qubitId)]);
@@ -254,13 +285,13 @@ void mock::MockQubitLocalizationPass::processOp(MeasureOp &measureOp) {
 
   // send the results from the acquire mock and recv on Controller
   (*mockBuilders)[config->acquireNode(qubitId)]->create<SendOp>(
-      op->getLoc(), clonedMeasureOp.outs().front(),
+      op->getLoc(), clonedMeasureOp.getOuts().front(),
       controllerBuilder->getIndexAttr(config->controllerNode()));
   auto recvOp = controllerBuilder->create<RecvOp>(
-      op->getLoc(), TypeRange(clonedMeasureOp.outs().front().getType()),
+      op->getLoc(), TypeRange(clonedMeasureOp.getOuts().front().getType()),
       controllerBuilder->getIndexArrayAttr(qubitId));
   // map the result on Controller
-  controllerMapping.map(measureOp.outs().front(), recvOp.vals().front());
+  controllerMapping.map(measureOp.getOuts().front(), recvOp.getVals().front());
 } // processOp MeasureOp
 
 void mock::MockQubitLocalizationPass::processOp(
@@ -276,15 +307,15 @@ void mock::MockQubitLocalizationPass::processOp(
       *op, controllerMapping); // cloning the callOp to controller
   // first look up the func def in the parent Module
   Operation *funcOperation = SymbolTable::lookupSymbolIn(
-      controllerModule->getParentOp(), callOp.callee());
+      controllerModule->getParentOp(), callOp.getCallee());
   if (!funcOperation) {
     callOp->emitOpError() << "Unable to find func def to match "
-                          << callOp.callee() << "\n";
+                          << callOp.getCallee() << "\n";
     return;
   }
-  auto funcOp = dyn_cast<FuncOp>(funcOperation);
+  auto funcOp = dyn_cast<mlir::func::FuncOp>(funcOperation);
 
-  bool onlyToController = classicalOnlyCheck(funcOperation);
+  bool const onlyToController = classicalOnlyCheck(funcOperation);
 
   if (!onlyToController) {
     // broadcast all classical values from Controller to all Mockss
@@ -296,7 +327,7 @@ void mock::MockQubitLocalizationPass::processOp(
     }   // for operands
 
     // Clone the subroutine call to all drive and acquire mocks
-    for (uint nodeId : seenNodeIds) {
+    for (uint const nodeId : seenNodeIds) {
       (*mockBuilders)[nodeId]->clone(*op, mockMapping[nodeId]);
     } // for nodeId in seenNodeIds
   }   // if !onlyToController
@@ -304,8 +335,8 @@ void mock::MockQubitLocalizationPass::processOp(
   // Now clone the corresponding funcOp and recurse on it
   // First check if it's already been cloned!
   if (SymbolTable::lookupSymbolIn(controllerModule.getOperation(),
-                                  callOp.callee())) {
-    llvm::outs() << callOp.callee() << " has already been cloned!\n";
+                                  callOp.getCallee())) {
+    llvm::outs() << callOp.getCallee() << " has already been cloned!\n";
     return;
   }
   OpBuilder::InsertPoint savedPoint = controllerBuilder->saveInsertionPoint();
@@ -313,21 +344,21 @@ void mock::MockQubitLocalizationPass::processOp(
   controllerBuilder->setInsertionPointToStart(controllerModule.getBody());
   Operation *clonedFuncOperation =
       controllerBuilder->cloneWithoutRegions(*funcOperation, controllerMapping);
-  auto clonedFuncOp = dyn_cast<FuncOp>(clonedFuncOperation);
+  auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedFuncOperation);
   if (funcOp.getCallableRegion()) {
     cloneRegionWithoutOps(&funcOp.getBody(), &clonedFuncOp.getBody(),
                           controllerMapping);
   }
   controllerBuilder->restoreInsertionPoint(savedPoint);
   if (!onlyToController) {
-    for (uint nodeId : seenNodeIds) {
+    for (uint const nodeId : seenNodeIds) {
       savedPoint = (*mockBuilders)[nodeId]->saveInsertionPoint();
       (*mockBuilders)[nodeId]->setInsertionPointToStart(
           dyn_cast<ModuleOp>(mockModules[nodeId]).getBody());
       Operation *clonedFuncOperation =
           (*mockBuilders)[nodeId]->cloneWithoutRegions(*funcOperation,
                                                        mockMapping[nodeId]);
-      auto clonedFuncOp = dyn_cast<FuncOp>(clonedFuncOperation);
+      auto clonedFuncOp = dyn_cast<mlir::func::FuncOp>(clonedFuncOperation);
       if (funcOp.getCallableRegion()) {
         cloneRegionWithoutOps(&funcOp.getBody(), &clonedFuncOp.getBody(),
                               mockMapping[nodeId]);
@@ -366,12 +397,12 @@ void mock::MockQubitLocalizationPass::processOp(CallGateOp &callOp) {
 
   // broadcast all classical values from Controller to all Mockss
   // recv all classical values on all Mockss
-  for (Value val : classicalVals) {
+  for (Value const val : classicalVals) {
     broadcastAndReceiveValue(val, op->getLoc(), seenNodeIds);
   } // for val in classicalVals
 
   // Clone the gate call to all relevant drive mocks
-  for (uint qubitId : qInd) {
+  for (uint const qubitId : qInd) {
     (*mockBuilders)[config->driveNode(qubitId)]->clone(
         *op, mockMapping[config->driveNode(qubitId)]);
   } // for qubitId in qInd
@@ -400,7 +431,7 @@ void mock::MockQubitLocalizationPass::processOp(BarrierOp &barrierOp) {
   }
 
   // Clone the gate call to all relevant drive
-  for (uint qubitId : qubits) {
+  for (uint const qubitId : qubits) {
     (*mockBuilders)[config->driveNode(qubitId)]->clone(
         *op, mockMapping[config->driveNode(qubitId)]);
   } // for qubitId in qInd
@@ -432,11 +463,11 @@ void mock::MockQubitLocalizationPass::processOp(CallDefCalGateOp &callOp) {
 
   // send all classical values from Controller to all Mockss
   // recv all classical values on all drive Mockss
-  for (Value val : classicalVals)
+  for (Value const val : classicalVals)
     broadcastAndReceiveValue(val, op->getLoc(), seenNodeIds);
 
   // Clone the gate call to all relevant drive mocks
-  for (uint qubitId : qInd) {
+  for (uint const qubitId : qInd) {
     (*mockBuilders)[config->driveNode(qubitId)]->clone(
         *op, mockMapping[config->driveNode(qubitId)]);
   } // for qubitId in qInd
@@ -468,10 +499,10 @@ void mock::MockQubitLocalizationPass::processOp(CallDefcalMeasureOp &callOp) {
 
   // send all classical values from Controller to all Mockss
   // recv all classical values on all drive Mockss
-  for (Value val : classicalVals)
+  for (Value const val : classicalVals)
     broadcastAndReceiveValue(val, op->getLoc(), seenNodeIds);
 
-  for (uint qubitId : qInd) {
+  for (uint const qubitId : qInd) {
     // Clone the measure call to all drive and acquire mocks
     (*mockBuilders)[config->driveNode(qubitId)]->clone(
         *op, mockMapping[config->driveNode(qubitId)]);
@@ -482,12 +513,12 @@ void mock::MockQubitLocalizationPass::processOp(CallDefcalMeasureOp &callOp) {
 
     // Send the measured value back to Controller and receive it on Controller
     (*mockBuilders)[config->acquireNode(qubitId)]->create<SendOp>(
-        op->getLoc(), acquireOp.res(),
+        op->getLoc(), acquireOp.getRes(),
         controllerBuilder->getIndexAttr(config->controllerNode()));
     auto recvOp = controllerBuilder->create<RecvOp>(
-        op->getLoc(), TypeRange(acquireOp.res().getType()),
+        op->getLoc(), TypeRange(acquireOp.getRes().getType()),
         controllerBuilder->getIndexArrayAttr(qubitId));
-    controllerMapping.map(callOp.res(), recvOp.vals().front());
+    controllerMapping.map(callOp.getRes(), recvOp.getVals().front());
   }
 } // processOp CallDefcalMeasureOp
 
@@ -496,7 +527,7 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
   Operation *op = delayOp.getOperation();
   std::vector<int> qInd;
   bool qubitIdsResolved = true;
-  for (auto operand : delayOp.qubits()) {
+  for (auto operand : delayOp.getQubits()) {
     qInd.emplace_back(lookupQubitId(operand));
     if (qInd.back() < 0)
       qubitIdsResolved = false;
@@ -505,39 +536,40 @@ void mock::MockQubitLocalizationPass::processOp(DelayOpType &delayOp) {
     delayOp->emitOpError() << "Unable to resolve all qubit IDs for delay\n";
     return signalPassFailure();
   }
-  if (delayOp.qubits().empty()) // no qubit args means all qubits
-    for (uint qId : seenQubitIds)
+  if (delayOp.getQubits().empty()) // no qubit args means all qubits
+    for (uint const qId : seenQubitIds)
       qInd.emplace_back((int)qId);
 
   // turn the vector of qubitIds into a set of node Ids
   std::unordered_set<uint> involvedNodes;
-  for (int qubitId : qInd) {
+  for (int const qubitId : qInd) {
     involvedNodes.emplace(config->driveNode(qubitId));
     involvedNodes.emplace(config->acquireNode(qubitId));
   }
 
   if (auto dOp = dyn_cast<DelayOp>(op)) {
-    auto *durationDeclare = dOp.time().getDefiningOp();
-    for (uint id : involvedNodes)
+    auto *durationDeclare = dOp.getTime().getDefiningOp();
+    for (uint const id : involvedNodes)
       (*mockBuilders)[id]->clone(*durationDeclare, mockMapping[id]);
   }
 
-  if (delayOp.qubits().empty())
+  if (delayOp.getQubits().empty())
     controllerBuilder->clone(*op, controllerMapping);
   // clone the delay op to the involved nodes
-  for (uint nodeId : involvedNodes)
+  for (uint const nodeId : involvedNodes)
     (*mockBuilders)[nodeId]->clone(*op, mockMapping[nodeId]);
 } // processOp DelayOp
 
-void mock::MockQubitLocalizationPass::processOp(mlir::ReturnOp &returnOp) {
+void mock::MockQubitLocalizationPass::processOp(
+    mlir::func::ReturnOp &returnOp) {
   Operation *op = returnOp.getOperation();
   controllerBuilder->clone(*op, controllerMapping);
-  FlatSymbolRefAttr symbolRef = SymbolRefAttr::get(op->getParentOp());
+  FlatSymbolRefAttr const symbolRef = SymbolRefAttr::get(op->getParentOp());
   if (symbolRef && symbolRef.getLeafReference() == "main")
-    for (auto arg : returnOp.operands())
+    for (auto arg : returnOp.getOperands())
       broadcastAndReceiveValue(arg, op->getLoc(), seenNodeIds);
   if (!classicalOnlyCheck(op->getParentOp()))
-    for (uint nodeId : seenNodeIds)
+    for (uint const nodeId : seenNodeIds)
       (*mockBuilders)[nodeId]->clone(*op, mockMapping[nodeId]);
 } // processOp ReturnOp
 
@@ -581,7 +613,7 @@ void mock::MockQubitLocalizationPass::processOp(
   int savedQubitId = -1;
   if (measureOp) { // remove the drive node from seenNodeIds temporarily
     // only if it can be resolved
-    savedQubitId = lookupQubitId(measureOp.qubits().front());
+    savedQubitId = lookupQubitId(measureOp.getQubits().front());
     if (savedQubitId >= 0) {
       seenNodeIds.erase(config->driveNode(savedQubitId));
 
@@ -592,8 +624,8 @@ void mock::MockQubitLocalizationPass::processOp(
               controllerBuilder->getIndexArrayAttr(
                   config->acquireNode(savedQubitId)));
       // map the result on the drive node
-      mockMapping[config->driveNode(savedQubitId)].map(ifOp.getCondition(),
-                                                       recvOp.vals().front());
+      mockMapping[config->driveNode(savedQubitId)].map(
+          ifOp.getCondition(), recvOp.getVals().front());
     }
   }
 
@@ -614,7 +646,7 @@ void mock::MockQubitLocalizationPass::processOp(
     cloneRegionWithoutOps(&ifOp.getElseRegion(), &clonedIfOp.getElseRegion(),
                           controllerMapping);
   }
-  for (uint nodeId : seenNodeIds) {
+  for (uint const nodeId : seenNodeIds) {
     Operation *clonedOp =
         (*mockBuilders)[nodeId]->cloneWithoutRegions(*op, mockMapping[nodeId]);
     auto clonedIfOp = dyn_cast<scf::IfOp>(clonedOp);
@@ -676,7 +708,7 @@ void mock::MockQubitLocalizationPass::processOp(
     auto clonedForOp = dyn_cast<scf::ForOp>(clonedOp);
     cloneRegionWithoutOps(&forOp.getLoopBody(), &clonedForOp.getLoopBody(),
                           controllerMapping);
-    for (uint nodeId : seenNodeIds) {
+    for (uint const nodeId : seenNodeIds) {
       Operation *clonedOp = (*mockBuilders)[nodeId]->cloneWithoutRegions(
           *op, mockMapping[nodeId]);
       auto clonedFor = dyn_cast<scf::ForOp>(clonedOp);
@@ -714,12 +746,12 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
   controllerModule = dyn_cast<ModuleOp>(
       b.create<ModuleOp>(b.getUnknownLoc(), llvm::StringRef("controller"))
           .getOperation());
-  FuncOp controllerMainOp =
+  mlir::func::FuncOp controllerMainOp =
       addMainFunction(controllerModule.getOperation(), mainFunc->getLoc());
   controllerBuilder = new OpBuilder(controllerMainOp.getBody());
   controllerModule->setAttr(
       llvm::StringRef("quir.nodeId"),
-      controllerBuilder->getI32IntegerAttr(config->controllerNode()));
+      controllerBuilder->getUI32IntegerAttr(config->controllerNode()));
   controllerModule->setAttr(
       llvm::StringRef("quir.nodeType"),
       controllerBuilder->getStringAttr(llvm::StringRef("controller")));
@@ -727,11 +759,57 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
   // first work on creating the modules
   // We do this first so that we can detect all physical qubit declarations
   auto newBuilders = std::make_unique<std::unordered_map<uint, OpBuilder *>>();
+
+  for (const auto &result : llvm::enumerate(config->getDriveNodes())) {
+    uint const qubitIdx = result.index();
+    uint const nodeId = result.value();
+    llvm::outs() << "Creating module for drive Mocks " << qubitIdx << "\n";
+    auto driveMod = b.create<ModuleOp>(
+        b.getUnknownLoc(),
+        llvm::StringRef("mock_drive_" + std::to_string(qubitIdx)));
+    driveMod.getOperation()->setAttr(
+        llvm::StringRef("quir.nodeType"),
+        controllerBuilder->getStringAttr(llvm::StringRef("drive")));
+    driveMod.getOperation()->setAttr(
+        llvm::StringRef("quir.nodeId"),
+        controllerBuilder->getUI32IntegerAttr(nodeId));
+    driveMod.getOperation()->setAttr(
+        llvm::StringRef("quir.physicalId"),
+        controllerBuilder->getI32IntegerAttr(qubitIdx));
+    mockModules[nodeId] = driveMod.getOperation();
+    mlir::func::FuncOp mockMainOp =
+        addMainFunction(driveMod.getOperation(), mainFunc->getLoc());
+    newBuilders->emplace(nodeId, new OpBuilder(mockMainOp.getBody()));
+  }
+
+  for (const auto &result : llvm::enumerate(config->getAcquireNodes())) {
+    uint const acquireIdx = result.index();
+    uint const nodeId = result.value();
+    llvm::outs() << "Creating module for acquire Mocks " << acquireIdx << "\n";
+    auto acquireMod = b.create<ModuleOp>(
+        b.getUnknownLoc(),
+        llvm::StringRef("mock_acquire_" + std::to_string(acquireIdx)));
+    acquireMod.getOperation()->setAttr(
+        llvm::StringRef("quir.nodeType"),
+        controllerBuilder->getStringAttr(llvm::StringRef("acquire")));
+    acquireMod.getOperation()->setAttr(
+        llvm::StringRef("quir.nodeId"),
+        controllerBuilder->getUI32IntegerAttr(nodeId));
+    acquireMod.getOperation()->setAttr(
+        llvm::StringRef("quir.physicalIds"),
+        controllerBuilder->getI32ArrayAttr(
+            ArrayRef<int>(config->acquireQubits(nodeId))));
+    mockModules[nodeId] = acquireMod.getOperation();
+    mlir::func::FuncOp mockMainOp =
+        addMainFunction(acquireMod.getOperation(), mainFunc->getLoc());
+    newBuilders->emplace(nodeId, new OpBuilder(mockMainOp.getBody()));
+  }
+
   mainFunc->walk([&](DeclareQubitOp qubitOp) {
-    llvm::outs() << qubitOp.getOperation()->getName() << " id: " << qubitOp.id()
-                 << "\n";
-    if (!qubitOp.id().hasValue() ||
-        qubitOp.id().getValue() > config->getNumQubits()) {
+    llvm::outs() << qubitOp.getOperation()->getName()
+                 << " id: " << qubitOp.getId() << "\n";
+    if (!qubitOp.getId().has_value() ||
+        qubitOp.getId().value() > config->getNumQubits()) {
       qubitOp->emitOpError()
           << "Error! Found a qubit without an ID or with ID > "
           << std::to_string(config->getNumQubits())
@@ -739,53 +817,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
           << " during qubit localization!\n";
       signalPassFailure();
     }
-
-    uint qubitId = qubitOp.id().getValue();
-
-    if (!mockModules.count(config->driveNode(qubitId))) {
-      llvm::outs() << "Creating module for drive Mocks " << qubitId << "\n";
-      auto driveMod = b.create<ModuleOp>(
-          qubitOp->getLoc(),
-          llvm::StringRef("mock_drive_" + std::to_string(qubitId)));
-      driveMod.getOperation()->setAttr(
-          llvm::StringRef("quir.nodeType"),
-          controllerBuilder->getStringAttr(llvm::StringRef("drive")));
-      driveMod.getOperation()->setAttr(
-          llvm::StringRef("quir.nodeId"),
-          controllerBuilder->getI32IntegerAttr(config->driveNode(qubitId)));
-      driveMod.getOperation()->setAttr(
-          llvm::StringRef("quir.physicalId"),
-          controllerBuilder->getI32IntegerAttr(qubitId));
-      mockModules[config->driveNode(qubitId)] = driveMod.getOperation();
-      FuncOp mockMainOp =
-          addMainFunction(driveMod.getOperation(), mainFunc->getLoc());
-      newBuilders->emplace(config->driveNode(qubitId),
-                           new OpBuilder(mockMainOp.getBody()));
-    }
-
-    if (!mockModules.count(config->acquireNode(qubitId))) {
-      llvm::outs() << "Creating module for acquire Mocks " << qubitId << "\n";
-      auto acquireMod = b.create<ModuleOp>(
-          qubitOp->getLoc(),
-          llvm::StringRef("mock_acquire_" + std::to_string(qubitId)));
-      acquireMod.getOperation()->setAttr(
-          llvm::StringRef("quir.nodeType"),
-          controllerBuilder->getStringAttr(llvm::StringRef("acquire")));
-      acquireMod.getOperation()->setAttr(
-          llvm::StringRef("quir.nodeId"),
-          controllerBuilder->getI32IntegerAttr(config->acquireNode(qubitId)));
-      acquireMod.getOperation()->setAttr(
-          llvm::StringRef("quir.physicalIds"),
-          controllerBuilder->getI32ArrayAttr(
-              ArrayRef<int>(config->multiplexedQubits(qubitId))));
-      mockModules[config->acquireNode(qubitId)] = acquireMod.getOperation();
-      FuncOp mockMainOp =
-          addMainFunction(acquireMod.getOperation(), mainFunc->getLoc());
-      newBuilders->emplace(config->acquireNode(qubitId),
-                           new OpBuilder(mockMainOp.getBody()));
-    }
-
-    uint qId = qubitOp.id().getValue();
+    uint const qId = qubitOp.getId().value();
     seenQubitIds.emplace(qId);
     driveNodeIds.emplace(config->driveNode(qId));
     acquireNodeIds.emplace(config->acquireNode(qId));
@@ -835,7 +867,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         processOp(delayOp);
       } else if (auto delayOp = dyn_cast<DelayCyclesOp>(op)) {
         processOp(delayOp);
-      } else if (auto returnOp = dyn_cast<mlir::ReturnOp>(op)) {
+      } else if (auto returnOp = dyn_cast<mlir::func::ReturnOp>(op)) {
         processOp(returnOp);
       } else if (auto yieldOp = dyn_cast<scf::YieldOp>(op)) {
         processOp(yieldOp);
@@ -843,7 +875,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         processOp(ifOp, blockAndBuilderWorkList);
       } else if (auto forOp = dyn_cast<scf::ForOp>(op)) {
         processOp(forOp, blockAndBuilderWorkList);
-      } else if (dyn_cast<FuncOp>(op) || dyn_cast<ModuleOp>(op)) {
+      } else if (dyn_cast<mlir::func::FuncOp>(op) || dyn_cast<ModuleOp>(op)) {
         // do nothing
       }      // moduleOp
       else { // some classical op, should go to Controller
@@ -858,7 +890,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
     }   // for Operations
     // delete the allocated opbuilders
     delete controllerBuilder;
-    for (uint nodeId : seenNodeIds)
+    for (uint const nodeId : seenNodeIds)
       delete (*mockBuilders)[nodeId];
     delete mockBuilders;
   } // while !blockAndBuilderWorklist.empty()
@@ -882,4 +914,8 @@ llvm::StringRef MockQubitLocalizationPass::getArgument() const {
 
 llvm::StringRef MockQubitLocalizationPass::getDescription() const {
   return "Create modules for Mock code blocks.";
+}
+
+llvm::StringRef MockQubitLocalizationPass::getName() const {
+  return "Mock Qubit Localization Pass";
 }

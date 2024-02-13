@@ -13,7 +13,7 @@ cbit[48] wide;
 cbit[2] wide_0;
 // CHECK: oq3.declare_variable @wide_0 : !quir.cbit<2>
 
-// CHECK: func @main() -> i32
+// CHECK: func.func @main() -> i32
 
 // CHECK-DAG: %c-8_i4 = arith.constant -8 : i4
 
@@ -67,6 +67,3 @@ if (assignment1[35] == 1) {
 // CHECK: [[LOADVAR:%.*]] = oq3.variable_load @assignment1_0 : !quir.cbit<32>
 // CHECK: [[LOADBIT:%.*]] = oq3.cbit_extractbit([[LOADVAR]] : !quir.cbit<32>) [0] : i1
 // CHECK: oq3.cbit_assign_bit @assignment1_1<4> [3] : i1 = [[LOADBIT]]
-
-
-

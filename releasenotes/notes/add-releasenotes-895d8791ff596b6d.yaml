@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Support for `reno release notes <https://docs.openstack.org/reno/latest/>`_ has been added to the project.
+    See the `contribution guidelines <https://github.com/openqasm/qe-compiler/blob/main/CONTRIBUTING.md>`_
+    for instructions on how to add a release note.

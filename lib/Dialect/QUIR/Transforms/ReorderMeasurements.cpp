@@ -21,20 +21,25 @@
 #include "Dialect/QUIR/Transforms/ReorderMeasurements.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/IR/Visitors.h"
+#include "mlir/Interfaces/ControlFlowInterfaces.h"
 #include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
-#include <llvm/ADT/SmallVector.h>
-#include <llvm/Support/Casting.h>
-#include <llvm/Support/Debug.h>
+#include "llvm/Support/Debug.h"
 
-#include <algorithm>
 #include <iterator>
+#include <set>
+#include <sys/types.h>
+#include <utility>
 #include <vector>
 
 #define DEBUG_TYPE "QUIRReorderMeasurements"
@@ -60,11 +65,11 @@ bool mayMoveVariableLoadOp(MeasureOp measureOp,
   bool moveVariableLoadOp = true;
   auto *currentBlock = variableLoadOp->getBlock();
   currentBlock->walk([&](oq3::VariableAssignOp assignOp) {
-    if (assignOp.variable_name() == variableLoadOp.variable_name()) {
+    if (assignOp.getVariableName() == variableLoadOp.getVariableName()) {
       moveVariableLoadOp = assignOp->isBeforeInBlock(measureOp);
       if (!moveVariableLoadOp) {
         auto assignCastOp =
-            dyn_cast<oq3::CastOp>(assignOp.assigned_value().getDefiningOp());
+            dyn_cast<oq3::CastOp>(assignOp.getAssignedValue().getDefiningOp());
         if (assignCastOp)
           moveVariableLoadOp = mayMoveCastOp(measureOp, assignCastOp, moveList);
       }
@@ -81,10 +86,10 @@ bool mayMoveCastOp(MeasureOp measureOp, oq3::CastOp castOp,
                    MoveListVec &moveList) {
   bool moveCastOp = false;
   auto variableLoadOp =
-      dyn_cast<oq3::VariableLoadOp>(castOp.arg().getDefiningOp());
+      dyn_cast<oq3::VariableLoadOp>(castOp.getArg().getDefiningOp());
   if (variableLoadOp)
     moveCastOp = mayMoveVariableLoadOp(measureOp, variableLoadOp, moveList);
-  auto castMeasureOp = dyn_cast<MeasureOp>(castOp.arg().getDefiningOp());
+  auto castMeasureOp = dyn_cast<MeasureOp>(castOp.getArg().getDefiningOp());
   if (castMeasureOp)
     moveCastOp = ((castMeasureOp != measureOp) &&
                   (castMeasureOp->isBeforeInBlock(measureOp) ||
@@ -113,14 +118,14 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
       // Accumulate qubits in measurement set
       std::set<uint> currQubits = measureOp.getOperatedQubits();
       LLVM_DEBUG(llvm::dbgs() << "Matching on measurement for qubits:\t");
-      LLVM_DEBUG(for (uint id : currQubits) llvm::dbgs() << id << " ");
+      LLVM_DEBUG(for (const uint id : currQubits) llvm::dbgs() << id << " ");
       LLVM_DEBUG(llvm::dbgs() << "\n");
 
       auto nextOpt = nextQuantumOrControlFlowOrNull(measureOp);
-      if (!nextOpt.hasValue())
+      if (!nextOpt.has_value())
         break;
 
-      Operation *nextOp = nextOpt.getValue();
+      Operation *nextOp = nextOpt.value();
       // for control flow ops, continue, but add the operated qubits of the
       // control flow block to the currQubits set
       while (nextOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
@@ -128,10 +133,10 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
 
         // now find the next next op
         auto nextNextOpt = nextQuantumOrControlFlowOrNull(nextOp);
-        if (!nextNextOpt.hasValue()) // only move non-control-flow ops
+        if (!nextNextOpt.has_value()) // only move non-control-flow ops
           break;
 
-        nextOp = nextNextOpt.getValue();
+        nextOp = nextNextOpt.value();
       }
 
       // don't reorder past the next measurement or reset or control flow
@@ -188,7 +193,7 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
       LLVM_DEBUG(llvm::dbgs() << "Succeeded match with operation:\n");
       LLVM_DEBUG(nextOp->dump());
       LLVM_DEBUG(llvm::dbgs() << "on qubits:\t");
-      LLVM_DEBUG(for (uint id // this is ugly but clang-format insists
+      LLVM_DEBUG(for (const uint id // this is ugly but clang-format insists
                       : QubitOpInterface::getOperatedQubits(nextOp)) {
         llvm::dbgs() << id << " ";
       });
@@ -213,8 +218,12 @@ void ReorderMeasurementsPass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   patterns.add<ReorderMeasureAndNonMeasurePat>(&getContext());
 
-  if (failed(
-          applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns))))
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
+
+  if (failed(applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns),
+                                          config)))
     signalPassFailure();
 } // runOnOperation
 
@@ -225,4 +234,8 @@ llvm::StringRef ReorderMeasurementsPass::getArgument() const {
 llvm::StringRef ReorderMeasurementsPass::getDescription() const {
   return "Move qubits to be as lexicograpically as late as possible without "
          "affecting the topological ordering.";
+}
+
+llvm::StringRef ReorderMeasurementsPass::getName() const {
+  return "Reorder Measurement Pass";
 }

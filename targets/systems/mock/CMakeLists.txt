@@ -39,7 +39,6 @@ qssc_add_plugin(QSSCTargetMock QSSC_TARGET_PLUGIN
 Conversion/QUIRToStandard/QUIRToStandard.cpp
 MockTarget.cpp
 MockUtils.cpp
-Transforms/FunctionLocalization.cpp
 Transforms/QubitLocalization.cpp
 
 ADDITIONAL_HEADER_DIRS
@@ -51,9 +50,9 @@ ${qssc_api_libs}
 QSSCHAL
 MLIRExecutionEngine
 MLIROptLib
-MLIRLLVMIR
+MLIRLLVMDialect
 MLIRLLVMToLLVMIRTranslation
-MLIRStandardOpsTransforms
+MLIRFuncTransforms
 ${llvm_code_gen_libraries}
 PLUGIN_REGISTRATION_HEADERS
 ${CMAKE_CURRENT_SOURCE_DIR}/Target.inc

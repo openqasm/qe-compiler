@@ -19,10 +19,10 @@
 module {
   oq3.declare_variable @a : !quir.cbit<1>
   oq3.declare_variable @b : !quir.cbit<2>
-  func @x(%arg0: !quir.qubit<1>) {
+  func.func @x(%arg0: !quir.qubit<1>) {
     return
   }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     %c0_i32 = arith.constant 0 : i32
     %c0_i2 = arith.constant 0 : i2
     %true = arith.constant true

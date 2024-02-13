@@ -13,8 +13,7 @@
 add_mlir_conversion_library(QUIRToPulse
 
 LoadPulseCals.cpp
-
-detail/TypeConversion.cpp
+QUIRToPulse.cpp
 
 ADDITIONAL_HEADER_DIRS
 ${PROJECT_SOURCE_DIR}/include/Conversion/QUIRToPulse/
@@ -24,7 +23,7 @@ Core
 
 LINK_LIBS PUBLIC
 MLIRIR
-MLIRComplex
+MLIRComplexDialect
 MLIROQ3Dialect
 MLIRPulseDialect
 MLIRQUIRDialect

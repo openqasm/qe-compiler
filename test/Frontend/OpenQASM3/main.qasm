@@ -15,7 +15,7 @@ OPENQASM 3.0;
 // that they have been altered from the originals.
 
 // MLIR: module {
-// MLIR: func @main() -> i32 {
+// MLIR: func.func @main() -> i32 {
 
 qubit $0;
 

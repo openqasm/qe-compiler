@@ -34,14 +34,7 @@ class OQ3_BinaryCmpOp<string mnemonic, list<Trait> traits = []> :
         attr-dict $lhs `,` $rhs `:` type($lhs) `->` type($result)
     }];
 
-    let verifier = [{
-        std::vector predicates = { "eq", "ne", "slt", "sle", "sgt", "sge", "ult", "ule", "ugt", "uge" };
-
-        if (std::find(predicates.begin(), predicates.end(), this->predicate()) != predicates.end())
-            return success();
-        else
-            return emitOpError("requires predicate \"eq\", \"ne\", \"slt\", \"sle\", \"sgt\", \"sge\", \"ult\", \"ule\", \"ugt\", \"uge\"");
-    }];
+    let hasVerifier = 1;
 }
 
 // -----

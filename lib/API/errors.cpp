@@ -1,4 +1,4 @@
-//===- error.cpp  - Error reporting API -------------------------*- C++ -*-===//
+//===- errors.cpp  - Error reporting API ------------------------*- C++ -*-===//
 //
 // (C) Copyright IBM 2023.
 //
@@ -18,15 +18,20 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#include "API/error.h"
+#include "API/errors.h"
 
+#include "llvm/Support/Error.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <string>
+#include <string_view>
+#include <system_error>
 #include <utility>
 
-namespace qssc {
-static std::string_view getErrorCategoryAsString(ErrorCategory category) {
+namespace {
+
+std::string_view getErrorCategoryAsString(qssc::ErrorCategory category) {
   using namespace qssc;
   switch (category) {
   case ErrorCategory::OpenQASM3ParseFailure:
@@ -46,6 +51,9 @@ static std::string_view getErrorCategoryAsString(ErrorCategory category) {
 
   case ErrorCategory::QSSCompilerNonZeroStatus:
     return "Errored because non-zero status is returned";
+
+  case ErrorCategory::QSSCompilerSequenceTooLong:
+    return "Input sequence is too long";
 
   case ErrorCategory::QSSCompilationFailure:
     return "Failure during compilation";
@@ -71,6 +79,9 @@ static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   case ErrorCategory::QSSLinkInvalidPatchTypeError:
     return "Invalid patch point type";
 
+  case ErrorCategory::QSSControlSystemResourcesExceeded:
+    return "Control system resources exceeded";
+
   case ErrorCategory::UncategorizedError:
     return "Compilation failure";
   }
@@ -78,20 +89,24 @@ static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   llvm_unreachable("unhandled category");
 }
 
-static llvm::StringRef getSeverityAsString(Severity sev) {
+llvm::StringRef getSeverityAsString(qssc::Severity sev) {
   switch (sev) {
-  case Severity::Info:
+  case qssc::Severity::Info:
     return "Info";
-  case Severity::Warning:
+  case qssc::Severity::Warning:
     return "Warning";
-  case Severity::Error:
+  case qssc::Severity::Error:
     return "Error";
-  case Severity::Fatal:
+  case qssc::Severity::Fatal:
     return "Fatal";
   }
 
   llvm_unreachable("unhandled severity");
 }
+
+} // anonymous namespace
+
+namespace qssc {
 
 std::string Diagnostic::toString() const {
   std::string str;
@@ -104,15 +119,20 @@ std::string Diagnostic::toString() const {
   return str;
 }
 
-llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
-                           Severity severity, ErrorCategory category,
-                           std::string message, std::error_code ec) {
+llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
+                           const Diagnostic &diag, std::error_code ec) {
   auto *diagnosticCallback =
       onDiagnostic.has_value() ? &onDiagnostic.value() : nullptr;
-  qssc::Diagnostic diag{severity, category, std::move(message)};
   if (diagnosticCallback)
     (*diagnosticCallback)(diag);
   return llvm::createStringError(ec, diag.toString());
+}
+
+llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
+                           Severity severity, ErrorCategory category,
+                           std::string message, std::error_code ec) {
+  qssc::Diagnostic const diag{severity, category, std::move(message)};
+  return emitDiagnostic(onDiagnostic, diag, ec);
 }
 
 } // namespace qssc

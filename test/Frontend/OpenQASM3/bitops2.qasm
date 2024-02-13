@@ -16,7 +16,7 @@ OPENQASM 3.0;
 // that they have been altered from the originals.
 
 // MLIR: module
-// MLIR: func @main
+// MLIR: func.func @main
 
 // AST-PRETTY: DeclarationNode(type=ASTTypeQubitContainer
 qubit $0;

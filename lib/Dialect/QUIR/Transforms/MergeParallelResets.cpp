@@ -21,14 +21,26 @@
 
 #include "Dialect/QUIR/Transforms/MergeParallelResets.h"
 
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
-#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/PatternMatch.h"
+#include "mlir/Support/LLVM.h"
+#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
+#include "llvm/ADT/StringRef.h"
+
+#include <algorithm>
+#include <iterator>
+#include <optional>
+#include <set>
+#include <sys/types.h>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 using namespace mlir;
 using namespace mlir::quir;
@@ -45,9 +57,9 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
   LogicalResult matchAndRewrite(ResetQubitOp resetOp,
                                 PatternRewriter &rewriter) const override {
     std::unordered_set<uint> qubitIds;
-    qubitIds.reserve(resetOp.qubits().size());
+    qubitIds.reserve(resetOp.getQubits().size());
 
-    for (auto qubit : resetOp.qubits()) {
+    for (auto qubit : resetOp.getQubits()) {
       auto id = lookupQubitId(qubit);
       if (!id)
         return failure();
@@ -56,9 +68,9 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
 
     // identify additional reset operations that may happen in parallel and can
     // be merged
-    auto resetQubitOperands = resetOp.qubitsMutable();
+    auto resetQubitOperands = resetOp.getQubitsMutable();
 
-    llvm::Optional<Operation *> nextQuantumOp = nextQuantumOpOrNull(resetOp);
+    std::optional<Operation *> nextQuantumOp = nextQuantumOpOrNull(resetOp);
     if (!nextQuantumOp)
       return failure();
 
@@ -67,8 +79,8 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
       return failure();
 
     // check if we can add this reset
-    if (!std::all_of(nextResetOp.qubits().begin(), nextResetOp.qubits().end(),
-                     [&](auto qubit) {
+    if (!std::all_of(nextResetOp.getQubits().begin(),
+                     nextResetOp.getQubits().end(), [&](auto qubit) {
                        // can merge this adjacent qubit reset op when we can
                        // lookup all of its qubits' ids and these are not
                        // overlapping with the qubit ids in resetOp or other
@@ -79,7 +91,7 @@ struct MergeResetsLexicographicPattern : public OpRewritePattern<ResetQubitOp> {
       return failure();
 
     // good to merge
-    for (auto qubit : nextResetOp.qubits())
+    for (auto qubit : nextResetOp.getQubits())
       resetQubitOperands.append(qubit);
     rewriter.eraseOp(nextResetOp);
     return success();
@@ -92,9 +104,10 @@ void MergeResetsLexicographicPass::runOnOperation() {
   mlir::RewritePatternSet patterns(&getContext());
   mlir::GreedyRewriteConfig config;
 
-  // use cheaper top-down traversal (in this case, bottom-up would not behave
-  // any differently)
-  config.useTopDownTraversal = true;
+  // Bottom up traversal is 3x as fast
+  config.useTopDownTraversal = false;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
 
   patterns.add<MergeResetsLexicographicPattern>(&getContext());
 
@@ -111,6 +124,10 @@ llvm::StringRef MergeResetsLexicographicPass::getDescription() const {
          "single operation lexicographically.";
 }
 
+llvm::StringRef MergeResetsLexicographicPass::getName() const {
+  return "Merge Resets Lexicographical Pass";
+}
+
 namespace {
 // This pattern merges qubit reset operations that can be parallelized into a
 // single reset op topologically.
@@ -125,10 +142,10 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     // topological path if it exists
     auto [nextResetOpt, observedQubits] =
         QubitOpInterface::getNextQubitOpOfTypeWithQubits<ResetQubitOp>(resetOp);
-    if (!nextResetOpt.hasValue())
+    if (!nextResetOpt.has_value())
       return failure();
 
-    ResetQubitOp nextResetOp = nextResetOpt.getValue();
+    ResetQubitOp nextResetOp = nextResetOpt.value();
 
     // There are 2 possible merge directions; we can hoist the next reset
     // to merge with this one (if nothing uses the future qubit between here
@@ -170,8 +187,8 @@ struct MergeResetsTopologicalPattern : public OpRewritePattern<ResetQubitOp> {
     // good to merge one way or the other. Prefer hoisting the next reset.
     if (mergeFwdIntersection.empty()) {
       // Hoist the next reset into this one
-      auto resetQubitOperands = resetOp.qubitsMutable();
-      for (auto qubit : nextResetOp.qubits())
+      auto resetQubitOperands = resetOp.getQubitsMutable();
+      for (auto qubit : nextResetOp.getQubits())
         resetQubitOperands.append(qubit);
       rewriter.eraseOp(nextResetOp);
     } else {
@@ -200,9 +217,10 @@ void MergeResetsTopologicalPass::runOnOperation() {
   mlir::RewritePatternSet patterns(&getContext());
   mlir::GreedyRewriteConfig config;
 
-  // use cheaper top-down traversal (in this case, bottom-up would not behave
-  // any differently)
-  config.useTopDownTraversal = true;
+  // Bottom up traversal is 3x as fast
+  config.useTopDownTraversal = false;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
 
   patterns.add<MergeResetsTopologicalPattern>(&getContext());
 
@@ -217,4 +235,8 @@ llvm::StringRef MergeResetsTopologicalPass::getArgument() const {
 llvm::StringRef MergeResetsTopologicalPass::getDescription() const {
   return "Merge qubit reset ops that can be parallelized into a "
          "single operation topologically.";
+}
+
+llvm::StringRef MergeResetsTopologicalPass::getName() const {
+  return "Merge Resets Topological Pass";
 }

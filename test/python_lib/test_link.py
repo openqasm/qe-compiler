@@ -15,14 +15,14 @@ Unit tests for the linker API.
 """
 import pytest
 
-from qss_compiler import compile_str, link_file, InputType, OutputType
+from qss_compiler import link_file
 from qss_compiler.exceptions import QSSLinkerNotImplemented
 
 
 def test_linker_not_implemented(tmp_path):
     qem_file = tmp_path / "test.txt"
     arg_file = tmp_path / "dummy.txt"
-    with open(qem_file,'w') as f:
+    with open(qem_file, "w") as f:
         f.write("dummy")
 
     with pytest.raises(QSSLinkerNotImplemented) as error:

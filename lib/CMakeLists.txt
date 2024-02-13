@@ -30,6 +30,7 @@ add_dependencies(QSSCCore mlir-headers)
 get_property(qssc_targets GLOBAL PROPERTY QSSC_TARGETS)
 get_property(mlir_dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(mlir_conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
+get_property(mlir_extension_libs GLOBAL PROPERTY MLIR_EXTENSION_LIBS)
 get_property(capi_libs GLOBAL PROPERTY QSSC_CAPI_LIBS)
 
 # All libraries for the QSS-Compiler
@@ -44,9 +45,11 @@ set(qssc_api_libs
         QSSCCore
         ${mlir_dialect_libs}
         ${mlir_conversion_libs}
+        ${mlir_extension_libs}
         MLIRCallInterfaces
         MLIRExecutionEngine
         MLIROptLib
+        MLIRLLVMDialect
         MLIROQ3Dialect
         MLIRQCSDialect
         MLIRQUIRDialect
@@ -83,7 +86,7 @@ if(INSTALL_BUNDLED_STATIC_LIB)
             QSSCPayload
             QSSCPayloadZip
             QSSCCore
-            Utils
+            QSSCUtils
             ${mlir_dialect_libs}
             ${mlir_conversion_libs}
             ${capi_libs}

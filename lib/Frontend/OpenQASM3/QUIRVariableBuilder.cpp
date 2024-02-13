@@ -24,21 +24,28 @@
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
-
 #include "Dialect/QUIR/IR/QUIRTypes.h"
-#include "mlir/Dialect/StandardOps/IR/Ops.h"
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/SymbolTable.h"
 
-#include "qasm/AST/ASTTypeEnums.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/Location.h"
+#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Value.h"
+#include "mlir/Support/LLVM.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/ErrorHandling.h"
 
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
-#include <string>
-#include <utility>
+#include <qasm/AST/ASTResult.h>
+#include <qasm/AST/ASTSymbolTable.h>
+#include <qasm/AST/ASTTypeEnums.h>
+#include <qasm/AST/ASTTypes.h>
 
 namespace qssc::frontend::openqasm3 {
 
@@ -48,7 +55,7 @@ void QUIRVariableBuilder::generateVariableDeclaration(
 
   // variables are symbols and thus need to be placed directly in a surrounding
   // Op that contains a symbol table.
-  mlir::OpBuilder::InsertionGuard g(builder);
+  mlir::OpBuilder::InsertionGuard const g(builder);
   auto *symbolTableOp = mlir::SymbolTable::getNearestSymbolTable(
       builder.getInsertionBlock()->getParentOp());
   assert(symbolTableOp &&
@@ -66,9 +73,9 @@ void QUIRVariableBuilder::generateVariableDeclaration(
   lastDeclaration[surroundingModuleOp] = declareOp; // save this to insert after
 
   if (isInputVariable)
-    declareOp.inputAttr(builder.getUnitAttr());
+    declareOp.setInputAttr(builder.getUnitAttr());
   if (isOutputVariable)
-    declareOp.outputAttr(builder.getUnitAttr());
+    declareOp.setOutputAttr(builder.getUnitAttr());
   variables.emplace(variableName.str(), type);
 }
 
@@ -76,7 +83,7 @@ void QUIRVariableBuilder::generateParameterDeclaration(
     mlir::Location location, llvm::StringRef variableName, mlir::Type type,
     mlir::Value assignedValue) {
 
-  mlir::OpBuilder::InsertionGuard g(builder);
+  mlir::OpBuilder::InsertionGuard const g(builder);
   auto *symbolTableOp = mlir::SymbolTable::getNearestSymbolTable(
       builder.getInsertionBlock()->getParentOp());
   assert(symbolTableOp &&
@@ -93,7 +100,7 @@ void QUIRVariableBuilder::generateParameterDeclaration(
     declareParameterOp =
         getClassicalBuilder().create<mlir::qcs::DeclareParameterOp>(
             location, variableName.str(),
-            builder.getType<mlir::quir::AngleType>(64), constantOp.value());
+            builder.getType<mlir::quir::AngleType>(64), constantOp.getValue());
   }
 
   // if the source is a arith::ConstantOp cast to angle
@@ -130,8 +137,8 @@ QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
     return loadOp;
   }
 
-  assert(false &&
-         "Unsupported defining value operation for parameter variable");
+  llvm_unreachable(
+      "Unsupported defining value operation for parameter variable");
 }
 
 void QUIRVariableBuilder::generateArrayVariableDeclaration(

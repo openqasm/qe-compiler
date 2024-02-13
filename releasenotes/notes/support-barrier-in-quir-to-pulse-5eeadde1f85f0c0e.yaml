@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Support for handling quir.barriers is added to quirToPulse pass.

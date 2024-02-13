@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --subroutine-cloning --quantum-decorate --merge-circuits %s | FileCheck %s 
+// RUN: qss-compiler -X=mlir --subroutine-cloning --quantum-decorate --merge-circuits %s | FileCheck %s
 
 //
 // This code is part of Qiskit.
@@ -57,12 +57,17 @@ module {
     %1 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
     quir.return %0, %1: i1, i1
   }
+  quir.circuit @circuit_9(%arg0: !quir.qubit<1>) -> (i1, i1) {
+    %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
+    %1 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
+    quir.return %0, %1: i1, i1
+  }
   // CHECK: @circuit_0_q0_circuit_1_q1(%arg0: !quir.qubit<1>
   // CHECK: %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
   // CHECK: %1 = quir.measure(%arg1) : (!quir.qubit<1>) -> i1
   // CHECK: quir.return %0, %1 : i1, i1
   // CHECK: }
-  func @main() -> i32 {
+  func.func @main() -> i32 {
     %0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
     %1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
     %200 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
@@ -110,7 +115,7 @@ module {
     %12:2 = quir.call_circuit @circuit_6(%0) : (!quir.qubit<1>) -> (i1, i1)
     quir.barrier %200 : (!quir.qubit<1>) -> ()
     %13:2 = quir.call_circuit @circuit_6(%0) : (!quir.qubit<1>) -> (i1, i1)
-    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_6_q0_circuit_6_q0(%0, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_6_q0_circuit_6_q0(%0) : (!quir.qubit<1>) -> (i1, i1, i1, i1)
 
 
     quir.barrier %0, %1, %200, %201, %202 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
@@ -118,13 +123,22 @@ module {
     quir.barrier %200, %201 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     quir.barrier %200, %202 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     %15:2 = quir.call_circuit @circuit_7(%0) : (!quir.qubit<1>) -> (i1, i1)
-    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_7_q0_circuit_7_q0(%0, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+    // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_7_q0_circuit_7_q0(%0) : (!quir.qubit<1>) -> (i1, i1, i1, i1)
 
     quir.barrier %0, %1, %200, %201, %202 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
     %16:2 = quir.call_circuit @circuit_8(%0) : (!quir.qubit<1>) -> (i1, i1)
     quir.barrier %0 : (!quir.qubit<1>) -> ()
     %17:2 = quir.call_circuit @circuit_8(%0) : (!quir.qubit<1>) -> (i1, i1)
-    // CHECK-NOT: %{{.*}}:4 = quir.call_circuit @circuit_8_q0_circuit_8_q0(%0, %0) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+    // CHECK-NOT: %{{.*}}:4 = quir.call_circuit @circuit_8_q0_circuit_8_q0(%0) : (!quir.qubit<1>) -> (i1, i1, i1, i1)
+
+    quir.barrier %0, %1, %200, %201, %202 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+    %18:2 = quir.call_circuit @circuit_9(%0) : (!quir.qubit<1>) -> (i1, i1)
+    // CHECK: %{{.*}}:2 = quir.call_circuit @circuit_9_q0(%0) : (!quir.qubit<1>) -> (i1, i1)
+    %19 = quir.measure(%0) {quir.noReportRuntime} : (!quir.qubit<1>) -> i1
+    // CHECK: %{{.*}} = quir.measure(%0) {quir.noReportRuntime} : (!quir.qubit<1>) -> i1
+    %20:2 = quir.call_circuit @circuit_9(%0) : (!quir.qubit<1>) -> (i1, i1)
+    // CHECK: %{{.*}}:2 = quir.call_circuit @circuit_9_q0(%0) : (!quir.qubit<1>) -> (i1, i1)
+    // CHECK-NOT: %{{.*}}:4 = quir.call_circuit @circuit_9_q0_circuit_9_q0(%0) : (!quir.qubit<1>) -> (i1, i1, i1, i1)
 
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32

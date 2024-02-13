@@ -23,7 +23,7 @@
 #ifndef ARGUMENTS_H
 #define ARGUMENTS_H
 
-#include "API/error.h"
+#include "API/errors.h"
 #include "Dialect/QCS/IR/QCSTypes.h"
 
 #include "Arguments/Signature.h"
@@ -34,8 +34,7 @@
 
 namespace qssc::arguments {
 
-using ArgumentType = std::variant<llvm::Optional<double>>;
-using OptDiagnosticCallback = std::optional<qssc::DiagnosticCallback>;
+using ArgumentType = std::variant<std::optional<double>>;
 
 class ArgumentSource {
 public:

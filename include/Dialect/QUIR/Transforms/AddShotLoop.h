@@ -53,8 +53,9 @@ struct AddShotLoopPass
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
+  llvm::StringRef getName() const override;
 
-  void getDependentDialects(DialectRegistry &registry) const override {
+  void getDependentDialects(mlir::DialectRegistry &registry) const override {
     registry.insert<mlir::quir::QUIRDialect>();
   }
 }; // struct AddShotLoopPass
