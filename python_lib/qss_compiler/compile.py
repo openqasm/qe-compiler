@@ -269,6 +269,12 @@ def _do_compile(
                         "interface code between the calling process and the compile process.",
                         return_diagnostics=return_diagnostics,
                     )
+                if diag.category == ErrorCategory.QSSControlSystemResourcesExceeded:
+                    raise exceptions.QSSControlSystemResourcesExceeded(
+                        diag.message,
+                        diagnostics,
+                        return_diagnostics=self.return_diagnostics,
+                    )
 
             if options.output_file is None:
                 # return compilation result via IPC instead of in a file.

@@ -55,6 +55,32 @@ public:
   const Target *getParent() const { return parent; }
   virtual ~Target() = default;
 
+  // Diagnostic creation and access
+  /// @brief Add a diagnostic to this target
+  void addDiagnostic(const qssc::Diagnostic &diag) {
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
+    diagnostics_.emplace_back(diag);
+  }
+  /// @brief Construct a diagnostic and add to this target
+  void addDiagnostic(Severity severity, ErrorCategory category,
+                     const std::string &message) {
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
+    diagnostics_.emplace_back(severity, category, message);
+  }
+  /// @brief Return the diagnostics from this target and its sub-targets.
+  ///        Take and clear the diagnostic lists of the targets.
+  qssc::DiagList takeDiagnostics() {
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
+    qssc::DiagList retDiagList;
+    // Take the elements of the given list and move them to the calling list
+    retDiagList.splice(retDiagList.end(), diagnostics_);
+
+    for (auto &child : getChildren_())
+      retDiagList.splice(retDiagList.end(), child->takeDiagnostics());
+
+    return retDiagList;
+  }
+
 protected:
   std::string name;
 
