@@ -36,19 +36,23 @@ using CallSequenceStack_t = std::deque<mlir::pulse::CallSequenceOp>;
 
 namespace mlir::pulse {
 
-Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
-                                CallSequenceOp callSequenceOp);
+const Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
+                                      CallSequenceOp callSequenceOp);
 
-Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
-                                CallSequenceStack_t &callSequenceOpStack);
+const Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
+                                      CallSequenceStack_t &callSequenceOpStack);
 
-double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
-                     CallSequenceStack_t &callSequenceOpStack);
+const double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
+                           CallSequenceStack_t &callSequenceOpStack);
 
-void sortOpsByTimepoint(SequenceOp &sequenceOp);
+/// this function goes over all the blocks of the input pulse sequence, and for
+/// each block, it sorts the pulse ops within the block according to their
+/// timepoints.
+const void sortOpsByTimepoint(const SequenceOp &sequenceOp);
 
 template <typename PulseOpTy>
-MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
+const MixFrameOp getMixFrameOp(PulseOpTy pulseOp,
+                               CallSequenceOp callSequenceOp) {
 
   auto frameArgIndex =
       pulseOp.getTarget().template cast<BlockArgument>().getArgNumber();
@@ -62,8 +66,8 @@ MixFrameOp getMixFrameOp(PulseOpTy pulseOp, CallSequenceOp callSequenceOp) {
 }
 
 template <typename PulseOpTy>
-MixFrameOp getMixFrameOp(PulseOpTy pulseOp,
-                         CallSequenceStack_t &callSequenceOpStack) {
+const MixFrameOp getMixFrameOp(PulseOpTy pulseOp,
+                               CallSequenceStack_t &callSequenceOpStack) {
 
   auto targetIndex = 0;
   auto target = pulseOp.getTarget();

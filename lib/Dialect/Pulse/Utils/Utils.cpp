@@ -35,8 +35,8 @@
 
 namespace mlir::pulse {
 
-Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
-                                CallSequenceOp callSequenceOp) {
+const Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
+                                      CallSequenceOp callSequenceOp) {
   auto wfrArgIndex =
       pulsePlayOp.getWfr().dyn_cast<BlockArgument>().getArgNumber();
   auto wfrOp = callSequenceOp.getOperand(wfrArgIndex)
@@ -44,8 +44,8 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
   return wfrOp;
 }
 
-Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
-                                CallSequenceStack_t &callSequenceOpStack) {
+const Waveform_CreateOp
+getWaveformOp(PlayOp pulsePlayOp, CallSequenceStack_t &callSequenceOpStack) {
   auto wfrIndex = 0;
   mlir::Value wfrOp = pulsePlayOp.getWfr();
 
@@ -64,8 +64,8 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
   return waveformOp;
 }
 
-double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
-                     CallSequenceStack_t &callSequenceOpStack) {
+const double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
+                           CallSequenceStack_t &callSequenceOpStack) {
   auto phaseOffsetIndex = 0;
   mlir::Value phaseOffset = shiftPhaseOp.getPhaseOffset();
 
@@ -85,7 +85,7 @@ double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
   return phaseOffsetOp.value().convertToDouble();
 }
 
-void sortOpsByTimepoint(SequenceOp &sequenceOp) {
+const void sortOpsByTimepoint(const SequenceOp &sequenceOp) {
   // sort ops by timepoint
   for (Region &region : sequenceOp->getRegions()) {
     for (Block &block : region.getBlocks()) {
