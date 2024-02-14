@@ -15,13 +15,13 @@
 
 from qss_compiler.mlir.ir import Context, InsertionPoint, Location, Module
 from qss_compiler.mlir.ir import F64Type, IntegerType, IndexType
-from qss_compiler.mlir.dialects import arith, builtin, std, scf
+from qss_compiler.mlir.dialects import arith, builtin, std, scf, complex
 
 
 # In[2]:
 
 
-from qss_compiler.mlir.dialects import pulse, quir, complex # noqa: F401, E402
+from qss_compiler.mlir.dialects import pulse, quir # noqa: F401, E402
 
 
 # In[4]:

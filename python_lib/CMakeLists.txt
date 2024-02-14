@@ -135,17 +135,6 @@ declare_mlir_dialect_python_bindings(
     dialects/_qcs_ops_ext.py
   DIALECT_NAME qcs)
 
-# LLVM 14 does not appear to export the complex dialect
-# this may be removed when updating for LLVM 15
-declare_mlir_dialect_python_bindings(
-  ADD_TO_PARENT QSSPythonSources.Dialects
-  ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qss_compiler/mlir"
-  TD_FILE dialects/ComplexOps.td
-  SOURCES
-    dialects/complex.py
-    dialects/_complex_ops_ext.py
-  DIALECT_NAME complex)
-
 
 set(PYTHON_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/Bindings/Python/")
 

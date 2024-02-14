@@ -11,10 +11,10 @@
 # 7. run `pip install -e .`
 
 from qss_compiler.mlir.ir import Context, InsertionPoint, Location, Module
-from qss_compiler.mlir.ir import F64Type, IntegerType, IndexType
-from qss_compiler.mlir.dialects import arith, builtin, std, scf
+from qss_compiler.mlir.ir import F64Type, IntegerType, IndexType, ComplexType
+from qss_compiler.mlir.dialects import arith, builtin, func, scf, complex
 
-from qss_compiler.mlir.dialects import pulse, quir, complex # noqa: F401, E402
+from qss_compiler.mlir.dialects import pulse, quir # noqa: F401, E402
 
 import numpy as np
 
@@ -44,8 +44,8 @@ with Context() as ctx:
         module = Module.create(loc)
 
         with InsertionPoint(module.body):
-            func = builtin.FuncOp("main", ([], [i32]))
-            func.add_entry_block()
+            function = func.FuncOp("main", ([], [i32]))
+            function.add_entry_block()
             
         with InsertionPoint(module.body):
             
@@ -61,13 +61,13 @@ with Context() as ctx:
     #         ret = pulse.ReturnOp(zero)
 
             
-        with InsertionPoint(func.entry_block):
+        with InsertionPoint(function.entry_block):
     #         quir.SystemInitOp()
 
             c0 = arith.ConstantOp(f64, 0.0)
             c1_r = arith.ConstantOp(f64, 0.0)
             c1_i = arith.ConstantOp(f64, 0.0)
-            c1_c = complex.CreateOp(c1_r, c1_i)
+            c1_c = complex.CreateOp(ComplexType.get(F64Type.get()), c1_r, c1_i)
 
     #         ph0 = quir.ConstantOp("angle", 0.0)
             p0 = pulse.Port_CreateOp("Q0")
@@ -96,7 +96,7 @@ with Context() as ctx:
             
     #         quir.SystemFinalizeOp()
             zero = arith.ConstantOp(i32, 0)
-            std.ReturnOp(zero)
+            func.ReturnOp(zero)
             
 print(str(module))
 

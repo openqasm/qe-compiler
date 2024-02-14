@@ -4,9 +4,9 @@
 from qss_compiler.mlir.ir import *
 # from mlir import affine
 # from mlir.ir import F64Type, IntegerType, IndexType, ComplexType
-from qss_compiler.mlir.dialects import arith, builtin, std, scf, linalg
+from qss_compiler.mlir.dialects import arith, builtin, std, scf, linalg, complex
 
-from qss_compiler.mlir.dialects import pulse, quir, complex # noqa: F401, E402
+from qss_compiler.mlir.dialects import pulse, quir # noqa: F401, E402
 
 
 dur_val = 5

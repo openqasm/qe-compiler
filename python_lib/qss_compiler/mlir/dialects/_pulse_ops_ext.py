@@ -3,7 +3,6 @@ try:
     from ..ir import *
     from .pulse import *
     from .quir import AngleType, ConstantOp as QUIRConstantOp
-    from .complex import CreateOp as ComplexCreateOp
     from .._mlir_libs._ibmDialectsPulse import *
     from ._ods_common import get_default_loc_context as _get_default_loc_context
 except ImportError as e:
@@ -51,7 +50,7 @@ class PlayOp:
 
 class Port_CreateOp:
     def __init__(self, uid, *, loc=None, ip=None):
-        super().__init__(PortType.get(), StringAttr.get(str(uid)), loc=loc, ip=ip)
+        super().__init__(StringAttr.get(str(uid)), loc=loc, ip=ip)
 
 
 class SequenceOp:

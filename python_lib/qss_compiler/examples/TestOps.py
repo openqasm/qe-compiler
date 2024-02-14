@@ -1,8 +1,8 @@
 ### Example python script for generating mlir for a variety of Pulse Ops
 
 from qss_compiler.mlir.ir import *
-from qss_compiler.mlir.dialects import arith, builtin, std
-from qss_compiler.mlir.dialects import pulse, complex, quir
+from qss_compiler.mlir.dialects import arith, builtin, std, complex
+from qss_compiler.mlir.dialects import pulse quir
 
 import numpy as np
 
