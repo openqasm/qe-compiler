@@ -255,12 +255,14 @@ void registerQuirPasses() {
   PassRegistration<quir::MergeResetsTopologicalPass>();
   PassRegistration<quir::SubroutineCloningPass>();
   PassRegistration<quir::RemoveQubitOperandsPass>();
+  PassRegistration<quir::RemoveUnusedCircuitsPass>();
   PassRegistration<quir::UnusedVariablePass>();
   PassRegistration<quir::AddShotLoopPass>();
   PassRegistration<quir::QuantumDecorationPass>();
   PassRegistration<quir::ReorderMeasurementsPass>();
   PassRegistration<quir::ReorderCircuitsPass>();
   PassRegistration<quir::MergeCircuitsPass>();
+  PassRegistration<quir::MergeCircuitMeasuresTopologicalPass>();
   PassRegistration<quir::MergeMeasuresLexographicalPass>();
   PassRegistration<quir::MergeMeasuresTopologicalPass>();
   PassRegistration<quir::QUIRAngleConversionPass>();
