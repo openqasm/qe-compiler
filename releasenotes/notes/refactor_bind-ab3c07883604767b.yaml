@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    Allow target-specific parameter bindings when ``qe-qem`` is specified as
+    an emit action.

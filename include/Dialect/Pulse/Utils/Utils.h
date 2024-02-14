@@ -45,6 +45,9 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
 double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
                      CallSequenceStack_t &callSequenceOpStack);
 
+/// this function goes over all the blocks of the input pulse sequence, and for
+/// each block, it sorts the pulse ops within the block according to their
+/// timepoints.
 void sortOpsByTimepoint(SequenceOp &sequenceOp);
 
 template <typename PulseOpTy>

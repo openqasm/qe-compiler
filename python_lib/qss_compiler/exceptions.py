@@ -65,6 +65,10 @@ class QSSCompilerNonZeroStatus(QSSCompilerError):
     """Raised when non-zero status is returned."""
 
 
+class QSSCompilerSequenceTooLong(QSSCompilerError):
+    """Raised when input sequence is too long."""
+
+
 class QSSCompilationFailure(QSSCompilerError):
     """Raised during other compilation failure."""
 
@@ -107,3 +111,7 @@ class QSSLinkInvalidPatchTypeError(QSSLinkingFailure):
 
 class QSSLinkInvalidArgumentError(QSSLinkingFailure):
     """Raised when argument is invalid"""
+
+
+class QSSControlSystemResourcesExceeded(QSSCompilerError):
+    """Raised when control system resources (such as instruction memory) are exceeded."""

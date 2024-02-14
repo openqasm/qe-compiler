@@ -24,6 +24,7 @@
 #include "llvm/Support/Error.h"
 
 #include <functional>
+#include <list>
 #include <optional>
 #include <string>
 
@@ -36,6 +37,7 @@ enum class ErrorCategory {
   QSSCompilerCommunicationFailure,
   QSSCompilerEOFFailure,
   QSSCompilerNonZeroStatus,
+  QSSCompilerSequenceTooLong,
   QSSCompilationFailure,
   QSSLinkerNotImplemented,
   QSSLinkSignatureWarning,
@@ -44,6 +46,7 @@ enum class ErrorCategory {
   QSSLinkSignatureNotFound,
   QSSLinkArgumentNotFoundWarning,
   QSSLinkInvalidPatchTypeError,
+  QSSControlSystemResourcesExceeded,
   UncategorizedError,
 };
 
@@ -67,9 +70,15 @@ public:
   std::string toString() const;
 };
 
+using DiagList = std::list<Diagnostic>;
+using DiagRefList = std::list<std::reference_wrapper<const Diagnostic>>;
 using DiagnosticCallback = std::function<void(const Diagnostic &)>;
+using OptDiagnosticCallback = std::optional<DiagnosticCallback>;
 
-llvm::Error emitDiagnostic(std::optional<DiagnosticCallback> onDiagnostic,
+llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
+                           const Diagnostic &diag,
+                           std::error_code ec = llvm::inconvertibleErrorCode());
+llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
                            Severity severity, ErrorCategory category,
                            std::string message,
                            std::error_code ec = llvm::inconvertibleErrorCode());

@@ -18,6 +18,7 @@
 #define QSS_COMPILER_LIB_H
 
 #include "API/errors.h"
+#include "Config/QSSConfig.h"
 
 #include "Config/QSSConfig.h"
 
@@ -75,7 +76,7 @@ llvm::Error compileMain(llvm::raw_ostream &outputStream,
                         std::unique_ptr<llvm::MemoryBuffer> buffer,
                         mlir::DialectRegistry &registry,
                         const qssc::config::QSSConfig &config,
-                        std::optional<DiagnosticCallback> diagnosticCb,
+                        OptDiagnosticCallback diagnosticCb,
                         mlir::TimingScope &timing);
 
 /// Implementation for tools like `qss-compiler`.
@@ -90,7 +91,7 @@ llvm::Error compileMain(int argc, const char **argv,
                         llvm::StringRef inputFilename,
                         llvm::StringRef outputFilename,
                         mlir::DialectRegistry &registry,
-                        std::optional<DiagnosticCallback> diagnosticCb);
+                        OptDiagnosticCallback diagnosticCb);
 
 /// Implementation for tools like `qss-compiler`.
 /// @param argc Commandline argc to parse.
@@ -100,7 +101,7 @@ llvm::Error compileMain(int argc, const char **argv,
 /// @param diagnosticCb callback for error diagnostic processsing.
 llvm::Error compileMain(int argc, const char **argv, llvm::StringRef toolName,
                         mlir::DialectRegistry &registry,
-                        std::optional<DiagnosticCallback> diagnosticCb);
+                        OptDiagnosticCallback diagnosticCb);
 
 /// Implementation for tools like `qss-compiler` with provided registry with
 /// default project dialects loaded
@@ -108,7 +109,7 @@ llvm::Error compileMain(int argc, const char **argv, llvm::StringRef toolName,
 /// @param argv Commandline argv to parse.
 /// @param diagnosticCb callback for error diagnostic processsing.
 llvm::Error compileMain(int argc, const char **argv, llvm::StringRef toolName,
-                        std::optional<DiagnosticCallback> diagnosticCb);
+                        OptDiagnosticCallback diagnosticCb);
 
 /// Helper wrapper to return the result of compileMain directly from main
 inline int asMainReturnCode(llvm::Error err) {
@@ -117,6 +118,7 @@ inline int asMainReturnCode(llvm::Error err) {
 
 /// @brief Call the parameter binder
 /// @param target name of the target to employ
+/// @param action name of the emit action of input and output
 /// @param moduleInputPath path of the module to use as input
 /// @param payloadOutputPath path of the payload to generate as output
 /// @param arguments bindings for the parameters in the module to apply
@@ -124,13 +126,13 @@ inline int asMainReturnCode(llvm::Error err) {
 /// @param diagnosticCb an optional callback that will receive emitted
 /// diagnostics
 /// @return 0 on success
-int bindArguments(std::string_view target, std::string_view configPath,
-                  std::string_view moduleInput,
+int bindArguments(std::string_view target, qssc::config::EmitAction action,
+                  std::string_view configPath, std::string_view moduleInput,
                   std::string_view payloadOutputPath,
                   std::unordered_map<std::string, double> const &arguments,
                   bool treatWarningsAsErrors, bool enableInMemoryInput,
                   std::string *inMemoryOutput,
-                  const std::optional<DiagnosticCallback> &onDiagnostic);
+                  const OptDiagnosticCallback &onDiagnostic);
 
 } // namespace qssc
 #endif // QSS_COMPILER_LIB_H

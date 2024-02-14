@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    It is now possible to set the maximum number of threads for the MLIR context.
+    This can be done through the CLI option ``--max-threads=<uint>`` or the
+    environment variable ``export QSSC_MAX_THREADS=<uint>``.

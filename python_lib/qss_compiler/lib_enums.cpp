@@ -24,6 +24,8 @@ void addErrorCategory(py::module &m) {
              qssc::ErrorCategory::QSSCompilerEOFFailure)
       .value("QSSCompilerNonZeroStatus",
              qssc::ErrorCategory::QSSCompilerNonZeroStatus)
+      .value("QSSCompilerSequenceTooLong",
+             qssc::ErrorCategory::QSSCompilerSequenceTooLong)
       .value("QSSCompilationFailure",
              qssc::ErrorCategory::QSSCompilationFailure)
       .value("QSSLinkerNotImplemented",
@@ -39,6 +41,8 @@ void addErrorCategory(py::module &m) {
              qssc::ErrorCategory::QSSLinkArgumentNotFoundWarning)
       .value("QSSLinkInvalidPatchTypeError",
              qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
+      .value("QSSControlSystemResourcesExceeded",
+             qssc::ErrorCategory::QSSControlSystemResourcesExceeded)
       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
       .export_values();
 }

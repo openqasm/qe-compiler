@@ -60,6 +60,8 @@
 #include "llvm/Support/InitLLVM.h"
 #include "llvm/Support/Process.h"
 #include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/ThreadPool.h"
+#include "llvm/Support/Threading.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -326,7 +328,7 @@ llvm::Error emitQEM(
 ///  @param diagnostic MLIR diagnostic from the Diagnostic Engine
 ///  @param diagnosticCb Handle to python diagnostic callback
 void diagEngineHandler(mlir::Diagnostic &diagnostic,
-                       std::optional<qssc::DiagnosticCallback> diagnosticCb) {
+                       const qssc::OptDiagnosticCallback &diagnosticCb) {
 
   // map diagnostic severity to qssc severity
   auto severity = diagnostic.getSeverity();
@@ -344,7 +346,7 @@ void diagEngineHandler(mlir::Diagnostic &diagnostic,
   }
   // emit diagnostic cast to void to discard result as it is not needed here
   if (qssc_severity == qssc::Severity::Error) {
-    (void)qssc::emitDiagnostic(std::move(diagnosticCb), qssc_severity,
+    (void)qssc::emitDiagnostic(diagnosticCb, qssc_severity,
                                qssc::ErrorCategory::QSSCompilationFailure,
                                diagnostic.str());
   }
@@ -396,11 +398,85 @@ llvm::Error applyEmitAction(
   return llvm::Error::success();
 }
 
-llvm::Error performCompileActions(
-    llvm::raw_ostream &outputStream, std::unique_ptr<llvm::MemoryBuffer> buffer,
-    DialectRegistry &registry, mlir::MLIRContext &context,
-    const qssc::config::QSSConfig &config, mlir::TimingScope &timing,
-    std::optional<qssc::DiagnosticCallback> diagnosticCb) {
+/// @brief Emit all given diagnostics, return true if there are errors
+///
+///        Uses qssc::emitDiagnostic to forward all diagnostics held by the
+///        target to the python diagnostic callback. Also prints diagnostics to
+///        llvm::errs to provide info in logs and for the binary. Returns true
+///        iff the target contains error or fatal severity diagnostics.
+/// @param diagnostics List of diagnostcs to emit
+/// @param diagnosticCb Handle to python diagnostic callback
+/// @param config Config data holding the verbosity level for output
+/// @return True iff target contains any error or fatal diagnostics
+bool emitDiagnosticsAndCheckForErrors(
+    const qssc::DiagList &diagnostics,
+    const qssc::OptDiagnosticCallback &diagnosticCb, const QSSConfig &config) {
+  // NOLINTNEXTLINE(misc-const-correctness)
+  bool foundError = false;
+  for (auto &diag : diagnostics) {
+    auto severity = diag.severity;
+    switch (config.getVerbosityLevel()) {
+    case QSSVerbosity::Error:
+      switch (severity) {
+      case Severity::Fatal:
+      case Severity::Error:
+        foundError = true;
+        (void)qssc::emitDiagnostic(diagnosticCb, diag);
+        llvm::errs() << diag.toString() << "\n";
+        break;
+      case Severity::Warning:
+      case Severity::Info:
+        break;
+      default:
+        llvm_unreachable("Unknown diagnostic severity");
+      }
+      break;
+    case QSSVerbosity::Warn:
+      switch (severity) {
+      case Severity::Fatal:
+      case Severity::Error:
+        foundError = true;
+        [[fallthrough]];
+      case Severity::Warning:
+        (void)qssc::emitDiagnostic(diagnosticCb, diag);
+        llvm::errs() << diag.toString() << "\n";
+        break;
+      case Severity::Info:
+        break;
+      default:
+        llvm_unreachable("Unknown diagnostic severity");
+      }
+      break;
+    case QSSVerbosity::Info:
+    case QSSVerbosity::Debug:
+      switch (severity) {
+      case Severity::Fatal:
+      case Severity::Error:
+        foundError = true;
+        [[fallthrough]];
+      case Severity::Warning:
+      case Severity::Info:
+        (void)qssc::emitDiagnostic(diagnosticCb, diag);
+        llvm::errs() << diag.toString() << "\n";
+        break;
+      default:
+        llvm_unreachable("Unknown diagnostic severity");
+      }
+      break;
+    default:
+      llvm_unreachable("Unknown verbosity level");
+    } // end switch for config verbosity
+  }   // end for diag in diagnostics list
+  return foundError;
+}
+
+llvm::Error performCompileActions(llvm::raw_ostream &outputStream,
+                                  std::unique_ptr<llvm::MemoryBuffer> buffer,
+                                  DialectRegistry &registry,
+                                  mlir::MLIRContext &context,
+                                  const qssc::config::QSSConfig &config,
+                                  mlir::TimingScope &timing,
+                                  qssc::OptDiagnosticCallback diagnosticCb) {
 
   // Populate the context
   context.appendDialectRegistry(registry);
@@ -575,8 +651,18 @@ llvm::Error performCompileActions(
   if (auto err =
           applyEmitAction(config, outputStream, std::move(payload), context,
                           moduleOp, sourceBuffer, fallbackResourceMap,
-                          targetCompilationManager, errorHandler, timing))
+                          targetCompilationManager, errorHandler, timing)) {
+    emitDiagnosticsAndCheckForErrors(
+        targetCompilationManager.takeTargetDiagnostics(), diagnosticCb, config);
     return err;
+  }
+
+  if (emitDiagnosticsAndCheckForErrors(
+          targetCompilationManager.takeTargetDiagnostics(), diagnosticCb,
+          config)) {
+    return llvm::createStringError(llvm::inconvertibleErrorCode(),
+                                   "Problems generating compiler output!");
+  }
 
   return llvm::Error::success();
 }
@@ -622,12 +708,22 @@ llvm::Error qssc::compileMain(llvm::raw_ostream &outputStream,
                               std::unique_ptr<llvm::MemoryBuffer> buffer,
                               DialectRegistry &registry,
                               const qssc::config::QSSConfig &config,
-                              std::optional<DiagnosticCallback> diagnosticCb,
+                              OptDiagnosticCallback diagnosticCb,
                               mlir::TimingScope &timing) {
 
   // The MLIR context for this compilation event.
   // Instantiate after parsing command line options.
   MLIRContext context{};
+
+  std::unique_ptr<llvm::ThreadPool> threadPool;
+  // Override default threadpool threads
+  if (context.isMultithreadingEnabled() && config.getMaxThreads().has_value()) {
+    llvm::ThreadPoolStrategy strategy;
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    strategy.ThreadsRequested = config.getMaxThreads().value();
+    threadPool = std::make_unique<llvm::ThreadPool>(strategy);
+    context.setThreadPool(*threadPool.get());
+  }
 
   qssc::config::setContextConfig(&context, config);
 
@@ -640,7 +736,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
                               llvm::StringRef inputFilename,
                               llvm::StringRef outputFilename,
                               mlir::DialectRegistry &registry,
-                              std::optional<DiagnosticCallback> diagnosticCb) {
+                              OptDiagnosticCallback diagnosticCb) {
 
   llvm::InitLLVM const y(argc, argv);
 
@@ -711,7 +807,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
 llvm::Error qssc::compileMain(int argc, const char **argv,
                               llvm::StringRef toolName,
                               mlir::DialectRegistry &registry,
-                              std::optional<DiagnosticCallback> diagnosticCb) {
+                              OptDiagnosticCallback diagnosticCb) {
 
   // Register and parse command line options.
   std::string inputFilename, outputFilename;
@@ -724,7 +820,7 @@ llvm::Error qssc::compileMain(int argc, const char **argv,
 
 llvm::Error qssc::compileMain(int argc, const char **argv,
                               llvm::StringRef toolName,
-                              std::optional<DiagnosticCallback> diagnosticCb) {
+                              OptDiagnosticCallback diagnosticCb) {
   // Register the standard passes with MLIR.
   // Must precede the command line parsing.
   if (auto err = qssc::dialect::registerPasses())
@@ -765,12 +861,13 @@ private:
 };
 
 llvm::Error
-bindArguments_(std::string_view target, std::string_view configPath,
-               std::string_view moduleInput, std::string_view payloadOutputPath,
+bindArguments_(std::string_view target, qssc::config::EmitAction action,
+               std::string_view configPath, std::string_view moduleInput,
+               std::string_view payloadOutputPath,
                std::unordered_map<std::string, double> const &arguments,
                bool treatWarningsAsErrors, bool enableInMemoryInput,
                std::string *inMemoryOutput,
-               const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
+               const qssc::OptDiagnosticCallback &onDiagnostic) {
 
   MLIRContext context{};
 
@@ -797,7 +894,8 @@ bindArguments_(std::string_view target, std::string_view configPath,
 
   MapAngleArgumentSource const source(arguments);
 
-  auto factory = targetInst.get()->getBindArgumentsImplementationFactory();
+  auto factory =
+      targetInst.get()->getBindArgumentsImplementationFactory(action);
   if ((!factory.has_value()) || (factory.value() == nullptr)) {
     return qssc::emitDiagnostic(
         onDiagnostic, qssc::Severity::Error,
@@ -814,17 +912,18 @@ bindArguments_(std::string_view target, std::string_view configPath,
 } // anonymous namespace
 
 int qssc::bindArguments(
-    std::string_view target, std::string_view configPath,
-    std::string_view moduleInput, std::string_view payloadOutputPath,
+    std::string_view target, qssc::config::EmitAction action,
+    std::string_view configPath, std::string_view moduleInput,
+    std::string_view payloadOutputPath,
     std::unordered_map<std::string, double> const &arguments,
     bool treatWarningsAsErrors, bool enableInMemoryInput,
     std::string *inMemoryOutput,
-    const std::optional<qssc::DiagnosticCallback> &onDiagnostic) {
+    const qssc::OptDiagnosticCallback &onDiagnostic) {
 
   if (auto err =
-          bindArguments_(target, configPath, moduleInput, payloadOutputPath,
-                         arguments, treatWarningsAsErrors, enableInMemoryInput,
-                         inMemoryOutput, onDiagnostic)) {
+          bindArguments_(target, action, configPath, moduleInput,
+                         payloadOutputPath, arguments, treatWarningsAsErrors,
+                         enableInMemoryInput, inMemoryOutput, onDiagnostic)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
     return 1;
   }

@@ -20,6 +20,8 @@
 #ifndef TARGETSYSTEM_H
 #define TARGETSYSTEM_H
 
+#include "API/api.h"
+#include "API/errors.h"
 #include "Arguments/Arguments.h"
 
 #include "llvm/ADT/SmallString.h"
@@ -29,6 +31,7 @@
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Pass/PassRegistry.h"
 
+#include <list>
 #include <optional>
 #include <string>
 #include <vector>
@@ -139,6 +142,32 @@ public:
   /// @brief Disable(stop) ongoing timers
   void disableTiming();
 
+  // Diagnostic creation and access
+  /// @brief Add a diagnostic to this target
+  void addDiagnostic(const qssc::Diagnostic &diag) {
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
+    diagnostics_.emplace_back(diag);
+  }
+  /// @brief Construct a diagnostic and add to this target
+  void addDiagnostic(Severity severity, ErrorCategory category,
+                     const std::string &message) {
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
+    diagnostics_.emplace_back(severity, category, message);
+  }
+  /// @brief Return the diagnostics from this target and its sub-targets.
+  ///        Take and clear the diagnostic lists of the targets.
+  qssc::DiagList takeDiagnostics() {
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex_);
+    qssc::DiagList retDiagList;
+    // Take the elements of the given list and move them to the calling list
+    retDiagList.splice(retDiagList.end(), diagnostics_);
+
+    for (auto &child : getChildren_())
+      retDiagList.splice(retDiagList.end(), child->takeDiagnostics());
+
+    return retDiagList;
+  }
+
 protected:
   /// @brief Get a nested timer instance from the root timer
   /// @param name The name of the timing span
@@ -156,6 +185,12 @@ protected:
 
 private:
   mlir::TimingScope rootTimer;
+
+  /// @brief List of diagnostics generated for this target
+  qssc::DiagList diagnostics_;
+
+  /// @brief Mutex for adding diagnostics to the diagnostic list
+  std::mutex diagnosticsMutex_;
 };
 
 class TargetSystem : public Target {
@@ -178,7 +213,7 @@ public:
   }
 
   virtual std::optional<qssc::arguments::BindArgumentsImplementationFactory *>
-  getBindArgumentsImplementationFactory() {
+  getBindArgumentsImplementationFactory(config::EmitAction action) {
     return std::nullopt;
   };
 
