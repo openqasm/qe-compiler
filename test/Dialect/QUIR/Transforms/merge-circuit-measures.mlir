@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --canonicalize --subroutine-cloning --quantum-decorate --merge-circuit-measures-topological %s | FileCheck %s
+// RUN: qss-compiler -X=mlir --canonicalize --subroutine-cloning --quantum-decorate --merge-circuit-measures-topological --remove-unused-circuits %s | FileCheck %s --dump-input always
 
 //
 // This code is part of Qiskit.
@@ -48,6 +48,11 @@ module {
     %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
     quir.return %0 : i1
   }
+  quir.circuit @circuit_6(%arg0: !quir.qubit<1> ) {
+    quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
+    quir.return
+  }
+  // func.func @main() -> i32  {
   func.func @main() -> i32  {
     %q0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
     %q1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
@@ -57,14 +62,14 @@ module {
     %q5 = quir.declare_qubit {id = 5 : i32} : !quir.qubit<1>
 
     // one
-    // CHECK:  %{{.*}} = quir.call_circuit @circuit_0_q0(%{{.*}}) : (!quir.qubit<1>) -> i1
+    // CHECK:  %{{.*}} = quir.call_circuit @circuit_0_q0(%{{.}}) : (!quir.qubit<1>) -> i1
     %res = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
 
     // CHECK:  quir.barrier %0, %1, %2, %3, %4, %5
     quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
     // two
-    // CHECK:  %{{.*}}:2 = quir.call_circuit @"circuit_0_q0_circuit_1_q1+m"(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
+    // CHECK:  %{{.*}}:2 = quir.call_circuit @"circuit_0_q0_circuit_1_q1+m"(%{{.}}, %{{.}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
     %res7_0 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
     %cast7_0 = "oq3.cast"(%res7_0) : (i1) -> !quir.cbit<1>
     oq3.variable_assign @c0 : !quir.cbit<1> = %cast7_0
@@ -76,7 +81,7 @@ module {
     quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
     // three
-    // CHECK:  %{{.*}}:3 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2+m1+m"(%{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1)
+    // CHECK:  %{{.*}}:3 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2+m1+m"(%{{.}}, %{{.}}, %{{.}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1)
     %res6_0 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
     %cast6_0 = "oq3.cast"(%res6_0) : (i1) -> !quir.cbit<1>
     oq3.variable_assign @c0 : !quir.cbit<1> = %cast6_0
@@ -89,7 +94,7 @@ module {
     quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
     // four
-    // CHECK:  %{{.*}}:4 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2_circuit_3_q3+m0+m+m"(%{{.*}}, %{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+    // CHECK:  %{{.*}}:4 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2_circuit_3_q3+m0+m+m"(%{{.}}, %{{.}}, %{{.}}, %{{.}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
     %res5_0 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
     %cast5_0 = "oq3.cast"(%res5_0) : (i1) -> !quir.cbit<1>
     oq3.variable_assign @c0 : !quir.cbit<1> = %cast5_0
@@ -105,7 +110,7 @@ module {
     quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
     // four_interrupted
-    // CHECK:  %{{.*}}:4 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2_circuit_3_q3+m+m+m"(%{{.*}}, %{{.*}}, %{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+    // CHECK:  %{{.*}}:4 = quir.call_circuit @"circuit_0_q0_circuit_1_q1_circuit_2_q2_circuit_3_q3+m+m+m"(%{{.}}, %{{.}}, %{{.}}, %{{.}}) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
     %res4_0 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> (i1)
     %cast4_0 = "oq3.cast"(%res4_0) : (i1) -> !quir.cbit<1>
     oq3.variable_assign @c0 : !quir.cbit<1> = %cast4_0
@@ -113,8 +118,7 @@ module {
     %cast4_1 = "oq3.cast"(%res4_1) : (i1) -> !quir.cbit<1>
     oq3.variable_assign @c0 : !quir.cbit<1> = %cast4_1
 
-    // CHECK: quir.call_gate @x(%{{.*}}) : (!quir.qubit<1>) -> ()
-    quir.call_gate @x(%q4) : (!quir.qubit<1>) -> ()
+    quir.barrier %q5 : (!quir.qubit<1>) -> ()
 
     // CHECK-NOT:  %{{.*}} = quir.call_circuit @circuit_2
     %res4_2 = quir.call_circuit @circuit_2(%q2) : (!quir.qubit<1>) -> (i1)
@@ -126,7 +130,7 @@ module {
     quir.barrier %q0, %q1, %q2, %q3, %q4, %q5: (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
 
     // inter_if
-    // CHECK: %{{.*}} = quir.call_circuit @circuit_0_q0(%0)
+    // CHECK:  %{{.*}} = quir.call_circuit @circuit_0_q0(%0)
     %res3_0 =  quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> i1
 
     %cond = arith.constant 1 : i1
@@ -135,7 +139,7 @@ module {
       quir.call_circuit @circuit_cx(%q2, %q3) : (!quir.qubit<1>, !quir.qubit<1>) -> ()
     }
 
-    // CHECK: %{{.*}}:2 = quir.call_circuit @"circuit_1_q1_circuit_2_q2+m0"(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
+    // CHECK:  %{{.*}}:2 = quir.call_circuit @"circuit_1_q1_circuit_2_q2+m0"(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
     %res3_1 = quir.call_circuit @circuit_1(%q1) : (!quir.qubit<1>) -> (i1)
     %res3_2 = quir.call_circuit @circuit_2(%q2) : (!quir.qubit<1>) -> (i1)
 
@@ -147,7 +151,7 @@ module {
     %res2_0 = quir.call_circuit @circuit_0(%q0) : (!quir.qubit<1>) -> i1
     quir.barrier %q1, %q0 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
 
-    // CHECK: %{{.*}}:2 = quir.call_circuit @"circuit_1_q1_circuit_2_q2+m"(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
+    // CHECK:  %{{.*}}:2 = quir.call_circuit @"circuit_1_q1_circuit_2_q2+m"(%{{.*}}, %{{.*}}) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
     %res2_1 = quir.call_circuit @circuit_1(%q1) : (!quir.qubit<1>) -> i1
 
     quir.barrier %q0, %q3: (!quir.qubit<1>, !quir.qubit<1>) -> ()
@@ -165,23 +169,26 @@ module {
     %flag = arith.constant 0 : i32
 
     quir.switch %flag {
-        quir.call_gate @x(%q1) : (!quir.qubit<1>) -> ()
+        // CHECK:  quir.call_circuit @circuit_6_q1(%{{.}}) : (!quir.qubit<1>) -> ()
+        quir.call_circuit @circuit_6(%q1) : (!quir.qubit<1>) -> ()
     } [
         0: {
-            quir.call_gate @x(%q2) : (!quir.qubit<1>) -> ()
+            // CHECK:  quir.call_circuit @circuit_6_q2(%{{.}}) : (!quir.qubit<1>) -> ()
+            quir.call_circuit @circuit_6(%q2) : (!quir.qubit<1>) -> ()
         }
         1: {
-            quir.call_gate @x(%q3) : (!quir.qubit<1>) -> ()
+            // CHECK:  quir.call_circuit @circuit_6_q3(%{{.}}) : (!quir.qubit<1>) -> ()
+            quir.call_circuit @circuit_6(%q3) : (!quir.qubit<1>) -> ()
         }
     ]
 
-    // CHECK:  %{{.*}}:4 = quir.call_circuit @"circuit_2_q2_circuit_3_q3_circuit_4_q4_circuit_5_q5+m+m+m"(%2, %3, %4, %5) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+    //  CHECK:  %{{.*}}:4 = quir.call_circuit @"circuit_2_q2_circuit_3_q3_circuit_4_q4_circuit_5_q5+m+m+m"(%2, %3, %4, %5) : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
     %res1_1 = quir.call_circuit @circuit_2(%q2) : (!quir.qubit<1>) -> i1
     %res1_2 = quir.call_circuit @circuit_3(%q3) : (!quir.qubit<1>) -> i1
 
     quir.switch %flag {} [
         0: {
-            quir.call_gate @x(%q0) : (!quir.qubit<1>) -> ()
+            quir.call_circuit @circuit_6(%q0) : (!quir.qubit<1>) -> ()
         }
     ]
 
