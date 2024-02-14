@@ -11,12 +11,12 @@
 # that they have been altered from the originals.
 
 """
-Unit tests for the linker API.
+Unit tests for the dialect python bindings
 """
 import pytest
 
 from qss_compiler.mlir.ir import *
-from qss_compiler.mlir.dialects import arith, builtin, pulse, qcs, std
+from qss_compiler.mlir.dialects import arith, builtin, pulse, qcs, func
 
 from test_compile import check_mlir_string
 
@@ -30,16 +30,16 @@ def test_create_sequenceop():
             seq = pulse.SequenceOp('test_seq', [], [])
             seq.add_entry_block()
 
-            func = builtin.FuncOp('test_main', ([],[]))
-            func.add_entry_block()
+            function = func.FuncOp('test_main', ([],[]))
+            function.add_entry_block()
 
         with InsertionPoint(seq.entry_block):
             pulse.ReturnOp([])
 
-        with InsertionPoint(func.entry_block):
+        with InsertionPoint(function.entry_block):
             qcs.SystemInitOp()
             res = pulse.CallSequenceOp([],'test_seq',[])
-            std.ReturnOp(res)
+            func.ReturnOp(res)
             qcs.SystemFinalizeOp
     
     check_mlir_string(str(module))

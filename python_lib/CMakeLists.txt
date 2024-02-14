@@ -221,7 +221,7 @@ add_mlir_python_common_capi_library(QSSPythonCAPI
   DECLARED_SOURCES
     QSSPythonSources
     MLIRPythonSources
-    MLIRPythonExtension.AllPassesRegistration
+    MLIRPythonExtension.RegisterEverything
 )
 
 add_mlir_python_modules(QSSPythonModules
@@ -230,8 +230,8 @@ add_mlir_python_modules(QSSPythonModules
   DECLARED_SOURCES
     QSSPythonSources
     MLIRPythonSources
-    MLIRPythonExtension.AllPassesRegistration
-    MLIRPythonCAPIHeaderSources
+    MLIRPythonExtension.RegisterEverything
+    MLIRPythonCAPI.HeaderSources
   COMMON_CAPI_LINK_LIBS
     QSSPythonCAPI
 )

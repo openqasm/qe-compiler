@@ -6,7 +6,6 @@
 #ifndef PYTHON_BINDINGS_PULSE_OPS
 #define PYTHON_BINDINGS_PULSE_OPS
 
-include "mlir/Bindings/Python/Attributes.td"
 include "Dialect/Pulse/IR/Pulse.td"
 
 #endif // PYTHON_BINDINGS_PULSE_OPS

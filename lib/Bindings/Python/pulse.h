@@ -7,7 +7,6 @@
 #define C_DIALECT_PULSE_H
 
 #include "mlir-c/IR.h"
-#include "mlir-c/Registration.h"
 
 #ifdef __cplusplus
 extern "C" {

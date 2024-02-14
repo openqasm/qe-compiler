@@ -1,7 +1,6 @@
 
 try:
     from ..ir import *
-    from . import arith
     from .pulse import *
     from .quir import AngleType, ConstantOp as QUIRConstantOp
     from .complex import CreateOp as ComplexCreateOp
@@ -60,13 +59,13 @@ class SequenceOp:
         super().__init__(
             StringAttr.get(str(sym_name)),
             TypeAttr.get(FunctionType.get(inputs=inputs, results=results)),
-            StringAttr.get(str(sym_visibility)),
+            sym_visibility=StringAttr.get(str(sym_visibility)),
             loc=loc,
             ip=ip,
         )
 
     def add_entry_block(self):
-        self.body.blocks.append(*FunctionType(TypeAttr(self.attributes["type"]).value).inputs)
+        self.body.blocks.append(*FunctionType(TypeAttr(self.attributes["function_type"]).value).inputs)
 
     @property
     def entry_block(self):

@@ -25,7 +25,7 @@ include "Dialect/Pulse/IR/PulseInterfaces.td"
 include "mlir/Interfaces/SideEffectInterfaces.td"
 include "mlir/Interfaces/CallInterfaces.td"
 include "mlir/Interfaces/ControlFlowInterfaces.td"
-// include "mlir/Interfaces/InferTypeOpInterface.td"
+include "mlir/Interfaces/InferTypeOpInterface.td"
 include "mlir/IR/BuiltinTypes.td"
 include "mlir/IR/FunctionInterfaces.td"
 include "mlir/IR/OpAsmInterface.td"
@@ -564,7 +564,7 @@ def Pulse_MixOp : Pulse_Op<"mix", [SequenceAllowed]> {
 }
 
 
-def Pulse_SumOp : Pulse_Op<"sum", [SequenceAllowed]> {
+def Pulse_SumOp : Pulse_Op<"sum", [SameOperandsAndResultType, SequenceAllowed]> {
     let summary = "Add pulse waveforms sample by sample. The waveforms must be the same length.";
     let description = [{
         The `pulse.sum` operation adds two waveforms together, ie `s(t_i) = s1(t_i)+s2(t_i)` for

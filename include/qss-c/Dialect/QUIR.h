@@ -7,7 +7,6 @@
 #define C_DIALECT_QUIR_H
 
 #include "mlir-c/IR.h"
-#include "mlir-c/Registration.h"
 #include "mlir-c/Support.h"
 
 #ifdef __cplusplus
