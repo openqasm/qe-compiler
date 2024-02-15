@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --canonicalize --remove-unused-circuits %s | FileCheck %s --dump-input always
+// RUN: qss-compiler -X=mlir --canonicalize --remove-unused-circuits %s | FileCheck %s
 //
 // This code is part of Qiskit.
 //
