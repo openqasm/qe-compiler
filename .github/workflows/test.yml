@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CONAN_USER_HOME: ${{ github.workspace }}
+      CC: gcc-${{ matrix.gcc }} ## attempting to use gcc-12
+      CXX: g++-${{ matrix.gcc }}
     steps:
       - name: free-up-space
         run: |
