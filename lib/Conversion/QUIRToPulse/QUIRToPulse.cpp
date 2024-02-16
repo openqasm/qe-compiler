@@ -699,7 +699,8 @@ QUIRToPulsePass::getCircuitOp(CallCircuitOp callCircuitOp) {
   return circuitOp;
 }
 
-mlir::pulse::SequenceOp QUIRToPulsePass::getSequenceOp(std::string symbolName) {
+mlir::pulse::SequenceOp
+QUIRToPulsePass::getSequenceOp(std::string const &symbolName) {
   auto search = symbolMap.find(symbolName);
   assert(search != symbolMap.end() && "matching sequence not found");
   auto sequenceOp = dyn_cast<SequenceOp>(search->second);
