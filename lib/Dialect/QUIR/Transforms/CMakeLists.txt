@@ -19,11 +19,13 @@ add_mlir_dialect_library(MLIRQUIRTransforms
     FunctionArgumentSpecialization.cpp
     LoadElimination.cpp
     MergeCircuits.cpp
+    MergeCircuitMeasures.cpp
     MergeMeasures.cpp
     MergeParallelResets.cpp
     Passes.cpp
     QuantumDecoration.cpp
     RemoveQubitOperands.cpp
+    RemoveUnusedCircuits.cpp
     ReorderMeasurements.cpp
     ReorderCircuits.cpp
     SubroutineCloning.cpp

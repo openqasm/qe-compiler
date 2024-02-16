@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Adds MergeCircuitMeasuresPass to replicate measurement merging performance
+    when using circuits.
