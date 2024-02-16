@@ -427,8 +427,6 @@ bool emitDiagnosticsAndCheckForErrors(
       case Severity::Warning:
       case Severity::Info:
         break;
-      default:
-        llvm_unreachable("Unknown diagnostic severity");
       }
       break;
     case QSSVerbosity::Warn:
@@ -443,8 +441,6 @@ bool emitDiagnosticsAndCheckForErrors(
         break;
       case Severity::Info:
         break;
-      default:
-        llvm_unreachable("Unknown diagnostic severity");
       }
       break;
     case QSSVerbosity::Info:
@@ -459,8 +455,6 @@ bool emitDiagnosticsAndCheckForErrors(
         (void)qssc::emitDiagnostic(diagnosticCb, diag);
         llvm::errs() << diag.toString() << "\n";
         break;
-      default:
-        llvm_unreachable("Unknown diagnostic severity");
       }
       break;
     default:
