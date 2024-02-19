@@ -35,7 +35,17 @@ enum QSSVerbosity {
   _VerbosityCnt = 4
 };
 
-enum class EmitAction { None, AST, ASTPretty, MLIR, WaveMem, QEM, QEQEM };
+enum class EmitAction {
+  Undetected,
+  None,
+  AST,
+  ASTPretty,
+  MLIR,
+  Bytecode,
+  WaveMem,
+  QEM,
+  QEQEM
+};
 
 enum class FileExtension {
   None,
@@ -43,18 +53,21 @@ enum class FileExtension {
   ASTPretty,
   QASM,
   MLIR,
+  Bytecode,
   WaveMem,
   QEM,
   QEQEM
 };
 
-enum class InputType { None, QASM, MLIR };
+enum class InputType { Undetected, QASM, MLIR, Bytecode };
 
 std::string to_string(const EmitAction &inExt);
 
 std::string to_string(const FileExtension &inExt);
 
 std::string to_string(const InputType &inType);
+
+FileExtension inputTypeToFileExtension(const InputType &inputType);
 
 InputType fileExtensionToInputType(const FileExtension &inExt);
 
@@ -77,24 +90,6 @@ struct QSSConfig : mlir::MlirOptMainConfig {
 public:
   friend class CLIConfigBuilder;
   friend class EnvVarConfigBuilder;
-
-  QSSConfig &setInputSource(std::string source) {
-    inputSource = std::move(source);
-    return *this;
-  }
-  llvm::StringRef getInputSource() const { return inputSource; }
-
-  QSSConfig &directInput(bool flag) {
-    directInputFlag = flag;
-    return *this;
-  }
-  bool isDirectInput() const { return directInputFlag; }
-
-  QSSConfig &setOutputFilePath(std::string path) {
-    outputFilePath = std::move(path);
-    return *this;
-  }
-  llvm::StringRef getOutputFilePath() const { return outputFilePath; }
 
   QSSConfig &setTargetName(std::string name) {
     targetName = std::move(name);
@@ -158,6 +153,12 @@ public:
   }
   bool shouldShowConfig() const { return showConfigFlag; }
 
+  QSSConfig &setPayloadName(std::string name) {
+    payloadName = std::move(name);
+    return *this;
+  }
+  llvm::StringRef getPayloadName() const { return payloadName; }
+
   QSSConfig &emitPlaintextPayload(bool flag) {
     emitPlaintextPayloadFlag = flag;
     return *this;
@@ -196,26 +197,25 @@ public:
   }
   const std::vector<std::string> &getDialectPlugins() { return dialectPlugins; }
 
+  QSSConfig &setMaxThreads(unsigned int maxThreads_) {
+    maxThreads = maxThreads_;
+    return *this;
+  }
+  std::optional<unsigned int> getMaxThreads() const { return maxThreads; }
+
 public:
   /// @brief Emit the configuration to stdout.
   void emit(llvm::raw_ostream &out) const;
 
 protected:
-  /// @brief input source (file path or direct input) to compile
-  std::string inputSource = "-";
-  /// @brief Whether inputSource directly contains the input source (otherwise
-  /// it is a file path).
-  bool directInputFlag = false;
-  /// @brief Output path for the compiler output if emitting to file.
-  std::string outputFilePath = "-";
   /// @brief The TargetSystem to target compilation for.
   std::optional<std::string> targetName = std::nullopt;
   /// @brief The path to the TargetSystem configuration information.
   std::optional<std::string> targetConfigPath = std::nullopt;
   /// @brief Source input type
-  InputType inputType = InputType::None;
+  InputType inputType = InputType::Undetected;
   /// @brief Output action to take
-  EmitAction emitAction = EmitAction::None;
+  EmitAction emitAction = EmitAction::Undetected;
   /// @brief Verbosity level for logging info
   QSSVerbosity verbosityLevel = QSSVerbosity::Warn;
   /// @brief Register target passes with the compiler.
@@ -226,6 +226,8 @@ protected:
   bool showPayloadsFlag = false;
   /// @brief Should the current configuration be printed
   bool showConfigFlag = false;
+  /// @brief Name of the payload for payload configuration
+  std::string payloadName = "-";
   /// @brief Should the plaintext payload be emitted
   bool emitPlaintextPayloadFlag = false;
   /// @brief Should the input source be included in the payload
@@ -238,6 +240,8 @@ protected:
   std::vector<std::string> passPlugins;
   /// @brief Dialect plugin paths
   std::vector<std::string> dialectPlugins;
+  /// @brief If set, enforces the maximum number of MLIR context threads
+  std::optional<unsigned int> maxThreads;
 };
 
 llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const QSSConfig &config);
@@ -285,8 +289,13 @@ public:
 /// 2. Environment variables
 /// 3. CLI arguments.
 ///
+/// @param inputFilename Input filename which will be used to compute input
+/// types
+/// @param outputFilename Output filename which will be used to compute input
+/// types
 /// @return The constructed configuration
-llvm::Expected<qssc::config::QSSConfig> buildToolConfig();
+llvm::Expected<qssc::config::QSSConfig>
+buildToolConfig(llvm::StringRef inputFilename, llvm::StringRef outputFilename);
 
 } // namespace qssc::config
 #endif // QSS_QSSCONFIG_H

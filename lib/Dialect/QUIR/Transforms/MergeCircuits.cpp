@@ -21,6 +21,7 @@
 
 #include "Dialect/QUIR/Transforms/MergeCircuits.h"
 
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -96,17 +97,16 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
       if (nextCallCircuitOp)
         break;
 
-      // check for overlapping BarrierOp and fail if found
-      auto barrierOp = dyn_cast<BarrierOp>(*secondOp);
-      if (barrierOp) {
-        std::set<uint> firstQubits =
-            QubitOpInterface::getOperatedQubits(callCircuitOp);
-        std::set<uint> secondQubits =
-            QubitOpInterface::getOperatedQubits(barrierOp);
+      // check for overlap in qubits between the circuit and the
+      // next quantum circuit which is not a CallCircuit
+      // fail if there is overlap
+      std::set<uint> firstQubits =
+          QubitOpInterface::getOperatedQubits(callCircuitOp);
+      std::set<uint> secondQubits =
+          QubitOpInterface::getOperatedQubits(*secondOp);
 
-        if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
-          return failure();
-      }
+      if (QubitOpInterface::qubitSetsOverlap(firstQubits, secondQubits))
+        return failure();
 
       searchOp = *secondOp;
     }
@@ -121,6 +121,12 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
     while (curOp != *secondOp) {
       moveList.clear();
       bool okToMoveUsers = false;
+
+      // do not attempt to merge circuits with a parallel control flow op in
+      // between
+      if (isa<qcs::ParallelControlFlowOp>(curOp))
+        return failure();
+
       if (std::find(callCircuitOp->user_begin(), callCircuitOp->user_end(),
                     curOp) != callCircuitOp->user_end())
 

@@ -18,7 +18,19 @@
 #define QSS_COMPILER_LIB_H
 
 #include "API/errors.h"
+#include "Config/QSSConfig.h"
 
+#include "Config/QSSConfig.h"
+
+#include "mlir/IR/DialectRegistry.h"
+#include "mlir/Support/Timing.h"
+
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Error.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/raw_ostream.h"
+
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -26,17 +38,87 @@
 
 namespace qssc {
 
-/// @brief Call the qss-compiler
-/// @param argc the number of argument strings
-/// @param argv array of argument strings
-/// @param outputString an optional buffer for the compilation result
-/// @param diagnosticCb an optional callback that will receive emitted
-/// diagnostics
-int compile(int argc, char const **argv, std::string *outputString,
-            std::optional<DiagnosticCallback> diagnosticCb);
+// The API implementation is based on that of MLIROptMain in the core
+// MLIR project. The hope is that this helps standardize CLI tooling and make
+// forwards compatiability more straightforward
+
+/// Register and parse command line options.
+/// @param argc Commandline argc to parse.
+/// @param argv Commandline argv to parse.
+/// @param toolName for the header displayed by `--help`.
+/// @param registry should contain all the dialects that can be parsed in the
+/// source.
+void registerAndParseCLIOptions(int argc, const char **argv,
+                                llvm::StringRef toolName,
+                                mlir::DialectRegistry &registry);
+
+/// Register and parse command line tool options.
+/// @param argc Commandline argc to parse.
+/// @param argv Commandline argv to parse.
+/// @param toolName for the header displayed by `--help`.
+/// @param registry should contain all the dialects that can be parsed in the
+/// source.
+/// @return inputFilename and outputFilename command line option values.
+std::pair<std::string, std::string>
+registerAndParseCLIToolOptions(int argc, const char **argv,
+                               llvm::StringRef toolName,
+                               mlir::DialectRegistry &registry);
+
+/// Perform the core processing behind `qss-compiler`
+/// @param outputStream to emit to.
+/// @param buffer to parse and process.
+/// @param registry should contain all the dialects that can be parsed in the
+/// source.
+/// @param config compilation configuration.
+/// @param diagnosticCb callback for error diagnostic processsing.
+/// @param timing scope for time tracking
+llvm::Error compileMain(llvm::raw_ostream &outputStream,
+                        std::unique_ptr<llvm::MemoryBuffer> buffer,
+                        mlir::DialectRegistry &registry,
+                        const qssc::config::QSSConfig &config,
+                        OptDiagnosticCallback diagnosticCb,
+                        mlir::TimingScope &timing);
+
+/// Implementation for tools like `qss-compiler`.
+/// @param argc Commandline argc to parse.
+/// @param argv Commandline argv to parse.
+/// @param inputFilename input filename to parse.
+/// @param outputFilename output filename to emit to.
+/// @param registry should contain all the dialects that can be parsed in the
+/// source.
+/// @param diagnosticCb callback for error diagnostic processsing.
+llvm::Error compileMain(int argc, const char **argv,
+                        llvm::StringRef inputFilename,
+                        llvm::StringRef outputFilename,
+                        mlir::DialectRegistry &registry,
+                        OptDiagnosticCallback diagnosticCb);
+
+/// Implementation for tools like `qss-compiler`.
+/// @param argc Commandline argc to parse.
+/// @param argv Commandline argv to parse.
+/// @param registry should contain all the dialects that can be parsed in the
+/// source.
+/// @param diagnosticCb callback for error diagnostic processsing.
+llvm::Error compileMain(int argc, const char **argv, llvm::StringRef toolName,
+                        mlir::DialectRegistry &registry,
+                        OptDiagnosticCallback diagnosticCb);
+
+/// Implementation for tools like `qss-compiler` with provided registry with
+/// default project dialects loaded
+/// @param argc Commandline argc to parse.
+/// @param argv Commandline argv to parse.
+/// @param diagnosticCb callback for error diagnostic processsing.
+llvm::Error compileMain(int argc, const char **argv, llvm::StringRef toolName,
+                        OptDiagnosticCallback diagnosticCb);
+
+/// Helper wrapper to return the result of compileMain directly from main
+inline int asMainReturnCode(llvm::Error err) {
+  return err ? EXIT_FAILURE : EXIT_SUCCESS;
+}
 
 /// @brief Call the parameter binder
 /// @param target name of the target to employ
+/// @param action name of the emit action of input and output
 /// @param moduleInputPath path of the module to use as input
 /// @param payloadOutputPath path of the payload to generate as output
 /// @param arguments bindings for the parameters in the module to apply
@@ -44,13 +126,13 @@ int compile(int argc, char const **argv, std::string *outputString,
 /// @param diagnosticCb an optional callback that will receive emitted
 /// diagnostics
 /// @return 0 on success
-int bindArguments(std::string_view target, std::string_view configPath,
-                  std::string_view moduleInput,
+int bindArguments(std::string_view target, qssc::config::EmitAction action,
+                  std::string_view configPath, std::string_view moduleInput,
                   std::string_view payloadOutputPath,
                   std::unordered_map<std::string, double> const &arguments,
                   bool treatWarningsAsErrors, bool enableInMemoryInput,
                   std::string *inMemoryOutput,
-                  const std::optional<DiagnosticCallback> &onDiagnostic);
+                  const OptDiagnosticCallback &onDiagnostic);
 
 } // namespace qssc
 #endif // QSS_COMPILER_LIB_H

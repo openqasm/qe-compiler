@@ -30,6 +30,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <array>
+#include <filesystem>
 #include <ostream>
 #include <string>
 #include <utility>
@@ -48,9 +49,6 @@ const std::array<const std::string, _VerbosityCnt> verbosityToStr = {
 void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   // Compiler configuration
   os << "[compiler]\n";
-  os << "inputSource: " << getInputSource() << "\n";
-  os << "directInput: " << isDirectInput() << "\n";
-  os << "outputFilePath: " << getOutputFilePath() << "\n";
   os << "inputType: " << to_string(getInputType()) << "\n";
   os << "emitAction: " << to_string(getEmitAction()) << "\n";
   os << "targetName: "
@@ -68,11 +66,17 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
   os << "showTargets: " << shouldShowTargets() << "\n";
   os << "showPayloads: " << shouldShowPayloads() << "\n";
   os << "showConfig: " << shouldShowConfig() << "\n";
+  os << "payloadName: " << getPayloadName() << "\n";
   os << "emitPlaintextPayload: " << shouldEmitPlaintextPayload() << "\n";
   os << "includeSource: " << shouldIncludeSource() << "\n";
   os << "compileTargetIR: " << shouldCompileTargetIR() << "\n";
   os << "bypassPayloadTargetCompilation: "
      << shouldBypassPayloadTargetCompilation() << "\n";
+  os << "maxThreads: "
+     // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+     << (getMaxThreads().has_value() ? std::to_string(getMaxThreads().value())
+                                     : "None")
+     << "\n";
   os << "\n";
 
   // Mlir opt configuration
@@ -81,7 +85,7 @@ void qssc::config::QSSConfig::emit(llvm::raw_ostream &os) const {
      << "\n";
   os << "dumpPassPipeline: " << shouldDumpPassPipeline() << "\n";
   os << "emitBytecode: " << shouldEmitBytecode() << "\n";
-  os << "bytecodeEmitVersion: " << bytecodeVersionToEmit() << "\n";
+  os << "emitBytecodeVersion: " << bytecodeVersionToEmit() << "\n";
   os << "irdlFile: " << getIrdlFile() << "\n";
   os << "runReproducer: " << shouldRunReproducer() << "\n";
   os << "showDialects: " << shouldShowDialects() << "\n";
@@ -152,6 +156,9 @@ std::string qssc::config::to_string(const EmitAction &inAction) {
   case EmitAction::MLIR:
     return "mlir";
     break;
+  case EmitAction::Bytecode:
+    return "bytecode";
+    break;
   case EmitAction::WaveMem:
     return "wmem";
     break;
@@ -161,11 +168,14 @@ std::string qssc::config::to_string(const EmitAction &inAction) {
   case EmitAction::QEQEM:
     return "qeqem";
     break;
-  default:
+  case EmitAction::None:
     return "none";
     break;
+  default:
+    return "undetected";
+    break;
   }
-  return "none";
+  return "undetected";
 }
 
 std::string qssc::config::to_string(const FileExtension &inExt) {
@@ -181,6 +191,9 @@ std::string qssc::config::to_string(const FileExtension &inExt) {
     break;
   case FileExtension::MLIR:
     return "mlir";
+    break;
+  case FileExtension::Bytecode:
+    return "bc";
     break;
   case FileExtension::WaveMem:
     return "wmem";
@@ -206,11 +219,32 @@ std::string qssc::config::to_string(const InputType &inputType) {
   case InputType::MLIR:
     return "mlir";
     break;
+  case InputType::Bytecode:
+    return "bytecode";
+    break;
   default:
     return "none";
     break;
   }
   return "none";
+}
+
+FileExtension
+qssc::config::inputTypeToFileExtension(const InputType &inputType) {
+  switch (inputType) {
+  case InputType::QASM:
+    return FileExtension::QASM;
+    break;
+  case InputType::MLIR:
+    return FileExtension::MLIR;
+    break;
+  case InputType::Bytecode:
+    return FileExtension::Bytecode;
+    break;
+  default:
+    break;
+  }
+  return FileExtension::None;
 }
 
 InputType qssc::config::fileExtensionToInputType(const FileExtension &inExt) {
@@ -221,10 +255,13 @@ InputType qssc::config::fileExtensionToInputType(const FileExtension &inExt) {
   case FileExtension::MLIR:
     return InputType::MLIR;
     break;
+  case FileExtension::Bytecode:
+    return InputType::Bytecode;
+    break;
   default:
     break;
   }
-  return InputType::None;
+  return InputType::Undetected;
 }
 
 EmitAction qssc::config::fileExtensionToAction(const FileExtension &inExt) {
@@ -238,6 +275,9 @@ EmitAction qssc::config::fileExtensionToAction(const FileExtension &inExt) {
   case FileExtension::MLIR:
     return EmitAction::MLIR;
     break;
+  case FileExtension::Bytecode:
+    return EmitAction::Bytecode;
+    break;
   case FileExtension::WaveMem:
     return EmitAction::WaveMem;
     break;
@@ -250,7 +290,7 @@ EmitAction qssc::config::fileExtensionToAction(const FileExtension &inExt) {
   default:
     break;
   }
-  return EmitAction::None;
+  return EmitAction::Undetected;
 }
 
 FileExtension qssc::config::strToFileExtension(const llvm::StringRef extStr) {
@@ -262,6 +302,8 @@ FileExtension qssc::config::strToFileExtension(const llvm::StringRef extStr) {
     return FileExtension::QASM;
   if (extStr == "mlir" || extStr == "MLIR")
     return FileExtension::MLIR;
+  if (extStr == "bytecode" || extStr == "bc")
+    return FileExtension::Bytecode;
   if (extStr == "wmem" || extStr == "WMEM")
     return FileExtension::WaveMem;
   if (extStr == "qem" || extStr == "QEM")
@@ -298,7 +340,9 @@ qssc::config::loadPassPlugin(const std::string &pluginPath) {
   return mlir::success();
 }
 
-llvm::Expected<qssc::config::QSSConfig> qssc::config::buildToolConfig() {
+llvm::Expected<qssc::config::QSSConfig>
+qssc::config::buildToolConfig(llvm::StringRef inputFilename,
+                              llvm::StringRef outputFilename) {
   // First populate the configuration from default values then
   // environment variables.
   auto config = EnvVarConfigBuilder().buildConfig();
@@ -308,10 +352,17 @@ llvm::Expected<qssc::config::QSSConfig> qssc::config::buildToolConfig() {
     return std::move(err);
 
   // Apply CLI options of top of the configuration constructed above.
-  if (auto err = CLIConfigBuilder().populateConfig(*config))
+  if (auto err = CLIConfigBuilder().populateConfig(*config, inputFilename,
+                                                   outputFilename))
     // Explicit move required for some systems as automatic move
     // is not recognized.
     return std::move(err);
+
+  // Set the payload name based on the output name.
+  if (outputFilename != "-") {
+    const std::filesystem::path payloadPath(outputFilename.str());
+    config.get().setPayloadName(payloadPath.stem());
+  }
 
   return config;
 }

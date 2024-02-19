@@ -37,6 +37,8 @@ qssc_add_library(QSSCPayload
 
         LINK_LIBS
         ${qssc_payloads}
+        QSSCArguments
+        QSSCError
 )
 
 # Add include directory to pick up generated Payloads.inc

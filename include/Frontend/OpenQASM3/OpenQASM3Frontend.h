@@ -28,6 +28,7 @@
 #include "mlir/Support/Timing.h"
 
 #include "llvm/Support/Error.h"
+#include "llvm/Support/SourceMgr.h"
 
 #include <optional>
 
@@ -35,9 +36,7 @@ namespace qssc::frontend::openqasm3 {
 
 /// @brief Parse an OpenQASM 3 source file and emit high-level IR in the
 /// OpenQASM 3 dialect or dump the AST
-/// @param source input source as string or filename of the source
-/// @param sourceIsFilename true when the parameter source is the name of a
-/// source file, false when the parameter is the source input
+/// @param sourceMgr Input source manager for the qasm3 source to be parsed
 /// @param emitRawAST whether the raw AST should be dumped
 /// @param emitPrettyAST whether a pretty-printed AST should be dumped
 /// @param emitMLIR whether high-level IR should be emitted
@@ -45,10 +44,9 @@ namespace qssc::frontend::openqasm3 {
 /// @param diagnosticCb a callback that will receive emitted diagnostics
 /// @return an llvm::Error in case of failure, or llvm::Error::success()
 /// otherwise
-llvm::Error parse(std::string const &source, bool sourceIsFilename,
-                  bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
-                  mlir::ModuleOp newModule,
-                  std::optional<DiagnosticCallback> diagnosticCb,
+llvm::Error parse(llvm::SourceMgr &sourceMgr, bool emitRawAST,
+                  bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp newModule,
+                  OptDiagnosticCallback diagnosticCb,
                   mlir::TimingScope &timing);
 
 }; // namespace qssc::frontend::openqasm3

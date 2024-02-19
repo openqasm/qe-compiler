@@ -57,6 +57,11 @@ module {
     %1 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
     quir.return %0, %1: i1, i1
   }
+  quir.circuit @circuit_9(%arg0: !quir.qubit<1>) -> (i1, i1) {
+    %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
+    %1 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
+    quir.return %0, %1: i1, i1
+  }
   // CHECK: @circuit_0_q0_circuit_1_q1(%arg0: !quir.qubit<1>
   // CHECK: %0 = quir.measure(%arg0) : (!quir.qubit<1>) -> i1
   // CHECK: %1 = quir.measure(%arg1) : (!quir.qubit<1>) -> i1
@@ -149,6 +154,31 @@ module {
     // CHECK-NOT: quir.barrier
     %17:2 = quir.call_circuit @circuit_8(%0) : (!quir.qubit<1>) -> (i1, i1)
     // CHECK: %{{.*}}:4 = quir.call_circuit @circuit_8_q0_circuit_8_q0(%0, %2) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1, i1, i1)
+
+    quir.barrier %0, %1, %200, %201, %202 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+    %18:2 = quir.call_circuit @circuit_9(%0) : (!quir.qubit<1>) -> (i1, i1)
+    // CHECK: %{{.*}}:2 = quir.call_circuit @circuit_9_q0(%0) : (!quir.qubit<1>) -> (i1, i1)
+    %19 = quir.measure(%0) {quir.noReportRuntime} : (!quir.qubit<1>) -> i1
+    // CHECK: %{{.*}} = quir.measure(%0) {quir.noReportRuntime} : (!quir.qubit<1>) -> i1
+    %20:2 = quir.call_circuit @circuit_9(%0) : (!quir.qubit<1>) -> (i1, i1)
+    // CHECK: %{{.*}}:2 = quir.call_circuit @circuit_9_q0(%0) : (!quir.qubit<1>) -> (i1, i1)
+    // CHECK-NOT: %{{.*}}:4 = quir.call_circuit @circuit_9_q0_circuit_9_q0(%0) : (!quir.qubit<1>) -> (i1, i1, i1, i1)
+
+    // verify that a qcs.parallel_control_flow will prevent circuits from being merged
+    quir.barrier %0, %1, %200, %201, %202 : (!quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>, !quir.qubit<1>) -> ()
+    %21:2 = quir.call_circuit @circuit_9(%0) : (!quir.qubit<1>) -> (i1, i1)
+    // CHECK: %{{.*}}:2 = quir.call_circuit @circuit_9_q0(%0) : (!quir.qubit<1>) -> (i1, i1)
+    qcs.parallel_control_flow {
+    // CHECK: qcs.parallel_control_flow
+      scf.if %21#0 {
+       %22 = quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> (i1)
+      } else {
+        qcs.delay_cycles() {time = 12 : i64} : () -> ()
+      } {quir.classicalOnly = false, quir.physicalIds = [0 : i32]}
+    } {quir.maxDelayCycles = 12 : i64, quir.physicalIds = [0 : i32]}
+    // CHECK: } {quir.maxDelayCycles = 12 : i64, quir.physicalIds = [0 : i32]}
+    %23:2 = quir.call_circuit @circuit_9(%0) : (!quir.qubit<1>) -> (i1, i1)
+    // CHECK: %{{.*}}:2 = quir.call_circuit @circuit_9_q0(%0) : (!quir.qubit<1>) -> (i1, i1)
 
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32

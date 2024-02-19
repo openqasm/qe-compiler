@@ -20,6 +20,7 @@
 
 #include "Conversion/QUIRToPulse/LoadPulseCals.h"
 
+#include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTraits.h"
@@ -31,15 +32,16 @@
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
+#include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/IRMapping.h"
 #include "mlir/IR/OwningOpRef.h"
 #include "mlir/IR/SymbolTable.h"
 #include "mlir/IR/Types.h"
 #include "mlir/IR/Value.h"
 #include "mlir/Parser/Parser.h"
+#include "mlir/Pass/Pass.h"
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Support/LLVM.h"
-#include <mlir/IR/BuiltinOps.h>
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/Debug.h"
@@ -667,4 +669,8 @@ llvm::StringRef LoadPulseCalsPass::getDescription() const {
 
 llvm::StringRef LoadPulseCalsPass::getName() const {
   return "Load Pulse Calibrations Pass";
+}
+
+void LoadPulseCalsPass::getDependentDialects(DialectRegistry &registry) const {
+  registry.insert<PulseDialect>();
 }

@@ -118,10 +118,12 @@ parseDurationStr(const std::string &durationStr) {
 } // anonymous namespace
 
 llvm::Error qssc::frontend::openqasm3::parse(
-    std::string const &source, bool sourceIsFilename, bool emitRawAST,
-    bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp newModule,
-    std::optional<qssc::DiagnosticCallback> diagnosticCallback,
-    mlir::TimingScope &timing) {
+    llvm::SourceMgr &sourceMgr, bool emitRawAST, bool emitPrettyAST,
+    bool emitMLIR, mlir::ModuleOp newModule,
+    qssc::OptDiagnosticCallback diagnosticCallback, mlir::TimingScope &timing) {
+
+  const llvm::MemoryBuffer *sourceBuffer =
+      sourceMgr.getMemoryBuffer(sourceMgr.getMainFileID());
 
   mlir::TimingScope qasm3ParseTiming = timing.nest("parse-qasm3");
 
@@ -133,7 +135,6 @@ llvm::Error qssc::frontend::openqasm3::parse(
 
   QASM::ASTParser parser;
   auto root = std::unique_ptr<QASM::ASTRoot>(nullptr);
-  llvm::SourceMgr sourceMgr;
 
   // Add a callback for diagnostics to the parser. Since the callback needs
   // access to diagnosticCallback to forward diagnostics, make it available in a
@@ -141,7 +142,6 @@ llvm::Error qssc::frontend::openqasm3::parse(
   diagnosticCallback_ =
       diagnosticCallback.has_value() ? &diagnosticCallback.value() : nullptr;
   sourceMgr_ = &sourceMgr;
-
   QASM::QasmDiagnosticEmitter::SetHandler(
       [](const std::string &File, QASM::ASTLocation Loc, // NOLINT
          const std::string &Msg, QASM::QasmDiagnosticEmitter::DiagLevel DL) {
@@ -215,27 +215,17 @@ llvm::Error qssc::frontend::openqasm3::parse(
       });
 
   try {
-    if (sourceIsFilename) {
-      QASM::QasmPreprocessor::Instance().SetTranslationUnit(source);
+    auto sourceFile = sourceBuffer->getBufferIdentifier();
 
-      std::string errorMessage;
-      auto file = mlir::openInputFile(source, &errorMessage);
-
-      if (!file)
-        return llvm::createStringError(llvm::inconvertibleErrorCode(),
-                                       "Failed to open input file: " +
-                                           errorMessage);
-
-      sourceMgr.AddNewSourceBuffer(std::move(file), llvm::SMLoc());
-
+    // Handle stdin differently as the qasm parser does not seem to perform
+    // includes on a raw string input. This limits includes to file inputs only
+    // at the current time.
+    if (!(sourceFile == "" || sourceFile == "<stdin>")) {
+      QASM::QasmPreprocessor::Instance().SetTranslationUnit(sourceFile.str());
       root.reset(parser.ParseAST());
+    } else
+      root.reset(parser.ParseAST(sourceBuffer->getBuffer().str()));
 
-    } else {
-      auto sourceBuffer = llvm::MemoryBuffer::getMemBuffer(source, "", false);
-
-      sourceMgr.AddNewSourceBuffer(std::move(sourceBuffer), llvm::SMLoc());
-      root.reset(parser.ParseAST(source));
-    }
   } catch (std::exception &e) {
     return llvm::createStringError(
         llvm::inconvertibleErrorCode(),
@@ -283,7 +273,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
     const auto [shotDelayValue, shotDelayUnits] = *result;
     visitor.initialize(numShots, shotDelayValue, shotDelayUnits);
     visitor.setStatementList(statementList);
-    visitor.setInputFile(sourceIsFilename ? source : "-");
+    visitor.setInputFile(sourceBuffer->getBufferIdentifier().str());
 
     if (failed(visitor.walkAST()))
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
