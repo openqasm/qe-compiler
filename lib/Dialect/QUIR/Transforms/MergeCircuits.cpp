@@ -38,6 +38,7 @@
 #include "mlir/IR/Types.h"
 #include "mlir/IR/Value.h"
 #include "mlir/IR/ValueRange.h"
+#include "mlir/Rewrite/FrozenRewritePatternSet.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
@@ -46,6 +47,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/CommandLine.h"
 
 #include <algorithm>
 #include <cassert>
@@ -59,6 +61,10 @@
 
 using namespace mlir;
 using namespace mlir::quir;
+
+llvm::cl::list<std::string>
+    disabledPatterns("merge-circuits-disabled-patterns",
+                     llvm::cl::desc("Patterns to disable from merge-circuits"));
 
 namespace {
 
@@ -174,7 +180,9 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
     return MergeCircuitsPass::mergeCallCircuits(
         getContext(), rewriter, callCircuitOp, nextCallCircuitOp, _symbolMap);
   } // matchAndRewrite
-};  // struct CircuitAndCircuitPattern
+
+  void initialize() { setDebugName("CircuitAndCircuitPattern"); }
+}; // struct CircuitAndCircuitPattern
 
 template <class FirstOp, class SecondOp>
 std::optional<SecondOp> getNextOpAndCompareOverlap(FirstOp firstOp) {
@@ -220,7 +228,9 @@ struct BarrierAndCircuitPattern : public OpRewritePattern<BarrierOp> {
 
     return success();
   } // matchAndRewrite
-};  // struct BarrierAndCircuitPattern
+
+  void initialize() { setDebugName("BarrierAndCircuitPattern"); }
+}; // struct BarrierAndCircuitPattern
 
 // This pattern matches on a CallCircuitOp followed by a BarrierOp separated by
 // non-quantum ops
@@ -247,7 +257,9 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
 
     return success();
   } // matchAndRewrite
-};  // struct CircuitAndBarrierPattern
+
+  void initialize() { setDebugName("CircuitAndBarrierPattern"); }
+}; // struct CircuitAndBarrierPattern
 
 // This pattern matches on a CallCircuitOp, multiple barriers, CallCircuitOp
 struct CircuitBarrierCircuitPattern : public OpRewritePattern<CallCircuitOp> {
@@ -281,7 +293,9 @@ struct CircuitBarrierCircuitPattern : public OpRewritePattern<CallCircuitOp> {
         barrierOps);
     return success();
   } // matchAndRewrite
-};  // struct CircuitAndBarrierPattern
+
+  void initialize() { setDebugName("CircuitBarrierCircuitPattern"); }
+}; // struct CircuitAndBarrierPattern
 
 } // end anonymous namespace
 
@@ -520,12 +534,17 @@ void MergeCircuitsPass::runOnOperation() {
   patterns.add<CircuitAndBarrierPattern>(&getContext());
   patterns.add<CircuitBarrierCircuitPattern>(&getContext(), circuitOpsMap);
 
+  // default enable / disable patters
+  SmallVector<std::string> const enabledPatterns = {};
+  auto frozenPatterns = FrozenRewritePatternSet(
+      std::move(patterns), disabledPatterns, enabledPatterns);
+
   mlir::GreedyRewriteConfig config;
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
-  if (failed(applyPatternsAndFoldGreedily(moduleOperation, std::move(patterns),
-                                          config)))
+  if (failed(applyPatternsAndFoldGreedily(moduleOperation,
+                                          frozenPatterns, config)))
     signalPassFailure();
 } // runOnOperation
 
