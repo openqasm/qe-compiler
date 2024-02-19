@@ -543,8 +543,8 @@ void MergeCircuitsPass::runOnOperation() {
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
-  if (failed(applyPatternsAndFoldGreedily(moduleOperation,
-                                          frozenPatterns, config)))
+  if (failed(applyPatternsAndFoldGreedily(moduleOperation, frozenPatterns,
+                                          config)))
     signalPassFailure();
 } // runOnOperation
 
