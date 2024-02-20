@@ -260,8 +260,8 @@ static void mergeMeasurements(PatternRewriter &rewriter,
       measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
 
   auto originalNumResults = measureOp->getNumResults();
-  rewriter.replaceOp(measureOp, ResultRange(mergedOp.outs().begin(),
-                                            mergedOp.outs().end()));
+  rewriter.replaceOp(
+      measureOp, ResultRange(mergedOp.outs().begin(), mergedOp.outs().end()));
 
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Value> outputValues;
