@@ -1742,11 +1742,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
     break;
 
   case ASTOpTypeDiv:
-    if (leftType.isSignedInteger())
+    if (leftType.isIntOrIndex())
       opRef = builder.create<mlir::arith::DivSIOp>(
-        loc, leftRef, rightRef);
-    else if (leftType.isUnsignedInteger())
-      opRef = builder.create<mlir::arith::DivUIOp>(
         loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
       opRef = builder.create<mlir::arith::DivFOp>(
@@ -1757,11 +1754,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
     break;
 
   case ASTOpTypeMod:
-    if (leftType.isSignedInteger())
+    if (leftType.isIntOrIndex())
       opRef = builder.create<mlir::arith::RemSIOp>(
-        loc, leftRef, rightRef);
-    else if (leftType.isUnsignedInteger())
-      opRef = builder.create<mlir::arith::RemUIOp>(
         loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
       opRef = builder.create<mlir::arith::RemFOp>(
@@ -1772,7 +1766,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
     break;
 
   case ASTOpTypePow:
-    if (leftType.isSignedInteger() && rightType.isIntOrIndex())
+    if (leftType.isIntOrIndex() && rightType.isIntOrIndex())
       opRef = builder.create<mlir::math::IPowIOp>(
         loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType) && rightType.isIntOrIndex())
@@ -1784,24 +1778,6 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
     else
         reportError(node, mlir::DiagnosticSeverity::Error)
         << "Power is not supported on value of left type: " << leftType << " and right type: " << rightType << "\n";
-    break;
-
-  case ASTOpTypeAddAssign:
-  case ASTOpTypeSubAssign:
-  case ASTOpTypeMulAssign:
-  case ASTOpTypeDivAssign:
-  case ASTOpTypeModAssign:
-    break;
-
-  case ASTOpTypeCos:
-  case ASTOpTypeSin:
-  case ASTOpTypeTan:
-  case ASTOpTypeArcCos:
-  case ASTOpTypeArcSin:
-  case ASTOpTypeArcTan:
-  case ASTOpTypeExp:
-  case ASTOpTypeLn:
-  case ASTOpTypeSqrt:
     break;
 
   default:

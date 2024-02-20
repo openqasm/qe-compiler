@@ -1,0 +1,87 @@
+OPENQASM 3.0;
+// RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --check-prefix AST-PRETTY
+// RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --check-prefix MLIR
+
+
+
+int i0 = 1;
+int i1 = 2;
+int i2;
+
+float f0 = 1.0;
+float f1 = 2.0;
+float f2;
+
+// Addition
+
+i2 = i0 + i1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=i2, bits=32), right=BinaryOpNode(type=ASTOpTypeAdd, left=IdentifierNode(name=i0, bits=32), right=IdentifierNode(name=i1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @i0 : i32
+// MLIR: {{.*}} = oq3.variable_load @i1 : i32
+// MLIR: %[[i2:.*]] = arith.addi %[[i0:.*]], %[[i1:.*]] : i32
+
+f2 = f0 + f1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=BinaryOpNode(type=ASTOpTypeAdd, left=IdentifierNode(name=f0, bits=32), right=IdentifierNode(name=f1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @f0 : f32
+// MLIR: {{.*}} = oq3.variable_load @f1 : f32
+// MLIR: %[[f2:.*]] = arith.addf %[[f0:.*]], %[[f1:.*]] : f32
+
+
+// Subtraction
+
+i2 = i0 - i1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=i2, bits=32), right=BinaryOpNode(type=ASTOpTypeSub, left=IdentifierNode(name=i0, bits=32), right=IdentifierNode(name=i1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @i0 : i32
+// MLIR: {{.*}} = oq3.variable_load @i1 : i32
+// MLIR: %[[i2:.*]] = arith.subi %[[i0:.*]], %[[i1:.*]] : i32
+
+f2 = f0 - f1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=BinaryOpNode(type=ASTOpTypeSub, left=IdentifierNode(name=f0, bits=32), right=IdentifierNode(name=f1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @f0 : f32
+// MLIR: {{.*}} = oq3.variable_load @f1 : f32
+// MLIR: %[[f2:.*]] = arith.subf %[[f0:.*]], %[[f1:.*]] : f32
+
+
+// Multiplication
+
+i2 = i0 * i1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=i2, bits=32), right=BinaryOpNode(type=ASTOpTypeMul, left=IdentifierNode(name=i0, bits=32), right=IdentifierNode(name=i1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @i0 : i32
+// MLIR: {{.*}} = oq3.variable_load @i1 : i32
+// MLIR: %[[i2:.*]] = arith.muli %[[i0:.*]], %[[i1:.*]] : i32
+
+f2 = f0 * f1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=BinaryOpNode(type=ASTOpTypeMul, left=IdentifierNode(name=f0, bits=32), right=IdentifierNode(name=f1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @f0 : f32
+// MLIR: {{.*}} = oq3.variable_load @f1 : f32
+// MLIR: %[[f2:.*]] = arith.mulf %[[f0:.*]], %[[f1:.*]] : f32
+
+
+// Division
+
+i2 = i0 / i1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=i2, bits=32), right=BinaryOpNode(type=ASTOpTypeDiv, left=IdentifierNode(name=i0, bits=32), right=IdentifierNode(name=i1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @i0 : i32
+// MLIR: {{.*}} = oq3.variable_load @i1 : i32
+// MLIR: %[[i2:.*]] = arith.divsi %[[i0:.*]], %[[i1:.*]] : i32
+
+f2 = f0 / f1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=BinaryOpNode(type=ASTOpTypeDiv, left=IdentifierNode(name=f0, bits=32), right=IdentifierNode(name=f1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @f0 : f32
+// MLIR: {{.*}} = oq3.variable_load @f1 : f32
+// MLIR: %[[f2:.*]] = arith.divf %[[f0:.*]], %[[f1:.*]] : f32
+
+
+// Modulo
+
+i2 = i0 % i1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=i2, bits=32), right=BinaryOpNode(type=ASTOpTypeMod, left=IdentifierNode(name=i0, bits=32), right=IdentifierNode(name=i1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @i0 : i32
+// MLIR: {{.*}} = oq3.variable_load @i1 : i32
+// MLIR: %[[i2:.*]] = arith.remsi %[[i0:.*]], %[[i1:.*]] : i32
+
+f2 = f0 % f1;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=BinaryOpNode(type=ASTOpTypeMod, left=IdentifierNode(name=f0, bits=32), right=IdentifierNode(name=f1, bits=32))
+// MLIR: {{.*}} = oq3.variable_load @f0 : f32
+// MLIR: {{.*}} = oq3.variable_load @f1 : f32
+// MLIR: %[[f2:.*]] = arith.remf %[[f0:.*]], %[[f1:.*]] : f32
