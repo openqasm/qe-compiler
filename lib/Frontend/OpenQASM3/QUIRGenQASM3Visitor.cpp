@@ -52,6 +52,7 @@
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Complex/IR/Complex.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Dialect/Math/IR/Math.h"
 #include "mlir/Dialect/MemRef/IR/MemRef.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/Attributes.h"
@@ -1702,6 +1703,105 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
   case ASTOpTypeGE:
     opRef = builder.create<mlir::arith::CmpIOp>(
         loc, getComparisonPredicate(node->GetOpType()), leftRef, rightRef);
+    break;
+
+  case ASTOpTypeAdd:
+    if (leftType.isIntOrIndex())
+      opRef = builder.create<mlir::arith::AddIOp>(
+        loc, leftRef, rightRef);
+    else if (llvm::isa<FloatType>(leftType))
+      opRef = builder.create<mlir::arith::AddFOp>(
+        loc, leftRef, rightRef);
+    else
+        reportError(node, mlir::DiagnosticSeverity::Error)
+        << "Addition is not supported on value of type: " << leftType << "\n";
+    break;
+
+  case ASTOpTypeSub:
+    if (leftType.isIntOrIndex())
+      opRef = builder.create<mlir::arith::SubIOp>(
+        loc, leftRef, rightRef);
+    else if (llvm::isa<FloatType>(leftType))
+      opRef = builder.create<mlir::arith::SubFOp>(
+        loc, leftRef, rightRef);
+    else
+        reportError(node, mlir::DiagnosticSeverity::Error)
+        << "Subtraction is not supported on value of type: " << leftType << "\n";
+    break;
+
+  case ASTOpTypeMul:
+    if (leftType.isIntOrIndex())
+      opRef = builder.create<mlir::arith::MulIOp>(
+        loc, leftRef, rightRef);
+    else if (llvm::isa<FloatType>(leftType))
+      opRef = builder.create<mlir::arith::MulFOp>(
+        loc, leftRef, rightRef);
+    else
+        reportError(node, mlir::DiagnosticSeverity::Error)
+        << "Multiplication is not supported on value of type: " << leftType << "\n";
+    break;
+
+  case ASTOpTypeDiv:
+    if (leftType.isSignedInteger())
+      opRef = builder.create<mlir::arith::DivSIOp>(
+        loc, leftRef, rightRef);
+    else if (leftType.isUnsignedInteger())
+      opRef = builder.create<mlir::arith::DivUIOp>(
+        loc, leftRef, rightRef);
+    else if (llvm::isa<FloatType>(leftType))
+      opRef = builder.create<mlir::arith::DivFOp>(
+        loc, leftRef, rightRef);
+    else
+        reportError(node, mlir::DiagnosticSeverity::Error)
+        << "Division is not supported on value of type: " << leftType << "\n";
+    break;
+
+  case ASTOpTypeMod:
+    if (leftType.isSignedInteger())
+      opRef = builder.create<mlir::arith::RemSIOp>(
+        loc, leftRef, rightRef);
+    else if (leftType.isUnsignedInteger())
+      opRef = builder.create<mlir::arith::RemUIOp>(
+        loc, leftRef, rightRef);
+    else if (llvm::isa<FloatType>(leftType))
+      opRef = builder.create<mlir::arith::RemFOp>(
+        loc, leftRef, rightRef);
+    else
+        reportError(node, mlir::DiagnosticSeverity::Error)
+        << "Modulo is not supported on value of type: " << leftType << "\n";
+    break;
+
+  case ASTOpTypePow:
+    if (leftType.isSignedInteger() && rightType.isIntOrIndex())
+      opRef = builder.create<mlir::math::IPowIOp>(
+        loc, leftRef, rightRef);
+    else if (llvm::isa<FloatType>(leftType) && rightType.isIntOrIndex())
+      opRef = builder.create<mlir::math::FPowIOp>(
+        loc, leftRef, rightRef);
+    else if (llvm::isa<FloatType>(leftType) && llvm::isa<FloatType>(rightType))
+      opRef = builder.create<mlir::math::PowFOp>(
+        loc, leftRef, rightRef);
+    else
+        reportError(node, mlir::DiagnosticSeverity::Error)
+        << "Power is not supported on value of left type: " << leftType << " and right type: " << rightType << "\n";
+    break;
+
+  case ASTOpTypeAddAssign:
+  case ASTOpTypeSubAssign:
+  case ASTOpTypeMulAssign:
+  case ASTOpTypeDivAssign:
+  case ASTOpTypeModAssign:
+    break;
+
+  case ASTOpTypeCos:
+  case ASTOpTypeSin:
+  case ASTOpTypeTan:
+  case ASTOpTypeArcCos:
+  case ASTOpTypeArcSin:
+  case ASTOpTypeArcTan:
+  case ASTOpTypeExp:
+  case ASTOpTypeLn:
+  case ASTOpTypeSqrt:
     break;
 
   default:
