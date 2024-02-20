@@ -87,7 +87,8 @@ f2 = f0 % f1;
 // MLIR: %[[f2:.*]] = arith.remf %[[f0]], %[[f1]] : f32
 
 
-// Arith operator precedence
+// Operator precedence
+
 int i3 = 3;
 int i4 = 4;
 int i5 = 5;
