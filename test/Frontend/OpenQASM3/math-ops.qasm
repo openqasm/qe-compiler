@@ -32,6 +32,53 @@ f2 = f0 ** i1;
 // MLIR: {{.*}} = oq3.variable_load @i1 : i32
 // MLIR: %[[f2:.*]] = math.fpowi %[[f0:.*]], %[[f1:.*]] : f32
 
+// Cos
+f2 = cos(f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeCos, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+
+// Sin
+f2 = sin(f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeSin, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+
+// Tan
+f2 = tan(f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeTan, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+
+
+// ArcCos
+f2 = acos(f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeArcCos, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+
+
+// ArcSin
+f2 = asin(f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeArcSin, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+
+
+// ArcTan
+f2 = atan(f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeArcTan, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+
+
+// Exp
+f2 = exp(f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeExp, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+
+
+// Ln
+f2 = ln(f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeLn, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+
+
+// Sqrt
+f2 = sqrt(f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeSqrt, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+
+
+// Unary expression
+f2 = cos(f0 + f0);
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeCos, operand=OperandNode(target=BinaryOpNode(type=ASTOpTypeAdd, left=IdentifierNode(name=f0, bits=32), right=IdentifierNode(name=f0, bits=32))
+
 
 // Operator precedence
 

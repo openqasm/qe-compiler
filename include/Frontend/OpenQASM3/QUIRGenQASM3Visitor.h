@@ -273,6 +273,13 @@ protected:
     llvm::report_fatal_error("not to be used with a visit function yet");
   }
 
+  void visit(const QASM::ASTOperandNode *node) override {
+    visitWithReturn(node);
+  }
+  ExpressionValueType visit_(const QASM::ASTOperandNode *) {
+    llvm::report_fatal_error("not to be used with a visit function yet");
+  }
+
   void visit(const QASM::ASTUnaryOpNode *node) override {
     visitWithReturn(node);
   }

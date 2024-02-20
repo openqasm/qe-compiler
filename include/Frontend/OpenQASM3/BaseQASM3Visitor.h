@@ -178,6 +178,8 @@ public:
 
   virtual void visit(const QASM::ASTOperatorNode *) = 0;
 
+  virtual void visit(const QASM::ASTOperandNode *) = 0;
+
   virtual void visit(const QASM::ASTUnaryOpNode *) = 0;
 };
 

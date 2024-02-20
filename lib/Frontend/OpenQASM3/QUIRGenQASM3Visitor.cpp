@@ -1818,12 +1818,17 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   const ASTOperatorNode *operatorNode = nullptr;
 
   switch (node->GetOpType()) {
+
+  case ASTOpTypeCos:
+  case ASTOpTypeSin:
+  case ASTOpTypeTan:
+  case ASTOpTypeArcCos:
+  case ASTOpTypeArcSin:
+  case ASTOpTypeArcTan:
+  case ASTOpTypeExp:
+  case ASTOpTypeLn:
+  case ASTOpTypeSqrt:
   case ASTOpTypeLogicalNot:
-    if (node->GetExpression()->GetASTType() != QASM::ASTTypeOpTy) {
-      reportError(node, mlir::DiagnosticSeverity::Error)
-          << "Operation type invalid";
-      return createVoidValue(node);
-    }
     operatorNode = dynamic_cast<const ASTOperatorNode *>(node->GetExpression());
     if (!operatorNode) {
       reportError(node, mlir::DiagnosticSeverity::Error)
@@ -1838,10 +1843,9 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
     break;
 
   default:
-    std::ostringstream oss;
-    oss << "Operator" << QASM::PrintOpTypeOperator(node->GetOpType())
+    reportError(node, mlir::DiagnosticSeverity::Error) << "Operator " << QASM::PrintOpTypeOperator(node->GetOpType())
         << " is not supported.\n";
-    throw std::runtime_error(oss.str());
+    return createVoidValue(node);
   }
 
   if (!operatorNode) {
@@ -1920,6 +1924,20 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
     return builder.create<mlir::arith::CmpIOp>(loc, CmpIPredicate::ne,
                                                targetValue, constantTrue);
   }
+
+  case ASTOpTypeCos:
+  case ASTOpTypeSin:
+  case ASTOpTypeTan:
+  case ASTOpTypeArcCos:
+  case ASTOpTypeArcSin:
+  case ASTOpTypeArcTan:
+  case ASTOpTypeExp:
+  case ASTOpTypeLn:
+  case ASTOpTypeSqrt:
+    reportError(node, mlir::DiagnosticSeverity::Error) << "Operator requested here " << QASM::PrintOpTypeOperator(node->GetOpType())
+        << " is in development.\n";
+    return createVoidValue(node);
+    break;
 
   default:
     llvm_unreachable("unimplemented operators should be caught above!");
