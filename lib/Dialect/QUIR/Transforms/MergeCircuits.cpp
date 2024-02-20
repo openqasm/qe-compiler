@@ -21,6 +21,7 @@
 
 #include "Dialect/QUIR/Transforms/MergeCircuits.h"
 
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -120,6 +121,12 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
     while (curOp != *secondOp) {
       moveList.clear();
       bool okToMoveUsers = false;
+
+      // do not attempt to merge circuits with a parallel control flow op in
+      // between
+      if (isa<qcs::ParallelControlFlowOp>(curOp))
+        return failure();
+
       if (std::find(callCircuitOp->user_begin(), callCircuitOp->user_end(),
                     curOp) != callCircuitOp->user_end())
 
