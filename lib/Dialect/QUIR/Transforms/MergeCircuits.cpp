@@ -336,7 +336,7 @@ void mapNextCircuitOperands(
     IRMapping &mapper) {
 
   // insert nextCircuit Operands into callInputValues if not there
-  // add argument to
+  // add arguments as well
   uint insertedCount = inputValueIndices.size();
   for (auto operandEnum : llvm::enumerate(nextCallCircuitOp.getOperands())) {
     auto arg = nextCircuitOp.getArgument(operandEnum.index());
