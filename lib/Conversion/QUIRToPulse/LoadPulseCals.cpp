@@ -247,6 +247,8 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
   SequenceOp mergedPulseSequenceOp =
       mergePulseSequenceOps(sequenceOps, gateMangledName);
   pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
+  mergedPulseSequenceOp->setAttr("pulse.duration",
+                                 builder.getI64IntegerAttr(0));
   addPulseCalToModule(funcOp, mergedPulseSequenceOp);
 }
 
