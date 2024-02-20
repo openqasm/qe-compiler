@@ -2,8 +2,6 @@ OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --check-prefix AST-PRETTY
 // RUN: qss-compiler -X=qasm --emit=mlir %s | FileCheck %s --check-prefix MLIR
 
-
-
 int i0 = 1;
 int i1 = 2;
 int i2;
@@ -12,7 +10,8 @@ float f0 = 1.0;
 float f1 = 2.0;
 float f2;
 
-// Addition
+
+// Add
 
 i2 = i0 + i1;
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=i2, bits=32), right=BinaryOpNode(type=ASTOpTypeAdd, left=IdentifierNode(name=i0, bits=32), right=IdentifierNode(name=i1, bits=32))
@@ -25,6 +24,23 @@ f2 = f0 + f1;
 // MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
 // MLIR: %[[f1:.*]] = oq3.variable_load @f1 : f32
 // MLIR: %[[f2:.*]] = arith.addf %[[f0]], %[[f1]] : f32
+
+
+// Add assign
+
+i2 += i0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAddAssign, left=IdentifierNode(name=i2, bits=32), right=IdentifierNode(name=i0, bits=32))
+// MLIR: %[[i2:.*]] = oq3.variable_load @i2 : i32
+// MLIR: %[[i0:.*]] = oq3.variable_load @i0 : i32
+// MLIR: %[[add:.*]] = arith.addi %[[i2]], %[[i0]] : i32
+// MLIR: oq3.variable_assign @i2 : i32 = %[[add]]
+
+f2 += f0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAddAssign, left=IdentifierNode(name=f2, bits=32), right=IdentifierNode(name=f0, bits=32))
+// MLIR: %[[f2:.*]] = oq3.variable_load @f2 : f32
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[add:.*]] = arith.addf %[[f2]], %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[add]]
 
 
 // Subtraction
@@ -42,7 +58,24 @@ f2 = f0 - f1;
 // MLIR: %[[f2:.*]] = arith.subf %[[f0]], %[[f1]] : f32
 
 
-// Multiplication
+// Sub assign
+
+i2 -= i0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeSubAssign, left=IdentifierNode(name=i2, bits=32), right=IdentifierNode(name=i0, bits=32))
+// MLIR: %[[i2:.*]] = oq3.variable_load @i2 : i32
+// MLIR: %[[i0:.*]] = oq3.variable_load @i0 : i32
+// MLIR: %[[sub:.*]] = arith.subi %[[i2]], %[[i0]] : i32
+// MLIR: oq3.variable_assign @i2 : i32 = %[[sub]]
+
+f2 -= f0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeSubAssign, left=IdentifierNode(name=f2, bits=32), right=IdentifierNode(name=f0, bits=32))
+// MLIR: %[[f2:.*]] = oq3.variable_load @f2 : f32
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[sub:.*]] = arith.subf %[[f2]], %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[sub]]
+
+
+// Multiply
 
 i2 = i0 * i1;
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=i2, bits=32), right=BinaryOpNode(type=ASTOpTypeMul, left=IdentifierNode(name=i0, bits=32), right=IdentifierNode(name=i1, bits=32))
@@ -57,7 +90,24 @@ f2 = f0 * f1;
 // MLIR: %[[f2:.*]] = arith.mulf %[[f0]], %[[f1]] : f32
 
 
-// Division
+// Multiply assign
+
+i2 *= i0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeMulAssign, left=IdentifierNode(name=i2, bits=32), right=IdentifierNode(name=i0, bits=32))
+// MLIR: %[[i2:.*]] = oq3.variable_load @i2 : i32
+// MLIR: %[[i0:.*]] = oq3.variable_load @i0 : i32
+// MLIR: %[[mul:.*]] = arith.muli %[[i2]], %[[i0]] : i32
+// MLIR: oq3.variable_assign @i2 : i32 = %[[mul]]
+
+f2 *= f0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeMulAssign, left=IdentifierNode(name=f2, bits=32), right=IdentifierNode(name=f0, bits=32))
+// MLIR: %[[f2:.*]] = oq3.variable_load @f2 : f32
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[mul:.*]] = arith.mulf %[[f2]], %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[mul]]
+
+
+// Divide
 
 i2 = i0 / i1;
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=i2, bits=32), right=BinaryOpNode(type=ASTOpTypeDiv, left=IdentifierNode(name=i0, bits=32), right=IdentifierNode(name=i1, bits=32))
@@ -70,6 +120,23 @@ f2 = f0 / f1;
 // MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
 // MLIR: %[[f1:.*]] = oq3.variable_load @f1 : f32
 // MLIR: %[[f2:.*]] = arith.divf %[[f0]], %[[f1]] : f32
+
+
+// Divide assign
+
+i2 /= i0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeDivAssign, left=IdentifierNode(name=i2, bits=32), right=IdentifierNode(name=i0, bits=32))
+// MLIR: %[[i2:.*]] = oq3.variable_load @i2 : i32
+// MLIR: %[[i0:.*]] = oq3.variable_load @i0 : i32
+// MLIR: %[[div:.*]] = arith.divsi %[[i2]], %[[i0]] : i32
+// MLIR: oq3.variable_assign @i2 : i32 = %[[div]]
+
+f2 /= f0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeDivAssign, left=IdentifierNode(name=f2, bits=32), right=IdentifierNode(name=f0, bits=32))
+// MLIR: %[[f2:.*]] = oq3.variable_load @f2 : f32
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[div:.*]] = arith.divf %[[f2]], %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[div]]
 
 
 // Modulo
@@ -85,6 +152,23 @@ f2 = f0 % f1;
 // MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
 // MLIR: %[[f1:.*]] = oq3.variable_load @f1 : f32
 // MLIR: %[[f2:.*]] = arith.remf %[[f0]], %[[f1]] : f32
+
+
+// Modulo assign
+
+i2 %= i0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeModAssign, left=IdentifierNode(name=i2, bits=32), right=IdentifierNode(name=i0, bits=32))
+// MLIR: %[[i2:.*]] = oq3.variable_load @i2 : i32
+// MLIR: %[[i0:.*]] = oq3.variable_load @i0 : i32
+// MLIR: %[[rem:.*]] = arith.remsi %[[i2]], %[[i0]] : i32
+// MLIR: oq3.variable_assign @i2 : i32 = %[[rem]]
+
+f2 %= f0;
+// AST-PRETTY: BinaryOpNode(type=ASTOpTypeModAssign, left=IdentifierNode(name=f2, bits=32), right=IdentifierNode(name=f0, bits=32))
+// MLIR: %[[f2:.*]] = oq3.variable_load @f2 : f32
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[rem:.*]] = arith.remf %[[f2]], %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[rem]]
 
 
 // Operator precedence

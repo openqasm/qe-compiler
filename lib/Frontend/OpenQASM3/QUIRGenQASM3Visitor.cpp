@@ -1428,18 +1428,22 @@ using mlir::arith::CmpIPredicate;
 
 ExpressionValueType
 QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
-  const Location location = getLocation(node);
-  const ASTExpressionNode *left = node->GetLeft();
   const ASTExpressionNode *right = node->GetRight();
-
   auto rightRefOrError = visitAndGetExpressionValue(right);
-
   if (!rightRefOrError) {
     assert(hasFailed && "visitAndGetExpressionValue returned error but did not "
                         "set state to failed.");
     return rightRefOrError;
   }
   Value const rightRef = rightRefOrError.get();
+  return handleAssign(node, rightRef);
+}
+
+ExpressionValueType
+QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node,
+                                  mlir::Value rightRef) {
+  const Location location = getLocation(node);
+  const ASTExpressionNode *left = node->GetLeft();
 
   llvm::Expected<std::string> leftNameOrError = getExpressionName(left);
   if (!leftNameOrError) {
@@ -1607,7 +1611,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
   LLVM_DEBUG(llvm::dbgs() << "  at " << loc << "\n");
 
   // check and potentially cast types
-  switch (node->GetOpType()) {
+  auto opType = node->GetOpType();
+  switch (opType) {
   case ASTOpTypeCompEq:
   case ASTOpTypeCompNeq:
   case ASTOpTypeLT:
@@ -1669,30 +1674,28 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
     }
   };
 
-  Value opRef;
-
   switch (node->GetOpType()) {
   case ASTOpTypeLogicalOr:
-    opRef = builder.create<mlir::arith::OrIOp>(loc, leftRef, rightRef);
+    return builder.create<mlir::arith::OrIOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeLogicalAnd:
-    opRef = builder.create<mlir::arith::AndIOp>(loc, leftRef, rightRef);
+    return builder.create<mlir::arith::AndIOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeBitAnd:
     createCastIfTypeMismatch();
-    opRef = builder.create<mlir::oq3::CBitAndOp>(loc, leftRef, rightRef);
+    return builder.create<mlir::oq3::CBitAndOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeBitOr:
     createCastIfTypeMismatch();
-    opRef = builder.create<mlir::oq3::CBitOrOp>(loc, leftRef, rightRef);
+    return builder.create<mlir::oq3::CBitOrOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeXor:
     createCastIfTypeMismatch();
-    opRef = builder.create<mlir::oq3::CBitXorOp>(loc, leftRef, rightRef);
+    return builder.create<mlir::oq3::CBitXorOp>(loc, leftRef, rightRef);
     break;
 
   case ASTOpTypeCompEq:
@@ -1701,93 +1704,112 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
   case ASTOpTypeLE:
   case ASTOpTypeGT:
   case ASTOpTypeGE:
-    opRef = builder.create<mlir::arith::CmpIOp>(
+    return builder.create<mlir::arith::CmpIOp>(
         loc, getComparisonPredicate(node->GetOpType()), leftRef, rightRef);
     break;
 
   case ASTOpTypeAdd:
+  case ASTOpTypeAddAssign: {
+    mlir::Value expRef;
     if (leftType.isIntOrIndex())
-      opRef = builder.create<mlir::arith::AddIOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::AddIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
-      opRef = builder.create<mlir::arith::AddFOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::AddFOp>(loc, leftRef, rightRef);
     else
-        reportError(node, mlir::DiagnosticSeverity::Error)
-        << "Addition is not supported on value of type: " << leftType << "\n";
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << "Addition is not supported on value of type: " << leftType << "\n";
+
+    if (opType == ASTOpTypeAddAssign)
+      return handleAssign(node, expRef);
+    return expRef;
     break;
+  }
 
   case ASTOpTypeSub:
+  case ASTOpTypeSubAssign: {
+    mlir::Value expRef;
     if (leftType.isIntOrIndex())
-      opRef = builder.create<mlir::arith::SubIOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::SubIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
-      opRef = builder.create<mlir::arith::SubFOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::SubFOp>(loc, leftRef, rightRef);
     else
-        reportError(node, mlir::DiagnosticSeverity::Error)
-        << "Subtraction is not supported on value of type: " << leftType << "\n";
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << "Subtraction is not supported on value of type: " << leftType
+          << "\n";
+    if (opType == ASTOpTypeSubAssign)
+      return handleAssign(node, expRef);
+    return expRef;
     break;
+  }
 
   case ASTOpTypeMul:
+  case ASTOpTypeMulAssign: {
+    mlir::Value expRef;
     if (leftType.isIntOrIndex())
-      opRef = builder.create<mlir::arith::MulIOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::MulIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
-      opRef = builder.create<mlir::arith::MulFOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::MulFOp>(loc, leftRef, rightRef);
     else
-        reportError(node, mlir::DiagnosticSeverity::Error)
-        << "Multiplication is not supported on value of type: " << leftType << "\n";
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << "Multiplication is not supported on value of type: " << leftType
+          << "\n";
+    if (opType == ASTOpTypeMulAssign)
+      return handleAssign(node, expRef);
+    return expRef;
     break;
+  }
 
   case ASTOpTypeDiv:
+  case ASTOpTypeDivAssign: {
+    mlir::Value expRef;
     if (leftType.isIntOrIndex())
-      opRef = builder.create<mlir::arith::DivSIOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::DivSIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
-      opRef = builder.create<mlir::arith::DivFOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::DivFOp>(loc, leftRef, rightRef);
     else
-        reportError(node, mlir::DiagnosticSeverity::Error)
-        << "Division is not supported on value of type: " << leftType << "\n";
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << "Division is not supported on value of type: " << leftType << "\n";
+    if (opType == ASTOpTypeDivAssign)
+      return handleAssign(node, expRef);
+    return expRef;
     break;
+  }
 
   case ASTOpTypeMod:
+  case ASTOpTypeModAssign: {
+    mlir::Value expRef;
     if (leftType.isIntOrIndex())
-      opRef = builder.create<mlir::arith::RemSIOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::RemSIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
-      opRef = builder.create<mlir::arith::RemFOp>(
-        loc, leftRef, rightRef);
+      expRef = builder.create<mlir::arith::RemFOp>(loc, leftRef, rightRef);
     else
-        reportError(node, mlir::DiagnosticSeverity::Error)
-        << "Modulo is not supported on value of type: " << leftType << "\n";
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << "Modulo is not supported on value of type: " << leftType << "\n";
+    if (opType == ASTOpTypeModAssign)
+      return handleAssign(node, expRef);
+    return expRef;
     break;
+  }
 
   case ASTOpTypePow:
     if (leftType.isIntOrIndex() && rightType.isIntOrIndex())
-      opRef = builder.create<mlir::math::IPowIOp>(
-        loc, leftRef, rightRef);
+      return builder.create<mlir::math::IPowIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType) && rightType.isIntOrIndex())
-      opRef = builder.create<mlir::math::FPowIOp>(
-        loc, leftRef, rightRef);
+      return builder.create<mlir::math::FPowIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType) && llvm::isa<FloatType>(rightType))
-      opRef = builder.create<mlir::math::PowFOp>(
-        loc, leftRef, rightRef);
+      return builder.create<mlir::math::PowFOp>(loc, leftRef, rightRef);
     else
-        reportError(node, mlir::DiagnosticSeverity::Error)
-        << "Power is not supported on value of left type: " << leftType << " and right type: " << rightType << "\n";
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << "Power is not supported on value of left type: " << leftType
+          << " and right type: " << rightType << "\n";
     break;
 
   default:
     reportError(node, mlir::DiagnosticSeverity::Error)
         << "Binary operation " << QASM::PrintOpTypeEnum(node->GetOpType())
         << " not supported yet.";
-    return createVoidValue(node);
   }
-
-  return opRef;
+  return createVoidValue(node);
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {

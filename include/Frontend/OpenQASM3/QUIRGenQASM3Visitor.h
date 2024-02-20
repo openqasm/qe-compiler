@@ -280,6 +280,7 @@ protected:
 
 private:
   ExpressionValueType handleAssign(const QASM::ASTBinaryOpNode *);
+  ExpressionValueType handleAssign(const QASM::ASTBinaryOpNode *, mlir::Value);
 
   ExpressionValueType getValueFromLiteral(const QASM::ASTMPDecimalNode *);
 
