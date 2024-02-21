@@ -1828,9 +1828,6 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   switchCircuit(true, getLocation(node));
 
   const Location loc = getLocation(node);
-
-  const ASTOperatorNode *operatorNode = nullptr;
-
   mlir::Value targetValue;
 
   if (node->HasOperator()) {
