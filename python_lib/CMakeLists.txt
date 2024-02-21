@@ -157,6 +157,11 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.Pulse.Pybind
     MLIRCAPIPulse
 )
 
+add_dependencies(py_qssc
+  QSSPythonSources.Dialects.pulse.ops_gen
+  QSSPythonModules.extension._ibmDialectsPulse.dso
+)
+
 declare_mlir_python_extension(QSSPythonExtension.Dialects.QUIR.Pybind
   MODULE_NAME _ibmDialectsQUIR
   ADD_TO_PARENT QSSPythonSources.Dialects.quir
@@ -174,6 +179,11 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.QUIR.Pybind
     MLIRCAPIQUIR
 )
 
+add_dependencies(py_qssc
+  QSSPythonSources.Dialects.quir.ops_gen
+  QSSPythonModules.extension._ibmDialectsQUIR.dso
+)
+
 declare_mlir_python_extension(QSSPythonExtension.Dialects.QCS.Pybind
   MODULE_NAME _ibmDialectsQCS
   ADD_TO_PARENT QSSPythonSources.Dialects.qcs
@@ -188,6 +198,11 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.QCS.Pybind
     MLIRCAPIQCS
 )
 
+add_dependencies(py_qssc
+  QSSPythonSources.Dialects.qcs.ops_gen
+  QSSPythonModules.extension._ibmDialectsQCS.dso
+)
+
 declare_mlir_python_extension(QSSPythonExtension.Dialects.OQ3.Pybind
   MODULE_NAME _ibmDialectsOQ3
   ADD_TO_PARENT QSSPythonSources.Dialects.oq3
@@ -200,6 +215,11 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.OQ3.Pybind
   EMBED_CAPI_LINK_LIBS
     MLIRCAPIIR
     MLIRCAPIOQ3
+)
+
+add_dependencies(py_qssc
+  QSSPythonSources.Dialects.oq3.ops_gen
+  QSSPythonModules.extension._ibmDialectsOQ3.dso
 )
 
 add_mlir_python_common_capi_library(QSSPythonCAPI
@@ -223,4 +243,23 @@ add_mlir_python_modules(QSSPythonModules
     MLIRPythonCAPI.HeaderSources
   COMMON_CAPI_LINK_LIBS
     QSSPythonCAPI
+)
+
+add_dependencies(py_qssc
+  ${mlir_qssc_capi_libs}
+  QSSPythonCAPI
+  QSSPythonModules
+  # register everything dsos
+  QSSPythonModules.extension._mlir.dso
+  QSSPythonModules.extension._mlirAsyncPasses.dso
+  QSSPythonModules.extension._mlirDialectsLinalg.dso
+  QSSPythonModules.extension._mlirDialectsPDL.dso
+  QSSPythonModules.extension._mlirDialectsQuant.dso
+  QSSPythonModules.extension._mlirDialectsSparseTensor.dso
+  QSSPythonModules.extension._mlirDialectsTransform.dso
+  QSSPythonModules.extension._mlirExecutionEngine.dso
+  QSSPythonModules.extension._mlirGPUPasses.dso
+  QSSPythonModules.extension._mlirLinalgPasses.dso
+  QSSPythonModules.extension._mlirRegisterEverything.dso
+  QSSPythonModules.extension._mlirSparseTensorPasses.dso
 )

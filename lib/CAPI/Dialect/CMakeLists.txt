@@ -45,9 +45,12 @@ add_qss_upstream_c_api_library(MLIRCAPIOQ3
     MLIROQ3Transforms
 )
 
-set(capi_libs
+set(mlir_qssc_capi_libs
     MLIRCAPIPulse
     MLIRCAPIQUIR
     MLIRCAPIQCS
     MLIRCAPIOQ3
+    CACHE STRING
+    "List of capi libs"
+    FORCE
 )

@@ -16,9 +16,16 @@ add_mlir_doc(QUIR QUIRDialect generated/Dialect/QUIR/ -gen-dialect-doc -dialect=
 set(LLVM_TARGET_DEFINITIONS QUIR.td)
 mlir_tablegen(QUIRAttributes.h.inc -gen-attrdef-decls -attrdefs-dialect=quir)
 mlir_tablegen(QUIRAttributes.cpp.inc -gen-attrdef-defs -attrdefs-dialect=quir)
+add_public_tablegen_target(QUIRAttributesIncGen)
 
 set(LLVM_TARGET_DEFINITIONS QUIR.td)
 mlir_tablegen(QUIREnums.h.inc -gen-enum-decls)
 mlir_tablegen(QUIREnums.cpp.inc -gen-enum-defs)
+add_public_tablegen_target(QUIREnumsIncGen)
+
+# This dependency makes sure that the attributes and enums include files are
+# generated before anything that requires the include files generated for the
+# QUIR dialect
+add_dependencies(MLIRQUIRIncGen QUIREnumsIncGen QUIRAttributesIncGen)
 
 add_mlir_interface(QUIRInterfaces)
