@@ -33,6 +33,7 @@
 namespace qssc::frontend::openqasm3 {
 
 class QUIRGenQASM3Visitor : public BaseQASM3Visitor {
+using ExpressionValueType = llvm::Expected<mlir::Value>;
 private:
   // References to MLIR single static assignment Values
   // (TODO needs to be refactored)
@@ -57,10 +58,14 @@ private:
   /// hold intermediate expression value while visiting child nodes
   llvm::Expected<mlir::Value> expression;
 
-  llvm::Expected<mlir::Value>
+  ExpressionValueType
   visitAndGetExpressionValue(QASM::ASTExpressionNode const *node);
-  template <class NodeType>
-  llvm::Expected<mlir::Value> visitAndGetExpressionValue(NodeType const *node) {
+  ExpressionValueType
+  visitAndGetExpressionValue(QASM::ASTOperatorNode const *node);
+  ExpressionValueType
+  visitAndGetExpressionValue(QASM::ASTOperandNode const *node);
+  template <class NodeType> ExpressionValueType
+  visitAndGetExpressionValue(NodeType const *node) {
     return visit_(node);
   }
 
@@ -93,6 +98,16 @@ private:
   mlir::InFlightDiagnostic reportError(QASM::ASTBase const *location,
                                        mlir::DiagnosticSeverity severity);
 
+  template <class MLIROp> ExpressionValueType buildUnaryOp(llvm::StringRef name, const QASM::ASTUnaryOpNode *node, mlir::Value value, mlir::Location loc) {
+    auto type = value.getType();
+    if (llvm::isa<mlir::FloatType>(type))
+      return builder.create<MLIROp>(loc, value);
+    else
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << name << " is not supported on value of type: " << type << "\n";
+      return createVoidValue(node);
+  }
+
 public:
   QUIRGenQASM3Visitor(QASM::ASTStatementList *sList, mlir::OpBuilder b,
                       mlir::ModuleOp newModule, std::string f)
@@ -122,8 +137,6 @@ public:
   mlir::LogicalResult walkAST();
 
 protected:
-  using ExpressionValueType = llvm::Expected<mlir::Value>;
-
   void visit(const QASM::ASTForStatementNode *) override;
 
   void visit(const QASM::ASTForLoopNode *) override;

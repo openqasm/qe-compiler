@@ -35,50 +35,77 @@ f2 = f0 ** i1;
 // Cos
 f2 = cos(f0);
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeCos, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[val:.*]] = math.cos %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
 // Sin
 f2 = sin(f0);
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeSin, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[val:.*]] = math.sin %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
 // Tan
 f2 = tan(f0);
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeTan, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[val:.*]] = math.tan %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
+// Not available until LLVM 18
+// TODO: Enable the following for LLVM 18
 
 // ArcCos
-f2 = acos(f0);
-// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeArcCos, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
-
+// f2 = acos(f0);
+// DISABLED-AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeArcCos, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+// DISABLED-MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// DISABLED-MLIR: %[[val:.*]] = math.acos %[[f0]] : f32
+// DISABLED-MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
 // ArcSin
-f2 = asin(f0);
-// AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeArcSin, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
-
+// f2 = asin(f0);
+// DISABLED-AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeArcSin, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
+// DISABLED-MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// DISABLED-MLIR: %[[val:.*]] = math.asin %[[f0]] : f32
+// DISABLED-MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
 // ArcTan
 f2 = atan(f0);
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeArcTan, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
-
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[val:.*]] = math.atan %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
 // Exp
 f2 = exp(f0);
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeExp, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
-
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[val:.*]] = math.exp %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
 // Ln
 f2 = ln(f0);
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeLn, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
-
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[val:.*]] = math.log %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
 // Sqrt
 f2 = sqrt(f0);
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeSqrt, operand=OperandNode(target-identifier=IdentifierNode(name=f0, bits=32))
-
+// MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[val:.*]] = math.sqrt %[[f0]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
 // Unary expression
 f2 = cos(f0 + f0);
 // AST-PRETTY: BinaryOpNode(type=ASTOpTypeAssign, left=IdentifierNode(name=f2, bits=32), right=UnaryOpNode(type=ASTOpTypeCos, operand=OperandNode(target=BinaryOpNode(type=ASTOpTypeAdd, left=IdentifierNode(name=f0, bits=32), right=IdentifierNode(name=f0, bits=32))
-
+// MLIR: %[[f0_0:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[f0_1:.*]] = oq3.variable_load @f0 : f32
+// MLIR: %[[sum:.*]] = arith.addf %[[f0_0]], %[[f0_1]] : f32
+// MLIR: %[[val:.*]] = math.cos %[[sum]] : f32
+// MLIR: oq3.variable_assign @f2 : f32 = %[[val]]
 
 // Operator precedence
 

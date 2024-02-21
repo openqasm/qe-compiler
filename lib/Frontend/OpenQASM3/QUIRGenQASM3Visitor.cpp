@@ -1715,9 +1715,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
       expRef = builder.create<mlir::arith::AddIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
       expRef = builder.create<mlir::arith::AddFOp>(loc, leftRef, rightRef);
-    else
+    else {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Addition is not supported on value of type: " << leftType << "\n";
+      return createVoidValue(node);
+    }
 
     if (opType == ASTOpTypeAddAssign)
       return handleAssign(node, expRef);
@@ -1732,10 +1734,12 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
       expRef = builder.create<mlir::arith::SubIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
       expRef = builder.create<mlir::arith::SubFOp>(loc, leftRef, rightRef);
-    else
+    else {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Subtraction is not supported on value of type: " << leftType
           << "\n";
+      return createVoidValue(node);
+    }
     if (opType == ASTOpTypeSubAssign)
       return handleAssign(node, expRef);
     return expRef;
@@ -1749,10 +1753,12 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
       expRef = builder.create<mlir::arith::MulIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
       expRef = builder.create<mlir::arith::MulFOp>(loc, leftRef, rightRef);
-    else
+    else {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Multiplication is not supported on value of type: " << leftType
           << "\n";
+      return createVoidValue(node);
+    }
     if (opType == ASTOpTypeMulAssign)
       return handleAssign(node, expRef);
     return expRef;
@@ -1766,9 +1772,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
       expRef = builder.create<mlir::arith::DivSIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
       expRef = builder.create<mlir::arith::DivFOp>(loc, leftRef, rightRef);
-    else
+    else {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Division is not supported on value of type: " << leftType << "\n";
+      return createVoidValue(node);
+    }
     if (opType == ASTOpTypeDivAssign)
       return handleAssign(node, expRef);
     return expRef;
@@ -1782,9 +1790,11 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
       expRef = builder.create<mlir::arith::RemSIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType))
       expRef = builder.create<mlir::arith::RemFOp>(loc, leftRef, rightRef);
-    else
+    else {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Modulo is not supported on value of type: " << leftType << "\n";
+      return createVoidValue(node);
+    }
     if (opType == ASTOpTypeModAssign)
       return handleAssign(node, expRef);
     return expRef;
@@ -1798,10 +1808,12 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
       return builder.create<mlir::math::FPowIOp>(loc, leftRef, rightRef);
     else if (llvm::isa<FloatType>(leftType) && llvm::isa<FloatType>(rightType))
       return builder.create<mlir::math::PowFOp>(loc, leftRef, rightRef);
-    else
+    else {
       reportError(node, mlir::DiagnosticSeverity::Error)
           << "Power is not supported on value of left type: " << leftType
           << " and right type: " << rightType << "\n";
+      return createVoidValue(node);
+    }
     break;
 
   default:
@@ -1815,90 +1827,35 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   switchCircuit(true, getLocation(node));
 
-  const ASTOperatorNode *operatorNode = nullptr;
-
-  switch (node->GetOpType()) {
-
-  case ASTOpTypeCos:
-  case ASTOpTypeSin:
-  case ASTOpTypeTan:
-  case ASTOpTypeArcCos:
-  case ASTOpTypeArcSin:
-  case ASTOpTypeArcTan:
-  case ASTOpTypeExp:
-  case ASTOpTypeLn:
-  case ASTOpTypeSqrt:
-  case ASTOpTypeLogicalNot:
-    operatorNode = dynamic_cast<const ASTOperatorNode *>(node->GetExpression());
-    if (!operatorNode) {
-      reportError(node, mlir::DiagnosticSeverity::Error)
-          << "mismatch of ASTType and class";
-      return createVoidValue(node);
-    }
-    if (operatorNode->GetOpType() != ASTOpTypeLogicalNot) {
-      reportError(node, mlir::DiagnosticSeverity::Error)
-          << "Operation type is not of type logical not";
-      return createVoidValue(node);
-    }
-    break;
-
-  default:
-    reportError(node, mlir::DiagnosticSeverity::Error) << "Operator " << QASM::PrintOpTypeOperator(node->GetOpType())
-        << " is not supported.\n";
-    return createVoidValue(node);
-  }
-
-  if (!operatorNode) {
-    reportError(node, mlir::DiagnosticSeverity::Error)
-        << "mismatch of ASTType and class";
-    return createVoidValue(node);
-  }
 
   const Location loc = getLocation(node);
+
+  const ASTOperatorNode *operatorNode = nullptr;
+
   mlir::Value targetValue;
 
-  if (operatorNode->IsExpression()) {
-    auto targetValueOrError =
-        visitAndGetExpressionValue(operatorNode->GetTargetExpression());
-
+  if (node->HasOperator()) {
+    auto targetValueOrError = visitAndGetExpressionValue(node->GetOperator());
     if (!targetValueOrError) {
-      assert(hasFailed && "visitAndGetExpressionValue returned error but did "
-                          "not set state to failed.");
-      return targetValueOrError;
+    assert(hasFailed && "visitAndGetExpressionValue returned error but did not "
+                        "set state to failed.");
+    return targetValueOrError;
     }
     targetValue = targetValueOrError.get();
-  } else {
-    const auto *id = operatorNode->GetTargetIdentifier();
-    if (!id) {
-      reportError(node, mlir::DiagnosticSeverity::Error)
-          << "ASTOperatorNode's target must be either expression or "
-             "identifier.";
-      return createVoidValue(node);
-    }
 
-    if (id->IsReference()) {
-      const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
-      // Check for error
-      auto expressionValueOrError = visitAndGetExpressionValue(idRef);
-      if (!expressionValueOrError) {
-        assert(hasFailed && "visitAndGetExpressionValue returned error but did "
-                            "not set state to failed.");
-        return expressionValueOrError;
-      }
-      // If not, get values from the function
-      targetValue = expressionValueOrError.get();
-    } else {
-      auto expressionValueOrError =
-          visitAndGetExpressionValue(operatorNode->GetTargetIdentifier());
-      // Check for error
-      if (!expressionValueOrError) {
-        assert(hasFailed && "visitAndGetExpressionValue returned error but did "
-                            "not set state to failed.");
-        return expressionValueOrError;
-      }
-      // If not, get values from the function
-      targetValue = expressionValueOrError.get();
+  } else if (node->HasOperand()) {
+    auto targetValueOrError = visitAndGetExpressionValue(node->GetOperand());
+    if (!targetValueOrError) {
+    assert(hasFailed && "visitAndGetExpressionValue returned error but did not "
+                        "set state to failed.");
+    return targetValueOrError;
     }
+    targetValue = targetValueOrError.get();
+  }
+  else {
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << "Unary operation " << node->GetName() << " is not supported \n";
+      return createVoidValue(node);
   }
 
   switch (node->GetOpType()) {
@@ -1926,21 +1883,83 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   }
 
   case ASTOpTypeCos:
-  case ASTOpTypeSin:
-  case ASTOpTypeTan:
-  case ASTOpTypeArcCos:
-  case ASTOpTypeArcSin:
-  case ASTOpTypeArcTan:
-  case ASTOpTypeExp:
-  case ASTOpTypeLn:
-  case ASTOpTypeSqrt:
-    reportError(node, mlir::DiagnosticSeverity::Error) << "Operator requested here " << QASM::PrintOpTypeOperator(node->GetOpType())
-        << " is in development.\n";
-    return createVoidValue(node);
+    return buildUnaryOp<mlir::math::CosOp>("cos", node, targetValue, loc);
     break;
+  case ASTOpTypeSin:
+    return buildUnaryOp<mlir::math::SinOp>("sin", node, targetValue, loc);
+    break;
+  case ASTOpTypeTan:
+    return buildUnaryOp<mlir::math::TanOp>("tan", node, targetValue, loc);
+    break;
+  // Not available until LLVM 18
+  // TODO: Enable the following for LLVM 18
+  // case ASTOpTypeArcCos:
+  //  return buildUnaryOp<mlir::math::AcosOp>("acos", targetValue, loc);
+  //  break;
+  //case ASTOpTypeArcSin:
+  //  return buildUnaryOp<mlir::math::AsinOp>("asin", targetValue, loc);
+  //  break;
+  case ASTOpTypeArcTan:
+    return buildUnaryOp<mlir::math::AtanOp>("atan", node, targetValue, loc);
+    break;
+  case ASTOpTypeExp:
+    return buildUnaryOp<mlir::math::ExpOp>("exp", node, targetValue, loc);
+    break;
+  case ASTOpTypeLn:
+    return buildUnaryOp<mlir::math::LogOp>("ln", node, targetValue, loc);
+    break;
+  case ASTOpTypeSqrt: {
+    return buildUnaryOp<mlir::math::SqrtOp>("sqrt", node, targetValue, loc);
+    break;
+  }
 
   default:
-    llvm_unreachable("unimplemented operators should be caught above!");
+    reportError(node, mlir::DiagnosticSeverity::Error)
+        << "Unary operation " << QASM::PrintOpTypeEnum(node->GetOpType())
+        << " is not supported yet.";
+  }
+  return createVoidValue(node);
+}
+
+ExpressionValueType QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTOperatorNode *node) {
+    if (node->IsExpression())
+      return visitAndGetExpressionValue(node->GetTargetExpression());
+    else {
+      const auto *id = node->GetTargetIdentifier();
+      if (!id) {
+        reportError(node, mlir::DiagnosticSeverity::Error)
+            << "ASTOperatorNode's target must be either expression or "
+              "identifier.";
+        return createVoidValue(node);
+      }
+
+      if (id->IsReference()) {
+        const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
+        return visitAndGetExpressionValue(idRef);
+      } else {
+        return visitAndGetExpressionValue(id);
+      }
+  }
+}
+
+ExpressionValueType QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTOperandNode *node) {
+  if (node->IsExpression())
+    return visitAndGetExpressionValue(node->GetExpression());
+  else {
+      const auto *id = node->GetTargetIdentifier();
+      if (!id) {
+        reportError(node, mlir::DiagnosticSeverity::Error)
+            << "ASTOperatorNode's target must be either expression or "
+              "identifier.";
+        return createVoidValue(node);
+      }
+
+      if (id->IsReference()) {
+        const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
+        return visitAndGetExpressionValue(idRef);
+      } else {
+        return visitAndGetExpressionValue(id);
+      }
   }
 }
 
