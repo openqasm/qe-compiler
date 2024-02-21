@@ -77,9 +77,9 @@ def example_invalid_qasm3_tmpfile(tmp_path, example_invalid_qasm3_str):
 def example_unsupported_qasm3_str():
     return """OPENQASM 3.0;
     int a;
-    int b;
+    float b;
     int c;
-    c = a + b;
+    c =  float(a) + b;
     """
 
 
