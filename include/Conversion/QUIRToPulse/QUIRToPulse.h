@@ -159,8 +159,9 @@ struct QUIRToPulsePass
   void parsePulseWaveformContainerOps(std::string &waveformContainerPath);
   std::map<std::string, Waveform_CreateOp> pulseNameToWaveformMap;
 
-  static mlir::quir::CircuitOp
-  getCircuitOp(mlir::quir::CallCircuitOp callCircuitOp);
+  llvm::StringMap<Operation *> symbolMap;
+  mlir::quir::CircuitOp getCircuitOp(mlir::quir::CallCircuitOp callCircuitOp);
+  mlir::pulse::SequenceOp getSequenceOp(std::string const &symbolName);
 };
 } // namespace mlir::pulse
 
