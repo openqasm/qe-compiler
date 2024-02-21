@@ -73,6 +73,7 @@
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/ADT/Twine.h"
+#include "llvm/Support/Casting.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/Error.h"
@@ -110,7 +111,6 @@
 #include <qasm/AST/ASTSymbolTable.h>
 #include <qasm/AST/ASTTypeEnums.h>
 #include <qasm/AST/ASTTypes.h>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <sys/types.h>
@@ -1925,44 +1925,40 @@ ExpressionValueType
 QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTOperatorNode *node) {
   if (node->IsExpression())
     return visitAndGetExpressionValue(node->GetTargetExpression());
-  else {
-    const auto *id = node->GetTargetIdentifier();
-    if (!id) {
-      reportError(node, mlir::DiagnosticSeverity::Error)
-          << "ASTOperatorNode's target must be either expression or "
-             "identifier.";
-      return createVoidValue(node);
-    }
 
-    if (id->IsReference()) {
-      const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
-      return visitAndGetExpressionValue(idRef);
-    } else {
-      return visitAndGetExpressionValue(id);
-    }
+  const auto *id = node->GetTargetIdentifier();
+  if (!id) {
+    reportError(node, mlir::DiagnosticSeverity::Error)
+        << "ASTOperatorNode's target must be either expression or "
+           "identifier.";
+    return createVoidValue(node);
   }
+
+  if (id->IsReference()) {
+    const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
+    return visitAndGetExpressionValue(idRef);
+  }
+  return visitAndGetExpressionValue(id);
 }
 
 ExpressionValueType
 QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTOperandNode *node) {
   if (node->IsExpression())
     return visitAndGetExpressionValue(node->GetExpression());
-  else {
-    const auto *id = node->GetTargetIdentifier();
-    if (!id) {
-      reportError(node, mlir::DiagnosticSeverity::Error)
-          << "ASTOperatorNode's target must be either expression or "
-             "identifier.";
-      return createVoidValue(node);
-    }
 
-    if (id->IsReference()) {
-      const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
-      return visitAndGetExpressionValue(idRef);
-    } else {
-      return visitAndGetExpressionValue(id);
-    }
+  const auto *id = node->GetTargetIdentifier();
+  if (!id) {
+    reportError(node, mlir::DiagnosticSeverity::Error)
+        << "ASTOperatorNode's target must be either expression or "
+           "identifier.";
+    return createVoidValue(node);
   }
+
+  if (id->IsReference()) {
+    const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
+    return visitAndGetExpressionValue(idRef);
+  }
+  return visitAndGetExpressionValue(id);
 }
 
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTIntNode *node) {
