@@ -1,4 +1,4 @@
-// RUN: qss-compiler -X=mlir --break-reset='putCallGatesAndMeasuresIntoCircuit=true' %s | FileCheck %s --check-prefix CHECK
+// RUN: qss-compiler -X=mlir --break-reset=quantum-gates-in-circuit=true %s | FileCheck %s --check-prefix CHECK
 
 //
 // This code is part of Qiskit.

@@ -183,6 +183,7 @@ void BreakResetPass::putCallGateInCircuit(ModuleOp moduleOp,
           /*inputs=*/ArrayRef<Type>(),
           /*results=*/ArrayRef<Type>()));
 
+  circOp.addEntryBlock();
   OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
 
   uint argumentIndex = 0;
@@ -238,6 +239,7 @@ void BreakResetPass::putMeasureInCircuit(ModuleOp moduleOp,
           /*inputs=*/ArrayRef<Type>(),
           /*results=*/ArrayRef<Type>()));
 
+  circOp.addEntryBlock();
   OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
 
   uint argumentIndex = 0;
