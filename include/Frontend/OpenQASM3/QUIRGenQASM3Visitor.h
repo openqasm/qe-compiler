@@ -106,9 +106,8 @@ private:
     auto type = value.getType();
     if (llvm::isa<mlir::FloatType>(type))
       return builder.create<MLIROp>(loc, value);
-    else
-      reportError(node, mlir::DiagnosticSeverity::Error)
-          << name << " is not supported on value of type: " << type << "\n";
+    reportError(node, mlir::DiagnosticSeverity::Error)
+        << name << " is not supported on value of type: " << type << "\n";
     return createVoidValue(node);
   }
 
