@@ -183,11 +183,9 @@ void BreakResetPass::putCallGateInCircuit(ModuleOp moduleOp,
           /*inputs=*/ArrayRef<Type>(),
           /*results=*/ArrayRef<Type>()));
 
-  auto *block = circOp.addEntryBlock();
-
   OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
 
-  uint const argumentIndex = 0;
+  uint argumentIndex = 0;
   llvm::SmallVector<Type> inputTypes;
   llvm::SmallVector<Value> inputValues;
   llvm::SmallVector<Type> outputTypes;
@@ -240,11 +238,9 @@ void BreakResetPass::putMeasureInCircuit(ModuleOp moduleOp,
           /*inputs=*/ArrayRef<Type>(),
           /*results=*/ArrayRef<Type>()));
 
-  auto *block = circOp.addEntryBlock();
-
   OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
 
-  uint const argumentIndex = 0;
+  uint argumentIndex = 0;
   llvm::SmallVector<Type> inputTypes;
   llvm::SmallVector<Value> inputValues;
   llvm::SmallVector<Type> outputTypes;
