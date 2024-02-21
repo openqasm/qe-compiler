@@ -162,7 +162,7 @@ void BreakResetPass::runOnOperation() {
   }
   while (!callGateList.empty()) {
     CallGateOp callGateOp = dyn_cast<CallGateOp>(callGateList.front());
-    // putCallGateInCircuit(moduleOp, callGateOp, circNum);
+    putCallGateInCircuit(moduleOp, callGateOp, circNum);
     circNum++;
     callGateList.pop_front();
   }
@@ -187,7 +187,7 @@ void BreakResetPass::putCallGateInCircuit(ModuleOp moduleOp,
 
   OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
 
-  uint argumentIndex = 0;
+  uint const argumentIndex = 0;
   llvm::SmallVector<Type> inputTypes;
   llvm::SmallVector<Value> inputValues;
   llvm::SmallVector<Type> outputTypes;
@@ -244,7 +244,7 @@ void BreakResetPass::putMeasureInCircuit(ModuleOp moduleOp,
 
   OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
 
-  uint argumentIndex = 0;
+  uint const argumentIndex = 0;
   llvm::SmallVector<Type> inputTypes;
   llvm::SmallVector<Value> inputValues;
   llvm::SmallVector<Type> outputTypes;
