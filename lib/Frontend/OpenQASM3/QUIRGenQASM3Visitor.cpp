@@ -1827,7 +1827,6 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTBinaryOpNode *node) {
 ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   switchCircuit(true, getLocation(node));
 
-
   const Location loc = getLocation(node);
 
   const ASTOperatorNode *operatorNode = nullptr;
@@ -1837,25 +1836,26 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   if (node->HasOperator()) {
     auto targetValueOrError = visitAndGetExpressionValue(node->GetOperator());
     if (!targetValueOrError) {
-    assert(hasFailed && "visitAndGetExpressionValue returned error but did not "
-                        "set state to failed.");
-    return targetValueOrError;
+      assert(hasFailed &&
+             "visitAndGetExpressionValue returned error but did not "
+             "set state to failed.");
+      return targetValueOrError;
     }
     targetValue = targetValueOrError.get();
 
   } else if (node->HasOperand()) {
     auto targetValueOrError = visitAndGetExpressionValue(node->GetOperand());
     if (!targetValueOrError) {
-    assert(hasFailed && "visitAndGetExpressionValue returned error but did not "
-                        "set state to failed.");
-    return targetValueOrError;
+      assert(hasFailed &&
+             "visitAndGetExpressionValue returned error but did not "
+             "set state to failed.");
+      return targetValueOrError;
     }
     targetValue = targetValueOrError.get();
-  }
-  else {
-      reportError(node, mlir::DiagnosticSeverity::Error)
-          << "Unary operation " << node->GetName() << " is not supported \n";
-      return createVoidValue(node);
+  } else {
+    reportError(node, mlir::DiagnosticSeverity::Error)
+        << "Unary operation " << node->GetName() << " is not supported \n";
+    return createVoidValue(node);
   }
 
   switch (node->GetOpType()) {
@@ -1896,7 +1896,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   // case ASTOpTypeArcCos:
   //  return buildUnaryOp<mlir::math::AcosOp>("acos", targetValue, loc);
   //  break;
-  //case ASTOpTypeArcSin:
+  // case ASTOpTypeArcSin:
   //  return buildUnaryOp<mlir::math::AsinOp>("asin", targetValue, loc);
   //  break;
   case ASTOpTypeArcTan:
@@ -1921,45 +1921,47 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   return createVoidValue(node);
 }
 
-ExpressionValueType QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTOperatorNode *node) {
-    if (node->IsExpression())
-      return visitAndGetExpressionValue(node->GetTargetExpression());
-    else {
-      const auto *id = node->GetTargetIdentifier();
-      if (!id) {
-        reportError(node, mlir::DiagnosticSeverity::Error)
-            << "ASTOperatorNode's target must be either expression or "
-              "identifier.";
-        return createVoidValue(node);
-      }
+ExpressionValueType
+QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTOperatorNode *node) {
+  if (node->IsExpression())
+    return visitAndGetExpressionValue(node->GetTargetExpression());
+  else {
+    const auto *id = node->GetTargetIdentifier();
+    if (!id) {
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << "ASTOperatorNode's target must be either expression or "
+             "identifier.";
+      return createVoidValue(node);
+    }
 
-      if (id->IsReference()) {
-        const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
-        return visitAndGetExpressionValue(idRef);
-      } else {
-        return visitAndGetExpressionValue(id);
-      }
+    if (id->IsReference()) {
+      const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
+      return visitAndGetExpressionValue(idRef);
+    } else {
+      return visitAndGetExpressionValue(id);
+    }
   }
 }
 
-ExpressionValueType QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTOperandNode *node) {
+ExpressionValueType
+QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTOperandNode *node) {
   if (node->IsExpression())
     return visitAndGetExpressionValue(node->GetExpression());
   else {
-      const auto *id = node->GetTargetIdentifier();
-      if (!id) {
-        reportError(node, mlir::DiagnosticSeverity::Error)
-            << "ASTOperatorNode's target must be either expression or "
-              "identifier.";
-        return createVoidValue(node);
-      }
+    const auto *id = node->GetTargetIdentifier();
+    if (!id) {
+      reportError(node, mlir::DiagnosticSeverity::Error)
+          << "ASTOperatorNode's target must be either expression or "
+             "identifier.";
+      return createVoidValue(node);
+    }
 
-      if (id->IsReference()) {
-        const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
-        return visitAndGetExpressionValue(idRef);
-      } else {
-        return visitAndGetExpressionValue(id);
-      }
+    if (id->IsReference()) {
+      const auto *idRef = dynamic_cast<const ASTIdentifierRefNode *>(id);
+      return visitAndGetExpressionValue(idRef);
+    } else {
+      return visitAndGetExpressionValue(id);
+    }
   }
 }
 

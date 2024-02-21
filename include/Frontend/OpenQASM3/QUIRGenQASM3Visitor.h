@@ -33,7 +33,8 @@
 namespace qssc::frontend::openqasm3 {
 
 class QUIRGenQASM3Visitor : public BaseQASM3Visitor {
-using ExpressionValueType = llvm::Expected<mlir::Value>;
+  using ExpressionValueType = llvm::Expected<mlir::Value>;
+
 private:
   // References to MLIR single static assignment Values
   // (TODO needs to be refactored)
@@ -64,8 +65,8 @@ private:
   visitAndGetExpressionValue(QASM::ASTOperatorNode const *node);
   ExpressionValueType
   visitAndGetExpressionValue(QASM::ASTOperandNode const *node);
-  template <class NodeType> ExpressionValueType
-  visitAndGetExpressionValue(NodeType const *node) {
+  template <class NodeType>
+  ExpressionValueType visitAndGetExpressionValue(NodeType const *node) {
     return visit_(node);
   }
 
@@ -98,14 +99,17 @@ private:
   mlir::InFlightDiagnostic reportError(QASM::ASTBase const *location,
                                        mlir::DiagnosticSeverity severity);
 
-  template <class MLIROp> ExpressionValueType buildUnaryOp(llvm::StringRef name, const QASM::ASTUnaryOpNode *node, mlir::Value value, mlir::Location loc) {
+  template <class MLIROp>
+  ExpressionValueType buildUnaryOp(llvm::StringRef name,
+                                   const QASM::ASTUnaryOpNode *node,
+                                   mlir::Value value, mlir::Location loc) {
     auto type = value.getType();
     if (llvm::isa<mlir::FloatType>(type))
       return builder.create<MLIROp>(loc, value);
     else
       reportError(node, mlir::DiagnosticSeverity::Error)
           << name << " is not supported on value of type: " << type << "\n";
-      return createVoidValue(node);
+    return createVoidValue(node);
   }
 
 public:
