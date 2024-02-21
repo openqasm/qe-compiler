@@ -59,12 +59,9 @@ struct BreakResetPass
                      "iterations, default is 1000"),
       llvm::cl::value_desc("num"), llvm::cl::init(1000)};
   Option<bool> putCallGatesAndMeasuresIntoCircuit{
-      *this,
-      "quantum-gates-in-circuit",
+      *this, "quantum-gates-in-circuit",
       llvm::cl::desc("an option to put call gates and measures into circuit"),
-      llvm::cl::desc(""),
-      llvm::cl::value_desc("bool"),
-      llvm::cl::init(false)};
+      llvm::cl::value_desc("bool"), llvm::cl::init(false)};
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
