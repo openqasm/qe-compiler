@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Support ``qe-qem`` emit action in python. This commit adds a new value of
+    enumeration ``OutputType.QEQEM``. With this option. ``compile_str()`` can
+    generate target-specific payloads.

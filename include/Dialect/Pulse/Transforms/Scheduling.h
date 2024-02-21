@@ -35,6 +35,7 @@ struct QuantumCircuitPulseSchedulingPass
 public:
   enum SchedulingMethod { ALAP, ASAP };
   SchedulingMethod SCHEDULING_METHOD = ALAP;
+  uint64_t PRE_MEASURE_BUFFER_DELAY = 0;
 
   // this pass can optionally receive an string specifying the scheduling
   // method; default method is alap scheduling
@@ -42,8 +43,10 @@ public:
   QuantumCircuitPulseSchedulingPass(
       const QuantumCircuitPulseSchedulingPass &pass)
       : PassWrapper(pass) {}
-  QuantumCircuitPulseSchedulingPass(SchedulingMethod inSchedulingMethod) {
+  QuantumCircuitPulseSchedulingPass(SchedulingMethod inSchedulingMethod,
+                                    uint64_t inPreMeasureBufferDelay) {
     SCHEDULING_METHOD = inSchedulingMethod;
+    PRE_MEASURE_BUFFER_DELAY = inPreMeasureBufferDelay;
   }
 
   void runOnOperation() override;
@@ -56,7 +59,13 @@ public:
   Option<std::string> schedulingMethod{
       *this, "scheduling-method",
       llvm::cl::desc("an string to specify scheduling method"),
-      llvm::cl::value_desc("filename"), llvm::cl::init("")};
+      llvm::cl::value_desc("scheduling method"), llvm::cl::init("alap")};
+
+  // optionally, one can override the pre measure delay value with this option
+  Option<uint64_t> preMeasureBufferDelay{
+      *this, "pre-measure-buffer-delay",
+      llvm::cl::desc("an optional delay before measurements"),
+      llvm::cl::value_desc("delay"), llvm::cl::init(0)};
 
 private:
   // map to keep track of next availability of ports
@@ -66,7 +75,9 @@ private:
   int getNextAvailableTimeOfPorts(mlir::ArrayAttr ports);
   void updatePortAvailabilityMap(mlir::ArrayAttr ports,
                                  int updatedAvailableTime);
-  static mlir::pulse::SequenceOp
+  bool sequenceOpIncludeCapture(mlir::pulse::SequenceOp quantumGateSequenceOp);
+  llvm::StringMap<Operation *> symbolMap;
+  mlir::pulse::SequenceOp
   getSequenceOp(mlir::pulse::CallSequenceOp callSequenceOp);
 };
 } // namespace mlir::pulse

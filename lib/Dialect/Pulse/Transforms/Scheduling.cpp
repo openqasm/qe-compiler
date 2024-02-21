@@ -26,7 +26,7 @@
 
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Visitors.h"
 #include "mlir/Support/LLVM.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -55,7 +55,16 @@ void QuantumCircuitPulseSchedulingPass::runOnOperation() {
       llvm_unreachable("scheduling method not supported currently");
   }
 
+  // check for command line override of the pre measure buffer delay
+  if (preMeasureBufferDelay.hasValue())
+    PRE_MEASURE_BUFFER_DELAY = preMeasureBufferDelay.getValue();
+
   ModuleOp const moduleOp = getOperation();
+
+  // populate/cache the symbol map
+  moduleOp->walk([&](SequenceOp sequenceOp) {
+    symbolMap[sequenceOp.getSymName()] = sequenceOp.getOperation();
+  });
 
   // schedule all the quantum circuits which are root call sequence ops
   moduleOp->walk([&](mlir::pulse::CallSequenceOp callSequenceOp) {
@@ -125,27 +134,28 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
                               << quantumGateCallSequenceOpDuration << "\n");
 
       // find next available time for all the ports
-      const int nextAvailableTimeOfAllPorts =
+      const int64_t nextAvailableTimeOfAllPorts =
           getNextAvailableTimeOfPorts(ports);
       LLVM_DEBUG(llvm::dbgs() << "\t\tnext availability is at "
                               << nextAvailableTimeOfAllPorts << "\n");
 
       // find the updated available time, i.e., when the current quantum gate
       // will be scheduled
-      const int updatedAvailableTime =
+      int64_t updatedAvailableTime =
           nextAvailableTimeOfAllPorts - quantumGateCallSequenceOpDuration;
+      // set the timepoint of quantum gate
+      PulseOpSchedulingInterface::setTimepoint(quantumGateCallSequenceOp,
+                                               updatedAvailableTime);
       LLVM_DEBUG(llvm::dbgs() << "\t\tcurrent gate scheduled at "
                               << updatedAvailableTime << "\n");
       // update the port availability map
+      if (sequenceOpIncludeCapture(quantumGateSequenceOp))
+        updatedAvailableTime -= PRE_MEASURE_BUFFER_DELAY;
       updatePortAvailabilityMap(ports, updatedAvailableTime);
 
       // keep track of total duration of the quantum circuit
       if (updatedAvailableTime < totalDurationOfQuantumCircuitNegative)
         totalDurationOfQuantumCircuitNegative = updatedAvailableTime;
-
-      // set the timepoint of quantum gate
-      PulseOpSchedulingInterface::setTimepoint(quantumGateCallSequenceOp,
-                                               updatedAvailableTime);
     }
   }
 
@@ -194,14 +204,22 @@ void QuantumCircuitPulseSchedulingPass::updatePortAvailabilityMap(
   }
 }
 
+bool QuantumCircuitPulseSchedulingPass::sequenceOpIncludeCapture(
+    mlir::pulse::SequenceOp quantumGateSequenceOp) {
+  bool sequenceOpIncludeCapture = false;
+  quantumGateSequenceOp->walk([&](mlir::pulse::CaptureOp op) {
+    sequenceOpIncludeCapture = true;
+    return WalkResult::interrupt();
+  });
+
+  return sequenceOpIncludeCapture;
+}
+
 mlir::pulse::SequenceOp QuantumCircuitPulseSchedulingPass::getSequenceOp(
     mlir::pulse::CallSequenceOp callSequenceOp) {
-  auto seqAttr = callSequenceOp->getAttrOfType<FlatSymbolRefAttr>("callee");
-  assert(seqAttr && "Requires a 'callee' symbol reference attribute");
-
-  auto sequenceOp =
-      SymbolTable::lookupNearestSymbolFrom<mlir::pulse::SequenceOp>(
-          callSequenceOp, seqAttr);
+  auto search = symbolMap.find(callSequenceOp.getCallee());
+  assert(search != symbolMap.end() && "matching sequence not found");
+  auto sequenceOp = dyn_cast<SequenceOp>(search->second);
   assert(sequenceOp && "matching sequence not found");
   return sequenceOp;
 }

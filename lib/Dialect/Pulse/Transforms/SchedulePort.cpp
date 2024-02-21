@@ -105,6 +105,8 @@ uint64_t SchedulePortPass::processSequence(SequenceOp sequenceOp) {
   // timepoints
   sequenceOp->walk([&](DelayOp op) { op->erase(); });
 
+  // sort updated ops so that ops across mixed frame are in the correct
+  // sequence with respect to timepoint on a single port.
   sortOpsByTimepoint(sequenceOp);
 
   // clean up
@@ -269,51 +271,6 @@ void SchedulePortPass::addTimepoints(mlir::OpBuilder &builder,
       maxTime = currentTimepoint;
   }
 } // addTimepoints
-
-void SchedulePortPass::sortOpsByTimepoint(SequenceOp &sequenceOp) {
-  // sort updated ops so that ops across mixed frame are in the correct
-  // sequence with respect to timepoint on a single port.
-
-  // sort ops by timepoint
-  for (Region &region : sequenceOp->getRegions()) {
-    for (Block &block : region.getBlocks()) {
-      auto &blockOps = block.getOperations();
-      blockOps.sort(
-          [&](Operation &op1, Operation &op2) {
-            // put constants ahead of everything else
-            if (isa<arith::ConstantIntOp>(op1) &&
-                !isa<arith::ConstantIntOp>(op2))
-              return true;
-
-            bool const testOp1 = (op1.hasTrait<mlir::pulse::HasTargetFrame>() ||
-                                  isa<CallSequenceOp>(op1));
-            bool const testOp2 = (op2.hasTrait<mlir::pulse::HasTargetFrame>() ||
-                                  isa<CallSequenceOp>(op2));
-
-            if (!testOp1 || !testOp2)
-              return false;
-
-            std::optional<int64_t> currentTimepoint =
-                PulseOpSchedulingInterface::getTimepoint(&op1);
-            if (!currentTimepoint.has_value()) {
-              op1.emitError()
-                  << "Operation does not have a pulse.timepoint attribute.";
-              signalPassFailure();
-            }
-            std::optional<int64_t> nextTimepoint =
-                PulseOpSchedulingInterface::getTimepoint(&op2);
-            if (!nextTimepoint.has_value()) {
-              op2.emitError()
-                  << "Operation does not have a pulse.timepoint attribute.";
-              signalPassFailure();
-            }
-
-            // order by timepoint
-            return currentTimepoint.value() < nextTimepoint.value();
-          }); // blockOps.sort
-    }
-  }
-} // sortOpsByType
 
 void SchedulePortPass::runOnOperation() {
 

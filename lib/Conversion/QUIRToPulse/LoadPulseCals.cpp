@@ -39,6 +39,7 @@
 #include "mlir/IR/Types.h"
 #include "mlir/IR/Value.h"
 #include "mlir/Parser/Parser.h"
+#include "mlir/Pass/Pass.h"
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Support/LLVM.h"
 
@@ -281,6 +282,8 @@ void LoadPulseCalsPass::loadPulseCals(mlir::quir::BarrierOp barrierOp,
   SequenceOp const mergedPulseSequenceOp =
       mergePulseSequenceOps(sequenceOps, gateMangledName);
   pulseCalsNameToSequenceMap[gateMangledName] = mergedPulseSequenceOp;
+  mergedPulseSequenceOp->setAttr("pulse.duration",
+                                 builder.getI64IntegerAttr(0));
   addPulseCalToModule(funcOp, mergedPulseSequenceOp);
 }
 
