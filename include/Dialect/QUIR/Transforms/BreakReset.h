@@ -24,6 +24,10 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
+#include "Dialect/QUIR/IR/QUIROps.h"
+
+#include <deque>
+
 namespace mlir::quir {
 
 /// This pass converts input ResetQubitOps to a parameterized number of
@@ -31,11 +35,16 @@ namespace mlir::quir {
 struct BreakResetPass
     : public mlir::PassWrapper<BreakResetPass,
                                mlir::OperationPass<mlir::ModuleOp>> {
+  bool PUT_QUANTUM_GATES_INTO_CIRC = false;
+
   BreakResetPass() = default;
   BreakResetPass(const BreakResetPass &pass) : PassWrapper(pass) {}
   BreakResetPass(uint inNumIterations, uint inDelayCycles) {
     numIterations = inNumIterations;
     delayCycles = inDelayCycles;
+  }
+  BreakResetPass(bool inPutCallGatesAndMeasuresIntoCircuit) {
+    PUT_QUANTUM_GATES_INTO_CIRC = inPutCallGatesAndMeasuresIntoCircuit;
   }
 
   void runOnOperation() override;
@@ -49,10 +58,22 @@ struct BreakResetPass
       llvm::cl::desc("Number of cycles of delay to add between reset "
                      "iterations, default is 1000"),
       llvm::cl::value_desc("num"), llvm::cl::init(1000)};
+  Option<bool> putCallGatesAndMeasuresIntoCircuit{
+      *this, "an option to put call gates and measures into circuit",
+      llvm::cl::desc(""), llvm::cl::value_desc("bool"), llvm::cl::init(false)};
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
+
+  std::deque<Operation *> measureList;
+  std::deque<Operation *> callGateList;
+
+private:
+  void putMeasureInCircuit(ModuleOp moduleOp, mlir::quir::MeasureOp measureOp,
+                           uint circNum);
+  void putCallGateInCircuit(ModuleOp moduleOp,
+                            mlir::quir::CallGateOp callGateOp, uint circNum);
 }; // struct BreakResetPass
 } // namespace mlir::quir
 

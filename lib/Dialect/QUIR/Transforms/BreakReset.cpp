@@ -22,6 +22,7 @@
 #include "Dialect/QUIR/Transforms/BreakReset.h"
 
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
+#include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
@@ -55,9 +56,9 @@ namespace {
 struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
 
   explicit BreakResetsPattern(MLIRContext *ctx, uint numIterations,
-                              uint delayCycles)
+                              uint delayCycles, BreakResetPass &thisPass)
       : OpRewritePattern<ResetQubitOp>(ctx), numIterations_(numIterations),
-        delayCycles_(delayCycles) {}
+        delayCycles_(delayCycles), thisPass_(thisPass) {}
 
   LogicalResult matchAndRewrite(ResetQubitOp resetOp,
                                 PatternRewriter &rewriter) const override {
@@ -96,6 +97,9 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
           resetOp.getLoc(), TypeRange(typeVec), resetOp.getQubits());
       measureOp->setAttr(getNoReportRuntimeAttrName(), rewriter.getUnitAttr());
 
+      if (thisPass_.PUT_QUANTUM_GATES_INTO_CIRC)
+        thisPass_.measureList.push_back(measureOp);
+
       size_t i = 0;
       for (auto qubit : resetOp.getQubits()) {
         auto ifOp = rewriter.create<scf::IfOp>(resetOp.getLoc(),
@@ -104,8 +108,11 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
         auto *thenBlock = ifOp.getBody(0);
 
         rewriter.setInsertionPointToStart(thenBlock);
-        rewriter.create<CallGateOp>(resetOp.getLoc(), StringRef("x"),
-                                    TypeRange{}, ValueRange{qubit});
+        auto callGateOp = rewriter.create<CallGateOp>(
+            resetOp.getLoc(), StringRef("x"), TypeRange{}, ValueRange{qubit});
+        if (thisPass_.PUT_QUANTUM_GATES_INTO_CIRC)
+          thisPass_.callGateList.push_back(callGateOp);
+
         i++;
         rewriter.restoreInsertionPoint(savedInsertionPoint);
       }
@@ -118,10 +125,15 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
 private:
   uint numIterations_;
   uint delayCycles_;
+  BreakResetPass &thisPass_;
 }; // BreakResetsPattern
 } // anonymous namespace
 
 void BreakResetPass::runOnOperation() {
+  // check for command line override of PUT_QUANTUM_GATES_INTO_CIRC
+  if (putCallGatesAndMeasuresIntoCircuit.hasValue())
+    PUT_QUANTUM_GATES_INTO_CIRC = putCallGatesAndMeasuresIntoCircuit.getValue();
+
   mlir::RewritePatternSet patterns(&getContext());
   mlir::GreedyRewriteConfig config;
 
@@ -131,12 +143,150 @@ void BreakResetPass::runOnOperation() {
   // Disable to improve performance
   config.enableRegionSimplification = false;
 
-  patterns.add<BreakResetsPattern>(&getContext(), numIterations, delayCycles);
+  patterns.add<BreakResetsPattern>(&getContext(), numIterations, delayCycles,
+                                   *this);
 
   if (mlir::failed(applyPatternsAndFoldGreedily(getOperation(),
                                                 std::move(patterns), config)))
     signalPassFailure();
+
+  // put measures and call gates into circuits -- when
+  // putCallGatesAndMeasuresIntoCircuit option is true
+  mlir::ModuleOp moduleOp = getOperation();
+  uint circNum = 0;
+  while (!measureList.empty()) {
+    MeasureOp measOp = dyn_cast<MeasureOp>(measureList.front());
+    putMeasureInCircuit(moduleOp, measOp, circNum);
+    circNum++;
+    measureList.pop_front();
+  }
+  while (!callGateList.empty()) {
+    CallGateOp callGateOp = dyn_cast<CallGateOp>(callGateList.front());
+    // putCallGateInCircuit(moduleOp, callGateOp, circNum);
+    circNum++;
+    callGateList.pop_front();
+  }
 } // BreakResetPass::runOnOperation
+
+void BreakResetPass::putCallGateInCircuit(ModuleOp moduleOp,
+                                          mlir::quir::CallGateOp callGateOp,
+                                          uint circNum) {
+  mlir::func::FuncOp mainFunc =
+      dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
+  assert(mainFunc && "could not find the main func");
+  mlir::OpBuilder builder(mainFunc);
+  mlir::Location location = mainFunc.getLoc();
+
+  auto circOp = builder.create<CircuitOp>(
+      mainFunc.getLoc(), "reset_x_" + std::to_string(circNum++),
+      builder.getFunctionType(
+          /*inputs=*/ArrayRef<Type>(),
+          /*results=*/ArrayRef<Type>()));
+
+  auto *block = circOp.addEntryBlock();
+
+  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
+
+  uint argumentIndex = 0;
+  llvm::SmallVector<Type> inputTypes;
+  llvm::SmallVector<Value> inputValues;
+  llvm::SmallVector<Type> outputTypes;
+  llvm::SmallVector<Value> outputValues;
+
+  for (auto operand : callGateOp->getOperands()) {
+    inputTypes.push_back(operand.getType());
+    inputValues.push_back(operand);
+    circOp.insertArgument(argumentIndex, operand.getType(), {},
+                          operand.getLoc());
+    argumentIndex++;
+  }
+
+  auto newCallGateOp = circuitBuilder.create<CallGateOp>(
+      location, StringRef("x"), TypeRange{}, circOp.getArguments());
+
+  outputValues.append(newCallGateOp->result_begin(),
+                      newCallGateOp->result_end());
+  outputTypes.append(newCallGateOp->result_type_begin(),
+                     newCallGateOp->result_type_end());
+
+  circOp.setType(circuitBuilder.getFunctionType(
+      /*inputs=*/ArrayRef<Type>(inputTypes),
+      /*results=*/ArrayRef<Type>(outputTypes)));
+
+  auto returnOp =
+      circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
+  returnOp->insertOperands(0, ValueRange(outputValues));
+
+  auto callCircOp = builder.create<mlir::quir::CallCircuitOp>(
+      circOp->getLoc(), circOp.getName(), TypeRange(outputTypes),
+      ValueRange(inputValues));
+
+  callCircOp->moveBefore(callGateOp);
+  callGateOp->erase();
+}
+
+void BreakResetPass::putMeasureInCircuit(ModuleOp moduleOp,
+                                         mlir::quir::MeasureOp measureOp,
+                                         uint circNum) {
+  mlir::func::FuncOp mainFunc =
+      dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
+  assert(mainFunc && "could not find the main func");
+  mlir::OpBuilder builder(mainFunc);
+
+  mlir::Location location = mainFunc.getLoc();
+  auto circOp = builder.create<CircuitOp>(
+      mainFunc.getLoc(), "reset_measure_" + std::to_string(circNum++),
+      builder.getFunctionType(
+          /*inputs=*/ArrayRef<Type>(),
+          /*results=*/ArrayRef<Type>()));
+
+  auto *block = circOp.addEntryBlock();
+
+  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
+
+  uint argumentIndex = 0;
+  llvm::SmallVector<Type> inputTypes;
+  llvm::SmallVector<Value> inputValues;
+  llvm::SmallVector<Type> outputTypes;
+  llvm::SmallVector<Value> outputValues;
+
+  for (auto operand : measureOp->getOperands()) {
+    inputTypes.push_back(operand.getType());
+    inputValues.push_back(operand);
+    circOp.insertArgument(argumentIndex, operand.getType(), {},
+                          operand.getLoc());
+    argumentIndex++;
+  }
+
+  std::vector<mlir::Type> const typeVec(measureOp.getQubits().size(),
+                                        circuitBuilder.getI1Type());
+
+  auto resetMeasureOp = circuitBuilder.create<MeasureOp>(
+      location, TypeRange(typeVec), circOp.getArguments());
+  resetMeasureOp->setAttr(getNoReportRuntimeAttrName(), builder.getUnitAttr());
+
+  outputValues.append(resetMeasureOp.result_begin(),
+                      resetMeasureOp.result_end());
+  outputTypes.append(resetMeasureOp.result_type_begin(),
+                     resetMeasureOp.result_type_end());
+
+  circOp.setType(circuitBuilder.getFunctionType(
+      /*inputs=*/ArrayRef<Type>(inputTypes),
+      /*results=*/ArrayRef<Type>(outputTypes)));
+
+  auto returnOp =
+      circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
+  returnOp->insertOperands(0, ValueRange(outputValues));
+
+  auto callCircOp = builder.create<mlir::quir::CallCircuitOp>(
+      circOp->getLoc(), circOp.getName(), TypeRange(outputTypes),
+      ValueRange(inputValues));
+
+  callCircOp->moveBefore(measureOp);
+  measureOp->replaceAllUsesWith(callCircOp);
+
+  measureOp->erase();
+}
 
 llvm::StringRef BreakResetPass::getArgument() const { return "break-reset"; }
 llvm::StringRef BreakResetPass::getDescription() const {
