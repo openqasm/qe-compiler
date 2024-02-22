@@ -89,4 +89,3 @@ module {
     pulse.return %false : i1
   }
 }
-

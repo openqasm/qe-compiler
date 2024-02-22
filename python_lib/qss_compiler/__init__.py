@@ -33,7 +33,7 @@ from .link import (  # noqa: F401
     LinkOptions,
 )
 
-from .exceptions import (   # noqa: F401
+from .exceptions import (  # noqa: F401
     QSSCompilationFailure,
     QSSCompilerError,
     QSSLinkingFailure,

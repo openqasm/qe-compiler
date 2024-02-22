@@ -1,15 +1,25 @@
-
 try:
-    from ..ir import *
-    from .pulse import *
-    from .quir import AngleType, ConstantOp as QUIRConstantOp
-    from .._mlir_libs._ibmDialectsPulse import *
-    from ._ods_common import get_default_loc_context as _get_default_loc_context
+    from ..ir import (
+        FlatSymbolRefAttr,
+        StringAttr,
+        TypeAttr,
+        FunctionType,
+        ArrayAttr,
+    )
+    from ..ir import *  # noqa: F401, F403
+    from .pulse import *  # noqa: F401, F403
+    from .quir import (  # noqa: F401, F403
+        AngleType,
+        ConstantOpConstantOp as QUIRConstantOp,
+      )
+    from .._mlir_libs._ibmDialectsPulse import *  # noqa: F401, F403
+    from ._ods_common import (  # noqa: F401
+        get_default_loc_context as _get_default_loc_context,
+    )
 except ImportError as e:
     raise RuntimeError("Error loading imports from extension module") from e
 
-from typing import Any, List, Optional, Union
-
+from typing import Any, List, Optional, Union  # noqa: F401
 
 
 class CallSequenceOp:
@@ -20,17 +30,34 @@ class CallSequenceOp:
 class Frame_CreateOp:
     """Specialization for the Frame_Create op class."""
 
-    def __init__(self, uid, *, amp=None, freq=None, phase=None,loc=None, ip=None):
-        super().__init__(FrameType.get(), StringAttr.get(str(uid)), amp, freq, phase, loc=loc, ip=ip)
+    def __init__(self, uid, *, amp=None, freq=None, phase=None, loc=None, ip=None):
+        super().__init__(
+            StringAttr.get(str(uid)), initial_amp=amp, initial_freq=freq, initial_phase=phase, loc=loc, ip=ip
+        )
+
 
 class MixFrameOp:
     """Specialization for the MixFrame op class."""
 
-    def __init__(self, port, frame, *, 
-                 initial_amp=None, initial_freq=None, initial_phase=None, loc=None, ip=None):
+    def __init__(
+        self,
+        port,
+        frame,
+        *,
+        initial_amp=None,
+        initial_freq=None,
+        initial_phase=None,
+        loc=None,
+        ip=None
+    ):
         super().__init__(
-            MixedFrameType.get(), port, StringAttr.get(str(frame)), 
-            initial_amp=initial_amp, initial_freq=initial_freq, initial_phase=initial_phase, loc=loc, ip=ip
+            port,
+            StringAttr.get(str(frame)),
+            initial_amp=initial_amp,
+            initial_freq=initial_freq,
+            initial_phase=initial_phase,
+            loc=loc,
+            ip=ip,
         )
 
 
@@ -40,9 +67,9 @@ class PlayOp:
         super().__init__(
             target,
             wfr,
-            angle, 
-            ssb,
-            amplitude,
+            angle=angle,
+            ssb=ssb,
+            amplitude=amplitude,
             loc=loc,
             ip=ip,
         )
@@ -64,7 +91,9 @@ class SequenceOp:
         )
 
     def add_entry_block(self):
-        self.body.blocks.append(*FunctionType(TypeAttr(self.attributes["function_type"]).value).inputs)
+        self.body.blocks.append(
+            *FunctionType(TypeAttr(self.attributes["function_type"]).value).inputs
+        )
 
     @property
     def entry_block(self):
@@ -73,7 +102,7 @@ class SequenceOp:
     @property
     def arguments(self):
         return self.entry_block.arguments
-    
+
     def pulse_args(self, args):
         args_attr = []
         for i in args:

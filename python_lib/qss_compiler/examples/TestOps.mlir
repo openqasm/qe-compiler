@@ -1,5 +1,5 @@
 module {
-  func @main() -> (i1, i1) {
+  func.func @main() -> (i1, i1) {
     %0 = "pulse.create_port"() {uid = "p0"} : () -> !pulse.port
     %1 = "pulse.create_port"() {uid = "p1"} : () -> !pulse.port
     %2 = "pulse.create_frame"() {uid = "f0"} : () -> !pulse.frame

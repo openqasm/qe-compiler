@@ -13,12 +13,25 @@
 """
 Unit tests for the dialect python bindings
 """
-import pytest
+import pytest  # noqa: F401
 
-from qss_compiler.mlir.ir import *
-from qss_compiler.mlir.dialects import arith, builtin, pulse, qcs, func
+from qss_compiler.mlir.ir import *  # noqa: F401, F403
+from qss_compiler.mlir.ir import (
+    Context,
+    InsertionPoint,
+    Module,
+    Location,
+)
+from qss_compiler.mlir.dialects import (  # noqa: F401
+    arith,
+    builtin,
+    pulse,
+    qcs,
+    func,
+)
 
 from test_compile import check_mlir_string
+
 
 def test_create_sequenceop():
     with Context(), Location.unknown():
@@ -27,10 +40,10 @@ def test_create_sequenceop():
         module = Module.create()
 
         with InsertionPoint(module.body):
-            seq = pulse.SequenceOp('test_seq', [], [])
+            seq = pulse.SequenceOp("test_seq", [], [])
             seq.add_entry_block()
 
-            function = func.FuncOp('test_main', ([],[]))
+            function = func.FuncOp("test_main", ([], []))
             function.add_entry_block()
 
         with InsertionPoint(seq.entry_block):
@@ -38,8 +51,8 @@ def test_create_sequenceop():
 
         with InsertionPoint(function.entry_block):
             qcs.SystemInitOp()
-            res = pulse.CallSequenceOp([],'test_seq',[])
+            res = pulse.CallSequenceOp([], "test_seq", [])
             func.ReturnOp(res)
             qcs.SystemFinalizeOp
-    
+
     check_mlir_string(str(module))

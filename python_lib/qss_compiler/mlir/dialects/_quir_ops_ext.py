@@ -1,12 +1,18 @@
 try:
-    from ..ir import *
-    from .quir import *
-    from .._mlir_libs._ibmDialectsQUIR import *
-    from ._ods_common import get_default_loc_context as _get_default_loc_context
-
-    from typing import Any, List, Optional, Union
+    from ..ir import *  # noqa: F401, F403
+    from .ir import Attribute
+    from .quir import (
+        AngleType,
+        DurationType,
+    )
+    from .oq3 import *  # noqa: F401, F403
+    from .._mlir_libs._ibmDialectsOQ3 import *  # noqa: F401, F403
+    from ._ods_common import (  # noqa: F401
+        get_default_loc_context as _get_default_loc_context,
+    )
 except ImportError as e:
     raise RuntimeError("Error loading imports from extension module") from e
+
 
 class ConstantOp:
     def __init__(self, constant_type, value, *, loc=None, ip=None):
@@ -15,7 +21,9 @@ class ConstantOp:
             value = Attribute.parse(f"#quir.angle<{value}: !quir.angle<20>>")
         elif constant_type == "duration":
             result = DurationType.get()
-            value = Attribute.parse(f'#quir.duration<"{value}" : !quir.duration>')
+            value = Attribute.parse(
+                f'#quir.duration<"{value}" : !quir.duration>'
+            )  # black/flake dispute about line length
         else:
             raise ValueError(f"Unknown quir constant type {constant_type}")
 

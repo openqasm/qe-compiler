@@ -14,7 +14,6 @@ from conans import ConanFile, CMake, tools
 
 import os.path
 import os
-import shutil
 import sys
 
 
