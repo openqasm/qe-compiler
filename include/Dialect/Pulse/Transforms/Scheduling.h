@@ -15,7 +15,7 @@
 //===----------------------------------------------------------------------===//
 ///
 ///  This file implements the pass for scheduling the quantum circuits at pulse
-///  level, based on the availability of involved ports
+///  level, based on the availability of involved mixed frames
 ///
 //===----------------------------------------------------------------------===//
 
@@ -26,6 +26,8 @@
 
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
+
+#include <unordered_set>
 
 namespace mlir::pulse {
 
@@ -68,13 +70,15 @@ public:
       llvm::cl::value_desc("delay"), llvm::cl::init(0)};
 
 private:
-  // map to keep track of next availability of ports
-  std::map<std::string, int> portNameToNextAvailabilityMap;
+  // map to keep track of next availability of mixed frames
+  std::map<uint, int64_t> mixedFrameToNextAvailabilityMap;
 
   void scheduleAlap(mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp);
-  int getNextAvailableTimeOfPorts(mlir::ArrayAttr ports);
-  void updatePortAvailabilityMap(mlir::ArrayAttr ports,
-                                 int updatedAvailableTime);
+  int64_t getNextAvailableTimeOfMixedFrames(
+      std::unordered_set<uint> &mixedFramesBlockIds);
+  void
+  updateMixedFrameAvailabilityMap(std::unordered_set<uint> &mixedFramesBlockIds,
+                                  int64_t updatedAvailableTime);
   bool sequenceOpIncludeCapture(mlir::pulse::SequenceOp quantumGateSequenceOp);
   llvm::StringMap<Operation *> symbolMap;
   mlir::pulse::SequenceOp

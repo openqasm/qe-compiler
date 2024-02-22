@@ -15,10 +15,9 @@
 //===----------------------------------------------------------------------===//
 ///
 ///  This file implements the pass for scheduling the quantum circuits at pulse
-///  level, based on the availability of involved ports
+///  level, based on the availability of involved mixed frames
 ///
 //===----------------------------------------------------------------------===//
-
 #include "Dialect/Pulse/Transforms/Scheduling.h"
 #include "Dialect/Pulse/IR/PulseInterfaces.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
@@ -37,6 +36,7 @@
 #include <cassert>
 #include <cstdint>
 #include <string>
+#include <unordered_set>
 #include <utility>
 
 #define DEBUG_TYPE "SchedulingDebug"
@@ -89,7 +89,7 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
   LLVM_DEBUG(llvm::dbgs() << "\nscheduling " << sequenceName << "\n");
 
   int totalDurationOfQuantumCircuitNegative = 0;
-  portNameToNextAvailabilityMap.clear();
+  mixedFrameToNextAvailabilityMap.clear();
 
   // get the MLIR block of the quantum circuit
   auto quantumCircuitSequenceOpBlock =
@@ -113,14 +113,17 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
       LLVM_DEBUG(llvm::dbgs() << "\tprocessing inner sequence "
                               << quantumGateSequenceName << "\n");
 
-      // find ports of the quantum gate SequenceOp
-      auto portsOrError =
-          PulseOpSchedulingInterface::getPorts(quantumGateSequenceOp);
-      if (auto err = portsOrError.takeError()) {
-        quantumGateSequenceOp.emitError() << toString(std::move(err));
-        signalPassFailure();
+      // find mixedFrame block ids of the quantum gate SequenceOp
+      std::unordered_set<uint> mixedFramesBlockIds;
+      for (auto const &argumentResult :
+           llvm::enumerate(quantumGateCallSequenceOp.getOperands())) {
+        auto argType = argumentResult.value().getType();
+        if (auto mixedFrameType =
+                argType.dyn_cast<mlir::pulse::MixedFrameType>()) {
+          mixedFramesBlockIds.insert(
+              argumentResult.value().dyn_cast<BlockArgument>().getArgNumber());
+        }
       }
-      auto ports = portsOrError.get();
 
       // find duration of the quantum gate callSequenceOp
       llvm::Expected<uint64_t> durOrError =
@@ -133,25 +136,26 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
       LLVM_DEBUG(llvm::dbgs() << "\t\tduration "
                               << quantumGateCallSequenceOpDuration << "\n");
 
-      // find next available time for all the ports
-      const int64_t nextAvailableTimeOfAllPorts =
-          getNextAvailableTimeOfPorts(ports);
+      // find next available time for all the mixedFrames
+      const int64_t nextAvailableTimeOfAllmixedFrames =
+          getNextAvailableTimeOfMixedFrames(mixedFramesBlockIds);
       LLVM_DEBUG(llvm::dbgs() << "\t\tnext availability is at "
-                              << nextAvailableTimeOfAllPorts << "\n");
+                              << nextAvailableTimeOfAllmixedFrames << "\n");
 
       // find the updated available time, i.e., when the current quantum gate
       // will be scheduled
       int64_t updatedAvailableTime =
-          nextAvailableTimeOfAllPorts - quantumGateCallSequenceOpDuration;
+          nextAvailableTimeOfAllmixedFrames - quantumGateCallSequenceOpDuration;
       // set the timepoint of quantum gate
       PulseOpSchedulingInterface::setTimepoint(quantumGateCallSequenceOp,
                                                updatedAvailableTime);
       LLVM_DEBUG(llvm::dbgs() << "\t\tcurrent gate scheduled at "
                               << updatedAvailableTime << "\n");
-      // update the port availability map
+      // update the mixed frame availability map
       if (sequenceOpIncludeCapture(quantumGateSequenceOp))
         updatedAvailableTime -= PRE_MEASURE_BUFFER_DELAY;
-      updatePortAvailabilityMap(ports, updatedAvailableTime);
+      updateMixedFrameAvailabilityMap(mixedFramesBlockIds,
+                                      updatedAvailableTime);
 
       // keep track of total duration of the quantum circuit
       if (updatedAvailableTime < totalDurationOfQuantumCircuitNegative)
@@ -178,30 +182,26 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
                                            totalDurationOfQuantumCircuit);
 }
 
-int QuantumCircuitPulseSchedulingPass::getNextAvailableTimeOfPorts(
-    mlir::ArrayAttr ports) {
-  int nextAvailableTimeOfAllPorts = 0;
-  for (auto attr : ports) {
-    const std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
-    if (portName.empty())
-      continue;
-    if (portNameToNextAvailabilityMap.find(portName) !=
-        portNameToNextAvailabilityMap.end()) {
-      if (portNameToNextAvailabilityMap[portName] < nextAvailableTimeOfAllPorts)
-        nextAvailableTimeOfAllPorts = portNameToNextAvailabilityMap[portName];
+int64_t QuantumCircuitPulseSchedulingPass::getNextAvailableTimeOfMixedFrames(
+    std::unordered_set<uint> &mixedFramesBlockIds) {
+  int64_t nextAvailableTimeOfAllmixedFrames = 0;
+  for (auto mixedFramesBlockId : mixedFramesBlockIds) {
+    if (mixedFrameToNextAvailabilityMap.find(mixedFramesBlockId) !=
+        mixedFrameToNextAvailabilityMap.end()) {
+      if (mixedFrameToNextAvailabilityMap[mixedFramesBlockId] <
+          nextAvailableTimeOfAllmixedFrames)
+        nextAvailableTimeOfAllmixedFrames =
+            mixedFrameToNextAvailabilityMap[mixedFramesBlockId];
     }
   }
-  return nextAvailableTimeOfAllPorts;
+  return nextAvailableTimeOfAllmixedFrames;
 }
 
-void QuantumCircuitPulseSchedulingPass::updatePortAvailabilityMap(
-    mlir::ArrayAttr ports, int updatedAvailableTime) {
-  for (auto attr : ports) {
-    const std::string portName = attr.dyn_cast<StringAttr>().getValue().str();
-    if (portName.empty())
-      continue;
-    portNameToNextAvailabilityMap[portName] = updatedAvailableTime;
-  }
+void QuantumCircuitPulseSchedulingPass::updateMixedFrameAvailabilityMap(
+    std::unordered_set<uint> &mixedFramesBlockIds,
+    int64_t updatedAvailableTime) {
+  for (auto mixedFramesBlockId : mixedFramesBlockIds)
+    mixedFrameToNextAvailabilityMap[mixedFramesBlockId] = updatedAvailableTime;
 }
 
 bool QuantumCircuitPulseSchedulingPass::sequenceOpIncludeCapture(
