@@ -11,7 +11,7 @@ try:
     from .quir import (  # noqa: F401, F403
         AngleType,
         ConstantOpConstantOp as QUIRConstantOp,
-      )
+    )
     from .._mlir_libs._ibmDialectsPulse import *  # noqa: F401, F403
     from ._ods_common import (  # noqa: F401
         get_default_loc_context as _get_default_loc_context,
@@ -32,7 +32,12 @@ class Frame_CreateOp:
 
     def __init__(self, uid, *, amp=None, freq=None, phase=None, loc=None, ip=None):
         super().__init__(
-            StringAttr.get(str(uid)), initial_amp=amp, initial_freq=freq, initial_phase=phase, loc=loc, ip=ip
+            StringAttr.get(str(uid)),
+            initial_amp=amp,
+            initial_freq=freq,
+            initial_phase=phase,
+            loc=loc,
+            ip=ip,
         )
 
 
