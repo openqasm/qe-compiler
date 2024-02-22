@@ -327,8 +327,6 @@ include(AddMLIR)
 include(AddMLIRPython)
 include(HandleLLVMOptions)
 include(LLVMExports)
-include(MLIRDetectPythonEnv)
-mlir_configure_python_dev_packages()
 
 include_directories(BEFORE SYSTEM ${LLVM_INCLUDE_DIRS})
 include_directories(BEFORE SYSTEM ${MLIR_INCLUDE_DIRS})
