@@ -1,12 +1,12 @@
 try:
     from ..ir import *  # noqa: F401, F403
     from ..ir import Attribute
-    from .quir import (
+    from .oq3 import *  # noqa: F401, F403
+    from .._mlir_libs._ibmDialectsOQ3 import *  # noqa: F401, F403
+    from .._mlir_libs._ibmDialectsQUIR import (
         AngleType,
         DurationType,
     )
-    from .oq3 import *  # noqa: F401, F403
-    from .._mlir_libs._ibmDialectsOQ3 import *  # noqa: F401, F403
     from ._ods_common import (  # noqa: F401
         get_default_loc_context as _get_default_loc_context,
     )

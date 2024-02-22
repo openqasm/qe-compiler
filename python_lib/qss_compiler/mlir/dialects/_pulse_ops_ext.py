@@ -10,7 +10,7 @@ try:
     from .pulse import *  # noqa: F401, F403
     from .quir import (  # noqa: F401, F403
         AngleType,
-        ConstantOpConstantOp as QUIRConstantOp,
+        ConstantOp as QUIRConstantOp,
     )
     from .._mlir_libs._ibmDialectsPulse import *  # noqa: F401, F403
     from ._ods_common import (  # noqa: F401
