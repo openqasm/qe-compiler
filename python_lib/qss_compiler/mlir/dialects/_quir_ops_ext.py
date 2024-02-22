@@ -1,6 +1,6 @@
 try:
     from ..ir import *  # noqa: F401, F403
-    from .ir import Attribute
+    from ..ir import Attribute
     from .quir import (
         AngleType,
         DurationType,
