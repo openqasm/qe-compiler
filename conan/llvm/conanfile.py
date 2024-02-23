@@ -14,6 +14,7 @@ from conans import ConanFile, CMake, tools
 
 import os.path
 import os
+import sys
 
 
 LLVM_TAG = "llvmorg-17.0.5"
@@ -199,6 +200,9 @@ class LLVMConan(ConanFile):
         cmake.definitions["LLVM_ENABLE_LIBXML2"] = self.options.get_safe("with_xml2", False)
 
         cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = 4
+
+        cmake.definitions["MLIR_ENABLE_BINDINGS_PYTHON"] = True
+        cmake.definitions["Python3_EXECUTABLE"] = sys.executable
 
         if self.settings.build_type == "Debug":
             cmake.definitions["CMAKE_C_FLAGS"] = "-gz=zlib"
