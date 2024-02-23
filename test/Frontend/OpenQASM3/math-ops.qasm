@@ -125,6 +125,7 @@ i2 = i0 ** i1 * i3;
 i2 = i0 * i1 ** i3;
 // WARNING: Operator precedence of power is incorrect.
 // TODO: power should take precedence over multiply.
+// See issue https://github.com/openqasm/qe-compiler/issues/270
 // MLIR: %[[i0:.*]] = oq3.variable_load @i0 : i32
 // MLIR: %[[i1:.*]] = oq3.variable_load @i1 : i32
 // MLIR: %[[mul:.*]] = arith.muli %[[i0]], %[[i1]] : i32
@@ -152,6 +153,7 @@ f2 = f0 ** f1 * f3;
 f2 = f0 * f1 ** f3;
 // WARNING: Operator precedence of power is incorrect.
 // TODO: power should take precedence over multiply
+// See issue https://github.com/openqasm/qe-compiler/issues/270
 // MLIR: %[[f0:.*]] = oq3.variable_load @f0 : f32
 // MLIR: %[[f1:.*]] = oq3.variable_load @f1 : f32
 // MLIR: %[[mul:.*]] = arith.mulf %[[f0]], %[[f1]] : f32
