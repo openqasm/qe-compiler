@@ -101,7 +101,11 @@ class QSSCompilerConan(ConanFile):
     def test(self, cmake):
         cmake = self._configure_cmake()
         cmake.test(target="check-tests")
-        self.run(f"cd {self.source_folder} && pytest test/python_lib targets/systems/mock/test/python_lib")
+        self.run(
+            f"cd {self.source_folder} && pytest "
+            "test/python_lib "
+            "targets/systems/mock/test/python_lib"
+        )
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
