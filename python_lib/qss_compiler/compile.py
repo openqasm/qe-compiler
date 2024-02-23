@@ -85,6 +85,7 @@ class OutputType(Enum):
 
     NONE = "none"  # Do not generate output, useful for testing
     QEM = "qem"
+    QEQEM = "qe-qem"
     MLIR = "mlir"
     BYTECODE = "bytecode"
 
