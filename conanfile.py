@@ -27,7 +27,11 @@ class QSSCompilerConan(ConanFile):
     version = get_version()
     url = "https://github.com/qiskit/qss-compiler"
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "pythonlib": [True, False], "enable_warnings": [True,False]}
+    options = {
+        "shared": [True, False],
+        "pythonlib": [True, False],
+        "enable_warnings": [True, False],
+    }
     default_options = {"shared": False, "pythonlib": True, "enable_warnings": True}
     license = "Apache-2.0 WITH LLVM-exception"
     author = "OpenQASM Organization"

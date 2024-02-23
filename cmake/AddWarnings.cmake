@@ -10,7 +10,7 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-# Based on LLVMs: 
+# Based on LLVMs:
 # llvm-project/llvm/cmake/modules/HandleLLVMOptions.cmake
 
 # uses the same set of options as LLVM_ENABLE_WARNINGS except for:
