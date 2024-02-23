@@ -21,8 +21,9 @@ include(CheckCCompilerFlag)
 
 option(QSSC_ENABLE_WARNINGS "Enable LLVM style warnings" ON)
 message(STATUS "QSS Warnings Enabled: ${QSSC_ENABLE_WARNINGS}")
+message(STATUS "LLVM Warnings Enabled: ${LLVM_ENABLE_WARNINGS}")
 
-if (QSSC_ENABLE_WARNINGS)
+if (QSSC_ENABLE_WARNINGS AND NOT LLVM_ENABLE_WARNINGS)
 
   function(append value)
     foreach(variable ${ARGN})
