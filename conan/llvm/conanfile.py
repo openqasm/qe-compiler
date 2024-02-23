@@ -201,7 +201,7 @@ class LLVMConan(ConanFile):
 
         cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = 4
 
-        cmake.definitions["MLIR_ENABLE_BINDINGS_PYTHON"] = "ON"
+        cmake.definitions["MLIR_ENABLE_BINDINGS_PYTHON"] = True
         cmake.definitions["Python3_EXECUTABLE"] = sys.executable
 
         if self.settings.build_type == "Debug":
