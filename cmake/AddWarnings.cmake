@@ -19,6 +19,7 @@
 include(CheckCXXCompilerFlag)
 include(CheckCCompilerFlag)
 
+option(QSSC_ENABLE_WARNINGS "Enable LLVM style warnings" ON)
 message(STATUS "QSS Warnings Enabled: ${QSSC_ENABLE_WARNINGS}")
 
 if (QSSC_ENABLE_WARNINGS)
