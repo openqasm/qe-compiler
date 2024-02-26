@@ -6,7 +6,9 @@ lit>=12.0.0
 markupsafe==2.0.1
 myst-parser
 ninja>=1.10
+numpy
 pre-commit
+pybind11
 pytest
 pytest-asyncio
 setuptools_scm>=6.0,<8.0
