@@ -305,7 +305,7 @@ class _CompilationManager:
                     )
                 if diag.category == ErrorCategory.QSSCompilerNonExistingCommandError:
                     raise exceptions.QSSCompilerNonExistingCommandError(
-                        diag.message, 
+                        diag.message,
                         diagnostics,
                         return_diagnostics=self.return_diagnostics,
                     )
