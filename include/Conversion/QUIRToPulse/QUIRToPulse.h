@@ -62,9 +62,9 @@ struct QUIRToPulsePass
   mlir::Operation *mainFuncFirstOp;
 
   // convert quir circuit to pulse sequence
-  void convertCircuitToSequence(mlir::quir::CallCircuitOp callCircuitOp,
-                                mlir::func::FuncOp &mainFunc,
-                                ModuleOp moduleOp);
+  mlir::pulse::CallSequenceOp
+  convertCircuitToSequence(mlir::quir::CallCircuitOp callCircuitOp,
+                           mlir::func::FuncOp &mainFunc, ModuleOp moduleOp);
   // helper datastructure for converting quir circuit to pulse sequence; these
   // will be reset every time convertCircuitToSequence is called and will be
   // used by several functions that are called within that function
@@ -149,10 +149,8 @@ struct QUIRToPulsePass
                                               mlir::OpBuilder &builder);
 
   void addCircuitToEraseList(mlir::Operation *op);
-  void addCallCircuitToEraseList(mlir::Operation *op);
   void addCircuitOperandToEraseList(mlir::Operation *op);
   std::vector<mlir::Operation *> quirCircuitEraseList;
-  std::vector<mlir::Operation *> quirCallCircuitEraseList;
   std::vector<mlir::Operation *> quirCircuitOperandEraseList;
 
   // parse the waveform containers and add them to pulseNameToWaveformMap

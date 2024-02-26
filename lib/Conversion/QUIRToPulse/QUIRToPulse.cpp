@@ -26,6 +26,7 @@
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
+#include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
@@ -100,15 +101,14 @@ void QUIRToPulsePass::runOnOperation() {
 
   // convert all QUIR circuits to Pulse sequences
   moduleOp->walk([&](CallCircuitOp callCircOp) {
-    convertCircuitToSequence(callCircOp, mainFunc, moduleOp);
+    if (isa<CircuitOp>(callCircOp->getParentOp()))
+      return;
+    auto convertedPulseCallSequenceOp =
+        convertCircuitToSequence(callCircOp, mainFunc, moduleOp);
+    if (!callCircOp->use_empty())
+      callCircOp->replaceAllUsesWith(convertedPulseCallSequenceOp);
+    callCircOp->erase();
   });
-
-  // first erase the quir call circuits
-  LLVM_DEBUG(llvm::dbgs() << "\nErasing quir call circuits:\n");
-  for (auto *op : quirCallCircuitEraseList) {
-    LLVM_DEBUG(op->dump());
-    op->erase();
-  }
 
   // erase the quir circuits
   LLVM_DEBUG(llvm::dbgs() << "\nErasing quir circuits:\n");
@@ -133,9 +133,10 @@ void QUIRToPulsePass::runOnOperation() {
   });
 }
 
-void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
-                                               mlir::func::FuncOp &mainFunc,
-                                               ModuleOp moduleOp) {
+mlir::pulse::CallSequenceOp
+QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
+                                          mlir::func::FuncOp &mainFunc,
+                                          ModuleOp moduleOp) {
   mlir::OpBuilder builder(mainFunc);
 
   auto circuitOp = getCircuitOp(callCircuitOp);
@@ -143,7 +144,6 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   LLVM_DEBUG(llvm::dbgs() << "\nConverting QUIR circuit " << circName << ":\n");
   assert(callCircuitOp && "callCircuit op is null");
   assert(circuitOp && "circuit op is null");
-  addCallCircuitToEraseList(callCircuitOp);
   addCircuitToEraseList(circuitOp);
 
   // build an empty pulse sequence
@@ -188,6 +188,15 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
       auto pulseCalCallSequenceOp =
           entryBuilder.create<mlir::pulse::CallSequenceOp>(
               quirOp->getLoc(), pulseCalSequenceOp, pulseCalSequenceArgs);
+
+      // copy the quir attributes of measure op (if any)
+      if (isa<MeasureOp>(quirOp)) {
+        for (auto attr : quirOp->getAttrs())
+          if (llvm::isa<mlir::quir::QUIRDialect>(attr.getNameDialect()))
+            pulseCalCallSequenceOp->setAttr(attr.getName().str(),
+                                            attr.getValue());
+      }
+
       pulseCalCallSequenceOp->setAttr(
           "pulse.operands",
           pulseCalSequenceOp->getAttrOfType<ArrayAttr>("pulse.args"));
@@ -248,6 +257,8 @@ void QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp callCircuitOp,
   convertedPulseCallSequenceOp->setAttr(
       "pulse.operands",
       builder.getArrayAttr(convertedPulseCallSequenceOpOperandNames));
+
+  return convertedPulseCallSequenceOp;
 }
 
 void QUIRToPulsePass::processCircuitArgs(
@@ -649,14 +660,6 @@ void QUIRToPulsePass::addCircuitToEraseList(mlir::Operation *op) {
   if (std::find(quirCircuitEraseList.begin(), quirCircuitEraseList.end(), op) ==
       quirCircuitEraseList.end())
     quirCircuitEraseList.push_back(op);
-}
-
-void QUIRToPulsePass::addCallCircuitToEraseList(mlir::Operation *op) {
-  assert(op && "caller requested adding a null op to erase list");
-  if (std::find(quirCallCircuitEraseList.begin(),
-                quirCallCircuitEraseList.end(),
-                op) == quirCallCircuitEraseList.end())
-    quirCallCircuitEraseList.push_back(op);
 }
 
 void QUIRToPulsePass::addCircuitOperandToEraseList(mlir::Operation *op) {
