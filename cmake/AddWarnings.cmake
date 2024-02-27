@@ -146,4 +146,4 @@ if (QSSC_ENABLE_WARNINGS AND NOT LLVM_ENABLE_WARNINGS)
 
   # Enable -Wctad-maybe-unsupported to catch unintended use of CTAD.
   add_flag_if_supported("-Wctad-maybe-unsupported" CTAD_MAYBE_UNSPPORTED_FLAG)
-endif (QSSC_ENABLE_WARNINGS)
+endif (QSSC_ENABLE_WARNINGS AND NOT LLVM_ENABLE_WARNINGS)
