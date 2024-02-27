@@ -101,10 +101,13 @@ class QSSCompilerConan(ConanFile):
     def test(self, cmake):
         cmake = self._configure_cmake()
         cmake.test(target="check-tests")
+        # Separate pytest calls to avoid
+        # cross contaminating the test environments
+        # due to fixtures/tests of the same name being cached
         self.run(
-            f"cd {self.source_folder} && pytest "
-            "test/python_lib "
-            "targets/systems/mock/test/python_lib"
+            f"cd {self.source_folder} && "
+            "pytest test/python_lib && "
+            "pytest targets/systems/mock/test/python_lib"
         )
 
     def package_info(self):
