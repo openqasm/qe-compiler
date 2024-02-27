@@ -1,0 +1,4 @@
+---
+other:
+  - |
+    Adds LLVM style compile warnings with the option to disable using conan install .. enable_warnings=False
