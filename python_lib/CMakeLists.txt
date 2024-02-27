@@ -66,7 +66,6 @@ python_pkg_add_files(
                 dummy.c
                 setup.cfg
                 setup.py
-                setup_mlir.sh
 )
 
 foreach(dir ${QSSC_TARGET_PYTHON_DIRS})
