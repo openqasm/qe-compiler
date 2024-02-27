@@ -56,9 +56,6 @@
 #include "lib_enums.h"
 
 #include "API/api.h"
-// <<<<<<< HEAD
-// #include <Config/QSSConfig.h>
-// =======
 #include "Dialect/RegisterDialects.h"
 #include "Dialect/RegisterPasses.h"
 

@@ -93,6 +93,8 @@ set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_COMPILE_WARNING_AS_ERROR ON)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/AddWarnings.cmake)
+
 # Compiler options
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
