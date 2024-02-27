@@ -9,7 +9,13 @@
 #include "qss-c/Dialect/OQ3.h"
 
 #include "mlir-c/IR.h"
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include "mlir/Bindings/Python/PybindAdaptors.h"
+
+#include "pybind11/cast.h"
+#include "pybind11/detail/common.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/pytypes.h"
 
 namespace py = pybind11;
 using namespace llvm;
@@ -31,7 +37,7 @@ PYBIND11_MODULE(_ibmDialectsOQ3, m) {
   quir_m.def(
       "register_dialect",
       [](MlirContext context, bool load) {
-        MlirDialectHandle handle = mlirGetDialectHandle__oq3__();
+        const MlirDialectHandle handle = mlirGetDialectHandle__oq3__();
         mlirDialectHandleRegisterDialect(handle, context);
         if (load)
           mlirDialectHandleLoadDialect(handle, context);

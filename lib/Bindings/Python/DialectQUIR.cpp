@@ -9,7 +9,13 @@
 #include "qss-c/Dialect/QUIR.h"
 
 #include "mlir-c/IR.h"
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include "mlir/Bindings/Python/PybindAdaptors.h"
+
+#include "pybind11/cast.h"
+#include "pybind11/detail/common.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/pytypes.h"
 
 namespace py = pybind11;
 using namespace llvm;
@@ -25,7 +31,7 @@ void populateDialectQUIRSubmodule(const pybind11::module &m) {
   auto angleType = mlir_type_subclass(m, "AngleType", quirTypeIsAAngleType);
   angleType.def_classmethod(
       "get",
-      [](py::object cls, unsigned width, MlirContext ctx) {
+      [](const py::object &cls, unsigned width, MlirContext ctx) {
         return cls(quirAngleTypeGet(ctx, width));
       },
       "Get an instance of AngleType in given context.", py::arg("cls"),
@@ -39,7 +45,7 @@ void populateDialectQUIRSubmodule(const pybind11::module &m) {
       mlir_type_subclass(m, "DurationType", quirTypeIsADurationType);
   durationType.def_classmethod(
       "get",
-      [](py::object cls, MlirContext ctx) {
+      [](const py::object &cls, MlirContext ctx) {
         return cls(quirDurationTypeGet(ctx));
       },
       "Get an instance of DurationType in given context.", py::arg("cls"),
@@ -58,7 +64,7 @@ PYBIND11_MODULE(_ibmDialectsQUIR, m) {
   quir_m.def(
       "register_dialect",
       [](MlirContext context, bool load) {
-        MlirDialectHandle handle = mlirGetDialectHandle__quir__();
+        const MlirDialectHandle handle = mlirGetDialectHandle__quir__();
         mlirDialectHandleRegisterDialect(handle, context);
         if (load)
           mlirDialectHandleLoadDialect(handle, context);

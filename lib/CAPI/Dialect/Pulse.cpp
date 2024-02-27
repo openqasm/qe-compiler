@@ -9,9 +9,10 @@
 #include "qss-c/Dialect/Pulse.h"
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
-#include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/Pulse/IR/PulseTypes.h"
 
+#include "mlir-c/IR.h"
+#include "mlir/CAPI/IR.h"
 #include "mlir/CAPI/Registration.h"
 
 using namespace mlir;

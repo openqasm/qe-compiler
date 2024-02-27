@@ -6,11 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "qss-c/Dialect/QCS.h"
-
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include "Dialect/QCS/IR/QCSDialect.h"
-#include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QCS/IR/QCSTypes.h"
 
 #include "mlir/CAPI/Registration.h"
 

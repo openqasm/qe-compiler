@@ -9,9 +9,11 @@
 #include "qss-c/Dialect/QUIR.h"
 
 #include "Dialect/QUIR/IR/QUIRDialect.h"
-#include "Dialect/QUIR/IR/QUIROps.h"
+#include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
+#include "mlir-c/IR.h"
+#include "mlir/CAPI/IR.h"
 #include "mlir/CAPI/Registration.h"
 
 using namespace mlir;

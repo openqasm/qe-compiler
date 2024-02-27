@@ -9,7 +9,13 @@
 #include "qss-c/Dialect/Pulse.h"
 
 #include "mlir-c/IR.h"
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include "mlir/Bindings/Python/PybindAdaptors.h"
+
+#include "pybind11/cast.h"
+#include "pybind11/detail/common.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/pytypes.h"
 
 namespace py = pybind11;
 using namespace llvm;
@@ -26,7 +32,7 @@ void populateDialectPulseSubmodule(const pybind11::module &m) {
       mlir_type_subclass(m, "CaptureType", pulseTypeIsACaptureType);
   captureType.def_classmethod(
       "get",
-      [](py::object cls, MlirContext ctx) {
+      [](const py::object &cls, MlirContext ctx) {
         return cls(pulseCaptureTypeGet(ctx));
       },
       "Get an instance of CaptureType in given context.", py::arg("cls"),
@@ -39,7 +45,7 @@ void populateDialectPulseSubmodule(const pybind11::module &m) {
   auto frameType = mlir_type_subclass(m, "FrameType", pulseTypeIsAFrameType);
   frameType.def_classmethod(
       "get",
-      [](py::object cls, MlirContext ctx) {
+      [](const py::object &cls, MlirContext ctx) {
         return cls(pulseFrameTypeGet(ctx));
       },
       "Get an instance of FrameType in given context.", py::arg("cls"),
@@ -52,7 +58,7 @@ void populateDialectPulseSubmodule(const pybind11::module &m) {
   auto kernelType = mlir_type_subclass(m, "KernelType", pulseTypeIsAKernelType);
   kernelType.def_classmethod(
       "get",
-      [](py::object cls, MlirContext ctx) {
+      [](const py::object &cls, MlirContext ctx) {
         return cls(pulseKernelTypeGet(ctx));
       },
       "Get an instance of KernelType in given context.", py::arg("cls"),
@@ -66,7 +72,7 @@ void populateDialectPulseSubmodule(const pybind11::module &m) {
       mlir_type_subclass(m, "MixedFrameType", pulseTypeIsAMixedFrameType);
   mixedFrameType.def_classmethod(
       "get",
-      [](py::object cls, MlirContext ctx) {
+      [](const py::object &cls, MlirContext ctx) {
         return cls(pulseMixedFrameTypeGet(ctx));
       },
       "Get an instance of MixedFrameType in given context.", py::arg("cls"),
@@ -79,7 +85,7 @@ void populateDialectPulseSubmodule(const pybind11::module &m) {
   auto portType = mlir_type_subclass(m, "PortType", pulseTypeIsAPortType);
   portType.def_classmethod(
       "get",
-      [](py::object cls, MlirContext ctx) {
+      [](const py::object &cls, MlirContext ctx) {
         return cls(pulsePortTypeGet(ctx));
       },
       "Get an instance of PortType in given context.", py::arg("cls"),
@@ -93,7 +99,7 @@ void populateDialectPulseSubmodule(const pybind11::module &m) {
       mlir_type_subclass(m, "WaveformType", pulseTypeIsAWaveformType);
   waveformType.def_classmethod(
       "get",
-      [](py::object cls, MlirContext ctx) {
+      [](const py::object &cls, MlirContext ctx) {
         return cls(pulseWaveformTypeGet(ctx));
       },
       "Get an instance of WaveformType in given context.", py::arg("cls"),
@@ -112,7 +118,7 @@ PYBIND11_MODULE(_ibmDialectsPulse, m) {
   pulse_m.def(
       "register_dialect",
       [](MlirContext context, bool load) {
-        MlirDialectHandle handle = mlirGetDialectHandle__pulse__();
+        const MlirDialectHandle handle = mlirGetDialectHandle__pulse__();
         mlirDialectHandleRegisterDialect(handle, context);
         if (load)
           mlirDialectHandleLoadDialect(handle, context);

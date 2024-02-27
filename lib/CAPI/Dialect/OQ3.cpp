@@ -6,11 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include "qss-c/Dialect/OQ3.h"
 
 #include "Dialect/OQ3/IR/OQ3Dialect.h"
-#include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/OQ3/IR/OQ3Types.h"
 
 #include "mlir/CAPI/Registration.h"
 
