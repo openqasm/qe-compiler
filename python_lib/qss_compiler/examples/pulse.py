@@ -1,14 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# Using this notebook requires manual install of MLIR python bindings:
-# 1. Copy or link to `qss-compiler/third_party/mlir/pyproject.toml` from `~/.conan/data/llvm/qss/stable/<hash>/python_packages/mlir_core`  # noqa: E501
-# 2. Run `pip install -e .`
-# 3. Copy or link to `~/.conan/data/llvm/qss/stable/<hash>/python_packages/mlir_core/mlir/_mlir_libs/libMLIRPythonCAPI.dylib` from `<python>/lib`  # noqa: E501
-# 4. build compiler
-# 5. cd `qss_compiler/python_lib`
-# 6. run `bash setup_mlir.sh`
-# 7. run `pip install -e .`
+# (C) Copyright IBM 2024.
+#
+# This code is part of Qiskit.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 from qss_compiler.mlir.ir import Context, InsertionPoint, Location, Module
 from qss_compiler.mlir.ir import F64Type, IntegerType, IndexType, ComplexType
