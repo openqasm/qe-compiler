@@ -14,6 +14,7 @@ from conans import ConanFile, CMake, tools
 
 import os.path
 import os
+import sys
 
 
 LLVM_TAG = "llvmorg-17.0.5"
@@ -59,6 +60,7 @@ class LLVMConan(ConanFile):
         "with_ffi": [True, False],
         "with_zlib": [True, False],
         "with_xml2": [True, False],
+        "with_python_bindings": [True, False],
     }
     default_options = {
         "shared": False,
@@ -78,6 +80,7 @@ class LLVMConan(ConanFile):
         "with_ffi": False,
         "with_zlib": True,
         "with_xml2": False,
+        "with_python_bindings": True,
     }
 
     generators = ["cmake"]
@@ -145,7 +148,7 @@ class LLVMConan(ConanFile):
         cmake.definitions["LLVM_ENABLE_PIC"] = self.options.get_safe("fPIC", default=False)
 
         cmake.definitions["LLVM_ABI_BREAKING_CHECKS"] = "WITH_ASSERTS"
-        cmake.definitions["LLVM_ENABLE_WARNINGS"] = True
+        cmake.definitions["LLVM_ENABLE_WARNINGS"] = False
         cmake.definitions["LLVM_ENABLE_PEDANTIC"] = True
         cmake.definitions["LLVM_ENABLE_WERROR"] = False
 
@@ -199,6 +202,11 @@ class LLVMConan(ConanFile):
         cmake.definitions["LLVM_ENABLE_LIBXML2"] = self.options.get_safe("with_xml2", False)
 
         cmake.definitions["LLVM_PARALLEL_LINK_JOBS"] = 4
+
+        cmake.definitions["MLIR_ENABLE_BINDINGS_PYTHON"] = self.options.get_safe(
+            "with_python_bindings", False
+        )
+        cmake.definitions["Python3_EXECUTABLE"] = sys.executable
 
         if self.settings.build_type == "Debug":
             cmake.definitions["CMAKE_C_FLAGS"] = "-gz=zlib"
