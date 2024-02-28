@@ -19,6 +19,9 @@
 //===----------------------------------------------------------------------===//
 
 // NOLINTNEXTLINE(misc-include-cleaner)
+#include "qss-c/Dialect/QCS.h"
+
+// NOLINTNEXTLINE(misc-include-cleaner)
 #include "Dialect/QCS/IR/QCSDialect.h"
 
 #include "mlir/CAPI/Registration.h"
