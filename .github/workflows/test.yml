@@ -17,8 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CONAN_USER_HOME: ${{ github.workspace }}
-      CC: clang
-      CXX: clang++
     steps:
       - name: free-up-space
         run: |
