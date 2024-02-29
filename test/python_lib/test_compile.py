@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -23,7 +23,7 @@ from qss_compiler import (
     OutputType,
     Severity,
 )
-from qss_compiler.exceptions import QSSCompilationFailure, QSSCompilerEOFFailure
+from qss_compiler import exceptions
 
 
 def check_mlir_string(mlir):
@@ -135,7 +135,7 @@ def test_compile_invalid_file(example_invalid_qasm3_tmpfile):
     """Test that we can attempt to compile invalid OpenQASM 3 and receive an
     error"""
 
-    with pytest.raises(QSSCompilationFailure):
+    with pytest.raises(exceptions.OpenQASM3ParseFailure):
         compile_file(
             example_invalid_qasm3_tmpfile,
             return_diagnostics=True,  # For testing purposes
@@ -149,7 +149,7 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     """Test that we can attempt to compile invalid OpenQASM 3 and receive an
     error"""
 
-    with pytest.raises(QSSCompilationFailure) as compfail:
+    with pytest.raises(exceptions.OpenQASM3ParseFailure) as compfail:
         compile_str(
             example_invalid_qasm3_str,
             return_diagnostics=True,  # For testing purposes
@@ -178,7 +178,7 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
 
 def test_failure_no_hang():
     """Test no hang on malformed inputs."""
-    with pytest.raises(QSSCompilerEOFFailure):
+    with pytest.raises(exceptions.QSSCompilerEOFFailure):
         _ = compile_str(
             "",
             input_type=InputType.QASM3,
