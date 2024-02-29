@@ -326,7 +326,7 @@ void mapNextCircuitOperands(
 
   // insert nextCircuit Operands into callInputValues if not there
   // add arguments as well
-  for (auto operandEnum : llvm::enumerate(nextCallCircuitOp.getOperands())) {
+  for (const auto& operandEnum : llvm::enumerate(nextCallCircuitOp.getOperands())) {
     uint const insertedCount = callInputValues.size();
     auto arg = nextCircuitOp.getArgument(operandEnum.index());
     auto *defOp = operandEnum.value().getDefiningOp();
