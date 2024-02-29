@@ -51,23 +51,29 @@ with Context() as ctx:
         module = Module.create(loc)
 
         with InsertionPoint(module.body):
-            function = func.FuncOp("main", ([], [i32]))
-            function.add_entry_block()
+            mainFunc = func.FuncOp("main", ([], [i32]))
+            mainFunc.add_entry_block()
 
         with InsertionPoint(module.body):
 
             seq1 = pulse.SequenceOp("seq_1", [wf, wf, mf, mf], [i1])
             seq1.add_entry_block()
 
-        #     with InsertionPoint(seq1.entry_block):
-        #         gs, dg, mf1, mf2 = seq1.arguments
-        #         c0 = arith.ConstantOp(i32, 656)
-        #         pulse.DelayOp(mf1, c0)
-        #         pulse.PlayOp(mf1, dg, 1.4, 5.25, 1.0)
-        #         zero = arith.ConstantOp(i1, 0)
-        #         ret = pulse.ReturnOp(zero)
+        with InsertionPoint(seq1.entry_block):
+            gs, dg, mf1, mf2 = seq1.arguments
+            c0 = arith.ConstantOp(i32, 656)
+            pulse.DelayOp(mf1, c0)
 
-        with InsertionPoint(function.entry_block):
+            amp = arith.ConstantOp(f64, 1.4)
+            sigma = arith.ConstantOp(f64, 5.25)
+            beta = arith.ConstantOp(f64, 1.0)
+            drag = pulse.DragOp(dg, amp, sigma, beta)
+            pulse.PlayOp(mf1, drag)
+
+            zero = arith.ConstantOp(i1, 0)
+            ret = pulse.ReturnOp(zero)
+
+        with InsertionPoint(mainFunc.entry_block):
             qcs.SystemInitOp()
 
             c0 = arith.ConstantOp(f64, 0.0)
@@ -75,36 +81,9 @@ with Context() as ctx:
             c1_i = arith.ConstantOp(f64, 0.0)
             c1_c = complex.CreateOp(ComplexType.get(f64), c1_r, c1_i)
 
-            #         ph0 = quir.ConstantOp("angle", 0.0)
             p0 = pulse.Port_CreateOp("Q0")
 
-            #         fM0 = pulse.Frame_CreateOp(c1_c, c0, ph0)
-            #         mfM0 = pulse.MixFrameOp("drive" ,p0, fM0)
-
-            #         fMTRIGOUT = pulse.Frame_CreateOp(c1_c, c0, ph0)
-            #         mfMTRIGOUT = pulse.MixFrameOp("measure", p0, fMTRIGOUT)
-
-            #         c2 = arith.ConstantOp(idx, 0)
-            #         c3 = arith.ConstantOp(idx, 1000)
-            #         c4 = arith.ConstantOp(idx, 1)
-
-            #         loop = quir.ShotLoop(c2,c3,c4)
-
-            #         with InsertionPoint(loop.body):
-            #             dur = quir.ConstantOp("duration","150us")
-            #             quir.DelayOp(dur)
-            #             si = quir.ShotInitOp(1000, False)
-            #             gaussian_square_ice0 =
-            #                  pulse.Waveform_CreateOp(samples_2d)
-            #             drag0 = pulse.Waveform_CreateOp(2* samples_2d)
-
-            #             res0 = pulse.CallSequenceOp([i1],
-            #                   "seq_1", [
-            #                       drag0, gaussian_square_ice0,
-            #                       mfM0, mfMTRIGOUT ])
-            #             scf.YieldOp(loop.inner_iter_args)
-
-            #         quir.SystemFinalizeOp()
+            qcs.SystemFinalizeOp()
             zero = arith.ConstantOp(i32, 0)
             func.ReturnOp(zero)
 
