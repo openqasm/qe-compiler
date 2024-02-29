@@ -47,6 +47,7 @@ enum class ErrorCategory {
   QSSLinkArgumentNotFoundWarning,
   QSSLinkInvalidPatchTypeError,
   QSSControlSystemResourcesExceeded,
+  QSSIncorrectQASM3,
   UncategorizedError,
 };
 

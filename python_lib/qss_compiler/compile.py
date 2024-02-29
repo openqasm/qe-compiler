@@ -304,6 +304,12 @@ class _CompilationManager:
                         diagnostics,
                         return_diagnostics=self.return_diagnostics,
                     )
+                if diag.category == ErrorCategory.OpenQASM3ParseFailure:
+                    raise exceptions.OpenQASM3ParseFailure(
+                        diag.message,
+                        diagnostics,
+                        return_diagnostics=self.return_diagnostics,
+                    )
 
             if not success:
                 raise exceptions.QSSCompilationFailure(
