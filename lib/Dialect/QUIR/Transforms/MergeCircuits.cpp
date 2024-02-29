@@ -327,7 +327,7 @@ void mapNextCircuitOperands(
   // insert nextCircuit Operands into callInputValues if not there
   // add arguments as well
   uint insertedCount = inputValueIndices.size();
-  for (auto operandEnum : llvm::enumerate(nextCallCircuitOp.getOperands())) {
+  for (const auto& operandEnum : llvm::enumerate(nextCallCircuitOp.getOperands())) {
     auto arg = nextCircuitOp.getArgument(operandEnum.index());
     auto *defOp = operandEnum.value().getDefiningOp();
     auto argumentIndex =
@@ -346,8 +346,8 @@ void mapNextCircuitOperands(
 void mapBarrierOperands(
     Operation *barrierOp, CircuitOp newCircuitOp,
     llvm::SmallVector<Value> &callInputValues,
-    std::unordered_map<Operation *, uint> &inputValueIndices, BlockAndValueMapping &mapper,
-    MLIRContext *context) {
+    std::unordered_map<Operation *, uint> &inputValueIndices,
+    BlockAndValueMapping &mapper, MLIRContext *context) {
   assert(barrierOp && "barrierOp requires valid operation pointer");
   assert(context && "context requires valid MLIR context pointer");
   uint insertedCount = inputValueIndices.size();
@@ -421,7 +421,7 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   // collect their input values
   llvm::SmallVector<Value> callInputValues;
   std::unordered_map<Operation *, uint> inputValueIndices;
-  for (auto inputValueEnum : llvm::enumerate(callCircuitOp->getOperands())) {
+  for (const auto& inputValueEnum : llvm::enumerate(callCircuitOp->getOperands())) {
     auto *defOp = inputValueEnum.value().getDefiningOp();
     callInputValues.push_back(inputValueEnum.value());
     inputValueIndices[defOp] = inputValueEnum.index();
