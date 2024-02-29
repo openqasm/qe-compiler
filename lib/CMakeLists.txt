@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -11,6 +11,7 @@
 # that they have been altered from the originals.
 
 add_subdirectory(API)
+add_subdirectory(CAPI)
 add_subdirectory(Config)
 add_subdirectory(Conversion)
 add_subdirectory(Dialect)
@@ -30,6 +31,7 @@ get_property(qssc_targets GLOBAL PROPERTY QSSC_TARGETS)
 get_property(mlir_dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(mlir_conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 get_property(mlir_extension_libs GLOBAL PROPERTY MLIR_EXTENSION_LIBS)
+get_property(capi_libs GLOBAL PROPERTY QSSC_CAPI_LIBS)
 
 # All libraries for the QSS-Compiler
 set(qssc_api_libs
@@ -56,6 +58,7 @@ set(qssc_api_libs
         mpc::mpc
         mpfr::mpfr
         gmp::gmp
+        ${capi_libs}
         )
 set_property(GLOBAL PROPERTY QSSC_API_LIBS ${qssc_api_libs})
 
@@ -86,6 +89,7 @@ if(INSTALL_BUNDLED_STATIC_LIB)
             QSSCUtils
             ${mlir_dialect_libs}
             ${mlir_conversion_libs}
+            ${capi_libs}
     )
     bundle_static_library(QSSCompiler QSSCompilerBundled)
     install(FILES

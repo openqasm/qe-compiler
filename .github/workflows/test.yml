@@ -96,6 +96,8 @@ jobs:
         id: build
         working-directory: build
         run: |
+          grep MLIR_ENABLE /home/runner/work/qe-compiler/qe-compiler/.conan/data/llvm/17.0.5-0/_/_/package/*/lib/cmake/mlir/MLIRConfig.cmake
+          grep MLIR_EXPORT /home/runner/work/qe-compiler/qe-compiler/.conan/data/llvm/17.0.5-0/_/_/package/*/lib/cmake/mlir/MLIRConfig.cmake
           conan build ..
       - name: Test
         id: test

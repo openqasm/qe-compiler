@@ -326,6 +326,7 @@ set(MLIR_BINARY_DIR ${CMAKE_BINARY_DIR})
 include(TableGen)
 include(AddLLVM)
 include(AddMLIR)
+include(AddMLIRPython)
 include(HandleLLVMOptions)
 include(LLVMExports)
 
