@@ -27,7 +27,7 @@ module {
   func.func @main() -> i32  {
     %c0_i32 = arith.constant 0 : i32
     %dur = quir.constant #quir.duration<3.750080e+05> : !quir.duration<dt>
-  
+
     %0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
     %1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
     %2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
