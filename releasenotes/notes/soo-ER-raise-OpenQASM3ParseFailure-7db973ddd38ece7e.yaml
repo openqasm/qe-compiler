@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    One of the failing test cases that raise the generic ``QSSCompilationFailure``
+    will now raise ``OpenQASM3ParseFailure`` when the parse returns an Error 
+    diagnostic.
