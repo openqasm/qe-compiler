@@ -347,7 +347,7 @@ def compile_file(
     **kwargs,
 ) -> Union[bytes, str, None]:
     """! Compile a file to the specified output type using the given target.
- 
+
     Produces output in a file (if parameter output_file is provided) or returns
     the compiler output as byte sequence or string, depending on the requested
     output format.
