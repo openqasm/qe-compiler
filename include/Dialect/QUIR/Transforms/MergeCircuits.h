@@ -27,6 +27,8 @@
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 
+#include <optional>
+
 namespace mlir::quir {
 
 /// @brief Merge together back to back circuits into a single circuit

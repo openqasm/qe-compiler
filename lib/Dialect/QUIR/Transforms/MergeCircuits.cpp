@@ -327,7 +327,8 @@ void mapNextCircuitOperands(
   // insert nextCircuit Operands into callInputValues if not there
   // add arguments as well
   uint insertedCount = inputValueIndices.size();
-  for (const auto& operandEnum : llvm::enumerate(nextCallCircuitOp.getOperands())) {
+  for (const auto &operandEnum :
+       llvm::enumerate(nextCallCircuitOp.getOperands())) {
     auto arg = nextCircuitOp.getArgument(operandEnum.index());
     auto *defOp = operandEnum.value().getDefiningOp();
     auto argumentIndex =
@@ -421,7 +422,8 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
   // collect their input values
   llvm::SmallVector<Value> callInputValues;
   std::unordered_map<Operation *, uint> inputValueIndices;
-  for (const auto& inputValueEnum : llvm::enumerate(callCircuitOp->getOperands())) {
+  for (const auto &inputValueEnum :
+       llvm::enumerate(callCircuitOp->getOperands())) {
     auto *defOp = inputValueEnum.value().getDefiningOp();
     callInputValues.push_back(inputValueEnum.value());
     inputValueIndices[defOp] = inputValueEnum.index();
