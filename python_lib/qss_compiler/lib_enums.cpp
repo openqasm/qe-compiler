@@ -16,8 +16,6 @@ void addErrorCategory(py::module &m) {
              qssc::ErrorCategory::QSSCompilerEOFFailure)
       .value("QSSCompilerNonZeroStatus",
              qssc::ErrorCategory::QSSCompilerNonZeroStatus)
-      .value("QSSCompilerSequenceTooLong",
-             qssc::ErrorCategory::QSSCompilerSequenceTooLong)
       .value("QSSCompilationFailure",
              qssc::ErrorCategory::QSSCompilationFailure)
       .value("QSSLinkerNotImplemented",
