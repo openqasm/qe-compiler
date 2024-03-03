@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -306,6 +306,12 @@ class _CompilationManager:
                     )
                 if diag.category == ErrorCategory.QSSCompilerNonExistingCommandError:
                     raise exceptions.QSSCompilerNonExistingCommandError(
+                        diag.message,
+                        diagnostics,
+                        return_diagnostics=self.return_diagnostics,
+                    )
+                if diag.category == ErrorCategory.OpenQASM3ParseFailure:
+                    raise exceptions.OpenQASM3ParseFailure(
                         diag.message,
                         diagnostics,
                         return_diagnostics=self.return_diagnostics,

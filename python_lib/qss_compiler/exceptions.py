@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -119,3 +119,7 @@ class QSSControlSystemResourcesExceeded(QSSCompilerError):
 
 class QSSCompilerNonExistingCommandError(QSSCompilerError):
     """Target non existing command was used"""
+
+
+class OpenQASM3ParseFailure(QSSCompilerError):
+    """Raised when a parser failure is received"""
