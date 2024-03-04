@@ -92,7 +92,7 @@ class ClangToolsExtraConan(ConanFile):
         cmake.definitions["LLVM_ENABLE_PIC"] = self.options.get_safe("fPIC", default=False)
 
         cmake.definitions["LLVM_ABI_BREAKING_CHECKS"] = "WITH_ASSERTS"
-        cmake.definitions["LLVM_ENABLE_WARNINGS"] = True
+        cmake.definitions["LLVM_ENABLE_WARNINGS"] = False
         cmake.definitions["LLVM_ENABLE_PEDANTIC"] = True
         cmake.definitions["LLVM_ENABLE_WERROR"] = False
 
