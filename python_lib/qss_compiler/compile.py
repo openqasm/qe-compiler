@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -61,7 +61,7 @@ from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from . import exceptions
-from .py_qssc import _compile_with_args, Diagnostic
+from .py_qssc import _compile_with_args, Diagnostic, ErrorCategory
 
 # use the forkserver context to create a server process
 # for forking new compiler processes
@@ -296,6 +296,14 @@ def _do_compile(
                 diagnostics,
                 return_diagnostics=return_diagnostics,
             )
+        
+        for diag in diagnostics:
+            if diag.category == ErrorCategory.OpenQASM3ParseFailure:
+                raise exceptions.OpenQASM3ParseFailure(
+                    diag.message,
+                    diagnostics,
+                    return_diagnostics=return_diagnostics,
+                )
 
         if not success:
             raise exceptions.QSSCompilationFailure(
