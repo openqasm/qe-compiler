@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Adds CircuitBarrierCircuitPattern to MergeCircuitsPass to allow two call_circuit
+    operations with barriers in between to be merged into one with the barriers
+    inserted into the new circuit.

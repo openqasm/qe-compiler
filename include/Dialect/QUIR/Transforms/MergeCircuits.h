@@ -27,6 +27,8 @@
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 
+#include <optional>
+
 namespace mlir::quir {
 
 /// @brief Merge together back to back circuits into a single circuit
@@ -36,10 +38,11 @@ struct MergeCircuitsPass
 
   static CircuitOp getCircuitOp(CallCircuitOp callCircuitOp,
                                 llvm::StringMap<Operation *> *symbolMap);
-  static LogicalResult
-  mergeCallCircuits(PatternRewriter &rewriter, CallCircuitOp callCircuitOp,
-                    CallCircuitOp nextCallCircuitOp,
-                    llvm::StringMap<Operation *> *symbolMap);
+  static LogicalResult mergeCallCircuits(
+      MLIRContext *context, PatternRewriter &rewriter,
+      CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
+      llvm::StringMap<Operation *> *symbolMap,
+      std::optional<llvm::SmallVector<Operation *>> barriers = std::nullopt);
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
