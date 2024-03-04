@@ -18,7 +18,6 @@
 ///  control flow.
 ///
 //===----------------------------------------------------------------------===//
-
 #include "Dialect/QUIR/Transforms/BreakReset.h"
 
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
@@ -153,137 +152,161 @@ void BreakResetPass::runOnOperation() {
   // put measures and call gates into circuits -- when
   // putCallGatesAndMeasuresIntoCircuit option is true
   mlir::ModuleOp moduleOp = getOperation();
-  uint circNum = 0;
   while (!measureList.empty()) {
     MeasureOp measOp = dyn_cast<MeasureOp>(measureList.front());
-    putMeasureInCircuit(moduleOp, measOp, circNum);
-    circNum++;
+    putMeasureInCircuit(moduleOp, measOp);
     measureList.pop_front();
   }
   while (!callGateList.empty()) {
     CallGateOp callGateOp = dyn_cast<CallGateOp>(callGateList.front());
-    putCallGateInCircuit(moduleOp, callGateOp, circNum);
-    circNum++;
+    putCallGateInCircuit(moduleOp, callGateOp);
     callGateList.pop_front();
   }
 } // BreakResetPass::runOnOperation
 
 void BreakResetPass::putCallGateInCircuit(ModuleOp moduleOp,
-                                          mlir::quir::CallGateOp callGateOp,
-                                          uint circNum) {
-  mlir::func::FuncOp mainFunc =
-      dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
-  assert(mainFunc && "could not find the main func");
-  mlir::OpBuilder builder(mainFunc);
-  mlir::Location location = mainFunc.getLoc();
+                                          mlir::quir::CallGateOp callGateOp) {
+  std::vector<Value> qubitOperands;
+  qubitCallOperands(callGateOp, qubitOperands);
+  std::string circuitName = "reset_x";
+  assert(qubitOperands.size() == 1 && "x gate call have only 1 qubit operand");
+  auto declOp = qubitOperands[0].getDefiningOp<quir::DeclareQubitOp>();
+  assert(declOp && "cannot find the declare qubit op");
+  auto qubitId = quir::lookupQubitId(declOp);
+  assert(qubitId.has_value() && "cannot find the qubit id");
+  circuitName += ("_" + std::to_string(qubitId.value()));
 
-  auto circOp = builder.create<CircuitOp>(
-      mainFunc.getLoc(), "reset_x_" + std::to_string(circNum++),
-      builder.getFunctionType(
-          /*inputs=*/ArrayRef<Type>(),
-          /*results=*/ArrayRef<Type>()));
+  auto search = resetGateCircuitsSymbolMap.find(circuitName);
+  CircuitOp circOp;
+  if (search == resetGateCircuitsSymbolMap.end()) {
+    // build a circuit
+    circOp = startCircuit<CallGateOp>(moduleOp, circuitName, callGateOp);
+    OpBuilder circuitBuilder =
+        OpBuilder::atBlockBegin(&circOp.getBody().front());
+    auto newCallGateOp =
+        circuitBuilder.create<CallGateOp>(callGateOp.getLoc(), StringRef("x"),
+                                          TypeRange{}, circOp.getArguments());
+    finishCircuit(circOp);
+    resetGateCircuitsSymbolMap[llvm::StringRef(circuitName)] =
+        circOp.getOperation();
+  } else
+    circOp = dyn_cast<CircuitOp>(search->second);
 
-  circOp.addEntryBlock();
-  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
-
-  uint argumentIndex = 0;
-  llvm::SmallVector<Type> inputTypes;
-  llvm::SmallVector<Value> inputValues;
-  llvm::SmallVector<Type> outputTypes;
-  llvm::SmallVector<Value> outputValues;
-
-  for (auto operand : callGateOp->getOperands()) {
-    inputTypes.push_back(operand.getType());
-    inputValues.push_back(operand);
-    circOp.insertArgument(argumentIndex, operand.getType(), {},
-                          operand.getLoc());
-    argumentIndex++;
-  }
-
-  auto newCallGateOp = circuitBuilder.create<CallGateOp>(
-      location, StringRef("x"), TypeRange{}, circOp.getArguments());
-
-  outputValues.append(newCallGateOp->result_begin(),
-                      newCallGateOp->result_end());
-  outputTypes.append(newCallGateOp->result_type_begin(),
-                     newCallGateOp->result_type_end());
-
-  circOp.setType(circuitBuilder.getFunctionType(
-      /*inputs=*/ArrayRef<Type>(inputTypes),
-      /*results=*/ArrayRef<Type>(outputTypes)));
-
-  auto returnOp =
-      circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
-  returnOp->insertOperands(0, ValueRange(outputValues));
-
+  mlir::OpBuilder builder(callGateOp);
   auto callCircOp = builder.create<mlir::quir::CallCircuitOp>(
-      circOp->getLoc(), circOp.getName(), TypeRange(outputTypes),
-      ValueRange(inputValues));
+      callGateOp->getLoc(), circuitName, TypeRange{}, callGateOp.getOperands());
 
   callCircOp->moveBefore(callGateOp);
   callGateOp->erase();
 }
 
 void BreakResetPass::putMeasureInCircuit(ModuleOp moduleOp,
-                                         mlir::quir::MeasureOp measureOp,
-                                         uint circNum) {
-  mlir::func::FuncOp mainFunc =
-      dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
-  assert(mainFunc && "could not find the main func");
-  mlir::OpBuilder builder(mainFunc);
+                                         mlir::quir::MeasureOp measureOp) {
+  std::set<uint32_t> measureQubits =
+      QubitOpInterface::getOperatedQubits(measureOp);
+  ;
+  std::string circuitName = "reset_measure";
+  for (auto qubit : measureQubits)
+    circuitName += ("_" + std::to_string(qubit));
 
-  mlir::Location location = mainFunc.getLoc();
-  auto circOp = builder.create<CircuitOp>(
-      mainFunc.getLoc(), "reset_measure_" + std::to_string(circNum++),
-      builder.getFunctionType(
-          /*inputs=*/ArrayRef<Type>(),
-          /*results=*/ArrayRef<Type>()));
-
-  circOp.addEntryBlock();
-  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
-
-  uint argumentIndex = 0;
-  llvm::SmallVector<Type> inputTypes;
-  llvm::SmallVector<Value> inputValues;
-  llvm::SmallVector<Type> outputTypes;
-  llvm::SmallVector<Value> outputValues;
-
-  for (auto operand : measureOp->getOperands()) {
-    inputTypes.push_back(operand.getType());
-    inputValues.push_back(operand);
-    circOp.insertArgument(argumentIndex, operand.getType(), {},
-                          operand.getLoc());
-    argumentIndex++;
-  }
-
+  mlir::OpBuilder builder(measureOp);
   std::vector<mlir::Type> const typeVec(measureOp.getQubits().size(),
-                                        circuitBuilder.getI1Type());
-
-  auto resetMeasureOp = circuitBuilder.create<MeasureOp>(
-      location, TypeRange(typeVec), circOp.getArguments());
-  resetMeasureOp->setAttr(getNoReportRuntimeAttrName(), builder.getUnitAttr());
-
-  outputValues.append(resetMeasureOp.result_begin(),
-                      resetMeasureOp.result_end());
-  outputTypes.append(resetMeasureOp.result_type_begin(),
-                     resetMeasureOp.result_type_end());
-
-  circOp.setType(circuitBuilder.getFunctionType(
-      /*inputs=*/ArrayRef<Type>(inputTypes),
-      /*results=*/ArrayRef<Type>(outputTypes)));
-
-  auto returnOp =
-      circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
-  returnOp->insertOperands(0, ValueRange(outputValues));
+                                        builder.getI1Type());
+  auto search = resetGateCircuitsSymbolMap.find(circuitName);
+  CircuitOp circOp;
+  if (search == resetGateCircuitsSymbolMap.end()) {
+    // build a circuit
+    circOp = startCircuit<MeasureOp>(moduleOp, circuitName, measureOp);
+    OpBuilder circuitBuilder =
+        OpBuilder::atBlockBegin(&circOp.getBody().front());
+    auto resetMeasureOp = circuitBuilder.create<MeasureOp>(
+        measureOp.getLoc(), TypeRange(typeVec), circOp.getArguments());
+    resetMeasureOp->setAttr(getNoReportRuntimeAttrName(),
+                            builder.getUnitAttr());
+    finishCircuit(circOp);
+    resetGateCircuitsSymbolMap[llvm::StringRef(circuitName)] =
+        circOp.getOperation();
+  } else
+    circOp = dyn_cast<CircuitOp>(search->second);
 
   auto callCircOp = builder.create<mlir::quir::CallCircuitOp>(
-      circOp->getLoc(), circOp.getName(), TypeRange(outputTypes),
-      ValueRange(inputValues));
+      measureOp->getLoc(), circuitName, TypeRange(typeVec),
+      measureOp.getOperands());
 
   callCircOp->moveBefore(measureOp);
   measureOp->replaceAllUsesWith(callCircOp);
 
   measureOp->erase();
+}
+
+template <class measureOrCallGate>
+CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
+                                       const std::string &circuitName,
+                                       measureOrCallGate quantumGate) {
+  mlir::func::FuncOp mainFunc =
+      dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
+  assert(mainFunc && "could not find the main func");
+  mlir::OpBuilder builder(mainFunc);
+  mlir::Location location = mainFunc.getLoc();
+
+  auto circOp = builder.create<CircuitOp>(mainFunc.getLoc(), circuitName,
+                                          builder.getFunctionType(
+                                              /*inputs=*/ArrayRef<Type>(),
+                                              /*results=*/ArrayRef<Type>()));
+
+  circOp.addEntryBlock();
+  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
+
+  uint argumentIndex = 0;
+  for (auto operand : quantumGate->getOperands()) {
+    circOp.insertArgument(argumentIndex, operand.getType(), {},
+                          operand.getLoc());
+    argumentIndex++;
+  }
+
+  circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
+  return circOp;
+}
+
+void BreakResetPass::finishCircuit(mlir::quir::CircuitOp circOp) {
+  llvm::SmallVector<Type> outputTypes;
+  llvm::SmallVector<Type> inputTypes;
+  llvm::SmallVector<Value> outputValues;
+  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
+
+  bool measOpFound = false;
+  circOp.walk([&](MeasureOp measOp) {
+    measOpFound = true;
+    inputTypes = TypeRange(measOp.getOperandTypes());
+    outputTypes.append(measOp.result_type_begin(), measOp.result_type_end());
+    outputValues.append(measOp.result_begin(), measOp.result_end());
+    return WalkResult::interrupt();
+  });
+
+  bool callGateOpFound = false;
+  circOp.walk([&](CallGateOp callGateOp) {
+    callGateOpFound = true;
+    inputTypes = TypeRange(callGateOp.getOperandTypes());
+    outputTypes.append(callGateOp->result_type_begin(),
+                       callGateOp->result_type_end());
+    outputValues.append(callGateOp->result_begin(), callGateOp->result_end());
+    return WalkResult::interrupt();
+  });
+
+  // sanity check that only one of measOp or callGateOp were found
+  assert(
+      ((callGateOpFound && !measOpFound) ||
+       (!callGateOpFound && measOpFound)) &&
+      "only one of measure op or call gate op can be present in input circuit");
+
+  circOp.setType(circuitBuilder.getFunctionType(
+      /*inputs=*/ArrayRef<Type>(inputTypes),
+      /*results=*/ArrayRef<Type>(outputTypes)));
+
+  circOp.walk([&](mlir::quir::ReturnOp returnOp) {
+    returnOp->insertOperands(0, ValueRange(outputValues));
+    return WalkResult::interrupt();
+  });
 }
 
 llvm::StringRef BreakResetPass::getArgument() const { return "break-reset"; }
