@@ -1,4 +1,4 @@
-# (C) Copyright IBM 2023.
+# (C) Copyright IBM 2023, 2024.
 #
 # This code is part of Qiskit.
 #
@@ -296,6 +296,14 @@ def _do_compile(
                 diagnostics,
                 return_diagnostics=return_diagnostics,
             )
+        
+        for diag in diagnostics:
+            if diag.category == ErrorCategory.OpenQASM3ParseFailure:
+                raise exceptions.OpenQASM3ParseFailure(
+                    diag.message,
+                    diagnostics,
+                    return_diagnostics=return_diagnostics,
+                )
 
         for diag in diagnostics:
             if diag.category == ErrorCategory.QSSControlSystemResourcesExceeded:
