@@ -104,7 +104,7 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
           resetOp.getLoc(), TypeRange(typeVec), resetOp.getQubits());
       measureOp->setAttr(getNoReportRuntimeAttrName(), rewriter.getUnitAttr());
 
-      if (thisPass_.PUT_QUANTUM_GATES_INTO_CIRC)
+      if (thisPass_.insertQuantumGatesIntoCirc)
         thisPass_.measureList.push_back(measureOp);
 
       size_t i = 0;
@@ -117,7 +117,7 @@ struct BreakResetsPattern : public OpRewritePattern<ResetQubitOp> {
         rewriter.setInsertionPointToStart(thenBlock);
         auto callGateOp = rewriter.create<CallGateOp>(
             resetOp.getLoc(), StringRef("x"), TypeRange{}, ValueRange{qubit});
-        if (thisPass_.PUT_QUANTUM_GATES_INTO_CIRC)
+        if (thisPass_.insertQuantumGatesIntoCirc)
           thisPass_.callGateList.push_back(callGateOp);
 
         i++;
@@ -137,9 +137,10 @@ private:
 } // anonymous namespace
 
 void BreakResetPass::runOnOperation() {
-  // check for command line override of PUT_QUANTUM_GATES_INTO_CIRC
-  if (putCallGatesAndMeasuresIntoCircuit.hasValue())
-    PUT_QUANTUM_GATES_INTO_CIRC = putCallGatesAndMeasuresIntoCircuit.getValue();
+  // check for command line override of insertQuantumGatesIntoCirc
+  if (insertCallGatesAndMeasuresIntoCircuit.hasValue())
+    insertQuantumGatesIntoCirc =
+        insertCallGatesAndMeasuresIntoCircuit.getValue();
 
   mlir::RewritePatternSet patterns(&getContext());
   mlir::GreedyRewriteConfig config;
@@ -157,7 +158,7 @@ void BreakResetPass::runOnOperation() {
                                                 std::move(patterns), config)))
     signalPassFailure();
 
-  if (PUT_QUANTUM_GATES_INTO_CIRC) {
+  if (insertQuantumGatesIntoCirc) {
     mlir::ModuleOp moduleOp = getOperation();
     assert(moduleOp && "cannot find module op");
     // populate symbol map for input circuits
@@ -166,23 +167,23 @@ void BreakResetPass::runOnOperation() {
         inputCircuitsSymbolMap[castOp.getSymName()] = castOp.getOperation();
     });
 
-    // put measures and call gates into circuits -- when
-    // putCallGatesAndMeasuresIntoCircuit option is true
+    // insert measures and call gates into circuits -- when
+    // insertCallGatesAndMeasuresIntoCircuit option is true
     while (!measureList.empty()) {
       const MeasureOp measOp = dyn_cast<MeasureOp>(measureList.front());
-      putMeasureInCircuit(moduleOp, measOp);
+      insertMeasureInCircuit(moduleOp, measOp);
       measureList.pop_front();
     }
     while (!callGateList.empty()) {
       const CallGateOp callGateOp = dyn_cast<CallGateOp>(callGateList.front());
-      putCallGateInCircuit(moduleOp, callGateOp);
+      insertCallGateInCircuit(moduleOp, callGateOp);
       callGateList.pop_front();
     }
   }
 } // BreakResetPass::runOnOperation
 
-void BreakResetPass::putCallGateInCircuit(ModuleOp moduleOp,
-                                          mlir::quir::CallGateOp callGateOp) {
+void BreakResetPass::insertCallGateInCircuit(
+    ModuleOp moduleOp, mlir::quir::CallGateOp callGateOp) {
   std::vector<Value> qubitOperands;
   qubitCallOperands(callGateOp, qubitOperands);
   std::string circuitName = "reset_x";
@@ -218,8 +219,8 @@ void BreakResetPass::putCallGateInCircuit(ModuleOp moduleOp,
   callGateOp->erase();
 }
 
-void BreakResetPass::putMeasureInCircuit(ModuleOp moduleOp,
-                                         mlir::quir::MeasureOp measureOp) {
+void BreakResetPass::insertMeasureInCircuit(ModuleOp moduleOp,
+                                            mlir::quir::MeasureOp measureOp) {
   const std::set<uint32_t> measureQubits =
       QubitOpInterface::getOperatedQubits(measureOp);
   ;

@@ -35,7 +35,7 @@ namespace mlir::quir {
 struct BreakResetPass
     : public mlir::PassWrapper<BreakResetPass,
                                mlir::OperationPass<mlir::ModuleOp>> {
-  bool PUT_QUANTUM_GATES_INTO_CIRC = false;
+  bool insertQuantumGatesIntoCirc = false;
 
   BreakResetPass() = default;
   BreakResetPass(const BreakResetPass &pass) : PassWrapper(pass) {}
@@ -43,8 +43,8 @@ struct BreakResetPass
     numIterations = inNumIterations;
     delayCycles = inDelayCycles;
   }
-  BreakResetPass(bool inPutCallGatesAndMeasuresIntoCircuit) {
-    PUT_QUANTUM_GATES_INTO_CIRC = inPutCallGatesAndMeasuresIntoCircuit;
+  BreakResetPass(bool inInsertCallGatesAndMeasuresIntoCircuit) {
+    insertQuantumGatesIntoCirc = inInsertCallGatesAndMeasuresIntoCircuit;
   }
 
   void runOnOperation() override;
@@ -58,9 +58,10 @@ struct BreakResetPass
       llvm::cl::desc("Number of cycles of delay to add between reset "
                      "iterations, default is 1000"),
       llvm::cl::value_desc("num"), llvm::cl::init(1000)};
-  Option<bool> putCallGatesAndMeasuresIntoCircuit{
+  Option<bool> insertCallGatesAndMeasuresIntoCircuit{
       *this, "quantum-gates-in-circuit",
-      llvm::cl::desc("an option to put call gates and measures into circuit"),
+      llvm::cl::desc(
+          "an option to insert call gates and measures into circuit"),
       llvm::cl::value_desc("bool"), llvm::cl::init(false)};
 
   llvm::StringRef getArgument() const override;
@@ -75,9 +76,10 @@ private:
   llvm::StringMap<Operation *> resetGateCircuitsSymbolMap;
   // keep track of circuits in input of this pass
   llvm::StringMap<Operation *> inputCircuitsSymbolMap;
-  void putMeasureInCircuit(ModuleOp moduleOp, mlir::quir::MeasureOp measureOp);
-  void putCallGateInCircuit(ModuleOp moduleOp,
-                            mlir::quir::CallGateOp callGateOp);
+  void insertMeasureInCircuit(ModuleOp moduleOp,
+                              mlir::quir::MeasureOp measureOp);
+  void insertCallGateInCircuit(ModuleOp moduleOp,
+                               mlir::quir::CallGateOp callGateOp);
   template <class measureOrCallGate>
   mlir::quir::CircuitOp startCircuit(ModuleOp moduleOp,
                                      const std::string &circuitName,
