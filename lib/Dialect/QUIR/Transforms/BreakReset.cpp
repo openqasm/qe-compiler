@@ -150,18 +150,27 @@ void BreakResetPass::runOnOperation() {
                                                 std::move(patterns), config)))
     signalPassFailure();
 
-  // put measures and call gates into circuits -- when
-  // putCallGatesAndMeasuresIntoCircuit option is true
-  mlir::ModuleOp moduleOp = getOperation();
-  while (!measureList.empty()) {
-    MeasureOp measOp = dyn_cast<MeasureOp>(measureList.front());
-    putMeasureInCircuit(moduleOp, measOp);
-    measureList.pop_front();
-  }
-  while (!callGateList.empty()) {
-    CallGateOp callGateOp = dyn_cast<CallGateOp>(callGateList.front());
-    putCallGateInCircuit(moduleOp, callGateOp);
-    callGateList.pop_front();
+  if (PUT_QUANTUM_GATES_INTO_CIRC) {
+    mlir::ModuleOp moduleOp = getOperation();
+    assert(moduleOp && "cannot find module op");
+    // populate symbol map for input circuits
+    moduleOp->walk([&](Operation *op) {
+      if (auto castOp = dyn_cast<CircuitOp>(op))
+        inputCircuitsSymbolMap[castOp.getSymName()] = castOp.getOperation();
+    });
+
+    // put measures and call gates into circuits -- when
+    // putCallGatesAndMeasuresIntoCircuit option is true
+    while (!measureList.empty()) {
+      MeasureOp measOp = dyn_cast<MeasureOp>(measureList.front());
+      putMeasureInCircuit(moduleOp, measOp);
+      measureList.pop_front();
+    }
+    while (!callGateList.empty()) {
+      CallGateOp callGateOp = dyn_cast<CallGateOp>(callGateList.front());
+      putCallGateInCircuit(moduleOp, callGateOp);
+      callGateList.pop_front();
+    }
   }
 } // BreakResetPass::runOnOperation
 
@@ -195,7 +204,8 @@ void BreakResetPass::putCallGateInCircuit(ModuleOp moduleOp,
 
   mlir::OpBuilder builder(callGateOp);
   auto callCircOp = builder.create<mlir::quir::CallCircuitOp>(
-      callGateOp->getLoc(), circuitName, TypeRange{}, callGateOp.getOperands());
+      callGateOp->getLoc(), circOp.getSymName(), TypeRange{},
+      callGateOp.getOperands());
 
   callCircOp->moveBefore(callGateOp);
   callGateOp->erase();
@@ -231,7 +241,7 @@ void BreakResetPass::putMeasureInCircuit(ModuleOp moduleOp,
     circOp = dyn_cast<CircuitOp>(search->second);
 
   auto callCircOp = builder.create<mlir::quir::CallCircuitOp>(
-      measureOp->getLoc(), circuitName, TypeRange(typeVec),
+      measureOp->getLoc(), circOp.getSymName(), TypeRange(typeVec),
       measureOp.getOperands());
 
   callCircOp->moveBefore(measureOp);
@@ -250,7 +260,14 @@ CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
   mlir::OpBuilder builder(mainFunc);
   mlir::Location location = mainFunc.getLoc();
 
-  auto circOp = builder.create<CircuitOp>(mainFunc.getLoc(), circuitName,
+  // mangle the circuit name if there exist a circuit with the same name in
+  // input of this pass
+  auto mangledCircuitName = circuitName;
+  int cnt = 0;
+  while (inputCircuitsSymbolMap.contains(mangledCircuitName))
+    mangledCircuitName += std::to_string(cnt++);
+
+  auto circOp = builder.create<CircuitOp>(mainFunc.getLoc(), mangledCircuitName,
                                           builder.getFunctionType(
                                               /*inputs=*/ArrayRef<Type>(),
                                               /*results=*/ArrayRef<Type>()));

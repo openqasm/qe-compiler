@@ -73,6 +73,8 @@ struct BreakResetPass
 private:
   // keep track of the circuits built so far for reset gates
   llvm::StringMap<Operation *> resetGateCircuitsSymbolMap;
+  // keep track of circuits in input of this pass
+  llvm::StringMap<Operation *> inputCircuitsSymbolMap;
   void putMeasureInCircuit(ModuleOp moduleOp, mlir::quir::MeasureOp measureOp);
   void putCallGateInCircuit(ModuleOp moduleOp,
                             mlir::quir::CallGateOp callGateOp);

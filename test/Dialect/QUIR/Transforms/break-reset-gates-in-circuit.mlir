@@ -25,20 +25,35 @@ module {
 // CHECK: quir.circuit @reset_x_1(%arg0: !quir.qubit<1>) {
 // CHECK: quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
 // CHECK: quir.return
+
+quir.circuit @reset_x_2(%arg0: !quir.qubit<1>) {
+    quir.return
+}
+
+// CHECK: quir.circuit @reset_x_20(%arg0: !quir.qubit<1>) {
+// CHECK: quir.call_gate @x(%arg0) : (!quir.qubit<1>) -> ()
+// CHECK: quir.return
+
 func.func @main () {
   %0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
   %1 = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
-  // CHECK: %2:2 = quir.call_circuit @reset_measure_0_1(%0, %1) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
-  // CHECK: scf.if %2#0 {
-  // CHECK: quir.call_circuit @reset_x_0(%0) : (!quir.qubit<1>) -> ()
-  // CHECK: scf.if %2#1 {
-  // CHECK: quir.call_circuit @reset_x_1(%1) : (!quir.qubit<1>) -> ()
-  quir.reset %0, %1 : !quir.qubit<1>, !quir.qubit<1>
+  %2 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
   // CHECK: %3:2 = quir.call_circuit @reset_measure_0_1(%0, %1) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
   // CHECK: scf.if %3#0 {
   // CHECK: quir.call_circuit @reset_x_0(%0) : (!quir.qubit<1>) -> ()
   // CHECK: scf.if %3#1 {
   // CHECK: quir.call_circuit @reset_x_1(%1) : (!quir.qubit<1>) -> ()
   quir.reset %0, %1 : !quir.qubit<1>, !quir.qubit<1>
+  // CHECK: %4:2 = quir.call_circuit @reset_measure_0_1(%0, %1) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
+  // CHECK: scf.if %4#0 {
+  // CHECK: quir.call_circuit @reset_x_0(%0) : (!quir.qubit<1>) -> ()
+  // CHECK: scf.if %4#1 {
+  // CHECK: quir.call_circuit @reset_x_1(%1) : (!quir.qubit<1>) -> ()
+  quir.reset %0, %1 : !quir.qubit<1>, !quir.qubit<1>
+
+  // CHECK: %5 = quir.call_circuit @reset_measure_2(%2) : (!quir.qubit<1>) -> i1
+  // CHECK: scf.if %5 {
+  // CHECK: quir.call_circuit @reset_x_20(%2) : (!quir.qubit<1>) -> ()
+  quir.reset %2 : !quir.qubit<1>
   return
 }}
