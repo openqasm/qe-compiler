@@ -22,16 +22,20 @@
 #include "Dialect/QUIR/Transforms/BreakReset.h"
 
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
-#include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIREnums.h"
+#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
 
+#include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
+#include "mlir/IR/Builders.h"
+#include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/TypeRange.h"
 #include "mlir/IR/ValueRange.h"
+#include "mlir/IR/Visitors.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
@@ -41,8 +45,11 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <set>
+#include <string>
 #include <sys/types.h>
 #include <utility>
 #include <vector>
@@ -162,12 +169,12 @@ void BreakResetPass::runOnOperation() {
     // put measures and call gates into circuits -- when
     // putCallGatesAndMeasuresIntoCircuit option is true
     while (!measureList.empty()) {
-      MeasureOp measOp = dyn_cast<MeasureOp>(measureList.front());
+      const MeasureOp measOp = dyn_cast<MeasureOp>(measureList.front());
       putMeasureInCircuit(moduleOp, measOp);
       measureList.pop_front();
     }
     while (!callGateList.empty()) {
-      CallGateOp callGateOp = dyn_cast<CallGateOp>(callGateList.front());
+      const CallGateOp callGateOp = dyn_cast<CallGateOp>(callGateList.front());
       putCallGateInCircuit(moduleOp, callGateOp);
       callGateList.pop_front();
     }
@@ -213,7 +220,7 @@ void BreakResetPass::putCallGateInCircuit(ModuleOp moduleOp,
 
 void BreakResetPass::putMeasureInCircuit(ModuleOp moduleOp,
                                          mlir::quir::MeasureOp measureOp) {
-  std::set<uint32_t> measureQubits =
+  const std::set<uint32_t> measureQubits =
       QubitOpInterface::getOperatedQubits(measureOp);
   ;
   std::string circuitName = "reset_measure";
@@ -258,7 +265,7 @@ CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
       dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
   assert(mainFunc && "could not find the main func");
   mlir::OpBuilder builder(mainFunc);
-  mlir::Location location = mainFunc.getLoc();
+  const mlir::Location location = mainFunc.getLoc();
 
   // mangle the circuit name if there exist a circuit with the same name in
   // input of this pass
