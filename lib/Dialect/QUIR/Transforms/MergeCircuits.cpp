@@ -337,8 +337,8 @@ void mapNextCircuitOperands(
 
   // insert nextCircuit Operands into callInputValues if not there
   // add arguments as well
-  uint insertedCount = inputValueIndices.size();
   for (auto operandEnum : llvm::enumerate(nextCallCircuitOp.getOperands())) {
+    uint const insertedCount = callInputValues.size();
     auto arg = nextCircuitOp.getArgument(operandEnum.index());
     auto *defOp = operandEnum.value().getDefiningOp();
     auto argumentIndex =
@@ -348,7 +348,6 @@ void mapNextCircuitOperands(
       auto dictArg = nextCircuitOp.getArgAttrDict(operandEnum.index());
       newCircuitOp.insertArgument(argumentIndex, arg.getType(), dictArg,
                                   arg.getLoc());
-      insertedCount++;
     }
     mapper.map(arg, newCircuitOp.getArgument(argumentIndex));
   }
@@ -361,9 +360,9 @@ void mapBarrierOperands(
     MLIRContext *context) {
   assert(barrierOp && "barrierOp requires valid operation pointer");
   assert(context && "context requires valid MLIR context pointer");
-  uint insertedCount = inputValueIndices.size();
   for (auto operand : barrierOp->getOperands()) {
     auto *defOp = operand.getDefiningOp();
+    uint const insertedCount = callInputValues.size();
     auto argumentIndex = insertOperandAndArgument(
         operand, defOp, callInputValues, inputValueIndices, insertedCount);
     if (argumentIndex == insertedCount) {
@@ -375,7 +374,6 @@ void mapBarrierOperands(
           ArrayRef({NamedAttribute(
               StringAttr::get(context, mlir::quir::getPhysicalIdAttrName()),
               physicalId)}));
-      insertedCount++;
     }
     mapper.map(operand, newCircuitOp.getArgument(argumentIndex));
   }
