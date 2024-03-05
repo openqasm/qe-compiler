@@ -224,7 +224,6 @@ void BreakResetPass::insertMeasureInCircuit(ModuleOp moduleOp,
                                             mlir::quir::MeasureOp measureOp) {
   const std::set<uint32_t> measureQubits =
       QubitOpInterface::getOperatedQubits(measureOp);
-  ;
   std::string circuitName = "reset_measure";
   for (auto qubit : measureQubits)
     circuitName += ("_" + std::to_string(qubit));
