@@ -23,7 +23,6 @@
 
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIREnums.h"
-#include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
@@ -44,12 +43,12 @@
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/StringRef.h"
+#include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
-#include <set>
 #include <string>
 #include <sys/types.h>
 #include <utility>
