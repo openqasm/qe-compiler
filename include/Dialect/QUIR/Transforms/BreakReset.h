@@ -72,20 +72,18 @@ struct BreakResetPass
   std::deque<Operation *> callGateList;
 
 private:
-  // keep track of the circuits built so far for reset gates
-  llvm::StringMap<Operation *> resetGateCircuitsSymbolMap;
-  // keep track of circuits in input of this pass
-  llvm::StringMap<Operation *> inputCircuitsSymbolMap;
+  // keep track of all circuits
+  llvm::StringMap<Operation *> circuitsSymbolMap;
   void insertMeasureInCircuit(ModuleOp moduleOp,
                               mlir::quir::MeasureOp measureOp);
   void insertCallGateInCircuit(ModuleOp moduleOp,
                                mlir::quir::CallGateOp callGateOp);
   template <class measureOrCallGate>
   mlir::quir::CircuitOp startCircuit(ModuleOp moduleOp,
-                                     const std::string &circuitName,
                                      measureOrCallGate quantumGate);
   void finishCircuit(mlir::quir::CircuitOp circOp, Operation *quantumGate);
-  std::string getMangledName(const std::string &name);
+  uint circuitCounter = 0;
+  std::string getMangledName();
 }; // struct BreakResetPass
 } // namespace mlir::quir
 

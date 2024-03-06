@@ -165,7 +165,7 @@ void BreakResetPass::runOnOperation() {
     // populate symbol map for input circuits
     moduleOp->walk([&](Operation *op) {
       if (auto castOp = dyn_cast<CircuitOp>(op))
-        inputCircuitsSymbolMap[castOp.getSymName()] = castOp.getOperation();
+        circuitsSymbolMap[castOp.getSymName()] = castOp.getOperation();
     });
 
     // insert measures and call gates into circuits -- when
@@ -185,31 +185,12 @@ void BreakResetPass::runOnOperation() {
 
 void BreakResetPass::insertCallGateInCircuit(
     ModuleOp moduleOp, mlir::quir::CallGateOp callGateOp) {
-  std::vector<Value> qubitOperands;
-  qubitCallOperands(callGateOp, qubitOperands);
-  std::string circuitName = "reset_x";
-  assert(qubitOperands.size() == 1 && "x gate call have only 1 qubit operand");
-  auto declOp = qubitOperands[0].getDefiningOp<quir::DeclareQubitOp>();
-  assert(declOp && "cannot find the declare qubit op");
-  auto qubitId = quir::lookupQubitId(declOp);
-  assert(qubitId.has_value() && "cannot find the qubit id");
-  circuitName += ("_" + std::to_string(qubitId.value()));
-
-  auto search = resetGateCircuitsSymbolMap.find(circuitName);
-  CircuitOp circOp;
-  if (search == resetGateCircuitsSymbolMap.end()) {
-    // build a circuit
-    circOp = startCircuit<CallGateOp>(moduleOp, circuitName, callGateOp);
-    OpBuilder circuitBuilder =
-        OpBuilder::atBlockBegin(&circOp.getBody().front());
-    auto newCallGateOp =
-        circuitBuilder.create<CallGateOp>(callGateOp.getLoc(), StringRef("x"),
-                                          TypeRange{}, circOp.getArguments());
-    finishCircuit(circOp, newCallGateOp.getOperation());
-    resetGateCircuitsSymbolMap[llvm::StringRef(circuitName)] =
-        circOp.getOperation();
-  } else
-    circOp = dyn_cast<CircuitOp>(search->second);
+  // build a circuit
+  CircuitOp circOp = startCircuit<CallGateOp>(moduleOp, callGateOp);
+  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
+  auto newCallGateOp = circuitBuilder.create<CallGateOp>(
+      callGateOp.getLoc(), StringRef("x"), TypeRange{}, circOp.getArguments());
+  finishCircuit(circOp, newCallGateOp.getOperation());
 
   mlir::OpBuilder builder(callGateOp);
   auto callCircOp = builder.create<mlir::quir::CallCircuitOp>(
@@ -222,31 +203,17 @@ void BreakResetPass::insertCallGateInCircuit(
 
 void BreakResetPass::insertMeasureInCircuit(ModuleOp moduleOp,
                                             mlir::quir::MeasureOp measureOp) {
-  const std::set<uint32_t> measureQubits =
-      QubitOpInterface::getOperatedQubits(measureOp);
-  std::string circuitName = "reset_measure";
-  for (auto qubit : measureQubits)
-    circuitName += ("_" + std::to_string(qubit));
 
   mlir::OpBuilder builder(measureOp);
   std::vector<mlir::Type> const typeVec(measureOp.getQubits().size(),
                                         builder.getI1Type());
-  auto search = resetGateCircuitsSymbolMap.find(circuitName);
-  CircuitOp circOp;
-  if (search == resetGateCircuitsSymbolMap.end()) {
-    // build a circuit
-    circOp = startCircuit<MeasureOp>(moduleOp, circuitName, measureOp);
-    OpBuilder circuitBuilder =
-        OpBuilder::atBlockBegin(&circOp.getBody().front());
-    auto resetMeasureOp = circuitBuilder.create<MeasureOp>(
-        measureOp.getLoc(), TypeRange(typeVec), circOp.getArguments());
-    resetMeasureOp->setAttr(getNoReportRuntimeAttrName(),
-                            builder.getUnitAttr());
-    finishCircuit(circOp, resetMeasureOp.getOperation());
-    resetGateCircuitsSymbolMap[llvm::StringRef(circuitName)] =
-        circOp.getOperation();
-  } else
-    circOp = dyn_cast<CircuitOp>(search->second);
+  // build a circuit
+  CircuitOp circOp = startCircuit<MeasureOp>(moduleOp, measureOp);
+  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
+  auto resetMeasureOp = circuitBuilder.create<MeasureOp>(
+      measureOp.getLoc(), TypeRange(typeVec), circOp.getArguments());
+  resetMeasureOp->setAttr(getNoReportRuntimeAttrName(), builder.getUnitAttr());
+  finishCircuit(circOp, resetMeasureOp.getOperation());
 
   auto callCircOp = builder.create<mlir::quir::CallCircuitOp>(
       measureOp->getLoc(), circOp.getSymName(), TypeRange(typeVec),
@@ -260,7 +227,6 @@ void BreakResetPass::insertMeasureInCircuit(ModuleOp moduleOp,
 
 template <class measureOrCallGate>
 CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
-                                       const std::string &circuitName,
                                        measureOrCallGate quantumGate) {
   mlir::func::FuncOp mainFunc =
       dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
@@ -268,11 +234,8 @@ CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
   mlir::OpBuilder builder(mainFunc);
   const mlir::Location location = mainFunc.getLoc();
 
-  // mangle the circuit name if there exist a circuit with the same name in
-  // input of this pass
-  auto mangledCircuitName = circuitName;
-  if (inputCircuitsSymbolMap.contains(circuitName))
-    mangledCircuitName = getMangledName(circuitName);
+  // get mangled circuit name
+  auto mangledCircuitName = getMangledName();
 
   auto circOp = builder.create<CircuitOp>(mainFunc.getLoc(), mangledCircuitName,
                                           builder.getFunctionType(
@@ -287,6 +250,9 @@ CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
                           operand.getLoc());
     argumentIndex++;
   }
+
+  circuitsSymbolMap[llvm::StringRef(mangledCircuitName)] =
+      circOp.getOperation();
 
   return circOp;
 }
@@ -318,12 +284,13 @@ void BreakResetPass::finishCircuit(mlir::quir::CircuitOp circOp,
   returnOp->moveAfter(quantumGate);
 }
 
-std::string BreakResetPass::getMangledName(const std::string &name) {
-  int cnt = 0;
-  auto mangledName = name;
+std::string BreakResetPass::getMangledName() {
+  auto mangledName = "reset_circuit_" + std::to_string(circuitCounter);
   // TODO: replace this with an O(1) algorithm
-  while (inputCircuitsSymbolMap.contains(mangledName))
-    mangledName += std::to_string(cnt++);
+  while (circuitsSymbolMap.contains(mangledName)) {
+    circuitCounter += 1;
+    mangledName = "reset_circuit_" + std::to_string(circuitCounter);
+  }
   return mangledName;
 }
 
