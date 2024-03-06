@@ -262,6 +262,9 @@ static void mergeMeasurements(PatternRewriter &rewriter,
       measureOp.getLoc(), TypeRange(typeVec), ValueRange(valVec));
 
   auto originalNumResults = measureOp->getNumResults();
+  rewriter.replaceOp(measureOp,
+                     ResultRange(mergedOp.result_begin(),
+                                 mergedOp.result_begin() + originalNumResults));
 
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Value> outputValues;
@@ -275,10 +278,6 @@ static void mergeMeasurements(PatternRewriter &rewriter,
 
   dropNextMeasure(rewriter, outputTypes, outputValues, nextCircuitOp,
                   nextMeasureOp);
-
-  for(uint resultNum = 0; resultNum < originalNumResults; resultNum++)
-    measureOp.getResult(resultNum).replaceAllUsesWith(mergedOp.getResult(resultNum));
-  rewriter.eraseOp(measureOp);
 
   // dice the output so we can specify which results to replace
   auto iterSep = newCallOp.result_begin() + callCircuitOp.getNumResults();
