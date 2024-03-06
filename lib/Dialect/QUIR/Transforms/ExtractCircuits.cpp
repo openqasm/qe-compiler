@@ -76,7 +76,7 @@ std::optional<Operation *> localNextQuantumOpOrNull(Operation *op) {
       return std::nullopt;
     if (isa<oq3::CBitInsertBitOp>(nextOp))
       return std::nullopt;
-    else if (isa<quir::SwitchOp>(nextOp))
+    if (isa<quir::SwitchOp>(nextOp))
       return std::nullopt;
     nextOp = nextOp->getNextNode();
   }
