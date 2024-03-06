@@ -284,7 +284,7 @@ void BreakResetPass::finishCircuit(mlir::quir::CircuitOp circOp,
 }
 
 std::string BreakResetPass::getMangledName() {
-  std::string baseName = "reset_circuit_";
+  const std::string baseName = "reset_circuit_";
   std::string mangledName;
 
   // TODO: replace this with an O(1) algorithm to obtain mangled name
