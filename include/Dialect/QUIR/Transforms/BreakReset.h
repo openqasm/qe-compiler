@@ -84,7 +84,8 @@ private:
   mlir::quir::CircuitOp startCircuit(ModuleOp moduleOp,
                                      const std::string &circuitName,
                                      measureOrCallGate quantumGate);
-  void finishCircuit(mlir::quir::CircuitOp circOp);
+  void finishCircuit(mlir::quir::CircuitOp circOp, Operation *quantumGate);
+  std::string getMangledName(const std::string &name);
 }; // struct BreakResetPass
 } // namespace mlir::quir
 

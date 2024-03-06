@@ -205,7 +205,7 @@ void BreakResetPass::insertCallGateInCircuit(
     auto newCallGateOp =
         circuitBuilder.create<CallGateOp>(callGateOp.getLoc(), StringRef("x"),
                                           TypeRange{}, circOp.getArguments());
-    finishCircuit(circOp);
+    finishCircuit(circOp, newCallGateOp.getOperation());
     resetGateCircuitsSymbolMap[llvm::StringRef(circuitName)] =
         circOp.getOperation();
   } else
@@ -242,7 +242,7 @@ void BreakResetPass::insertMeasureInCircuit(ModuleOp moduleOp,
         measureOp.getLoc(), TypeRange(typeVec), circOp.getArguments());
     resetMeasureOp->setAttr(getNoReportRuntimeAttrName(),
                             builder.getUnitAttr());
-    finishCircuit(circOp);
+    finishCircuit(circOp, resetMeasureOp.getOperation());
     resetGateCircuitsSymbolMap[llvm::StringRef(circuitName)] =
         circOp.getOperation();
   } else
@@ -271,9 +271,8 @@ CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
   // mangle the circuit name if there exist a circuit with the same name in
   // input of this pass
   auto mangledCircuitName = circuitName;
-  int cnt = 0;
-  while (inputCircuitsSymbolMap.contains(mangledCircuitName))
-    mangledCircuitName += std::to_string(cnt++);
+  if (inputCircuitsSymbolMap.contains(circuitName))
+    mangledCircuitName = getMangledName(circuitName);
 
   auto circOp = builder.create<CircuitOp>(mainFunc.getLoc(), mangledCircuitName,
                                           builder.getFunctionType(
@@ -281,7 +280,6 @@ CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
                                               /*results=*/ArrayRef<Type>()));
 
   circOp.addEntryBlock();
-  OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
 
   uint argumentIndex = 0;
   for (auto operand : quantumGate->getOperands()) {
@@ -290,49 +288,43 @@ CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
     argumentIndex++;
   }
 
-  circuitBuilder.create<mlir::quir::ReturnOp>(location, ValueRange({}));
   return circOp;
 }
 
-void BreakResetPass::finishCircuit(mlir::quir::CircuitOp circOp) {
+void BreakResetPass::finishCircuit(mlir::quir::CircuitOp circOp,
+                                   Operation *quantumGate) {
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Type> inputTypes;
   llvm::SmallVector<Value> outputValues;
   OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
 
-  bool measOpFound = false;
-  circOp.walk([&](MeasureOp measOp) {
-    measOpFound = true;
-    inputTypes = TypeRange(measOp.getOperandTypes());
-    outputTypes.append(measOp.result_type_begin(), measOp.result_type_end());
-    outputValues.append(measOp.result_begin(), measOp.result_end());
-    return WalkResult::interrupt();
-  });
-
-  bool callGateOpFound = false;
-  circOp.walk([&](CallGateOp callGateOp) {
-    callGateOpFound = true;
-    inputTypes = TypeRange(callGateOp.getOperandTypes());
-    outputTypes.append(callGateOp->result_type_begin(),
-                       callGateOp->result_type_end());
-    outputValues.append(callGateOp->result_begin(), callGateOp->result_end());
-    return WalkResult::interrupt();
-  });
-
-  // sanity check that only one of measOp or callGateOp were found
-  assert(
-      ((callGateOpFound && !measOpFound) ||
-       (!callGateOpFound && measOpFound)) &&
-      "only one of measure op or call gate op can be present in input circuit");
+  if (auto castOp = dyn_cast<CallGateOp>(quantumGate)) {
+    inputTypes = TypeRange(castOp->getOperandTypes());
+    outputTypes.append(castOp->result_type_begin(), castOp->result_type_end());
+    outputValues.append(castOp->result_begin(), castOp->result_end());
+  } else if (auto castOp = dyn_cast<MeasureOp>(quantumGate)) {
+    inputTypes = TypeRange(castOp->getOperandTypes());
+    outputTypes.append(castOp->result_type_begin(), castOp->result_type_end());
+    outputValues.append(castOp->result_begin(), castOp->result_end());
+  } else
+    llvm_unreachable("operation not supported in this function");
 
   circOp.setType(circuitBuilder.getFunctionType(
       /*inputs=*/ArrayRef<Type>(inputTypes),
       /*results=*/ArrayRef<Type>(outputTypes)));
 
-  circOp.walk([&](mlir::quir::ReturnOp returnOp) {
-    returnOp->insertOperands(0, ValueRange(outputValues));
-    return WalkResult::interrupt();
-  });
+  auto returnOp = circuitBuilder.create<mlir::quir::ReturnOp>(
+      quantumGate->getLoc(), ValueRange(outputValues));
+  returnOp->moveAfter(quantumGate);
+}
+
+std::string BreakResetPass::getMangledName(const std::string &name) {
+  int cnt = 0;
+  auto mangledName = name;
+  // TODO: replace this with an O(1) algorithm
+  while (inputCircuitsSymbolMap.contains(mangledName))
+    mangledName += std::to_string(cnt++);
+  return mangledName;
 }
 
 llvm::StringRef BreakResetPass::getArgument() const { return "break-reset"; }
