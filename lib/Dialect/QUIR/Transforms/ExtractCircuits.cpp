@@ -74,7 +74,7 @@ std::optional<Operation *> localNextQuantumOpOrNull(Operation *op) {
     }
     if (isa<qcs::ParallelControlFlowOp>(nextOp))
       return std::nullopt;
-    else if (isa<oq3::CBitInsertBitOp>(nextOp))
+    if (isa<oq3::CBitInsertBitOp>(nextOp))
       return std::nullopt;
     else if (isa<quir::SwitchOp>(nextOp))
       return std::nullopt;
@@ -107,7 +107,7 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
                                         topLevelBuilder.getFunctionType(
                                             /*inputs=*/ArrayRef<Type>(),
                                             /*results=*/ArrayRef<Type>()));
-  auto *block = currentCircuitOp.addEntryBlock();
+  currentCircuitOp.addEntryBlock();
   circuitOpsMap[newName] = currentCircuitOp;
 
   currentCircuitOp->setAttr(llvm::StringRef("quir.classicalOnly"),
@@ -139,7 +139,6 @@ void ExtractCircuitsPass::addToCircuit(
       currentCircuitOp.insertArgument(argumentIndex, operand.getType(), {},
                                       currentOp->getLoc());
       if (isa<quir::DeclareQubitOp>(defOp)) {
-        auto declareQubitOp = static_cast<quir::DeclareQubitOp>(defOp);
         auto physicalId = defOp->getAttrOfType<IntegerAttr>("id");
         phyiscalIds.push_back(physicalId.getInt());
         currentCircuitOp.setArgAttrs(
@@ -195,7 +194,7 @@ void ExtractCircuitsPass::endCircuit(
   // remap uses
   assert(originalResults.size() == newCallCircuitOp->getNumResults() &&
          "number of results does not match");
-  for (auto cnt = 0; cnt < newCallCircuitOp->getNumResults(); cnt++) {
+  for (uint cnt = 0; cnt < newCallCircuitOp->getNumResults(); cnt++) {
     originalResults[cnt].replaceAllUsesWith(newCallCircuitOp->getResult(cnt));
     assert(originalResults[cnt].use_empty() && "usage expected to be empty");
   }
