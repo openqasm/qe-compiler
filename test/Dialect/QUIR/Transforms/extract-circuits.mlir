@@ -45,5 +45,3 @@ module {
     return %c0_i32 : i32
   }
 }
-
-

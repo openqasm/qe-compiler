@@ -4,9 +4,9 @@ features:
     Add new ExtractCircuitsPass. This pass will walk the main func and extract
     quantum operations into quir.circuits. It is intended to be run after all
     reordering and merging has been completed. The pass currently requires
-    --enable-circuits=true in order to have effect. 
+    --enable-circuits=true in order to have effect.
 deprecations:
   - |
     Circuit formation during QUIRGen has been deprecated. This form of circuit
     generation is now controlled by the --enable-circuits-from-qasm command
-    line option. 
+    line option.
