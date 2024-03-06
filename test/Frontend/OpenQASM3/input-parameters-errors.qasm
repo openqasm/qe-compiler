@@ -1,6 +1,5 @@
 OPENQASM 3;
-// RUN: (! qss-compiler -X=qasm --emit=mlir --enable-parameters %s 2>&1 ) | FileCheck %s --check-prefixes NO-CIRCUITS,CIRCUITS
-// RUN: (! qss-compiler -X=qasm --emit=mlir --enable-parameters --enable-circuits %s 2>&1 ) | FileCheck %s --check-prefix CIRCUITS
+// RUN: (! qss-compiler -X=qasm --emit=mlir --enable-parameters --enable-circuits-from-qasm %s 2>&1 ) | FileCheck %s --check-prefix CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -28,7 +27,6 @@ input uint badUInt;
 input float[32] badFloat32;
 input float badFloat;
 
-// NO-CIRCUITS: loc("-":0:0): error: the --enable-parameters circuit requires --enable-circuits
 // CIRCUITS-NOT: error: Input parameter theta type error. Input parameters must be angle or float[64].
 // CIRCUITS-NOT: error: Input parameter theta2 type error. Input parameters must be angle or float[64].
 // CIRCUITS: error: Input parameter badComplex type error. Input parameters must be angle or float[64].

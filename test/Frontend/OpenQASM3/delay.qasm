@@ -1,7 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits=false | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
-// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits-from-qasm=false | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-NO-CIRCUITS
+// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-circuits-from-qasm | FileCheck %s --match-full-lines --check-prefixes MLIR,MLIR-CIRCUITS
 
 //
 // This code is part of Qiskit.
@@ -75,7 +75,7 @@ delay[a] $0, $1;
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<4.000000e+01> : !quir.duration<dt>
 // MLIR-CIRCUITS: {{.*}} = quir.constant #quir.duration<1.000000e+01> : !quir.duration<ns>
 // MLIR-CIRCUITS: quir.call_circuit @circuit_0({{.*}}, {{.*}}, {{.*}}, {{.*}}, {{.*}}, {{.*}}, {{.*}}, {{.*}}) : (!quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}) -> ()
-// TODO: Two oq3.declare_stretch statements are generated independent of --enable-circuits
+// TODO: Two oq3.declare_stretch statements are generated independent of --enable-circuits-from-qasm
 //       This does no harm but might potentially be fixed at some point
 //MLIR-CIRCUITS: %3 = oq3.declare_stretch : !quir.stretch
 //MLIR-CIRCUITS: quir.call_circuit @circuit_1({{.*}}, {{.*}},{{.*}}) : (!quir.{{.*}}, !quir.{{.*}}, !quir.{{.*}}) -> ()
