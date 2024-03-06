@@ -285,12 +285,15 @@ void BreakResetPass::finishCircuit(mlir::quir::CircuitOp circOp,
 }
 
 std::string BreakResetPass::getMangledName() {
-  auto mangledName = "reset_circuit_" + std::to_string(circuitCounter);
-  // TODO: replace this with an O(1) algorithm
-  while (circuitsSymbolMap.contains(mangledName)) {
+  std::string baseName = "reset_circuit_";
+  std::string mangledName;
+
+  // TODO: replace this with an O(1) algorithm to obtain mangled name
+  do {
+    mangledName = baseName + std::to_string(circuitCounter);
     circuitCounter += 1;
-    mangledName = "reset_circuit_" + std::to_string(circuitCounter);
-  }
+  } while (circuitsSymbolMap.contains(mangledName));
+
   return mangledName;
 }
 
