@@ -1,7 +1,7 @@
 OPENQASM 3.0;
 // RUN: qss-compiler %s --target mock --config %TEST_CFG --emit=qem --plaintext-payload --enable-circuits-from-qasm=false | FileCheck %s
 
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
