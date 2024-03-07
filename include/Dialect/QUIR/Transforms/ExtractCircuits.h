@@ -25,6 +25,7 @@
 
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
+
 #include "llvm/ADT/SmallVector.h"
 
 #include <unordered_map>
