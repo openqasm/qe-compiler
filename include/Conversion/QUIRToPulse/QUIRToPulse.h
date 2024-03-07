@@ -62,9 +62,9 @@ struct QUIRToPulsePass
   mlir::Operation *mainFuncFirstOp;
 
   // convert quir circuit to pulse sequence
-  void convertCircuitToSequence(mlir::quir::CallCircuitOp callCircuitOp,
-                                mlir::func::FuncOp &mainFunc,
-                                ModuleOp moduleOp);
+  mlir::pulse::CallSequenceOp
+  convertCircuitToSequence(mlir::quir::CallCircuitOp &callCircuitOp,
+                           mlir::func::FuncOp &mainFunc, ModuleOp &moduleOp);
   // helper datastructure for converting quir circuit to pulse sequence; these
   // will be reset every time convertCircuitToSequence is called and will be
   // used by several functions that are called within that function
@@ -75,17 +75,17 @@ struct QUIRToPulsePass
 
   // process the args of the circuit op, and add corresponding args to the
   // converted pulse sequence op
-  void processCircuitArgs(mlir::quir::CallCircuitOp callCircuitOp,
-                          mlir::quir::CircuitOp circuitOp,
-                          SequenceOp convertedPulseSequenceOp,
+  void processCircuitArgs(mlir::quir::CallCircuitOp &callCircuitOp,
+                          mlir::quir::CircuitOp &circuitOp,
+                          SequenceOp &convertedPulseSequenceOp,
                           mlir::func::FuncOp &mainFunc,
                           mlir::OpBuilder &builder);
 
   // process the args of the pulse cal sequence op corresponding to quirOp
   void processPulseCalArgs(mlir::Operation *quirOp,
-                           SequenceOp pulseCalSequenceOp,
+                           SequenceOp &pulseCalSequenceOp,
                            SmallVector<Value> &pulseCalSeqArgs,
-                           SequenceOp convertedPulseSequenceOp,
+                           SequenceOp &convertedPulseSequenceOp,
                            mlir::func::FuncOp &mainFunc,
                            mlir::OpBuilder &builder);
   void getQUIROpClassicalOperands(mlir::Operation *quirOp,
@@ -93,33 +93,33 @@ struct QUIRToPulsePass
                                   std::queue<Value> &durationOperands);
   void processMixFrameOpArg(std::string const &mixFrameName,
                             std::string const &portName,
-                            SequenceOp convertedPulseSequenceOp,
+                            SequenceOp &convertedPulseSequenceOp,
                             SmallVector<Value> &quirOpPulseCalSeqArgs,
                             Value argumentValue, mlir::func::FuncOp &mainFunc,
                             mlir::OpBuilder &builder);
   void processPortOpArg(std::string const &portName,
-                        SequenceOp convertedPulseSequenceOp,
+                        SequenceOp &convertedPulseSequenceOp,
                         SmallVector<Value> &quirOpPulseCalSeqArgs,
                         Value argumentValue, mlir::func::FuncOp &mainFunc,
                         mlir::OpBuilder &builder);
   void processWfrOpArg(std::string const &wfrName,
-                       SequenceOp convertedPulseSequenceOp,
+                       SequenceOp &convertedPulseSequenceOp,
                        SmallVector<Value> &quirOpPulseCalSeqArgs,
                        Value argumentValue, mlir::func::FuncOp &mainFunc,
                        mlir::OpBuilder &builder);
   void processAngleArg(Value nextAngleOperand,
-                       SequenceOp convertedPulseSequenceOp,
+                       SequenceOp &convertedPulseSequenceOp,
                        SmallVector<Value> &quirOpPulseCalSeqArgs,
                        mlir::OpBuilder &builder);
   void processDurationArg(Value frontDurOperand,
-                          SequenceOp convertedPulseSequenceOp,
+                          SequenceOp &convertedPulseSequenceOp,
                           SmallVector<Value> &quirOpPulseCalSeqArgs,
                           mlir::OpBuilder &builder);
 
   // convert angle to F64
   mlir::Value convertAngleToF64(Operation *angleOp, mlir::OpBuilder &builder);
   // convert duration to I64
-  mlir::Value convertDurationToI64(mlir::quir::CallCircuitOp callCircuitOp,
+  mlir::Value convertDurationToI64(mlir::quir::CallCircuitOp &callCircuitOp,
                                    Operation *durOp, uint &cnt,
                                    mlir::OpBuilder &builder,
                                    mlir::func::FuncOp &mainFunc);
@@ -149,10 +149,8 @@ struct QUIRToPulsePass
                                               mlir::OpBuilder &builder);
 
   void addCircuitToEraseList(mlir::Operation *op);
-  void addCallCircuitToEraseList(mlir::Operation *op);
   void addCircuitOperandToEraseList(mlir::Operation *op);
   std::vector<mlir::Operation *> quirCircuitEraseList;
-  std::vector<mlir::Operation *> quirCallCircuitEraseList;
   std::vector<mlir::Operation *> quirCircuitOperandEraseList;
 
   // parse the waveform containers and add them to pulseNameToWaveformMap
@@ -160,7 +158,7 @@ struct QUIRToPulsePass
   std::map<std::string, Waveform_CreateOp> pulseNameToWaveformMap;
 
   llvm::StringMap<Operation *> symbolMap;
-  mlir::quir::CircuitOp getCircuitOp(mlir::quir::CallCircuitOp callCircuitOp);
+  mlir::quir::CircuitOp getCircuitOp(mlir::quir::CallCircuitOp &callCircuitOp);
   mlir::pulse::SequenceOp getSequenceOp(std::string const &symbolName);
 };
 } // namespace mlir::pulse
