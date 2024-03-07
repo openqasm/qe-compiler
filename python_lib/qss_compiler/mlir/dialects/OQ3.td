@@ -1,4 +1,4 @@
-//===- OQ3.td - OQ3 dialect pythond includer ---------------*- tablegen -*-===//
+//===- OQ3.td - OQ3 dialect python includer ----------------*- tablegen -*-===//
 //
 // (C) Copyright IBM 2024.
 //

@@ -1,4 +1,4 @@
-//===- Pulse.td - Pulse dialect pythond includer -----------*- tablegen -*-===//
+//===- Pulse.td - Pulse dialect python includer ------------*- tablegen -*-===//
 //
 // (C) Copyright IBM 2024.
 //

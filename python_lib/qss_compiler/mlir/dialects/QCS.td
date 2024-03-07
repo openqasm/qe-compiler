@@ -1,4 +1,4 @@
-//===- QCS.td - QCS dialect pythond includer ---------------*- tablegen -*-===//
+//===- QCS.td - QCS dialect python includer ----------------*- tablegen -*-===//
 //
 // (C) Copyright IBM 2024.
 //

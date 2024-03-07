@@ -1,4 +1,4 @@
-//===- QUIR.td - QUIR dialect pythond includer -------------*- tablegen -*-===//
+//===- QUIR.td - QUIR dialect python includer --------------*- tablegen -*-===//
 //
 // (C) Copyright IBM 2024.
 //
