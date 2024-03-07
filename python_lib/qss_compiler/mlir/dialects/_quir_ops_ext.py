@@ -47,6 +47,7 @@ class ConstantOp:
 
 
 class DelayOp:
-    # TODO: Why is target and duration apparently swapped?
-    def __init__(self, target, *, dur=[], loc=None, ip=None):
-        super().__init__(target, dur, loc=loc, ip=ip)
+    # TODO: The order of arguments is reversed between the QUIR and Pulse
+    # versions of the DelayOp. This QUIR version has duration first.
+    def __init__(self, duration, targets, *, loc=None, ip=None):
+        super().__init__(duration, targets, loc=loc, ip=ip)
