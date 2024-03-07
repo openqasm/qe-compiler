@@ -17,15 +17,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# In[1]:
-
-
 import sys
 from qss_compiler.mlir.ir import Context, Module
 from qss_compiler.mlir.dialects import pulse, quir
-
-# In[2]:
-
 
 with Context() as ctx:
 

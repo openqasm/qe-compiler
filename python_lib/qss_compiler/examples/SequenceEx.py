@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # (C) Copyright IBM 2024.
 #
 # This code is part of Qiskit.

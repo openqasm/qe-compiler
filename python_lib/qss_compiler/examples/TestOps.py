@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # (C) Copyright IBM 2024.
 #
 # This code is part of Qiskit.
@@ -52,12 +54,13 @@ with Context(), Location.unknown():
         # create test sequence op
         seq = pulse.SequenceOp("test_pulse_ops", [p, p, f, mf, c64], [i1, i1])
         seq.add_entry_block()
+
     # define sequence
     with InsertionPoint(seq.entry_block):
         # define args
         p0, p1, f0, mf0, amp = seq.entry_block.arguments
 
-        # # define constants
+        # define constants
         dur = arith.ConstantOp(i32, 160)
         sigma = arith.ConstantOp(i32, 40)
         width = arith.ConstantOp(i32, 1000)
@@ -66,7 +69,7 @@ with Context(), Location.unknown():
         samples = np.array([[0.0, 0.5], [0.5, 0.5], [0.5, 0.0]])
         samples_2d = DenseElementsAttr.get(samples)
 
-        # # create waveforms
+        # create waveforms
         gauss = pulse.GaussianOp(dur, amp, sigma)
         gauss_square = pulse.GaussianSquareOp(dur, amp, sigma, width)
         drag = pulse.DragOp(dur, amp, sigma, beta)
@@ -81,8 +84,8 @@ with Context(), Location.unknown():
         param_amp_i = arith.ConstantOp(f64, 0.0012978777572167797)
         param_amp = complex.CreateOp(ComplexType.get(F64Type.get()), param_amp_r, param_amp_i)
 
-        # freq stuff
-        # define freq
+        # frequency operations
+        # define frequency
         fc = arith.ConstantOp(f64, 200.0e4)
 
         pulse.SetFrequencyOp(mf0, fc)
@@ -91,7 +94,7 @@ with Context(), Location.unknown():
         pulse.ShiftFrequencyOp(mf0, fc)
         pulse.ShiftFrequencyOp(f0, fc)
 
-        # phase stuff
+        # phase operations
         # define angle
         angle = arith.ConstantOp(f64, 3.14)
 
@@ -111,7 +114,7 @@ with Context(), Location.unknown():
         # play
         pulse.PlayOp(mf0, drag)
 
-        # # kernel
+        # kernel
         kernel = pulse.Kernel_CreateOp(kernel_waveform)
         res0 = pulse.CaptureOp(mf0)
         pulse.ReturnOp([res0, res0])
