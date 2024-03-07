@@ -26,6 +26,7 @@ module {
   // CHECK: quir.return
   // CHECK: func.func @main()
   func.func @main() -> i32 attributes {quir.classicalOnly = false} {
+    %c0_i1 = arith.constant 0 : i1
     %c0_i32 = arith.constant 0 : i32
     %c0_i4 = arith.constant 0 : i4
     %dur = quir.constant #quir.duration<1.000000e+00> : !quir.duration<ms>
@@ -47,12 +48,46 @@ module {
       // CHECK-NOT: quir.delay %dur_0, (%1) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
       // CHECK-NOT: %4:2 = quir.measure(%0, %2) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
       // CHECK: %4:2 = quir.call_circuit @circuit_0(%dur_0, %1, %0, %2)
+      qcs.parallel_control_flow {
+      // CHECK: qcs.parallel_control_flow
       scf.if %4#0 {
+      // scf.if
         quir.call_gate @x(%0) : (!quir.qubit<1>) -> ()
         // CHECK-NOT:  quir.call_gate @x(%0) : (!quir.qubit<1>) -> ()
         // CHECK: quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> ()
       } {quir.classicalOnly = false, quir.physicalIds = [0 : i32]}
       oq3.cbit_assign_bit @obs<4> [0] : i1 = %4#1
+      } {quir.maxDelayCycles = 100 : i64, quir.physicalIds = [0 : i32]}
+      quir.switch %c0_i32 {
+      // CHECK: quir.switch
+        } [
+            1: {
+                quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
+                // CHECK-NOT:  quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
+                // CHECK: quir.call_circuit @circuit_2(%1) : (!quir.qubit<1>) -> ()
+            }
+            2: {
+                quir.call_gate @x(%2) : (!quir.qubit<1>) -> ()
+                // CHECK-NOT:  quir.call_gate @x(%2) : (!quir.qubit<1>) -> ()
+                // CHECK: quir.call_circuit @circuit_3(%2) : (!quir.qubit<1>) -> ()
+            }
+            3: {
+            }
+        ]
+      scf.while : () -> () {
+      // CHECK: scf.while
+        quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
+        // CHECK-NOT:  quir.call_gate @x(%1) : (!quir.qubit<1>) -> ()
+        // CHECK: quir.call_circuit @circuit_4(%1) : (!quir.qubit<1>) -> ()
+        scf.condition(%c0_i1)
+        // CHECK: scf.condition
+      } do {
+        quir.call_gate @x(%2) : (!quir.qubit<1>) -> ()
+        // CHECK-NOT:  quir.call_gate @x(%2) : (!quir.qubit<1>) -> ()
+        // CHECK: quir.call_circuit @circuit_5(%2) : (!quir.qubit<1>) -> ()
+        scf.yield
+        // CHECK: scf.yield
+      }
     } {qcs.shot_loop, quir.classicalOnly = false, quir.physicalIds = [0 : i32, 1 : i32, 2 : i32]}
     qcs.finalize
     return %c0_i32 : i32

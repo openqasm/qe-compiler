@@ -295,6 +295,12 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
     } else if (isa<scf::ForOp>(currentOp)) {
       auto forOp = static_cast<scf::ForOp>(currentOp);
       processOps(&forOp.getBody()->front(), topLevelBuilder, circuitBuilder);
+    } else if (isa<scf::WhileOp>(currentOp)) {
+      auto whileOp = static_cast<scf::WhileOp>(currentOp);
+      if (!whileOp.getBefore().empty())
+        processOps(&whileOp.getBefore().front().front(), topLevelBuilder, circuitBuilder);
+      if (!whileOp.getAfter().empty())
+        processOps(&whileOp.getAfter().front().front(), topLevelBuilder, circuitBuilder);
     } else if (isa<quir::SwitchOp>(currentOp)) {
       auto switchOp = static_cast<quir::SwitchOp>(currentOp);
       for (auto &region : switchOp.getCaseRegions())
