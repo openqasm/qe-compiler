@@ -221,7 +221,7 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
   // Handle Shot Loop delay differently
   if (isa<quir::DelayOp>(currentOp) &&
       isa<qcs::ShotInitOp>(currentOp->getNextNode())) {
-    // skip pass shot init
+    // skip past shot init
     currentOp = currentOp->getNextNode()->getNextNode();
   }
 
