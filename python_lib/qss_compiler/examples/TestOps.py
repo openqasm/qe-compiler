@@ -20,7 +20,6 @@
 
 from qss_compiler.mlir.ir import InsertionPoint, Location, Module, Context
 from qss_compiler.mlir.ir import IntegerType, F64Type, ComplexType
-from qss_compiler.mlir.ir import DenseElementsAttr
 
 from qss_compiler.mlir.dialects import arith, complex, func
 from qss_compiler.mlir.dialects import pulse, quir
@@ -82,7 +81,9 @@ with Context(), Location.unknown():
         # define complex amp
         param_amp_r = arith.ConstantOp(f64, 0.10086211860780928)
         param_amp_i = arith.ConstantOp(f64, 0.0012978777572167797)
-        param_amp = complex.CreateOp(ComplexType.get(F64Type.get()), param_amp_r, param_amp_i)
+        param_amp = complex.CreateOp(
+            ComplexType.get(F64Type.get()), param_amp_r, param_amp_i
+        )
 
         # frequency operations
         # define frequency
@@ -140,8 +141,9 @@ with Context(), Location.unknown():
 print(module)
 
 # writing to a file
-print("Writing to test.mlir")
-test = open("TestOps.mlir", "w")
+file = "TestOps.mlir"
+print(f"Writing to {file}")
+test = open(file, "w")
 test.write(str(module))
 test.close()
 print("Done!")
