@@ -300,9 +300,11 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
     } else if (isa<scf::WhileOp>(currentOp)) {
       auto whileOp = static_cast<scf::WhileOp>(currentOp);
       if (!whileOp.getBefore().empty())
-        processOps(&whileOp.getBefore().front().front(), topLevelBuilder, circuitBuilder);
+        processOps(&whileOp.getBefore().front().front(), topLevelBuilder,
+                   circuitBuilder);
       if (!whileOp.getAfter().empty())
-        processOps(&whileOp.getAfter().front().front(), topLevelBuilder, circuitBuilder);
+        processOps(&whileOp.getAfter().front().front(), topLevelBuilder,
+                   circuitBuilder);
     } else if (isa<quir::SwitchOp>(currentOp)) {
       // NOLINTNEXTLINE(llvm-qualified-auto)
       auto switchOp = static_cast<quir::SwitchOp>(currentOp);
