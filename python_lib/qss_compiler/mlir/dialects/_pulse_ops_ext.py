@@ -16,11 +16,12 @@
 
 try:
     from ..ir import (
-        FlatSymbolRefAttr,
+        ArrayAttr,
+        DenseElementsAttr,
         StringAttr,
         TypeAttr,
+        FlatSymbolRefAttr,
         FunctionType,
-        ArrayAttr,
     )
     from ..ir import *  # noqa: F401, F403
     from .pulse import *  # noqa: F401, F403
@@ -102,7 +103,9 @@ class Port_CreateOp:
 
 
 class SequenceOp:
-    def __init__(self, sym_name, inputs, results, *, sym_visibility="public", loc=None, ip=None):
+    def __init__(
+        self, sym_name, inputs, results, *, sym_visibility="public", loc=None, ip=None
+    ):
         super().__init__(
             StringAttr.get(str(sym_name)),
             TypeAttr.get(FunctionType.get(inputs=inputs, results=results)),
@@ -133,6 +136,6 @@ class SequenceOp:
         return
 
 
-# class Waveform_CreateOp:
-#     def __init__(self, wf, samples_2d, *, loc=None, ip=None):
-#         super().__init__(wf, DenseElementsAttr.get(samples_2d), loc=loc, ip=ip)
+class Waveform_CreateOp:
+    def __init__(self, samples_2d, *, loc=None, ip=None):
+        super().__init__(DenseElementsAttr.get(samples_2d), loc=loc, ip=ip)

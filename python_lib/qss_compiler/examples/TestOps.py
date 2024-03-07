@@ -67,14 +67,14 @@ with Context(), Location.unknown():
         beta = arith.ConstantOp(f64, -1.3677586253287046)
 
         samples = np.array([[0.0, 0.5], [0.5, 0.5], [0.5, 0.0]])
-        samples_2d = DenseElementsAttr.get(samples)
+        # samples_2d = DenseElementsAttr.get(samples)
 
         # create waveforms
         gauss = pulse.GaussianOp(dur, amp, sigma)
         gauss_square = pulse.GaussianSquareOp(dur, amp, sigma, width)
         drag = pulse.DragOp(dur, amp, sigma, beta)
         const = pulse.ConstOp(dur, amp)
-        kernel_waveform = pulse.Waveform_CreateOp(samples_2d)
+        kernel_waveform = pulse.Waveform_CreateOp(samples)
 
         # mixed frame
         mf1 = pulse.MixFrameOp(p0, "mf1-p0")
