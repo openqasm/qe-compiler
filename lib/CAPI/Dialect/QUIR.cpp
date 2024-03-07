@@ -41,8 +41,6 @@ bool quirTypeIsAAngleType(MlirType type) {
 }
 
 MlirType quirAngleTypeGet(MlirContext ctx, unsigned width) {
-
-  // TODO: NEED TO ADD WIDTH PARAMETER
   return wrap(quir::AngleType::get(unwrap(ctx), width));
 }
 
@@ -56,7 +54,5 @@ bool quirTypeIsADurationType(MlirType type) {
 
 // TODO: NEED TO ADD TIME UNIT TO THIS SIGNATURE
 MlirType quirDurationTypeGet(MlirContext ctx) {
-
-  // TODO: NEED TO ADD WIDTH PARAMETER
   return wrap(quir::DurationType::get(unwrap(ctx), mlir::quir::TimeUnits::dt));
 }
