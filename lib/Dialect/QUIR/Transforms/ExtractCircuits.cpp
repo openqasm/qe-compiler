@@ -62,6 +62,7 @@ llvm::cl::opt<bool>
                    llvm::cl::desc("enable extract quir circuits"),
                    llvm::cl::init(false));
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static std::optional<Operation *> localNextQuantumOpOrNull(Operation *op) {
   Operation *nextOp = op;
   while (nextOp) {
@@ -183,6 +184,7 @@ void ExtractCircuitsPass::endCircuit(
       topLevelBuilder.getI32ArrayAttr(ArrayRef<int>(phyiscalIds)));
 
   // insert call_circuit
+  // NOLINTNEXTLINE(misc-const-correctness)
   OpBuilder builder(firstOp);
   newCallCircuitOp = builder.create<mlir::quir::CallCircuitOp>(
       currentCircuitOp->getLoc(), currentCircuitOp.getSymName(),
@@ -302,10 +304,12 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
       if (!whileOp.getAfter().empty())
         processOps(&whileOp.getAfter().front().front(), topLevelBuilder, circuitBuilder);
     } else if (isa<quir::SwitchOp>(currentOp)) {
+      // NOLINTNEXTLINE(llvm-qualified-auto)
       auto switchOp = static_cast<quir::SwitchOp>(currentOp);
       for (auto &region : switchOp.getCaseRegions())
         processOps(&region.front().front(), topLevelBuilder, circuitBuilder);
     } else if (isa<qcs::ParallelControlFlowOp>(currentOp)) {
+      // NOLINTNEXTLINE(llvm-qualified-auto)
       auto parOp = static_cast<qcs::ParallelControlFlowOp>(currentOp);
       processOps(&parOp.getBody()->front(), topLevelBuilder, circuitBuilder);
     } else if (currentOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
