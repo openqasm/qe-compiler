@@ -15,6 +15,9 @@ Unit tests for the dialect python bindings
 """
 import pytest  # noqa: F401
 
+# TODO: Remove import * after we write more tests, hopefully it will ease test
+# development in the meantime
+
 from qss_compiler.mlir.ir import *  # noqa: F401, F403
 from qss_compiler.mlir.ir import (
     Context,
