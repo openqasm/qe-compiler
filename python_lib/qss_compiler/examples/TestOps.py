@@ -81,9 +81,7 @@ with Context(), Location.unknown():
         # define complex amp
         param_amp_r = arith.ConstantOp(f64, 0.10086211860780928)
         param_amp_i = arith.ConstantOp(f64, 0.0012978777572167797)
-        param_amp = complex.CreateOp(
-            ComplexType.get(F64Type.get()), param_amp_r, param_amp_i
-        )
+        param_amp = complex.CreateOp(ComplexType.get(f64), param_amp_r, param_amp_i)
 
         # frequency operations
         # define frequency

@@ -84,9 +84,7 @@ class MixFrameOp:
 
 
 class PlayOp:
-    def __init__(
-        self, target, wfr, *, angle=None, ssb=None, amplitude=None, loc=None, ip=None
-    ):
+    def __init__(self, target, wfr, *, angle=None, ssb=None, amplitude=None, loc=None, ip=None):
         super().__init__(
             target,
             wfr,
@@ -104,9 +102,7 @@ class Port_CreateOp:
 
 
 class SequenceOp:
-    def __init__(
-        self, sym_name, inputs, results, *, sym_visibility="public", loc=None, ip=None
-    ):
+    def __init__(self, sym_name, inputs, results, *, sym_visibility="public", loc=None, ip=None):
         super().__init__(
             StringAttr.get(str(sym_name)),
             TypeAttr.get(FunctionType.get(inputs=inputs, results=results)),
