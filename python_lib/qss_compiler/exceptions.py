@@ -109,5 +109,9 @@ class QSSLinkInvalidArgumentError(QSSLinkingFailure):
     """Raised when argument is invalid"""
 
 
+class QSSControlSystemResourcesExceeded(QSSCompilerError):
+    """Raised when control system resources (such as instruction memory) are exceeded."""
+
+
 class OpenQASM3ParseFailure(QSSCompilerError):
     """Raised when a parser failure is received"""

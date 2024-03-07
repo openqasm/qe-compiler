@@ -71,6 +71,9 @@ static std::string_view getErrorCategoryAsString(ErrorCategory category) {
   case ErrorCategory::QSSLinkInvalidPatchTypeError:
     return "Invalid patch point type";
 
+  case ErrorCategory::QSSControlSystemResourcesExceeded:
+    return "Control system resources exceeded";
+
   case ErrorCategory::UncategorizedError:
     return "Compilation failure";
   }
