@@ -35,6 +35,7 @@ using namespace mlir;
 using namespace mlir::python;
 using namespace mlir::python::adaptors;
 
+// Intentionally left blank placeholder and for a common pattern across dialects
 void populateDialectOQ3Submodule(const pybind11::module &m) {}
 
 PYBIND11_MODULE(_ibmDialectsOQ3, m) {
