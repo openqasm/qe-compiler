@@ -57,13 +57,12 @@
 using namespace mlir;
 using namespace mlir::quir;
 
-namespace {
 llvm::cl::opt<bool>
     enableCircuits("enable-circuits",
                    llvm::cl::desc("enable extract quir circuits"),
                    llvm::cl::init(false));
 
-std::optional<Operation *> localNextQuantumOpOrNull(Operation *op) {
+static std::optional<Operation *> localNextQuantumOpOrNull(Operation *op) {
   Operation *nextOp = op;
   while (nextOp) {
     if (isQuantumOp(nextOp) && nextOp != op)
@@ -82,8 +81,6 @@ std::optional<Operation *> localNextQuantumOpOrNull(Operation *op) {
   }
   return std::nullopt;
 } // localNextQuantumOpOrNull
-
-} // anonymous namespace
 
 OpBuilder ExtractCircuitsPass::startCircuit(Location location,
                                             OpBuilder topLevelBuilder) {
