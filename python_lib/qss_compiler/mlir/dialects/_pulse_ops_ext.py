@@ -84,8 +84,9 @@ class MixFrameOp:
 
 
 class PlayOp:
-    def __init__(self, target, wfr, *, loc=None, ip=None):
-        angle, ssb, amplitude = None, None, None
+    def __init__(
+        self, target, wfr, *, angle=None, ssb=None, amplitude=None, loc=None, ip=None
+    ):
         super().__init__(
             target,
             wfr,
