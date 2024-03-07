@@ -18,8 +18,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef C_DIALECT_OQ3_H
-#define C_DIALECT_OQ3_H
+#ifndef C_DIALECT_PYTHON_OQ3_H
+#define C_DIALECT_PYTHON_OQ3_H
 
 #include "mlir-c/IR.h"
 
@@ -33,4 +33,4 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(OQ3, oq3);
 }
 #endif
 
-#endif // C_DIALECT_QUIR_H
+#endif // C_DIALECT_PYTHON_OQ3_H

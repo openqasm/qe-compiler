@@ -34,4 +34,4 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(QCS, qcs);
 }
 #endif
 
-#endif // C_DIALECT_QUIR_H
+#endif // C_DIALECT_QCS_H

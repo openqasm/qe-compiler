@@ -18,8 +18,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef C_DIALECT_QCS_H
-#define C_DIALECT_QCS_H
+#ifndef C_DIALECT_PYTHON_QCS_H
+#define C_DIALECT_PYTHON_QCS_H
 
 #include "mlir-c/IR.h"
 
@@ -33,4 +33,4 @@ MLIR_DECLARE_CAPI_DIALECT_REGISTRATION(QCS, qcs);
 }
 #endif
 
-#endif // C_DIALECT_QUIR_H
+#endif // C_DIALECT_PYTHON_QCS_H

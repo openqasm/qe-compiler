@@ -18,8 +18,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef C_DIALECT_PULSE_H
-#define C_DIALECT_PULSE_H
+#ifndef C_DIALECT_PYTHON_PULSE_H
+#define C_DIALECT_PYTHON_PULSE_H
 
 #include "mlir-c/IR.h"
 
@@ -81,4 +81,4 @@ MLIR_CAPI_EXPORTED MlirType pulseWaveformTypeGet(MlirContext ctx);
 }
 #endif
 
-#endif // C_DIALECT_PULSE_H
+#endif // C_DIALECT_PYTHON_PULSE_H

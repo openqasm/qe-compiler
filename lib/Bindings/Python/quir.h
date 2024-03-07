@@ -18,8 +18,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef C_DIALECT_QUIR_H
-#define C_DIALECT_QUIR_H
+#ifndef C_DIALECT_PYTHON_QUIR_H
+#define C_DIALECT_PYTHON_QUIR_H
 
 #include "mlir-c/IR.h"
 
@@ -49,4 +49,4 @@ MLIR_CAPI_EXPORTED MlirType quirDurationTypeGet(MlirContext ctx);
 }
 #endif
 
-#endif // C_DIALECT_QUIR_H
+#endif // C_DIALECT_PYTHON_QUIR_H
