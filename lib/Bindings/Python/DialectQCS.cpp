@@ -38,16 +38,16 @@ using namespace mlir::python::adaptors;
 // Intentionally left blank placeholder and for a common pattern across dialects
 void populateDialectQCSSubmodule(const pybind11::module &m) {}
 
-PYBIND11_MODULE(_ibmDialectsQCS, m) {
+PYBIND11_MODULE(_qeDialectsQCS, m) {
   m.doc() = "IBM Quantum QCS dialect.";
   populateDialectQCSSubmodule(m);
 
   //===--------------------------------------------------------------------===//
   // QCS dialect
   //===--------------------------------------------------------------------===//
-  auto quir_m = m.def_submodule("qcs");
+  auto qcs_m = m.def_submodule("qcs");
 
-  quir_m.def(
+  qcs_m.def(
       "register_dialect",
       [](MlirContext context, bool load) {
         const MlirDialectHandle handle = mlirGetDialectHandle__qcs__();

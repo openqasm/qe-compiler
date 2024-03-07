@@ -64,7 +64,7 @@ void populateDialectQUIRSubmodule(const pybind11::module &m) {
       py::arg("context") = py::none());
 }
 
-PYBIND11_MODULE(_ibmDialectsQUIR, m) {
+PYBIND11_MODULE(_qeDialectsQUIR, m) {
   m.doc() = "IBM Quantum QUIR dialect.";
   populateDialectQUIRSubmodule(m);
 

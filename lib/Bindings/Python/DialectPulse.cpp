@@ -118,7 +118,7 @@ void populateDialectPulseSubmodule(const pybind11::module &m) {
       py::arg("context") = py::none());
 }
 
-PYBIND11_MODULE(_ibmDialectsPulse, m) {
+PYBIND11_MODULE(_qeDialectsPulse, m) {
   m.doc() = "IBM Quantum Pulse dialect.";
   populateDialectPulseSubmodule(m);
 

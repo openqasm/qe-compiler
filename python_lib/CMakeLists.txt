@@ -138,7 +138,7 @@ declare_mlir_dialect_python_bindings(
 set(PYTHON_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../lib/Bindings/Python/")
 
 declare_mlir_python_extension(QSSPythonExtension.Dialects.Pulse.Pybind
-  MODULE_NAME _ibmDialectsPulse
+  MODULE_NAME _qeDialectsPulse
   ADD_TO_PARENT QSSPythonSources.Dialects.pulse
   ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
@@ -158,11 +158,11 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.Pulse.Pybind
 
 add_dependencies(py_qssc
   QSSPythonSources.Dialects.pulse.ops_gen
-  QSSPythonModules.extension._ibmDialectsPulse.dso
+  QSSPythonModules.extension._qeDialectsPulse.dso
 )
 
 declare_mlir_python_extension(QSSPythonExtension.Dialects.QUIR.Pybind
-  MODULE_NAME _ibmDialectsQUIR
+  MODULE_NAME _qeDialectsQUIR
   ADD_TO_PARENT QSSPythonSources.Dialects.quir
   ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
@@ -180,11 +180,11 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.QUIR.Pybind
 
 add_dependencies(py_qssc
   QSSPythonSources.Dialects.quir.ops_gen
-  QSSPythonModules.extension._ibmDialectsQUIR.dso
+  QSSPythonModules.extension._qeDialectsQUIR.dso
 )
 
 declare_mlir_python_extension(QSSPythonExtension.Dialects.QCS.Pybind
-  MODULE_NAME _ibmDialectsQCS
+  MODULE_NAME _qeDialectsQCS
   ADD_TO_PARENT QSSPythonSources.Dialects.qcs
   ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
@@ -199,11 +199,11 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.QCS.Pybind
 
 add_dependencies(py_qssc
   QSSPythonSources.Dialects.qcs.ops_gen
-  QSSPythonModules.extension._ibmDialectsQCS.dso
+  QSSPythonModules.extension._qeDialectsQCS.dso
 )
 
 declare_mlir_python_extension(QSSPythonExtension.Dialects.OQ3.Pybind
-  MODULE_NAME _ibmDialectsOQ3
+  MODULE_NAME _qeDialectsOQ3
   ADD_TO_PARENT QSSPythonSources.Dialects.oq3
   ROOT_DIR "${PYTHON_SOURCE_DIR}"
   SOURCES
@@ -218,7 +218,7 @@ declare_mlir_python_extension(QSSPythonExtension.Dialects.OQ3.Pybind
 
 add_dependencies(py_qssc
   QSSPythonSources.Dialects.oq3.ops_gen
-  QSSPythonModules.extension._ibmDialectsOQ3.dso
+  QSSPythonModules.extension._qeDialectsOQ3.dso
 )
 
 add_mlir_python_common_capi_library(QSSPythonCAPI

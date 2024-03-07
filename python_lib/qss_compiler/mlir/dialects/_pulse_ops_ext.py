@@ -28,7 +28,7 @@ try:
         AngleType,
         ConstantOp as QUIRConstantOp,
     )
-    from .._mlir_libs._ibmDialectsPulse import *  # noqa: F401, F403
+    from .._mlir_libs._qeDialectsPulse import *  # noqa: F401, F403
     from ._ods_common import (  # noqa: F401
         get_default_loc_context as _get_default_loc_context,
     )

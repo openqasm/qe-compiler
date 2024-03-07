@@ -18,8 +18,8 @@ try:
     from ..ir import *  # noqa: F401, F403
     from ..ir import Attribute
     from .oq3 import *  # noqa: F401, F403
-    from .._mlir_libs._ibmDialectsOQ3 import *  # noqa: F401, F403
-    from .._mlir_libs._ibmDialectsQUIR import (
+    from .._mlir_libs._qeDialectsOQ3 import *  # noqa: F401, F403
+    from .._mlir_libs._qeDialectsQUIR import (
         AngleType,
         DurationType,
     )
