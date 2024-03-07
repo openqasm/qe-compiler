@@ -224,11 +224,27 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
 
   while (currentOp) {
 
+    // Walk through current block of operations and pull out quantum
+    // operations into quir.circuits:
+    //
+    // 1. Identify first quantum operation
+    // 2. Start new circuit and clone quantum operation into circuit
+    // 2.a. startCircuit will create a new unique quir.circuit
+    // 3. Walk forward node by node
+    // 4. If node is a quantum operation clone into circuit
+    // 5. If not quantum or if control flow - end circuit
+    // 5.a. endCircuit will finish circuit, adjust circuit input / output,
+    //      create call_circuit and erase original operations
+    // 6. If control flow - recursively call processOps for each region of
+    //    control flow
+
+    // do not assume first operation is quantum and find first quantum operation
     if (!firstQuantumOp) {
 
       if (isQuantumOp(currentOp)) {
         firstQuantumOp = currentOp;
       } else {
+        // walk forward for first quantum operation or control flow
         auto firstOrNull = localNextQuantumOpOrNull(currentOp);
         if (firstOrNull) {
           currentOp = firstOrNull.value();
@@ -240,17 +256,22 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
             startCircuit(firstQuantumOp->getLoc(), topLevelBuilder);
     }
 
-    if (isQuantumOp(currentOp) && !isa<qcs::DelayCyclesOp>(currentOp))
+    // if operation is a quantum operation clone into circuit
+    if (isQuantumOp(currentOp))
       addToCircuit(currentOp, circuitBuilder, eraseList);
 
+    // walk forward for next operation
     auto nextOpOrNull = localNextQuantumOpOrNull(currentOp);
     if (nextOpOrNull) {
       currentOp = nextOpOrNull.value();
       continue;
     }
 
+    // next operation was not quantum so if there is a firstQuantumOp there is
+    // an in progress circuit to ben ended.
     if (firstQuantumOp) {
       Operation *lastOp = currentOp;
+      // nextOpOrNull was null so advance one node
       currentOp = currentOp->getNextNode();
       endCircuit(firstQuantumOp, lastOp, topLevelBuilder, circuitBuilder,
                  eraseList);
@@ -260,7 +281,8 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
     if (!currentOp)
       break;
 
-    // handle control flow
+    // handle control flow -- and recursively call processOps for control flow
+    // regions
 
     if (isa<scf::IfOp>(currentOp)) {
       auto ifOp = static_cast<scf::IfOp>(currentOp);
@@ -287,6 +309,8 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
     currentOp = currentOp->getNextNode();
   }
 
+  // if firstQuantumOp is still set then there is an in progress circuit to be
+  // ended
   if (firstQuantumOp) {
     endCircuit(firstQuantumOp, currentOp, topLevelBuilder, circuitBuilder,
                eraseList);
