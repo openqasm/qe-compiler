@@ -270,7 +270,7 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
     }
 
     // next operation was not quantum so if there is a firstQuantumOp there is
-    // an in progress circuit to ben ended.
+    // an in progress circuit to be ended.
     if (firstQuantumOp) {
       Operation *lastOp = currentOp;
       // nextOpOrNull was null so advance one node
