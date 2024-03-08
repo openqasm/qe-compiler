@@ -1,6 +1,6 @@
 //===- Passes.cpp - QUIR Passes ---------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -263,6 +263,7 @@ void registerQuirPasses() {
   PassRegistration<quir::ReorderMeasurementsPass>();
   PassRegistration<quir::ReorderCircuitsPass>();
   PassRegistration<quir::MergeCircuitsPass>();
+  PassRegistration<quir::ExtractCircuitsPass>();
   PassRegistration<quir::MergeCircuitMeasuresTopologicalPass>();
   PassRegistration<quir::MergeMeasuresLexographicalPass>();
   PassRegistration<quir::MergeMeasuresTopologicalPass>();
