@@ -320,13 +320,6 @@ void ExtractCircuitsPass::processOps(Operation *currentOp,
     }
     currentOp = currentOp->getNextNode();
   }
-
-  // if firstQuantumOp is still set then there is an in progress circuit to be
-  // ended
-  if (firstQuantumOp) {
-    endCircuit(firstQuantumOp, currentOp, topLevelBuilder, circuitBuilder,
-               eraseList);
-  }
 }
 
 void ExtractCircuitsPass::runOnOperation() {
