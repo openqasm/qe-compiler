@@ -89,7 +89,8 @@ static llvm::cl::opt<bool>
                      llvm::cl::init(false));
 
 static llvm::cl::opt<bool>
-    enableCircuits("enable-circuits-from-qasm", llvm::cl::desc("enable quir circuits"),
+    enableCircuits("enable-circuits-from-qasm",
+                   llvm::cl::desc("enable quir circuits"),
                    llvm::cl::init(false));
 
 static llvm::cl::opt<bool> debugCircuits("debug-circuits",

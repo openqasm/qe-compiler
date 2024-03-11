@@ -180,9 +180,9 @@ llvm::Error qssc::frontend::openqasm3::parse(
                      << errMsg.str();
 
         if (diagnosticCallback_) {
-          qssc::Diagnostic diag{
-              diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure,
-              errMsg.str()};
+          qssc::Diagnostic diag{diagLevel,
+                                qssc::ErrorCategory::OpenQASM3ParseFailure,
+                                errMsg.str()};
           (*diagnosticCallback_)(diag);
         }
 
