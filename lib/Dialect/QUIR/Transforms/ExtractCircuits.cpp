@@ -212,6 +212,7 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
                                        OpBuilder circuitBuilder) {
   llvm::SmallVector<Operation *> eraseList;
   Operation *firstQuantumOp = nullptr;
+  Operation *lastQuantumOp = nullptr;
 
   // Walk through current block of operations and pull out quantum
   // operations into quir.circuits:
@@ -234,8 +235,9 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
       continue;
     } else if (isQuantumOp(&currentOp)) {
       // Start building circuit if not already
+      lastQuantumOp = &currentOp;
       if (!currentCircuitOp) {
-        firstQuantumOp = &currentOp;
+        firstQuantumOp = lastQuantumOp;
         circuitBuilder =
             startCircuit(firstQuantumOp->getLoc(), topLevelBuilder);
       }
@@ -245,8 +247,8 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
       // next operation was not quantum so if there is a circuit builder in
       // progress there is an in progress circuit to be ended.
       if (currentCircuitOp) {
-        endCircuit(firstQuantumOp, &currentOp, topLevelBuilder, circuitBuilder,
-                   eraseList);
+        endCircuit(firstQuantumOp, lastQuantumOp, topLevelBuilder,
+                   circuitBuilder, eraseList);
       }
 
       // handle control flow by recursively calling processBlock for control
@@ -257,7 +259,7 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
   }
   // End of block complete the circuit
   if (currentCircuitOp) {
-    endCircuit(firstQuantumOp, &block.back(), topLevelBuilder, circuitBuilder,
+    endCircuit(firstQuantumOp, lastQuantumOp, topLevelBuilder, circuitBuilder,
                eraseList);
   }
 }
