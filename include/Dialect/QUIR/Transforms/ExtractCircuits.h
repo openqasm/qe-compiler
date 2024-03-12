@@ -63,7 +63,6 @@ private:
   std::vector<int> phyiscalIds;
   std::unordered_map<uint32_t, int> argToId;
 
-  std::unordered_map<Operation *, BlockArgument> circuitArguments;
   std::unordered_map<Operation *, uint32_t> circuitOperands;
   llvm::SmallVector<OpResult> originalResults;
 

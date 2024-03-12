@@ -91,7 +91,6 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
   outputTypes.clear();
   outputValues.clear();
   originalResults.clear();
-  circuitArguments.clear();
   circuitOperands.clear();
   phyiscalIds.clear();
   argToId.clear();
