@@ -63,25 +63,9 @@ llvm::cl::opt<bool>
                    llvm::cl::init(false));
 
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)
-static std::optional<Operation *> localNextQuantumOpOrNull(Operation *op) {
-  Operation *nextOp = op;
-  while (nextOp) {
-    if (isQuantumOp(nextOp) && nextOp != op)
-      return nextOp;
-    if (nextOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
-      // control flow found, no next quantum op
-      return std::nullopt;
-    }
-    if (isa<qcs::ParallelControlFlowOp>(nextOp))
-      return std::nullopt;
-    if (isa<oq3::CBitInsertBitOp>(nextOp))
-      return std::nullopt;
-    if (isa<quir::SwitchOp>(nextOp))
-      return std::nullopt;
-    nextOp = nextOp->getNextNode();
-  }
-  return std::nullopt;
-} // localNextQuantumOpOrNull
+static bool terminatesCircuit(Operation &op) {
+  return (op.hasTrait<::mlir::RegionBranchOpInterface::Trait>() || isa<qcs::ParallelControlFlowOp>(op) || isa<oq3::CBitInsertBitOp>(op) || isa<quir::SwitchOp>(op));
+} // terminatesCircuit
 
 OpBuilder ExtractCircuitsPass::startCircuit(Location location,
                                             OpBuilder topLevelBuilder) {
@@ -210,128 +194,78 @@ void ExtractCircuitsPass::endCircuit(
     LLVM_DEBUG(op->dump());
     op->erase();
   }
+
+currentCircuitOp = nullptr;
 }
 
-void ExtractCircuitsPass::processOps(Operation *currentOp,
+void ExtractCircuitsPass::processRegion(mlir::Region &region,
                                      OpBuilder topLevelBuilder,
                                      OpBuilder circuitBuilder) {
-
-  llvm::SmallVector<Operation *> eraseList;
-
-  Operation *firstQuantumOp = nullptr;
-
-  // Handle Shot Loop delay differently
-  if (isa<quir::DelayOp>(currentOp) &&
-      isa<qcs::ShotInitOp>(currentOp->getNextNode())) {
-    // skip past shot init
-    currentOp = currentOp->getNextNode()->getNextNode();
-  }
-
-  while (currentOp) {
-
-    // Walk through current block of operations and pull out quantum
-    // operations into quir.circuits:
-    //
-    // 1. Identify first quantum operation
-    // 2. Start new circuit and clone quantum operation into circuit
-    // 2.a. startCircuit will create a new unique quir.circuit
-    // 3. Walk forward node by node
-    // 4. If node is a quantum operation clone into circuit
-    // 5. If not quantum or if control flow - end circuit
-    // 5.a. endCircuit will finish circuit, adjust circuit input / output,
-    //      create call_circuit and erase original operations
-    // 6. If control flow - recursively call processOps for each region of
-    //    control flow
-
-    // do not assume first operation is quantum and find first quantum operation
-    if (!firstQuantumOp) {
-
-      if (isQuantumOp(currentOp)) {
-        firstQuantumOp = currentOp;
-      } else {
-        // walk forward for first quantum operation or control flow
-        auto firstOrNull = localNextQuantumOpOrNull(currentOp);
-        if (firstOrNull) {
-          currentOp = firstOrNull.value();
-          firstQuantumOp = currentOp;
-        }
-      }
-      if (firstQuantumOp)
-        circuitBuilder =
-            startCircuit(firstQuantumOp->getLoc(), topLevelBuilder);
-    }
-
-    // if operation is a quantum operation clone into circuit
-    if (isQuantumOp(currentOp))
-      addToCircuit(currentOp, circuitBuilder, eraseList);
-
-    // walk forward for next operation
-    auto nextOpOrNull = localNextQuantumOpOrNull(currentOp);
-    if (nextOpOrNull) {
-      currentOp = nextOpOrNull.value();
-      continue;
-    }
-
-    // next operation was not quantum so if there is a firstQuantumOp there is
-    // an in progress circuit to be ended.
-    if (firstQuantumOp) {
-      Operation *lastOp = currentOp;
-      // nextOpOrNull was null so advance one node
-      currentOp = currentOp->getNextNode();
-      endCircuit(firstQuantumOp, lastOp, topLevelBuilder, circuitBuilder,
-                 eraseList);
-    }
-    firstQuantumOp = nullptr;
-
-    if (!currentOp)
-      break;
-
-    // handle control flow -- and recursively call processOps for control flow
-    // regions
-
-    if (isa<scf::IfOp>(currentOp)) {
-      auto ifOp = static_cast<scf::IfOp>(currentOp);
-      if (!ifOp.getThenRegion().empty())
-        processOps(&ifOp.getThenRegion().front().front(), topLevelBuilder,
-                   circuitBuilder);
-      if (!ifOp.getElseRegion().empty())
-        processOps(&ifOp.getElseRegion().front().front(), topLevelBuilder,
-                   circuitBuilder);
-    } else if (isa<scf::ForOp>(currentOp)) {
-      auto forOp = static_cast<scf::ForOp>(currentOp);
-      processOps(&forOp.getBody()->front(), topLevelBuilder, circuitBuilder);
-    } else if (isa<scf::WhileOp>(currentOp)) {
-      auto whileOp = static_cast<scf::WhileOp>(currentOp);
-      if (!whileOp.getBefore().empty())
-        processOps(&whileOp.getBefore().front().front(), topLevelBuilder,
-                   circuitBuilder);
-      if (!whileOp.getAfter().empty())
-        processOps(&whileOp.getAfter().front().front(), topLevelBuilder,
-                   circuitBuilder);
-    } else if (isa<quir::SwitchOp>(currentOp)) {
-      // NOLINTNEXTLINE(llvm-qualified-auto)
-      auto switchOp = static_cast<quir::SwitchOp>(currentOp);
-      for (auto &region : switchOp.getCaseRegions())
-        processOps(&region.front().front(), topLevelBuilder, circuitBuilder);
-    } else if (isa<qcs::ParallelControlFlowOp>(currentOp)) {
-      // NOLINTNEXTLINE(llvm-qualified-auto)
-      auto parOp = static_cast<qcs::ParallelControlFlowOp>(currentOp);
-      processOps(&parOp.getBody()->front(), topLevelBuilder, circuitBuilder);
-    } else if (currentOp->hasTrait<::mlir::RegionBranchOpInterface::Trait>()) {
-      currentOp->dump();
-      assert(false && "Unhandled control flow");
-    }
-    currentOp = currentOp->getNextNode();
+  for (mlir::Block &block : region.getBlocks()) {
+    processBlock(block, topLevelBuilder, circuitBuilder);
   }
 }
+
+void ExtractCircuitsPass::processBlock(mlir::Block &block,
+                                     OpBuilder topLevelBuilder,
+                                     OpBuilder circuitBuilder) {
+  llvm::SmallVector<Operation *> eraseList;
+  Operation *firstQuantumOp = nullptr;
+
+  // Walk through current block of operations and pull out quantum
+  // operations into quir.circuits:
+  //
+  // 1. Identify first quantum operation
+  // 2. Start new circuit and clone quantum operation into circuit
+  // 2.a. startCircuit will create a new unique quir.circuit
+  // 3. Walk forward node by node
+  // 4. If node is a quantum operation clone into circuit
+  // 5. If not quantum or if control flow - end circuit
+  // 5.a. endCircuit will finish circuit, adjust circuit input / output,
+  //      create call_circuit and erase original operations
+  // 6. If control flow - recursively call processRegion for each region of
+  //    control flow
+  for (Operation &currentOp : llvm::make_early_inc_range(block)) {
+    // Handle Shot Loop delay differently
+    if (isa<quir::DelayOp>(currentOp) &&
+        isa<qcs::ShotInitOp>(currentOp.getNextNode())) {
+      // skip past shot init
+      continue;
+    } else if (isQuantumOp(&currentOp)) {
+      // Start building circuit if not already
+      if (!currentCircuitOp) {
+        firstQuantumOp = &currentOp;
+        circuitBuilder =
+            startCircuit(firstQuantumOp->getLoc(), topLevelBuilder);
+      }
+      addToCircuit(&currentOp, circuitBuilder, eraseList);
+      continue;
+    } else if (terminatesCircuit(currentOp)) {
+      // next operation was not quantum so if there is a circuit builder in progress there is
+      // an in progress circuit to be ended.
+      if (currentCircuitOp) {
+        endCircuit(firstQuantumOp, &currentOp, topLevelBuilder, circuitBuilder,
+                  eraseList);
+      }
+
+      // handle control flow by recursively calling processBlock for control flow regions
+      for (mlir::Region &region : currentOp.getRegions())
+        processRegion(region, topLevelBuilder, circuitBuilder);
+    }
+
+  }
+  // End of block complete the circuit
+  if (currentCircuitOp) {
+      endCircuit(firstQuantumOp, &block.back(), topLevelBuilder, circuitBuilder,
+                eraseList);
+  }
+}
+
 
 void ExtractCircuitsPass::runOnOperation() {
   // do nothing if circuits is not enabled
   if (!enableCircuits)
     return;
-
-  circuitCount = 0;
-  currentCircuitOp = nullptr;
 
   Operation *moduleOp = getOperation();
 
@@ -346,8 +280,7 @@ void ExtractCircuitsPass::runOnOperation() {
   assert(mainFunc && "could not find the main func");
 
   auto const builder = OpBuilder(mainFunc);
-  auto *firstOp = &mainFunc.getBody().front().front();
-  processOps(firstOp, builder, builder);
+  processRegion(mainFunc.getBody(), builder, builder);
 } // runOnOperation
 
 llvm::StringRef ExtractCircuitsPass::getArgument() const {
