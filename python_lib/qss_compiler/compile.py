@@ -310,6 +310,12 @@ class _CompilationManager:
                         diagnostics,
                         return_diagnostics=self.return_diagnostics,
                     )
+                if diag.category == ErrorCategory.QSSUnsupportedQASM3:
+                    raise exceptions.QSSUnsupportedQASM3(
+                        diag.message,
+                        diagnostics,
+                        return_diagnostics=self.return_diagnostics,
+                    ) 
 
             if not success:
                 raise exceptions.QSSCompilationFailure(

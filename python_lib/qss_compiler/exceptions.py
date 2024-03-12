@@ -118,4 +118,8 @@ class QSSControlSystemResourcesExceeded(QSSCompilerError):
 
 
 class OpenQASM3ParseFailure(QSSCompilerError):
-    """Raised when a parser failure is received"""
+    """Raised when a parser failure is received."""
+
+
+class QSSUnsupportedQASM3(QSSCompilerError):
+    """Raised when an unsupported QASM3 is received."""

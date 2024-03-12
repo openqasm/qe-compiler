@@ -347,7 +347,7 @@ void diagEngineHandler(mlir::Diagnostic &diagnostic,
   // emit diagnostic cast to void to discard result as it is not needed here
   if (qssc_severity == qssc::Severity::Error) {
     (void)qssc::emitDiagnostic(diagnosticCb, qssc_severity,
-                               qssc::ErrorCategory::QSSCompilationFailure,
+                               qssc::ErrorCategory::QSSUnsupportedQASM3,
                                diagnostic.str());
   }
 

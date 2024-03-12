@@ -29,7 +29,7 @@ from qss_compiler import (
     OutputType,
     CompileOptions,
 )
-from qss_compiler.exceptions import QSSCompilationFailure
+from qss_compiler.exceptions import QSSCompilationFailure, QSSUnsupportedQASM3
 
 compiler_extra_args = ["--enable-circuits=false"]
 
@@ -136,7 +136,7 @@ def test_compile_failing_str_to_qem(
     """Test that compiling an invalid OpenQASM3 string via the interface
     compile_str to a QEM payload will fail and result in an empty payload."""
 
-    with pytest.raises(QSSCompilationFailure):
+    with pytest.raises(QSSUnsupportedQASM3):
         compile_str(
             example_unsupported_qasm3_str,
             input_type=InputType.QASM3,
@@ -154,7 +154,7 @@ def test_compile_failing_file_to_qem(
     """Test that compiling an invalid file input via the interface compile_file
     to a QEM payload will fail and result in an empty payload."""
 
-    with pytest.raises(QSSCompilationFailure):
+    with pytest.raises(QSSUnsupportedQASM3):
         compile_file(
             example_unsupported_qasm3_tmpfile,
             input_type=InputType.QASM3,

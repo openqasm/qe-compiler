@@ -82,6 +82,9 @@ std::string_view getErrorCategoryAsString(qssc::ErrorCategory category) {
   case ErrorCategory::QSSControlSystemResourcesExceeded:
     return "Control system resources exceeded";
 
+  case ErrorCategory::QSSUnsupportedQASM3:
+    return "The provided QASM3 is not supported by the compiler";
+
   case ErrorCategory::UncategorizedError:
     return "Compilation failure";
   }
