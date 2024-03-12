@@ -43,9 +43,9 @@ struct ExtractCircuitsPass
 
 private:
   void processRegion(mlir::Region &region, OpBuilder topLevelBuilder,
-                  OpBuilder circuitBuilder);
+                     OpBuilder circuitBuilder);
   void processBlock(mlir::Block &block, OpBuilder topLevelBuilder,
-                  OpBuilder circuitBuilder);
+                    OpBuilder circuitBuilder);
   OpBuilder startCircuit(mlir::Location location, OpBuilder topLevelBuilder);
   void endCircuit(mlir::Operation *firstOp, mlir::Operation *lastOp,
                   OpBuilder topLevelBuilder, OpBuilder circuitBuilder,

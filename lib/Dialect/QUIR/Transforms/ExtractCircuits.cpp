@@ -64,7 +64,9 @@ llvm::cl::opt<bool>
 
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static bool terminatesCircuit(Operation &op) {
-  return (op.hasTrait<::mlir::RegionBranchOpInterface::Trait>() || isa<qcs::ParallelControlFlowOp>(op) || isa<oq3::CBitInsertBitOp>(op) || isa<quir::SwitchOp>(op));
+  return (op.hasTrait<::mlir::RegionBranchOpInterface::Trait>() ||
+          isa<qcs::ParallelControlFlowOp>(op) ||
+          isa<oq3::CBitInsertBitOp>(op) || isa<quir::SwitchOp>(op));
 } // terminatesCircuit
 
 OpBuilder ExtractCircuitsPass::startCircuit(Location location,
@@ -195,20 +197,19 @@ void ExtractCircuitsPass::endCircuit(
     op->erase();
   }
 
-currentCircuitOp = nullptr;
+  currentCircuitOp = nullptr;
 }
 
 void ExtractCircuitsPass::processRegion(mlir::Region &region,
-                                     OpBuilder topLevelBuilder,
-                                     OpBuilder circuitBuilder) {
-  for (mlir::Block &block : region.getBlocks()) {
+                                        OpBuilder topLevelBuilder,
+                                        OpBuilder circuitBuilder) {
+  for (mlir::Block &block : region.getBlocks())
     processBlock(block, topLevelBuilder, circuitBuilder);
-  }
 }
 
 void ExtractCircuitsPass::processBlock(mlir::Block &block,
-                                     OpBuilder topLevelBuilder,
-                                     OpBuilder circuitBuilder) {
+                                       OpBuilder topLevelBuilder,
+                                       OpBuilder circuitBuilder) {
   llvm::SmallVector<Operation *> eraseList;
   Operation *firstQuantumOp = nullptr;
 
@@ -241,26 +242,25 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
       addToCircuit(&currentOp, circuitBuilder, eraseList);
       continue;
     } else if (terminatesCircuit(currentOp)) {
-      // next operation was not quantum so if there is a circuit builder in progress there is
-      // an in progress circuit to be ended.
+      // next operation was not quantum so if there is a circuit builder in
+      // progress there is an in progress circuit to be ended.
       if (currentCircuitOp) {
         endCircuit(firstQuantumOp, &currentOp, topLevelBuilder, circuitBuilder,
-                  eraseList);
+                   eraseList);
       }
 
-      // handle control flow by recursively calling processBlock for control flow regions
+      // handle control flow by recursively calling processBlock for control
+      // flow regions
       for (mlir::Region &region : currentOp.getRegions())
         processRegion(region, topLevelBuilder, circuitBuilder);
     }
-
   }
   // End of block complete the circuit
   if (currentCircuitOp) {
-      endCircuit(firstQuantumOp, &block.back(), topLevelBuilder, circuitBuilder,
-                eraseList);
+    endCircuit(firstQuantumOp, &block.back(), topLevelBuilder, circuitBuilder,
+               eraseList);
   }
 }
-
 
 void ExtractCircuitsPass::runOnOperation() {
   // do nothing if circuits is not enabled
@@ -280,7 +280,7 @@ void ExtractCircuitsPass::runOnOperation() {
   assert(mainFunc && "could not find the main func");
 
   auto const builder = OpBuilder(mainFunc);
-  processRegion(mainFunc.getBody(), builder, builder);
+  processRegion(mainFunc.getRegion(), builder, builder);
 } // runOnOperation
 
 llvm::StringRef ExtractCircuitsPass::getArgument() const {
