@@ -161,6 +161,9 @@ void BreakResetPass::runOnOperation() {
   if (insertQuantumGatesIntoCirc) {
     mlir::ModuleOp moduleOp = getOperation();
     assert(moduleOp && "cannot find module op");
+    mlir::func::FuncOp mainFunc =
+        dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
+    assert(mainFunc && "could not find the main func");
     // populate symbol map for input circuits
     moduleOp->walk([&](Operation *op) {
       if (auto castOp = dyn_cast<CircuitOp>(op))
@@ -171,21 +174,21 @@ void BreakResetPass::runOnOperation() {
     // insertCallGatesAndMeasuresIntoCircuit option is true
     while (!measureList.empty()) {
       const MeasureOp measOp = dyn_cast<MeasureOp>(measureList.front());
-      insertMeasureInCircuit(moduleOp, measOp);
+      insertMeasureInCircuit(mainFunc, measOp);
       measureList.pop_front();
     }
     while (!callGateList.empty()) {
       const CallGateOp callGateOp = dyn_cast<CallGateOp>(callGateList.front());
-      insertCallGateInCircuit(moduleOp, callGateOp);
+      insertCallGateInCircuit(mainFunc, callGateOp);
       callGateList.pop_front();
     }
   }
 } // BreakResetPass::runOnOperation
 
 void BreakResetPass::insertCallGateInCircuit(
-    ModuleOp moduleOp, mlir::quir::CallGateOp callGateOp) {
+    mlir::func::FuncOp &mainFunc, mlir::quir::CallGateOp callGateOp) {
   // build a circuit
-  CircuitOp circOp = startCircuit<CallGateOp>(moduleOp, callGateOp);
+  CircuitOp circOp = startCircuit<CallGateOp>(mainFunc, callGateOp);
   OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
   auto newCallGateOp = circuitBuilder.create<CallGateOp>(
       callGateOp.getLoc(), StringRef("x"), TypeRange{}, circOp.getArguments());
@@ -200,14 +203,14 @@ void BreakResetPass::insertCallGateInCircuit(
   callGateOp->erase();
 }
 
-void BreakResetPass::insertMeasureInCircuit(ModuleOp moduleOp,
+void BreakResetPass::insertMeasureInCircuit(mlir::func::FuncOp &mainFunc,
                                             mlir::quir::MeasureOp measureOp) {
 
   mlir::OpBuilder builder(measureOp);
   std::vector<mlir::Type> const typeVec(measureOp.getQubits().size(),
                                         builder.getI1Type());
   // build a circuit
-  CircuitOp circOp = startCircuit<MeasureOp>(moduleOp, measureOp);
+  CircuitOp circOp = startCircuit<MeasureOp>(mainFunc, measureOp);
   OpBuilder circuitBuilder = OpBuilder::atBlockBegin(&circOp.getBody().front());
   auto resetMeasureOp = circuitBuilder.create<MeasureOp>(
       measureOp.getLoc(), TypeRange(typeVec), circOp.getArguments());
@@ -225,11 +228,8 @@ void BreakResetPass::insertMeasureInCircuit(ModuleOp moduleOp,
 }
 
 template <class measureOrCallGate>
-CircuitOp BreakResetPass::startCircuit(ModuleOp moduleOp,
+CircuitOp BreakResetPass::startCircuit(mlir::func::FuncOp &mainFunc,
                                        measureOrCallGate quantumGate) {
-  mlir::func::FuncOp mainFunc =
-      dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
-  assert(mainFunc && "could not find the main func");
   mlir::OpBuilder builder(mainFunc);
   const mlir::Location location = mainFunc.getLoc();
 
