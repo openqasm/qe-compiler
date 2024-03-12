@@ -74,12 +74,12 @@ struct BreakResetPass
 private:
   // keep track of all circuits
   llvm::StringMap<Operation *> circuitsSymbolMap;
-  void insertMeasureInCircuit(ModuleOp moduleOp,
+  void insertMeasureInCircuit(mlir::func::FuncOp &mainFunc,
                               mlir::quir::MeasureOp measureOp);
-  void insertCallGateInCircuit(ModuleOp moduleOp,
+  void insertCallGateInCircuit(mlir::func::FuncOp &mainFunc,
                                mlir::quir::CallGateOp callGateOp);
   template <class measureOrCallGate>
-  mlir::quir::CircuitOp startCircuit(ModuleOp moduleOp,
+  mlir::quir::CircuitOp startCircuit(mlir::func::FuncOp &mainFunc,
                                      measureOrCallGate quantumGate);
   void finishCircuit(mlir::quir::CircuitOp circOp, Operation *quantumGate);
   uint circuitCounter = 0;
