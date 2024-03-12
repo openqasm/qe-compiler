@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Added ``QSSUnsupportedQASM3`` error category for the cases which
+    fail to generate MLIR from the QUIRGen. These errors used to be
+    categorized under ``QSSCompilationFailure``.
