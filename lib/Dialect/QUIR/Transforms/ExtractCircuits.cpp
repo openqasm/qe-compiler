@@ -136,7 +136,7 @@ void ExtractCircuitsPass::addToCircuit(
       inputTypes.push_back(operand.getType());
       circuitOperands[defOp] = argumentIndex;
       currentCircuitOp.getBody().addArgument(operand.getType(),
-                                     currentOp->getLoc());
+                                             currentOp->getLoc());
       if (isa<quir::DeclareQubitOp>(defOp)) {
         auto id = defOp->getAttrOfType<IntegerAttr>("id").getInt();
         phyiscalIds.push_back(id);
@@ -174,14 +174,12 @@ void ExtractCircuitsPass::endCircuit(
       /*inputs=*/ArrayRef<Type>(inputTypes),
       /*results=*/ArrayRef<Type>(outputTypes)));
 
-  for (const auto& [key, value]  : argToId)
+  for (const auto &[key, value] : argToId)
     currentCircuitOp.setArgAttrs(
-            key,
-            ArrayRef({NamedAttribute(
-                StringAttr::get(&getContext(),
-                                mlir::quir::getPhysicalIdAttrName()),
-                topLevelBuilder.getI32IntegerAttr(value))}));
-
+        key,
+        ArrayRef({NamedAttribute(
+            StringAttr::get(&getContext(), mlir::quir::getPhysicalIdAttrName()),
+            topLevelBuilder.getI32IntegerAttr(value))}));
 
   std::sort(phyiscalIds.begin(), phyiscalIds.end());
   currentCircuitOp->setAttr(
