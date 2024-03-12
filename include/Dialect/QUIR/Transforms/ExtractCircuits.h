@@ -42,18 +42,20 @@ struct ExtractCircuitsPass
   llvm::StringRef getName() const override;
 
 private:
-  void processOps(mlir::Operation *currentOp, OpBuilder topLevelBuilder,
-                  OpBuilder circuitBuilder);
+  void processRegion(mlir::Region &region, OpBuilder topLevelBuilder,
+                     OpBuilder circuitBuilder);
+  void processBlock(mlir::Block &block, OpBuilder topLevelBuilder,
+                    OpBuilder circuitBuilder);
   OpBuilder startCircuit(mlir::Location location, OpBuilder topLevelBuilder);
   void endCircuit(mlir::Operation *firstOp, mlir::Operation *lastOp,
                   OpBuilder topLevelBuilder, OpBuilder circuitBuilder,
                   llvm::SmallVector<Operation *> &eraseList);
   void addToCircuit(mlir::Operation *currentOp, OpBuilder circuitBuilder,
                     llvm::SmallVector<Operation *> &eraseList);
-  uint64_t circuitCount;
+  uint64_t circuitCount = 0;
   llvm::StringMap<Operation *> circuitOpsMap;
 
-  mlir::quir::CircuitOp currentCircuitOp;
+  mlir::quir::CircuitOp currentCircuitOp = nullptr;
   mlir::quir::CallCircuitOp newCallCircuitOp;
 
   llvm::SmallVector<Type> inputTypes;
