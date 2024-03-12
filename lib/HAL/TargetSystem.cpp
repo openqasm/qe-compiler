@@ -81,6 +81,7 @@ TargetInstrument::getModule(mlir::ModuleOp parentModuleOp) {
   for (auto childModuleOp :
        parentModuleOp.getBody()->getOps<mlir::ModuleOp>()) {
     // Check for a QUIR module. If no quir.nodeType, skip this module.
+    // This likely indicates it is the `main` module
     if (!childModuleOp->hasAttrOfType<mlir::StringAttr>("quir.nodeType"))
       continue;
 
