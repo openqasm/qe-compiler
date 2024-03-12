@@ -23,12 +23,12 @@
 
 #include "Dialect/QUIR/IR/QUIROps.h"
 
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 
 #include "llvm/ADT/SmallVector.h"
 
-#include <mlir/IR/BuiltinAttributes.h>
 #include <unordered_map>
 
 namespace mlir::quir {
