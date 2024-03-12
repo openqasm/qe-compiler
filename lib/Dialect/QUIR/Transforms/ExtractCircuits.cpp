@@ -78,6 +78,8 @@ static std::optional<Operation *> localNextQuantumOpOrNull(Operation *op) {
       return std::nullopt;
     if (isa<quir::SwitchOp>(nextOp))
       return std::nullopt;
+    if (isa<oq3::CastOp>(nextOp))
+      return std::nullopt;
     nextOp = nextOp->getNextNode();
   }
   return std::nullopt;
@@ -94,6 +96,7 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
   circuitArguments.clear();
   circuitOperands.clear();
   phyiscalIds.clear();
+  argToId.clear();
 
   std::string const circuitName = "circuit_";
   std::string newName = circuitName + std::to_string(circuitCount++);
@@ -132,19 +135,14 @@ void ExtractCircuitsPass::addToCircuit(
     if (search == circuitOperands.end()) {
       argumentIndex = inputValues.size();
       inputValues.push_back(operand);
+      inputTypes.push_back(operand.getType());
       circuitOperands[defOp] = argumentIndex;
-
-      currentCircuitOp.insertArgument(argumentIndex, operand.getType(), {},
-                                      currentOp->getLoc());
+      currentCircuitOp.getBody().addArgument(operand.getType(),
+                                     currentOp->getLoc());
       if (isa<quir::DeclareQubitOp>(defOp)) {
-        auto physicalId = defOp->getAttrOfType<IntegerAttr>("id");
-        phyiscalIds.push_back(physicalId.getInt());
-        currentCircuitOp.setArgAttrs(
-            argumentIndex,
-            ArrayRef({NamedAttribute(
-                StringAttr::get(&getContext(),
-                                mlir::quir::getPhysicalIdAttrName()),
-                physicalId)}));
+        auto id = defOp->getAttrOfType<IntegerAttr>("id").getInt();
+        phyiscalIds.push_back(id);
+        argToId[argumentIndex] = id;
       }
     } else {
       argumentIndex = search->second;
@@ -175,8 +173,17 @@ void ExtractCircuitsPass::endCircuit(
   // change the input / output types for the quir.circuit
   auto opType = currentCircuitOp.getFunctionType();
   currentCircuitOp.setType(topLevelBuilder.getFunctionType(
-      /*inputs=*/opType.getInputs(),
+      /*inputs=*/ArrayRef<Type>(inputTypes),
       /*results=*/ArrayRef<Type>(outputTypes)));
+
+  for (const auto& [key, value]  : argToId)
+    currentCircuitOp.setArgAttrs(
+            key,
+            ArrayRef({NamedAttribute(
+                StringAttr::get(&getContext(),
+                                mlir::quir::getPhysicalIdAttrName()),
+                topLevelBuilder.getI32IntegerAttr(value))}));
+
 
   std::sort(phyiscalIds.begin(), phyiscalIds.end());
   currentCircuitOp->setAttr(

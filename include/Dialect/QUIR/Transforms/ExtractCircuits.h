@@ -28,6 +28,7 @@
 
 #include "llvm/ADT/SmallVector.h"
 
+#include <mlir/IR/BuiltinAttributes.h>
 #include <unordered_map>
 
 namespace mlir::quir {
@@ -60,8 +61,9 @@ private:
   llvm::SmallVector<Type> outputTypes;
   llvm::SmallVector<Value> outputValues;
   std::vector<int> phyiscalIds;
+  std::unordered_map<uint32_t, int> argToId;
 
-  std::unordered_map<uint32_t, BlockArgument> circuitArguments;
+  std::unordered_map<Operation *, BlockArgument> circuitArguments;
   std::unordered_map<Operation *, uint32_t> circuitOperands;
   llvm::SmallVector<OpResult> originalResults;
 
