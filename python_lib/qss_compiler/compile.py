@@ -315,7 +315,7 @@ class _CompilationManager:
                         diag.message,
                         diagnostics,
                         return_diagnostics=self.return_diagnostics,
-                    ) 
+                    )
 
             if not success:
                 raise exceptions.QSSCompilationFailure(
