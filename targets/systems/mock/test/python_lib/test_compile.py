@@ -29,7 +29,7 @@ from qss_compiler import (
     OutputType,
     CompileOptions,
 )
-from qss_compiler.exceptions import QSSCompilationFailure, QSSUnsupportedQASM3
+from qss_compiler.exceptions import QSSUnsupportedQASM3
 
 compiler_extra_args = ["--enable-circuits=false"]
 
