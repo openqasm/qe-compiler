@@ -27,7 +27,6 @@
 #include "Dialect/QUIR/Utils/Utils.h"
 
 #include "mlir/Dialect/Func/IR/FuncOps.h"
-#include "mlir/Dialect/SCF/IR/SCF.h"
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/IRMapping.h"
@@ -47,7 +46,9 @@
 
 #include <algorithm>
 #include <cassert>
-#include <optional>
+#include <llvm/ADT/STLExtras.h>
+#include <mlir/IR/Block.h>
+#include <mlir/IR/Region.h>
 #include <string>
 #include <sys/types.h>
 #include <vector>
@@ -233,7 +234,7 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
         isa<qcs::ShotInitOp>(currentOp.getNextNode())) {
       // skip past shot init
       continue;
-    } else if (isQuantumOp(&currentOp)) {
+    } if (isQuantumOp(&currentOp)) {
       // Start building circuit if not already
       lastQuantumOp = &currentOp;
       if (!currentCircuitOp) {
