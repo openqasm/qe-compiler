@@ -78,8 +78,6 @@ static std::optional<Operation *> localNextQuantumOpOrNull(Operation *op) {
       return std::nullopt;
     if (isa<quir::SwitchOp>(nextOp))
       return std::nullopt;
-    if (isa<oq3::CastOp>(nextOp))
-      return std::nullopt;
     nextOp = nextOp->getNextNode();
   }
   return std::nullopt;
@@ -192,7 +190,8 @@ void ExtractCircuitsPass::endCircuit(
 
   // insert call_circuit
   // NOLINTNEXTLINE(misc-const-correctness)
-  OpBuilder builder(firstOp);
+  OpBuilder builder(lastOp);
+  builder.setInsertionPointAfter(lastOp);
   newCallCircuitOp = builder.create<mlir::quir::CallCircuitOp>(
       currentCircuitOp->getLoc(), currentCircuitOp.getSymName(),
       TypeRange(outputTypes), ValueRange(inputValues));
