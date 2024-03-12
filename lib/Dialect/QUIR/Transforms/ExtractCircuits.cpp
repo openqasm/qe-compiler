@@ -245,7 +245,8 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
       }
       addToCircuit(&currentOp, circuitBuilder, eraseList);
       continue;
-    } if (terminatesCircuit(currentOp)) {
+    }
+    if (terminatesCircuit(currentOp)) {
       // next operation was not quantum so if there is a circuit builder in
       // progress there is an in progress circuit to be ended.
       if (currentCircuitOp) {
