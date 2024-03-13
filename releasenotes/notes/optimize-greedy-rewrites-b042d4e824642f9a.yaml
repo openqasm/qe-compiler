@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    The performance of the QUIRAngleConversionPass has been improved by a factor of
+    ~8-10x by optimizing the greedy rewrite behaviour.
