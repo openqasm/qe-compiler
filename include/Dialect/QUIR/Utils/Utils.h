@@ -150,6 +150,8 @@ std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,
                                                  Value result);
 std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
                                                  Value result);
+std::tuple<Value, MeasureOp> qubitFromMeasResult(CircuitOp circuitOp,
+                                                 Value result);
 
 } // end namespace mlir::quir
 
