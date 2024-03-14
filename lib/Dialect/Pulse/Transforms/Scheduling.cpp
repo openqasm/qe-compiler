@@ -18,6 +18,7 @@
 ///  level, based on the availability of involved mix frames
 ///
 //===----------------------------------------------------------------------===//
+
 #include "Dialect/Pulse/Transforms/Scheduling.h"
 #include "Dialect/Pulse/IR/PulseInterfaces.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
