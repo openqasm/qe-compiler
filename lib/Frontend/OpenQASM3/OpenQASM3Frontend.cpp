@@ -203,7 +203,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
                      << errMsg.str();
 
         if (diagnosticCallback_ and (diagLevel == qssc::Severity::Error or
-                                     diagLevel == qssc::Severity::ICE)) {
+                                     diagLevel == qssc::Severity::Fatal)) {
           qssc::Diagnostic const diag{
               diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure,
               errMsg.str()};
