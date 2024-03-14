@@ -177,8 +177,7 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
 
 
 def test_warning_not_in_errors(example_warning_not_in_errors):
-    """Test that we can attempt to compile invalid OpenQASM 3 and receive an
-    error"""
+    """Test that warnings are not included in error."""
 
     with pytest.raises(exceptions.OpenQASM3ParseFailure) as compfail:
         compile_str(
