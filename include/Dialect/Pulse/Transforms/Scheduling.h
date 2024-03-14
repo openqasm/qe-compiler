@@ -15,7 +15,7 @@
 //===----------------------------------------------------------------------===//
 ///
 ///  This file implements the pass for scheduling the quantum circuits at pulse
-///  level, based on the availability of involved mixed frames
+///  level, based on the availability of involved mix frames
 ///
 //===----------------------------------------------------------------------===//
 
@@ -27,6 +27,7 @@
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
 
+#include <unordered_map>
 #include <unordered_set>
 
 namespace mlir::pulse {
@@ -70,15 +71,17 @@ public:
       llvm::cl::value_desc("delay"), llvm::cl::init(0)};
 
 private:
-  // map to keep track of next availability of mixed frames
-  std::map<uint, int64_t> mixedFrameToNextAvailabilityMap;
+  // map to keep track of next availability of mix frames
+  std::unordered_map<uint, int64_t> mixFrameToNextAvailabilityMap;
 
   void scheduleAlap(mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp);
-  int64_t getNextAvailableTimeOfMixedFrames(
-      std::unordered_set<uint> &mixedFramesBlockIds);
+  std::unordered_set<uint>
+  getMixFramesBlockIds(mlir::pulse::CallSequenceOp quantumGateCallSequenceOp);
+  int64_t
+  getNextAvailableTimeOfMixFrames(std::unordered_set<uint> &mixFramesBlockIds);
   void
-  updateMixedFrameAvailabilityMap(std::unordered_set<uint> &mixedFramesBlockIds,
-                                  int64_t updatedAvailableTime);
+  updateMixFrameAvailabilityMap(std::unordered_set<uint> &mixFramesBlockIds,
+                                int64_t updatedAvailableTime);
   bool sequenceOpIncludeCapture(mlir::pulse::SequenceOp quantumGateSequenceOp);
   llvm::StringMap<Operation *> symbolMap;
   mlir::pulse::SequenceOp
