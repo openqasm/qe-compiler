@@ -176,6 +176,40 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     assert "unknown version number" in str(compfail.value)
 
 
+def test_warning_not_in_errors(example_warning_not_in_errors):
+    """Test that we can attempt to compile invalid OpenQASM 3 and receive an
+    error"""
+
+    with pytest.raises(exceptions.OpenQASM3ParseFailure) as compfail:
+        compile_str(
+            example_warning_not_in_errors,
+            return_diagnostics=True,
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+        )
+
+    assert hasattr(compfail.value, "diagnostics")
+
+    diags = compfail.value.diagnostics
+
+    assert any(
+        diag.severity == Severity.Error
+        and diag.category == ErrorCategory.OpenQASM3ParseFailure
+        and "Non-existent angle a passed as angle argument to Gate Call." in diag.message
+        and "^" in diag.message
+        for diag in diags
+    )
+    assert any("OpenQASM 3 parse error" in str(diag) for diag in diags)
+
+    # check string representation of the exception to contain diagnostic messages
+    assert (
+        "Error: OpenQASM 3 parse error" in str(compfail.value)
+        and "Non-existent angle a passed as angle argument to Gate Call." in str(compfail.value)
+        and "Angle value exceeds 2pi." not in str(compfail.value)
+    )
+
+
 def test_failure_no_hang():
     """Test no hang on malformed inputs."""
     with pytest.raises(exceptions.QSSCompilerEOFFailure):
