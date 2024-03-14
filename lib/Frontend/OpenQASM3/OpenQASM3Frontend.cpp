@@ -202,7 +202,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
         llvm::errs() << level << " while parsing OpenQASM 3 input\n"
                      << errMsg.str();
 
-        if (diagnosticCallback_) {
+        if (diagnosticCallback_ and diagLevel == qssc::Severity::Error) {
           qssc::Diagnostic const diag{
               diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure,
               errMsg.str()};
