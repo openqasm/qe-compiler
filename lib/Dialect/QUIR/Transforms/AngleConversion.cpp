@@ -84,8 +84,15 @@ void QUIRAngleConversionPass::runOnOperation() {
   RewritePatternSet patterns(&getContext());
   patterns.add<AngleConversion>(&getContext(), functionOps);
 
-  if (failed(
-          applyPatternsAndFoldGreedily(getOperation(), std::move(patterns)))) {
+  mlir::GreedyRewriteConfig config;
+  // Disable to improve performance
+  config.enableRegionSimplification = false;
+  config.strictMode = mlir::GreedyRewriteStrictness::ExistingOps;
+  // Each operation can only be modified once so limit
+  config.maxIterations = 1;
+
+  if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
+                                          config))) {
     ; // TODO why would this call to applyPatternsAndFoldGreedily fail?
       // signalPassFailure();
   }
