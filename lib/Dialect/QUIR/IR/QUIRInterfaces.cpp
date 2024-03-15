@@ -115,6 +115,8 @@ std::set<uint32_t>
 interfaces_impl::getQubitsBetweenOperations(mlir::Operation *first,
                                             mlir::Operation *second) {
   std::set<uint32_t> operatedQubits;
+  // Don't use isBeforeInBlock if the op order is invalid as
+  // this is O(n) in the worst case.
   if (first->getBlock()->isOpOrderValid() && !first->isBeforeInBlock(second))
     return operatedQubits;
 
