@@ -75,5 +75,15 @@ def example_unsupported_qasm3_str():
 
 
 @pytest.fixture
+def example_warning_not_in_errors():
+    return """OPENQASM 3.0;
+    gate rz(theta) q {}
+    qubit $0;
+    rz(7.35196807786455) $0;
+    rz(a) $0;
+    """
+
+
+@pytest.fixture
 def example_unsupported_qasm3_tmpfile(tmp_path, example_unsupported_qasm3_str):
     return __create_tmpfile(tmp_path, example_unsupported_qasm3_str)
