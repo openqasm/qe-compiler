@@ -521,7 +521,8 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 void MergeCircuitsPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
-  auto cache = getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>();
+  auto cache =
+      getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>();
   auto circuitOpsMap = cache.getSymbolMap();
   llvm::errs() << "Symbols\n";
   cache.listSymbols();

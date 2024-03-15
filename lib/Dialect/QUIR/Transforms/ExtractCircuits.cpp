@@ -276,7 +276,9 @@ void ExtractCircuitsPass::runOnOperation() {
 
   Operation *moduleOp = getOperation();
 
-  circuitOpsMap = &getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>().getSymbolMap();
+  circuitOpsMap = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+                       .addToCache<CircuitOp>()
+                       .getSymbolMap();
 
   mlir::func::FuncOp mainFunc =
       dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));

@@ -279,7 +279,9 @@ void SchedulePortPass::runOnOperation() {
 
   Operation *module = getOperation();
 
-  sequenceOps = &getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<mlir::pulse::SequenceOp>().getSymbolMap();
+  sequenceOps = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+                     .addToCache<mlir::pulse::SequenceOp>()
+                     .getSymbolMap();
 
   INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
 

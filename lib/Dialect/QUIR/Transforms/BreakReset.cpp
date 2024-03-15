@@ -165,7 +165,9 @@ void BreakResetPass::runOnOperation() {
     mlir::func::FuncOp mainFunc =
         dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
     assert(mainFunc && "could not find the main func");
-    circuitsSymbolMap =  &getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>().getSymbolMap();
+    circuitsSymbolMap = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+                             .addToCache<CircuitOp>()
+                             .getSymbolMap();
 
     // insert measures and call gates into circuits -- when
     // insertCallGatesAndMeasuresIntoCircuit option is true

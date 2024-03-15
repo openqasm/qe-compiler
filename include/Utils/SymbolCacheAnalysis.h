@@ -20,6 +20,7 @@
 
 #include "mlir/Pass/AnalysisManager.h"
 #include "mlir/Pass/Pass.h"
+#include <llvm/ADT/StringRef.h>
 #include <mlir/IR/Operation.h>
 
 namespace qssc::utils {
@@ -38,13 +39,24 @@ public:
   }
   llvm::StringMap<mlir::Operation *> &getSymbolMap() { return symbolOpsMap; }
 
-  template<class calleeOp>
+  template<class CalleeOp>
   SymbolCacheAnalysis &addToCache() {
-    topOp->walk([&](calleeOp op) {
+    topOp->walk([&](CalleeOp op) {
         symbolOpsMap[op.getSymName()] = op.getOperation();
     });
     return *this;
   }
+
+  template<class CalleeOp>
+  CalleeOp getOp(llvm::StringRef callee) {
+    auto search = symbolOpsMap.find(callee);
+    llvm::errs() << callee << "\n";
+    assert(search != symbolOpsMap.end() && "matching callee not found");
+    auto calleeOp = dyn_cast<CalleeOp>(search->second);
+    assert(calleeOp && "callee is not of the expected type");
+    return calleeOp;
+  }
+
 
   // for debugging purposes
   void listSymbols() {

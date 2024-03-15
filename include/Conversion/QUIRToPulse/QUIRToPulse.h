@@ -24,6 +24,7 @@
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/QCS/IR/QCSOps.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
@@ -157,9 +158,7 @@ struct QUIRToPulsePass
   void parsePulseWaveformContainerOps(std::string &waveformContainerPath);
   std::map<std::string, Waveform_CreateOp> pulseNameToWaveformMap;
 
-  llvm::StringMap<Operation *> *symbolMap{nullptr};
-  mlir::quir::CircuitOp getCircuitOp(mlir::quir::CallCircuitOp &callCircuitOp);
-  mlir::pulse::SequenceOp getSequenceOp(std::string const &symbolName);
+  qssc::utils::SymbolCacheAnalysis *symbolCache{nullptr};
 };
 } // namespace mlir::pulse
 

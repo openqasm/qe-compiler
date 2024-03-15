@@ -403,7 +403,9 @@ struct CallCircuitAndCallCircuitTopologicalPattern
 void MergeCircuitMeasuresTopologicalPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
-  auto circuitOpsMap = getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>().getSymbolMap();
+  auto circuitOpsMap = getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+                           .addToCache<CircuitOp>()
+                           .getSymbolMap();
 
   RewritePatternSet patterns(&getContext());
   patterns.add<CallCircuitAndCallCircuitTopologicalPattern>(&getContext(),

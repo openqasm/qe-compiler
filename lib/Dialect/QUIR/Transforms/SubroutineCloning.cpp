@@ -185,14 +185,14 @@ void SubroutineCloningPass::runOnOperation() {
 
   auto symbolCache = getAnalysis<qssc::utils::SymbolCacheAnalysis>();
 
-  if (!callWorkList.empty()) {
+  if (!callWorkList.empty())
     symbolCache.addToCache<mlir::func::FuncOp>();
-  }
 
   while (!callWorkList.empty()) {
     Operation *op = callWorkList.front();
     callWorkList.pop_front();
-    processCallOp<CallSubroutineOp, mlir::func::FuncOp>(op, symbolCache.getSymbolMap());
+    processCallOp<CallSubroutineOp, mlir::func::FuncOp>(
+        op, symbolCache.getSymbolMap());
   }
 
   mainFunc->walk([&](CallCircuitOp op) { callWorkList.push_back(op); });
