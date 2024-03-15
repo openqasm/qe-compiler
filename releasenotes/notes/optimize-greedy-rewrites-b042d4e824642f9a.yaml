@@ -3,3 +3,6 @@ features:
   - |
     The performance of the QUIRAngleConversionPass has been improved by a factor of
     ~8-10x by optimizing the greedy rewrite behaviour.
+  - |
+    Parallelize control flow improves by ~8-10x due to a quadratic scaling factor
+    that was uncovered.

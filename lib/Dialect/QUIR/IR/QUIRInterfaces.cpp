@@ -115,7 +115,7 @@ std::set<uint32_t>
 interfaces_impl::getQubitsBetweenOperations(mlir::Operation *first,
                                             mlir::Operation *second) {
   std::set<uint32_t> operatedQubits;
-  if (!first->isBeforeInBlock(second))
+  if (first->getBlock()->isOpOrderValid() && !first->isBeforeInBlock(second))
     return operatedQubits;
 
   Operation *curOp = first->getNextNode();
