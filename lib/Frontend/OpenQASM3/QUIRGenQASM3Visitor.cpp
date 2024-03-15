@@ -335,13 +335,17 @@ mlir::LogicalResult QUIRGenQASM3Visitor::walkAST() {
 
 mlir::InFlightDiagnostic
 QUIRGenQASM3Visitor::reportError(ASTBase const *location,
-                                 mlir::DiagnosticSeverity severity) {
+                                 mlir::DiagnosticSeverity severity, qssc::ErrorCategory qsscErrorCategory) {
 
   DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
 
   if (severity == mlir::DiagnosticSeverity::Error)
     hasFailed = true;
-  return engine.emit(getLocation(location), severity);
+
+  // Create a MLIRQSSCDiagnostic such that the diagnostic will be properly reported by the
+  // compilers diagnostic handling APIs.
+  auto diagnostic = qssc::MLIRQSSCDiagnostic(getLocation(location), severity, qsscErrorCategory);
+  return engine.emit(std::move(diagnostic));
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {

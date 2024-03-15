@@ -17,6 +17,8 @@
 #ifndef VISITOR_QUIR_GEN_VISITOR_H
 #define VISITOR_QUIR_GEN_VISITOR_H
 
+#include "API/errors.h"
+
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -97,7 +99,8 @@ private:
   ///
   /// \returns an in-flight diagnostic that allows adding messages and notes.
   mlir::InFlightDiagnostic reportError(QASM::ASTBase const *location,
-                                       mlir::DiagnosticSeverity severity);
+                                       mlir::DiagnosticSeverity severity,
+                                       qssc::ErrorCategory category = qssc::ErrorCategory::OpenQASM3UnsupportedInput);
 
   template <class MLIROp>
   ExpressionValueType buildUnaryOp(llvm::StringRef name,

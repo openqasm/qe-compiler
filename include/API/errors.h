@@ -21,6 +21,8 @@
 #ifndef QSS_COMPILER_ERROR_H
 #define QSS_COMPILER_ERROR_H
 
+#include "mlir/IR/Diagnostics.h"
+
 #include "llvm/Support/Error.h"
 
 #include <functional>
@@ -70,6 +72,22 @@ public:
 
   std::string toString() const;
 };
+
+/// MLIR diagnostic that contains a QSSC diagnostic and will
+/// automatically be deduced by the qss-compiler and its
+/// diagnostic APIs when used in conjunction with MLIR's
+/// in-flight diagnostic APIs.
+class MLIRQSSCDiagnostic : public mlir::Diagnostic {
+  public:
+    MLIRQSSCDiagnostic(mlir::Location loc, mlir::DiagnosticSeverity severity, ErrorCategory qsscErrorCategory)
+       : mlir::Diagnostic(loc, severity), qsscErrorCategory(qsscErrorCategory) {}
+    ErrorCategory getQSSCErrorCategory() { return qsscErrorCategory; }
+
+    private:
+      ErrorCategory qsscErrorCategory;
+
+};
+
 
 using DiagList = std::list<Diagnostic>;
 using DiagRefList = std::list<std::reference_wrapper<const Diagnostic>>;
