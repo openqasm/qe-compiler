@@ -119,3 +119,7 @@ class QSSControlSystemResourcesExceeded(QSSCompilerError):
 
 class OpenQASM3ParseFailure(QSSCompilerError):
     """Raised when a parser failure is received"""
+
+
+class OpenQASM3UnsupportedInput(QSSCompilerError):
+    """Raised when provided Openqasm 3 input has semantics that are not supported by the compiler."""

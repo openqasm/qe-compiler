@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    A new diagnostic has been added for unsupported OpenQASM 3 semantics - ``OpenQASM3UnsupportedInput``.
+    This should be raised when the input OpenQASM 3 semantics are not valid for the compiler.
+
