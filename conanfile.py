@@ -27,8 +27,12 @@ class QSSCompilerConan(ConanFile):
     version = get_version()
     url = "https://github.com/qiskit/qss-compiler"
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "pythonlib": [True, False]}
-    default_options = {"shared": False, "pythonlib": True}
+    options = {
+        "shared": [True, False],
+        "pythonlib": [True, False],
+        "enable_warnings": [True, False],
+    }
+    default_options = {"shared": False, "pythonlib": True, "enable_warnings": True}
     license = "Apache-2.0 WITH LLVM-exception"
     author = "OpenQASM Organization"
     topics = ("Compiler", "OpenQASM3", "MLIR", "Quantum", "Computing")
@@ -59,6 +63,7 @@ class QSSCompilerConan(ConanFile):
         cmake = CMake(self, generator="Ninja")
         cmake.definitions["CMAKE_TOOLCHAIN_FILE"] = "conan_toolchain.cmake"
         cmake.definitions["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"
+        cmake.definitions["QSSC_ENABLE_WARNINGS"] = "ON" if self.options.enable_warnings else "OFF"
         # linking in parallel on all CPUs may take up more memory than
         # available in a typical CI worker for debug builds.
         if self.settings.build_type == "Debug":

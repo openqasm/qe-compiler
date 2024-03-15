@@ -1,6 +1,6 @@
 //===- QUIRGenQASM3Visitor.cpp ----------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -137,7 +137,7 @@ llvm::cl::opt<bool>
                      llvm::cl::desc("enable qasm3 input parameters"),
                      llvm::cl::init(false));
 
-llvm::cl::opt<bool> enableCircuits("enable-circuits",
+llvm::cl::opt<bool> enableCircuits("enable-circuits-from-qasm",
                                    llvm::cl::desc("enable quir circuits"),
                                    llvm::cl::init(false));
 
@@ -264,15 +264,6 @@ void QUIRGenQASM3Visitor::initialize(
     const mlir::quir::TimeUnits &shotDelayUnits) {
   Location const initialLocation =
       mlir::FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
-
-  // validate command line options
-  if (enableParameters && !enableCircuits) {
-    hasFailed = true;
-    DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
-    engine.emit(initialLocation, mlir::DiagnosticSeverity::Error)
-        << "the --enable-parameters circuit requires --enable-circuits";
-    return;
-  }
 
   // create the "main" function
   auto func = topLevelBuilder.create<mlir::func::FuncOp>(

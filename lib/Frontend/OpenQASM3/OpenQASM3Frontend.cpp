@@ -1,6 +1,6 @@
 //===- OpenQASM3Frontend.cpp ------------------------------------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -195,14 +195,18 @@ llvm::Error qssc::frontend::openqasm3::parse(
         fileLoc << "File: " << File << ", Line: " << Loc.LineNo
                 << ", Col: " << Loc.ColNo;
 
-        llvm::errs() << level << " while parsing OpenQASM 3 input\n"
-                     << fileLoc.str() << " " << Msg << "\n"
-                     << sourceString << "\n";
+        std::stringstream errMsg;
+        errMsg << fileLoc.str() << " " << Msg << "\n" << sourceString << "\n";
 
-        if (diagnosticCallback_) {
+        // This will show the error when trying to generate MLIR
+        llvm::errs() << level << " while parsing OpenQASM 3 input\n"
+                     << errMsg.str();
+
+        if (diagnosticCallback_ and (diagLevel == qssc::Severity::Error or
+                                     diagLevel == qssc::Severity::Fatal)) {
           qssc::Diagnostic const diag{
               diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure,
-              fileLoc.str() + "\n" + Msg + "\n" + sourceString};
+              errMsg.str()};
           (*diagnosticCallback_)(diag);
         }
 
