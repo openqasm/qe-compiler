@@ -80,13 +80,13 @@ bool moveUsers(Operation *curOp, MoveListVec &moveList) {
 
 // This pattern matches on two CallCircuitOps separated by non-quantum ops
 struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
-  explicit CircuitAndCircuitPattern(MLIRContext *ctx,
-                                    llvm::StringMap<Operation *> &symbolMap)
+  explicit CircuitAndCircuitPattern(
+      MLIRContext *ctx, qssc::utils::SymbolCacheAnalysis &symbolCache)
       : OpRewritePattern<CallCircuitOp>(ctx) {
-    _symbolMap = &symbolMap;
+    _symbolCache = &symbolCache;
   }
 
-  llvm::StringMap<Operation *> *_symbolMap;
+  qssc::utils::SymbolCacheAnalysis *_symbolCache;
 
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
@@ -179,7 +179,7 @@ struct CircuitAndCircuitPattern : public OpRewritePattern<CallCircuitOp> {
       return failure();
 
     return MergeCircuitsPass::mergeCallCircuits(
-        getContext(), rewriter, callCircuitOp, nextCallCircuitOp, _symbolMap);
+        getContext(), rewriter, callCircuitOp, nextCallCircuitOp, _symbolCache);
   } // matchAndRewrite
 
   void initialize() { setDebugName("CircuitAndCircuitPattern"); }
@@ -264,13 +264,13 @@ struct CircuitAndBarrierPattern : public OpRewritePattern<CallCircuitOp> {
 
 // This pattern matches on a CallCircuitOp, multiple barriers, CallCircuitOp
 struct CircuitBarrierCircuitPattern : public OpRewritePattern<CallCircuitOp> {
-  explicit CircuitBarrierCircuitPattern(MLIRContext *ctx,
-                                        llvm::StringMap<Operation *> &symbolMap)
+  explicit CircuitBarrierCircuitPattern(
+      MLIRContext *ctx, qssc::utils::SymbolCacheAnalysis &symbolCache)
       : OpRewritePattern<CallCircuitOp>(ctx) {
-    _symbolMap = &symbolMap;
+    _symbolCache = &symbolCache;
   }
 
-  llvm::StringMap<Operation *> *_symbolMap;
+  qssc::utils::SymbolCacheAnalysis *_symbolCache;
 
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
@@ -290,7 +290,7 @@ struct CircuitBarrierCircuitPattern : public OpRewritePattern<CallCircuitOp> {
       return failure();
 
     return MergeCircuitsPass::mergeCallCircuits(
-        getContext(), rewriter, callCircuitOp, nextCallCircuitOp, _symbolMap,
+        getContext(), rewriter, callCircuitOp, nextCallCircuitOp, _symbolCache,
         barrierOps);
     return success();
   } // matchAndRewrite
@@ -299,20 +299,6 @@ struct CircuitBarrierCircuitPattern : public OpRewritePattern<CallCircuitOp> {
 }; // struct CircuitAndBarrierPattern
 
 } // end anonymous namespace
-
-CircuitOp
-MergeCircuitsPass::getCircuitOp(CallCircuitOp callCircuitOp,
-                                llvm::StringMap<Operation *> *symbolMap) {
-  // look for func def match
-  assert(symbolMap && "a valid symbolMap pointer must be provided");
-  auto search = symbolMap->find(callCircuitOp.getCallee());
-
-  assert(search != symbolMap->end() && "matching circuit not found");
-
-  auto circuitOp = dyn_cast<CircuitOp>(search->second);
-  assert(circuitOp && "matching circuit not found");
-  return circuitOp;
-}
 
 uint insertOperandAndArgument(
     Value operand, Operation *defOp, llvm::SmallVector<Value> &callInputValues,
@@ -417,11 +403,11 @@ quir::ReturnOp getReturnOp(Operation *op) {
 LogicalResult MergeCircuitsPass::mergeCallCircuits(
     MLIRContext *context, PatternRewriter &rewriter,
     CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
-    llvm::StringMap<Operation *> *symbolMap,
+    qssc::utils::SymbolCacheAnalysis *symbolCache,
     std::optional<llvm::SmallVector<Operation *>> barrierOps) {
-  auto circuitOp = getCircuitOp(callCircuitOp, symbolMap);
-  auto nextCircuitOp = getCircuitOp(nextCallCircuitOp, symbolMap);
-
+  auto circuitOp = symbolCache->getOp<CircuitOp>(callCircuitOp.getCallee());
+  auto nextCircuitOp =
+      symbolCache->getOp<CircuitOp>(nextCallCircuitOp.getCallee());
   rewriter.setInsertionPointAfter(nextCircuitOp);
 
   llvm::SmallVector<Type> outputTypes;
@@ -513,7 +499,7 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // add new name to symbolMap
   // do not remove old in case the are multiple calls
-  (*symbolMap)[newName] = newCircuitOp.getOperation();
+  symbolCache->getSymbolMap()[newName] = newCircuitOp.getOperation();
 
   return success();
 }
@@ -523,16 +509,12 @@ void MergeCircuitsPass::runOnOperation() {
 
   auto cache =
       getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>();
-  auto circuitOpsMap = cache.getSymbolMap();
-  llvm::errs() << "Symbols\n";
-  cache.listSymbols();
-  llvm::errs() << "Done\n";
 
   RewritePatternSet patterns(&getContext());
-  patterns.add<CircuitAndCircuitPattern>(&getContext(), circuitOpsMap);
+  patterns.add<CircuitAndCircuitPattern>(&getContext(), cache);
   patterns.add<BarrierAndCircuitPattern>(&getContext());
   patterns.add<CircuitAndBarrierPattern>(&getContext());
-  patterns.add<CircuitBarrierCircuitPattern>(&getContext(), circuitOpsMap);
+  patterns.add<CircuitBarrierCircuitPattern>(&getContext(), cache);
 
   // default enable / disable patters
   SmallVector<std::string> const enabledPatterns = {};
