@@ -39,7 +39,6 @@ qssc_add_plugin(QSSCTargetMock QSSC_TARGET_PLUGIN
 Conversion/QUIRToStandard/QUIRToStandard.cpp
 MockTarget.cpp
 MockUtils.cpp
-Transforms/FunctionLocalization.cpp
 Transforms/QubitLocalization.cpp
 
 ADDITIONAL_HEADER_DIRS

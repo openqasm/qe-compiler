@@ -305,14 +305,6 @@ def _do_compile(
                     return_diagnostics=return_diagnostics,
                 )
 
-        for diag in diagnostics:
-            if diag.category == ErrorCategory.QSSControlSystemResourcesExceeded:
-                raise exceptions.QSSControlSystemResourcesExceeded(
-                    diag.message,
-                    diagnostics,
-                    return_diagnostics=self.return_diagnostics,
-                )
-
         if not success:
             raise exceptions.QSSCompilationFailure(
                 "Failure during compilation",
