@@ -23,6 +23,7 @@
 #include "Dialect/Pulse/IR/PulseInterfaces.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -62,9 +63,7 @@ void QuantumCircuitPulseSchedulingPass::runOnOperation() {
   ModuleOp const moduleOp = getOperation();
 
   // populate/cache the symbol map
-  moduleOp->walk([&](SequenceOp sequenceOp) {
-    symbolMap[sequenceOp.getSymName()] = sequenceOp.getOperation();
-  });
+  symbolMap = &getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<SequenceOp>().getSymbolMap();
 
   // schedule all the quantum circuits which are root call sequence ops
   moduleOp->walk([&](mlir::pulse::CallSequenceOp callSequenceOp) {
@@ -217,8 +216,9 @@ bool QuantumCircuitPulseSchedulingPass::sequenceOpIncludeCapture(
 
 mlir::pulse::SequenceOp QuantumCircuitPulseSchedulingPass::getSequenceOp(
     mlir::pulse::CallSequenceOp callSequenceOp) {
-  auto search = symbolMap.find(callSequenceOp.getCallee());
-  assert(search != symbolMap.end() && "matching sequence not found");
+  assert(symbolMap && "symbolMap has not been set");
+  auto search = symbolMap->find(callSequenceOp.getCallee());
+  assert(search != symbolMap->end() && "matching sequence not found");
   auto sequenceOp = dyn_cast<SequenceOp>(search->second);
   assert(sequenceOp && "matching sequence not found");
   return sequenceOp;

@@ -53,7 +53,7 @@ private:
   void addToCircuit(mlir::Operation *currentOp, OpBuilder circuitBuilder,
                     llvm::SmallVector<Operation *> &eraseList);
   uint64_t circuitCount = 0;
-  llvm::StringMap<Operation *> circuitOpsMap;
+  llvm::StringMap<Operation *> *circuitOpsMap{nullptr};
 
   mlir::quir::CircuitOp currentCircuitOp = nullptr;
   mlir::quir::CallCircuitOp newCallCircuitOp;

@@ -25,6 +25,7 @@
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Attributes.h"
@@ -402,11 +403,7 @@ struct CallCircuitAndCallCircuitTopologicalPattern
 void MergeCircuitMeasuresTopologicalPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
-  llvm::StringMap<Operation *> circuitOpsMap;
-
-  moduleOperation->walk([&](CircuitOp circuitOp) {
-    circuitOpsMap[circuitOp.getSymName()] = circuitOp.getOperation();
-  });
+  auto circuitOpsMap = getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>().getSymbolMap();
 
   RewritePatternSet patterns(&getContext());
   patterns.add<CallCircuitAndCallCircuitTopologicalPattern>(&getContext(),

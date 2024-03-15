@@ -26,6 +26,7 @@
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/BuiltinAttributes.h"
@@ -520,11 +521,11 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 void MergeCircuitsPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
-  llvm::StringMap<Operation *> circuitOpsMap;
-
-  moduleOperation->walk([&](CircuitOp circuitOp) {
-    circuitOpsMap[circuitOp.getSymName()] = circuitOp.getOperation();
-  });
+  auto cache = getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>();
+  auto circuitOpsMap = cache.getSymbolMap();
+  llvm::errs() << "Symbols\n";
+  cache.listSymbols();
+  llvm::errs() << "Done\n";
 
   RewritePatternSet patterns(&getContext());
   patterns.add<CircuitAndCircuitPattern>(&getContext(), circuitOpsMap);

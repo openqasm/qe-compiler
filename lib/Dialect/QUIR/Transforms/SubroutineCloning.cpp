@@ -28,6 +28,7 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Attributes.h"
@@ -182,33 +183,29 @@ void SubroutineCloningPass::runOnOperation() {
 
   mainFunc->walk([&](CallSubroutineOp op) { callWorkList.push_back(op); });
 
-  SymbolOpMap symbolOps;
+  auto symbolCache = getAnalysis<qssc::utils::SymbolCacheAnalysis>();
 
   if (!callWorkList.empty()) {
-    moduleOperation->walk([&](mlir::func::FuncOp functionOp) {
-      symbolOps[functionOp.getSymName()] = functionOp.getOperation();
-    });
+    symbolCache.addToCache<mlir::func::FuncOp>();
   }
 
   while (!callWorkList.empty()) {
     Operation *op = callWorkList.front();
     callWorkList.pop_front();
-    processCallOp<CallSubroutineOp, mlir::func::FuncOp>(op, symbolOps);
+    processCallOp<CallSubroutineOp, mlir::func::FuncOp>(op, symbolCache.getSymbolMap());
   }
 
   mainFunc->walk([&](CallCircuitOp op) { callWorkList.push_back(op); });
 
   if (!callWorkList.empty()) {
-    symbolOps.clear();
-    moduleOperation->walk([&](CircuitOp circuitOp) {
-      symbolOps[circuitOp.getSymName()] = circuitOp.getOperation();
-    });
+    symbolCache.getSymbolMap().clear();
+    symbolCache.addToCache<CircuitOp>();
   }
 
   while (!callWorkList.empty()) {
     Operation *op = callWorkList.front();
     callWorkList.pop_front();
-    processCallOp<CallCircuitOp, CircuitOp>(op, symbolOps);
+    processCallOp<CallCircuitOp, CircuitOp>(op, symbolCache.getSymbolMap());
   }
 
   // All subroutine defs that have been cloned are no longer needed

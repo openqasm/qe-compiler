@@ -60,7 +60,7 @@ private:
 
   void addTimepoints(mlir::OpBuilder &builder,
                      mixedFrameMap_t &mixedFrameSequences, int64_t &maxTime);
-  llvm::StringMap<mlir::pulse::SequenceOp> sequenceOps;
+  llvm::StringMap<mlir::Operation *> *sequenceOps{nullptr};
 };
 } // namespace mlir::pulse
 

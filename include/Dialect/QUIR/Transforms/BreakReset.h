@@ -73,7 +73,7 @@ struct BreakResetPass
 
 private:
   // keep track of all circuits
-  llvm::StringMap<Operation *> circuitsSymbolMap;
+  llvm::StringMap<Operation *> *circuitsSymbolMap{nullptr};
   void insertMeasureInCircuit(mlir::func::FuncOp &mainFunc,
                               mlir::quir::MeasureOp measureOp);
   void insertCallGateInCircuit(mlir::func::FuncOp &mainFunc,

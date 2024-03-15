@@ -31,6 +31,7 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
@@ -93,12 +94,7 @@ void QUIRToPulsePass::runOnOperation() {
   mainFuncFirstOp = &mainFunc.getBody().front().front();
 
   // populate/cache the symbol map
-  moduleOp->walk([&](Operation *op) {
-    if (auto castOp = dyn_cast<CircuitOp>(op))
-      symbolMap[castOp.getSymName()] = castOp.getOperation();
-    else if (auto castOp = dyn_cast<SequenceOp>(op))
-      symbolMap[castOp.getSymName()] = castOp.getOperation();
-  });
+  symbolMap = &getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>().addToCache<SequenceOp>().getSymbolMap();
 
   // convert all QUIR circuits to Pulse sequences
   moduleOp->walk([&](CallCircuitOp callCircOp) {
@@ -696,8 +692,10 @@ void QUIRToPulsePass::parsePulseWaveformContainerOps(
 
 mlir::quir::CircuitOp
 QUIRToPulsePass::getCircuitOp(CallCircuitOp &callCircuitOp) {
-  auto search = symbolMap.find(callCircuitOp.getCallee());
-  assert(search != symbolMap.end() && "matching circuit not found");
+  assert(symbolMap && "symbolMap has not been set");
+  auto search = symbolMap->find(callCircuitOp.getCallee());
+  llvm::errs() << callCircuitOp.getCallee() << "\n";
+  assert(search != symbolMap->end() && "matching circuit not found");
   auto circuitOp = dyn_cast<CircuitOp>(search->second);
   assert(circuitOp && "matching circuit not found");
   return circuitOp;
@@ -705,8 +703,9 @@ QUIRToPulsePass::getCircuitOp(CallCircuitOp &callCircuitOp) {
 
 mlir::pulse::SequenceOp
 QUIRToPulsePass::getSequenceOp(std::string const &symbolName) {
-  auto search = symbolMap.find(symbolName);
-  assert(search != symbolMap.end() && "matching sequence not found");
+  assert(symbolMap && "symbolMap has not been set");
+  auto search = symbolMap->find(symbolName);
+  assert(search != symbolMap->end() && "matching sequence not found");
   auto sequenceOp = dyn_cast<SequenceOp>(search->second);
   assert(sequenceOp && "matching sequence not found");
   return sequenceOp;

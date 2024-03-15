@@ -76,7 +76,7 @@ private:
   void updatePortAvailabilityMap(mlir::ArrayAttr ports,
                                  int updatedAvailableTime);
   bool sequenceOpIncludeCapture(mlir::pulse::SequenceOp quantumGateSequenceOp);
-  llvm::StringMap<Operation *> symbolMap;
+  llvm::StringMap<Operation *> *symbolMap{nullptr};
   mlir::pulse::SequenceOp
   getSequenceOp(mlir::pulse::CallSequenceOp callSequenceOp);
 };

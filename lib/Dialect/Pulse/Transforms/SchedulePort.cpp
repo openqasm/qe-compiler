@@ -30,6 +30,7 @@
 #include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/Pulse/Utils/Utils.h"
 #include "Utils/DebugIndent.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/Block.h"
@@ -66,16 +67,18 @@ uint64_t SchedulePortPass::processCall(CallSequenceOp &callSequenceOp,
 
   // walk into region and check arguments
   // look for sequence def match
+  assert(sequenceOps && "sequence Op map has not been created");
   auto callee = callSequenceOp.getCallee();
-  auto sequenceOpIter = sequenceOps.find(callee);
+  auto sequenceOpIter = sequenceOps->find(callee);
 
-  if (sequenceOpIter == sequenceOps.end()) {
+  if (sequenceOpIter == sequenceOps->end()) {
     callSequenceOp->emitError()
         << "Unable to find callee symbol " << callee << ".";
     signalPassFailure();
   }
 
-  auto sequenceOp = sequenceOpIter->second;
+  auto sequenceOp = dyn_cast<SequenceOp>(sequenceOpIter->second);
+  assert(sequenceOp && "could not convert cached symbol to sequence");
 
   uint64_t calleeDuration;
   if (updateNestedSequences)
@@ -276,8 +279,7 @@ void SchedulePortPass::runOnOperation() {
 
   Operation *module = getOperation();
 
-  module->walk(
-      [&](mlir::pulse::SequenceOp op) { sequenceOps[op.getSymName()] = op; });
+  sequenceOps = &getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<mlir::pulse::SequenceOp>().getSymbolMap();
 
   INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
 
