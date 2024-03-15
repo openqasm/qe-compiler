@@ -15,6 +15,7 @@ void addErrorCategory(py::module &m) {
   py::enum_<qssc::ErrorCategory>(m, "ErrorCategory", py::arithmetic())
       .value("OpenQASM3ParseFailure",
              qssc::ErrorCategory::OpenQASM3ParseFailure)
+      .value("OpenQASM3UnsupportedInput", qssc::ErrorCategory::OpenQASM3UnsupportedInput)
       .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
       .value("QSSCompilerNoInputError",
              qssc::ErrorCategory::QSSCompilerNoInputError)

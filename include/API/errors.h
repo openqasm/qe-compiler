@@ -32,6 +32,7 @@ namespace qssc {
 
 enum class ErrorCategory {
   OpenQASM3ParseFailure,
+  OpenQASM3UnsupportedInput,
   QSSCompilerError,
   QSSCompilerNoInputError,
   QSSCompilerCommunicationFailure,
