@@ -87,7 +87,6 @@ void QUIRAngleConversionPass::runOnOperation() {
   mlir::GreedyRewriteConfig config;
   // Disable to improve performance
   config.enableRegionSimplification = false;
-  config.strictMode = mlir::GreedyRewriteStrictness::ExistingOps;
   // Each operation can only be modified once so limit
   config.maxIterations = 1;
 
