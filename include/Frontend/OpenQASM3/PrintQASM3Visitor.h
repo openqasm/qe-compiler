@@ -123,6 +123,8 @@ public:
 
   void visit(const QASM::ASTOperatorNode *) override;
 
+  void visit(const QASM::ASTOperandNode *) override;
+
   void visit(const QASM::ASTUnaryOpNode *) override;
 };
 

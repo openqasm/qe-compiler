@@ -17,4 +17,5 @@ add_mlir_dialect_library(MLIROQ3Dialect
 
 	LINK_LIBS PUBLIC
 	MLIRIR
+        MLIRMathDialect
 	)
