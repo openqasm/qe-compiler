@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Scheduling of a quantum circuit based on the availability of mix frames
+    is added in order to reduce the overall duration of the scheduled pulse
+    sequence compared to that of port-based scheduling.
