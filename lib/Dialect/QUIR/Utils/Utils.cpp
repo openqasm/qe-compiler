@@ -357,14 +357,18 @@ std::tuple<Value, MeasureOp> qubitFromMeasResult(MeasureOp measureOp,
 
 std::tuple<Value, MeasureOp> qubitFromMeasResult(CallCircuitOp callCircuitOp,
                                                  Value result) {
-  auto opRes = result.cast<OpResult>();
-  uint const resNum = opRes.getResultNumber();
-
   Operation *findOp =
       SymbolTable::lookupNearestSymbolFrom<mlir::quir::CircuitOp>(
           callCircuitOp, callCircuitOp.getCalleeAttr());
 
   auto circuitOp = dyn_cast<CircuitOp>(findOp);
+  return qubitFromMeasResult(circuitOp, result);
+}
+
+std::tuple<Value, MeasureOp> qubitFromMeasResult(CircuitOp circuitOp,
+                                                 Value result) {
+  auto opRes = result.cast<OpResult>();
+  uint const resNum = opRes.getResultNumber();
   auto returnOp = dyn_cast<quir::ReturnOp>(circuitOp.back().getTerminator());
   auto circuitResult = returnOp->getOperand(resNum).cast<OpResult>();
   auto measureOp = dyn_cast<MeasureOp>(circuitResult.getDefiningOp());

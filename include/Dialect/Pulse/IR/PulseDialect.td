@@ -1,6 +1,6 @@
 //===- PulseDialect.td - Pulse dialect ---------------------*- tablegen -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -57,7 +57,7 @@ class Pulse_Attr<string name, string attrMnemonic, list<Trait> traits = []>
   let mnemonic = attrMnemonic;
 }
 
-include "PulseTypes.td"
-include "PulseOps.td"
+include "Dialect/Pulse/IR/PulseTypes.td"
+include "Dialect/Pulse/IR/PulseOps.td"
 
 #endif // PULSE_DIALECT

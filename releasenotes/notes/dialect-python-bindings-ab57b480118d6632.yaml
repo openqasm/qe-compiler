@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Python bindings for the compiler's custom dialects have been added, along
+    with some examples of their usage. Full compatibility has not been
+    accomplished yet, but this serves as a proof of concept for future
+    enablement.

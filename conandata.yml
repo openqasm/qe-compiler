@@ -4,7 +4,7 @@ requirements:
   - zlib/1.2.13
   - zstd/1.5.5
   - nlohmann_json/3.9.1
-  - pybind11/2.10.1
+  - pybind11/2.11.1
   - clang-tools-extra/17.0.5-0@
   - llvm/17.0.5-0@
   - qasm/0.3.0@qss/stable

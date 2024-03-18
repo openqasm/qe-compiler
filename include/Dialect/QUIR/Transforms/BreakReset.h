@@ -24,6 +24,10 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Pass/Pass.h"
 
+#include "Dialect/QUIR/IR/QUIROps.h"
+
+#include <deque>
+
 namespace mlir::quir {
 
 /// This pass converts input ResetQubitOps to a parameterized number of
@@ -31,11 +35,16 @@ namespace mlir::quir {
 struct BreakResetPass
     : public mlir::PassWrapper<BreakResetPass,
                                mlir::OperationPass<mlir::ModuleOp>> {
+  bool insertQuantumGatesIntoCirc = false;
+
   BreakResetPass() = default;
   BreakResetPass(const BreakResetPass &pass) : PassWrapper(pass) {}
   BreakResetPass(uint inNumIterations, uint inDelayCycles) {
     numIterations = inNumIterations;
     delayCycles = inDelayCycles;
+  }
+  BreakResetPass(bool inInsertCallGatesAndMeasuresIntoCircuit) {
+    insertQuantumGatesIntoCirc = inInsertCallGatesAndMeasuresIntoCircuit;
   }
 
   void runOnOperation() override;
@@ -49,10 +58,32 @@ struct BreakResetPass
       llvm::cl::desc("Number of cycles of delay to add between reset "
                      "iterations, default is 1000"),
       llvm::cl::value_desc("num"), llvm::cl::init(1000)};
+  Option<bool> insertCallGatesAndMeasuresIntoCircuit{
+      *this, "quantum-gates-in-circuit",
+      llvm::cl::desc(
+          "an option to insert call gates and measures into circuit"),
+      llvm::cl::value_desc("bool"), llvm::cl::init(false)};
 
   llvm::StringRef getArgument() const override;
   llvm::StringRef getDescription() const override;
   llvm::StringRef getName() const override;
+
+  std::deque<Operation *> measureList;
+  std::deque<Operation *> callGateList;
+
+private:
+  // keep track of all circuits
+  llvm::StringMap<Operation *> circuitsSymbolMap;
+  void insertMeasureInCircuit(mlir::func::FuncOp &mainFunc,
+                              mlir::quir::MeasureOp measureOp);
+  void insertCallGateInCircuit(mlir::func::FuncOp &mainFunc,
+                               mlir::quir::CallGateOp callGateOp);
+  template <class measureOrCallGate>
+  mlir::quir::CircuitOp startCircuit(mlir::func::FuncOp &mainFunc,
+                                     measureOrCallGate quantumGate);
+  void finishCircuit(mlir::quir::CircuitOp circOp, Operation *quantumGate);
+  uint circuitCounter = 0;
+  std::string getMangledName();
 }; // struct BreakResetPass
 } // namespace mlir::quir
 
