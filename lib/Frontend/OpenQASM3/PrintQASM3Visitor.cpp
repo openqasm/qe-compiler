@@ -703,4 +703,19 @@ void PrintQASM3Visitor::visit(const QASM::ASTOperatorNode *node) {
   vStream << ")\n";
 }
 
+void PrintQASM3Visitor::visit(const QASM::ASTOperandNode *node) {
+  vStream << "OperandNode(";
+  if (const auto *id = node->GetTargetIdentifier()) {
+    vStream << "target-identifier=";
+    if (id->IsReference())
+      BaseQASM3Visitor::dispatchVisit<ASTIdentifierRefNode>(id);
+    else
+      BaseQASM3Visitor::dispatchVisit<ASTIdentifierNode>(id);
+  } else {
+    vStream << "target=";
+    BaseQASM3Visitor::visit(node->GetExpression());
+  }
+  vStream << ")\n";
+}
+
 } // namespace qssc::frontend::openqasm3
