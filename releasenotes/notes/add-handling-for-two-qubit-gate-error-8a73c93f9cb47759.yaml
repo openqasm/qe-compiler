@@ -1,5 +1,5 @@
 ---
 features:
   - |
-    Add a new ErrorCategory of type QSSCompilerNonExistingCommandError
-    to handle non existing two qubit gate commands.
+    Add a new ErrorCategory of type QSSTargetUnsupportedOperation
+    to handle non existing gate operation.

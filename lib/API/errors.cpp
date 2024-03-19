@@ -82,8 +82,8 @@ std::string_view getErrorCategoryAsString(qssc::ErrorCategory category) {
   case ErrorCategory::QSSControlSystemResourcesExceeded:
     return "Control system resources exceeded";
 
-  case ErrorCategory::QSSCompilerNonExistingCommandError:
-    return "Target non existing command was used";
+  case ErrorCategory::QSSTargetUnsupportedOperation:
+    return "An unsupported operation on a target was used";
 
   case ErrorCategory::UncategorizedError:
     return "Compilation failure";

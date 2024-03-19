@@ -117,8 +117,8 @@ class QSSControlSystemResourcesExceeded(QSSCompilerError):
     """Raised when control system resources (such as instruction memory) are exceeded."""
 
 
-class QSSCompilerNonExistingCommandError(QSSCompilerError):
-    """Target non existing command was used"""
+class QSSTargetUnsupportedOperation(QSSCompilerError):
+    """An unsupported operation on a target was used"""
 
 
 class OpenQASM3ParseFailure(QSSCompilerError):

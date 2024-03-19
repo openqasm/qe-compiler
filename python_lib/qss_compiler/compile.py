@@ -304,8 +304,8 @@ class _CompilationManager:
                         diagnostics,
                         return_diagnostics=self.return_diagnostics,
                     )
-                if diag.category == ErrorCategory.QSSCompilerNonExistingCommandError:
-                    raise exceptions.QSSCompilerNonExistingCommandError(
+                if diag.category == ErrorCategory.QSSTargetUnsupportedOperation:
+                    raise exceptions.QSSTargetUnsupportedOperation(
                         diag.message,
                         diagnostics,
                         return_diagnostics=self.return_diagnostics,
