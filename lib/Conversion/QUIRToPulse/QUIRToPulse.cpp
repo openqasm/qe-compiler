@@ -140,7 +140,7 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
 
   assert(symbolCache && "symbolCache not set");
   auto circuitOp =
-      symbolCache->getOpByName<CircuitOp>(callCircuitOp.getCallee());
+      symbolCache->getOp<CircuitOp>(callCircuitOp);
   std::string const circName = circuitOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nConverting QUIR circuit " << circName << ":\n");
   assert(callCircuitOp && "callCircuit op is null");

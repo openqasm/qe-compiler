@@ -153,7 +153,6 @@ public:
 
   void addCallee(llvm::StringRef name, mlir::Operation *op) {
     // if this is an update to existing symbol clear callMap cache
-    llvm::errs() << "Adding " << name << "\n";
     if (symbolOpsMap.contains(name))
       callMap.clear();
     symbolOpsMap[name] = op;
