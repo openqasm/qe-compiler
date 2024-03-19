@@ -339,6 +339,10 @@ void BaseQASM3Visitor::visit(const ASTExpressionNode *node) {
     dispatchVisit<ASTOperatorNode>(node);
     break;
 
+  case ASTTypeOpndTy:
+    dispatchVisit<ASTOperandNode>(node);
+    break;
+
   case ASTTypeUnaryOp:
     dispatchVisit<ASTUnaryOpNode>(node);
     break;

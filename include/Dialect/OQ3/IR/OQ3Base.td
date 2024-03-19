@@ -33,6 +33,7 @@ def OQ3_Dialect : Dialect {
     let cppNamespace = "::mlir::oq3";
     let dependentDialects = [
         "mlir::arith::ArithDialect",
+        "mlir::math::MathDialect",
         "mlir::LLVM::LLVMDialect"
     ];
 }

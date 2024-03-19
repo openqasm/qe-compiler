@@ -1,0 +1,18 @@
+---
+features:
+  - |
+    Support has been added for the following OpenQASM 3 operations:
+
+    * addition (*, *=) for integers and floats
+    * subtraction (*, *=) for integers and floats
+    * multiplication (*, *=) for integers and floats
+    * division (*, *=) for integers and floats
+    * modulo (*, *=) for integers and floats
+    * power (**) for integers and floats
+    * cos() for floats
+    * sin() for floats
+    * tan() for floats
+    * atan() for floats
+    * exp() for floats
+    * ln() for floats
+    * sqrt() for floats
