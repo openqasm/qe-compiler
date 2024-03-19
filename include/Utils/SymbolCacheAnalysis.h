@@ -124,7 +124,7 @@ public:
   CalleeOp getOpByName(llvm::StringRef callee) {
     auto search = symbolOpsMap.find(callee);
     assert(search != symbolOpsMap.end() && "matching callee not found");
-    auto calleeOp = dyn_cast<CalleeOp>(search->second);
+    auto calleeOp = llvm::dyn_cast<CalleeOp>(search->second);
     assert(calleeOp && "callee is not of the expected type");
     return calleeOp;
   }
@@ -137,7 +137,7 @@ public:
       callMap[callOp.getOperation()] = calleeOp.getOperation();
       return calleeOp;
     }
-    auto calleeOp = dyn_cast<CalleeOp>(search->second);
+    auto calleeOp = llvm::dyn_cast<CalleeOp>(search->second);
     assert(calleeOp && "callee is not of the expected type");
     return calleeOp;
   }
