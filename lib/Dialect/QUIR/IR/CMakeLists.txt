@@ -27,6 +27,7 @@ add_mlir_dialect_library(MLIRQUIRDialect
 	MLIRIR
         MLIRArithDialect
         MLIRLLVMDialect
+        MLIRMathDialect
         MLIROQ3Dialect
         MLIRQCSDialect
         MLIRSCFDialect

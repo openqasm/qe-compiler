@@ -77,9 +77,19 @@ def example_invalid_qasm3_tmpfile(tmp_path, example_invalid_qasm3_str):
 def example_unsupported_qasm3_str():
     return """OPENQASM 3.0;
     int a;
-    int b;
+    float b;
     int c;
-    c = a + b;
+    c =  float(a) + b;
+    """
+
+
+@pytest.fixture
+def example_warning_not_in_errors():
+    return """OPENQASM 3.0;
+    gate rz(theta) q {}
+    qubit $0;
+    rz(7.35196807786455) $0;
+    rz(a) $0;
     """
 
 

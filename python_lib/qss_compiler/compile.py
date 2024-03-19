@@ -304,6 +304,12 @@ class _CompilationManager:
                         diagnostics,
                         return_diagnostics=self.return_diagnostics,
                     )
+                if diag.category == ErrorCategory.QSSTargetUnsupportedOperation:
+                    raise exceptions.QSSTargetUnsupportedOperation(
+                        diag.message,
+                        diagnostics,
+                        return_diagnostics=self.return_diagnostics,
+                    )
                 if diag.category == ErrorCategory.OpenQASM3ParseFailure:
                     raise exceptions.OpenQASM3ParseFailure(
                         diag.message,

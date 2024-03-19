@@ -43,6 +43,8 @@ void addErrorCategory(py::module &m) {
              qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
       .value("QSSControlSystemResourcesExceeded",
              qssc::ErrorCategory::QSSControlSystemResourcesExceeded)
+      .value("QSSTargetUnsupportedOperation",
+             qssc::ErrorCategory::QSSTargetUnsupportedOperation)
       .value("QSSUnsupportedQASM3", qssc::ErrorCategory::QSSUnsupportedQASM3)
       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
       .export_values();
