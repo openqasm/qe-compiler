@@ -30,6 +30,8 @@
 
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Utils/DebugIndent.h"
+#include "Utils/SymbolCacheAnalysis.h"
+
 #include "mlir/Pass/Pass.h"
 
 #include <map>
@@ -60,7 +62,7 @@ private:
 
   void addTimepoints(mlir::OpBuilder &builder,
                      mixedFrameMap_t &mixedFrameSequences, int64_t &maxTime);
-  llvm::StringMap<mlir::Operation *> *sequenceOps{nullptr};
+  qssc::utils::SymbolCacheAnalysis *symbolCache{nullptr};
 };
 } // namespace mlir::pulse
 

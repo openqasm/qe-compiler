@@ -44,6 +44,7 @@
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <cassert>
 #include <cstdint>
 #include <optional>
 #include <utility>
@@ -67,17 +68,9 @@ uint64_t SchedulePortPass::processCall(CallSequenceOp &callSequenceOp,
 
   // walk into region and check arguments
   // look for sequence def match
-  assert(sequenceOps && "sequence Op map has not been created");
-  auto callee = callSequenceOp.getCallee();
-  auto sequenceOpIter = sequenceOps->find(callee);
+  assert(symbolCache && "symbolCache Op map has not been set");
 
-  if (sequenceOpIter == sequenceOps->end()) {
-    callSequenceOp->emitError()
-        << "Unable to find callee symbol " << callee << ".";
-    signalPassFailure();
-  }
-
-  auto sequenceOp = dyn_cast<SequenceOp>(sequenceOpIter->second);
+  auto sequenceOp = symbolCache->getOp<SequenceOp>(callSequenceOp);
   assert(sequenceOp && "could not convert cached symbol to sequence");
 
   uint64_t calleeDuration;
@@ -279,9 +272,8 @@ void SchedulePortPass::runOnOperation() {
 
   Operation *module = getOperation();
 
-  sequenceOps = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
-                     .addToCache<mlir::pulse::SequenceOp>()
-                     .getSymbolMap();
+  symbolCache = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+                     .addToCache<mlir::pulse::SequenceOp>();
 
   INDENT_DEBUG("===== SchedulePortPass - start ==========\n");
 

@@ -63,8 +63,9 @@ void QuantumCircuitPulseSchedulingPass::runOnOperation() {
   ModuleOp const moduleOp = getOperation();
 
   // populate/cache the symbol map
-  symbolCache =
-      &getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<SequenceOp>();
+  symbolCache = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+                     .invalidate()
+                     .addToCache<SequenceOp>();
 
   // schedule all the quantum circuits which are root call sequence ops
   moduleOp->walk([&](mlir::pulse::CallSequenceOp callSequenceOp) {
@@ -85,8 +86,8 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
     mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp) {
 
   assert(symbolCache && "symbolCache not set");
-  auto quantumCircuitSequenceOp =
-      symbolCache->getOpByName<SequenceOp>(quantumCircuitCallSequenceOp.getCallee());
+  auto quantumCircuitSequenceOp = symbolCache->getOpByName<SequenceOp>(
+      quantumCircuitCallSequenceOp.getCallee());
   std::string const sequenceName = quantumCircuitSequenceOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nscheduling " << sequenceName << "\n");
 
@@ -110,8 +111,8 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
             dyn_cast<mlir::pulse::CallSequenceOp>(op)) {
       // find quantum gate SequenceOp
       assert(symbolCache && "symbolCache not set");
-      auto quantumGateSequenceOp =
-          symbolCache->getOpByName<SequenceOp>(quantumGateCallSequenceOp.getCallee());
+      auto quantumGateSequenceOp = symbolCache->getOpByName<SequenceOp>(
+          quantumGateCallSequenceOp.getCallee());
       const std::string quantumGateSequenceName =
           quantumGateSequenceOp.getSymName().str();
       LLVM_DEBUG(llvm::dbgs() << "\tprocessing inner sequence "

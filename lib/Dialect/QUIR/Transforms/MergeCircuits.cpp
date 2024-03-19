@@ -46,7 +46,6 @@
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 
@@ -405,9 +404,8 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
     CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
     qssc::utils::SymbolCacheAnalysis *symbolCache,
     std::optional<llvm::SmallVector<Operation *>> barrierOps) {
-  auto circuitOp = symbolCache->getOpByName<CircuitOp>(callCircuitOp.getCallee());
-  auto nextCircuitOp =
-      symbolCache->getOpByName<CircuitOp>(nextCallCircuitOp.getCallee());
+  auto circuitOp = symbolCache->getOp<CircuitOp>(callCircuitOp);
+  auto nextCircuitOp = symbolCache->getOp<CircuitOp>(nextCallCircuitOp);
   rewriter.setInsertionPointAfter(nextCircuitOp);
 
   llvm::SmallVector<Type> outputTypes;
@@ -499,8 +497,9 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // add new name to symbolMap
   // do not remove old in case the are multiple calls
-  //symbolCache->getSymbolMap()[newName] = newCircuitOp.getOperation();
+  // symbolCache->getSymbolMap()[newName] = newCircuitOp.getOperation()
   symbolCache->addCallee(newCircuitOp);
+  symbolCache->cacheCall(newCallOp, newCircuitOp);
 
   return success();
 }
@@ -508,7 +507,7 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 void MergeCircuitsPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
-  auto cache =
+  auto &cache =
       getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>();
 
   RewritePatternSet patterns(&getContext());

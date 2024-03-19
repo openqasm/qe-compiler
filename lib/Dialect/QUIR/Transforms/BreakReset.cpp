@@ -165,9 +165,8 @@ void BreakResetPass::runOnOperation() {
     mlir::func::FuncOp mainFunc =
         dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
     assert(mainFunc && "could not find the main func");
-    circuitsSymbolMap = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
-                             .addToCache<CircuitOp>()
-                             .getSymbolMap();
+    symbolCache = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+                       .addToCache<CircuitOp>();
 
     // insert measures and call gates into circuits -- when
     // insertCallGatesAndMeasuresIntoCircuit option is true
@@ -249,9 +248,8 @@ CircuitOp BreakResetPass::startCircuit(mlir::func::FuncOp &mainFunc,
     argumentIndex++;
   }
 
-  assert(circuitsSymbolMap && "circuitsSymbolMap not set");
-  (*circuitsSymbolMap)[llvm::StringRef(mangledCircuitName)] =
-      circOp.getOperation();
+  assert(symbolCache && "symbolCache not set");
+  symbolCache->addCallee(circOp);
 
   return circOp;
 }
@@ -284,7 +282,7 @@ void BreakResetPass::finishCircuit(mlir::quir::CircuitOp circOp,
 }
 
 std::string BreakResetPass::getMangledName() {
-  assert(circuitsSymbolMap && "circuitsSymbolMap not set");
+  assert(symbolCache && "symbolCache not set");
   const std::string baseName = "reset_circuit_";
   std::string mangledName;
 
@@ -292,7 +290,7 @@ std::string BreakResetPass::getMangledName() {
   do {
     mangledName = baseName + std::to_string(circuitCounter);
     circuitCounter += 1;
-  } while (circuitsSymbolMap->contains(mangledName));
+  } while (symbolCache->contains(mangledName));
 
   return mangledName;
 }

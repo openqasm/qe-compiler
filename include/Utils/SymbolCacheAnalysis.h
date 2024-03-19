@@ -8,8 +8,10 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// This file implements an analysis for caching symbols for quir.circuits and
-/// pulse.sequence
+/// This file implements an analysis for caching symbols for which match a
+/// call -> callee pattern. This currently includes circuit / call_circuit
+/// and sequence / call_sequence. 
+///
 ///
 //===----------------------------------------------------------------------===//
 
@@ -23,26 +25,58 @@
 #include <llvm/ADT/StringRef.h>
 #include <mlir/IR/Operation.h>
 
+#include <unordered_map>
+#include <unordered_set>
+#include <string>
+#include <typeinfo>
+
 namespace qssc::utils {
 
-class SymbolCacheAnalysis {
-private:
-  llvm::StringMap<mlir::Operation *> symbolOpsMap;
-  std::unordered_map<mlir::Operation *, mlir::Operation *> callMap;
-  mlir::Operation *topOp{nullptr};
-  bool invalid_{true};
+// This analysis maintains a mapping of symbol name to operation in 
+// symbolOpsMap. It will also maintain a cache of CallOp to CalleeOp
+// when operations are looked up through the getOp method. The CallOp
+// to CalleeOp cache is intended to reduce string comparison where 
+// possible
+//
+// Example usage:
+// auto & cache = getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+//                .addToCache<CircuitOp>();
+//
+// multiple symbol types may be cached using:
+// auto & cache = getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+//                .addToCache<CircuitOp>()
+//                .addToCache<SequenceOp>();
+//
+// This analysis is intended to be used with MLIR's getAnalysis 
+// framework. It has been designed to reused the chached value
+// and will not be invalidated automatically with each pass.
+// If a pass manipulates the symbols that are cached with this 
+// analysis then it should use the addCallee method to update the
+// map or call invalidate after appying updates.
+// Note this analysis should always be used by reference or
+// via a pointer to ensure that updates are applied to the maps
+// stored by the MLIR analysis framework. 
+//
+// Passes may force the maps to be re-loaded by calling invalidate
+// before calling addToCache:
+//
+// auto & cache = getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+//                .invalidate()
+//                .addToCache<CircuitOp>();
 
+
+class SymbolCacheAnalysis {
 public:
   SymbolCacheAnalysis(mlir::Operation *op) {
-    llvm::errs() << "SymbolCacheAnalysis" << "\n";
+    if (topOp && topOp != op)
+      invalidate();
     topOp = op;
   }
   SymbolCacheAnalysis(mlir::Operation *op, qssc::hal::SystemConfiguration *config) {
-    llvm::errs() << "SymbolCacheAnalysis with config" << "\n";
+    if (topOp && topOp != op)
+      invalidate();
     topOp = op;
   }
-  llvm::StringMap<mlir::Operation *> &getSymbolMap() { return symbolOpsMap; }
-  std::unordered_map<mlir::Operation *, mlir::Operation *>  &getCallMap() { return callMap; }
 
   template<class CalleeOp>
   SymbolCacheAnalysis &addToCache() {
@@ -51,19 +85,32 @@ public:
 
   template<class CalleeOp>
   SymbolCacheAnalysis &addToCache(mlir::Operation *op) {
+    std::string typeName = typeid(CalleeOp).name();
+
+    if (!invalid && (cachedTypes.find(typeName) != cachedTypes.end())) {
+      // already cached skipping
+      return *this;
+    }
+
     op->walk([&](CalleeOp op) {
         symbolOpsMap[op.getSymName()] = op.getOperation();
     });
+    cachedTypes.insert(typeName);
+    invalid = false;
     return *this;
   }
 
   template<class CallOp>
-  SymbolCacheAnalysis cacheCallMap() {
+  SymbolCacheAnalysis &cacheCallMap() {
      return cacheCallMap<CallOp>(topOp);
   }
 
   template<class CallOp>
-  SymbolCacheAnalysis cacheCallMap(mlir::Operation *op) {
+  SymbolCacheAnalysis &cacheCallMap(mlir::Operation *op) {
+    std::string typeName = typeid(CallOp).name();
+    if ((cachedTypes.find(typeName) != cachedTypes.end()))
+      return *this;
+
     op->walk([&](CallOp callOp) {
         auto search = symbolOpsMap.find(callOp.getCallee());
         if (search != symbolOpsMap.end())
@@ -89,7 +136,6 @@ public:
       callMap[callOp.getOperation()] = calleeOp.getOperation();
       return calleeOp;
     }
-    assert(search != callMap.end() && "matching callee not found");
     auto calleeOp = dyn_cast<CalleeOp>(search->second);
     assert(calleeOp && "callee is not of the expected type");
     return calleeOp;
@@ -102,7 +148,15 @@ public:
 
   template<class CalleeOp>
   void addCallee(CalleeOp calleeOp) {
-    symbolOpsMap[calleeOp.getSymName()] = calleeOp.getOperation();
+    addCallee(calleeOp.getSymName(), calleeOp.getOperation());
+  }
+
+  void addCallee(llvm::StringRef name, mlir::Operation *op) {
+    // if this is an update to existing symbol clear callMap cache
+    llvm::errs() << "Adding " << name << "\n";
+    if (symbolOpsMap.contains(name))
+      callMap.clear();
+    symbolOpsMap[name] = op;
   }
 
   template<class CallOp, class CalleeOp>
@@ -110,18 +164,27 @@ public:
     callMap[callOp.getOperation()] = calleeOp.getOperation();
   }
 
-  void invalidate() { 
-    symbolOpsMap.clear();
-    callMap.clear();
-    invalid_ = true; 
+  bool contains(llvm::StringRef name) {
+    return symbolOpsMap.contains(name);
   }
 
-  void freeze() {
-    invalid_ = false;
+  template<class CalleeOp>
+  void erase(CalleeOp calleeOp) {
+    symbolOpsMap.erase(calleeOp.getSymName());
+    // TODO: determine if it is worth just clearing the callers of calleeOp
+    callMap.clear();
+  }
+
+  SymbolCacheAnalysis & invalidate() { 
+    symbolOpsMap.clear();
+    callMap.clear();
+    cachedTypes.clear();
+    invalid = true; 
+    return *this;
   }
 
   bool isInvalidated(const mlir::AnalysisManager::PreservedAnalyses &pa) {
-    return invalid_;
+    return invalid;
   }
 
   // for debugging purposes
@@ -129,6 +192,14 @@ public:
     for (auto & [key, value] : symbolOpsMap)
       llvm::errs() << key << "\n";
   }
+
+private:
+  llvm::StringMap<mlir::Operation *> symbolOpsMap;
+  std::unordered_map<mlir::Operation *, mlir::Operation *> callMap;
+  std::unordered_set<std::string> cachedTypes;
+  mlir::Operation *topOp{nullptr};
+  bool invalid{true};
+
 };
 } // namespace qssc::utils
 

@@ -43,7 +43,6 @@
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
@@ -85,8 +84,8 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
 
   std::string const circuitName = "circuit_";
   std::string newName = circuitName + std::to_string(circuitCount++);
-  assert(circuitOpsMap && "circuitOpsMap not set");
-  while (circuitOpsMap->contains(newName))
+  assert(symbolCache && "symbolCache not set");
+  while (symbolCache->contains(newName))
     newName = circuitName + std::to_string(circuitCount++);
 
   currentCircuitOp =
@@ -95,7 +94,7 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
                                             /*inputs=*/ArrayRef<Type>(),
                                             /*results=*/ArrayRef<Type>()));
   currentCircuitOp.addEntryBlock();
-  (*circuitOpsMap)[newName] = currentCircuitOp;
+  symbolCache->addCallee(currentCircuitOp);
 
   currentCircuitOp->setAttr(llvm::StringRef("quir.classicalOnly"),
                             topLevelBuilder.getBoolAttr(false));
@@ -276,9 +275,8 @@ void ExtractCircuitsPass::runOnOperation() {
 
   Operation *moduleOp = getOperation();
 
-  circuitOpsMap = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
-                       .addToCache<CircuitOp>()
-                       .getSymbolMap();
+  symbolCache =
+      &getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>();
 
   mlir::func::FuncOp mainFunc =
       dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));

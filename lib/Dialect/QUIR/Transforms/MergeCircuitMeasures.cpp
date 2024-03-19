@@ -43,7 +43,6 @@
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 
 #include <algorithm>
@@ -62,27 +61,26 @@ using namespace mlir::quir;
 
 namespace {
 
-static std::string duplicateCircuit(PatternRewriter &rewriter,
-                                    CircuitOp circuitOp,
-                                    llvm::StringMap<Operation *> &symbolMap,
-                                    const std::string &newNameTemplate,
-                                    const std::string &salt) {
+static std::string
+duplicateCircuit(PatternRewriter &rewriter, CircuitOp circuitOp,
+                 qssc::utils::SymbolCacheAnalysis &symbolCache,
+                 const std::string &newNameTemplate, const std::string &salt) {
   rewriter.setInsertionPoint(circuitOp);
   auto *oldCircuitOp = rewriter.clone(*circuitOp);
-  symbolMap[circuitOp.getSymName()] = oldCircuitOp;
+  symbolCache.addCallee(circuitOp.getSymName(), oldCircuitOp);
 
   // merge circuit names with an additional salt for the merge
 
   std::string newName = newNameTemplate + salt;
   std::string testName = newName;
   int cnt = 0;
-  while (symbolMap.contains(testName))
+  while (symbolCache.contains(testName))
     testName = newName + std::to_string(cnt++);
   newName = testName;
 
   circuitOp->setAttr(SymbolTable::getSymbolAttrName(),
                      StringAttr::get(circuitOp->getContext(), newName));
-  symbolMap[newName] = circuitOp;
+  symbolCache.addCallee(circuitOp);
 
   return newName;
 }
@@ -234,16 +232,16 @@ static void mergeMeasurements(PatternRewriter &rewriter,
                               CallCircuitOp nextCallCircuitOp,
                               CircuitOp circuitOp, CircuitOp nextCircuitOp,
                               MeasureOp measureOp, MeasureOp nextMeasureOp,
-                              llvm::StringMap<Operation *> &symbolMap) {
+                              qssc::utils::SymbolCacheAnalysis &symbolCache) {
 
   // copy circuitOp in case there are multiple calls
   std::string const newNameTemplate =
       (circuitOp.getSymName() + "_" + nextCircuitOp.getSymName()).str();
   auto newName1 =
-      duplicateCircuit(rewriter, circuitOp, symbolMap, newNameTemplate, "+m");
+      duplicateCircuit(rewriter, circuitOp, symbolCache, newNameTemplate, "+m");
 
   // copy nextCircuitOp in case there are multiple calls
-  auto newName2 = duplicateCircuit(rewriter, nextCircuitOp, symbolMap,
+  auto newName2 = duplicateCircuit(rewriter, nextCircuitOp, symbolCache,
                                    newNameTemplate, "-m");
 
   // merge measurements
@@ -290,7 +288,7 @@ static void mergeMeasurements(PatternRewriter &rewriter,
   // delete the nextCircuit if it is now empty (starts with a return)
   auto firstReturnOp = dyn_cast<quir::ReturnOp>(&nextCircuitOp.front().front());
   if (firstReturnOp) {
-    symbolMap.erase(nextCircuitOp.getSymName());
+    symbolCache.erase(nextCircuitOp);
     rewriter.eraseOp(nextCircuitOp);
   }
 }
@@ -300,12 +298,12 @@ static void mergeMeasurements(PatternRewriter &rewriter,
 struct CallCircuitAndCallCircuitTopologicalPattern
     : public OpRewritePattern<CallCircuitOp> {
   explicit CallCircuitAndCallCircuitTopologicalPattern(
-      MLIRContext *ctx, llvm::StringMap<Operation *> &symbolMap)
+      MLIRContext *ctx, qssc::utils::SymbolCacheAnalysis &symbolCache)
       : OpRewritePattern<CallCircuitOp>(ctx) {
-    _symbolMap = &symbolMap;
+    _symbolCache = &symbolCache;
   }
 
-  llvm::StringMap<Operation *> *_symbolMap;
+  qssc::utils::SymbolCacheAnalysis *_symbolCache;
 
   LogicalResult matchAndRewrite(CallCircuitOp callCircuitOp,
                                 PatternRewriter &rewriter) const override {
@@ -318,10 +316,7 @@ struct CallCircuitAndCallCircuitTopologicalPattern
       return failure();
 
     // is there a measure in the current circuit
-    auto search1 = _symbolMap->find(callCircuitOp.getCallee());
-    assert(search1 != _symbolMap->end() && "matching circuit not found");
-
-    auto firstCircuit = dyn_cast<CircuitOp>(search1->second);
+    auto firstCircuit = _symbolCache->getOp<CircuitOp>(callCircuitOp);
 
     MeasureOp firstMeasureOp;
     std::set<uint32_t> currMeasureQubits;
@@ -347,10 +342,8 @@ struct CallCircuitAndCallCircuitTopologicalPattern
     if (!nextCallCircuitOp.has_value())
       return failure();
 
-    auto search2 = _symbolMap->find(nextCallCircuitOp->getCallee());
-    assert(search2 != _symbolMap->end() && "matching circuit not found");
-
-    auto secondCircuit = dyn_cast<CircuitOp>(search2->second);
+    auto secondCircuit =
+        _symbolCache->getOp<CircuitOp>(nextCallCircuitOp.value());
 
     // Find the next measurement operation accumulating qubits along the
     // topological path if it exists
@@ -393,7 +386,7 @@ struct CallCircuitAndCallCircuitTopologicalPattern
     // good to merge
     mergeMeasurements(rewriter, callCircuitOp, *nextCallCircuitOp, firstCircuit,
                       secondCircuit, firstMeasureOp, nextMeasureOp,
-                      *_symbolMap);
+                      *_symbolCache);
 
     return success();
   } // matchAndRewrite
@@ -403,13 +396,12 @@ struct CallCircuitAndCallCircuitTopologicalPattern
 void MergeCircuitMeasuresTopologicalPass::runOnOperation() {
   Operation *moduleOperation = getOperation();
 
-  auto circuitOpsMap = getAnalysis<qssc::utils::SymbolCacheAnalysis>()
-                           .addToCache<CircuitOp>()
-                           .getSymbolMap();
+  auto &symbolCache =
+      getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>();
 
   RewritePatternSet patterns(&getContext());
   patterns.add<CallCircuitAndCallCircuitTopologicalPattern>(&getContext(),
-                                                            circuitOpsMap);
+                                                            symbolCache);
 
   mlir::GreedyRewriteConfig config;
   // Disable to improve performance

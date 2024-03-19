@@ -22,6 +22,7 @@
 #define QUIR_EXTRACT_CIRCUITS_H
 
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/PatternMatch.h"
@@ -53,7 +54,7 @@ private:
   void addToCircuit(mlir::Operation *currentOp, OpBuilder circuitBuilder,
                     llvm::SmallVector<Operation *> &eraseList);
   uint64_t circuitCount = 0;
-  llvm::StringMap<Operation *> *circuitOpsMap{nullptr};
+  qssc::utils::SymbolCacheAnalysis *symbolCache{nullptr};
 
   mlir::quir::CircuitOp currentCircuitOp = nullptr;
   mlir::quir::CallCircuitOp newCallCircuitOp;
