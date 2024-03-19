@@ -22,8 +22,9 @@
 
 #include "mlir/Pass/AnalysisManager.h"
 #include "mlir/Pass/Pass.h"
-#include <llvm/ADT/StringRef.h>
-#include <mlir/IR/Operation.h>
+#include "mlir/IR/Operation.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/Support/Casting.h"
 
 #include <unordered_map>
 #include <unordered_set>
