@@ -405,9 +405,9 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
     CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
     qssc::utils::SymbolCacheAnalysis *symbolCache,
     std::optional<llvm::SmallVector<Operation *>> barrierOps) {
-  auto circuitOp = symbolCache->getOp<CircuitOp>(callCircuitOp.getCallee());
+  auto circuitOp = symbolCache->getOpByName<CircuitOp>(callCircuitOp.getCallee());
   auto nextCircuitOp =
-      symbolCache->getOp<CircuitOp>(nextCallCircuitOp.getCallee());
+      symbolCache->getOpByName<CircuitOp>(nextCallCircuitOp.getCallee());
   rewriter.setInsertionPointAfter(nextCircuitOp);
 
   llvm::SmallVector<Type> outputTypes;
@@ -499,7 +499,8 @@ LogicalResult MergeCircuitsPass::mergeCallCircuits(
 
   // add new name to symbolMap
   // do not remove old in case the are multiple calls
-  symbolCache->getSymbolMap()[newName] = newCircuitOp.getOperation();
+  //symbolCache->getSymbolMap()[newName] = newCircuitOp.getOperation();
+  symbolCache->addCallee(newCircuitOp);
 
   return success();
 }

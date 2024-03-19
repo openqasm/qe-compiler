@@ -139,7 +139,7 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
   mlir::OpBuilder builder(mainFunc);
 
   assert(symbolCache && "symbolCache not set");
-  auto circuitOp = symbolCache->getOp<CircuitOp>(callCircuitOp.getCallee());
+  auto circuitOp = symbolCache->getOpByName<CircuitOp>(callCircuitOp.getCallee());
   std::string const circName = circuitOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nConverting QUIR circuit " << circName << ":\n");
   assert(callCircuitOp && "callCircuit op is null");
@@ -177,7 +177,7 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
           quirOp->getAttrOfType<StringAttr>("pulse.calName").getValue().str();
       SmallVector<Value> pulseCalSequenceArgs;
 
-      auto pulseCalSequenceOp = symbolCache->getOp<SequenceOp>(pulseCalName);
+      auto pulseCalSequenceOp = symbolCache->getOpByName<SequenceOp>(pulseCalName);
 
       LLVM_DEBUG(llvm::dbgs() << "Processing Pulse cal args.\n");
       LLVM_DEBUG(llvm::dbgs() << "QUIR op: ");

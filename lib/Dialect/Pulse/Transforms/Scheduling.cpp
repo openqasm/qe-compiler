@@ -86,7 +86,7 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
 
   assert(symbolCache && "symbolCache not set");
   auto quantumCircuitSequenceOp =
-      symbolCache->getOp<SequenceOp>(quantumCircuitCallSequenceOp.getCallee());
+      symbolCache->getOpByName<SequenceOp>(quantumCircuitCallSequenceOp.getCallee());
   std::string const sequenceName = quantumCircuitSequenceOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nscheduling " << sequenceName << "\n");
 
@@ -111,7 +111,7 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
       // find quantum gate SequenceOp
       assert(symbolCache && "symbolCache not set");
       auto quantumGateSequenceOp =
-          symbolCache->getOp<SequenceOp>(quantumGateCallSequenceOp.getCallee());
+          symbolCache->getOpByName<SequenceOp>(quantumGateCallSequenceOp.getCallee());
       const std::string quantumGateSequenceName =
           quantumGateSequenceOp.getSymName().str();
       LLVM_DEBUG(llvm::dbgs() << "\tprocessing inner sequence "
