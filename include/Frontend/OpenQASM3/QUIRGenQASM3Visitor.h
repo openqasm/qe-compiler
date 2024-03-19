@@ -98,9 +98,10 @@ private:
   /// \param severity severity of the diagnostic
   ///
   /// \returns an in-flight diagnostic that allows adding messages and notes.
-  mlir::InFlightDiagnostic reportError(QASM::ASTBase const *location,
-                                       mlir::DiagnosticSeverity severity,
-                                       qssc::ErrorCategory category = qssc::ErrorCategory::OpenQASM3UnsupportedInput);
+  mlir::InFlightDiagnostic
+  reportError(QASM::ASTBase const *location, mlir::DiagnosticSeverity severity,
+              qssc::ErrorCategory category =
+                  qssc::ErrorCategory::OpenQASM3UnsupportedInput);
 
   template <class MLIROp>
   ExpressionValueType buildUnaryOp(llvm::StringRef name,

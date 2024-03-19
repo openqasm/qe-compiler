@@ -22,6 +22,7 @@
 #define QSS_COMPILER_ERROR_H
 
 #include "mlir/IR/Diagnostics.h"
+#include "mlir/IR/MLIRContext.h"
 
 #include "llvm/Support/Error.h"
 
@@ -73,22 +74,6 @@ public:
   std::string toString() const;
 };
 
-/// MLIR diagnostic that contains a QSSC diagnostic and will
-/// automatically be deduced by the qss-compiler and its
-/// diagnostic APIs when used in conjunction with MLIR's
-/// in-flight diagnostic APIs.
-class MLIRQSSCDiagnostic : public mlir::Diagnostic {
-  public:
-    MLIRQSSCDiagnostic(mlir::Location loc, mlir::DiagnosticSeverity severity, ErrorCategory qsscErrorCategory)
-       : mlir::Diagnostic(loc, severity), qsscErrorCategory(qsscErrorCategory) {}
-    ErrorCategory getQSSCErrorCategory() { return qsscErrorCategory; }
-
-    private:
-      ErrorCategory qsscErrorCategory;
-
-};
-
-
 using DiagList = std::list<Diagnostic>;
 using DiagRefList = std::list<std::reference_wrapper<const Diagnostic>>;
 using DiagnosticCallback = std::function<void(const Diagnostic &)>;
@@ -101,6 +86,59 @@ llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
                            Severity severity, ErrorCategory category,
                            std::string message,
                            std::error_code ec = llvm::inconvertibleErrorCode());
+
+/// Encode QSSC diagnostic information within the notes of an
+/// MLIR diagnostic. This enables the usage of MLIR's diagnostic
+/// mechanisms to return QSSC diagnostics. This information
+/// will be extracted by the QSSC runtime API and handled like other
+/// emitted diagnostics.
+/// @param context The active context
+/// @param diagnostic Inflight diagnostic to encode into
+/// @param category The QSSC error category to encode. This will be encoded as a
+/// diagnostic note.
+void encodeQSSCError(mlir::MLIRContext *context,
+                     mlir::InFlightDiagnostic &diagnostic,
+                     ErrorCategory category);
+
+/// Encode QSSC diagnostic information within the notes of an
+/// MLIR diagnostic. This enables the usage of MLIR's diagnostic
+/// mechanisms to return QSSC diagnostics. This information
+/// will be extracted by the QSSC runtime API and handled like other
+/// emitted diagnostics.
+/// @param context The active context
+/// @param diagnostic Diagnostic to encode into
+/// @param category The QSSC error category to encode. This will be encoded as a
+/// diagnostic note.
+void encodeQSSCError(mlir::MLIRContext *context, mlir::Diagnostic *diagnostic,
+                     ErrorCategory category);
+
+/// Decode the MLIR diagnostic into a QSSC Diagnostic (if necessary). If the
+/// diagnostic has a QSSC diagnostic encoded through encodeQSSCError the emitted
+/// diagnostic will contain this information. If std::nullopt is returned no
+/// QSSC diagnostic should be generated.
+std::optional<Diagnostic> decodeQSSCDiagnostic(mlir::Diagnostic &diagnostic);
+
+/// Emit a QSSC encoded MLIR error on an operation. Reporting up to any
+/// diagnostic handlers that may be listening.
+mlir::InFlightDiagnostic emitError(mlir::Operation *op, ErrorCategory category,
+                                   const llvm::Twine &message = {});
+
+/// Emit a QSSC encoded MLIR operation error on an operation. Reporting up to
+/// any diagnostic handlers that may be listening.
+mlir::InFlightDiagnostic emitOpError(mlir::Operation *op,
+                                     ErrorCategory category,
+                                     const llvm::Twine &message = {});
+
+/// Emit a QSSC encoded MLIR remark on an operation. Reporting up to any
+/// diagnostic handlers that may be listening.
+mlir::InFlightDiagnostic emitRemark(mlir::Operation *op, ErrorCategory category,
+                                    const llvm::Twine &message = {});
+
+/// Emit a QSSC encoded MLIR warning on an operation. Reporting up to any
+/// diagnostic handlers that may be listening.
+mlir::InFlightDiagnostic emitWarning(mlir::Operation *op,
+                                     ErrorCategory category,
+                                     const llvm::Twine &message = {});
 
 } // namespace qssc
 

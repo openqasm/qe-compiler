@@ -39,6 +39,7 @@
 
 #include "Frontend/OpenQASM3/QUIRGenQASM3Visitor.h"
 
+#include "Api/errors.h"
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
@@ -335,17 +336,21 @@ mlir::LogicalResult QUIRGenQASM3Visitor::walkAST() {
 
 mlir::InFlightDiagnostic
 QUIRGenQASM3Visitor::reportError(ASTBase const *location,
-                                 mlir::DiagnosticSeverity severity, qssc::ErrorCategory qsscErrorCategory) {
+                                 mlir::DiagnosticSeverity severity,
+                                 qssc::ErrorCategory qsscErrorCategory) {
 
-  DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
+  auto *context = builder.getContext();
+  DiagnosticEngine &engine = context->getDiagEngine();
 
   if (severity == mlir::DiagnosticSeverity::Error)
     hasFailed = true;
 
-  // Create a MLIRQSSCDiagnostic such that the diagnostic will be properly reported by the
-  // compilers diagnostic handling APIs.
-  auto diagnostic = qssc::MLIRQSSCDiagnostic(getLocation(location), severity, qsscErrorCategory);
-  return engine.emit(std::move(diagnostic));
+  // Create a MLIRQSSCDiagnostic such that the diagnostic will be properly
+  // reported by the compilers diagnostic handling APIs.
+  auto inflightDiagnostic = engine.emit(getLocation(location), severity);
+  qssc::encodeQSSCError(context, inflightDiagnostic, qsscErrorCategory);
+
+  return inflightDiagnostic;
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {

@@ -330,31 +330,15 @@ llvm::Error emitQEM(
 void diagEngineHandler(mlir::Diagnostic &diagnostic,
                        const qssc::OptDiagnosticCallback &diagnosticCb) {
 
-  // map diagnostic severity to qssc severity
-  auto severity = diagnostic.getSeverity();
-  qssc::Severity qssc_severity = qssc::Severity::Error;
-  switch (severity) {
-  case mlir::DiagnosticSeverity::Error:
-    qssc_severity = qssc::Severity::Error;
-    break;
-  case mlir::DiagnosticSeverity::Warning:
-    qssc_severity = qssc::Severity::Warning;
-    break;
-  case mlir::DiagnosticSeverity::Note:
-  case mlir::DiagnosticSeverity::Remark:
-    qssc_severity = qssc::Severity::Info;
-  }
   // emit diagnostic cast to void to discard result as it is not needed here
-  if (qssc_severity == qssc::Severity::Error) {
-    (void)qssc::emitDiagnostic(diagnosticCb, qssc_severity,
-                               qssc::ErrorCategory::QSSCompilationFailure,
-                               diagnostic.str());
-  }
+  if (auto decoded = qssc::decodeQSSCDiagnostic(diagnostic))
+    (void)qssc::emitDiagnostic(diagnosticCb, decoded.value());
 
   // emit to llvm::errs as well to mimic default handler
   diagnostic.getLocation().print(llvm::errs());
   llvm::errs() << ": ";
   // based on mlir's Diagnostic.cpp:getDiagKindStr which is static
+  auto severity = diagnostic.getSeverity();
   switch (severity) {
   case mlir::DiagnosticSeverity::Note:
     llvm::errs() << "note: ";
