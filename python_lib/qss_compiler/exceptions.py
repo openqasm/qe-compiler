@@ -117,5 +117,9 @@ class QSSControlSystemResourcesExceeded(QSSCompilerError):
     """Raised when control system resources (such as instruction memory) are exceeded."""
 
 
+class QSSTargetUnsupportedOperation(QSSCompilerError):
+    """An unsupported operation on a target was used"""
+
+
 class OpenQASM3ParseFailure(QSSCompilerError):
     """Raised when a parser failure is received"""
