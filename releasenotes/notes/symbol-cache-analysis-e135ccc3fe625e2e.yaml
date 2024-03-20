@@ -1,0 +1,5 @@
+---
+other:
+  - |
+    Adds SymbolCacheAnalysis for caching call to callee lookups in using an
+    MLIR analysis.
