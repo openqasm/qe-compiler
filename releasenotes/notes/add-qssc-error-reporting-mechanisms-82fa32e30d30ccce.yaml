@@ -10,4 +10,3 @@ features:
 
     The diagnostic will be treated like a normal MLIR diagnostic but will also encode the QSSC
     information to be decoded by the compiler's diagnostic handlers.
-

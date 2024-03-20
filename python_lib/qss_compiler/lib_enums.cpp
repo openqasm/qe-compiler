@@ -15,7 +15,6 @@ void addErrorCategory(py::module &m) {
   py::enum_<qssc::ErrorCategory>(m, "ErrorCategory", py::arithmetic())
       .value("OpenQASM3ParseFailure",
              qssc::ErrorCategory::OpenQASM3ParseFailure)
-      .value("OpenQASM3UnsupportedInput", qssc::ErrorCategory::OpenQASM3UnsupportedInput)
       .value("QSSCompilerError", qssc::ErrorCategory::QSSCompilerError)
       .value("QSSCompilerNoInputError",
              qssc::ErrorCategory::QSSCompilerNoInputError)
@@ -44,6 +43,8 @@ void addErrorCategory(py::module &m) {
              qssc::ErrorCategory::QSSLinkInvalidPatchTypeError)
       .value("QSSControlSystemResourcesExceeded",
              qssc::ErrorCategory::QSSControlSystemResourcesExceeded)
+      .value("OpenQASM3UnsupportedInput",
+             qssc::ErrorCategory::OpenQASM3UnsupportedInput)
       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
       .export_values();
 }

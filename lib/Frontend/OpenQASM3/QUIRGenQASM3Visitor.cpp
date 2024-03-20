@@ -39,7 +39,7 @@
 
 #include "Frontend/OpenQASM3/QUIRGenQASM3Visitor.h"
 
-#include "Api/errors.h"
+#include "API/errors.h"
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"

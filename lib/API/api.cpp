@@ -320,42 +320,6 @@ llvm::Error emitQEM(
   return llvm::Error::success();
 }
 
-/// @brief Handler for the Diagnostic Engine.
-///
-///        Uses qssc::emitDiagnostic to forward diagnostic to the python
-///        diagnostic callback.
-///        Prints diagnostic to llvm::errs to mimic default handler.
-///  @param diagnostic MLIR diagnostic from the Diagnostic Engine
-///  @param diagnosticCb Handle to python diagnostic callback
-void diagEngineHandler(mlir::Diagnostic &diagnostic,
-                       const qssc::OptDiagnosticCallback &diagnosticCb) {
-
-  // emit diagnostic cast to void to discard result as it is not needed here
-  if (auto decoded = qssc::decodeQSSCDiagnostic(diagnostic))
-    (void)qssc::emitDiagnostic(diagnosticCb, decoded.value());
-
-  // emit to llvm::errs as well to mimic default handler
-  diagnostic.getLocation().print(llvm::errs());
-  llvm::errs() << ": ";
-  // based on mlir's Diagnostic.cpp:getDiagKindStr which is static
-  auto severity = diagnostic.getSeverity();
-  switch (severity) {
-  case mlir::DiagnosticSeverity::Note:
-    llvm::errs() << "note: ";
-    break;
-  case mlir::DiagnosticSeverity::Warning:
-    llvm::errs() << "warning: ";
-    break;
-  case mlir::DiagnosticSeverity::Error:
-    llvm::errs() << "error: ";
-    break;
-  case mlir::DiagnosticSeverity::Remark:
-    llvm::errs() << "remark: ";
-  }
-  llvm::errs() << diagnostic << "\n";
-  return;
-}
-
 llvm::Error applyEmitAction(
     const QSSConfig &config, llvm::raw_ostream &outputStream,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::MLIRContext &context,
@@ -485,9 +449,8 @@ llvm::Error performCompileActions(llvm::raw_ostream &outputStream,
   const llvm::MemoryBuffer *sourceBuffer =
       sourceMgr->getMemoryBuffer(sourceBufferID);
 
-  context.getDiagEngine().registerHandler([&](mlir::Diagnostic &diagnostic) {
-    diagEngineHandler(diagnostic, diagnosticCb);
-  });
+  auto mlirDiagHandler =
+      qssc::QSSCMLIRDiagnosticHandler(*sourceMgr.get(), &context, diagnosticCb);
 
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 

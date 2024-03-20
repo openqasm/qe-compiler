@@ -135,7 +135,6 @@ def link_file(
             link_options.on_diagnostic,
         )
         if not success:
-
             exception_mapping = {
                 ErrorCategory.QSSLinkerNotImplemented: exceptions.QSSLinkerNotImplemented,
                 ErrorCategory.QSSLinkSignatureWarning: exceptions.QSSLinkSignatureWarning,

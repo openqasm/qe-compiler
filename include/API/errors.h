@@ -35,7 +35,6 @@ namespace qssc {
 
 enum class ErrorCategory {
   OpenQASM3ParseFailure,
-  OpenQASM3UnsupportedInput,
   QSSCompilerError,
   QSSCompilerNoInputError,
   QSSCompilerCommunicationFailure,
@@ -51,6 +50,7 @@ enum class ErrorCategory {
   QSSLinkArgumentNotFoundWarning,
   QSSLinkInvalidPatchTypeError,
   QSSControlSystemResourcesExceeded,
+  OpenQASM3UnsupportedInput,
   UncategorizedError,
 };
 
@@ -139,6 +139,23 @@ mlir::InFlightDiagnostic emitRemark(mlir::Operation *op, ErrorCategory category,
 mlir::InFlightDiagnostic emitWarning(mlir::Operation *op,
                                      ErrorCategory category,
                                      const llvm::Twine &message = {});
+
+/// Diagnostic handler for the QSSC compiler which will emit MLIR diagnostics
+/// through the compiler's diagnostic interface as well as through MLIR's
+/// source manager handler.
+class QSSCMLIRDiagnosticHandler : public mlir::ScopedDiagnosticHandler {
+public:
+  QSSCMLIRDiagnosticHandler(llvm::SourceMgr &mgr, mlir::MLIRContext *ctx,
+                            const OptDiagnosticCallback &diagnosticCb);
+
+private:
+  const OptDiagnosticCallback &diagnosticCb;
+  // Must be pointer as we need to initialize after this class to avoid
+  // registering handle with MLIR context before this class.
+  std::unique_ptr<mlir::SourceMgrDiagnosticHandler> sourceMgrDiagnosticHandler;
+
+  void emitDiagnostic(mlir::Diagnostic &diagnostic);
+};
 
 } // namespace qssc
 

@@ -61,7 +61,7 @@ from pathlib import Path
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 from . import exceptions
-from .py_qssc import _compile_bytes, _compile_file, Diagnostic, ErrorCategory
+from .py_qssc import _compile_bytes, _compile_file, Diagnostic
 
 # use the forkserver context to create a server process
 # for forking new compiler processes
@@ -289,27 +289,8 @@ class _CompilationManager:
                     return_diagnostics=self.return_diagnostics,
                 )
 
-            # Place all higher-level diagnostics related to user input here
-            # TODO: Best way to deal with multiple diagnostics?
-            for diag in diagnostics:
-                if diag.category == ErrorCategory.QSSCompilerSequenceTooLong:
-                    raise exceptions.QSSCompilerSequenceTooLong(
-                        diag.message,
-                        diagnostics,
-                        return_diagnostics=self.return_diagnostics,
-                    )
-                if diag.category == ErrorCategory.QSSControlSystemResourcesExceeded:
-                    raise exceptions.QSSControlSystemResourcesExceeded(
-                        diag.message,
-                        diagnostics,
-                        return_diagnostics=self.return_diagnostics,
-                    )
-                if diag.category == ErrorCategory.OpenQASM3ParseFailure:
-                    raise exceptions.OpenQASM3ParseFailure(
-                        diag.message,
-                        diagnostics,
-                        return_diagnostics=self.return_diagnostics,
-                    )
+            # Convert diagnostics to Python exceptions if necessary
+            exceptions.raise_diagnostics(diagnostics, return_diagnostics=self.return_diagnostics)
 
             if not success:
                 raise exceptions.QSSCompilationFailure(

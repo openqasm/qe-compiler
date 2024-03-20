@@ -260,4 +260,21 @@ mlir::InFlightDiagnostic emitWarning(mlir::Operation *op,
   return diagnostic;
 }
 
+QSSCMLIRDiagnosticHandler::QSSCMLIRDiagnosticHandler(
+    llvm::SourceMgr &mgr, mlir::MLIRContext *ctx,
+    const OptDiagnosticCallback &diagnosticCb)
+    : mlir::ScopedDiagnosticHandler(ctx), diagnosticCb(diagnosticCb) {
+  // Register handlier for QSSC diagnostic
+  setHandler([this](mlir::Diagnostic &diag) { this->emitDiagnostic(diag); });
+  // Then register standard source mgr handler to ensure emitted to stdout
+  sourceMgrDiagnosticHandler =
+      std::make_unique<mlir::SourceMgrDiagnosticHandler>(mgr, ctx);
+}
+
+void QSSCMLIRDiagnosticHandler::emitDiagnostic(mlir::Diagnostic &diagnostic) {
+  // emit diagnostic cast to void to discard result as it is not needed here
+  if (auto decoded = qssc::decodeQSSCDiagnostic(diagnostic))
+    (void)qssc::emitDiagnostic(diagnosticCb, decoded.value());
+}
+
 } // namespace qssc
