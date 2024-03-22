@@ -150,9 +150,9 @@ public:
 
 private:
   const OptDiagnosticCallback &diagnosticCb;
-  // Must be pointer as we need to initialize after this class to avoid
-  // registering handle with MLIR context before this class.
-  std::unique_ptr<mlir::SourceMgrDiagnosticHandler> sourceMgrDiagnosticHandler;
+  // Must be initialized after the QSSC emitDiagnostic callback
+  // to ensure processed after.
+  mlir::SourceMgrDiagnosticHandler sourceMgrDiagnosticHandler;
 
   void emitDiagnostic(mlir::Diagnostic &diagnostic);
 };

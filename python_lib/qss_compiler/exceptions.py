@@ -129,6 +129,15 @@ class OpenQASM3UnsupportedInput(QSSCompilerError):
     compiler."""
 
 
+# Map diagnostic categories to compiler exceptions
+category_exception_map = {
+    ErrorCategory.QSSCompilerSequenceTooLong: QSSCompilerSequenceTooLong,
+    ErrorCategory.QSSControlSystemResourcesExceeded: QSSControlSystemResourcesExceeded,
+    ErrorCategory.OpenQASM3ParseFailure: OpenQASM3ParseFailure,
+    ErrorCategory.OpenQASM3UnsupportedInput: OpenQASM3UnsupportedInput,
+}
+
+
 def convert_diagnostics_to_exception(
     diagnostics: Iterable[Diagnostic], return_diagnostics: bool = False
 ) -> QSSCompilerError:
@@ -146,20 +155,9 @@ def convert_diagnostics_to_exception(
         # Do not double print diagnostic message
         msg = "" if return_diagnostics else diag.message
 
-        if diag.category == QSSCompilerSequenceTooLong:
-            return QSSCompilerSequenceTooLong(
-                msg,
-                diagnostics,
-                return_diagnostics=return_diagnostics,
-            )
-        if diag.category == ErrorCategory.QSSControlSystemResourcesExceeded:
-            return QSSControlSystemResourcesExceeded(
-                msg,
-                diagnostics,
-                return_diagnostics=return_diagnostics,
-            )
-        if diag.category == ErrorCategory.OpenQASM3ParseFailure:
-            return OpenQASM3ParseFailure(
+        exception_class = category_exception_map.get(diag.category, None)
+        if exception_class:
+            return exception_class(
                 msg,
                 diagnostics,
                 return_diagnostics=return_diagnostics,
