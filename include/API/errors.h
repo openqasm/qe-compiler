@@ -51,6 +51,7 @@ enum class ErrorCategory {
   QSSLinkInvalidPatchTypeError,
   QSSControlSystemResourcesExceeded,
   OpenQASM3UnsupportedInput,
+  QSSTargetUnsupportedOperation,
   UncategorizedError,
 };
 
