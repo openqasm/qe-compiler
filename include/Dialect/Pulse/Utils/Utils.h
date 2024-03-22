@@ -42,9 +42,13 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
 Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
                                 CallSequenceStack_t &callSequenceOpStack);
 
+#if 0
 double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
                      CallSequenceStack_t &callSequenceOpStack);
-
+#else
+mlir::Value getPhaseValue(ShiftPhaseOp shiftPhaseOp,
+                          CallSequenceStack_t &callSequenceOpStack);
+#endif
 /// this function goes over all the blocks of the input pulse sequence, and for
 /// each block, it sorts the pulse ops within the block according to their
 /// timepoints.
