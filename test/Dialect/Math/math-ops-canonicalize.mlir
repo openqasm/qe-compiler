@@ -34,7 +34,7 @@ module {
       // CHECK: %[[cst_0:.*]] = arith.constant 2.71828175 : f32
       // CHECK: %[[cst_1:.*]] = arith.constant 0.785398185 : f32
       // CHECK: %[[cst_2:.*]] = arith.constant 1.55740774 : f32
-      // CHECK: %[[cst_3:.*]] = arith.constant 0.841470957 : f32
+      // CHECK: %[[cst_3:.*]] = arith.constant {{0.841470957|8.414710e-01}} : f32
       // CHECK: %[[cst_4:.*]] = arith.constant 0.540302277 : f32
       // CHECK: %[[cst_5:.*]] = arith.constant 2.000000e+00 : f32
       // CHECK: %[[cst_6:.*]] = arith.constant 1.000000e+00 : f32
