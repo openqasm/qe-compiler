@@ -266,12 +266,19 @@ mlir::InFlightDiagnostic emitWarning(mlir::Operation *op,
 QSSCMLIRDiagnosticHandler::QSSCMLIRDiagnosticHandler(
     llvm::SourceMgr &mgr, mlir::MLIRContext *ctx,
     const OptDiagnosticCallback &diagnosticCb)
-    : mlir::ScopedDiagnosticHandler(ctx, [this](mlir::Diagnostic &diag) { this->emitDiagnostic(diag); }), diagnosticCb(diagnosticCb), sourceMgrDiagnosticHandler(mlir::SourceMgrDiagnosticHandler(mgr, ctx)) {}
+    : mlir::SourceMgrDiagnosticHandler(mgr, ctx), diagnosticCb(diagnosticCb) {
+
+      // Replace the source manager handler set through inheritance
+      // with our own implementation. This will eventually call the
+      // source manager handler.
+      setHandler([&](mlir::Diagnostic &diag) { this->emitDiagnostic(diag); });
+    }
 
 void QSSCMLIRDiagnosticHandler::emitDiagnostic(mlir::Diagnostic &diagnostic) {
   // emit diagnostic cast to void to discard result as it is not needed here
   if (auto decoded = qssc::decodeQSSCDiagnostic(diagnostic))
     (void)qssc::emitDiagnostic(diagnosticCb, decoded.value());
+  mlir::SourceMgrDiagnosticHandler::emitDiagnostic(diagnostic);
 }
 
 } // namespace qssc

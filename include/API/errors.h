@@ -144,18 +144,18 @@ mlir::InFlightDiagnostic emitWarning(mlir::Operation *op,
 /// Diagnostic handler for the QSSC compiler which will emit MLIR diagnostics
 /// through the compiler's diagnostic interface as well as through MLIR's
 /// source manager handler.
-class QSSCMLIRDiagnosticHandler : public mlir::ScopedDiagnosticHandler {
+class QSSCMLIRDiagnosticHandler : mlir::SourceMgrDiagnosticHandler {
 public:
   QSSCMLIRDiagnosticHandler(llvm::SourceMgr &mgr, mlir::MLIRContext *ctx,
                             const OptDiagnosticCallback &diagnosticCb);
 
+  /// Emit a diagnostic through the source manager dianostic handler
+  /// removing any fields that are related to the qscc error category.
+  void emitDiagnostic(mlir::Diagnostic &diagnostic);
+
 private:
   const OptDiagnosticCallback &diagnosticCb;
-  // Must be initialized after the QSSC emitDiagnostic callback
-  // to ensure processed after.
-  mlir::SourceMgrDiagnosticHandler sourceMgrDiagnosticHandler;
 
-  void emitDiagnostic(mlir::Diagnostic &diagnostic);
 };
 
 } // namespace qssc
