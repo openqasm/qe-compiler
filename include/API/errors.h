@@ -154,6 +154,10 @@ public:
   void emitDiagnostic(mlir::Diagnostic &diagnostic);
 
 private:
+  /// Create a new diagnostic which contains all information
+  /// except the QSSC diagnostic category information.
+  mlir::Diagnostic filterQSSCDiagnostic(mlir::Diagnostic &diagnostic);
+
   const OptDiagnosticCallback &diagnosticCb;
 
 };

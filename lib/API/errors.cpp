@@ -153,33 +153,64 @@ llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
 namespace {
 std::string ErrorCategoryAttrName = "QSSCErrorCategory";
 
+std::optional<ErrorCategory> getQSSCDiagnosticCategory(mlir::DiagnosticArgument &arg) {
+  if (arg.getKind() ==
+      mlir::DiagnosticArgument::DiagnosticArgumentKind::Attribute) {
+    if (auto dictAttr =
+            arg.getAsAttribute().dyn_cast_or_null<mlir::DictionaryAttr>()) {
+      if (auto namedAttr = dictAttr.getNamed(ErrorCategoryAttrName)) {
+        if (auto catInt = namedAttr.value()
+                              .getValue()
+                              .dyn_cast<mlir::IntegerAttr>()) {
+          auto cat = static_cast<ErrorCategory>((uint32_t)catInt.getInt());
+          return cat;
+        }
+
+        llvm_unreachable("Invalid attribute type for error category. Must "
+                          "be an integer.");
+      }
+    }
+  }
+  return std::nullopt;
+}
+
 // We decode the QSSC ErrorCategory as an attribute argument that a dictionary
 // attribute containing a named attribute that is an integer encoding the error
 // category enum value.
 std::optional<ErrorCategory> lookupErrorCategory(mlir::Diagnostic &diagnostic) {
-  for (const auto &note : diagnostic.getNotes()) {
-    for (const auto &arg : note.getArguments()) {
-      if (arg.getKind() ==
-          mlir::DiagnosticArgument::DiagnosticArgumentKind::Attribute) {
-        if (auto dictAttr =
-                arg.getAsAttribute().dyn_cast_or_null<mlir::DictionaryAttr>()) {
-          if (auto namedAttr = dictAttr.getNamed(ErrorCategoryAttrName)) {
-            if (auto catInt = namedAttr.value()
-                                  .getValue()
-                                  .dyn_cast<mlir::IntegerAttr>()) {
-              auto cat = static_cast<ErrorCategory>((uint32_t)catInt.getInt());
-              return cat;
-            }
-
-            llvm_unreachable("Invalid attribute type for error category. Must "
-                             "be an integer.");
-          }
-        }
-      }
+  for (auto &note : diagnostic.getNotes()) {
+    for (auto &arg : note.getArguments()) {
+      if (auto cat = getQSSCDiagnosticCategory(arg))
+        return cat.value();
     }
   }
   // Not found
   return std::nullopt;
+}
+
+// Recursively populate diagnostic (including notes except those that are for the
+// QSSC error category)
+void populateDiagnosticIgnoringQSSC(mlir::Diagnostic &from, mlir::Diagnostic &to) {
+    for (auto &arg: from.getArguments()) {
+      // Do not copy diagnostic category
+      if (!getQSSCDiagnosticCategory(arg).has_value())
+        to.append(arg);
+    }
+    // Recurse on notes
+    for (auto &fromNote: from.getNotes()) {
+      // First past through args and ensure there are non-qssc notes
+      // as we do not want to add an empty note.
+      bool containsNonQSSCNote = false;
+      for (auto &arg: fromNote.getArguments()) {
+        // Do not copy diagnostic category
+        if (!getQSSCDiagnosticCategory(arg).has_value())
+          containsNonQSSCNote = true;
+      }
+      if (containsNonQSSCNote) {
+        auto &toNote = to.attachNote(fromNote.getLocation());
+        populateDiagnosticIgnoringQSSC(fromNote, toNote);
+      }
+    }
 }
 
 } // anonymous namespace
@@ -278,7 +309,17 @@ void QSSCMLIRDiagnosticHandler::emitDiagnostic(mlir::Diagnostic &diagnostic) {
   // emit diagnostic cast to void to discard result as it is not needed here
   if (auto decoded = qssc::decodeQSSCDiagnostic(diagnostic))
     (void)qssc::emitDiagnostic(diagnosticCb, decoded.value());
-  mlir::SourceMgrDiagnosticHandler::emitDiagnostic(diagnostic);
+
+  auto filteredDiagnostic = filterQSSCDiagnostic(diagnostic);
+  mlir::SourceMgrDiagnosticHandler::emitDiagnostic(filteredDiagnostic);
+}
+
+mlir::Diagnostic QSSCMLIRDiagnosticHandler::filterQSSCDiagnostic(mlir::Diagnostic &diagnostic) {
+  auto filteredDiagnostic = mlir::Diagnostic(diagnostic.getLocation(), diagnostic.getSeverity());
+
+  populateDiagnosticIgnoringQSSC(diagnostic, filteredDiagnostic);
+
+  return filteredDiagnostic;
 }
 
 } // namespace qssc
