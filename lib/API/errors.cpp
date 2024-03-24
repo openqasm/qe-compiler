@@ -153,21 +153,21 @@ llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
 namespace {
 std::string ErrorCategoryAttrName = "QSSCErrorCategory";
 
-std::optional<ErrorCategory> getQSSCDiagnosticCategory(mlir::DiagnosticArgument &arg) {
+std::optional<ErrorCategory>
+getQSSCDiagnosticCategory(mlir::DiagnosticArgument &arg) {
   if (arg.getKind() ==
       mlir::DiagnosticArgument::DiagnosticArgumentKind::Attribute) {
     if (auto dictAttr =
             arg.getAsAttribute().dyn_cast_or_null<mlir::DictionaryAttr>()) {
       if (auto namedAttr = dictAttr.getNamed(ErrorCategoryAttrName)) {
-        if (auto catInt = namedAttr.value()
-                              .getValue()
-                              .dyn_cast<mlir::IntegerAttr>()) {
+        if (auto catInt =
+                namedAttr.value().getValue().dyn_cast<mlir::IntegerAttr>()) {
           auto cat = static_cast<ErrorCategory>((uint32_t)catInt.getInt());
           return cat;
         }
 
         llvm_unreachable("Invalid attribute type for error category. Must "
-                          "be an integer.");
+                         "be an integer.");
       }
     }
   }
@@ -179,38 +179,38 @@ std::optional<ErrorCategory> getQSSCDiagnosticCategory(mlir::DiagnosticArgument 
 // category enum value.
 std::optional<ErrorCategory> lookupErrorCategory(mlir::Diagnostic &diagnostic) {
   for (auto &note : diagnostic.getNotes()) {
-    for (auto &arg : note.getArguments()) {
+    for (auto &arg : note.getArguments())
       if (auto cat = getQSSCDiagnosticCategory(arg))
         return cat.value();
-    }
   }
   // Not found
   return std::nullopt;
 }
 
-// Recursively populate diagnostic (including notes except those that are for the
-// QSSC error category)
-void populateDiagnosticIgnoringQSSC(mlir::Diagnostic &from, mlir::Diagnostic &to) {
-    for (auto &arg: from.getArguments()) {
+// Recursively populate diagnostic (including notes except those that are for
+// the QSSC error category)
+void populateDiagnosticIgnoringQSSC(mlir::Diagnostic &from,
+                                    mlir::Diagnostic &to) {
+  for (auto &arg : from.getArguments()) {
+    // Do not copy diagnostic category
+    if (!getQSSCDiagnosticCategory(arg).has_value())
+      to.append(arg);
+  }
+  // Recurse on notes
+  for (auto &fromNote : from.getNotes()) {
+    // First past through args and ensure there are non-qssc notes
+    // as we do not want to add an empty note.
+    bool containsNonQSSCNote = false;
+    for (auto &arg : fromNote.getArguments()) {
       // Do not copy diagnostic category
       if (!getQSSCDiagnosticCategory(arg).has_value())
-        to.append(arg);
+        containsNonQSSCNote = true;
     }
-    // Recurse on notes
-    for (auto &fromNote: from.getNotes()) {
-      // First past through args and ensure there are non-qssc notes
-      // as we do not want to add an empty note.
-      bool containsNonQSSCNote = false;
-      for (auto &arg: fromNote.getArguments()) {
-        // Do not copy diagnostic category
-        if (!getQSSCDiagnosticCategory(arg).has_value())
-          containsNonQSSCNote = true;
-      }
-      if (containsNonQSSCNote) {
-        auto &toNote = to.attachNote(fromNote.getLocation());
-        populateDiagnosticIgnoringQSSC(fromNote, toNote);
-      }
+    if (containsNonQSSCNote) {
+      auto &toNote = to.attachNote(fromNote.getLocation());
+      populateDiagnosticIgnoringQSSC(fromNote, toNote);
     }
+  }
 }
 
 } // anonymous namespace
@@ -299,11 +299,11 @@ QSSCMLIRDiagnosticHandler::QSSCMLIRDiagnosticHandler(
     const OptDiagnosticCallback &diagnosticCb)
     : mlir::SourceMgrDiagnosticHandler(mgr, ctx), diagnosticCb(diagnosticCb) {
 
-      // Replace the source manager handler set through inheritance
-      // with our own implementation. This will eventually call the
-      // source manager handler.
-      setHandler([&](mlir::Diagnostic &diag) { this->emitDiagnostic(diag); });
-    }
+  // Replace the source manager handler set through inheritance
+  // with our own implementation. This will eventually call the
+  // source manager handler.
+  setHandler([&](mlir::Diagnostic &diag) { this->emitDiagnostic(diag); });
+}
 
 void QSSCMLIRDiagnosticHandler::emitDiagnostic(mlir::Diagnostic &diagnostic) {
   // emit diagnostic cast to void to discard result as it is not needed here
@@ -314,8 +314,10 @@ void QSSCMLIRDiagnosticHandler::emitDiagnostic(mlir::Diagnostic &diagnostic) {
   mlir::SourceMgrDiagnosticHandler::emitDiagnostic(filteredDiagnostic);
 }
 
-mlir::Diagnostic QSSCMLIRDiagnosticHandler::filterQSSCDiagnostic(mlir::Diagnostic &diagnostic) {
-  auto filteredDiagnostic = mlir::Diagnostic(diagnostic.getLocation(), diagnostic.getSeverity());
+mlir::Diagnostic
+QSSCMLIRDiagnosticHandler::filterQSSCDiagnostic(mlir::Diagnostic &diagnostic) {
+  auto filteredDiagnostic =
+      mlir::Diagnostic(diagnostic.getLocation(), diagnostic.getSeverity());
 
   populateDiagnosticIgnoringQSSC(diagnostic, filteredDiagnostic);
 

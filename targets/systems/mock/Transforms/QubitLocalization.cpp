@@ -182,7 +182,8 @@ void mock::MockQubitLocalizationPass::cloneRegionWithoutOps(
 } // cloneRegionWithoutOps
 
 auto mock::MockQubitLocalizationPass::addMainFunction(
-    Operation *moduleOperation, const Location &loc, bool addReturn) -> mlir::func::FuncOp {
+    Operation *moduleOperation, const Location &loc, bool addReturn)
+    -> mlir::func::FuncOp {
   OpBuilder b(moduleOperation->getRegion(0));
   auto funcOp = b.create<mlir::func::FuncOp>(
       loc, "main",
@@ -813,8 +814,8 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         llvm::StringRef("quir.physicalId"),
         controllerBuilder->getI32IntegerAttr(qubitIdx));
     mockModules[nodeId] = driveMod.getOperation();
-    mlir::func::FuncOp mockMainOp =
-        addMainFunction(driveMod.getOperation(), mainFunc->getLoc(), /*addReturn=*/isUnused);
+    mlir::func::FuncOp mockMainOp = addMainFunction(
+        driveMod.getOperation(), mainFunc->getLoc(), /*addReturn=*/isUnused);
     newBuilders->emplace(nodeId, new OpBuilder(mockMainOp.getBody()));
   }
 
@@ -842,8 +843,8 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
         controllerBuilder->getI32ArrayAttr(
             ArrayRef<int>(config->acquireQubits(nodeId))));
     mockModules[nodeId] = acquireMod.getOperation();
-    mlir::func::FuncOp mockMainOp =
-        addMainFunction(acquireMod.getOperation(), mainFunc->getLoc(), /*addReturn=*/isUnused);
+    mlir::func::FuncOp mockMainOp = addMainFunction(
+        acquireMod.getOperation(), mainFunc->getLoc(), /*addReturn=*/isUnused);
     newBuilders->emplace(nodeId, new OpBuilder(mockMainOp.getBody()));
   }
 
@@ -914,7 +915,7 @@ void mock::MockQubitLocalizationPass::runOnOperation(MockSystem &target) {
     // delete the allocated opbuilders
     // TODO: use smart pointers to manage lifetimes
     delete controllerBuilder;
-    for (const auto &pair : *mockBuilders )
+    for (const auto &pair : *mockBuilders)
       delete pair.second;
     delete mockBuilders;
   } // while !blockAndBuilderWorklist.empty()

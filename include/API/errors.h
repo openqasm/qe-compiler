@@ -159,7 +159,6 @@ private:
   mlir::Diagnostic filterQSSCDiagnostic(mlir::Diagnostic &diagnostic);
 
   const OptDiagnosticCallback &diagnosticCb;
-
 };
 
 } // namespace qssc

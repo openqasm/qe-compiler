@@ -189,29 +189,29 @@ struct CommOpConversionPat : public OpConversionPattern<CommOp> {
 // Remaining operation conversion pattern
 class RemainingOpConversionPat : public ConversionPattern {
 
-  public:
-    RemainingOpConversionPat(MLIRContext *ctx, QuirTypeConverter &typeConverter)
-        : ConversionPattern(RewritePattern::MatchAnyOpTypeTag(), /*benefit=*/1, ctx) {}
+public:
+  RemainingOpConversionPat(MLIRContext *ctx, QuirTypeConverter &typeConverter)
+      : ConversionPattern(RewritePattern::MatchAnyOpTypeTag(), /*benefit=*/1,
+                          ctx) {}
 
-    LogicalResult
-    matchAndRewrite(Operation *op, ArrayRef<Value> operands, ConversionPatternRewriter &rewriter) const override {
-      if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||
-            llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
-            llvm::isa<qcs::QCSDialect>(op->getDialect())) {
+  LogicalResult
+  matchAndRewrite(Operation *op, ArrayRef<Value> operands,
+                  ConversionPatternRewriter &rewriter) const override {
+    if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||
+        llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
+        llvm::isa<qcs::QCSDialect>(op->getDialect())) {
 
-          for (auto *user : op->getUsers()) {
-            rewriter.eraseOp(user);
-          }
+      for (auto *user : op->getUsers())
+        rewriter.eraseOp(user);
 
-          rewriter.eraseOp(op);
-          return success();
-      }
+      rewriter.eraseOp(op);
+      return success();
+    }
 
-      // attribute type is not handled (for now)
-      return failure();
-    } // matchAndRewrite
+    // attribute type is not handled (for now)
+    return failure();
+  } // matchAndRewrite
 };  // struct RemainingOpConversionPat
-
 
 void conversion::MockQUIRToStdPass::getDependentDialects(
     DialectRegistry &registry) const {
