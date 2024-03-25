@@ -20,7 +20,6 @@
 
 #include "Dialect/Pulse/Utils/Utils.h"
 
-#include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/Pulse/IR/PulseInterfaces.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/Pulse/IR/PulseTraits.h"
@@ -65,33 +64,6 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
   return waveformOp;
 }
 
-double angleValToDouble(mlir::Value &value) {
-  llvm::dbgs() << "KIT: DUMMY -- NOT IMPLEMENTED\n";
-  return 0.0;
-}
-
-#if 0
-double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
-                     CallSequenceStack_t &callSequenceOpStack) {
-  auto phaseOffsetIndex = 0;
-  mlir::Value phaseOffset = shiftPhaseOp.getPhaseOffset();
-
-  for (auto it = callSequenceOpStack.rbegin(); it != callSequenceOpStack.rend();
-       ++it) {
-    if (phaseOffset.isa<BlockArgument>()) {
-      phaseOffsetIndex = phaseOffset.dyn_cast<BlockArgument>().getArgNumber();
-      phaseOffset = it->getOperand(phaseOffsetIndex);
-    } else
-      break;
-  }
-
-  auto phaseOffsetOp =
-      dyn_cast<mlir::arith::ConstantFloatOp>(phaseOffset.getDefiningOp());
-  if (!phaseOffsetOp)
-    phaseOffsetOp->emitError() << "Phase offset is not a ConstantFloatOp.";
-  return phaseOffsetOp.value().convertToDouble();
-}
-#else
 mlir::Value getPhaseValue(ShiftPhaseOp shiftPhaseOp,
                           CallSequenceStack_t &callSequenceOpStack) {
   auto phaseOffsetIndex = 0;
@@ -99,35 +71,14 @@ mlir::Value getPhaseValue(ShiftPhaseOp shiftPhaseOp,
 
   for (auto it = callSequenceOpStack.rbegin(); it != callSequenceOpStack.rend();
        ++it) {
-    if (phaseOffset.isa<BlockArgument>()) {
-      phaseOffsetIndex = phaseOffset.dyn_cast<BlockArgument>().getArgNumber();
-      phaseOffset = it->getOperand(phaseOffsetIndex);
-    } else
+    if (auto blockArg = dyn_cast<BlockArgument>(phaseOffset))
+      phaseOffset = it->getOperand(blockArg.getArgNumber());
+    else
       break;
   }
 
   return phaseOffset;
-#if 0
-  if (auto castOp =
-          dyn_cast<mlir::arith::ConstantFloatOp>(phaseOffset.getDefiningOp())) {
-    return castOp.value().convertToDouble();
-  }
-  if (auto castOp = dyn_cast<mlir::oq3::CastOp>(phaseOffset.getDefiningOp())) {
-    assert(castOp->getNumOperands() == 1 &&
-           "Expecting OQ3::CastOp to have 1 operand!");
-    mlir::Value castFromVal = castOp->getOperand(0);
-    // Check type of operand
-    if (castFromVal.getType().isa<mlir::quir::AngleType>())
-      return angleValToDouble(castFromVal);
-
-    assert(0 && "Unhandled type");
-  } else {
-    shiftPhaseOp->emitError() << "Phase offset is not a ConstantFloatOp.";
-  }
-  return 0.0;
-#endif
 }
-#endif
 
 void sortOpsByTimepoint(SequenceOp &sequenceOp) {
   // sort ops by timepoint
