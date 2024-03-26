@@ -145,38 +145,32 @@ llvm::Error qssc::frontend::openqasm3::parse(
   QASM::QasmDiagnosticEmitter::SetHandler(
       [](const std::string &File, QASM::ASTLocation Loc, // NOLINT
          const std::string &Msg, QASM::QasmDiagnosticEmitter::DiagLevel DL) {
-        std::string level = "unknown";
         qssc::Severity diagLevel = qssc::Severity::Error;
         llvm::SourceMgr::DiagKind sourceMgrDiagKind =
             llvm::SourceMgr::DiagKind::DK_Error;
 
         switch (DL) {
         case QASM::QasmDiagnosticEmitter::DiagLevel::Error:
-          level = "Error";
           diagLevel = qssc::Severity::Error;
           sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Error;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::ICE:
-          level = "ICE";
           diagLevel = qssc::Severity::Fatal;
           sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Error;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Warning:
-          level = "Warning";
           diagLevel = qssc::Severity::Warning;
           sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Warning;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Info:
-          level = "Info";
           diagLevel = qssc::Severity::Info;
           sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Remark;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Status:
-          level = "Status";
           diagLevel = qssc::Severity::Info;
           sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Note;
           break;
@@ -186,27 +180,18 @@ llvm::Error qssc::frontend::openqasm3::parse(
         assert(sourceMgr_);
         auto &sourceMgr = *sourceMgr_;
         auto loc = sourceMgr.FindLocForLineAndColumn(1, Loc.LineNo, Loc.ColNo);
-        std::string sourceString;
-        llvm::raw_string_ostream stringStream(sourceString);
 
-        sourceMgr.PrintMessage(stringStream, loc, sourceMgrDiagKind, "");
+        std::string errMsg;
+        llvm::raw_string_ostream ostream(errMsg);
+        sourceMgr.PrintMessage(ostream, loc, sourceMgrDiagKind, "While parsing OpenQASM3 input: \n" + Msg + "\n");
 
-        std::stringstream fileLoc;
-        fileLoc << "File: " << File << ", Line: " << Loc.LineNo
-                << ", Col: " << Loc.ColNo;
-
-        std::stringstream errMsg;
-        errMsg << fileLoc.str() << " " << Msg << "\n" << sourceString << "\n";
-
-        // This will show the error when trying to generate MLIR
-        llvm::errs() << level << " while parsing OpenQASM 3 input\n"
-                     << errMsg.str();
+        llvm::errs() << errMsg << "\n";
 
         if (diagnosticCallback_ and (diagLevel == qssc::Severity::Error or
                                      diagLevel == qssc::Severity::Fatal)) {
           qssc::Diagnostic const diag{
               diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure,
-              errMsg.str()};
+              errMsg};
           (*diagnosticCallback_)(diag);
         }
 
