@@ -183,15 +183,16 @@ llvm::Error qssc::frontend::openqasm3::parse(
 
         std::string errMsg;
         llvm::raw_string_ostream ostream(errMsg);
-        sourceMgr.PrintMessage(ostream, loc, sourceMgrDiagKind, "While parsing OpenQASM3 input: \n" + Msg + "\n");
+        sourceMgr.PrintMessage(ostream, loc, sourceMgrDiagKind,
+                               "While parsing OpenQASM3 input: \n" + Msg +
+                                   "\n");
 
         llvm::errs() << errMsg << "\n";
 
         if (diagnosticCallback_ and (diagLevel == qssc::Severity::Error or
                                      diagLevel == qssc::Severity::Fatal)) {
           qssc::Diagnostic const diag{
-              diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure,
-              errMsg};
+              diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure, errMsg};
           (*diagnosticCallback_)(diag);
         }
 
