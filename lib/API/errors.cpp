@@ -228,7 +228,7 @@ void encodeQSSCError(mlir::MLIRContext *context,
 void encodeQSSCError(mlir::MLIRContext *context, mlir::Diagnostic *diagnostic,
                      ErrorCategory category) {
   auto builder = mlir::OpBuilder(context);
-  const mlir::StringAttr key = builder.getStringAttr(ErrorCategoryAttrName);
+  mlir::StringAttr const key = builder.getStringAttr(ErrorCategoryAttrName);
   mlir::IntegerAttr const value =
       builder.getI32IntegerAttr(static_cast<int32_t>(category));
   auto attr = builder.getDictionaryAttr(builder.getNamedAttr(key, value));
