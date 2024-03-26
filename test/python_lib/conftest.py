@@ -82,6 +82,11 @@ def example_unsupported_qasm3_str():
     c =  float(a) + b;
     """
 
+@pytest.fixture
+def example_unsupported_qasm3_tmpfile(tmp_path, example_unsupported_qasm3_str):
+    return __create_tmpfile(tmp_path, example_unsupported_qasm3)
+
+
 
 @pytest.fixture
 def example_warning_not_in_errors():

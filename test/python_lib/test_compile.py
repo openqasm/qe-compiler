@@ -176,6 +176,44 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     assert "unknown version number" in str(compfail.value)
 
 
+def test_compile_unsupported_openqasm_file(example_unsupported_qasm3_tmpfile):
+    """Test that we can attempt to compile unsupported OpenQASM 3 and receive an
+    error"""
+
+    with pytest.raises(exceptions.OpenQASM3UnsupportedInput):
+        compile_file(
+            example_unsupported_qasm3_tmpfile,
+            return_diagnostics=True,  # For testing purposes
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+        )
+
+
+def test_compile_unsupported_openqasm_str(example_unsupported_qasm3_str):
+    """Test that we can attempt to compile unsupported OpenQASM 3 and receive an
+    error"""
+
+    with pytest.raises(exceptions.OpenQASM3UnsupportedInput) as compfail:
+        compile_str(
+            example_unsupported_qasm3_str,
+            return_diagnostics=True,  # For testing purposes
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+        )
+
+    assert hasattr(compfail.value, "diagnostics")
+
+    diags = compfail.value.diagnostics
+
+    assert any(
+        diag.severity == Severity.Error
+        and diag.category == ErrorCategory.OpenQASM3UnsupportedInput
+        for diag in diags
+    )
+
+
 def test_warning_not_in_errors(example_warning_not_in_errors):
     """Test that warnings are not included in error."""
 
