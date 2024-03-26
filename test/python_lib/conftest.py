@@ -92,6 +92,7 @@ def example_warning_not_in_errors():
     rz(a) $0;
     """
 
+
 @pytest.fixture
 def example_incorrect_qasm3():
     return """OPENQASM 3;
@@ -104,6 +105,7 @@ def example_incorrect_qasm3():
     bit b;
     b = measure $0;
     """
+
 
 @pytest.fixture
 def example_unsupported_qasm3_tmpfile(tmp_path, example_unsupported_qasm3_str):

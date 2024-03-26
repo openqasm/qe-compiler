@@ -232,7 +232,8 @@ def test_incorrect_qasm3(example_incorrect_qasm3):
     assert any(
         diag.severity == Severity.Error
         and diag.category == ErrorCategory.OpenQASM3ParseFailure
-        and "1 inconsistent parameters in the gate call for the corresponding gate definition" in diag.message
+        and "1 inconsistent parameters in the gate call for the corresponding gate definition"
+        in diag.message
         and "    gate rz(phi) q {}" in diag.message
         and "              ^" in diag.message
         for diag in diags
@@ -242,7 +243,8 @@ def test_incorrect_qasm3(example_incorrect_qasm3):
     # check string representation of the exception to contain diagnostic messages
     assert (
         "Error: OpenQASM 3 parse error" in str(compfail.value)
-        and "1 inconsistent parameters in the gate call for the corresponding gate definition" in str(compfail.value)
+        and "1 inconsistent parameters in the gate call for the corresponding gate definition"
+        in str(compfail.value)
         and "error:" not in str(compfail.value)
         and "    gate rz(phi) q {}" not in str(compfail.value)
         and "              ^" not in str(compfail.value)
