@@ -94,8 +94,7 @@ def example_warning_not_in_errors():
 
 @pytest.fixture
 def example_incorrect_qasm3():
-    return """INCORRECT_QASM3_STR =
-    OPENQASM 3;
+    return """OPENQASM 3;
     qubit $0;
     gate sx q {}
     gate rz(phi) q {}
