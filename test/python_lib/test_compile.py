@@ -208,8 +208,7 @@ def test_compile_unsupported_openqasm_str(example_unsupported_qasm3_str):
     diags = compfail.value.diagnostics
 
     assert any(
-        diag.severity == Severity.Error
-        and diag.category == ErrorCategory.OpenQASM3UnsupportedInput
+        diag.severity == Severity.Error and diag.category == ErrorCategory.OpenQASM3UnsupportedInput
         for diag in diags
     )
 

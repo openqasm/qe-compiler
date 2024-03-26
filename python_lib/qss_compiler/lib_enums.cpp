@@ -45,7 +45,7 @@ void addErrorCategory(py::module &m) {
              qssc::ErrorCategory::QSSControlSystemResourcesExceeded)
       .value("QSSTargetUnsupportedOperation",
              qssc::ErrorCategory::QSSTargetUnsupportedOperation)
-       .value("OpenQASM3UnsupportedInput",
+      .value("OpenQASM3UnsupportedInput",
              qssc::ErrorCategory::OpenQASM3UnsupportedInput)
       .value("UncategorizedError", qssc::ErrorCategory::UncategorizedError)
       .export_values();
