@@ -45,13 +45,14 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/DialectRegistry.h"
+#include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/ValueRange.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 
+#include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Casting.h"
-#include "llvm/Support/raw_ostream.h"
 
 #include <cstdint>
 #include <utility>
@@ -220,7 +221,7 @@ void conversion::MockQUIRToStdPass::getDependentDialects(
 }
 
 void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
-  ModuleOp moduleOp = getOperation();
+  const ModuleOp moduleOp = getOperation();
 
   // First remove all arguments from synchronization ops
   moduleOp->walk([](qcs::SynchronizeOp synchOp) {

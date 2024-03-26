@@ -42,6 +42,7 @@
 #include "mlir/IR/TypeRange.h"
 #include "mlir/IR/Types.h"
 #include "mlir/IR/Value.h"
+#include "mlir/IR/ValueRange.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/LLVM.h"
 
@@ -197,7 +198,7 @@ auto mock::MockQubitLocalizationPass::addMainFunction(
   if (addReturn) {
     OpBuilder mainBuilder(funcOp.getBody());
     auto intAttr = mainBuilder.getI32IntegerAttr(0);
-    mlir::Value intConstVal = mainBuilder.create<mlir::arith::ConstantOp>(
+    const mlir::Value intConstVal = mainBuilder.create<mlir::arith::ConstantOp>(
         loc, mainBuilder.getI32Type(), intAttr);
     auto range = mlir::ValueRange(intConstVal);
     mainBuilder.create<mlir::func::ReturnOp>(loc, range);

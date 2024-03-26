@@ -56,7 +56,6 @@
 #include <qasm/Frontend/QasmParser.h>
 #include <qasm/QPP/QasmPP.h>
 #include <regex>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <sys/types.h>
