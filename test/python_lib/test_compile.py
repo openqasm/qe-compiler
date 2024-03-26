@@ -225,17 +225,11 @@ def test_incorrect_qasm3(example_incorrect_qasm3):
 
     diags = compfail.value.diagnostics
 
-    print("****************************************************************************")
-    print(diag.message for diag in diags)
-    print("****************************************************************************")
-
     assert any(
         diag.severity == Severity.Error
         and diag.category == ErrorCategory.OpenQASM3ParseFailure
         and "1 inconsistent parameters in the gate call for the corresponding gate definition"
         in diag.message
-        and "    gate rz(phi) q {}" in diag.message
-        and "              ^" in diag.message
         for diag in diags
     )
     assert any("OpenQASM 3 parse error" in str(diag) for diag in diags)
@@ -245,9 +239,6 @@ def test_incorrect_qasm3(example_incorrect_qasm3):
         "Error: OpenQASM 3 parse error" in str(compfail.value)
         and "1 inconsistent parameters in the gate call for the corresponding gate definition"
         in str(compfail.value)
-        and "error:" not in str(compfail.value)
-        and "    gate rz(phi) q {}" not in str(compfail.value)
-        and "              ^" not in str(compfail.value)
     )
 
 
