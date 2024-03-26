@@ -8,7 +8,7 @@
 //
 //===----------------------------------------------------------------------===//
 ///
-/// This file implements an analysis for caching symbols for which match a
+/// This file implements an analysis for caching symbols that match a
 /// call -> callee pattern. This currently includes circuit / call_circuit
 /// and sequence / call_sequence.
 ///
