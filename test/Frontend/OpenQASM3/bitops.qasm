@@ -107,3 +107,5 @@ f = e | d;
 // MLIR: [[NOT_CBIT:%.*]] = "oq3.cast"([[NOT]]) : (i1) -> !quir.cbit<1>
 // MLIR: oq3.variable_assign @f : !quir.cbit<1> = [[NOT_CBIT]]
 f = !f;
+// equivalent to "!"
+f = ~f;

@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes failure to parse expressions with bitnop operation. Refer to
+    `#278 <https://github.com/openqasm/qe-compiler/issues/278>` for more
+    details.
