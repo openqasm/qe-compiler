@@ -491,11 +491,7 @@ llvm::Error performCompileActions(llvm::raw_ostream &outputStream,
     if (config.getEmitAction() >= EmitAction::MLIR) {
       auto bufferIdentifier = sourceBuffer->getBufferIdentifier();
 
-      LocationAttr sourceLoc;
-      if ((bufferIdentifier == "" || bufferIdentifier == "<stdin>"))
-        sourceLoc = UnknownLoc::get(&context);
-      else
-        sourceLoc = mlir::FileLineColLoc::get(&context, bufferIdentifier, 0, 0);
+      LocationAttr sourceLoc = mlir::FileLineColLoc::get(&context, bufferIdentifier, 0, 0);
 
       moduleOp = mlir::ModuleOp::create(sourceLoc);
     }
