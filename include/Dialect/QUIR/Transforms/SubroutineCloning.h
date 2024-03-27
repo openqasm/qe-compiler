@@ -25,6 +25,8 @@
 #ifndef QUIR_SUBROUTINE_CLONING_H
 #define QUIR_SUBROUTINE_CLONING_H
 
+#include "Utils/SymbolCacheAnalysis.h"
+
 #include <deque>
 #include <unordered_set>
 
@@ -36,7 +38,7 @@ class Operation;
 
 namespace mlir::quir {
 
-using SymbolOpMap = llvm::StringMap<Operation *>;
+using SymbolCache = qssc::utils::SymbolCacheAnalysis;
 
 struct SubroutineCloningPass
     : public PassWrapper<SubroutineCloningPass, OperationPass<>> {
@@ -45,7 +47,7 @@ struct SubroutineCloningPass
   template <class CallLikeOp>
   auto getMangledName(Operation *op) -> std::string;
   template <class CallLikeOp, class FuncLikeOp>
-  void processCallOp(Operation *op, SymbolOpMap &symbolOpMap);
+  void processCallOp(Operation *op, SymbolCache &symbolOpMap);
 
   void runOnOperation() override;
 

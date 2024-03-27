@@ -23,6 +23,7 @@
 #define QUIR_MERGE_CIRCUITS_H
 
 #include "Dialect/QUIR/IR/QUIROps.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
@@ -34,12 +35,10 @@ struct MergeCircuitsPass
     : public PassWrapper<MergeCircuitsPass, OperationPass<>> {
   void runOnOperation() override;
 
-  static CircuitOp getCircuitOp(CallCircuitOp callCircuitOp,
-                                llvm::StringMap<Operation *> *symbolMap);
   static LogicalResult mergeCallCircuits(
       MLIRContext *context, PatternRewriter &rewriter,
       CallCircuitOp callCircuitOp, CallCircuitOp nextCallCircuitOp,
-      llvm::StringMap<Operation *> *symbolMap,
+      qssc::utils::SymbolCacheAnalysis *symbolCache,
       std::optional<llvm::SmallVector<Operation *>> barriers = std::nullopt);
 
   llvm::StringRef getArgument() const override;
