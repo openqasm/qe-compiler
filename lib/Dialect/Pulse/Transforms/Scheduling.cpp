@@ -1,6 +1,6 @@
 //===- Scheduling.cpp ---  quantum circuits pulse scheduling ----*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
