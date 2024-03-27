@@ -1847,6 +1847,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTUnaryOpNode *node) {
   }
 
   switch (node->GetOpType()) {
+  case ASTOpTypeBitNot:
   case ASTOpTypeLogicalNot: {
     const auto boolType = builder.getI1Type();
 
