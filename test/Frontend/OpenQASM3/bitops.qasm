@@ -107,5 +107,11 @@ f = e | d;
 // MLIR: [[NOT_CBIT:%.*]] = "oq3.cast"([[NOT]]) : (i1) -> !quir.cbit<1>
 // MLIR: oq3.variable_assign @f : !quir.cbit<1> = [[NOT_CBIT]]
 f = !f;
-// equivalent to "!"
+
+// MLIR: [[F:%.*]] = oq3.variable_load @f : !quir.cbit<1>
+// MLIR: [[BOOL_F:%.*]] = "oq3.cast"([[F]]) : (!quir.cbit<1>) -> i1
+// MLIR: [[TRUE:%.*]] = arith.constant true
+// MLIR: [[NOT:%.*]] = arith.cmpi ne, [[BOOL_F]], [[TRUE]] : i1
+// MLIR: [[NOT_CBIT:%.*]] = "oq3.cast"([[NOT]]) : (i1) -> !quir.cbit<1>
+// MLIR: oq3.variable_assign @f : !quir.cbit<1> = [[NOT_CBIT]]
 f = ~f;
