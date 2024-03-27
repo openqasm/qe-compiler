@@ -88,6 +88,13 @@ module {
         scf.yield
         // CHECK: scf.yield
       }
+      %5 = quir.measure(%0) : (!quir.qubit<1>) -> (i1)
+      // CHECK: %5 = quir.call_circuit @circuit_6(%0) : (!quir.qubit<1>) -> i1
+      // CHECK-NOT: %5 = quir.measure(%0) : (!quir.qubit<1>) -> (i1)
+      qcs.synchronize %0 : (!quir.qubit<1>) -> ()
+      %6 = quir.measure(%0) : (!quir.qubit<1>) -> (i1)
+      // CHECK: %6 = quir.call_circuit @circuit_7(%0) : (!quir.qubit<1>) -> i1
+       // CHECK-NOT: %6 = quir.measure(%0) : (!quir.qubit<1>) -> (i1)
     } {qcs.shot_loop, quir.classicalOnly = false, quir.physicalIds = [0 : i32, 1 : i32, 2 : i32]}
     qcs.finalize
     return %c0_i32 : i32
