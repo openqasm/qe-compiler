@@ -118,9 +118,9 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
       LLVM_DEBUG(llvm::dbgs() << "\tprocessing inner sequence "
                               << quantumGateSequenceName << "\n");
 
-      // find mix frame block ids of the quantum gate SequenceOp
-      std::unordered_set<unsigned int> mixFramesBlockIds =
-          getMixFramesBlockIds(quantumGateCallSequenceOp);
+      // find the block argument numbers of the mix frames
+      std::unordered_set<unsigned int> mixFramesBlockArgNums =
+          getMixFramesBlockArgNums(quantumGateCallSequenceOp);
 
       // find duration of the quantum gate callSequenceOp
       llvm::Expected<uint64_t> durOrError =
@@ -135,7 +135,7 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
 
       // find next available time for all the mix frames
       const int64_t nextAvailableTimeOfAllMixFrames =
-          getNextAvailableTimeOfMixFrames(mixFramesBlockIds);
+          getNextAvailableTimeOfMixFrames(mixFramesBlockArgNums);
       LLVM_DEBUG(llvm::dbgs() << "\t\tnext availability is at "
                               << nextAvailableTimeOfAllMixFrames << "\n");
 
@@ -151,7 +151,8 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
       // update the mix frame availability map
       if (sequenceOpIncludeCapture(quantumGateSequenceOp))
         updatedAvailableTime -= PRE_MEASURE_BUFFER_DELAY;
-      updateMixFrameAvailabilityMap(mixFramesBlockIds, updatedAvailableTime);
+      updateMixFrameAvailabilityMap(mixFramesBlockArgNums,
+                                    updatedAvailableTime);
 
       // keep track of total duration of the quantum circuit
       if (updatedAvailableTime < totalDurationOfQuantumCircuitNegative)
@@ -179,37 +180,35 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
 }
 
 int64_t QuantumCircuitPulseSchedulingPass::getNextAvailableTimeOfMixFrames(
-    std::unordered_set<unsigned int> &mixFramesBlockIds) {
+    std::unordered_set<unsigned int> &mixFramesBlockArgNums) {
   int64_t nextAvailableTimeOfAllMixFrames = 0;
-  for (auto id : mixFramesBlockIds) {
+  for (auto id : mixFramesBlockArgNums)
     if (mixFrameToNextAvailabilityMap.find(id) !=
-        mixFrameToNextAvailabilityMap.end()) {
-      if (mixFrameToNextAvailabilityMap[id] < nextAvailableTimeOfAllMixFrames)
-        nextAvailableTimeOfAllMixFrames = mixFrameToNextAvailabilityMap[id];
-    }
-  }
+            mixFrameToNextAvailabilityMap.end() &&
+        mixFrameToNextAvailabilityMap[id] < nextAvailableTimeOfAllMixFrames)
+      nextAvailableTimeOfAllMixFrames = mixFrameToNextAvailabilityMap[id];
   return nextAvailableTimeOfAllMixFrames;
 }
 
 std::unordered_set<unsigned int>
-QuantumCircuitPulseSchedulingPass::getMixFramesBlockIds(
+QuantumCircuitPulseSchedulingPass::getMixFramesBlockArgNums(
     mlir::pulse::CallSequenceOp quantumGateCallSequenceOp) {
-  std::unordered_set<unsigned int> mixFramesBlockIds;
+  std::unordered_set<unsigned int> mixFramesBlockArgNums;
   for (auto const &argumentResult :
        llvm::enumerate(quantumGateCallSequenceOp.getOperands())) {
     auto argType = argumentResult.value().getType();
     if (auto mixFrameType = argType.dyn_cast<mlir::pulse::MixedFrameType>()) {
-      mixFramesBlockIds.insert(
+      mixFramesBlockArgNums.insert(
           argumentResult.value().dyn_cast<BlockArgument>().getArgNumber());
     }
   }
-  return mixFramesBlockIds;
+  return mixFramesBlockArgNums;
 }
 
 void QuantumCircuitPulseSchedulingPass::updateMixFrameAvailabilityMap(
-    std::unordered_set<unsigned int> &mixFramesBlockIds,
+    std::unordered_set<unsigned int> &mixFramesBlockArgNums,
     int64_t updatedAvailableTime) {
-  for (auto id : mixFramesBlockIds)
+  for (auto id : mixFramesBlockArgNums)
     mixFrameToNextAvailabilityMap[id] = updatedAvailableTime;
 }
 
