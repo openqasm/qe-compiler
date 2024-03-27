@@ -72,16 +72,16 @@ public:
 
 private:
   // map to keep track of next availability of mix frames
-  std::unordered_map<uint, int64_t> mixFrameToNextAvailabilityMap;
+  std::unordered_map<unsigned int, int64_t> mixFrameToNextAvailabilityMap;
 
   void scheduleAlap(mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp);
-  std::unordered_set<uint>
+  std::unordered_set<unsigned int>
   getMixFramesBlockIds(mlir::pulse::CallSequenceOp quantumGateCallSequenceOp);
-  int64_t
-  getNextAvailableTimeOfMixFrames(std::unordered_set<uint> &mixFramesBlockIds);
-  void
-  updateMixFrameAvailabilityMap(std::unordered_set<uint> &mixFramesBlockIds,
-                                int64_t updatedAvailableTime);
+  int64_t getNextAvailableTimeOfMixFrames(
+      std::unordered_set<unsigned int> &mixFramesBlockIds);
+  void updateMixFrameAvailabilityMap(
+      std::unordered_set<unsigned int> &mixFramesBlockIds,
+      int64_t updatedAvailableTime);
   bool sequenceOpIncludeCapture(mlir::pulse::SequenceOp quantumGateSequenceOp);
   llvm::StringMap<Operation *> symbolMap;
   mlir::pulse::SequenceOp
