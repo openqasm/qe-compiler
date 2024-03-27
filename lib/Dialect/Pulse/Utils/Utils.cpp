@@ -64,25 +64,20 @@ Waveform_CreateOp getWaveformOp(PlayOp pulsePlayOp,
   return waveformOp;
 }
 
-double getPhaseValue(ShiftPhaseOp shiftPhaseOp,
-                     CallSequenceStack_t &callSequenceOpStack) {
+mlir::Value getPhaseValue(ShiftPhaseOp shiftPhaseOp,
+                          CallSequenceStack_t &callSequenceOpStack) {
   auto phaseOffsetIndex = 0;
   mlir::Value phaseOffset = shiftPhaseOp.getPhaseOffset();
 
   for (auto it = callSequenceOpStack.rbegin(); it != callSequenceOpStack.rend();
        ++it) {
-    if (phaseOffset.isa<BlockArgument>()) {
-      phaseOffsetIndex = phaseOffset.dyn_cast<BlockArgument>().getArgNumber();
-      phaseOffset = it->getOperand(phaseOffsetIndex);
-    } else
+    if (auto blockArg = dyn_cast<BlockArgument>(phaseOffset))
+      phaseOffset = it->getOperand(blockArg.getArgNumber());
+    else
       break;
   }
 
-  auto phaseOffsetOp =
-      dyn_cast<mlir::arith::ConstantFloatOp>(phaseOffset.getDefiningOp());
-  if (!phaseOffsetOp)
-    phaseOffsetOp->emitError() << "Phase offset is not a ConstantFloatOp.";
-  return phaseOffsetOp.value().convertToDouble();
+  return phaseOffset;
 }
 
 void sortOpsByTimepoint(SequenceOp &sequenceOp) {
