@@ -246,6 +246,39 @@ def test_warning_not_in_errors(example_warning_not_in_errors):
     )
 
 
+def test_incorrect_qasm3(example_incorrect_qasm3):
+    """Test incorrect qasm3 raises error."""
+
+    with pytest.raises(exceptions.OpenQASM3ParseFailure) as compfail:
+        compile_str(
+            example_incorrect_qasm3,
+            return_diagnostics=True,
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+        )
+
+    assert hasattr(compfail.value, "diagnostics")
+
+    diags = compfail.value.diagnostics
+
+    assert any(
+        diag.severity == Severity.Error
+        and diag.category == ErrorCategory.OpenQASM3ParseFailure
+        and "1 inconsistent parameters in the gate call for the corresponding gate definition"
+        in diag.message
+        for diag in diags
+    )
+    assert any("OpenQASM 3 parse error" in str(diag) for diag in diags)
+
+    # check string representation of the exception to contain diagnostic messages
+    assert "Error: OpenQASM 3 parse error" in str(
+        compfail.value
+    ) and "1 inconsistent parameters in the gate call for the corresponding gate definition" in str(
+        compfail.value
+    )
+
+
 def test_failure_no_hang():
     """Test no hang on malformed inputs."""
     with pytest.raises(exceptions.QSSCompilerEOFFailure):

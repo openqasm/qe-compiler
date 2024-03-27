@@ -96,3 +96,22 @@ def example_warning_not_in_errors():
     rz(7.35196807786455) $0;
     rz(a) $0;
     """
+
+
+@pytest.fixture
+def example_incorrect_qasm3():
+    return """OPENQASM 3;
+    qubit $0;
+    gate sx q {}
+    gate rz(phi) q {}
+    sx $0;
+    rz("A") $0;
+    sx $0;
+    bit b;
+    b = measure $0;
+    """
+
+
+@pytest.fixture
+def example_unsupported_qasm3_tmpfile(tmp_path, example_unsupported_qasm3_str):
+    return __create_tmpfile(tmp_path, example_unsupported_qasm3_str)

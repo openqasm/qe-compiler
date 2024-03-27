@@ -17,7 +17,7 @@ import subprocess
 
 class QasmConan(ConanFile):
     name = "qasm"
-    version = "0.3.0"
+    version = "0.3.2"
     url = "https://github.com/openqasm/qe-qasm.git"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "examples": [True, False]}
