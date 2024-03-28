@@ -87,7 +87,8 @@ struct MockQubitLocalizationPass
                              mlir::Region::iterator destPos,
                              mlir::IRMapping &mapper);
   auto addMainFunction(mlir::Operation *moduleOperation,
-                       const mlir::Location &loc) -> mlir::func::FuncOp;
+                       const mlir::Location &loc, bool addReturn = false)
+      -> mlir::func::FuncOp;
   void cloneVariableDeclarations(mlir::ModuleOp topModuleOp);
 
   MockConfig *config;

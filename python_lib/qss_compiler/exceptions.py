@@ -18,9 +18,9 @@
 This file contains all the exception subclasses.
 """
 
-from typing import List, Optional
+from typing import Iterable, List, Optional
 
-from .py_qssc import Diagnostic
+from .py_qssc import Diagnostic, ErrorCategory
 
 
 def _diagnostics_to_str(diagnostics):
@@ -43,10 +43,13 @@ class QSSCompilerError(Exception):
         self.return_diagnostics = return_diagnostics
 
     def __str__(self):
-        """Return the message."""
+        """Emit the exception as a string possibly including diagnostic messages."""
         if self.return_diagnostics:
-            return "\n".join([self.message, _diagnostics_to_str(self.diagnostics)])
-        return "\n".join([self.message])
+            message_strings = [_diagnostics_to_str(self.diagnostics)]
+            if self.message:
+                message_strings.insert(0, self.message)
+            return "\n".join(message_strings)
+        return self.message
 
 
 class QSSCompilerNoInputError(QSSCompilerError):
@@ -123,3 +126,60 @@ class QSSTargetUnsupportedOperation(QSSCompilerError):
 
 class OpenQASM3ParseFailure(QSSCompilerError):
     """Raised when a parser failure is received"""
+
+
+class OpenQASM3UnsupportedInput(QSSCompilerError):
+    """Raised when the input Openqasm 3 source uses semantics that are not supported by the
+    compiler."""
+
+
+# Map diagnostic categories to compiler exceptions
+category_exception_map = {
+    ErrorCategory.QSSCompilerSequenceTooLong: QSSCompilerSequenceTooLong,
+    ErrorCategory.QSSControlSystemResourcesExceeded: QSSControlSystemResourcesExceeded,
+    ErrorCategory.OpenQASM3ParseFailure: OpenQASM3ParseFailure,
+    ErrorCategory.QSSTargetUnsupportedOperation: QSSTargetUnsupportedOperation,
+    ErrorCategory.OpenQASM3UnsupportedInput: OpenQASM3UnsupportedInput,
+}
+
+
+def convert_diagnostics_to_exception(
+    diagnostics: Iterable[Diagnostic], return_diagnostics: bool = False
+) -> QSSCompilerError:
+    """Convert diagnostics to Python compiler exceptions.
+
+    Args:
+        diagnostics: Iterable of diagnostics to check to raise exception from.
+        return_diagnostics: Should the diagnostics be returned in the exception.
+    Returns:
+        Created exception (if any).
+
+    """
+
+    for diag in diagnostics:
+        # Do not double print diagnostic message
+        msg = "" if return_diagnostics else diag.message
+
+        exception_class = category_exception_map.get(diag.category, None)
+        if exception_class:
+            return exception_class(
+                msg,
+                diagnostics,
+                return_diagnostics=return_diagnostics,
+            )
+    return None
+
+
+def raise_diagnostics(diagnostics: Iterable[Diagnostic], return_diagnostics: bool = False) -> None:
+    """Convert diagnostics to Python exception if necessary and raise.
+
+    Args:
+        diagnostics: Iterable of diagnostics to check to raise exception from.
+        return_diagnostics: Should the diagnostics be returned in the exception.
+    Raises:
+        QSSCompilerError: Raises the exception created from the diagnostic.
+
+    """
+    exception = convert_diagnostics_to_exception(diagnostics, return_diagnostics=return_diagnostics)
+    if exception is not None:
+        raise exception

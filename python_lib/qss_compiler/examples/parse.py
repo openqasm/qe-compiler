@@ -22,7 +22,6 @@ from qss_compiler.mlir.ir import Context, Module
 from qss_compiler.mlir.dialects import pulse, quir
 
 with Context() as ctx:
-
     pulse.pulse.register_dialect()
     quir.quir.register_dialect()
 

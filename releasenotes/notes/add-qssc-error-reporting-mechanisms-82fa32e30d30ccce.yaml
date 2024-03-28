@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    Added the ability to easily return QSSC diagnostics from the standard MLIR diagnostic mechanisms
+    and callback handlers through easy to use helper methods. It is now possible to write code like:
+
+    .. code-block:: cpp
+
+        qssc::emitError(op, qssc::ErrorCategory::OpenQASM3UnsupportedInput) << "Error message \n";
+
+    The diagnostic will be treated like a normal MLIR diagnostic but will also encode the QSSC
+    information to be decoded by the compiler's diagnostic handlers.
