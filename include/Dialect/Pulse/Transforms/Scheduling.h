@@ -1,6 +1,6 @@
 //===- scheduling.h --- quantum circuits pulse scheduling -------*- C++ -*-===//
 //
-// (C) Copyright IBM 2023.
+// (C) Copyright IBM 2023, 2024.
 //
 // This code is part of Qiskit.
 //
@@ -15,7 +15,7 @@
 //===----------------------------------------------------------------------===//
 ///
 ///  This file implements the pass for scheduling the quantum circuits at pulse
-///  level, based on the availability of involved ports
+///  level, based on the availability of involved mix frames
 ///
 //===----------------------------------------------------------------------===//
 
@@ -26,6 +26,9 @@
 
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
+
+#include <unordered_map>
+#include <unordered_set>
 
 namespace mlir::pulse {
 
@@ -68,13 +71,20 @@ public:
       llvm::cl::value_desc("delay"), llvm::cl::init(0)};
 
 private:
-  // map to keep track of next availability of ports
-  std::map<std::string, int> portNameToNextAvailabilityMap;
+  // map to keep track of next availability of mix frames
+  std::unordered_map<unsigned int, int64_t> mixFrameToNextAvailabilityMap;
 
   void scheduleAlap(mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp);
-  int getNextAvailableTimeOfPorts(mlir::ArrayAttr ports);
-  void updatePortAvailabilityMap(mlir::ArrayAttr ports,
-                                 int updatedAvailableTime);
+  // returns an unordered set of block argument numbers of the mix frames of a
+  // quantum gate; here block refers to the current block that includes the call
+  // op
+  std::unordered_set<unsigned int> getMixFramesBlockArgNums(
+      mlir::pulse::CallSequenceOp quantumGateCallSequenceOp);
+  int64_t getNextAvailableTimeOfMixFrames(
+      std::unordered_set<unsigned int> &mixFramesBlockArgNums);
+  void updateMixFrameAvailabilityMap(
+      std::unordered_set<unsigned int> &mixFramesBlockArgNums,
+      int64_t updatedAvailableTime);
   bool sequenceOpIncludeCapture(mlir::pulse::SequenceOp quantumGateSequenceOp);
   llvm::StringMap<Operation *> symbolMap;
   mlir::pulse::SequenceOp
