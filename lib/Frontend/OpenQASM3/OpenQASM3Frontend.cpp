@@ -142,13 +142,14 @@ llvm::Error qssc::frontend::openqasm3::parse(
       diagnosticCallback.has_value() ? &diagnosticCallback.value() : nullptr;
   sourceMgr_ = &sourceMgr;
   QASM::QasmDiagnosticEmitter::SetHandler(
-      [](const std::string &File, QASM::ASTLocation Loc, // NOLINT
-         const std::string &Msg, QASM::QasmDiagnosticEmitter::DiagLevel DL) {
+      [](const std::string &file, QASM::ASTLocation qasmLoc, // NOLINT
+         const std::string &msg,
+         QASM::QasmDiagnosticEmitter::DiagLevel qasmDiagLevel) {
         qssc::Severity diagLevel = qssc::Severity::Error;
         llvm::SourceMgr::DiagKind sourceMgrDiagKind =
             llvm::SourceMgr::DiagKind::DK_Error;
 
-        switch (DL) {
+        switch (qasmDiagLevel) {
         case QASM::QasmDiagnosticEmitter::DiagLevel::Error:
           diagLevel = qssc::Severity::Error;
           sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Error;
@@ -178,13 +179,19 @@ llvm::Error qssc::frontend::openqasm3::parse(
         // Capture source context for including it in error messages
         assert(sourceMgr_);
         auto &sourceMgr = *sourceMgr_;
-        auto loc = sourceMgr.FindLocForLineAndColumn(1, Loc.LineNo, Loc.ColNo);
+
+        auto lineNo = qasmLoc.LineNo;
+        // Workaround for https://github.com/openqasm/qe-qasm/issues/35
+        // TODO: Remove once this bug is fixed
+        if (file == "\"-\"")
+          lineNo++;
+
+        auto loc = sourceMgr.FindLocForLineAndColumn(1, lineNo, qasmLoc.ColNo);
 
         std::string errMsg;
         llvm::raw_string_ostream ostream(errMsg);
         sourceMgr.PrintMessage(ostream, loc, sourceMgrDiagKind,
-                               "While parsing OpenQASM3 input: \n" + Msg +
-                                   "\n");
+                               "While parsing OpenQASM3 input: " + msg);
 
         llvm::errs() << errMsg << "\n";
 
@@ -195,13 +202,17 @@ llvm::Error qssc::frontend::openqasm3::parse(
           (*diagnosticCallback_)(diag);
         }
 
-        if (DL == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
-            DL == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
+        if (qasmDiagLevel == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
+            qasmDiagLevel == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
           // give up parsing after errors right away
           // TODO: update to recent qss-qasm to support continuing
           throw std::runtime_error("Failure parsing");
         }
       });
+
+  // Workaround for https://github.com/openqasm/qe-qasm/issues/35
+  // TODO: Remove once this bug is fixed
+  bool requiresParserLocationFix = false;
 
   try {
     auto sourceFile = sourceBuffer->getBufferIdentifier();
@@ -212,8 +223,10 @@ llvm::Error qssc::frontend::openqasm3::parse(
     if (!(sourceFile == "" || sourceFile == "<stdin>")) {
       QASM::QasmPreprocessor::Instance().SetTranslationUnit(sourceFile.str());
       root.reset(parser.ParseAST());
-    } else
+    } else {
       root.reset(parser.ParseAST(sourceBuffer->getBuffer().str()));
+      requiresParserLocationFix = true;
+    }
 
   } catch (std::exception &e) {
     return llvm::createStringError(
@@ -252,8 +265,8 @@ llvm::Error qssc::frontend::openqasm3::parse(
     QASM::ASTStatementList *statementList =
         QASM::ASTStatementBuilder::Instance().List();
 
-    qssc::frontend::openqasm3::QUIRGenQASM3Visitor visitor(builder, newModule,
-                                                           /*filename=*/"");
+    qssc::frontend::openqasm3::QUIRGenQASM3Visitor visitor(
+        builder, newModule, "", requiresParserLocationFix);
 
     auto result = parseDurationStr(shotDelay);
     if (auto err = result.takeError())

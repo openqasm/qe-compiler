@@ -149,8 +149,15 @@ llvm::cl::opt<bool> debugCircuits("debug-circuits",
 } // anonymous namespace
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
-  return mlir::FileLineColLoc::get(builder.getContext(), filename,
-                                   node->GetLineNo(), node->GetColNo());
+
+  // Workaround for https://github.com/openqasm/qe-qasm/issues/35
+  // TODO: Remove once this bug is fixed
+  auto lineNo = node->GetLineNo();
+  if (requiresParserLocationFix)
+    lineNo++;
+
+  return mlir::FileLineColLoc::get(builder.getContext(), fileName, lineNo,
+                                   node->GetColNo());
 }
 
 auto QUIRGenQASM3Visitor::assign(Value &val, const std::string &valName)
@@ -264,7 +271,7 @@ void QUIRGenQASM3Visitor::initialize(
     uint numShots, const double &shotDelay,
     const mlir::quir::TimeUnits &shotDelayUnits) {
   Location const initialLocation =
-      mlir::FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
+      mlir::FileLineColLoc::get(topLevelBuilder.getContext(), fileName, 0, 0);
 
   // create the "main" function
   auto func = topLevelBuilder.create<mlir::func::FuncOp>(
@@ -326,7 +333,7 @@ void QUIRGenQASM3Visitor::initialize(
 }
 
 void QUIRGenQASM3Visitor::setInputFile(std::string fName) {
-  filename = std::move(fName);
+  fileName = std::move(fName);
 }
 
 mlir::LogicalResult QUIRGenQASM3Visitor::walkAST() {
