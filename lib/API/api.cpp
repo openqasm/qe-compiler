@@ -497,9 +497,9 @@ llvm::Error performCompileActions(llvm::raw_ostream &outputStream,
       moduleOp = mlir::ModuleOp::create(sourceLoc);
     }
     if (auto frontendError = qssc::frontend::openqasm3::parse(
-            *sourceMgr, config.getEmitAction() == EmitAction::AST,
+            &context, *sourceMgr, config.getEmitAction() == EmitAction::AST,
             config.getEmitAction() == EmitAction::ASTPretty,
-            config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb,
+            config.getEmitAction() >= EmitAction::MLIR, moduleOp,
             loadQASM3Timing))
       return frontendError;
     if (config.getEmitAction() < EmitAction::MLIR)

@@ -82,8 +82,8 @@ llvm::cl::list<std::string>
     includeDirs("I", llvm::cl::desc("Add <dir> to the include path"),
                 llvm::cl::value_desc("dir"), llvm::cl::cat(openqasm3Cat));
 
-qssc::DiagnosticCallback *diagnosticCallback_;
-llvm::SourceMgr *sourceMgr_;
+mlir::MLIRContext *MLIRContext_;
+std::string sourceFile;
 
 std::mutex qasmParserLock;
 
@@ -116,15 +116,21 @@ parseDurationStr(const std::string &durationStr) {
 
 } // anonymous namespace
 
-llvm::Error qssc::frontend::openqasm3::parse(
-    llvm::SourceMgr &sourceMgr, bool emitRawAST, bool emitPrettyAST,
-    bool emitMLIR, mlir::ModuleOp newModule,
-    qssc::OptDiagnosticCallback diagnosticCallback, mlir::TimingScope &timing) {
+const static std::string stdinFileName = "<stdin>";
+
+llvm::Error qssc::frontend::openqasm3::parse(mlir::MLIRContext *context,
+                                             llvm::SourceMgr &sourceMgr,
+                                             bool emitRawAST,
+                                             bool emitPrettyAST, bool emitMLIR,
+                                             mlir::ModuleOp newModule,
+                                             mlir::TimingScope &timing) {
 
   const llvm::MemoryBuffer *sourceBuffer =
       sourceMgr.getMemoryBuffer(sourceMgr.getMainFileID());
 
   mlir::TimingScope qasm3ParseTiming = timing.nest("parse-qasm3");
+
+  MLIRContext_ = context;
 
   // The QASM parser can only be called from a single thread.
   std::lock_guard<std::mutex> const qasmParserLockGuard(qasmParserLock);
@@ -135,72 +141,58 @@ llvm::Error qssc::frontend::openqasm3::parse(
   QASM::ASTParser parser;
   auto root = std::unique_ptr<QASM::ASTRoot>(nullptr);
 
-  // Add a callback for diagnostics to the parser. Since the callback needs
-  // access to diagnosticCallback to forward diagnostics, make it available in a
-  // global variable.
-  diagnosticCallback_ =
-      diagnosticCallback.has_value() ? &diagnosticCallback.value() : nullptr;
-  sourceMgr_ = &sourceMgr;
   QASM::QasmDiagnosticEmitter::SetHandler(
       [](const std::string &file, QASM::ASTLocation qasmLoc, // NOLINT
          const std::string &msg,
          QASM::QasmDiagnosticEmitter::DiagLevel qasmDiagLevel) {
-        qssc::Severity diagLevel = qssc::Severity::Error;
-        llvm::SourceMgr::DiagKind sourceMgrDiagKind =
-            llvm::SourceMgr::DiagKind::DK_Error;
+        mlir::DiagnosticSeverity diagLevel = mlir::DiagnosticSeverity::Error;
 
         switch (qasmDiagLevel) {
         case QASM::QasmDiagnosticEmitter::DiagLevel::Error:
-          diagLevel = qssc::Severity::Error;
-          sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Error;
+          diagLevel = mlir::DiagnosticSeverity::Error;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::ICE:
-          diagLevel = qssc::Severity::Fatal;
-          sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Error;
+          diagLevel = mlir::DiagnosticSeverity::Error;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Warning:
-          diagLevel = qssc::Severity::Warning;
-          sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Warning;
+          diagLevel = mlir::DiagnosticSeverity::Warning;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Info:
-          diagLevel = qssc::Severity::Info;
-          sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Remark;
+          diagLevel = mlir::DiagnosticSeverity::Remark;
           break;
 
         case QASM::QasmDiagnosticEmitter::DiagLevel::Status:
-          diagLevel = qssc::Severity::Info;
-          sourceMgrDiagKind = llvm::SourceMgr::DiagKind::DK_Note;
+          diagLevel = mlir::DiagnosticSeverity::Remark;
           break;
         }
-
-        // Capture source context for including it in error messages
-        assert(sourceMgr_);
-        auto &sourceMgr = *sourceMgr_;
 
         auto lineNo = qasmLoc.LineNo;
         // Workaround for https://github.com/openqasm/qe-qasm/issues/35
         // TODO: Remove once this bug is fixed
-        if (file == "\"-\"")
+
+        // Parser hardcoded name for direct input
+        if (sourceFile == stdinFileName)
           lineNo++;
 
-        auto loc = sourceMgr.FindLocForLineAndColumn(1, lineNo, qasmLoc.ColNo);
+        mlir::LocationAttr const sourceLocAttr = mlir::FileLineColLoc::get(
+            MLIRContext_, sourceFile, lineNo, qasmLoc.ColNo);
 
-        std::string errMsg;
-        llvm::raw_string_ostream ostream(errMsg);
-        sourceMgr.PrintMessage(ostream, loc, sourceMgrDiagKind,
-                               "While parsing OpenQASM3 input: " + msg);
+        auto sourceLoc = mlir::Location(sourceLocAttr);
 
-        llvm::errs() << errMsg << "\n";
+        // Capture source context for including it in error messages
+        if (!MLIRContext_)
+          throw std::runtime_error(
+              "MLIR context was not set for parser diagnostic handling");
 
-        if (diagnosticCallback_ and (diagLevel == qssc::Severity::Error or
-                                     diagLevel == qssc::Severity::Fatal)) {
-          qssc::Diagnostic const diag{
-              diagLevel, qssc::ErrorCategory::OpenQASM3ParseFailure, errMsg};
-          (*diagnosticCallback_)(diag);
-        }
+        auto &diagEngine = MLIRContext_->getDiagEngine();
+        auto inflightDiag = diagEngine.emit(sourceLoc, diagLevel);
+        encodeQSSCError(MLIRContext_, inflightDiag,
+                        qssc::ErrorCategory::OpenQASM3ParseFailure);
+        inflightDiag << "While parsing OpenQASM3 input: " << msg;
+        inflightDiag.report();
 
         if (qasmDiagLevel == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
             qasmDiagLevel == QASM::QasmDiagnosticEmitter::DiagLevel::ICE) {
@@ -215,13 +207,13 @@ llvm::Error qssc::frontend::openqasm3::parse(
   bool requiresParserLocationFix = false;
 
   try {
-    auto sourceFile = sourceBuffer->getBufferIdentifier();
+    sourceFile = sourceBuffer->getBufferIdentifier().str();
 
     // Handle stdin differently as the qasm parser does not seem to perform
     // includes on a raw string input. This limits includes to file inputs only
     // at the current time.
-    if (!(sourceFile == "" || sourceFile == "<stdin>")) {
-      QASM::QasmPreprocessor::Instance().SetTranslationUnit(sourceFile.str());
+    if (!(sourceFile == "" || sourceFile == stdinFileName)) {
+      QASM::QasmPreprocessor::Instance().SetTranslationUnit(sourceFile);
       root.reset(parser.ParseAST());
     } else {
       root.reset(parser.ParseAST(sourceBuffer->getBuffer().str()));
@@ -254,11 +246,9 @@ llvm::Error qssc::frontend::openqasm3::parse(
   if (emitMLIR) {
     mlir::TimingScope qasm3ToMlirTiming = timing.nest("convert-qasm3-to-mlir");
 
-    auto *context = newModule.getContext();
-
-    context->loadDialect<mlir::quir::QUIRDialect>();
-    context->loadDialect<mlir::complex::ComplexDialect>();
-    context->loadDialect<mlir::func::FuncDialect>();
+    MLIRContext_->loadDialect<mlir::quir::QUIRDialect>();
+    MLIRContext_->loadDialect<mlir::complex::ComplexDialect>();
+    MLIRContext_->loadDialect<mlir::func::FuncDialect>();
 
     mlir::OpBuilder const builder(newModule.getBodyRegion());
 
@@ -275,7 +265,7 @@ llvm::Error qssc::frontend::openqasm3::parse(
     const auto [shotDelayValue, shotDelayUnits] = *result;
     visitor.initialize(numShots, shotDelayValue, shotDelayUnits);
     visitor.setStatementList(statementList);
-    visitor.setInputFile(sourceBuffer->getBufferIdentifier().str());
+    visitor.setInputFile(sourceFile);
 
     if (failed(visitor.walkAST()))
       return llvm::createStringError(llvm::inconvertibleErrorCode(),
