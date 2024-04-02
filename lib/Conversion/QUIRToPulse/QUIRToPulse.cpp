@@ -57,10 +57,8 @@
 #include "llvm/Support/SMLoc.h"
 #include "llvm/Support/SourceMgr.h"
 
-#include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <iterator>
 #include <memory>
 #include <queue>
 #include <string>
