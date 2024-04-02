@@ -161,10 +161,8 @@ getQSSCDiagnosticCategory(mlir::DiagnosticArgument &arg) {
             arg.getAsAttribute().dyn_cast_or_null<mlir::DictionaryAttr>()) {
       if (auto namedAttr = dictAttr.getNamed(ErrorCategoryAttrName)) {
         if (auto catInt =
-                namedAttr.value().getValue().dyn_cast<mlir::IntegerAttr>()) {
-          auto cat = static_cast<ErrorCategory>((uint32_t)catInt.getInt());
-          return cat;
-        }
+                namedAttr.value().getValue().dyn_cast<mlir::IntegerAttr>())
+          return static_cast<ErrorCategory>((uint32_t)catInt.getInt());
 
         llvm_unreachable("Invalid attribute type for error category. Must "
                          "be an integer.");

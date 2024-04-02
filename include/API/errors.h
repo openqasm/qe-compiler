@@ -50,8 +50,8 @@ enum class ErrorCategory {
   QSSLinkArgumentNotFoundWarning,
   QSSLinkInvalidPatchTypeError,
   QSSControlSystemResourcesExceeded,
-  OpenQASM3UnsupportedInput,
   QSSTargetUnsupportedOperation,
+  OpenQASM3UnsupportedInput,
   UncategorizedError,
 };
 
