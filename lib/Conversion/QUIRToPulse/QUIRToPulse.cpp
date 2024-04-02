@@ -31,6 +31,7 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
@@ -93,12 +94,9 @@ void QUIRToPulsePass::runOnOperation() {
   mainFuncFirstOp = &mainFunc.getBody().front().front();
 
   // populate/cache the symbol map
-  moduleOp->walk([&](Operation *op) {
-    if (auto castOp = dyn_cast<CircuitOp>(op))
-      symbolMap[castOp.getSymName()] = castOp.getOperation();
-    else if (auto castOp = dyn_cast<SequenceOp>(op))
-      symbolMap[castOp.getSymName()] = castOp.getOperation();
-  });
+  symbolCache = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+                     .addToCache<CircuitOp>()
+                     .addToCache<SequenceOp>();
 
   // convert all QUIR circuits to Pulse sequences
   moduleOp->walk([&](CallCircuitOp callCircOp) {
@@ -140,7 +138,8 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
                                           ModuleOp &moduleOp) {
   mlir::OpBuilder builder(mainFunc);
 
-  auto circuitOp = getCircuitOp(callCircuitOp);
+  assert(symbolCache && "symbolCache not set");
+  auto circuitOp = symbolCache->getOp<CircuitOp>(callCircuitOp);
   std::string const circName = circuitOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nConverting QUIR circuit " << circName << ":\n");
   assert(callCircuitOp && "callCircuit op is null");
@@ -171,12 +170,15 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
   processCircuitArgs(callCircuitOp, circuitOp, convertedPulseSequenceOp,
                      mainFunc, entryBuilder);
 
+  assert(symbolCache && "symbolCache not set");
   circuitOp->walk([&](Operation *quirOp) {
     if (quirOp->hasAttr("pulse.calName")) {
       std::string const pulseCalName =
           quirOp->getAttrOfType<StringAttr>("pulse.calName").getValue().str();
       SmallVector<Value> pulseCalSequenceArgs;
-      auto pulseCalSequenceOp = getSequenceOp(pulseCalName);
+
+      auto pulseCalSequenceOp =
+          symbolCache->getOpByName<SequenceOp>(pulseCalName);
 
       LLVM_DEBUG(llvm::dbgs() << "Processing Pulse cal args.\n");
       LLVM_DEBUG(llvm::dbgs() << "QUIR op: ");
@@ -692,24 +694,6 @@ void QUIRToPulsePass::parsePulseWaveformContainerOps(
         wfrOp->getAttrOfType<StringAttr>("pulse.waveformName").getValue().str();
     pulseNameToWaveformMap[wfrName] = wfrOp;
   });
-}
-
-mlir::quir::CircuitOp
-QUIRToPulsePass::getCircuitOp(CallCircuitOp &callCircuitOp) {
-  auto search = symbolMap.find(callCircuitOp.getCallee());
-  assert(search != symbolMap.end() && "matching circuit not found");
-  auto circuitOp = dyn_cast<CircuitOp>(search->second);
-  assert(circuitOp && "matching circuit not found");
-  return circuitOp;
-}
-
-mlir::pulse::SequenceOp
-QUIRToPulsePass::getSequenceOp(std::string const &symbolName) {
-  auto search = symbolMap.find(symbolName);
-  assert(search != symbolMap.end() && "matching sequence not found");
-  auto sequenceOp = dyn_cast<SequenceOp>(search->second);
-  assert(sequenceOp && "matching sequence not found");
-  return sequenceOp;
 }
 
 llvm::StringRef QUIRToPulsePass::getArgument() const { return "quir-to-pulse"; }

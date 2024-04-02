@@ -28,6 +28,7 @@
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Attributes.h"
@@ -109,20 +110,11 @@ auto SubroutineCloningPass::getMangledName(Operation *op) -> std::string {
 
 template <class CallLikeOp, class FuncLikeOp>
 void SubroutineCloningPass::processCallOp(Operation *op,
-                                          SymbolOpMap &symbolOps) {
+                                          SymbolCache &symbolCache) {
   auto callOp = dyn_cast<CallLikeOp>(op);
   OpBuilder build(moduleOperation->getRegion(0));
 
-  // look for func def match
-  auto search = symbolOps.find(callOp.getCallee());
-
-  if (search == symbolOps.end()) {
-    callOp->emitOpError() << "No matching function def found for "
-                          << callOp.getCallee() << "\n";
-    return signalPassFailure();
-  }
-
-  Operation *findOp = search->second;
+  auto *findOp = symbolCache.getOpByName<Operation *>(callOp.getCallee());
   if (findOp) {
     std::vector<Value> qOperands;
     qubitCallOperands(callOp, qOperands);
@@ -133,7 +125,7 @@ void SubroutineCloningPass::processCallOp(Operation *op,
                     FlatSymbolRefAttr::get(&getContext(), mangledName));
 
     // does the mangled function already exist?
-    if (symbolOps.find(mangledName) != symbolOps.end())
+    if (symbolCache.contains(mangledName))
       return;
 
     // clone the func def with the new name
@@ -159,7 +151,7 @@ void SubroutineCloningPass::processCallOp(Operation *op,
     // add calls within the new func def to the callWorkList
     newFunc->walk([&](CallLikeOp op) { callWorkList.push_back(op); });
 
-    symbolOps[mangledName] = newFunc.getOperation();
+    symbolCache.addCallee(newFunc);
 
   } else { // matching function not found
     callOp->emitOpError() << "No matching function def found for "
@@ -182,33 +174,28 @@ void SubroutineCloningPass::runOnOperation() {
 
   mainFunc->walk([&](CallSubroutineOp op) { callWorkList.push_back(op); });
 
-  SymbolOpMap symbolOps;
+  auto &symbolCache = getAnalysis<qssc::utils::SymbolCacheAnalysis>();
 
-  if (!callWorkList.empty()) {
-    moduleOperation->walk([&](mlir::func::FuncOp functionOp) {
-      symbolOps[functionOp.getSymName()] = functionOp.getOperation();
-    });
-  }
+  if (!callWorkList.empty())
+    symbolCache.addToCache<mlir::func::FuncOp>();
 
   while (!callWorkList.empty()) {
     Operation *op = callWorkList.front();
     callWorkList.pop_front();
-    processCallOp<CallSubroutineOp, mlir::func::FuncOp>(op, symbolOps);
+    processCallOp<CallSubroutineOp, mlir::func::FuncOp>(op, symbolCache);
   }
 
   mainFunc->walk([&](CallCircuitOp op) { callWorkList.push_back(op); });
 
   if (!callWorkList.empty()) {
-    symbolOps.clear();
-    moduleOperation->walk([&](CircuitOp circuitOp) {
-      symbolOps[circuitOp.getSymName()] = circuitOp.getOperation();
-    });
+    symbolCache.invalidate();
+    symbolCache.addToCache<CircuitOp>();
   }
 
   while (!callWorkList.empty()) {
     Operation *op = callWorkList.front();
     callWorkList.pop_front();
-    processCallOp<CallCircuitOp, CircuitOp>(op, symbolOps);
+    processCallOp<CallCircuitOp, CircuitOp>(op, symbolCache);
   }
 
   // All subroutine defs that have been cloned are no longer needed
