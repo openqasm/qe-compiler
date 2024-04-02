@@ -196,8 +196,10 @@ py::tuple py_compile_bytes(const std::string &bytes,
                            qssc::DiagnosticCallback onDiagnostic) {
 
   // Set up the input file.
+  // <stdin> is treated specially for diagnostic handling
+  // so assign buffer identifier.
   std::unique_ptr<llvm::MemoryBuffer> input =
-      llvm::MemoryBuffer::getMemBuffer(bytes);
+      llvm::MemoryBuffer::getMemBuffer(bytes, "<stdin>");
 
   return compileOptionalOutput(outputFile, std::move(input), args,
                                std::move(onDiagnostic));

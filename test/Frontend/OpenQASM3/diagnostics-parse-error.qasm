@@ -11,6 +11,6 @@ int a;
 int b;
 
 a &&& b;
-// CHECK: 13:5: error: While parsing OpenQASM3 input: syntax error, unexpected '&'
+// CHECK: 13:5: error: syntax error, unexpected '&'
 // CHECK: a &&& b;
 // CHECK:     ^

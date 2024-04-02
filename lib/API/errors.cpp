@@ -235,35 +235,6 @@ void encodeQSSCError(mlir::MLIRContext *context, mlir::Diagnostic *diagnostic,
   diagnostic->attachNote().append(attr);
 }
 
-std::optional<Diagnostic> decodeQSSCDiagnostic(mlir::Diagnostic &diagnostic) {
-  // map diagnostic severity to qssc severity
-  auto severity = diagnostic.getSeverity();
-  qssc::Severity qsscSeverity = qssc::Severity::Error;
-  switch (severity) {
-  case mlir::DiagnosticSeverity::Error:
-    qsscSeverity = qssc::Severity::Error;
-    break;
-  case mlir::DiagnosticSeverity::Warning:
-    qsscSeverity = qssc::Severity::Warning;
-    break;
-  case mlir::DiagnosticSeverity::Note:
-  case mlir::DiagnosticSeverity::Remark:
-    qsscSeverity = qssc::Severity::Info;
-  }
-
-  auto errorCategory = lookupErrorCategory(diagnostic);
-  if (errorCategory.has_value())
-    return Diagnostic(qsscSeverity, errorCategory.value(), diagnostic.str());
-
-  // Default error category for unspecified MLIR error diagnostics of Error
-  // severity.
-  if (qsscSeverity == qssc::Severity::Error)
-    return Diagnostic(qsscSeverity, ErrorCategory::QSSCompilationFailure,
-                      diagnostic.str());
-
-  return std::nullopt;
-}
-
 mlir::InFlightDiagnostic emitError(mlir::Operation *op, ErrorCategory category,
                                    const llvm::Twine &message) {
   auto diagnostic = op->emitError(message);
@@ -297,7 +268,8 @@ mlir::InFlightDiagnostic emitWarning(mlir::Operation *op,
 QSSCMLIRDiagnosticHandler::QSSCMLIRDiagnosticHandler(
     llvm::SourceMgr &mgr, mlir::MLIRContext *ctx,
     const OptDiagnosticCallback &diagnosticCb)
-    : mlir::SourceMgrDiagnosticHandler(mgr, ctx), diagnosticCb(diagnosticCb) {
+    : mlir::SourceMgrDiagnosticHandler(mgr, ctx, capturedOutputStream),
+      diagnosticCb(diagnosticCb) {
 
   // Replace the source manager handler set through inheritance
   // with our own implementation. This will eventually call the
@@ -307,11 +279,57 @@ QSSCMLIRDiagnosticHandler::QSSCMLIRDiagnosticHandler(
 
 void QSSCMLIRDiagnosticHandler::emitDiagnostic(mlir::Diagnostic &diagnostic) {
   // emit diagnostic cast to void to discard result as it is not needed here
-  if (auto decoded = qssc::decodeQSSCDiagnostic(diagnostic))
+  // Extract message from output stream
+  if (auto decoded = decodeQSSCDiagnostic(diagnostic)) {
     (void)qssc::emitDiagnostic(diagnosticCb, decoded.value());
+    llvm::errs() << decoded.value().message;
+  }
 
+  // If no diagnostic
+  // emit message using source manager diagnostic handler
+  // as passthrough.
   auto filteredDiagnostic = filterQSSCDiagnostic(diagnostic);
   mlir::SourceMgrDiagnosticHandler::emitDiagnostic(filteredDiagnostic);
+  llvm::errs() << capturedString;
+  capturedString.clear();
+}
+
+std::optional<Diagnostic>
+QSSCMLIRDiagnosticHandler::decodeQSSCDiagnostic(mlir::Diagnostic &diagnostic) {
+  // map diagnostic severity to qssc severity
+  auto severity = diagnostic.getSeverity();
+  qssc::Severity qsscSeverity = qssc::Severity::Error;
+  switch (severity) {
+  case mlir::DiagnosticSeverity::Error:
+    qsscSeverity = qssc::Severity::Error;
+    break;
+  case mlir::DiagnosticSeverity::Warning:
+    qsscSeverity = qssc::Severity::Warning;
+    break;
+  case mlir::DiagnosticSeverity::Note:
+  case mlir::DiagnosticSeverity::Remark:
+    qsscSeverity = qssc::Severity::Info;
+  }
+
+  auto errorCategory = lookupErrorCategory(diagnostic);
+
+  // Capture formatted string from source manager diagnostic handler
+  capturedString.clear();
+  auto filteredDiagnostic = filterQSSCDiagnostic(diagnostic);
+  mlir::SourceMgrDiagnosticHandler::emitDiagnostic(filteredDiagnostic);
+  std::string diagnosticOutput;
+  capturedString.swap(diagnosticOutput);
+
+  if (errorCategory.has_value())
+    return Diagnostic(qsscSeverity, errorCategory.value(), diagnosticOutput);
+
+  // Default error category for unspecified MLIR error diagnostics of Error
+  // severity.
+  if (qsscSeverity == qssc::Severity::Error)
+    return Diagnostic(qsscSeverity, ErrorCategory::QSSCompilationFailure,
+                      diagnosticOutput);
+
+  return std::nullopt;
 }
 
 mlir::Diagnostic

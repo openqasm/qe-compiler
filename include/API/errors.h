@@ -113,12 +113,6 @@ void encodeQSSCError(mlir::MLIRContext *context,
 void encodeQSSCError(mlir::MLIRContext *context, mlir::Diagnostic *diagnostic,
                      ErrorCategory category);
 
-/// Decode the MLIR diagnostic into a QSSC Diagnostic (if necessary). If the
-/// diagnostic has a QSSC diagnostic encoded through encodeQSSCError the emitted
-/// diagnostic will contain this information. If std::nullopt is returned no
-/// QSSC diagnostic should be generated.
-std::optional<Diagnostic> decodeQSSCDiagnostic(mlir::Diagnostic &diagnostic);
-
 /// Emit a QSSC encoded MLIR error on an operation. Reporting up to any
 /// diagnostic handlers that may be listening.
 mlir::InFlightDiagnostic emitError(mlir::Operation *op, ErrorCategory category,
@@ -153,12 +147,23 @@ public:
   /// removing any fields that are related to the qscc error category.
   void emitDiagnostic(mlir::Diagnostic &diagnostic);
 
+  /// Decode the MLIR diagnostic into a QSSC Diagnostic (if necessary). If the
+  /// diagnostic has a QSSC diagnostic encoded through encodeQSSCError the
+  /// emitted diagnostic will contain this information. If std::nullopt is
+  /// returned no QSSC diagnostic should be generated.
+  std::optional<Diagnostic> decodeQSSCDiagnostic(mlir::Diagnostic &diagnostic);
+
 private:
   /// Create a new diagnostic which contains all information
   /// except the QSSC diagnostic category information.
   mlir::Diagnostic filterQSSCDiagnostic(mlir::Diagnostic &diagnostic);
 
   const OptDiagnosticCallback &diagnosticCb;
+  // Store captured output
+  std::string capturedString;
+  // Output stream for source manager
+  llvm::raw_string_ostream capturedOutputStream =
+      llvm::raw_string_ostream(capturedString);
 };
 
 } // namespace qssc

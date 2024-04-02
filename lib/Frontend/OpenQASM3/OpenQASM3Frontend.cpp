@@ -190,9 +190,14 @@ llvm::Error qssc::frontend::openqasm3::parse(mlir::MLIRContext *context,
 
         auto &diagEngine = MLIRContext_->getDiagEngine();
         auto inflightDiag = diagEngine.emit(sourceLoc, diagLevel);
-        encodeQSSCError(MLIRContext_, inflightDiag,
-                        qssc::ErrorCategory::OpenQASM3ParseFailure);
-        inflightDiag << "While parsing OpenQASM3 input: " << msg;
+
+        // Currently we only report QSSC diagnostics for errors
+        // as the parser emits too much noise at warning level.
+        // TODO: Remove warning noise and return all diagnostics.
+        if (diagLevel == mlir::DiagnosticSeverity::Error)
+          encodeQSSCError(MLIRContext_, inflightDiag,
+                          qssc::ErrorCategory::OpenQASM3ParseFailure);
+        inflightDiag << msg;
         inflightDiag.report();
 
         if (qasmDiagLevel == QASM::QasmDiagnosticEmitter::DiagLevel::Error ||
