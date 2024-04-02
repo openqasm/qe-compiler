@@ -24,6 +24,7 @@
 #include "Dialect/Pulse/IR/PulseOps.h"
 #include "Dialect/Pulse/IR/PulseTypes.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -67,9 +68,9 @@ void QuantumCircuitPulseSchedulingPass::runOnOperation() {
   ModuleOp const moduleOp = getOperation();
 
   // populate/cache the symbol map
-  moduleOp->walk([&](SequenceOp sequenceOp) {
-    symbolMap[sequenceOp.getSymName()] = sequenceOp.getOperation();
-  });
+  symbolCache = &getAnalysis<qssc::utils::SymbolCacheAnalysis>()
+                     .invalidate()
+                     .addToCache<SequenceOp>();
 
   // schedule all the quantum circuits which are root call sequence ops
   moduleOp->walk([&](mlir::pulse::CallSequenceOp callSequenceOp) {
@@ -89,7 +90,9 @@ void QuantumCircuitPulseSchedulingPass::runOnOperation() {
 void QuantumCircuitPulseSchedulingPass::scheduleAlap(
     mlir::pulse::CallSequenceOp quantumCircuitCallSequenceOp) {
 
-  auto quantumCircuitSequenceOp = getSequenceOp(quantumCircuitCallSequenceOp);
+  assert(symbolCache && "symbolCache not set");
+  auto quantumCircuitSequenceOp =
+      symbolCache->getOp<SequenceOp>(quantumCircuitCallSequenceOp);
   std::string const sequenceName = quantumCircuitSequenceOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nscheduling " << sequenceName << "\n");
 
@@ -112,7 +115,9 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
     if (auto quantumGateCallSequenceOp =
             dyn_cast<mlir::pulse::CallSequenceOp>(op)) {
       // find quantum gate SequenceOp
-      auto quantumGateSequenceOp = getSequenceOp(quantumGateCallSequenceOp);
+      assert(symbolCache && "symbolCache not set");
+      auto quantumGateSequenceOp =
+          symbolCache->getOp<SequenceOp>(quantumGateCallSequenceOp);
       const std::string quantumGateSequenceName =
           quantumGateSequenceOp.getSymName().str();
       LLVM_DEBUG(llvm::dbgs() << "\tprocessing inner sequence "
@@ -221,15 +226,6 @@ bool QuantumCircuitPulseSchedulingPass::sequenceOpIncludeCapture(
   });
 
   return sequenceOpIncludeCapture;
-}
-
-mlir::pulse::SequenceOp QuantumCircuitPulseSchedulingPass::getSequenceOp(
-    mlir::pulse::CallSequenceOp callSequenceOp) {
-  auto search = symbolMap.find(callSequenceOp.getCallee());
-  assert(search != symbolMap.end() && "matching sequence not found");
-  auto sequenceOp = dyn_cast<SequenceOp>(search->second);
-  assert(sequenceOp && "matching sequence not found");
-  return sequenceOp;
 }
 
 llvm::StringRef QuantumCircuitPulseSchedulingPass::getArgument() const {

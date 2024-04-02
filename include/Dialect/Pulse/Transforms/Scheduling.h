@@ -23,6 +23,7 @@
 #define SCHEDULING_PULSE_SEQUENCES_H
 
 #include "Dialect/Pulse/IR/PulseOps.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/Pass/Pass.h"
@@ -86,9 +87,7 @@ private:
       std::unordered_set<unsigned int> &mixFramesBlockArgNums,
       int64_t updatedAvailableTime);
   bool sequenceOpIncludeCapture(mlir::pulse::SequenceOp quantumGateSequenceOp);
-  llvm::StringMap<Operation *> symbolMap;
-  mlir::pulse::SequenceOp
-  getSequenceOp(mlir::pulse::CallSequenceOp callSequenceOp);
+  qssc::utils::SymbolCacheAnalysis *symbolCache{nullptr};
 };
 } // namespace mlir::pulse
 
