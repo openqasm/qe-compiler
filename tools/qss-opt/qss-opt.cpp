@@ -58,7 +58,6 @@
 using namespace qssc;
 using namespace qssc::hal;
 
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static const std::string toolName = "qss-opt";
 
 namespace {

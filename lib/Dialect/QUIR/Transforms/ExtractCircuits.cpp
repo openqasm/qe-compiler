@@ -63,11 +63,11 @@ llvm::cl::opt<bool>
                    llvm::cl::desc("enable extract quir circuits"),
                    llvm::cl::init(false));
 
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static bool terminatesCircuit(Operation &op) {
   return (op.hasTrait<::mlir::RegionBranchOpInterface::Trait>() ||
           isa<qcs::ParallelControlFlowOp>(op) ||
-          isa<oq3::CBitInsertBitOp>(op) || isa<quir::SwitchOp>(op));
+          isa<oq3::CBitInsertBitOp>(op) || isa<quir::SwitchOp>(op) ||
+          isa<qcs::SynchronizeOp>(op));
 } // terminatesCircuit
 
 OpBuilder ExtractCircuitsPass::startCircuit(Location location,
