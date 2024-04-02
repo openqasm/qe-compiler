@@ -163,7 +163,7 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
   convertedSequenceOpArgIndex = 0;
   circuitArgToConvertedSequenceArgMap.clear();
   convertedPulseSequenceOpArgs.clear();
-  convertedPulseCallSequenceOpOperandNames.clear();
+  operandNameToIndexMap.clear();
 
   // convert quir circuit args if not already converted, and add the converted
   // args to the the converted pulse sequence
@@ -198,9 +198,6 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
                                             attr.getValue());
       }
 
-      pulseCalCallSequenceOp->setAttr(
-          "pulse.operands",
-          pulseCalSequenceOp->getAttrOfType<ArrayAttr>("pulse.args"));
       for (auto type : pulseCalCallSequenceOp.getResultTypes())
         convertedPulseSequenceOpReturnTypes.push_back(type);
       for (auto val : pulseCalCallSequenceOp.getRes())
@@ -252,12 +249,6 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
                                                   convertedPulseSequenceOp,
                                                   convertedPulseSequenceOpArgs);
   convertedPulseCallSequenceOp->moveAfter(callCircuitOp);
-  convertedPulseSequenceOp->setAttr(
-      "pulse.args",
-      builder.getArrayAttr(convertedPulseCallSequenceOpOperandNames));
-  convertedPulseCallSequenceOp->setAttr(
-      "pulse.operands",
-      builder.getArrayAttr(convertedPulseCallSequenceOpOperandNames));
 
   return convertedPulseCallSequenceOp;
 }
@@ -274,28 +265,22 @@ void QUIRToPulsePass::processCircuitArgs(
       auto *angleOp = callCircuitOp.getOperand(cnt).getDefiningOp();
       LLVM_DEBUG(llvm::dbgs() << "angle argument ");
       LLVM_DEBUG(angleOp->dump());
-      convertedPulseSequenceOp.insertArgument(convertedSequenceOpArgIndex,
-                                              builder.getF64Type(), dictArg,
-                                              arg.getLoc());
+      convertedPulseSequenceOp.getBody().addArgument(builder.getF64Type(),
+                                                     arg.getLoc());
       circuitArgToConvertedSequenceArgMap[cnt] = convertedSequenceOpArgIndex;
       auto convertedAngleToF64 = convertAngleToF64(angleOp, builder);
       convertedSequenceOpArgIndex += 1;
-      convertedPulseCallSequenceOpOperandNames.push_back(
-          builder.getStringAttr("angle"));
       convertedPulseSequenceOpArgs.push_back(convertedAngleToF64);
     } else if (argumentType.isa<mlir::quir::DurationType>()) {
       auto *durationOp = callCircuitOp.getOperand(cnt).getDefiningOp();
       LLVM_DEBUG(llvm::dbgs() << "duration argument ");
       LLVM_DEBUG(durationOp->dump());
-      convertedPulseSequenceOp.insertArgument(convertedSequenceOpArgIndex,
-                                              builder.getI64Type(), dictArg,
-                                              arg.getLoc());
+      convertedPulseSequenceOp.getBody().addArgument(builder.getI64Type(),
+                                                     arg.getLoc());
       circuitArgToConvertedSequenceArgMap[cnt] = convertedSequenceOpArgIndex;
       auto convertedDurationToI64 = convertDurationToI64(
           callCircuitOp, durationOp, cnt, builder, mainFunc);
       convertedSequenceOpArgIndex += 1;
-      convertedPulseCallSequenceOpOperandNames.push_back(
-          builder.getStringAttr("duration"));
       convertedPulseSequenceOpArgs.push_back(convertedDurationToI64);
     } else if (argumentType.isa<mlir::quir::QubitType>()) {
       auto *qubitOp = callCircuitOp.getOperand(cnt).getDefiningOp();
@@ -411,23 +396,16 @@ void QUIRToPulsePass::processMixFrameOpArg(
     mlir::func::FuncOp &mainFunc, mlir::OpBuilder &builder) {
   auto mixedFrameOp =
       addMixFrameOpToIR(mixFrameName, portName, mainFunc, builder);
-  auto it = std::find(convertedPulseCallSequenceOpOperandNames.begin(),
-                      convertedPulseCallSequenceOpOperandNames.end(),
-                      builder.getStringAttr(mixFrameName));
-  if (it == convertedPulseCallSequenceOpOperandNames.end()) {
-    convertedPulseCallSequenceOpOperandNames.push_back(
-        builder.getStringAttr(mixFrameName));
+  if (operandNameToIndexMap.find(mixFrameName) == operandNameToIndexMap.end()) {
+    operandNameToIndexMap[mixFrameName] = convertedSequenceOpArgIndex;
     convertedPulseSequenceOpArgs.push_back(mixedFrameOp);
-    convertedPulseSequenceOp.insertArgument(
-        convertedSequenceOpArgIndex,
-        builder.getType<mlir::pulse::MixedFrameType>(), DictionaryAttr{},
-        argumentValue.getLoc());
+    convertedPulseSequenceOp.getBody().addArgument(
+        builder.getType<mlir::pulse::MixedFrameType>(), argumentValue.getLoc());
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp.getArguments()[convertedSequenceOpArgIndex]);
     convertedSequenceOpArgIndex += 1;
   } else {
-    uint const mixFrameOperandIndex =
-        std::distance(convertedPulseCallSequenceOpOperandNames.begin(), it);
+    uint const mixFrameOperandIndex = operandNameToIndexMap[mixFrameName];
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp.getArguments()[mixFrameOperandIndex]);
   }
@@ -440,22 +418,16 @@ void QUIRToPulsePass::processPortOpArg(std::string const &portName,
                                        mlir::func::FuncOp &mainFunc,
                                        mlir::OpBuilder &builder) {
   auto portOp = addPortOpToIR(portName, mainFunc, builder);
-  auto it = std::find(convertedPulseCallSequenceOpOperandNames.begin(),
-                      convertedPulseCallSequenceOpOperandNames.end(),
-                      builder.getStringAttr(portName));
-  if (it == convertedPulseCallSequenceOpOperandNames.end()) {
-    convertedPulseCallSequenceOpOperandNames.push_back(
-        builder.getStringAttr(portName));
+  if (operandNameToIndexMap.find(portName) == operandNameToIndexMap.end()) {
+    operandNameToIndexMap[portName] = convertedSequenceOpArgIndex;
     convertedPulseSequenceOpArgs.push_back(portOp);
-    convertedPulseSequenceOp.insertArgument(
-        convertedSequenceOpArgIndex, builder.getType<mlir::pulse::PortType>(),
-        DictionaryAttr{}, argumentValue.getLoc());
+    convertedPulseSequenceOp.getBody().addArgument(
+        builder.getType<mlir::pulse::PortType>(), argumentValue.getLoc());
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp.getArguments()[convertedSequenceOpArgIndex]);
     convertedSequenceOpArgIndex += 1;
   } else {
-    uint const portOperandIndex =
-        std::distance(convertedPulseCallSequenceOpOperandNames.begin(), it);
+    uint const portOperandIndex = operandNameToIndexMap[portName];
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp.getArguments()[portOperandIndex]);
   }
@@ -468,23 +440,16 @@ void QUIRToPulsePass::processWfrOpArg(std::string const &wfrName,
                                       mlir::func::FuncOp &mainFunc,
                                       mlir::OpBuilder &builder) {
   auto wfrOp = addWfrOpToIR(wfrName, mainFunc, builder);
-  auto it = std::find(convertedPulseCallSequenceOpOperandNames.begin(),
-                      convertedPulseCallSequenceOpOperandNames.end(),
-                      builder.getStringAttr(wfrName));
-  if (it == convertedPulseCallSequenceOpOperandNames.end()) {
-    convertedPulseCallSequenceOpOperandNames.push_back(
-        builder.getStringAttr(wfrName));
+  if (operandNameToIndexMap.find(wfrName) == operandNameToIndexMap.end()) {
+    operandNameToIndexMap[wfrName] = convertedSequenceOpArgIndex;
     convertedPulseSequenceOpArgs.push_back(wfrOp);
-    convertedPulseSequenceOp.insertArgument(
-        convertedSequenceOpArgIndex,
-        builder.getType<mlir::pulse::WaveformType>(), DictionaryAttr{},
-        argumentValue.getLoc());
+    convertedPulseSequenceOp.getBody().addArgument(
+        builder.getType<mlir::pulse::WaveformType>(), argumentValue.getLoc());
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp.getArguments()[convertedSequenceOpArgIndex]);
     convertedSequenceOpArgIndex += 1;
   } else {
-    uint const wfrOperandIndex =
-        std::distance(convertedPulseCallSequenceOpOperandNames.begin(), it);
+    uint const wfrOperandIndex = operandNameToIndexMap[wfrName];
     pulseCalSequenceArgs.push_back(
         convertedPulseSequenceOp.getArguments()[wfrOperandIndex]);
   }

@@ -29,6 +29,7 @@
 #include "mlir/Pass/Pass.h"
 
 #include <queue>
+#include <unordered_map>
 
 namespace mlir::pulse {
 
@@ -71,7 +72,7 @@ struct QUIRToPulsePass
   uint convertedSequenceOpArgIndex;
   std::map<uint, uint> circuitArgToConvertedSequenceArgMap;
   SmallVector<Value> convertedPulseSequenceOpArgs;
-  std::vector<mlir::Attribute> convertedPulseCallSequenceOpOperandNames;
+  std::unordered_map<std::string, uint> operandNameToIndexMap;
 
   // process the args of the circuit op, and add corresponding args to the
   // converted pulse sequence op
