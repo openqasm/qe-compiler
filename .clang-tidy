@@ -44,8 +44,7 @@ Checks: >
   -modernize-use-override,
   -modernize-use-nodiscard,
   -bugprone-exception-escape,
-  -llvm-else-after-return,
-  -misc-use-anonymous-namespace
+  -llvm-else-after-return
   '
 
 WarningsAsErrors: >
@@ -64,6 +63,7 @@ WarningsAsErrors: >
   misc-*,
   -misc-no-recursion,
   -misc-unused-parameters,
+  -misc-use-anonymous-namespace,
   -misc-non-private-member-variables-in-classes,
   readability-identifier-naming,
   -llvm-header-guard,
