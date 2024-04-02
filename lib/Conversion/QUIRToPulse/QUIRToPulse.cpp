@@ -114,7 +114,7 @@ void QUIRToPulsePass::runOnOperation() {
 
   // erase qubit ops and constant angle ops
   moduleOp->walk([&](Operation *op) {
-    if (auto castOp = dyn_cast<mlir::quir::DeclareQubitOp>(op))
+    if (isa<mlir::quir::DeclareQubitOp>(op))
       op->erase();
     else if (auto castOp = dyn_cast<mlir::quir::ConstantOp>(op)) {
       if (castOp.getType().isa<::mlir::quir::AngleType>())
