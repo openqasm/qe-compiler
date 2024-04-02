@@ -150,10 +150,9 @@ llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
   return emitDiagnostic(onDiagnostic, diag, ec);
 }
 
-namespace {
 std::string ErrorCategoryAttrName = "QSSCErrorCategory";
 
-std::optional<ErrorCategory>
+static std::optional<ErrorCategory>
 getQSSCDiagnosticCategory(mlir::DiagnosticArgument &arg) {
   if (arg.getKind() ==
       mlir::DiagnosticArgument::DiagnosticArgumentKind::Attribute) {
@@ -175,7 +174,7 @@ getQSSCDiagnosticCategory(mlir::DiagnosticArgument &arg) {
 // We decode the QSSC ErrorCategory as an attribute argument that a dictionary
 // attribute containing a named attribute that is an integer encoding the error
 // category enum value.
-std::optional<ErrorCategory> lookupErrorCategory(mlir::Diagnostic &diagnostic) {
+static std::optional<ErrorCategory> lookupErrorCategory(mlir::Diagnostic &diagnostic) {
   for (auto &note : diagnostic.getNotes()) {
     for (auto &arg : note.getArguments())
       if (auto cat = getQSSCDiagnosticCategory(arg))
@@ -187,7 +186,7 @@ std::optional<ErrorCategory> lookupErrorCategory(mlir::Diagnostic &diagnostic) {
 
 // Recursively populate diagnostic (including notes except those that are for
 // the QSSC error category)
-void populateDiagnosticIgnoringQSSC(mlir::Diagnostic &from,
+static void populateDiagnosticIgnoringQSSC(mlir::Diagnostic &from,
                                     mlir::Diagnostic &to) {
   for (auto &arg : from.getArguments()) {
     // Do not copy diagnostic category
@@ -210,8 +209,6 @@ void populateDiagnosticIgnoringQSSC(mlir::Diagnostic &from,
     }
   }
 }
-
-} // anonymous namespace
 
 // We encode the QSSC ErrorCategory as an attribute argument that a dictionary
 // attribute containing a named attribute that is an integer encoding the error
