@@ -174,7 +174,8 @@ getQSSCDiagnosticCategory(mlir::DiagnosticArgument &arg) {
 // We decode the QSSC ErrorCategory as an attribute argument that a dictionary
 // attribute containing a named attribute that is an integer encoding the error
 // category enum value.
-static std::optional<ErrorCategory> lookupErrorCategory(mlir::Diagnostic &diagnostic) {
+static std::optional<ErrorCategory>
+lookupErrorCategory(mlir::Diagnostic &diagnostic) {
   for (auto &note : diagnostic.getNotes()) {
     for (auto &arg : note.getArguments())
       if (auto cat = getQSSCDiagnosticCategory(arg))
@@ -187,7 +188,7 @@ static std::optional<ErrorCategory> lookupErrorCategory(mlir::Diagnostic &diagno
 // Recursively populate diagnostic (including notes except those that are for
 // the QSSC error category)
 static void populateDiagnosticIgnoringQSSC(mlir::Diagnostic &from,
-                                    mlir::Diagnostic &to) {
+                                           mlir::Diagnostic &to) {
   for (auto &arg : from.getArguments()) {
     // Do not copy diagnostic category
     if (!getQSSCDiagnosticCategory(arg).has_value())
