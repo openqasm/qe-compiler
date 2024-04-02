@@ -70,7 +70,7 @@ struct QUIRToPulsePass
   // will be reset every time convertCircuitToSequence is called and will be
   // used by several functions that are called within that function
   uint convertedSequenceOpArgIndex;
-  std::map<uint, uint> circuitArgToConvertedSequenceArgMap;
+  std::unordered_map<uint, uint> circuitArgToConvertedSequenceArgMap;
   SmallVector<Value> convertedPulseSequenceOpArgs;
   std::unordered_map<std::string, uint> operandNameToIndexMap;
 
@@ -126,14 +126,15 @@ struct QUIRToPulsePass
                                    mlir::func::FuncOp &mainFunc);
   // map of the hashed location of quir angle/duration ops to their converted
   // pulse ops
-  std::map<std::string, mlir::Value> classicalQUIROpLocToConvertedPulseOpMap;
+  std::unordered_map<std::string, mlir::Value>
+      classicalQUIROpLocToConvertedPulseOpMap;
 
   // port name to Port_CreateOp map
-  std::map<std::string, mlir::pulse::Port_CreateOp> openedPorts;
+  std::unordered_map<std::string, mlir::pulse::Port_CreateOp> openedPorts;
   // mixframe name to MixFrameOp map
-  std::map<std::string, mlir::pulse::MixFrameOp> openedMixFrames;
+  std::unordered_map<std::string, mlir::pulse::MixFrameOp> openedMixFrames;
   // waveform name to Waveform_CreateOp map
-  std::map<std::string, mlir::pulse::Waveform_CreateOp> openedWfrs;
+  std::unordered_map<std::string, mlir::pulse::Waveform_CreateOp> openedWfrs;
   // add a port to IR if it's not already added and return the Port_CreateOp
   mlir::pulse::Port_CreateOp addPortOpToIR(std::string const &portName,
                                            mlir::func::FuncOp &mainFunc,
@@ -149,14 +150,9 @@ struct QUIRToPulsePass
                                               mlir::func::FuncOp &mainFunc,
                                               mlir::OpBuilder &builder);
 
-  void addCircuitToEraseList(mlir::Operation *op);
-  void addCircuitOperandToEraseList(mlir::Operation *op);
-  std::vector<mlir::Operation *> quirCircuitEraseList;
-  std::vector<mlir::Operation *> quirCircuitOperandEraseList;
-
   // parse the waveform containers and add them to pulseNameToWaveformMap
   void parsePulseWaveformContainerOps(std::string &waveformContainerPath);
-  std::map<std::string, Waveform_CreateOp> pulseNameToWaveformMap;
+  std::unordered_map<std::string, Waveform_CreateOp> pulseNameToWaveformMap;
 
   llvm::StringMap<Operation *> symbolMap;
   mlir::quir::CircuitOp getCircuitOp(mlir::quir::CallCircuitOp &callCircuitOp);

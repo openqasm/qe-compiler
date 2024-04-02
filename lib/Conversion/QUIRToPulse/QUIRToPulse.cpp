@@ -111,26 +111,17 @@ void QUIRToPulsePass::runOnOperation() {
     callCircOp->erase();
   });
 
-  // erase the quir circuits
-  LLVM_DEBUG(llvm::dbgs() << "\nErasing quir circuits:\n");
-  for (auto *op : quirCircuitEraseList) {
-    LLVM_DEBUG(op->dump());
-    op->erase();
-  }
+  // erase circuit ops
+  moduleOp->walk([&](CircuitOp circOp) { circOp->erase(); });
 
-  // erase quir barriers before erasing the operands
-  moduleOp->walk([&](mlir::quir::BarrierOp barrierOp) { barrierOp->erase(); });
-
-  // erase the quir circuit operands
-  LLVM_DEBUG(llvm::dbgs() << "\nErasing quir circuit operands:\n");
-  for (auto *op : quirCircuitOperandEraseList) {
-    LLVM_DEBUG(op->dump());
-    op->erase();
-  }
-
-  // erase the rest of quir.declare_qubits (unused in the input program)
-  moduleOp->walk([&](mlir::quir::DeclareQubitOp declareQubitOp) {
-    declareQubitOp->erase();
+  // erase qubit ops and constant angle ops
+  moduleOp->walk([&](Operation *op) {
+    if (auto castOp = dyn_cast<mlir::quir::DeclareQubitOp>(op))
+      op->erase();
+    else if (auto castOp = dyn_cast<mlir::quir::ConstantOp>(op)) {
+      if (castOp.getType().isa<::mlir::quir::AngleType>())
+        op->erase();
+    }
   });
 }
 
@@ -145,7 +136,6 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
   LLVM_DEBUG(llvm::dbgs() << "\nConverting QUIR circuit " << circName << ":\n");
   assert(callCircuitOp && "callCircuit op is null");
   assert(circuitOp && "circuit op is null");
-  addCircuitToEraseList(circuitOp);
 
   // build an empty pulse sequence
   SmallVector<Value> arguments;
@@ -284,10 +274,7 @@ void QUIRToPulsePass::processCircuitArgs(
       convertedPulseSequenceOpArgs.push_back(convertedDurationToI64);
     } else if (argumentType.isa<mlir::quir::QubitType>()) {
       auto *qubitOp = callCircuitOp.getOperand(cnt).getDefiningOp();
-      addCircuitOperandToEraseList(qubitOp);
-    }
-
-    else
+    } else
       llvm_unreachable("unkown circuit argument.");
   }
 }
@@ -524,7 +511,6 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
   if (classicalQUIROpLocToConvertedPulseOpMap.find(angleLocHash) ==
       classicalQUIROpLocToConvertedPulseOpMap.end()) {
     if (auto castOp = dyn_cast<quir::ConstantOp>(angleOp)) {
-      addCircuitOperandToEraseList(angleOp);
       double const angleVal =
           castOp.getAngleValueFromConstant().convertToDouble();
       auto f64Angle = builder.create<mlir::arith::ConstantOp>(
@@ -538,7 +524,6 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
       angleCastedOp->moveAfter(castOp);
       classicalQUIROpLocToConvertedPulseOpMap[angleLocHash] = angleCastedOp;
     } else if (auto castOp = dyn_cast<oq3::CastOp>(angleOp)) {
-      addCircuitOperandToEraseList(angleOp);
       auto castOpArg = castOp.getArg();
       if (auto paramCastOp =
               dyn_cast<qcs::ParameterLoadOp>(castOpArg.getDefiningOp())) {
@@ -563,7 +548,6 @@ mlir::Value QUIRToPulsePass::convertDurationToI64(
   if (classicalQUIROpLocToConvertedPulseOpMap.find(durLocHash) ==
       classicalQUIROpLocToConvertedPulseOpMap.end()) {
     if (auto castOp = dyn_cast<quir::ConstantOp>(durationOp)) {
-      addCircuitOperandToEraseList(durationOp);
       auto durVal =
           quir::getDuration(castOp).get().getDuration().convertToDouble();
       assert(castOp.getType().dyn_cast<DurationType>().getUnits() ==
@@ -619,21 +603,6 @@ QUIRToPulsePass::addWfrOpToIR(std::string const &wfrName,
     openedWfrs[wfrName] = wfrOp;
   }
   return openedWfrs[wfrName];
-}
-
-void QUIRToPulsePass::addCircuitToEraseList(mlir::Operation *op) {
-  assert(op && "caller requested adding a null op to erase list");
-  if (std::find(quirCircuitEraseList.begin(), quirCircuitEraseList.end(), op) ==
-      quirCircuitEraseList.end())
-    quirCircuitEraseList.push_back(op);
-}
-
-void QUIRToPulsePass::addCircuitOperandToEraseList(mlir::Operation *op) {
-  assert(op && "caller requested adding a null op to erase list");
-  if (std::find(quirCircuitOperandEraseList.begin(),
-                quirCircuitOperandEraseList.end(),
-                op) == quirCircuitOperandEraseList.end())
-    quirCircuitOperandEraseList.push_back(op);
 }
 
 void QUIRToPulsePass::parsePulseWaveformContainerOps(
