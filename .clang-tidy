@@ -44,7 +44,8 @@ Checks: >
   -modernize-use-override,
   -modernize-use-nodiscard,
   -bugprone-exception-escape,
-  -llvm-else-after-return
+  -llvm-else-after-return,
+  -misc-use-anonymous-namespace
   '
 
 WarningsAsErrors: >
