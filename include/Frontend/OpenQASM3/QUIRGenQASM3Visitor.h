@@ -17,6 +17,8 @@
 #ifndef VISITOR_QUIR_GEN_VISITOR_H
 #define VISITOR_QUIR_GEN_VISITOR_H
 
+#include "API/errors.h"
+
 #include "Dialect/QUIR/IR/QUIRDialect.h"
 #include "Dialect/QUIR/IR/QUIREnums.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
@@ -45,10 +47,11 @@ private:
   mlir::OpBuilder circuitParentBuilder;
   mlir::ModuleOp newModule;
   mlir::quir::CircuitOp currentCircuitOp;
-  std::string filename;
   bool hasFailed{false};
   bool buildingInCircuit{false};
   uint circuitCount{0};
+  std::string fileName;
+  bool requiresParserLocationFix;
 
   mlir::Location getLocation(const QASM::ASTBase *);
   bool assign(mlir::Value &, const std::string &);
@@ -96,8 +99,10 @@ private:
   /// \param severity severity of the diagnostic
   ///
   /// \returns an in-flight diagnostic that allows adding messages and notes.
-  mlir::InFlightDiagnostic reportError(QASM::ASTBase const *location,
-                                       mlir::DiagnosticSeverity severity);
+  mlir::InFlightDiagnostic
+  reportError(QASM::ASTBase const *location, mlir::DiagnosticSeverity severity,
+              qssc::ErrorCategory category =
+                  qssc::ErrorCategory::OpenQASM3UnsupportedInput);
 
   template <class MLIROp>
   ExpressionValueType buildUnaryOp(llvm::StringRef name,
@@ -113,17 +118,23 @@ private:
 
 public:
   QUIRGenQASM3Visitor(QASM::ASTStatementList *sList, mlir::OpBuilder b,
-                      mlir::ModuleOp newModule, std::string f)
+                      mlir::ModuleOp newModule, std::string fileName,
+                      bool requiresParserLocationFix = false)
       : BaseQASM3Visitor(sList), builder(b), topLevelBuilder(b),
-        circuitParentBuilder(b), newModule(newModule), filename(std::move(f)),
+        circuitParentBuilder(b), newModule(newModule),
+        fileName(std::move(fileName)),
+        requiresParserLocationFix(requiresParserLocationFix),
         expression(llvm::createStringError(llvm::inconvertibleErrorCode(),
                                            "Testing error")),
         varHandler(builder) {}
 
   QUIRGenQASM3Visitor(mlir::OpBuilder b, mlir::ModuleOp newModule,
-                      std::string filename)
+                      std::string fileName,
+                      bool requiresParserLocationFix = false)
       : builder(b), topLevelBuilder(b), circuitParentBuilder(b),
-        newModule(newModule), filename(std::move(filename)),
+        fileName(std::move(fileName)),
+        requiresParserLocationFix(requiresParserLocationFix),
+        newModule(newModule),
         expression(llvm::createStringError(llvm::inconvertibleErrorCode(),
                                            "Testing error")),
         varHandler(builder) {}

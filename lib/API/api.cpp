@@ -320,58 +320,6 @@ llvm::Error emitQEM(
   return llvm::Error::success();
 }
 
-/// @brief Handler for the Diagnostic Engine.
-///
-///        Uses qssc::emitDiagnostic to forward diagnostic to the python
-///        diagnostic callback.
-///        Prints diagnostic to llvm::errs to mimic default handler.
-///  @param diagnostic MLIR diagnostic from the Diagnostic Engine
-///  @param diagnosticCb Handle to python diagnostic callback
-void diagEngineHandler(mlir::Diagnostic &diagnostic,
-                       const qssc::OptDiagnosticCallback &diagnosticCb) {
-
-  // map diagnostic severity to qssc severity
-  auto severity = diagnostic.getSeverity();
-  qssc::Severity qssc_severity = qssc::Severity::Error;
-  switch (severity) {
-  case mlir::DiagnosticSeverity::Error:
-    qssc_severity = qssc::Severity::Error;
-    break;
-  case mlir::DiagnosticSeverity::Warning:
-    qssc_severity = qssc::Severity::Warning;
-    break;
-  case mlir::DiagnosticSeverity::Note:
-  case mlir::DiagnosticSeverity::Remark:
-    qssc_severity = qssc::Severity::Info;
-  }
-  // emit diagnostic cast to void to discard result as it is not needed here
-  if (qssc_severity == qssc::Severity::Error) {
-    (void)qssc::emitDiagnostic(diagnosticCb, qssc_severity,
-                               qssc::ErrorCategory::QSSCompilationFailure,
-                               diagnostic.str());
-  }
-
-  // emit to llvm::errs as well to mimic default handler
-  diagnostic.getLocation().print(llvm::errs());
-  llvm::errs() << ": ";
-  // based on mlir's Diagnostic.cpp:getDiagKindStr which is static
-  switch (severity) {
-  case mlir::DiagnosticSeverity::Note:
-    llvm::errs() << "note: ";
-    break;
-  case mlir::DiagnosticSeverity::Warning:
-    llvm::errs() << "warning: ";
-    break;
-  case mlir::DiagnosticSeverity::Error:
-    llvm::errs() << "error: ";
-    break;
-  case mlir::DiagnosticSeverity::Remark:
-    llvm::errs() << "remark: ";
-  }
-  llvm::errs() << diagnostic << "\n";
-  return;
-}
-
 llvm::Error applyEmitAction(
     const QSSConfig &config, llvm::raw_ostream &outputStream,
     std::unique_ptr<qssc::payload::Payload> payload, mlir::MLIRContext &context,
@@ -501,9 +449,8 @@ llvm::Error performCompileActions(llvm::raw_ostream &outputStream,
   const llvm::MemoryBuffer *sourceBuffer =
       sourceMgr->getMemoryBuffer(sourceBufferID);
 
-  context.getDiagEngine().registerHandler([&](mlir::Diagnostic &diagnostic) {
-    diagEngineHandler(diagnostic, diagnosticCb);
-  });
+  auto mlirDiagHandler =
+      qssc::QSSCMLIRDiagnosticHandler(*sourceMgr.get(), &context, diagnosticCb);
 
   std::unique_ptr<qssc::payload::Payload> payload = nullptr;
 
@@ -544,18 +491,15 @@ llvm::Error performCompileActions(llvm::raw_ostream &outputStream,
     if (config.getEmitAction() >= EmitAction::MLIR) {
       auto bufferIdentifier = sourceBuffer->getBufferIdentifier();
 
-      LocationAttr sourceLoc;
-      if ((bufferIdentifier == "" || bufferIdentifier == "<stdin>"))
-        sourceLoc = UnknownLoc::get(&context);
-      else
-        sourceLoc = mlir::FileLineColLoc::get(&context, bufferIdentifier, 0, 0);
+      LocationAttr const sourceLoc =
+          mlir::FileLineColLoc::get(&context, bufferIdentifier, 0, 0);
 
       moduleOp = mlir::ModuleOp::create(sourceLoc);
     }
     if (auto frontendError = qssc::frontend::openqasm3::parse(
-            *sourceMgr, config.getEmitAction() == EmitAction::AST,
+            &context, *sourceMgr, config.getEmitAction() == EmitAction::AST,
             config.getEmitAction() == EmitAction::ASTPretty,
-            config.getEmitAction() >= EmitAction::MLIR, moduleOp, diagnosticCb,
+            config.getEmitAction() >= EmitAction::MLIR, moduleOp,
             loadQASM3Timing))
       return frontendError;
     if (config.getEmitAction() < EmitAction::MLIR)

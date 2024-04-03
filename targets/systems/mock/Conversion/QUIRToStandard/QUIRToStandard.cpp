@@ -45,13 +45,14 @@
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/DialectRegistry.h"
+#include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/ValueRange.h"
+#include "mlir/Support/LLVM.h"
 #include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Casting.h"
-#include "llvm/Support/raw_ostream.h"
 
 #include <cstdint>
 #include <utility>
@@ -186,6 +187,33 @@ struct CommOpConversionPat : public OpConversionPattern<CommOp> {
   } // matchAndRewrite
 };  // struct CommOpConversionPat
 
+// Remaining operation conversion pattern
+class RemainingOpConversionPat : public ConversionPattern {
+
+public:
+  RemainingOpConversionPat(MLIRContext *ctx, QuirTypeConverter &typeConverter)
+      : ConversionPattern(RewritePattern::MatchAnyOpTypeTag(), /*benefit=*/1,
+                          ctx) {}
+
+  LogicalResult
+  matchAndRewrite(Operation *op, ArrayRef<Value> operands,
+                  ConversionPatternRewriter &rewriter) const override {
+    if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||
+        llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
+        llvm::isa<qcs::QCSDialect>(op->getDialect())) {
+
+      for (auto *user : op->getUsers())
+        rewriter.eraseOp(user);
+
+      rewriter.eraseOp(op);
+      return success();
+    }
+
+    // attribute type is not handled (for now)
+    return failure();
+  } // matchAndRewrite
+};  // struct RemainingOpConversionPat
+
 void conversion::MockQUIRToStdPass::getDependentDialects(
     DialectRegistry &registry) const {
   registry.insert<LLVM::LLVMDialect, mlir::memref::MemRefDialect,
@@ -193,7 +221,7 @@ void conversion::MockQUIRToStdPass::getDependentDialects(
 }
 
 void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
-  ModuleOp moduleOp = getOperation();
+  const ModuleOp moduleOp = getOperation();
 
   // First remove all arguments from synchronization ops
   moduleOp->walk([](qcs::SynchronizeOp synchOp) {
@@ -251,7 +279,8 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
                AngleBinOpConversionPat<oq3::AngleAddOp, mlir::arith::AddIOp>,
                AngleBinOpConversionPat<oq3::AngleSubOp, mlir::arith::SubIOp>,
                AngleBinOpConversionPat<oq3::AngleMulOp, mlir::arith::MulIOp>,
-               AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>>(
+               AngleBinOpConversionPat<oq3::AngleDivOp, mlir::arith::DivSIOp>,
+               RemainingOpConversionPat>(
       context, typeConverter);
   // clang-format on
 
@@ -261,19 +290,7 @@ void MockQUIRToStdPass::runOnOperation(MockSystem &system) {
   // With the target and rewrite patterns defined, we can now attempt the
   // conversion. The conversion will signal failure if any of our `illegal`
   // operations were not converted successfully.
-  if (failed(applyPartialConversion(moduleOp, target, std::move(patterns)))) {
-    // If we fail conversion remove remaining ops for the Mock target.
-    moduleOp.walk([&](Operation *op) {
-      if (llvm::isa<oq3::OQ3Dialect>(op->getDialect()) ||
-          llvm::isa<quir::QUIRDialect>(op->getDialect()) ||
-          llvm::isa<qcs::QCSDialect>(op->getDialect())) {
-        llvm::outs() << "Removing unsupported " << op->getName() << " \n";
-        op->dropAllReferences();
-        op->dropAllDefinedValueUses();
-        op->erase();
-      }
-    });
-  }
+  applyPartialConversion(moduleOp, target, std::move(patterns));
 } // QUIRToStdPass::runOnOperation()
 
 llvm::StringRef MockQUIRToStdPass::getArgument() const {
