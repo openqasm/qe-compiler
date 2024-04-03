@@ -279,6 +279,7 @@ void QSSCMLIRDiagnosticHandler::emitDiagnostic(mlir::Diagnostic &diagnostic) {
   if (auto decoded = decodeQSSCDiagnostic(diagnostic)) {
     (void)qssc::emitDiagnostic(diagnosticCb, decoded.value());
     llvm::errs() << decoded.value().message;
+    return;
   }
 
   // If no diagnostic
