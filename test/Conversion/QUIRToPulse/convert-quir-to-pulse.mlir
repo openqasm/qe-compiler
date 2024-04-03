@@ -71,19 +71,19 @@ module {
     %false = arith.constant false
     pulse.return %false : i1
   }
-  // CHECK: pulse.sequence @circuit_0_q5_q3_circuit_1_q5_sequence(%arg0: !pulse.mixed_frame, %arg1: !pulse.mixed_frame, %arg2: !pulse.mixed_frame, %arg3: !pulse.mixed_frame, %arg4: !pulse.mixed_frame, %arg5: !pulse.mixed_frame) -> (i1, i1, i1, i1) attributes {pulse.args = ["q3-drive-mixframe", "q5-drive-mixframe", "q3-readout-mixframe", "q3-capture-mixframe", "q5-readout-mixframe", "q5-capture-mixframe"]} {
-    // CHECK: %0 = pulse.call_sequence @x_3(%arg0) {{{.*}} : (!pulse.mixed_frame) -> i1
-    // CHECK: %1 = pulse.call_sequence @sx_5(%arg1) {{{.*}} : (!pulse.mixed_frame) -> i1
-    // CHECK: %2:2 = pulse.call_sequence @measure_3_5(%arg2, %arg3, %arg4, %arg5) {{{.*}} : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1, i1)
+  // CHECK: pulse.sequence @circuit_0_q5_q3_circuit_1_q5_sequence(%arg0: !pulse.mixed_frame, %arg1: !pulse.mixed_frame, %arg2: !pulse.mixed_frame, %arg3: !pulse.mixed_frame, %arg4: !pulse.mixed_frame, %arg5: !pulse.mixed_frame) -> (i1, i1, i1, i1) {
+    // CHECK: %0 = pulse.call_sequence @x_3(%arg0) : (!pulse.mixed_frame) -> i1
+    // CHECK: %1 = pulse.call_sequence @sx_5(%arg1) : (!pulse.mixed_frame) -> i1
+    // CHECK: %2:2 = pulse.call_sequence @measure_3_5(%arg2, %arg3, %arg4, %arg5) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1, i1)
     // CHECK: pulse.return %0, %1, %2#0, %2#1 : i1, i1, i1, i1
 
-  // CHECK: pulse.sequence @circuit_2_q5_q3_circuit_3_q5_sequence(%arg0: !pulse.mixed_frame, %arg1: !pulse.mixed_frame, %arg2: !pulse.mixed_frame, %arg3: !pulse.mixed_frame, %arg4: !pulse.mixed_frame, %arg5: !pulse.mixed_frame, %arg6: !pulse.mixed_frame) -> (i1, i1, i1, i1, i1, i1) attributes {pulse.args = ["q5-drive-mixframe", "q3-5-cx-mixframe", "q5-3-cx-mixframe", "q3-readout-mixframe", "q3-capture-mixframe", "q5-readout-mixframe", "q5-capture-mixframe"]} {
+  // CHECK: pulse.sequence @circuit_2_q5_q3_circuit_3_q5_sequence(%arg0: !pulse.mixed_frame, %arg1: !pulse.mixed_frame, %arg2: !pulse.mixed_frame, %arg3: !pulse.mixed_frame, %arg4: !pulse.mixed_frame, %arg5: !pulse.mixed_frame, %arg6: !pulse.mixed_frame) -> (i1, i1, i1, i1, i1, i1) {
     // CHECK: %cst = arith.constant 1.5707963267948966 : f64
-    // CHECK: %0 = pulse.call_sequence @rz_5(%cst, %arg0) {{{.*}} : (f64, !pulse.mixed_frame) -> i1
-    // CHECK: %1 = pulse.call_sequence @sx_5(%arg0) {{{.*}} : (!pulse.mixed_frame) -> i1
-    // CHECK: %2 = pulse.call_sequence @rz_5(%cst, %arg0) {{{.*}} : (f64, !pulse.mixed_frame) -> i1
-    // CHECK: %3 = pulse.call_sequence @cx_5_3(%arg1, %arg2) {{{.*}} : (!pulse.mixed_frame, !pulse.mixed_frame) -> i1
-    // CHECK: %4:2 = pulse.call_sequence @measure_3_5(%arg3, %arg4, %arg5, %arg6) {{{.*}} : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1, i1)
+    // CHECK: %0 = pulse.call_sequence @rz_5(%cst, %arg0) : (f64, !pulse.mixed_frame) -> i1
+    // CHECK: %1 = pulse.call_sequence @sx_5(%arg0) : (!pulse.mixed_frame) -> i1
+    // CHECK: %2 = pulse.call_sequence @rz_5(%cst, %arg0) : (f64, !pulse.mixed_frame) -> i1
+    // CHECK: %3 = pulse.call_sequence @cx_5_3(%arg1, %arg2) : (!pulse.mixed_frame, !pulse.mixed_frame) -> i1
+    // CHECK: %4:2 = pulse.call_sequence @measure_3_5(%arg3, %arg4, %arg5, %arg6) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1, i1)
     // CHECK: pulse.return %0, %1, %2, %3, %4#0, %4#1 : i1, i1, i1, i1, i1, i1
 
   func.func @main() -> i32 attributes {quir.classicalOnly = false} {
@@ -121,12 +121,10 @@ module {
       // CHECK-NOT: %5 = quir.declare_qubit {id = 5 : i32} : !quir.qubit<1>
       %7:2 = quir.call_circuit @circuit_0_q5_q3_circuit_1_q5(%5, %3) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
       // CHECK-NOT: %7:2 = quir.call_circuit @circuit_0_q5_q3_circuit_1_q5(%5, %3) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
-      // CHECK: %14:4 = pulse.call_sequence @circuit_0_q5_q3_circuit_1_q5_sequence(%1, %3, %5, %7, %9, %11) {{{.*}} : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1, i1, i1, i1)
-      quir.barrier %3, %5 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
-      // CHECK-NOT: %quir.barrier %3, %5 : (!quir.qubit<1>, !quir.qubit<1>) -> ()
+      // CHECK: %14:4 = pulse.call_sequence @circuit_0_q5_q3_circuit_1_q5_sequence(%1, %3, %5, %7, %9, %11) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1, i1, i1, i1)
       %8:2 = quir.call_circuit @circuit_2_q5_q3_circuit_3_q5(%5, %3) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
       // CHECK-NOT: %8:2 = quir.call_circuit @circuit_2_q5_q3_circuit_3_q5(%5, %3) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
-      // CHECK: %15:6 = pulse.call_sequence @circuit_2_q5_q3_circuit_3_q5_sequence(%3, %12, %13, %5, %7, %9, %11) {{{.*}} : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1, i1, i1, i1, i1, i1)
+      // CHECK: %15:6 = pulse.call_sequence @circuit_2_q5_q3_circuit_3_q5_sequence(%3, %12, %13, %5, %7, %9, %11) : (!pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame, !pulse.mixed_frame) -> (i1, i1, i1, i1, i1, i1)
     } {qcs.shot_loop}
     return %c0_i32 : i32
   }
