@@ -34,7 +34,6 @@ samples_2d[:, 1] = np.imag(samples)
 
 
 with Context() as ctx:
-
     pulse.pulse.register_dialect()
     quir.quir.register_dialect()
 
@@ -55,7 +54,6 @@ with Context() as ctx:
             mainFunc.add_entry_block()
 
         with InsertionPoint(module.body):
-
             seq1 = pulse.SequenceOp("seq_1", [wf, wf, mf, mf], [i1])
             seq1.add_entry_block()
 

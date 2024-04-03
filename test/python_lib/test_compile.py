@@ -176,6 +176,43 @@ def test_compile_invalid_str(example_invalid_qasm3_str):
     assert "unknown version number" in str(compfail.value)
 
 
+def test_compile_unsupported_openqasm_file(example_unsupported_qasm3_tmpfile):
+    """Test that we can attempt to compile unsupported OpenQASM 3 and receive an
+    error"""
+
+    with pytest.raises(exceptions.OpenQASM3UnsupportedInput):
+        compile_file(
+            example_unsupported_qasm3_tmpfile,
+            return_diagnostics=True,  # For testing purposes
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+        )
+
+
+def test_compile_unsupported_openqasm_str(example_unsupported_qasm3_str):
+    """Test that we can attempt to compile unsupported OpenQASM 3 and receive an
+    error"""
+
+    with pytest.raises(exceptions.OpenQASM3UnsupportedInput) as compfail:
+        compile_str(
+            example_unsupported_qasm3_str,
+            return_diagnostics=True,  # For testing purposes
+            input_type=InputType.QASM3,
+            output_type=OutputType.MLIR,
+            output_file=None,
+        )
+
+    assert hasattr(compfail.value, "diagnostics")
+
+    diags = compfail.value.diagnostics
+
+    assert any(
+        diag.severity == Severity.Error and diag.category == ErrorCategory.OpenQASM3UnsupportedInput
+        for diag in diags
+    )
+
+
 def test_warning_not_in_errors(example_warning_not_in_errors):
     """Test that warnings are not included in error."""
 
@@ -202,11 +239,9 @@ def test_warning_not_in_errors(example_warning_not_in_errors):
     assert any("OpenQASM 3 parse error" in str(diag) for diag in diags)
 
     # check string representation of the exception to contain diagnostic messages
-    assert (
-        "Error: OpenQASM 3 parse error" in str(compfail.value)
-        and "Non-existent angle a passed as angle argument to Gate Call." in str(compfail.value)
-        and "Angle value exceeds 2pi." not in str(compfail.value)
-    )
+    assert "Non-existent angle a passed as angle argument to Gate Call." in str(
+        compfail.value
+    ) and "Angle value exceeds 2pi." not in str(compfail.value)
 
 
 def test_incorrect_qasm3(example_incorrect_qasm3):
@@ -235,10 +270,9 @@ def test_incorrect_qasm3(example_incorrect_qasm3):
     assert any("OpenQASM 3 parse error" in str(diag) for diag in diags)
 
     # check string representation of the exception to contain diagnostic messages
-    assert "Error: OpenQASM 3 parse error" in str(
-        compfail.value
-    ) and "1 inconsistent parameters in the gate call for the corresponding gate definition" in str(
-        compfail.value
+    assert (
+        "1 inconsistent parameters in the gate call for the corresponding gate definition"
+        in str(compfail.value)
     )
 
 

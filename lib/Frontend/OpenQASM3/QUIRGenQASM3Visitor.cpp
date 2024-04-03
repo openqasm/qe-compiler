@@ -39,6 +39,7 @@
 
 #include "Frontend/OpenQASM3/QUIRGenQASM3Visitor.h"
 
+#include "API/errors.h"
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSAttributes.h"
 #include "Dialect/QCS/IR/QCSOps.h"
@@ -148,8 +149,15 @@ llvm::cl::opt<bool> debugCircuits("debug-circuits",
 } // anonymous namespace
 
 auto QUIRGenQASM3Visitor::getLocation(const ASTBase *node) -> Location {
-  return mlir::FileLineColLoc::get(builder.getContext(), filename,
-                                   node->GetLineNo(), node->GetColNo());
+
+  // Workaround for https://github.com/openqasm/qe-qasm/issues/35
+  // TODO: Remove once this bug is fixed
+  auto lineNo = node->GetLineNo();
+  if (requiresParserLocationFix)
+    lineNo++;
+
+  return mlir::FileLineColLoc::get(builder.getContext(), fileName, lineNo,
+                                   node->GetColNo());
 }
 
 auto QUIRGenQASM3Visitor::assign(Value &val, const std::string &valName)
@@ -263,7 +271,7 @@ void QUIRGenQASM3Visitor::initialize(
     uint numShots, const double &shotDelay,
     const mlir::quir::TimeUnits &shotDelayUnits) {
   Location const initialLocation =
-      mlir::FileLineColLoc::get(topLevelBuilder.getContext(), filename, 0, 0);
+      mlir::FileLineColLoc::get(topLevelBuilder.getContext(), fileName, 0, 0);
 
   // create the "main" function
   auto func = topLevelBuilder.create<mlir::func::FuncOp>(
@@ -325,7 +333,7 @@ void QUIRGenQASM3Visitor::initialize(
 }
 
 void QUIRGenQASM3Visitor::setInputFile(std::string fName) {
-  filename = std::move(fName);
+  fileName = std::move(fName);
 }
 
 mlir::LogicalResult QUIRGenQASM3Visitor::walkAST() {
@@ -335,13 +343,21 @@ mlir::LogicalResult QUIRGenQASM3Visitor::walkAST() {
 
 mlir::InFlightDiagnostic
 QUIRGenQASM3Visitor::reportError(ASTBase const *location,
-                                 mlir::DiagnosticSeverity severity) {
+                                 mlir::DiagnosticSeverity severity,
+                                 qssc::ErrorCategory qsscErrorCategory) {
 
-  DiagnosticEngine &engine = builder.getContext()->getDiagEngine();
+  auto *context = builder.getContext();
+  DiagnosticEngine &engine = context->getDiagEngine();
 
   if (severity == mlir::DiagnosticSeverity::Error)
     hasFailed = true;
-  return engine.emit(getLocation(location), severity);
+
+  // Create a MLIRQSSCDiagnostic such that the diagnostic will be properly
+  // reported by the compilers diagnostic handling APIs.
+  auto inflightDiagnostic = engine.emit(getLocation(location), severity);
+  qssc::encodeQSSCError(context, inflightDiagnostic, qsscErrorCategory);
+
+  return inflightDiagnostic;
 }
 
 void QUIRGenQASM3Visitor::visit(const ASTForStatementNode *node) {

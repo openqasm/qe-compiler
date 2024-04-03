@@ -36,18 +36,17 @@ namespace qssc::frontend::openqasm3 {
 
 /// @brief Parse an OpenQASM 3 source file and emit high-level IR in the
 /// OpenQASM 3 dialect or dump the AST
+/// @param context The context to parse the module into
 /// @param sourceMgr Input source manager for the qasm3 source to be parsed
 /// @param emitRawAST whether the raw AST should be dumped
 /// @param emitPrettyAST whether a pretty-printed AST should be dumped
 /// @param emitMLIR whether high-level IR should be emitted
 /// @param newModule ModuleOp container for emitting MLIR into
-/// @param diagnosticCb a callback that will receive emitted diagnostics
 /// @return an llvm::Error in case of failure, or llvm::Error::success()
 /// otherwise
-llvm::Error parse(llvm::SourceMgr &sourceMgr, bool emitRawAST,
-                  bool emitPrettyAST, bool emitMLIR, mlir::ModuleOp newModule,
-                  OptDiagnosticCallback diagnosticCb,
-                  mlir::TimingScope &timing);
+llvm::Error parse(mlir::MLIRContext *context, llvm::SourceMgr &sourceMgr,
+                  bool emitRawAST, bool emitPrettyAST, bool emitMLIR,
+                  mlir::ModuleOp newModule, mlir::TimingScope &timing);
 
 }; // namespace qssc::frontend::openqasm3
 
