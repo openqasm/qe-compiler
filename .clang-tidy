@@ -63,6 +63,7 @@ WarningsAsErrors: >
   misc-*,
   -misc-no-recursion,
   -misc-unused-parameters,
+  -misc-use-anonymous-namespace,
   -misc-non-private-member-variables-in-classes,
   readability-identifier-naming,
   -llvm-header-guard,
