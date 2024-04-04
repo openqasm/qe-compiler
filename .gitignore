@@ -203,6 +203,8 @@ cython_debug/
 
 # CMake
 CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
 
 # JetBrains IDEs
 /.idea
