@@ -25,6 +25,7 @@
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/Utils/Utils.h"
+#include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/IR/Attributes.h"
@@ -42,7 +43,6 @@
 
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
-#include "llvm/ADT/StringMap.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
@@ -85,7 +85,8 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
 
   std::string const circuitName = "circuit_";
   std::string newName = circuitName + std::to_string(circuitCount++);
-  while (circuitOpsMap.contains(newName))
+  assert(symbolCache && "symbolCache not set");
+  while (symbolCache->contains(newName))
     newName = circuitName + std::to_string(circuitCount++);
 
   currentCircuitOp =
@@ -94,7 +95,7 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
                                             /*inputs=*/ArrayRef<Type>(),
                                             /*results=*/ArrayRef<Type>()));
   currentCircuitOp.addEntryBlock();
-  circuitOpsMap[newName] = currentCircuitOp;
+  symbolCache->addCallee(currentCircuitOp);
 
   currentCircuitOp->setAttr(llvm::StringRef("quir.classicalOnly"),
                             topLevelBuilder.getBoolAttr(false));
@@ -275,11 +276,8 @@ void ExtractCircuitsPass::runOnOperation() {
 
   Operation *moduleOp = getOperation();
 
-  llvm::StringMap<Operation *> circuitOpsMap;
-
-  moduleOp->walk([&](CircuitOp circuitOp) {
-    circuitOpsMap[circuitOp.getSymName()] = circuitOp.getOperation();
-  });
+  symbolCache =
+      &getAnalysis<qssc::utils::SymbolCacheAnalysis>().addToCache<CircuitOp>();
 
   mlir::func::FuncOp mainFunc =
       dyn_cast<mlir::func::FuncOp>(quir::getMainFunction(moduleOp));
