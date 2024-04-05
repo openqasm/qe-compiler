@@ -21,6 +21,9 @@
 #ifndef QSS_COMPILER_ERROR_H
 #define QSS_COMPILER_ERROR_H
 
+#include "mlir/IR/Diagnostics.h"
+#include "mlir/IR/MLIRContext.h"
+
 #include "llvm/Support/Error.h"
 
 #include <functional>
@@ -48,6 +51,7 @@ enum class ErrorCategory {
   QSSLinkInvalidPatchTypeError,
   QSSControlSystemResourcesExceeded,
   QSSTargetUnsupportedOperation,
+  OpenQASM3UnsupportedInput,
   UncategorizedError,
 };
 
@@ -83,6 +87,84 @@ llvm::Error emitDiagnostic(const OptDiagnosticCallback &onDiagnostic,
                            Severity severity, ErrorCategory category,
                            std::string message,
                            std::error_code ec = llvm::inconvertibleErrorCode());
+
+/// Encode QSSC diagnostic information within the notes of an
+/// MLIR diagnostic. This enables the usage of MLIR's diagnostic
+/// mechanisms to return QSSC diagnostics. This information
+/// will be extracted by the QSSC runtime API and handled like other
+/// emitted diagnostics.
+/// @param context The active context
+/// @param diagnostic Inflight diagnostic to encode into
+/// @param category The QSSC error category to encode. This will be encoded as a
+/// diagnostic note.
+void encodeQSSCError(mlir::MLIRContext *context,
+                     mlir::InFlightDiagnostic &diagnostic,
+                     ErrorCategory category);
+
+/// Encode QSSC diagnostic information within the notes of an
+/// MLIR diagnostic. This enables the usage of MLIR's diagnostic
+/// mechanisms to return QSSC diagnostics. This information
+/// will be extracted by the QSSC runtime API and handled like other
+/// emitted diagnostics.
+/// @param context The active context
+/// @param diagnostic Diagnostic to encode into
+/// @param category The QSSC error category to encode. This will be encoded as a
+/// diagnostic note.
+void encodeQSSCError(mlir::MLIRContext *context, mlir::Diagnostic *diagnostic,
+                     ErrorCategory category);
+
+/// Emit a QSSC encoded MLIR error on an operation. Reporting up to any
+/// diagnostic handlers that may be listening.
+mlir::InFlightDiagnostic emitError(mlir::Operation *op, ErrorCategory category,
+                                   const llvm::Twine &message = {});
+
+/// Emit a QSSC encoded MLIR operation error on an operation. Reporting up to
+/// any diagnostic handlers that may be listening.
+mlir::InFlightDiagnostic emitOpError(mlir::Operation *op,
+                                     ErrorCategory category,
+                                     const llvm::Twine &message = {});
+
+/// Emit a QSSC encoded MLIR remark on an operation. Reporting up to any
+/// diagnostic handlers that may be listening.
+mlir::InFlightDiagnostic emitRemark(mlir::Operation *op, ErrorCategory category,
+                                    const llvm::Twine &message = {});
+
+/// Emit a QSSC encoded MLIR warning on an operation. Reporting up to any
+/// diagnostic handlers that may be listening.
+mlir::InFlightDiagnostic emitWarning(mlir::Operation *op,
+                                     ErrorCategory category,
+                                     const llvm::Twine &message = {});
+
+/// Diagnostic handler for the QSSC compiler which will emit MLIR diagnostics
+/// through the compiler's diagnostic interface as well as through MLIR's
+/// source manager handler.
+class QSSCMLIRDiagnosticHandler : mlir::SourceMgrDiagnosticHandler {
+public:
+  QSSCMLIRDiagnosticHandler(llvm::SourceMgr &mgr, mlir::MLIRContext *ctx,
+                            const OptDiagnosticCallback &diagnosticCb);
+
+  /// Emit a diagnostic through the source manager dianostic handler
+  /// removing any fields that are related to the qscc error category.
+  void emitDiagnostic(mlir::Diagnostic &diagnostic);
+
+  /// Decode the MLIR diagnostic into a QSSC Diagnostic (if necessary). If the
+  /// diagnostic has a QSSC diagnostic encoded through encodeQSSCError the
+  /// emitted diagnostic will contain this information. If std::nullopt is
+  /// returned no QSSC diagnostic should be generated.
+  std::optional<Diagnostic> decodeQSSCDiagnostic(mlir::Diagnostic &diagnostic);
+
+private:
+  /// Create a new diagnostic which contains all information
+  /// except the QSSC diagnostic category information.
+  mlir::Diagnostic filterQSSCDiagnostic(mlir::Diagnostic &diagnostic);
+
+  const OptDiagnosticCallback &diagnosticCb;
+  // Store captured output
+  std::string capturedString;
+  // Output stream for source manager
+  llvm::raw_string_ostream capturedOutputStream =
+      llvm::raw_string_ostream(capturedString);
+};
 
 } // namespace qssc
 
