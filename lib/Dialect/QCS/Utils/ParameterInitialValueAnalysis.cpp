@@ -36,50 +36,57 @@ using namespace mlir::qcs;
 ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
     mlir::Operation *moduleOp) {
 
-  // ParameterInitialValueAnalysis should only process the top level
-  // module where parameters are defined
-  // find the top level module
-  auto parentOp = moduleOp->getParentOfType<mlir::ModuleOp>();
-  while (parentOp) {
-    moduleOp = parentOp;
-    parentOp = moduleOp->getParentOfType<mlir::ModuleOp>();
-  }
-
   if (not invalid_)
     return;
 
-  // process the module top level to cache declareParameterOp initial_values
-  // this does not use a walk method so that submodule (if present) are not
-  // processed in order to limit processing time
+  bool foundParameters = false;
 
-  for (auto &region : moduleOp->getRegions())
-    for (auto &block : region.getBlocks())
-      for (auto &op : block.getOperations()) {
-        auto declareParameterOp = dyn_cast<DeclareParameterOp>(op);
-        if (!declareParameterOp)
-          continue;
+  // search for the parameters in the current module
+  // if not found search parent module
+  // TODO - determine if there is a faster way to do this
+  do {
 
-        // moduleOp->walk([&](DeclareParameterOp declareParameterOp) {
-        double initial_value = 0.0;
-        if (declareParameterOp.getInitialValue().has_value()) {
-          auto angleAttr = declareParameterOp.getInitialValue()
-                               .value()
-                               .dyn_cast<mlir::quir::AngleAttr>();
-          auto floatAttr = declareParameterOp.getInitialValue()
-                               .value()
-                               .dyn_cast<FloatAttr>();
-          if (!(angleAttr || floatAttr))
-            declareParameterOp.emitError("Parameters are currently limited to "
-                                         "angles or float[64] only.");
+    // process the module top level to cache declareParameterOp initial_values
+    // this does not use a walk method so that submodule (if present) are not
+    // processed in order to limit processing time
 
-          if (angleAttr)
-            initial_value = angleAttr.getValue().convertToDouble();
+    for (auto &region : moduleOp->getRegions())
+      for (auto &block : region.getBlocks())
+        for (auto &op : block.getOperations()) {
+          auto declareParameterOp = dyn_cast<DeclareParameterOp>(op);
+          if (!declareParameterOp)
+            continue;
 
-          if (floatAttr)
-            initial_value = floatAttr.getValue().convertToDouble();
+          // moduleOp->walk([&](DeclareParameterOp declareParameterOp) {
+          double initial_value = 0.0;
+          if (declareParameterOp.getInitialValue().has_value()) {
+            auto angleAttr = declareParameterOp.getInitialValue()
+                                .value()
+                                .dyn_cast<mlir::quir::AngleAttr>();
+            auto floatAttr = declareParameterOp.getInitialValue()
+                                .value()
+                                .dyn_cast<FloatAttr>();
+            if (!(angleAttr || floatAttr))
+              declareParameterOp.emitError("Parameters are currently limited to "
+                                          "angles or float[64] only.");
+
+            if (angleAttr)
+              initial_value = angleAttr.getValue().convertToDouble();
+
+            if (floatAttr)
+              initial_value = floatAttr.getValue().convertToDouble();
+          }
+          initial_values_[declareParameterOp.getSymName()] = initial_value;
+          foundParameters = true;
         }
-        initial_values_[declareParameterOp.getSymName()] = initial_value;
-      }
+    if (!foundParameters) {
+      auto parentOp = moduleOp->getParentOfType<mlir::ModuleOp>();
+      if (parentOp)
+        moduleOp = parentOp;
+      else
+        break;
+    }
+  } while(!foundParameters);
   invalid_ = false;
 }
 
