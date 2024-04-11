@@ -61,14 +61,15 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
           double initial_value = 0.0;
           if (declareParameterOp.getInitialValue().has_value()) {
             auto angleAttr = declareParameterOp.getInitialValue()
-                                .value()
-                                .dyn_cast<mlir::quir::AngleAttr>();
+                                 .value()
+                                 .dyn_cast<mlir::quir::AngleAttr>();
             auto floatAttr = declareParameterOp.getInitialValue()
-                                .value()
-                                .dyn_cast<FloatAttr>();
+                                 .value()
+                                 .dyn_cast<FloatAttr>();
             if (!(angleAttr || floatAttr))
-              declareParameterOp.emitError("Parameters are currently limited to "
-                                          "angles or float[64] only.");
+              declareParameterOp.emitError(
+                  "Parameters are currently limited to "
+                  "angles or float[64] only.");
 
             if (angleAttr)
               initial_value = angleAttr.getValue().convertToDouble();
@@ -86,7 +87,7 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
       else
         break;
     }
-  } while(!foundParameters);
+  } while (!foundParameters);
   invalid_ = false;
 }
 
