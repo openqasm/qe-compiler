@@ -61,7 +61,7 @@ using namespace mlir::quir;
 llvm::cl::opt<bool>
     enableCircuits("enable-circuits",
                    llvm::cl::desc("enable extract quir circuits"),
-                   llvm::cl::init(false));
+                   llvm::cl::init(true));
 
 static bool terminatesCircuit(Operation &op) {
   return (op.hasTrait<::mlir::RegionBranchOpInterface::Trait>() ||
