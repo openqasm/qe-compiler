@@ -33,6 +33,11 @@
 
 using namespace mlir::qcs;
 
+static llvm::cl::opt<bool> printAnalysisEntries(
+    "qcs-parameter-initial-value-analysis-print",
+    llvm::cl::desc("Print ParameterInitialValueAnalysis entries"),
+    llvm::cl::init(false));
+
 ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
     mlir::Operation *moduleOp) {
 
@@ -57,7 +62,6 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
           if (!declareParameterOp)
             continue;
 
-          // moduleOp->walk([&](DeclareParameterOp declareParameterOp) {
           double initial_value = 0.0;
           if (declareParameterOp.getInitialValue().has_value()) {
             auto angleAttr = declareParameterOp.getInitialValue()
@@ -89,6 +93,14 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
     }
   } while (!foundParameters);
   invalid_ = false;
+
+  // debugging / test print out
+  if (printAnalysisEntries) {
+    for (auto &initial_value : initial_values_) {
+      llvm::outs() << initial_value.first() << " = "
+                   << std::get<double>(initial_value.second) << "\n";
+    }
+  }
 }
 
 void ParameterInitialValueAnalysisPass::runOnOperation() {
