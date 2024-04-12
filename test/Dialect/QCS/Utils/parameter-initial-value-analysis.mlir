@@ -1,5 +1,5 @@
 // RUN: qss-opt --qcs-parameter-initial-value-analysis-print --pass-pipeline='builtin.module(builtin.module(qcs-parameter-initial-value-analysis))' --mlir-disable-threading %s | FileCheck %s --check-prefixes CHECK,NESTED
-// RUN: qss-opt --qcs-parameter-initial-value-analysis-print --qcs-parameter-initial-value-analysis %s | FileCheck %s 
+// RUN: qss-opt --qcs-parameter-initial-value-analysis-print --qcs-parameter-initial-value-analysis %s | FileCheck %s
 
 //
 // This code is part of Qiskit.
@@ -25,7 +25,7 @@ module {
         qcs.declare_parameter @phi : f64 = 1.500000e+00 : f64
     }
     module @second {
-        // test module without declare_parameter 
+        // test module without declare_parameter
         // should find alpha and beta when nested
     }
 }
