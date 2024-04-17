@@ -110,6 +110,11 @@ void QUIRToPulsePass::runOnOperation() {
   // erase circuit ops
   moduleOp->walk([&](CircuitOp circOp) { circOp->erase(); });
 
+  // Remove all arguments from synchronization ops
+  moduleOp->walk([](qcs::SynchronizeOp synchOp) {
+    synchOp.getQubitsMutable().assign(ValueRange({}));
+  });
+
   // erase qubit ops and constant angle ops
   moduleOp->walk([&](Operation *op) {
     if (isa<mlir::quir::DeclareQubitOp>(op))
