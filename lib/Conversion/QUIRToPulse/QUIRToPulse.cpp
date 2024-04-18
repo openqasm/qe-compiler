@@ -224,7 +224,7 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
     } else if (isa<qcs::DelayCyclesOp>(quirOp)) {
       // a qcs.delay_cycles may be inserted into a quir.circuit and should be
       // placed outside of the sequence at the call point
-      auto newDelayCyclesOp = builder.clone(*quirOp);
+      auto *newDelayCyclesOp = builder.clone(*quirOp);
       newDelayCyclesOp->moveAfter(callCircuitOp);
     } else
       assert(((isa<quir::ConstantOp>(quirOp) or isa<quir::ReturnOp>(quirOp) or

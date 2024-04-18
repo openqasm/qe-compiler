@@ -146,9 +146,9 @@ void LoadPulseCalsPass::loadPulseCals(CallCircuitOp callCircuitOp,
       loadPulseCals(castOp, callCircuitOp, funcOp);
     else if (auto castOp = dyn_cast<mlir::quir::ResetQubitOp>(op))
       loadPulseCals(castOp, callCircuitOp, funcOp);
-    else if (isa<mlir::qcs::DelayCyclesOp>(op))
-      (void) 0; // no pulse call to load for a delay cycles op
-    else {
+    else if (isa<mlir::qcs::DelayCyclesOp>(op)) {
+      // no pulse call to load for a delay cycles op
+    } else {
       LLVM_DEBUG(llvm::dbgs() << "no pulse cal loading needed for " << op);
       assert((!op->hasTrait<mlir::quir::UnitaryOp>() and
               !op->hasTrait<mlir::quir::CPTPOp>()) &&
