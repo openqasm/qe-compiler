@@ -22,6 +22,7 @@
 
 #include "Dialect/Pulse/IR/PulseDialect.h"
 #include "Dialect/Pulse/IR/PulseOps.h"
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTraits.h"
 #include "Dialect/QUIR/Utils/Utils.h"
@@ -145,6 +146,8 @@ void LoadPulseCalsPass::loadPulseCals(CallCircuitOp callCircuitOp,
       loadPulseCals(castOp, callCircuitOp, funcOp);
     else if (auto castOp = dyn_cast<mlir::quir::ResetQubitOp>(op))
       loadPulseCals(castOp, callCircuitOp, funcOp);
+    else if (isa<mlir::qcs::DelayCyclesOp>(op))
+      void; // no pulse call to load for a delay cycles op
     else {
       LLVM_DEBUG(llvm::dbgs() << "no pulse cal loading needed for " << op);
       assert((!op->hasTrait<mlir::quir::UnitaryOp>() and
