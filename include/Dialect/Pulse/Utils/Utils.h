@@ -82,4 +82,21 @@ MixFrameOp getMixFrameOp(PulseOpTy pulseOp,
   return mixFrameOp;
 }
 
+template <typename PulseOpTy>
+llvm::StringRef getMixFrameName(PulseOpTy pulseOp, SequenceOp sequenceOp) {
+
+  auto frameArgIndex =
+      pulseOp.getTarget().template cast<BlockArgument>().getArgNumber();
+
+  assert(sequenceOp->hasAttrOfType<ArrayAttr>("pulse.args") and
+         "no pulse.args found for the pulse cal sequence.");
+
+  auto argAttr = sequenceOp->getAttrOfType<ArrayAttr>("pulse.args");
+
+  llvm::StringRef frameName =
+      argAttr[frameArgIndex].template dyn_cast<StringAttr>().getValue();
+
+  return frameName;
+}
+
 } // end namespace mlir::pulse
