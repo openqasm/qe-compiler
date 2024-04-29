@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Switch statements with only a default region will now correctly compile.
