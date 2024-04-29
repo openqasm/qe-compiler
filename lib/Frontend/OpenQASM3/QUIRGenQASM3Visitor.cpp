@@ -540,11 +540,10 @@ void QUIRGenQASM3Visitor::visit(const ASTSwitchStatementNode *node) {
   SmallVector<uint32_t> caseValues;
   for (auto const &[key, caseStatement] : node->GetCaseStatementsMap())
     caseValues.push_back(caseStatement->GetCaseIndex());
-  if (!caseValues.empty())
-    caseValuesAttr = DenseIntElementsAttr::get(
-        VectorType::get(static_cast<int64_t>(caseValues.size()),
-                        builder.getIntegerType(32)),
-        caseValues);
+  caseValuesAttr = DenseIntElementsAttr::get(
+      VectorType::get(static_cast<int64_t>(caseValues.size()),
+                      builder.getIntegerType(32)),
+      caseValues);
 
   auto caseOperands = node->GetCaseStatementsMap();
 
