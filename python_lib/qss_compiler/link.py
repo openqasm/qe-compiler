@@ -20,6 +20,7 @@ package.
 """
 
 from dataclasses import dataclass, field
+from enum import Enum
 from importlib import resources as importlib_resources
 from os import environ as os_environ
 from typing import Mapping, Any, Optional, Callable, Union
@@ -29,6 +30,16 @@ from .py_qssc import _link_file, Diagnostic, ErrorCategory
 from .compile import stringify_path
 
 from . import exceptions
+
+
+class InputType(Enum):
+    """Enumeration of input types supported by the link"""
+
+    QEM = "qem"
+    QEQEM = "qe-qem"
+
+    def __str__(self):
+        return self.value
 
 
 @dataclass
@@ -42,6 +53,8 @@ class LinkOptions:
     output_file: Union[str, None] = None
     """Output file, if not supplied raw bytes will be returned."""
     target: str = None
+    """Input source type."""
+    input_type: InputType = InputType.QEM
     """Hardware target to select."""
     arguments: Mapping[str, Any] = field(default_factory=lambda: {})
     """Set the specific execution arguments of a pre-compiled program
@@ -75,6 +88,8 @@ def link_file(
         output_file: Path to write the output payload to.
         target: Compiler target to invoke for binding arguments (must match
             with the target that created the module).
+        input_type: Input file type to invoke for binding arguments (must match
+            with the output type that created the module).
         arguments: Circuit arguments as name/value map.
 
     Returns: Produces a payload in a file.
@@ -129,6 +144,7 @@ def link_file(
             enable_in_memory,
             output_file,
             link_options.target,
+            link_options.input_type,
             config_path,
             link_options.arguments,
             link_options.treat_warnings_as_errors,
