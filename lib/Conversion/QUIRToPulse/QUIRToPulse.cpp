@@ -110,6 +110,11 @@ void QUIRToPulsePass::runOnOperation() {
   // erase circuit ops
   moduleOp->walk([&](CircuitOp circOp) { circOp->erase(); });
 
+  // Remove all arguments from synchronization ops
+  moduleOp->walk([](qcs::SynchronizeOp synchOp) {
+    synchOp.getQubitsMutable().assign(ValueRange({}));
+  });
+
   // erase qubit ops and constant angle ops
   moduleOp->walk([&](Operation *op) {
     if (isa<mlir::quir::DeclareQubitOp>(op))
@@ -216,6 +221,11 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
         PulseOpSchedulingInterface::setDuration(pulseCalCallSequenceOp,
                                                 durValue);
       }
+    } else if (isa<qcs::DelayCyclesOp>(quirOp)) {
+      // a qcs.delay_cycles may be inserted into a quir.circuit and should be
+      // placed outside of the sequence at the call point
+      auto *newDelayCyclesOp = builder.clone(*quirOp);
+      newDelayCyclesOp->moveAfter(callCircuitOp);
     } else
       assert(((isa<quir::ConstantOp>(quirOp) or isa<quir::ReturnOp>(quirOp) or
                isa<quir::CircuitOp>(quirOp))) &&
@@ -229,7 +239,7 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
                 convertedPulseSequenceOpReturnTypes.size()));
   convertedPulseSequenceOp.setType(newFuncType);
   entryBuilder.create<mlir::pulse::ReturnOp>(
-      convertedPulseSequenceOp.back().back().getLoc(),
+      convertedPulseSequenceOp.getLoc(),
       mlir::ValueRange{convertedPulseSequenceOpReturnValues});
   convertedPulseSequenceOp->moveBefore(mainFunc);
 
@@ -239,7 +249,6 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
                                                   convertedPulseSequenceOp,
                                                   convertedPulseSequenceOpArgs);
   convertedPulseCallSequenceOp->moveAfter(callCircuitOp);
-
   return convertedPulseCallSequenceOp;
 }
 
