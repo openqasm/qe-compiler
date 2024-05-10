@@ -144,7 +144,7 @@ def link_file(
             enable_in_memory,
             output_file,
             link_options.target,
-            link_options.input_type,
+            str(link_options.input_type),
             config_path,
             link_options.arguments,
             link_options.treat_warnings_as_errors,

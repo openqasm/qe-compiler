@@ -222,18 +222,38 @@ py::tuple py_compile_file(const std::string &inputFile,
                                std::move(onDiagnostic));
 }
 
+qssc::config::EmitAction parseEmitAction(const std::string &name) {
+  if (name == "ast")
+    return qssc::config::EmitAction::AST;
+  else if (name == "ast-pretty")
+    return qssc::config::EmitAction::ASTPretty;
+  else if (name == "mlir")
+    return qssc::config::EmitAction::MLIR;
+  else if (name == "bytecode")
+    return qssc::config::EmitAction::Bytecode;
+  else if (name == "wmem")
+    return qssc::config::EmitAction::WaveMem;
+  else if (name == "qem")
+    return qssc::config::EmitAction::QEM;
+  else if (name == "qeqem")
+    return qssc::config::EmitAction::QEQEM;
+  else
+    return qssc::config::EmitAction::None;
+}
+
 py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
                        const std::string &outputPath, const std::string &target,
-                       const qssc::config::EmitAction action,
+                       const std::string &emitActionString,
                        const std::string &configPath,
                        const std::unordered_map<std::string, double> &arguments,
                        bool treatWarningsAsErrors,
                        qssc::DiagnosticCallback onDiagnostic) {
 
   std::string inMemoryOutput("");
+  auto emitAction = parseEmitAction(emitActionString);
 
   int const status =
-      qssc::bindArguments(target, action, configPath, input, outputPath,
+      qssc::bindArguments(target, emitAction, configPath, input, outputPath,
                           arguments, treatWarningsAsErrors, enableInMemoryInput,
                           &inMemoryOutput, std::move(onDiagnostic));
 
