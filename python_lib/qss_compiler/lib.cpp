@@ -225,20 +225,20 @@ py::tuple py_compile_file(const std::string &inputFile,
 qssc::config::EmitAction parseEmitAction(const std::string &name) {
   if (name == "ast")
     return qssc::config::EmitAction::AST;
-  else if (name == "ast-pretty")
+  if (name == "ast-pretty")
     return qssc::config::EmitAction::ASTPretty;
-  else if (name == "mlir")
+  if (name == "mlir")
     return qssc::config::EmitAction::MLIR;
-  else if (name == "bytecode")
+  if (name == "bytecode")
     return qssc::config::EmitAction::Bytecode;
-  else if (name == "wmem")
+  if (name == "wmem")
     return qssc::config::EmitAction::WaveMem;
-  else if (name == "qem")
+  if (name == "qem")
     return qssc::config::EmitAction::QEM;
-  else if (name == "qeqem")
+  if (name == "qeqem")
     return qssc::config::EmitAction::QEQEM;
-  else
-    return qssc::config::EmitAction::None;
+
+  return qssc::config::EmitAction::None;
 }
 
 py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
