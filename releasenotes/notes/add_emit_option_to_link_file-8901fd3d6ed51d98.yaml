@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Add ``--emit`` option to ``link_file`` function to specify a file format
+    of target file to be linked.
