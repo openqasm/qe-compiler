@@ -96,7 +96,7 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
   std::string const sequenceName = quantumCircuitSequenceOp.getSymName().str();
   LLVM_DEBUG(llvm::dbgs() << "\nscheduling " << sequenceName << "\n");
 
-  int totalDurationOfQuantumCircuitNegative = 0;
+  int64_t totalDurationOfQuantumCircuitNegative = 0;
   mixFrameToNextAvailabilityMap.clear();
 
   // get the MLIR block of the quantum circuit
@@ -166,7 +166,7 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
   }
 
   // multiply by -1 so that quantum circuit duration becomes positive
-  const int totalDurationOfQuantumCircuit =
+  const int64_t totalDurationOfQuantumCircuit =
       -totalDurationOfQuantumCircuitNegative;
   LLVM_DEBUG(llvm::dbgs() << "\ttotal duration of quantum circuit "
                           << totalDurationOfQuantumCircuit << "\n");
