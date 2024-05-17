@@ -207,13 +207,15 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
           auto durOpConstantOp = callCircuitOp.getOperand(argNum)
                                      .getDefiningOp<mlir::quir::ConstantOp>();
           auto durOp = quir::getDuration(durOpConstantOp).get();
-          durValue = static_cast<uint>(durOp.getDuration().convertToDouble());
+          durValue =
+              static_cast<uint64_t>(durOp.getDuration().convertToDouble());
           assert(durOp.getType().dyn_cast<DurationType>().getUnits() ==
                      TimeUnits::dt &&
                  "this pass only accepts durations with dt unit");
         } else {
           auto durOp = quir::getDuration(delayOp).get();
-          durValue = static_cast<uint>(durOp.getDuration().convertToDouble());
+          durValue =
+              static_cast<uint64_t>(durOp.getDuration().convertToDouble());
           assert(durOp.getType().dyn_cast<DurationType>().getUnits() ==
                      TimeUnits::dt &&
                  "this pass only accepts durations with dt unit");
