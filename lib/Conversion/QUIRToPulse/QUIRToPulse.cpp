@@ -207,13 +207,15 @@ QUIRToPulsePass::convertCircuitToSequence(CallCircuitOp &callCircuitOp,
           auto durOpConstantOp = callCircuitOp.getOperand(argNum)
                                      .getDefiningOp<mlir::quir::ConstantOp>();
           auto durOp = quir::getDuration(durOpConstantOp).get();
-          durValue = static_cast<uint>(durOp.getDuration().convertToDouble());
+          durValue =
+              static_cast<uint64_t>(durOp.getDuration().convertToDouble());
           assert(durOp.getType().dyn_cast<DurationType>().getUnits() ==
                      TimeUnits::dt &&
                  "this pass only accepts durations with dt unit");
         } else {
           auto durOp = quir::getDuration(delayOp).get();
-          durValue = static_cast<uint>(durOp.getDuration().convertToDouble());
+          durValue =
+              static_cast<uint64_t>(durOp.getDuration().convertToDouble());
           assert(durOp.getType().dyn_cast<DurationType>().getUnits() ==
                      TimeUnits::dt &&
                  "this pass only accepts durations with dt unit");
@@ -540,6 +542,12 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
             paramCastOp->getLoc(), builder.getF64Type(), paramCastOp.getRes());
         angleCastedOp->moveAfter(paramCastOp);
         classicalQUIROpLocToConvertedPulseOpMap[angleLocHash] = angleCastedOp;
+      } else if (auto constOp =
+                     dyn_cast<arith::ConstantOp>(castOpArg.getDefiningOp())) {
+        // if cast from float64 then use directly
+        assert(constOp.getType() == builder.getF64Type() &&
+               "expected angle type to be float 64");
+        classicalQUIROpLocToConvertedPulseOpMap[angleLocHash] = constOp;
       } else
         llvm_unreachable("castOp arg unknown");
     } else
