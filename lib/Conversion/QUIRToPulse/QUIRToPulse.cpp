@@ -542,6 +542,12 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
             paramCastOp->getLoc(), builder.getF64Type(), paramCastOp.getRes());
         angleCastedOp->moveAfter(paramCastOp);
         classicalQUIROpLocToConvertedPulseOpMap[angleLocHash] = angleCastedOp;
+      } else if (auto constOp =
+                     dyn_cast<arith::ConstantOp>(castOpArg.getDefiningOp())) {
+        // if cast from float64 then use directly
+        assert(constOp.getType() == builder.getF64Type() &&
+               "expected angle type to be float 64");
+        classicalQUIROpLocToConvertedPulseOpMap[angleLocHash] = constOp;
       } else
         llvm_unreachable("castOp arg unknown");
     } else
