@@ -17,7 +17,7 @@
 module {
     // without nested pass manager should only find
     // alpha and beta
-    qcs.parameter_load "alpha" : !quir.angle<64> {initialValue = 1.000000e+00 :f64} 
+    qcs.parameter_load "alpha" : !quir.angle<64> {initialValue = 1.000000e+00 :f64}
     qcs.parameter_load "beta" : f64 {initialValue = 2.000000e+00 :f64}
     module @first {
         // nested test should find alpha and beta

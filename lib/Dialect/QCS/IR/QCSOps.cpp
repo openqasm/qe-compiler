@@ -29,7 +29,6 @@
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/Support/LogicalResult.h>
 
-
 #include <cassert>
 
 using namespace mlir;
