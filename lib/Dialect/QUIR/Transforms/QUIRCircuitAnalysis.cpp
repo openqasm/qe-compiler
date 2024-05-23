@@ -126,10 +126,8 @@ llvm::StringRef QUIRCircuitAnalysis::getParameterName(mlir::Value operand) {
           dyn_cast<qcs::ParameterLoadOp>(castOp.getArg().getDefiningOp());
   }
 
-  if (parameterLoad &&
-      parameterLoad->hasAttr(mlir::quir::getInputParameterAttrName())) {
-    parameterName = parameterLoad->getAttrOfType<StringAttr>(
-        mlir::quir::getInputParameterAttrName());
+  if (parameterLoad) {
+    parameterName = parameterLoad.getParameterName();
   }
   return parameterName;
 }

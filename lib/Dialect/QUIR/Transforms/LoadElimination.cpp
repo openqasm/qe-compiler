@@ -81,17 +81,6 @@ void LoadEliminationPass::runOnOperation() {
 
     auto varAssignmentOp = mlir::cast<mlir::oq3::VariableAssignOp>(assignment);
 
-    // Transfer marker for input parameters
-    // Note: for arith.constant operations, canonicalization will drop these
-    // attributes and we need to find another way (to be specific:
-    // canonicalization will move constants to the begin of ops like Functions
-    // by means of dialect->materializeConstant(...) that creates new
-    // constants). For now and for angle constants, this approach is good-enough
-    // while not satisfying.
-    if (decl.isInputVariable())
-      varAssignmentOp.getAssignedValue().getDefiningOp()->setAttr(
-          mlir::quir::getInputParameterAttrName(), decl.getNameAttr());
-
     for (auto *userOp : symbolUses) {
 
       if (!mlir::isa<mlir::oq3::VariableLoadOp>(userOp))
