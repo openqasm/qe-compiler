@@ -21,7 +21,6 @@
 #include "Dialect/QUIR/Transforms/LoadElimination.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/IR/Dominance.h"
 #include "mlir/IR/SymbolTable.h"

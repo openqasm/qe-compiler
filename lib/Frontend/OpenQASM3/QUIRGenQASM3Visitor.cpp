@@ -1168,10 +1168,10 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
       bool genParameter = true;
       if (!enableParameters) {
         if (!enableParametersWarningEmitted) {
-        reportError(node, mlir::DiagnosticSeverity::Warning)
-            << "Input parameter " << idNode->GetName()
-            << " warning. Parameters are not enabled. Enable with "
-               "--enable-parameters.";
+          reportError(node, mlir::DiagnosticSeverity::Warning)
+              << "Input parameter " << idNode->GetName()
+              << " warning. Parameters are not enabled. Enable with "
+                 "--enable-parameters.";
           enableParametersWarningEmitted = true;
         }
         genParameter = false;
@@ -1184,8 +1184,8 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
       }
 
       if (genParameter) {
-        auto load = varHandler.generateParameterLoad(
-            loc, idNode->GetName(), val);
+        auto load =
+            varHandler.generateParameterLoad(loc, idNode->GetName(), val);
         varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
         genVariableWithVal = false;
       }

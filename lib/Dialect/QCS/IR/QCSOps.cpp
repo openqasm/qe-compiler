@@ -21,7 +21,6 @@
 #include "Dialect/QCS/IR/QCSOps.h"
 
 #include "Dialect/QCS/IR/QCSTypes.h"
-#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -30,7 +29,6 @@
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/Support/LogicalResult.h>
 
-#include "llvm/ADT/StringMap.h"
 
 #include <cassert>
 
@@ -109,9 +107,8 @@ ParameterType ParameterLoadOp::getInitialValue() {
   double retVal = 0.0;
   if (op->hasAttr("initial_value")) {
     auto initAttr = op->getAttr("initial_value").dyn_cast<FloatAttr>();
-    if (initAttr) {
+    if (initAttr)
       retVal = initAttr.getValue().convertToDouble();
-    }
   }
   return retVal;
 }

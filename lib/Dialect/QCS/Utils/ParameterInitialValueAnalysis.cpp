@@ -19,7 +19,6 @@
 #include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -64,7 +63,8 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
           if (!parameterLoadOp)
             continue;
 
-          double initial_value = std::get<double>(parameterLoadOp.getInitialValue());
+          double initial_value =
+              std::get<double>(parameterLoadOp.getInitialValue());
           initial_values_[parameterLoadOp.getParameterName()] = initial_value;
           foundParameters = true;
         }

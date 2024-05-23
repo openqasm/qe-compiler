@@ -43,8 +43,7 @@ using namespace mlir;
 
 namespace mlir::quir {
 
-double
-parameterValToDouble(mlir::qcs::ParameterLoadOp defOp) {
+double parameterValToDouble(mlir::qcs::ParameterLoadOp defOp) {
   return std::get<double>(defOp.getInitialValue());
 }
 
@@ -97,8 +96,7 @@ angleValToDouble(mlir::Value inVal,
   return llvm::createStringError(llvm::inconvertibleErrorCode(), errorStr);
 } // angleValToDouble
 
-double QUIRCircuitAnalysis::getAngleValue(
-    mlir::Value operand) {
+double QUIRCircuitAnalysis::getAngleValue(mlir::Value operand) {
   auto valueOrError = angleValToDouble(operand);
   if (auto err = valueOrError.takeError()) {
     operand.getDefiningOp()->emitOpError() << toString(std::move(err)) + "\n";
@@ -119,9 +117,8 @@ llvm::StringRef QUIRCircuitAnalysis::getParameterName(mlir::Value operand) {
           dyn_cast<qcs::ParameterLoadOp>(castOp.getArg().getDefiningOp());
   }
 
-  if (parameterLoad) {
+  if (parameterLoad)
     parameterName = parameterLoad.getParameterName();
-  }
   return parameterName;
 }
 
