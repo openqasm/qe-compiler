@@ -96,11 +96,6 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
 // ParameterLoadOp
 //===----------------------------------------------------------------------===//
 
-// LogicalResult
-// ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-//   return verifyQCSParameterOpSymbolUses(symbolTable, getOperation(), true);
-// }
-
 // Returns the float value from the initial value of this parameter
 ParameterType ParameterLoadOp::getInitialValue() {
   auto *op = getOperation();
