@@ -1167,13 +1167,19 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
     if (node->GetModifierType() == QASM::ASTTypeInputModifier) {
       bool genParameter = true;
       if (!enableParameters) {
+        if (!enableParametersWarningEmitted) {
         reportError(node, mlir::DiagnosticSeverity::Warning)
             << "Input parameter " << idNode->GetName()
             << " warning. Parameters are not enabled. Enable with "
                "--enable-parameters.";
+          enableParametersWarningEmitted = true;
+        }
         genParameter = false;
       } else if (!(variableType.isa<mlir::quir::AngleType>() ||
                    variableType.isa<mlir::Float64Type>())) {
+        reportError(node, mlir::DiagnosticSeverity::Error)
+            << "Input parameter " << idNode->GetName()
+            << " type error. Input parameters must be angle or float[64].";
         genParameter = false;
       }
 

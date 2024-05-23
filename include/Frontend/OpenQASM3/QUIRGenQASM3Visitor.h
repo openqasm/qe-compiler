@@ -319,6 +319,8 @@ private:
   ExpressionValueType getValueFromLiteral(const QASM::ASTMPDecimalNode *);
 
   mlir::Type getQUIRTypeFromDeclaration(const QASM::ASTDeclarationNode *);
+
+  bool enableParametersWarningEmitted = false;
 };
 
 } // namespace qssc::frontend::openqasm3
