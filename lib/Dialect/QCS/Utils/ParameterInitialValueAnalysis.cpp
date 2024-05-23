@@ -63,9 +63,9 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
           if (!parameterLoadOp)
             continue;
 
-          double initial_value =
+          double initialValue =
               std::get<double>(parameterLoadOp.getInitialValue());
-          initial_values_[parameterLoadOp.getParameterName()] = initial_value;
+          initialValues_[parameterLoadOp.getParameterName()] = initialValue;
           foundParameters = true;
         }
     if (!foundParameters) {
@@ -80,9 +80,9 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
 
   // debugging / test print out
   if (printAnalysisEntries) {
-    for (auto &initial_value : initial_values_) {
-      llvm::outs() << initial_value.first() << " = "
-                   << std::get<double>(initial_value.second) << "\n";
+    for (auto &initialValue : initialValues_) {
+      llvm::outs() << initialValue.first() << " = "
+                   << std::get<double>(initialValue.second) << "\n";
     }
   }
 }

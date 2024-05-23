@@ -142,7 +142,7 @@ QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
 
     mlir::FloatAttr const floatAttr =
         getClassicalBuilder().getF64FloatAttr(initialValue);
-    op->setAttr("initial_value", floatAttr);
+    op->setAttr("initialValue", floatAttr);
     return op;
   }
 
@@ -157,7 +157,7 @@ QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
       initialValue = constAttr.getValueAsDouble();
     mlir::FloatAttr const floatAttr =
         getClassicalBuilder().getF64FloatAttr(initialValue);
-    loadOp->setAttr("initial_value", floatAttr);
+    loadOp->setAttr("initialValue", floatAttr);
     return loadOp;
   }
 
