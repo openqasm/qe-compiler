@@ -1185,7 +1185,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
 
       if (genParameter) {
         auto load = varHandler.generateParameterLoad(
-            loc, "input_" + idNode->GetName(), val);
+            loc, idNode->GetName(), val);
         varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
         genVariableWithVal = false;
       }

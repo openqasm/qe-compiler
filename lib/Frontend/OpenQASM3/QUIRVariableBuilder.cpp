@@ -128,9 +128,15 @@ QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
         variableName.str());
 
     double initialValue = 0.0;
-    auto constAttr = constantOp.getValue().dyn_cast<mlir::FloatAttr>();
-    if (constAttr) {
-      initialValue = constAttr.getValueAsDouble();
+    
+    auto constFloatAttr = constantOp.getValue().dyn_cast<mlir::FloatAttr>();
+    if (constFloatAttr) {
+      initialValue = constFloatAttr.getValueAsDouble();
+    } else {
+      auto constAngleAttr = constantOp.getValue().dyn_cast<mlir::quir::AngleAttr>();
+      if (constAngleAttr) {
+        initialValue = constAngleAttr.getValue().convertToDouble();
+      }
     }
 
     mlir::FloatAttr floatAttr = getClassicalBuilder().getF64FloatAttr(initialValue);
