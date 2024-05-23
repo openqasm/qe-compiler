@@ -23,13 +23,10 @@
 #include "Dialect/QCS/IR/QCSTypes.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
-#include "mlir/IR/BuiltinOps.h"
-#include "mlir/IR/SymbolTable.h"
 #include <mlir/IR/OpImplementation.h>
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/Support/LogicalResult.h>
 
-#include <cassert>
 
 using namespace mlir;
 using namespace mlir::qcs;
