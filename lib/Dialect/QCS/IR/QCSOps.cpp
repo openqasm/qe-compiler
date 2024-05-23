@@ -106,53 +106,6 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
 // Returns the float value from the initial value of this parameter
 ParameterType ParameterLoadOp::getInitialValue() {
   auto *op = getOperation();
-#if 0
-  auto paramRefAttr =
-      op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
-  auto declOp =
-      mlir::SymbolTable::lookupNearestSymbolFrom<mlir::qcs::DeclareParameterOp>(
-          op, paramRefAttr);
-
-  // check higher level modules
-
-  auto currentScopeOp = op->getParentOfType<mlir::ModuleOp>();
-  do {
-    declOp = mlir::SymbolTable::lookupNearestSymbolFrom<
-        mlir::qcs::DeclareParameterOp>(currentScopeOp, paramRefAttr);
-    if (declOp)
-      break;
-    currentScopeOp = currentScopeOp->getParentOfType<mlir::ModuleOp>();
-    assert(currentScopeOp);
-  } while (!declOp);
-
-  assert(declOp);
-
-  double retVal;
-
-  auto iniValue = declOp.getInitialValue();
-  if (iniValue.has_value()) {
-    auto angleAttr = iniValue.value().dyn_cast<mlir::quir::AngleAttr>();
-
-    auto floatAttr = iniValue.value().dyn_cast<FloatAttr>();
-
-    if (!(angleAttr || floatAttr)) {
-      op->emitError(
-          "Parameters are currently limited to angles or float[64] only.");
-      return 0.0;
-    }
-
-    if (angleAttr)
-      retVal = angleAttr.getValue().convertToDouble();
-
-    if (floatAttr)
-      retVal = floatAttr.getValue().convertToDouble();
-
-    return retVal;
-  }
-
-  op->emitError("Does not have initial value set.");
-  return 0.0;
-#else 
   double retVal = 0.0;
   if (op->hasAttr("initial_value")) {
     auto initAttr = op->getAttr("initial_value").dyn_cast<FloatAttr>();
@@ -161,31 +114,6 @@ ParameterType ParameterLoadOp::getInitialValue() {
     }
   }
   return retVal;
-#endif
-}
-
-// Returns the float value from the initial value of this parameter
-// this version uses a precomputed map of parameter_name to the initial_value
-// in order to avoid slow SymbolTable lookups
-ParameterType ParameterLoadOp::getInitialValue(
-    llvm::StringMap<ParameterType> &declareParametersMap) {
-#if 0
-  auto *op = getOperation();
-  auto paramRefAttr =
-      op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
-
-  auto paramOpEntry = declareParametersMap.find(paramRefAttr.getValue());
-
-  if (paramOpEntry == declareParametersMap.end()) {
-    op->emitError("Could not find declare parameter op " +
-                  paramRefAttr.getValue().str());
-    return 0.0;
-  }
-
-  return paramOpEntry->second;
-#else 
-  return getInitialValue();
-#endif
 }
 
 //===----------------------------------------------------------------------===//

@@ -60,30 +60,12 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
     for (auto &region : moduleOp->getRegions())
       for (auto &block : region.getBlocks())
         for (auto &op : block.getOperations()) {
-          auto declareParameterOp = dyn_cast<DeclareParameterOp>(op);
-          if (!declareParameterOp)
+          auto parameterLoadOp = dyn_cast<ParameterLoadOp>(op);
+          if (!parameterLoadOp)
             continue;
 
-          double initial_value = 0.0;
-          if (declareParameterOp.getInitialValue().has_value()) {
-            auto angleAttr = declareParameterOp.getInitialValue()
-                                 .value()
-                                 .dyn_cast<mlir::quir::AngleAttr>();
-            auto floatAttr = declareParameterOp.getInitialValue()
-                                 .value()
-                                 .dyn_cast<FloatAttr>();
-            if (!(angleAttr || floatAttr))
-              declareParameterOp.emitError(
-                  "Parameters are currently limited to "
-                  "angles or float[64] only.");
-
-            if (angleAttr)
-              initial_value = angleAttr.getValue().convertToDouble();
-
-            if (floatAttr)
-              initial_value = floatAttr.getValue().convertToDouble();
-          }
-          initial_values_[declareParameterOp.getSymName()] = initial_value;
+          double initial_value = std::get<double>(parameterLoadOp.getInitialValue());
+          initial_values_[parameterLoadOp.getParameterName()] = initial_value;
           foundParameters = true;
         }
     if (!foundParameters) {

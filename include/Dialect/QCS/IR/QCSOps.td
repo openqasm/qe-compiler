@@ -287,10 +287,6 @@ def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
     let results = (outs AnyClassical:$res);
 
     let extraClassDeclaration = [{
-        // Return the initial value - using ParameterInitialValueAnalysis
-        ParameterType getInitialValue(llvm::StringMap<ParameterType> &parameterNames);
-
-        // Return the initial value - slower SymbolTable version
         ParameterType getInitialValue();
     }];
 

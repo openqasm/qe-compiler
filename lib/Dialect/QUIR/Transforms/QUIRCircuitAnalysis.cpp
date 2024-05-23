@@ -17,7 +17,6 @@
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 #include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
@@ -45,16 +44,12 @@ using namespace mlir;
 namespace mlir::quir {
 
 double
-parameterValToDouble(mlir::qcs::ParameterLoadOp defOp,
-                     mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis) {
-  assert(nameAnalysis &&
-         "A valid ParameterInitialValueAnalysis pointer is required");
-  return std::get<double>(defOp.getInitialValue(nameAnalysis->getNames()));
+parameterValToDouble(mlir::qcs::ParameterLoadOp defOp) {
+  return std::get<double>(defOp.getInitialValue());
 }
 
 llvm::Expected<double>
 angleValToDouble(mlir::Value inVal,
-                 mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis,
                  mlir::quir::QUIRCircuitAnalysis *circuitAnalysis) {
 
   llvm::StringRef errorStr;
@@ -63,7 +58,7 @@ angleValToDouble(mlir::Value inVal,
     return defOp.getAngleValueFromConstant().convertToDouble();
 
   if (auto defOp = inVal.getDefiningOp<mlir::qcs::ParameterLoadOp>())
-    return parameterValToDouble(defOp, nameAnalysis);
+    return parameterValToDouble(defOp);
 
   if (auto blockArg = inVal.dyn_cast<mlir::BlockArgument>()) {
     auto circuitOp = mlir::dyn_cast<mlir::quir::CircuitOp>(
@@ -85,7 +80,7 @@ angleValToDouble(mlir::Value inVal,
   if (auto castOp = inVal.getDefiningOp<mlir::oq3::CastOp>()) {
     auto defOp = castOp.getArg().getDefiningOp<mlir::qcs::ParameterLoadOp>();
     if (defOp)
-      return parameterValToDouble(defOp, nameAnalysis);
+      return parameterValToDouble(defOp);
     if (auto constOp =
             castOp.getArg().getDefiningOp<mlir::arith::ConstantOp>()) {
       if (auto angleAttr = constOp.getValue().dyn_cast<mlir::quir::AngleAttr>())
@@ -103,10 +98,8 @@ angleValToDouble(mlir::Value inVal,
 } // angleValToDouble
 
 double QUIRCircuitAnalysis::getAngleValue(
-    mlir::Value operand,
-    mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis) {
-  assert(nameAnalysis && "valid nameAnalysis pointer required");
-  auto valueOrError = angleValToDouble(operand, nameAnalysis);
+    mlir::Value operand) {
+  auto valueOrError = angleValToDouble(operand);
   if (auto err = valueOrError.takeError()) {
     operand.getDefiningOp()->emitOpError() << toString(std::move(err)) + "\n";
     assert(false && "unhandled value in angleValToDouble");
@@ -147,23 +140,6 @@ QUIRCircuitAnalysis::QUIRCircuitAnalysis(mlir::Operation *moduleOp,
   if (not invalid_)
     return;
 
-  bool runGetAnalysis = true;
-
-  mlir::qcs::ParameterInitialValueAnalysis *nameAnalysis;
-  auto topLevelModuleOp = moduleOp->getParentOfType<ModuleOp>();
-  if (topLevelModuleOp) {
-    auto nameAnalysisOptional =
-        am.getCachedParentAnalysis<mlir::qcs::ParameterInitialValueAnalysis>(
-            moduleOp->getParentOfType<ModuleOp>());
-    if (nameAnalysisOptional.has_value()) {
-      nameAnalysis = &nameAnalysisOptional.value().get();
-      runGetAnalysis = false;
-    }
-  }
-
-  if (runGetAnalysis)
-    nameAnalysis = &am.getAnalysis<mlir::qcs::ParameterInitialValueAnalysis>();
-
   std::unordered_map<mlir::Operation *, std::map<llvm::StringRef, Operation *>>
       circuitOps;
 
@@ -196,7 +172,7 @@ QUIRCircuitAnalysis::QUIRCircuitAnalysis(mlir::Operation *moduleOp,
       // cache angle values and parameter names
       if (auto angType = operand.getType().dyn_cast<quir::AngleType>()) {
 
-        value = getAngleValue(operand, nameAnalysis);
+        value = getAngleValue(operand);
         parameterName = getParameterName(operand);
         circuitOperands[parentModuleOp][circuitOp][ii] = {value, parameterName,
                                                           duration};
@@ -216,7 +192,7 @@ QUIRCircuitAnalysis::QUIRCircuitAnalysis(mlir::Operation *moduleOp,
 
 void QUIRCircuitAnalysisPass::runOnOperation() {
   mlir::Pass::getAnalysis<QUIRCircuitAnalysis>();
-} // ParameterInitialValueAnalysisPass::runOnOperation()
+}
 
 llvm::StringRef QUIRCircuitAnalysisPass::getArgument() const {
   return "quir-circuit-analysis";
