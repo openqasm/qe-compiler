@@ -63,7 +63,7 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
           if (!parameterLoadOp)
             continue;
 
-          double initialValue =
+          const double initialValue =
               std::get<double>(parameterLoadOp.getInitialValue());
           initialValues_[parameterLoadOp.getParameterName()] = initialValue;
           foundParameters = true;
