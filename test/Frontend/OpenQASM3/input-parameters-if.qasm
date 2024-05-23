@@ -50,7 +50,7 @@ is_excited = measure $2;
 // CHECK: [[QUBIT2:%.*]] = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
 // CHECK: [[QUBIT3:%.*]] = quir.declare_qubit {id = 3 : i32} : !quir.qubit<1>
 
-// CHECK: [[PARAM:%.*]] = qcs.parameter_load "input_theta" : !quir.angle<64> {initial_value = 0.000000e+00 : f64}
+// CHECK: [[PARAM:%.*]] = qcs.parameter_load "theta" : !quir.angle<64> {initial_value = 3.141000e+00 : f64}
 // CHECK: oq3.variable_assign @theta : !quir.angle<64> = [[PARAM]]
 
 // CHECK: [[EXCITED:%.*]] = oq3.variable_load @is_excited : !quir.cbit<1>

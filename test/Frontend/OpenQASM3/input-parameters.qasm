@@ -65,9 +65,9 @@ c = measure $0;
 // CHECK: %0 = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // CHECK: %1 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
 
-// CHECK: %2 = qcs.parameter_load "input_theta" : !quir.angle<64> {initial_value = 0.000000e+00 : f64}
+// CHECK: %2 = qcs.parameter_load "theta" : !quir.angle<64> {initial_value = 3.141000e+00 : f64}
 // CHECK: oq3.variable_assign @theta : !quir.angle<64> = %2
-// CHECK: %3 = qcs.parameter_load "input_theta2" : f64 {initial_value = 1.560000e+00 : f64}
+// CHECK: %3 = qcs.parameter_load "theta2" : f64 {initial_value = 1.560000e+00 : f64}
 // CHECK: oq3.variable_assign @theta2 : f64 = %3
 // CHECK-XX: quir.reset %0 : !quir.qubit<1>
 // CHECK-NOT: oq3.variable_assign @theta : !quir.angle<64> = %angle
