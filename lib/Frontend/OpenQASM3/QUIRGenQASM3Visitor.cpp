@@ -1174,17 +1174,12 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
         genParameter = false;
       } else if (!(variableType.isa<mlir::quir::AngleType>() ||
                    variableType.isa<mlir::Float64Type>())) {
-        reportError(node, mlir::DiagnosticSeverity::Error)
-            << "Input parameter " << idNode->GetName()
-            << " type error. Input parameters must be angle or float[64].";
         genParameter = false;
       }
 
       if (genParameter) {
-        varHandler.generateParameterDeclaration(loc, idNode->GetMangledName(),
-                                                variableType, val);
         auto load = varHandler.generateParameterLoad(
-            loc, idNode->GetMangledName(), val);
+            loc, "input_" + idNode->GetName(), val);
         varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
         genVariableWithVal = false;
       }

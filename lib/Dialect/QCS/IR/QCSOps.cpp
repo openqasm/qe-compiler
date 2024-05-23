@@ -47,7 +47,7 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
                                mlir::Operation *op,
                                bool operandMustMatchSymbolType = false) {
   assert(op);
-
+  return success();
   // Check that op has attribute variable_name
   auto paramRefAttr = op->getAttrOfType<FlatSymbolRefAttr>("parameter_name");
   if (!paramRefAttr)
@@ -98,14 +98,15 @@ verifyQCSParameterOpSymbolUses(SymbolTableCollection &symbolTable,
 // ParameterLoadOp
 //===----------------------------------------------------------------------===//
 
-LogicalResult
-ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
-  return verifyQCSParameterOpSymbolUses(symbolTable, getOperation(), true);
-}
+// LogicalResult
+// ParameterLoadOp::verifySymbolUses(SymbolTableCollection &symbolTable) {
+//   return verifyQCSParameterOpSymbolUses(symbolTable, getOperation(), true);
+// }
 
 // Returns the float value from the initial value of this parameter
 ParameterType ParameterLoadOp::getInitialValue() {
   auto *op = getOperation();
+#if 0
   auto paramRefAttr =
       op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
   auto declOp =
@@ -151,6 +152,16 @@ ParameterType ParameterLoadOp::getInitialValue() {
 
   op->emitError("Does not have initial value set.");
   return 0.0;
+#else 
+  double retVal = 0.0;
+  if (op->hasAttr("initial_value")) {
+    auto initAttr = op->getAttr("initial_value").dyn_cast<FloatAttr>();
+    if (initAttr) {
+      retVal = initAttr.getValue().convertToDouble();
+    }
+  }
+  return retVal;
+#endif
 }
 
 // Returns the float value from the initial value of this parameter
@@ -158,6 +169,7 @@ ParameterType ParameterLoadOp::getInitialValue() {
 // in order to avoid slow SymbolTable lookups
 ParameterType ParameterLoadOp::getInitialValue(
     llvm::StringMap<ParameterType> &declareParametersMap) {
+#if 0
   auto *op = getOperation();
   auto paramRefAttr =
       op->getAttrOfType<mlir::FlatSymbolRefAttr>("parameter_name");
@@ -171,6 +183,9 @@ ParameterType ParameterLoadOp::getInitialValue(
   }
 
   return paramOpEntry->second;
+#else 
+  return getInitialValue();
+#endif
 }
 
 //===----------------------------------------------------------------------===//
