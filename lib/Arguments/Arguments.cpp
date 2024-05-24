@@ -208,7 +208,6 @@ bindArguments(llvm::StringRef moduleInput, llvm::StringRef payloadOutputPath,
   //    payload was on disk originally use writeBack
   if (auto err = payload->writeBack())
     return err;
-
   if (enableInMemoryOutput || enableInMemoryInput) {
     if (auto err = payload->writeString(inMemoryOutput))
       return err;
@@ -221,6 +220,7 @@ bindArguments(llvm::StringRef moduleInput, llvm::StringRef payloadOutputPath,
       *inMemoryOutput = "";
     }
   }
+
   return llvm::Error::success();
 }
 
