@@ -17,12 +17,12 @@
 module {
     // without nested pass manager should only find
     // alpha and beta
-    qcs.declare_parameter @alpha : !quir.angle<64> = #quir.angle<1.000000e+00> : !quir.angle<64>
-    qcs.declare_parameter @beta : f64 = 2.000000e+00 : f64
+    qcs.parameter_load "alpha" : !quir.angle<64> {initialValue = 1.000000e+00 :f64}
+    qcs.parameter_load "beta" : f64 {initialValue = 2.000000e+00 :f64}
     module @first {
         // nested test should find alpha and beta
-        qcs.declare_parameter @theta : !quir.angle<64> = #quir.angle<3.140000e+00> : !quir.angle<64>
-        qcs.declare_parameter @phi : f64 = 1.500000e+00 : f64
+        qcs.parameter_load "theta" : !quir.angle<64> {initialValue = 3.140000e+00 :f64}
+        qcs.parameter_load "phi" : f64 {initialValue = 1.500000e+00 :f64}
     }
     module @second {
         // test module without declare_parameter

@@ -19,7 +19,6 @@
 #include "Dialect/QCS/Utils/ParameterInitialValueAnalysis.h"
 
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinOps.h"
@@ -60,30 +59,13 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
     for (auto &region : moduleOp->getRegions())
       for (auto &block : region.getBlocks())
         for (auto &op : block.getOperations()) {
-          auto declareParameterOp = dyn_cast<DeclareParameterOp>(op);
-          if (!declareParameterOp)
+          auto parameterLoadOp = dyn_cast<ParameterLoadOp>(op);
+          if (!parameterLoadOp)
             continue;
 
-          double initial_value = 0.0;
-          if (declareParameterOp.getInitialValue().has_value()) {
-            auto angleAttr = declareParameterOp.getInitialValue()
-                                 .value()
-                                 .dyn_cast<mlir::quir::AngleAttr>();
-            auto floatAttr = declareParameterOp.getInitialValue()
-                                 .value()
-                                 .dyn_cast<FloatAttr>();
-            if (!(angleAttr || floatAttr))
-              declareParameterOp.emitError(
-                  "Parameters are currently limited to "
-                  "angles or float[64] only.");
-
-            if (angleAttr)
-              initial_value = angleAttr.getValue().convertToDouble();
-
-            if (floatAttr)
-              initial_value = floatAttr.getValue().convertToDouble();
-          }
-          initial_values_[declareParameterOp.getSymName()] = initial_value;
+          const double initialValue =
+              std::get<double>(parameterLoadOp.getInitialValue());
+          initialValues_[parameterLoadOp.getParameterName()] = initialValue;
           foundParameters = true;
         }
     if (!foundParameters) {
@@ -98,9 +80,9 @@ ParameterInitialValueAnalysis::ParameterInitialValueAnalysis(
 
   // debugging / test print out
   if (printAnalysisEntries) {
-    for (auto &initial_value : initial_values_) {
-      llvm::outs() << initial_value.first() << " = "
-                   << std::get<double>(initial_value.second) << "\n";
+    for (auto &initialValue : initialValues_) {
+      llvm::outs() << initialValue.first() << " = "
+                   << std::get<double>(initialValue.second) << "\n";
     }
   }
 }

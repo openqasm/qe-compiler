@@ -21,7 +21,6 @@
 #include "Dialect/QUIR/Transforms/LoadElimination.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
-#include "Dialect/QUIR/IR/QUIRAttributes.h"
 
 #include "mlir/IR/Dominance.h"
 #include "mlir/IR/SymbolTable.h"
@@ -80,17 +79,6 @@ void LoadEliminationPass::runOnOperation() {
       return WalkResult::advance();
 
     auto varAssignmentOp = mlir::cast<mlir::oq3::VariableAssignOp>(assignment);
-
-    // Transfer marker for input parameters
-    // Note: for arith.constant operations, canonicalization will drop these
-    // attributes and we need to find another way (to be specific:
-    // canonicalization will move constants to the begin of ops like Functions
-    // by means of dialect->materializeConstant(...) that creates new
-    // constants). For now and for angle constants, this approach is good-enough
-    // while not satisfying.
-    if (decl.isInputVariable())
-      varAssignmentOp.getAssignedValue().getDefiningOp()->setAttr(
-          mlir::quir::getInputParameterAttrName(), decl.getNameAttr());
 
     for (auto *userOp : symbolUses) {
 
