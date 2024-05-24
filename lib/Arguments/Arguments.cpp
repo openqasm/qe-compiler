@@ -84,7 +84,10 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
       }));
 
   uint numThreads = 0;
-  for (const auto &[binaryName, patchPoints] : sig.patchPointsByBinary) {
+  for (const auto &entry : sig.patchPointsByBinary) {
+
+    const auto &binaryName = entry.first;
+    const auto &patchPoints = entry.second;
 
     if (patchPoints.size() == 0) // no patch points
       continue;
