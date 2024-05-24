@@ -228,7 +228,7 @@ py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
                        const std::unordered_map<std::string, double> &arguments,
                        bool treatWarningsAsErrors,
                        qssc::DiagnosticCallback onDiagnostic,
-                       int numberOfThreads = 10) {
+                       int numberOfThreads = -1) {
 
   std::string inMemoryOutput("");
 
