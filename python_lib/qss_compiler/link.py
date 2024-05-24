@@ -53,9 +53,9 @@ class LinkOptions:
     """Treat link warnings as errors"""
     on_diagnostic: Optional[Callable[[Diagnostic], Any]] = None
     """Optional callback for processing diagnostic messages from the linker."""
-    number_of_threads: int = 10
+    number_of_threads: int = -1
     """Number of threads to use in linking
-          -1 = unlimited,
+          -1 = number of cpus reported,
           0 disabled,
           > 1 = limit,
           defaults = -1
