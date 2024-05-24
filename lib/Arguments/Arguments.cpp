@@ -28,13 +28,17 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <deque>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <sys/types.h>
 #include <system_error>
+#include <thread>
 #include <utility>
+#include <vector>
 
 namespace qssc::arguments {
 
@@ -44,8 +48,26 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
                              Signature &sig, ArgumentSource const &arguments,
                              bool treatWarningsAsErrors,
                              BindArgumentsImplementationFactory &factory,
-                             const OptDiagnosticCallback &onDiagnostic) {
+                             const OptDiagnosticCallback &onDiagnostic,
+                             int numberOfThreads) {
 
+  std::deque<std::thread> threads;
+  std::vector<std::shared_ptr<BindArgumentsImplementation>> binaries;
+
+  bool const enableThreads = (numberOfThreads != 0);
+  uint MAX_NUM_THREADS = (numberOfThreads > 0)
+                             ? numberOfThreads
+                             : std::thread::hardware_concurrency();
+
+  // if failed to detect number of CPUs default to 10
+  if (MAX_NUM_THREADS == 0)
+    MAX_NUM_THREADS = 10;
+
+  std::mutex errorMutex;
+  bool errorSet = false;
+  llvm::Error firstError = llvm::Error::success();
+
+  uint numThreads = 0;
   for (const auto &[binaryName, patchPoints] : sig.patchPointsByBinary) {
 
     if (patchPoints.size() == 0) // no patch points
@@ -67,21 +89,58 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
         factory.create(binaryData, onDiagnostic));
     binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
-    for (auto const &patchPoint : patchPoints)
-      if (auto err = binary->patch(patchPoint, arguments))
-        return err;
+    if (enableThreads) {
+      // save shared point in vector to ensure lifetime exceeds the thread
+      binaries.emplace_back(binary);
+
+      numThreads++;
+      if (numThreads > MAX_NUM_THREADS) {
+        // wait for a thread to finish before starting another
+        auto &t = threads[0];
+        t.join();
+        threads.pop_front();
+      }
+      threads.emplace_back([&, binary] {
+        if (errorSet)
+          return;
+
+        for (auto const &patchPoint : patchPoints) {
+
+          auto err = binary->patch(patchPoint, arguments);
+          if (err && !errorSet) {
+            const std::lock_guard<std::mutex> lock(errorMutex);
+            firstError = std::move(err);
+            errorSet = true;
+          }
+        }
+      });
+    } else {
+      // processing patch points on main thread
+      for (auto const &patchPoint : patchPoints)
+        if (auto err = binary->patch(patchPoint, arguments))
+          return err;
+    }
+  }
+
+  if (enableThreads) {
+    for (auto &t : threads)
+      t.join();
+
+    binaries.clear();
+
+    if (errorSet)
+      return firstError;
   }
 
   return llvm::Error::success();
 }
 
-llvm::Error bindArguments(llvm::StringRef moduleInput,
-                          llvm::StringRef payloadOutputPath,
-                          ArgumentSource const &arguments,
-                          bool treatWarningsAsErrors, bool enableInMemoryInput,
-                          std::string *inMemoryOutput,
-                          BindArgumentsImplementationFactory &factory,
-                          const OptDiagnosticCallback &onDiagnostic) {
+llvm::Error
+bindArguments(llvm::StringRef moduleInput, llvm::StringRef payloadOutputPath,
+              ArgumentSource const &arguments, bool treatWarningsAsErrors,
+              bool enableInMemoryInput, std::string *inMemoryOutput,
+              BindArgumentsImplementationFactory &factory,
+              const OptDiagnosticCallback &onDiagnostic, int numberOfThreads) {
 
   bool const enableInMemoryOutput = payloadOutputPath == "";
 
@@ -134,7 +193,8 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
     return err;
 
   if (auto err = updateParameters(payload.get(), sigOrError.get(), arguments,
-                                  treatWarningsAsErrors, factory, onDiagnostic))
+                                  treatWarningsAsErrors, factory, onDiagnostic,
+                                  numberOfThreads))
     return err;
 
   // setup linked payload I/O
@@ -148,6 +208,7 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
   //    payload was on disk originally use writeBack
   if (auto err = payload->writeBack())
     return err;
+
   if (enableInMemoryOutput || enableInMemoryInput) {
     if (auto err = payload->writeString(inMemoryOutput))
       return err;
@@ -160,7 +221,6 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
       *inMemoryOutput = "";
     }
   }
-
   return llvm::Error::success();
 }
 

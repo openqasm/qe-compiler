@@ -53,6 +53,13 @@ class LinkOptions:
     """Treat link warnings as errors"""
     on_diagnostic: Optional[Callable[[Diagnostic], Any]] = None
     """Optional callback for processing diagnostic messages from the linker."""
+    number_of_threads: int = 10
+    """Number of threads to use in linking
+          -1 = unlimited,
+          0 disabled,
+          > 1 = limit,
+          defaults = -1
+    """
 
 
 def _prepare_link_options(link_options: Optional[LinkOptions] = None, **kwargs) -> LinkOptions:
@@ -133,6 +140,7 @@ def link_file(
             link_options.arguments,
             link_options.treat_warnings_as_errors,
             link_options.on_diagnostic,
+            link_options.number_of_threads,
         )
         if not success:
             exception_mapping = {

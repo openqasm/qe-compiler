@@ -811,7 +811,8 @@ bindArguments_(std::string_view target, qssc::config::EmitAction action,
                std::unordered_map<std::string, double> const &arguments,
                bool treatWarningsAsErrors, bool enableInMemoryInput,
                std::string *inMemoryOutput,
-               const qssc::OptDiagnosticCallback &onDiagnostic) {
+               const qssc::OptDiagnosticCallback &onDiagnostic,
+               int numberOfThreads) {
 
   MLIRContext context{};
 
@@ -850,7 +851,8 @@ bindArguments_(std::string_view target, qssc::config::EmitAction action,
       *factory.value();
   return qssc::arguments::bindArguments(
       moduleInput, payloadOutputPath, source, treatWarningsAsErrors,
-      enableInMemoryInput, inMemoryOutput, factoryRef, onDiagnostic);
+      enableInMemoryInput, inMemoryOutput, factoryRef, onDiagnostic,
+      numberOfThreads);
 }
 
 } // anonymous namespace
@@ -862,12 +864,12 @@ int qssc::bindArguments(
     std::unordered_map<std::string, double> const &arguments,
     bool treatWarningsAsErrors, bool enableInMemoryInput,
     std::string *inMemoryOutput,
-    const qssc::OptDiagnosticCallback &onDiagnostic) {
+    const qssc::OptDiagnosticCallback &onDiagnostic, int numberOfThreads) {
 
-  if (auto err =
-          bindArguments_(target, action, configPath, moduleInput,
-                         payloadOutputPath, arguments, treatWarningsAsErrors,
-                         enableInMemoryInput, inMemoryOutput, onDiagnostic)) {
+  if (auto err = bindArguments_(
+          target, action, configPath, moduleInput, payloadOutputPath, arguments,
+          treatWarningsAsErrors, enableInMemoryInput, inMemoryOutput,
+          onDiagnostic, numberOfThreads)) {
     llvm::logAllUnhandledErrors(std::move(err), llvm::errs());
     return 1;
   }
