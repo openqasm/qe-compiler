@@ -27,7 +27,6 @@
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/Support/LogicalResult.h>
 
-
 using namespace mlir;
 using namespace mlir::qcs;
 
