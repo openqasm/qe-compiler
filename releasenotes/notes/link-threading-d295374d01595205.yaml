@@ -2,4 +2,4 @@
 features:
   - |
     Adds `number_of_threads` parameter to qss_compiler.link_file
-    interface to control number of threads used during linking. 
+    interface to control number of threads used during linking.

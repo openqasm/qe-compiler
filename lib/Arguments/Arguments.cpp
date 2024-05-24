@@ -30,8 +30,11 @@
 
 #include <deque>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <sys/types.h>
@@ -67,6 +70,19 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
   bool errorSet = false;
   llvm::Error firstError = llvm::Error::success();
 
+  // the onDiagnastic method used to emit diagnostics to python
+  // is not thread safe
+  // setup of local callback to capture the highest level diagnostic
+  // and re-emit from the main thread if threading is being used
+  std::optional<qssc::Diagnostic> localDiagValue = std::nullopt;
+  std::optional<DiagnosticCallback> const localCallback =
+      std::optional(std::function([&](const Diagnostic &diag) {
+        if (!localDiagValue.has_value() ||
+            localDiagValue.value().severity < diag.severity) {
+          localDiagValue = diag;
+        }
+      }));
+
   uint numThreads = 0;
   for (const auto &[binaryName, patchPoints] : sig.patchPointsByBinary) {
 
@@ -85,8 +101,11 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
 
     auto &binaryData = binaryDataOrErr.get();
 
+    // onDiagnostic callback is not thread safe
+    auto localDiagnostic = (enableThreads) ? localCallback : onDiagnostic;
+
     auto binary = std::shared_ptr<BindArgumentsImplementation>(
-        factory.create(binaryData, onDiagnostic));
+        factory.create(binaryData, localDiagnostic));
     binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
     if (enableThreads) {
@@ -105,12 +124,12 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
           return;
 
         for (auto const &patchPoint : patchPoints) {
-
           auto err = binary->patch(patchPoint, arguments);
           if (err && !errorSet) {
             const std::lock_guard<std::mutex> lock(errorMutex);
             firstError = std::move(err);
             errorSet = true;
+            return;
           }
         }
       });
@@ -128,8 +147,21 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
 
     binaries.clear();
 
-    if (errorSet)
-      return firstError;
+    if (errorSet || localDiagValue.has_value()) {
+      // emit error or warning via onDiagnostic if
+      // one was set
+      auto *diagnosticCallback =
+          onDiagnostic.has_value() ? &onDiagnostic.value() : nullptr;
+      if (diagnosticCallback && localDiagValue.has_value())
+        (*diagnosticCallback)(localDiagValue.value());
+      // possibly return the error
+      auto minLevel =
+          (treatWarningsAsErrors) ? Severity::Info : Severity::Warning;
+      if (localDiagValue.has_value() &&
+          (localDiagValue.value().severity > minLevel)) {
+        return firstError;
+      }
+    }
   }
 
   return llvm::Error::success();
