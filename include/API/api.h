@@ -125,6 +125,11 @@ inline int asMainReturnCode(llvm::Error err) {
 /// @param treatWarningsAsErrors return errors in place of warnings
 /// @param diagnosticCb an optional callback that will receive emitted
 /// diagnostics
+/// @param numberOfThreads number of threads to use in binding
+///    -1 : number of cpus
+///    0
+///    > 0: limit
+///    defaults to -1
 /// @return 0 on success
 int bindArguments(std::string_view target, qssc::config::EmitAction action,
                   std::string_view configPath, std::string_view moduleInput,
@@ -132,7 +137,8 @@ int bindArguments(std::string_view target, qssc::config::EmitAction action,
                   std::unordered_map<std::string, double> const &arguments,
                   bool treatWarningsAsErrors, bool enableInMemoryInput,
                   std::string *inMemoryOutput,
-                  const OptDiagnosticCallback &onDiagnostic);
+                  const OptDiagnosticCallback &onDiagnostic,
+                  int numberOfThreads = -1);
 
 } // namespace qssc
 #endif // QSS_COMPILER_LIB_H
