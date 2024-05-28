@@ -28,13 +28,20 @@
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <deque>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <sys/types.h>
 #include <system_error>
+#include <thread>
 #include <utility>
+#include <vector>
 
 namespace qssc::arguments {
 
@@ -44,9 +51,43 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
                              Signature &sig, ArgumentSource const &arguments,
                              bool treatWarningsAsErrors,
                              BindArgumentsImplementationFactory &factory,
-                             const OptDiagnosticCallback &onDiagnostic) {
+                             const OptDiagnosticCallback &onDiagnostic,
+                             int numberOfThreads) {
 
-  for (const auto &[binaryName, patchPoints] : sig.patchPointsByBinary) {
+  std::deque<std::thread> threads;
+  std::vector<std::shared_ptr<BindArgumentsImplementation>> binaries;
+
+  bool const enableThreads = (numberOfThreads != 0);
+  uint MAX_NUM_THREADS = (numberOfThreads > 0)
+                             ? numberOfThreads
+                             : std::thread::hardware_concurrency();
+
+  // if failed to detect number of CPUs default to 10
+  if (MAX_NUM_THREADS == 0)
+    MAX_NUM_THREADS = 10;
+
+  std::mutex errorMutex;
+  bool errorSet = false;
+  llvm::Error firstError = llvm::Error::success();
+
+  // the onDiagnastic method used to emit diagnostics to python
+  // is not thread safe
+  // setup of local callback to capture the highest level diagnostic
+  // and re-emit from the main thread if threading is being used
+  std::optional<qssc::Diagnostic> localDiagValue = std::nullopt;
+  std::optional<DiagnosticCallback> const localCallback =
+      std::optional(std::function([&](const Diagnostic &diag) {
+        if (!localDiagValue.has_value() ||
+            localDiagValue.value().severity < diag.severity) {
+          localDiagValue = diag;
+        }
+      }));
+
+  uint numThreads = 0;
+  for (const auto &entry : sig.patchPointsByBinary) {
+
+    const auto &binaryName = entry.first;
+    const auto &patchPoints = entry.second;
 
     if (patchPoints.size() == 0) // no patch points
       continue;
@@ -63,25 +104,78 @@ llvm::Error updateParameters(qssc::payload::PatchablePayload *payload,
 
     auto &binaryData = binaryDataOrErr.get();
 
+    // onDiagnostic callback is not thread safe
+    auto localDiagnostic = (enableThreads) ? localCallback : onDiagnostic;
+
     auto binary = std::shared_ptr<BindArgumentsImplementation>(
-        factory.create(binaryData, onDiagnostic));
+        factory.create(binaryData, localDiagnostic));
     binary->setTreatWarningsAsErrors(treatWarningsAsErrors);
 
-    for (auto const &patchPoint : patchPoints)
-      if (auto err = binary->patch(patchPoint, arguments))
-        return err;
+    if (enableThreads) {
+      // save shared point in vector to ensure lifetime exceeds the thread
+      binaries.emplace_back(binary);
+
+      numThreads++;
+      if (numThreads > MAX_NUM_THREADS) {
+        // wait for a thread to finish before starting another
+        auto &t = threads[0];
+        t.join();
+        threads.pop_front();
+      }
+      threads.emplace_back([&, binary] {
+        if (errorSet)
+          return;
+
+        for (auto const &patchPoint : patchPoints) {
+          auto err = binary->patch(patchPoint, arguments);
+          if (err && !errorSet) {
+            const std::lock_guard<std::mutex> lock(errorMutex);
+            firstError = std::move(err);
+            errorSet = true;
+            return;
+          }
+        }
+      });
+    } else {
+      // processing patch points on main thread
+      for (auto const &patchPoint : patchPoints)
+        if (auto err = binary->patch(patchPoint, arguments))
+          return err;
+    }
+  }
+
+  if (enableThreads) {
+    for (auto &t : threads)
+      t.join();
+
+    binaries.clear();
+
+    if (errorSet || localDiagValue.has_value()) {
+      // emit error or warning via onDiagnostic if
+      // one was set
+      auto *diagnosticCallback =
+          onDiagnostic.has_value() ? &onDiagnostic.value() : nullptr;
+      if (diagnosticCallback && localDiagValue.has_value())
+        (*diagnosticCallback)(localDiagValue.value());
+      // possibly return the error
+      auto minLevel =
+          (treatWarningsAsErrors) ? Severity::Info : Severity::Warning;
+      if (localDiagValue.has_value() &&
+          (localDiagValue.value().severity > minLevel)) {
+        return firstError;
+      }
+    }
   }
 
   return llvm::Error::success();
 }
 
-llvm::Error bindArguments(llvm::StringRef moduleInput,
-                          llvm::StringRef payloadOutputPath,
-                          ArgumentSource const &arguments,
-                          bool treatWarningsAsErrors, bool enableInMemoryInput,
-                          std::string *inMemoryOutput,
-                          BindArgumentsImplementationFactory &factory,
-                          const OptDiagnosticCallback &onDiagnostic) {
+llvm::Error
+bindArguments(llvm::StringRef moduleInput, llvm::StringRef payloadOutputPath,
+              ArgumentSource const &arguments, bool treatWarningsAsErrors,
+              bool enableInMemoryInput, std::string *inMemoryOutput,
+              BindArgumentsImplementationFactory &factory,
+              const OptDiagnosticCallback &onDiagnostic, int numberOfThreads) {
 
   bool const enableInMemoryOutput = payloadOutputPath == "";
 
@@ -134,7 +228,8 @@ llvm::Error bindArguments(llvm::StringRef moduleInput,
     return err;
 
   if (auto err = updateParameters(payload.get(), sigOrError.get(), arguments,
-                                  treatWarningsAsErrors, factory, onDiagnostic))
+                                  treatWarningsAsErrors, factory, onDiagnostic,
+                                  numberOfThreads))
     return err;
 
   // setup linked payload I/O
