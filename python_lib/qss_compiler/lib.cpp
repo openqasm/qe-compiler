@@ -227,14 +227,15 @@ py::tuple py_link_file(const std::string &input, const bool enableInMemoryInput,
                        const std::string &configPath,
                        const std::unordered_map<std::string, double> &arguments,
                        bool treatWarningsAsErrors,
-                       qssc::DiagnosticCallback onDiagnostic) {
+                       qssc::DiagnosticCallback onDiagnostic,
+                       int numberOfThreads = -1) {
 
   std::string inMemoryOutput("");
 
   int const status = qssc::bindArguments(
       target, qssc::config::EmitAction::QEM, configPath, input, outputPath,
       arguments, treatWarningsAsErrors, enableInMemoryInput, &inMemoryOutput,
-      std::move(onDiagnostic));
+      std::move(onDiagnostic), numberOfThreads);
 
   bool const success = status == 0;
 #ifndef NDEBUG
