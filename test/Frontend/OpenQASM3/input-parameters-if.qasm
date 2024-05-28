@@ -26,7 +26,6 @@ gate x q { }
 gate rz(phi) q { }
 
 input angle theta = 3.141;
-// CHECK: qcs.declare_parameter @_QX64_5thetaEE_ : !quir.angle<64> = #quir.angle<3.141000e+00> : !quir.angle<64>
 
 x $2;
 rz(theta) $2;
@@ -50,6 +49,9 @@ is_excited = measure $2;
 // CHECK: scf.for %arg0 = %c0 to %c1000 step %c1 {
 // CHECK: [[QUBIT2:%.*]] = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
 // CHECK: [[QUBIT3:%.*]] = quir.declare_qubit {id = 3 : i32} : !quir.qubit<1>
+
+// CHECK: [[PARAM:%.*]] = qcs.parameter_load "theta" : !quir.angle<64> {initialValue = 3.141000e+00 : f64}
+// CHECK: oq3.variable_assign @theta : !quir.angle<64> = [[PARAM]]
 
 // CHECK: [[EXCITED:%.*]] = oq3.variable_load @is_excited : !quir.cbit<1>
 // CHECK: [[CONST:%[0-9a-z_]+]] = arith.constant 1 : i32

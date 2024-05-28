@@ -40,12 +40,12 @@ using InitialValueType = llvm::StringMap<ParameterType>;
 
 class ParameterInitialValueAnalysis {
 private:
-  InitialValueType initial_values_;
+  InitialValueType initialValues_;
   bool invalid_{true};
 
 public:
   ParameterInitialValueAnalysis(mlir::Operation *op);
-  InitialValueType &getNames() { return initial_values_; }
+  InitialValueType &getNames() { return initialValues_; }
   void invalidate() { invalid_ = true; }
   bool isInvalidated(const AnalysisManager::PreservedAnalyses &pa) {
     return invalid_;

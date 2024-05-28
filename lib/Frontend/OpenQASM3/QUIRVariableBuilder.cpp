@@ -23,6 +23,7 @@
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
+#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
@@ -126,6 +127,22 @@ QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
     auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
         location, builder.getType<mlir::quir::AngleType>(64),
         variableName.str());
+
+    double initialValue = 0.0;
+
+    auto constFloatAttr = constantOp.getValue().dyn_cast<mlir::FloatAttr>();
+    if (constFloatAttr) {
+      initialValue = constFloatAttr.getValueAsDouble();
+    } else {
+      auto constAngleAttr =
+          constantOp.getValue().dyn_cast<mlir::quir::AngleAttr>();
+      if (constAngleAttr)
+        initialValue = constAngleAttr.getValue().convertToDouble();
+    }
+
+    mlir::FloatAttr const floatAttr =
+        getClassicalBuilder().getF64FloatAttr(initialValue);
+    op->setAttr("initialValue", floatAttr);
     return op;
   }
 
@@ -134,6 +151,13 @@ QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
           assignedValue.getDefiningOp())) {
     auto loadOp = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
         location, constantOp.getType(), variableName.str());
+    double initialValue = 0.0;
+    auto constAttr = constantOp.getValue().dyn_cast<mlir::FloatAttr>();
+    if (constAttr)
+      initialValue = constAttr.getValueAsDouble();
+    mlir::FloatAttr const floatAttr =
+        getClassicalBuilder().getF64FloatAttr(initialValue);
+    loadOp->setAttr("initialValue", floatAttr);
     return loadOp;
   }
 

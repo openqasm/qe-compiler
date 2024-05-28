@@ -267,7 +267,7 @@ def QCS_DeclareParameterOp : QCS_Op<"declare_parameter", [Symbol]> {
 }
 
 def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
-                        [DeclareOpInterfaceMethods<SymbolUserOpInterface>]> {
+                        []> {
     let summary = "Use the current value of a parameter";
     let description = [{
         The operation `qcs.parameter_load` returns the current value of the
@@ -281,16 +281,12 @@ def QCS_ParameterLoadOp : QCS_Op<"parameter_load",
     }];
 
     let arguments = (ins
-        FlatSymbolRefAttr:$parameter_name
+        StrAttr:$parameter_name
     );
 
     let results = (outs AnyClassical:$res);
 
     let extraClassDeclaration = [{
-        // Return the initial value - using ParameterInitialValueAnalysis
-        ParameterType getInitialValue(llvm::StringMap<ParameterType> &parameterNames);
-
-        // Return the initial value - slower SymbolTable version
         ParameterType getInitialValue();
     }];
 
