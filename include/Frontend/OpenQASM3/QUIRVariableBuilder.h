@@ -67,8 +67,7 @@ public:
                                     mlir::Type type, mlir::Value assignedValue);
 
   mlir::Value generateParameterLoad(mlir::Location location,
-                                    llvm::StringRef variableName,
-                                    double initialValue);
+                                    llvm::StringRef variableName);
 
   /// Generate code for declaring an array (at the builder's current insertion
   /// point).

@@ -840,7 +840,7 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
       if (!assign(pos, param->GetGateParamName())) {
         if (const auto *const ident = param->GetValueIdentifier()) {
           pos = varHandler.generateParameterLoad(getLocation(node),
-                                                 ident->GetName(), 0.0);
+                                                 ident->GetName());
           ssaOtherValues.push_back(pos);
         } else {
           reportError(node, mlir::DiagnosticSeverity::Error)
