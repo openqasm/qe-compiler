@@ -839,11 +839,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
       // must be a normal angle variable use
       if (!assign(pos, param->GetGateParamName())) {
         if (const auto *const ident = param->GetValueIdentifier()) {
-          pos = varHandler.generateVariableUse(getLocation(node), ident);
-          if (pos.getType() != builder.getType<AngleType>(64)) {
-            pos = circuitParentBuilder.create<CastOp>(
-                pos.getLoc(), builder.getType<AngleType>(64), pos);
-          }
+          pos = varHandler.generateParameterLoad(getLocation(node),
+                                                 ident->GetName(), 0.0);
           ssaOtherValues.push_back(pos);
         } else {
           reportError(node, mlir::DiagnosticSeverity::Error)
@@ -1163,7 +1160,7 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
 
     bool genVariableWithVal = true;
 
-    // parameter support currently limited to quir::AngleType
+    // parameter support currently limited to quir::AngleType/Float64Type
     if (node->GetModifierType() == QASM::ASTTypeInputModifier) {
       bool genParameter = true;
       if (!enableParameters) {
@@ -1183,12 +1180,8 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
         genParameter = false;
       }
 
-      if (genParameter) {
-        auto load =
-            varHandler.generateParameterLoad(loc, idNode->GetName(), val);
-        varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
+      if (genParameter)
         genVariableWithVal = false;
-      }
     }
 
     if (genVariableWithVal)
