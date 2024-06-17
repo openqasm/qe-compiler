@@ -117,23 +117,36 @@ void ExtractCircuitsPass::addToCircuit(
     auto *defOp = operand.getDefiningOp();
     auto search = circuitOperands.find(defOp);
     uint argumentIndex = 0;
+    mlir::Value mappedValue;
     if (search == circuitOperands.end()) {
-      argumentIndex = inputValues.size();
-      inputValues.push_back(operand);
-      inputTypes.push_back(operand.getType());
-      circuitOperands[defOp] = argumentIndex;
-      currentCircuitOp.getBody().addArgument(operand.getType(),
-                                             currentOp->getLoc());
-      if (isa<quir::DeclareQubitOp>(defOp)) {
-        auto id = defOp->getAttrOfType<IntegerAttr>("id").getInt();
-        phyiscalIds.push_back(id);
-        argToId[argumentIndex] = id;
+      // Check if we should embed in the circuit
+      auto constantLike = (isa<mlir::quir::ConstantOp>(defOp) ||
+                           isa<qcs::ParameterLoadOp>(defOp));
+      if (constantLike && !mapper.contains(operand)) {
+        auto *newDefOp = circuitBuilder.clone(*defOp, mapper);
+        mappedValue = newDefOp->getResult(0);
+        eraseList.push_back(defOp);
+      } else {
+        // Otherwise we add to the circuit signature
+        argumentIndex = inputValues.size();
+        inputValues.push_back(operand);
+        inputTypes.push_back(operand.getType());
+        circuitOperands[defOp] = argumentIndex;
+        currentCircuitOp.getBody().addArgument(operand.getType(),
+                                               currentOp->getLoc());
+
+        if (isa<quir::DeclareQubitOp>(defOp)) {
+          auto id = defOp->getAttrOfType<IntegerAttr>("id").getInt();
+          phyiscalIds.push_back(id);
+          argToId[argumentIndex] = id;
+        }
+        mappedValue = currentCircuitOp.getArgument(argumentIndex);
       }
     } else {
       argumentIndex = search->second;
+      mappedValue = currentCircuitOp.getArgument(argumentIndex);
     }
-
-    mapper.map(operand, currentCircuitOp.getArgument(argumentIndex));
+    mapper.map(operand, mappedValue);
   }
   auto *newOp = circuitBuilder.clone(*currentOp, mapper);
 
