@@ -126,7 +126,9 @@ void ExtractCircuitsPass::addToCircuit(Operation *currentOp,
           continue;
         auto *newDefOp = circuitBuilder.clone(*defOp, currentCircuitMapper);
         mappedValue = newDefOp->getResult(0);
-        eraseSet.insert(defOp);
+        // May be used multiple times so we must remove all users
+        // before erasing.
+        eraseConstSet.insert(defOp);
       } else {
         // Otherwise we add to the circuit signature
         argumentIndex = inputValues.size();
@@ -157,7 +159,7 @@ void ExtractCircuitsPass::addToCircuit(Operation *currentOp,
   originalResults.append(currentOp->getResults().begin(),
                          currentOp->getResults().end());
 
-  eraseSet.insert(currentOp);
+  eraseOpSet.insert(currentOp);
 }
 
 void ExtractCircuitsPass::endCircuit(Operation *firstOp, Operation *lastOp,
@@ -287,9 +289,14 @@ void ExtractCircuitsPass::runOnOperation() {
   processRegion(mainFunc.getRegion(), builder, builder);
 
   // erase operations
-  for (auto *op : eraseSet) {
-    op->dropAllDefinedValueUses();
-
+  for (auto *op : eraseOpSet) {
+    assert(op->use_empty() && "operation usage expected to be empty");
+    LLVM_DEBUG(llvm::dbgs() << "Erasing: ");
+    LLVM_DEBUG(op->dump());
+    op->erase();
+  }
+  for (auto *op : eraseConstSet) {
+    assert(op->use_empty() && "operation usage expected to be empty");
     LLVM_DEBUG(llvm::dbgs() << "Erasing: ");
     LLVM_DEBUG(op->dump());
     op->erase();

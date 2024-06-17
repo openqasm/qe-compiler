@@ -51,6 +51,7 @@ private:
   void endCircuit(mlir::Operation *firstOp, mlir::Operation *lastOp,
                   OpBuilder topLevelBuilder, OpBuilder circuitBuilder);
   void addToCircuit(mlir::Operation *currentOp, OpBuilder circuitBuilder);
+
   uint64_t circuitCount = 0;
   qssc::utils::SymbolCacheAnalysis *symbolCache{nullptr};
 
@@ -67,7 +68,8 @@ private:
 
   std::unordered_map<Operation *, uint32_t> circuitOperands;
   llvm::SmallVector<OpResult> originalResults;
-  std::set<Operation *> eraseSet;
+  std::set<Operation *> eraseConstSet;
+  std::set<Operation *> eraseOpSet;
 
 }; // struct ExtractCircuitsPass
 } // namespace mlir::quir
