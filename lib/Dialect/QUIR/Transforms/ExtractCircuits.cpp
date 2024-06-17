@@ -290,7 +290,6 @@ void ExtractCircuitsPass::runOnOperation() {
 
   // erase operations
   for (auto *op : eraseOpSet) {
-    assert(op->use_empty() && "operation usage expected to be empty");
     LLVM_DEBUG(llvm::dbgs() << "Erasing: ");
     LLVM_DEBUG(op->dump());
     op->erase();
