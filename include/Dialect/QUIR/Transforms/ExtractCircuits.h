@@ -29,8 +29,7 @@
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 
-#include "llvm/ADT/SmallVector.h"
-
+#include <set>
 #include <unordered_map>
 
 namespace mlir::quir {
@@ -50,10 +49,8 @@ private:
                     OpBuilder circuitBuilder);
   OpBuilder startCircuit(mlir::Location location, OpBuilder topLevelBuilder);
   void endCircuit(mlir::Operation *firstOp, mlir::Operation *lastOp,
-                  OpBuilder topLevelBuilder, OpBuilder circuitBuilder,
-                  llvm::SmallVector<Operation *> &eraseList);
-  void addToCircuit(mlir::Operation *currentOp, OpBuilder circuitBuilder,
-                    llvm::SmallVector<Operation *> &eraseList);
+                  OpBuilder topLevelBuilder, OpBuilder circuitBuilder);
+  void addToCircuit(mlir::Operation *currentOp, OpBuilder circuitBuilder);
   uint64_t circuitCount = 0;
   qssc::utils::SymbolCacheAnalysis *symbolCache{nullptr};
 
@@ -70,6 +67,7 @@ private:
 
   std::unordered_map<Operation *, uint32_t> circuitOperands;
   llvm::SmallVector<OpResult> originalResults;
+  std::set<Operation *> eraseSet;
 
 }; // struct ExtractCircuitsPass
 } // namespace mlir::quir

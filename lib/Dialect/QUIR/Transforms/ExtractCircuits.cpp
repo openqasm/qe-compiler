@@ -107,9 +107,8 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
   return circuitBuilder;
 }
 
-void ExtractCircuitsPass::addToCircuit(
-    Operation *currentOp, OpBuilder circuitBuilder,
-    llvm::SmallVector<Operation *> &eraseList) {
+void ExtractCircuitsPass::addToCircuit(Operation *currentOp,
+                                       OpBuilder circuitBuilder) {
 
   // add operands to circuit input list
   for (auto operand : currentOp->getOperands()) {
@@ -127,7 +126,7 @@ void ExtractCircuitsPass::addToCircuit(
           continue;
         auto *newDefOp = circuitBuilder.clone(*defOp, currentCircuitMapper);
         mappedValue = newDefOp->getResult(0);
-        eraseList.push_back(defOp);
+        eraseSet.insert(defOp);
       } else {
         // Otherwise we add to the circuit signature
         argumentIndex = inputValues.size();
@@ -158,12 +157,12 @@ void ExtractCircuitsPass::addToCircuit(
   originalResults.append(currentOp->getResults().begin(),
                          currentOp->getResults().end());
 
-  eraseList.push_back(currentOp);
+  eraseSet.insert(currentOp);
 }
 
-void ExtractCircuitsPass::endCircuit(
-    Operation *firstOp, Operation *lastOp, OpBuilder topLevelBuilder,
-    OpBuilder circuitBuilder, llvm::SmallVector<Operation *> &eraseList) {
+void ExtractCircuitsPass::endCircuit(Operation *firstOp, Operation *lastOp,
+                                     OpBuilder topLevelBuilder,
+                                     OpBuilder circuitBuilder) {
 
   LLVM_DEBUG(llvm::dbgs() << "Ending circuit " << currentCircuitOp.getSymName()
                           << "\n");
@@ -204,16 +203,6 @@ void ExtractCircuitsPass::endCircuit(
     assert(originalResults[cnt].use_empty() && "usage expected to be empty");
   }
 
-  // erase operations
-  while (!eraseList.empty()) {
-    auto *op = eraseList.back();
-    eraseList.pop_back();
-    assert(op->use_empty() && "operation usage expected to be empty");
-    LLVM_DEBUG(llvm::dbgs() << "Erasing: ");
-    LLVM_DEBUG(op->dump());
-    op->erase();
-  }
-
   currentCircuitOp = nullptr;
 }
 
@@ -227,7 +216,6 @@ void ExtractCircuitsPass::processRegion(mlir::Region &region,
 void ExtractCircuitsPass::processBlock(mlir::Block &block,
                                        OpBuilder topLevelBuilder,
                                        OpBuilder circuitBuilder) {
-  llvm::SmallVector<Operation *> eraseList;
   Operation *firstQuantumOp = nullptr;
   Operation *lastQuantumOp = nullptr;
 
@@ -259,7 +247,7 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
         circuitBuilder =
             startCircuit(firstQuantumOp->getLoc(), topLevelBuilder);
       }
-      addToCircuit(&currentOp, circuitBuilder, eraseList);
+      addToCircuit(&currentOp, circuitBuilder);
       continue;
     }
     if (terminatesCircuit(currentOp)) {
@@ -267,7 +255,7 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
       // progress there is an in progress circuit to be ended.
       if (currentCircuitOp) {
         endCircuit(firstQuantumOp, lastQuantumOp, topLevelBuilder,
-                   circuitBuilder, eraseList);
+                   circuitBuilder);
       }
 
       // handle control flow by recursively calling processBlock for control
@@ -277,10 +265,8 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
     }
   }
   // End of block complete the circuit
-  if (currentCircuitOp) {
-    endCircuit(firstQuantumOp, lastQuantumOp, topLevelBuilder, circuitBuilder,
-               eraseList);
-  }
+  if (currentCircuitOp)
+    endCircuit(firstQuantumOp, lastQuantumOp, topLevelBuilder, circuitBuilder);
 }
 
 void ExtractCircuitsPass::runOnOperation() {
@@ -299,6 +285,16 @@ void ExtractCircuitsPass::runOnOperation() {
 
   auto const builder = OpBuilder(mainFunc);
   processRegion(mainFunc.getRegion(), builder, builder);
+
+  // erase operations
+  for (auto *op : eraseSet) {
+    op->dropAllDefinedValueUses();
+
+    LLVM_DEBUG(llvm::dbgs() << "Erasing: ");
+    LLVM_DEBUG(op->dump());
+    op->erase();
+  }
+
 } // runOnOperation
 
 llvm::StringRef ExtractCircuitsPass::getArgument() const {
