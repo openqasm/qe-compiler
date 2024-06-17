@@ -839,8 +839,8 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
       // must be a normal angle variable use
       if (!assign(pos, param->GetGateParamName())) {
         if (const auto *const ident = param->GetValueIdentifier()) {
-          pos = varHandler.generateParameterLoad(getLocation(node),
-                                                 ident->GetName());
+          pos = varHandler.generateParameterLoad(
+              getLocation(node), ident->GetName(), param->AsDouble());
           ssaOtherValues.push_back(pos);
         } else {
           reportError(node, mlir::DiagnosticSeverity::Error)

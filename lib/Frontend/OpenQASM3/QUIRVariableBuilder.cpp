@@ -122,10 +122,18 @@ void QUIRVariableBuilder::generateParameterDeclaration(
 
 mlir::Value
 QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
-                                           llvm::StringRef variableName) {
+                                           llvm::StringRef variableName,
+                                           double initialValue) {
 
   auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
       location, builder.getType<mlir::quir::AngleType>(64), variableName.str());
+
+  // Only store initial value if it is not zero for performance reasons.
+  if (initialValue != 0.0) {
+    mlir::FloatAttr const floatAttr =
+        getClassicalBuilder().getF64FloatAttr(initialValue);
+    op->setAttr("initialValue", floatAttr);
+  }
 
   return op;
 }
