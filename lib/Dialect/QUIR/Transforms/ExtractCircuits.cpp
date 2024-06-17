@@ -31,7 +31,6 @@
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Block.h"
 #include "mlir/IR/Builders.h"
-#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/Location.h"
 #include "mlir/IR/OpDefinition.h"
 #include "mlir/IR/Operation.h"
@@ -93,6 +92,7 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
                                         topLevelBuilder.getFunctionType(
                                             /*inputs=*/ArrayRef<Type>(),
                                             /*results=*/ArrayRef<Type>()));
+  currentCircuitMapper = IRMapping();
   currentCircuitOp.addEntryBlock();
   symbolCache->addCallee(currentCircuitOp);
 
@@ -111,7 +111,6 @@ void ExtractCircuitsPass::addToCircuit(
     Operation *currentOp, OpBuilder circuitBuilder,
     llvm::SmallVector<Operation *> &eraseList) {
 
-  IRMapping mapper;
   // add operands to circuit input list
   for (auto operand : currentOp->getOperands()) {
     auto *defOp = operand.getDefiningOp();
@@ -122,8 +121,11 @@ void ExtractCircuitsPass::addToCircuit(
       // Check if we should embed in the circuit
       auto constantLike = (isa<mlir::quir::ConstantOp>(defOp) ||
                            isa<qcs::ParameterLoadOp>(defOp));
-      if (constantLike && !mapper.contains(operand)) {
-        auto *newDefOp = circuitBuilder.clone(*defOp, mapper);
+      if (constantLike) {
+        // Don't clone/map if we already have
+        if (currentCircuitMapper.contains(operand))
+          continue;
+        auto *newDefOp = circuitBuilder.clone(*defOp, currentCircuitMapper);
         mappedValue = newDefOp->getResult(0);
         eraseList.push_back(defOp);
       } else {
@@ -146,9 +148,9 @@ void ExtractCircuitsPass::addToCircuit(
       argumentIndex = search->second;
       mappedValue = currentCircuitOp.getArgument(argumentIndex);
     }
-    mapper.map(operand, mappedValue);
+    currentCircuitMapper.map(operand, mappedValue);
   }
-  auto *newOp = circuitBuilder.clone(*currentOp, mapper);
+  auto *newOp = circuitBuilder.clone(*currentOp, currentCircuitMapper);
 
   outputTypes.append(newOp->getResultTypes().begin(),
                      newOp->getResultTypes().end());

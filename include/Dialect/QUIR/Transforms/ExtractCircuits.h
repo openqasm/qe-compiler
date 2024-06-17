@@ -25,6 +25,7 @@
 #include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 
@@ -57,6 +58,7 @@ private:
   qssc::utils::SymbolCacheAnalysis *symbolCache{nullptr};
 
   mlir::quir::CircuitOp currentCircuitOp = nullptr;
+  mlir::IRMapping currentCircuitMapper;
   mlir::quir::CallCircuitOp newCallCircuitOp;
 
   llvm::SmallVector<Type> inputTypes;
