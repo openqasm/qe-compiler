@@ -101,6 +101,7 @@ void QUIRToPulsePass::runOnOperation() {
   moduleOp->walk([&](CallCircuitOp callCircOp) {
     if (isa<CircuitOp>(callCircOp->getParentOp()))
       return;
+
     auto convertedPulseCallSequenceOp =
         convertCircuitToSequence(callCircOp, mainFunc, moduleOp);
 
@@ -290,7 +291,7 @@ void QUIRToPulsePass::processCircuitArgs(
     } else if (argumentType.isa<mlir::quir::QubitType>()) {
       auto *qubitOp = callCircuitOp.getOperand(cnt).getDefiningOp();
     } else
-      llvm_unreachable("unkown circuit argument.");
+      llvm_unreachable("unknown circuit argument.");
   }
 }
 
@@ -343,7 +344,7 @@ void QUIRToPulsePass::processPulseCalArgs(
     } else if (argumentType.isa<FloatType>()) {
       assert(argAttr[index].dyn_cast<StringAttr>().getValue().str() ==
                  "angle" &&
-             "unkown argument.");
+             "unknown argument.");
       assert(angleOperands.size() && "no angle operand found.");
       auto nextAngle = angleOperands.front();
       LLVM_DEBUG(llvm::dbgs() << "angle argument ");
@@ -354,7 +355,7 @@ void QUIRToPulsePass::processPulseCalArgs(
     } else if (argumentType.isa<IntegerType>()) {
       assert(argAttr[index].dyn_cast<StringAttr>().getValue().str() ==
                  "duration" &&
-             "unkown argument.");
+             "unknown argument.");
       assert(durationOperands.size() && "no duration operand found.");
       auto nextDuration = durationOperands.front();
       LLVM_DEBUG(llvm::dbgs() << "duration argument ");
@@ -363,7 +364,7 @@ void QUIRToPulsePass::processPulseCalArgs(
                          pulseCalSequenceArgs, builder);
       durationOperands.pop();
     } else
-      llvm_unreachable("unkown argument type.");
+      llvm_unreachable("unknown argument type.");
   }
 }
 
@@ -383,12 +384,15 @@ void QUIRToPulsePass::getQUIROpClassicalOperands(
   }
 
   for (auto operand : classicalOperands)
-    if (operand.getType().isa<mlir::quir::AngleType>())
+    if (operand.getType().isa<mlir::quir::AngleType>() ||
+        operand.getType().isa<FloatType>())
       angleOperands.push(operand);
     else if (operand.getType().isa<mlir::quir::DurationType>())
       durationOperands.push(operand);
-    else
-      llvm_unreachable("unkown operand.");
+    else {
+      operand.getDefiningOp()->dump();
+      llvm_unreachable("unknown operand.");
+    }
 }
 
 void QUIRToPulsePass::processMixFrameOpArg(
@@ -483,7 +487,12 @@ void QUIRToPulsePass::processAngleArg(Value nextAngleOperand,
   } else if (auto paramOp =
                  nextAngleOperand.getDefiningOp<mlir::qcs::ParameterLoadOp>()) {
     auto *op = paramOp.getOperation();
-    auto newParam = convertAngleToF64(paramOp, entryBuilder);
+    if (classicalQUIROpLocToConvertedPulseOpMap.find(op) ==
+        classicalQUIROpLocToConvertedPulseOpMap.end()) {
+      auto newParamVal = convertAngleToF64(paramOp, entryBuilder);
+      classicalQUIROpLocToConvertedPulseOpMap[op] = newParamVal;
+    }
+
     pulseCalSequenceArgs.push_back(classicalQUIROpLocToConvertedPulseOpMap[op]);
   }
 }
@@ -536,9 +545,9 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
       classicalQUIROpLocToConvertedPulseOpMap[angleOp] = f64Angle;
     } else if (auto castOp = dyn_cast<qcs::ParameterLoadOp>(angleOp)) {
       // Just convert to an f64 directly
-      auto rewriter = IRRewriter(builder);
-      auto newParam = rewriter.replaceOpWithNewOp<qcs::ParameterLoadOp>(
-          angleOp, builder.getF64Type(), castOp.getParameterName());
+      auto newParam = builder.create<qcs::ParameterLoadOp>(
+          angleOp->getLoc(), builder.getF64Type(), castOp.getParameterName());
+
       classicalQUIROpLocToConvertedPulseOpMap[angleOp] = newParam;
     } else if (auto castOp = dyn_cast<oq3::CastOp>(angleOp)) {
       auto castOpArg = castOp.getArg();
@@ -581,7 +590,7 @@ mlir::Value QUIRToPulsePass::convertDurationToI64(
       I64Dur->moveAfter(castOp);
       classicalQUIROpLocToConvertedPulseOpMap[durationOp] = I64Dur;
     } else
-      llvm_unreachable("unkown duration op");
+      llvm_unreachable("unknown duration op");
   }
   return classicalQUIROpLocToConvertedPulseOpMap[durationOp];
 }
