@@ -110,6 +110,8 @@ void QUIRToPulsePass::runOnOperation() {
     callCircOp->erase();
   });
 
+  moduleOp.dump();
+
   // erase circuit ops
   moduleOp->walk([&](CircuitOp circOp) { circOp->erase(); });
 
@@ -389,10 +391,8 @@ void QUIRToPulsePass::getQUIROpClassicalOperands(
       angleOperands.push(operand);
     else if (operand.getType().isa<mlir::quir::DurationType>())
       durationOperands.push(operand);
-    else {
-      operand.getDefiningOp()->dump();
+    else
       llvm_unreachable("unknown operand.");
-    }
 }
 
 void QUIRToPulsePass::processMixFrameOpArg(
@@ -551,6 +551,13 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
       // Just convert to an f64 directly
       auto newParam = builder.create<qcs::ParameterLoadOp>(
           angleOp->getLoc(), builder.getF64Type(), castOp.getParameterName());
+      if (castOp->hasAttr("initialValue")) {
+        auto initAttr = castOp->getAttr("initialValue").dyn_cast<FloatAttr>();
+        if (initAttr)
+          newParam->setAttr("initialValue", initAttr);
+      }
+
+      newParam->moveAfter(castOp);
 
       classicalQUIROpLocToConvertedPulseOpMap[angleOp] = newParam;
     } else if (auto castOp = dyn_cast<oq3::CastOp>(angleOp)) {
