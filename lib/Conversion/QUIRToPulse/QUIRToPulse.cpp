@@ -490,6 +490,10 @@ void QUIRToPulsePass::processAngleArg(Value nextAngleOperand,
     if (classicalQUIROpLocToConvertedPulseOpMap.find(op) ==
         classicalQUIROpLocToConvertedPulseOpMap.end()) {
       auto newParamVal = convertAngleToF64(paramOp, entryBuilder);
+
+      mlir::IRRewriter rewriter(entryBuilder);
+      rewriter.replaceAllUsesWith(nextAngleOperand, newParamVal);
+
       classicalQUIROpLocToConvertedPulseOpMap[op] = newParamVal;
     }
 
