@@ -110,8 +110,6 @@ void QUIRToPulsePass::runOnOperation() {
     callCircOp->erase();
   });
 
-  moduleOp.dump();
-
   // erase circuit ops
   moduleOp->walk([&](CircuitOp circOp) { circOp->erase(); });
 
@@ -489,12 +487,17 @@ void QUIRToPulsePass::processAngleArg(Value nextAngleOperand,
     auto *op = paramOp.getOperation();
     if (classicalQUIROpLocToConvertedPulseOpMap.find(op) ==
         classicalQUIROpLocToConvertedPulseOpMap.end()) {
-      auto newParamVal = convertAngleToF64(paramOp, entryBuilder);
 
-      mlir::IRRewriter rewriter(entryBuilder);
-      rewriter.replaceAllUsesWith(nextAngleOperand, newParamVal);
+      auto newParam = entryBuilder.create<qcs::ParameterLoadOp>(
+          paramOp->getLoc(), entryBuilder.getF64Type(),
+          paramOp.getParameterName());
+      if (paramOp->hasAttr("initialValue")) {
+        auto initAttr = paramOp->getAttr("initialValue").dyn_cast<FloatAttr>();
+        if (initAttr)
+          newParam->setAttr("initialValue", initAttr);
+      }
 
-      classicalQUIROpLocToConvertedPulseOpMap[op] = newParamVal;
+      classicalQUIROpLocToConvertedPulseOpMap[op] = newParam;
     }
 
     pulseCalSequenceArgs.push_back(classicalQUIROpLocToConvertedPulseOpMap[op]);
@@ -556,7 +559,6 @@ mlir::Value QUIRToPulsePass::convertAngleToF64(Operation *angleOp,
         if (initAttr)
           newParam->setAttr("initialValue", initAttr);
       }
-
       newParam->moveAfter(castOp);
 
       classicalQUIROpLocToConvertedPulseOpMap[angleOp] = newParam;
