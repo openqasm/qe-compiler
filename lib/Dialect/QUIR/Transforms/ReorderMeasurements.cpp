@@ -21,6 +21,7 @@
 #include "Dialect/QUIR/Transforms/ReorderMeasurements.h"
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIRInterfaces.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTraits.h"
@@ -85,11 +86,14 @@ bool mayMoveVariableLoadOp(MeasureOp measureOp,
 bool mayMoveCastOp(MeasureOp measureOp, oq3::CastOp castOp,
                    MoveListVec &moveList) {
   bool moveCastOp = false;
-  auto variableLoadOp =
-      dyn_cast<oq3::VariableLoadOp>(castOp.getArg().getDefiningOp());
-  if (variableLoadOp)
+
+  auto definingOp = castOp.getArg().getDefiningOp();
+  if (auto variableLoadOp = dyn_cast<oq3::VariableLoadOp>(definingOp))
     moveCastOp = mayMoveVariableLoadOp(measureOp, variableLoadOp, moveList);
-  auto castMeasureOp = dyn_cast<MeasureOp>(castOp.getArg().getDefiningOp());
+  else if (isa<qcs::ParameterLoadOp>(definingOp))
+    moveCastOp = true;
+
+  auto castMeasureOp = dyn_cast<MeasureOp>(definingOp);
   if (castMeasureOp)
     moveCastOp = ((castMeasureOp != measureOp) &&
                   (castMeasureOp->isBeforeInBlock(measureOp) ||
@@ -168,6 +172,13 @@ struct ReorderMeasureAndNonMeasurePat : public OpRewritePattern<MeasureOp> {
             if (variableLoadOp) {
               moveOps =
                   mayMoveVariableLoadOp(measureOp, variableLoadOp, moveList);
+            }
+
+            // if the defining op is a parameter load op we are are safe
+            // to move
+            if (auto parameterLoadOp = dyn_cast<qcs::ParameterLoadOp>(defOp)) {
+              moveOps = true;
+              moveList.push_back(parameterLoadOp);
             }
 
             auto castOp = dyn_cast<oq3::CastOp>(defOp);
