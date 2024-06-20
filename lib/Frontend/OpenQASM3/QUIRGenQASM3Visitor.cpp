@@ -1145,20 +1145,8 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
   case ASTTypeMPDecimal:
   case ASTTypeMPComplex: {
     switchCircuit(false, getLocation(node));
+
     auto variableType = varHandler.resolveQUIRVariableType(node);
-    auto valOrError = visitAndGetExpressionValue(node->GetExpression());
-
-    varHandler.generateVariableDeclaration(
-        loc, idNode->GetName(), variableType,
-        node->GetModifierType() == QASM::ASTTypeInputModifier,
-        node->GetModifierType() == QASM::ASTTypeOutputModifier);
-
-    if (!valOrError) {
-      assert(hasFailed && "visitAndGetExpressionValue returned error but did "
-                          "not set state to failed.");
-      return;
-    }
-    auto val = valOrError.get();
 
     // generate variable assignment so that they are reinitialized on every
     // shot.
@@ -1189,8 +1177,21 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
         genVariableWithVal = false;
     }
 
-    if (genVariableWithVal)
+    if (genVariableWithVal) {
+      auto valOrError = visitAndGetExpressionValue(node->GetExpression());
+      if (!valOrError) {
+        assert(hasFailed && "visitAndGetExpressionValue returned error but did "
+                            "not set state to failed.");
+        return;
+      }
+      auto val = valOrError.get();
       varHandler.generateVariableAssignment(loc, idNode->GetName(), val);
+
+      varHandler.generateVariableDeclaration(
+          loc, idNode->GetName(), variableType,
+          node->GetModifierType() == QASM::ASTTypeInputModifier,
+          node->GetModifierType() == QASM::ASTTypeOutputModifier);
+    }
 
     return;
   }
