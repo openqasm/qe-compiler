@@ -321,6 +321,9 @@ private:
   mlir::Type getQUIRTypeFromDeclaration(const QASM::ASTDeclarationNode *);
 
   bool enableParametersWarningEmitted = false;
+
+  /// Cached dummy value for error handling
+  mlir::Value voidValue;
 };
 
 } // namespace qssc::frontend::openqasm3

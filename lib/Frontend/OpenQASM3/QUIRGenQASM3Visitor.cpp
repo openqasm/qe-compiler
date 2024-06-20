@@ -1441,7 +1441,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
                         "set state to failed.");
     return rightRefOrError;
   }
-  Value const rightRef = rightRefOrError.get();
+  Value rightRef = rightRefOrError.get();
   return handleAssign(node, rightRef);
 }
 
@@ -1552,6 +1552,7 @@ QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTExpressionNode *node) {
   BaseQASM3Visitor::visit(node);
   if (expression)
     ssaOtherValues.push_back((expression.get()));
+
   return std::move(expression);
 }
 
@@ -2254,7 +2255,12 @@ QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(mlir::Location location) {
-  return {};
+  // Only create void value for error propagation reasons once
+  // to avoid adding many unused operations to the program.
+  if (!voidValue)
+    voidValue = builder.create<mlir::arith::ConstantOp>(
+        location, builder.getZeroAttr(builder.getI1Type()));
+  return voidValue;
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
