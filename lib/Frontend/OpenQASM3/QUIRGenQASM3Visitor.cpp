@@ -1441,7 +1441,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
                         "set state to failed.");
     return rightRefOrError;
   }
-  Value rightRef = rightRefOrError.get();
+  const Value rightRef = rightRefOrError.get();
   return handleAssign(node, rightRef);
 }
 
