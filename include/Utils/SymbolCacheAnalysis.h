@@ -193,7 +193,7 @@ public:
 
 private:
   llvm::StringMap<mlir::Operation *> symbolOpsMap;
-  std::unordered_map<mlir::Operation *, mlir::Operation *> callMap;
+  llvm::DenseMap<mlir::Operation *, mlir::Operation *> callMap;
   std::unordered_set<std::string> cachedTypes;
   mlir::Operation *topOp{nullptr};
   bool invalid{true};
