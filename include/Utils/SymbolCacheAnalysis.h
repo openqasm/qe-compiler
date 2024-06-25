@@ -95,6 +95,8 @@ public:
 
     op->walk([&](CalleeOp op) {
       symbolOpsMap[op.getSymName()] = op.getOperation();
+      // Don't recurse symbols
+      return mlir::WalkResult::skip();
     });
     cachedTypes.insert(typeName);
     invalid = false;
