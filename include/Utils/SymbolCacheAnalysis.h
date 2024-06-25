@@ -49,11 +49,11 @@ namespace qssc::utils {
 //                .addToCache<SequenceOp>();
 //
 // This analysis is intended to be used with MLIR's getAnalysis
-// framework. It has been designed to reused the chached value
+// framework. It has been designed to reuse the cached value
 // and will not be invalidated automatically with each pass.
 // If a pass manipulates the symbols that are cached with this
 // analysis then it should use the addCallee method to update the
-// map or call invalidate after appying updates.
+// map or call invalidate after applying updates.
 // Note this analysis should always be used by reference or
 // via a pointer to ensure that updates are applied to the maps
 // stored by the MLIR analysis framework.
