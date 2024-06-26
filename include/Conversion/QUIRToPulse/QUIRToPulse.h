@@ -127,7 +127,7 @@ struct QUIRToPulsePass
                                    mlir::func::FuncOp &mainFunc);
   // map of the hashed location of quir angle/duration ops to their converted
   // pulse ops
-  std::unordered_map<std::string, mlir::Value>
+  std::unordered_map<Operation *, mlir::Value>
       classicalQUIROpLocToConvertedPulseOpMap;
 
   // port name to Port_CreateOp map

@@ -1,5 +1,5 @@
 OPENQASM 3;
-// RUN: qss-compiler -X=qasm --emit=mlir --enable-parameters --enable-circuits-from-qasm %s | FileCheck %s --check-prefixes=CHECK,CHECK-XX
+// RUN: qss-compiler -X=qasm --emit=mlir --enable-parameters --enable-circuits-from-qasm %s | FileCheck %s --check-prefixes=CHECK
 
 //
 // This code is part of Qiskit.
@@ -66,16 +66,10 @@ c = measure $0;
 // CHECK: %1 = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
 
 // CHECK: %2 = qcs.parameter_load "theta" : !quir.angle<64> {initialValue = 3.141000e+00 : f64}
-// CHECK: oq3.variable_assign @theta : !quir.angle<64> = %2
-// CHECK: %3 = qcs.parameter_load "theta2" : f64 {initialValue = 1.560000e+00 : f64}
-// CHECK: oq3.variable_assign @theta2 : f64 = %3
-// CHECK-XX: quir.reset %0 : !quir.qubit<1>
-// CHECK-NOT: oq3.variable_assign @theta : !quir.angle<64> = %angle
 
-// CHECK: quir.call_circuit @circuit_0(%0, %4) : (!quir.qubit<1>, !quir.angle<64>) -> ()
-// CHECK: %6 = quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> i1
-// CHECK: oq3.cbit_assign_bit @b<1> [0] : i1 = %6
+// CHECK: quir.call_circuit @circuit_0(%0, %2) : (!quir.qubit<1>, !quir.angle<64>) -> ()
+// CHECK: %4 = quir.call_circuit @circuit_1(%0) : (!quir.qubit<1>) -> i1
+// CHECK: oq3.cbit_assign_bit @b<1> [0] : i1 = %4
 
-// CHECK: %7 = oq3.variable_load @theta2 : f64
-// CHECK: %8 = "oq3.cast"(%7) : (f64) -> !quir.angle<64>
-// CHECK: quir.call_circuit @circuit_2(%0, %8) : (!quir.qubit<1>, !quir.angle<64>) -> ()
+// CHECK: %5 = qcs.parameter_load "theta2" : !quir.angle<64> {initialValue = 1.560000e+00 : f64}
+// CHECK: quir.call_circuit @circuit_2(%0, %5) : (!quir.qubit<1>, !quir.angle<64>) -> ()

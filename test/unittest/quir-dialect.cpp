@@ -36,13 +36,13 @@ namespace {
 class QUIRDialect : public ::testing::Test {
 protected:
   mlir::MLIRContext ctx;
-  mlir::UnknownLoc unkownLoc;
+  mlir::UnknownLoc unknownLoc;
   mlir::ModuleOp rootModule;
   mlir::OpBuilder builder;
 
   QUIRDialect()
-      : unkownLoc(mlir::UnknownLoc::get(&ctx)),
-        rootModule(mlir::ModuleOp::create(unkownLoc)), builder(rootModule) {
+      : unknownLoc(mlir::UnknownLoc::get(&ctx)),
+        rootModule(mlir::ModuleOp::create(unknownLoc)), builder(rootModule) {
     mlir::DialectRegistry registry;
     registry.insert<mlir::quir::QUIRDialect>();
     ctx.appendDialectRegistry(registry);
@@ -55,10 +55,10 @@ protected:
 TEST_F(QUIRDialect, CPTPOpTrait) {
 
   auto declareQubitOp = builder.create<mlir::quir::DeclareQubitOp>(
-      unkownLoc, builder.getType<mlir::quir::QubitType>(1),
+      unknownLoc, builder.getType<mlir::quir::QubitType>(1),
       builder.getIntegerAttr(builder.getI32Type(), 0));
   auto reset = builder.create<mlir::quir::ResetQubitOp>(
-      unkownLoc, mlir::ValueRange{declareQubitOp.getResult()});
+      unknownLoc, mlir::ValueRange{declareQubitOp.getResult()});
 
   EXPECT_FALSE(declareQubitOp->hasTrait<mlir::quir::UnitaryOp>());
   EXPECT_FALSE(declareQubitOp->hasTrait<mlir::quir::CPTPOp>());
@@ -73,10 +73,10 @@ TEST_F(QUIRDialect, CPTPOpTrait) {
 TEST_F(QUIRDialect, UnitaryOpTrait) {
 
   auto declareQubitOp = builder.create<mlir::quir::DeclareQubitOp>(
-      unkownLoc, builder.getType<mlir::quir::QubitType>(1),
+      unknownLoc, builder.getType<mlir::quir::QubitType>(1),
       builder.getIntegerAttr(builder.getI32Type(), 0));
   auto barrier = builder.create<mlir::quir::BarrierOp>(
-      unkownLoc, mlir::ValueRange{declareQubitOp.getResult()});
+      unknownLoc, mlir::ValueRange{declareQubitOp.getResult()});
 
   EXPECT_TRUE(barrier->hasTrait<mlir::quir::UnitaryOp>());
   EXPECT_FALSE(barrier->hasTrait<mlir::quir::CPTPOp>());
@@ -88,11 +88,11 @@ TEST_F(QUIRDialect, UnitaryOpTrait) {
 TEST_F(QUIRDialect, MeasureSideEffects) {
 
   auto qubitDecl = builder.create<mlir::quir::DeclareQubitOp>(
-      unkownLoc, builder.getType<mlir::quir::QubitType>(1),
+      unknownLoc, builder.getType<mlir::quir::QubitType>(1),
       builder.getIntegerAttr(builder.getI32Type(), 0));
 
   auto measureOp = builder.create<mlir::quir::MeasureOp>(
-      unkownLoc, builder.getI1Type(), qubitDecl.getRes());
+      unknownLoc, builder.getI1Type(), qubitDecl.getRes());
 
   EXPECT_TRUE(measureOp);
 

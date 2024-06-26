@@ -112,6 +112,7 @@ void QuantumCircuitPulseSchedulingPass::scheduleAlap(
             opEnd = quantumCircuitSequenceOpBlock->rend();
        opIt != opEnd; ++opIt) {
     auto &op = *opIt;
+
     if (auto quantumGateCallSequenceOp =
             dyn_cast<mlir::pulse::CallSequenceOp>(op)) {
       // find quantum gate SequenceOp

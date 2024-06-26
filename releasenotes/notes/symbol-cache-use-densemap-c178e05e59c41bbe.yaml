@@ -1,0 +1,4 @@
+---
+features:
+  - |
+    Symbol cache now uses llvm::DenseMap for performance reasons.
