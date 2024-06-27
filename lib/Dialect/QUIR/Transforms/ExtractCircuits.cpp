@@ -31,12 +31,12 @@
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Block.h"
 #include "mlir/IR/Builders.h"
-#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/Location.h"
 #include "mlir/IR/OpDefinition.h"
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/Region.h"
 #include "mlir/IR/TypeRange.h"
+#include "mlir/IR/Value.h"
 #include "mlir/IR/ValueRange.h"
 #include "mlir/Interfaces/ControlFlowInterfaces.h"
 #include "mlir/Support/LLVM.h"
@@ -93,6 +93,7 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
                                         topLevelBuilder.getFunctionType(
                                             /*inputs=*/ArrayRef<Type>(),
                                             /*results=*/ArrayRef<Type>()));
+  currentCircuitMapper = IRMapping();
   currentCircuitOp.addEntryBlock();
   symbolCache->addCallee(currentCircuitOp);
 
@@ -107,35 +108,51 @@ OpBuilder ExtractCircuitsPass::startCircuit(Location location,
   return circuitBuilder;
 }
 
-void ExtractCircuitsPass::addToCircuit(
-    Operation *currentOp, OpBuilder circuitBuilder,
-    llvm::SmallVector<Operation *> &eraseList) {
+void ExtractCircuitsPass::addToCircuit(Operation *currentOp,
+                                       OpBuilder circuitBuilder) {
 
-  IRMapping mapper;
   // add operands to circuit input list
   for (auto operand : currentOp->getOperands()) {
     auto *defOp = operand.getDefiningOp();
     auto search = circuitOperands.find(defOp);
     uint argumentIndex = 0;
+    mlir::Value mappedValue;
     if (search == circuitOperands.end()) {
-      argumentIndex = inputValues.size();
-      inputValues.push_back(operand);
-      inputTypes.push_back(operand.getType());
-      circuitOperands[defOp] = argumentIndex;
-      currentCircuitOp.getBody().addArgument(operand.getType(),
-                                             currentOp->getLoc());
-      if (isa<quir::DeclareQubitOp>(defOp)) {
-        auto id = defOp->getAttrOfType<IntegerAttr>("id").getInt();
-        phyiscalIds.push_back(id);
-        argToId[argumentIndex] = id;
+      // Check if we should embed in the circuit
+      auto constantLike = (isa<mlir::quir::ConstantOp>(defOp) ||
+                           isa<qcs::ParameterLoadOp>(defOp));
+      if (constantLike) {
+        // Don't clone/map if we already have
+        if (currentCircuitMapper.contains(operand))
+          continue;
+        auto *newDefOp = circuitBuilder.clone(*defOp, currentCircuitMapper);
+        mappedValue = newDefOp->getResult(0);
+        // May be used multiple times so we must remove all users
+        // before erasing.
+        eraseConstSet.insert(defOp);
+      } else {
+        // Otherwise we add to the circuit signature
+        argumentIndex = inputValues.size();
+        inputValues.push_back(operand);
+        inputTypes.push_back(operand.getType());
+        circuitOperands[defOp] = argumentIndex;
+        currentCircuitOp.getBody().addArgument(operand.getType(),
+                                               currentOp->getLoc());
+
+        if (isa<quir::DeclareQubitOp>(defOp)) {
+          auto id = defOp->getAttrOfType<IntegerAttr>("id").getInt();
+          phyiscalIds.push_back(id);
+          argToId[argumentIndex] = id;
+        }
+        mappedValue = currentCircuitOp.getArgument(argumentIndex);
       }
     } else {
       argumentIndex = search->second;
+      mappedValue = currentCircuitOp.getArgument(argumentIndex);
     }
-
-    mapper.map(operand, currentCircuitOp.getArgument(argumentIndex));
+    currentCircuitMapper.map(operand, mappedValue);
   }
-  auto *newOp = circuitBuilder.clone(*currentOp, mapper);
+  auto *newOp = circuitBuilder.clone(*currentOp, currentCircuitMapper);
 
   outputTypes.append(newOp->getResultTypes().begin(),
                      newOp->getResultTypes().end());
@@ -143,12 +160,12 @@ void ExtractCircuitsPass::addToCircuit(
   originalResults.append(currentOp->getResults().begin(),
                          currentOp->getResults().end());
 
-  eraseList.push_back(currentOp);
+  eraseOpSet.insert(currentOp);
 }
 
-void ExtractCircuitsPass::endCircuit(
-    Operation *firstOp, Operation *lastOp, OpBuilder topLevelBuilder,
-    OpBuilder circuitBuilder, llvm::SmallVector<Operation *> &eraseList) {
+void ExtractCircuitsPass::endCircuit(Operation *firstOp, Operation *lastOp,
+                                     OpBuilder topLevelBuilder,
+                                     OpBuilder circuitBuilder) {
 
   LLVM_DEBUG(llvm::dbgs() << "Ending circuit " << currentCircuitOp.getSymName()
                           << "\n");
@@ -189,16 +206,6 @@ void ExtractCircuitsPass::endCircuit(
     assert(originalResults[cnt].use_empty() && "usage expected to be empty");
   }
 
-  // erase operations
-  while (!eraseList.empty()) {
-    auto *op = eraseList.back();
-    eraseList.pop_back();
-    assert(op->use_empty() && "operation usage expected to be empty");
-    LLVM_DEBUG(llvm::dbgs() << "Erasing: ");
-    LLVM_DEBUG(op->dump());
-    op->erase();
-  }
-
   currentCircuitOp = nullptr;
 }
 
@@ -212,7 +219,6 @@ void ExtractCircuitsPass::processRegion(mlir::Region &region,
 void ExtractCircuitsPass::processBlock(mlir::Block &block,
                                        OpBuilder topLevelBuilder,
                                        OpBuilder circuitBuilder) {
-  llvm::SmallVector<Operation *> eraseList;
   Operation *firstQuantumOp = nullptr;
   Operation *lastQuantumOp = nullptr;
 
@@ -244,7 +250,7 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
         circuitBuilder =
             startCircuit(firstQuantumOp->getLoc(), topLevelBuilder);
       }
-      addToCircuit(&currentOp, circuitBuilder, eraseList);
+      addToCircuit(&currentOp, circuitBuilder);
       continue;
     }
     if (terminatesCircuit(currentOp)) {
@@ -252,7 +258,7 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
       // progress there is an in progress circuit to be ended.
       if (currentCircuitOp) {
         endCircuit(firstQuantumOp, lastQuantumOp, topLevelBuilder,
-                   circuitBuilder, eraseList);
+                   circuitBuilder);
       }
 
       // handle control flow by recursively calling processBlock for control
@@ -262,10 +268,8 @@ void ExtractCircuitsPass::processBlock(mlir::Block &block,
     }
   }
   // End of block complete the circuit
-  if (currentCircuitOp) {
-    endCircuit(firstQuantumOp, lastQuantumOp, topLevelBuilder, circuitBuilder,
-               eraseList);
-  }
+  if (currentCircuitOp)
+    endCircuit(firstQuantumOp, lastQuantumOp, topLevelBuilder, circuitBuilder);
 }
 
 void ExtractCircuitsPass::runOnOperation() {
@@ -284,6 +288,20 @@ void ExtractCircuitsPass::runOnOperation() {
 
   auto const builder = OpBuilder(mainFunc);
   processRegion(mainFunc.getRegion(), builder, builder);
+
+  // erase operations
+  for (auto *op : eraseOpSet) {
+    LLVM_DEBUG(llvm::dbgs() << "Erasing: ");
+    LLVM_DEBUG(op->dump());
+    op->erase();
+  }
+  for (auto *op : eraseConstSet) {
+    assert(op->use_empty() && "operation usage expected to be empty");
+    LLVM_DEBUG(llvm::dbgs() << "Erasing: ");
+    LLVM_DEBUG(op->dump());
+    op->erase();
+  }
+
 } // runOnOperation
 
 llvm::StringRef ExtractCircuitsPass::getArgument() const {

@@ -25,11 +25,11 @@
 #include "Utils/SymbolCacheAnalysis.h"
 
 #include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/IRMapping.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/Pass/Pass.h"
 
-#include "llvm/ADT/SmallVector.h"
-
+#include <set>
 #include <unordered_map>
 
 namespace mlir::quir {
@@ -49,14 +49,14 @@ private:
                     OpBuilder circuitBuilder);
   OpBuilder startCircuit(mlir::Location location, OpBuilder topLevelBuilder);
   void endCircuit(mlir::Operation *firstOp, mlir::Operation *lastOp,
-                  OpBuilder topLevelBuilder, OpBuilder circuitBuilder,
-                  llvm::SmallVector<Operation *> &eraseList);
-  void addToCircuit(mlir::Operation *currentOp, OpBuilder circuitBuilder,
-                    llvm::SmallVector<Operation *> &eraseList);
+                  OpBuilder topLevelBuilder, OpBuilder circuitBuilder);
+  void addToCircuit(mlir::Operation *currentOp, OpBuilder circuitBuilder);
+
   uint64_t circuitCount = 0;
   qssc::utils::SymbolCacheAnalysis *symbolCache{nullptr};
 
   mlir::quir::CircuitOp currentCircuitOp = nullptr;
+  mlir::IRMapping currentCircuitMapper;
   mlir::quir::CallCircuitOp newCallCircuitOp;
 
   llvm::SmallVector<Type> inputTypes;
@@ -68,6 +68,8 @@ private:
 
   std::unordered_map<Operation *, uint32_t> circuitOperands;
   llvm::SmallVector<OpResult> originalResults;
+  std::set<Operation *> eraseConstSet;
+  std::set<Operation *> eraseOpSet;
 
 }; // struct ExtractCircuitsPass
 } // namespace mlir::quir

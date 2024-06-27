@@ -28,10 +28,13 @@ func.func @three(%c : memref<1xi1>, %ind : index, %angle_0 : !quir.angle<64>) {
   quir.call_gate @rz(%q1, %angle_0) : (!quir.qubit<1>, !quir.angle<64>) -> ()
   %res1 = quir.measure(%q1) : (!quir.qubit<1>) -> (i1)
   memref.store %res1, %c[%ind] : memref<1xi1>
-  quir.call_gate @rz(%q2, %angle_0) : (!quir.qubit<1>, !quir.angle<64>) -> ()
+  %angle_1 = "qcs.parameter_load"() {parameter_name = "test"} : () -> !quir.angle<64>
+  quir.call_gate @rz(%q2, %angle_1) : (!quir.qubit<1>, !quir.angle<64>) -> ()
   quir.call_gate @sx(%q2) : (!quir.qubit<1>) -> ()
-  quir.call_gate @rz(%q2, %angle_0) : (!quir.qubit<1>, !quir.angle<64>) -> ()
+  %angle_2 = quir.constant #quir.angle<3.0> : !quir.angle<64>
+  quir.call_gate @rz(%q2, %angle_2) : (!quir.qubit<1>, !quir.angle<64>) -> ()
   %res2 = quir.measure(%q2) : (!quir.qubit<1>) -> (i1)
+// CHECK: {{.*}} = quir.constant #quir.angle<3.000000e+00> : !quir.angle<64>
 // CHECK: [[Q00:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // CHECK: [[Q01:%.*]] = quir.declare_qubit {id = 1 : i32} : !quir.qubit<1>
 // CHECK: [[Q02:%.*]] = quir.declare_qubit {id = 2 : i32} : !quir.qubit<1>
@@ -41,7 +44,8 @@ func.func @three(%c : memref<1xi1>, %ind : index, %angle_0 : !quir.angle<64>) {
 // CHECK-NEXT:     quir.call_gate @rz([[Q01]], {{%.*}}) : (!quir.qubit<1>, !quir.angle<64>) -> ()
 // CHECK-NEXT:     quir.call_gate @sx([[Q01]]) : (!quir.qubit<1>) -> ()
 // CHECK-NEXT:     quir.call_gate @rz([[Q01]], {{%.*}}) : (!quir.qubit<1>, !quir.angle<64>) -> ()
-// CHECK-NEXT:     quir.call_gate @rz([[Q02]], {{%.*}}) : (!quir.qubit<1>, !quir.angle<64>) -> ()
+// CHECK-NEXT:     [[ANGLE:%.*]] = qcs.parameter_load "test" : !quir.angle<64>
+// CHECK-NEXT:     quir.call_gate @rz([[Q02]], [[ANGLE]]) : (!quir.qubit<1>, !quir.angle<64>) -> ()
 // CHECK-NEXT:     quir.call_gate @sx([[Q02]]) : (!quir.qubit<1>) -> ()
 // CHECK-NEXT:     quir.call_gate @rz([[Q02]], {{%.*}}) : (!quir.qubit<1>, !quir.angle<64>) -> ()
 // CHECK-NEXT:     [[RES00:%.*]] = quir.measure([[Q00]]) : (!quir.qubit<1>) -> i1

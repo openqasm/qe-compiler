@@ -7,4 +7,4 @@ requirements:
   - pybind11/2.11.1
   - clang-tools-extra/17.0.5-0@
   - llvm/17.0.5-0@
-  - qasm/0.3.2@qss/stable
+  - qasm/0.3.3@qss/stable

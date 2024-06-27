@@ -23,7 +23,6 @@
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 #include "Dialect/QCS/IR/QCSOps.h"
-#include "Dialect/QUIR/IR/QUIRAttributes.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 #include "Dialect/QUIR/IR/QUIRTypes.h"
 
@@ -54,6 +53,11 @@ void QUIRVariableBuilder::generateVariableDeclaration(
     mlir::Location location, llvm::StringRef variableName, mlir::Type type,
     bool isInputVariable, bool isOutputVariable) {
 
+  // Input variables are not used as parameter loads replace them
+  // for performance reasons.
+  // TODO: Replace many parameters with array accesses.
+  if (isInputVariable)
+    return;
   // variables are symbols and thus need to be placed directly in a surrounding
   // Op that contains a symbol table.
   mlir::OpBuilder::InsertionGuard const g(builder);
@@ -73,8 +77,6 @@ void QUIRVariableBuilder::generateVariableDeclaration(
 
   lastDeclaration[surroundingModuleOp] = declareOp; // save this to insert after
 
-  if (isInputVariable)
-    declareOp.setInputAttr(builder.getUnitAttr());
   if (isOutputVariable)
     declareOp.setOutputAttr(builder.getUnitAttr());
   variables.emplace(variableName.str(), type);
@@ -120,49 +122,19 @@ void QUIRVariableBuilder::generateParameterDeclaration(
 mlir::Value
 QUIRVariableBuilder::generateParameterLoad(mlir::Location location,
                                            llvm::StringRef variableName,
-                                           mlir::Value assignedValue) {
+                                           double initialValue) {
 
-  if (auto constantOp = mlir::dyn_cast<mlir::quir::ConstantOp>(
-          assignedValue.getDefiningOp())) {
-    auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
-        location, builder.getType<mlir::quir::AngleType>(64),
-        variableName.str());
+  auto op = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
+      location, builder.getType<mlir::quir::AngleType>(64), variableName.str());
 
-    double initialValue = 0.0;
-
-    auto constFloatAttr = constantOp.getValue().dyn_cast<mlir::FloatAttr>();
-    if (constFloatAttr) {
-      initialValue = constFloatAttr.getValueAsDouble();
-    } else {
-      auto constAngleAttr =
-          constantOp.getValue().dyn_cast<mlir::quir::AngleAttr>();
-      if (constAngleAttr)
-        initialValue = constAngleAttr.getValue().convertToDouble();
-    }
-
+  // Only store initial value if it is not zero for performance reasons.
+  if (initialValue != 0.0) {
     mlir::FloatAttr const floatAttr =
         getClassicalBuilder().getF64FloatAttr(initialValue);
     op->setAttr("initialValue", floatAttr);
-    return op;
   }
 
-  // if the source is a arith::ConstantOp cast to angle
-  if (auto constantOp = mlir::dyn_cast<mlir::arith::ConstantOp>(
-          assignedValue.getDefiningOp())) {
-    auto loadOp = getClassicalBuilder().create<mlir::qcs::ParameterLoadOp>(
-        location, constantOp.getType(), variableName.str());
-    double initialValue = 0.0;
-    auto constAttr = constantOp.getValue().dyn_cast<mlir::FloatAttr>();
-    if (constAttr)
-      initialValue = constAttr.getValueAsDouble();
-    mlir::FloatAttr const floatAttr =
-        getClassicalBuilder().getF64FloatAttr(initialValue);
-    loadOp->setAttr("initialValue", floatAttr);
-    return loadOp;
-  }
-
-  llvm_unreachable(
-      "Unsupported defining value operation for parameter variable");
+  return op;
 }
 
 void QUIRVariableBuilder::generateArrayVariableDeclaration(

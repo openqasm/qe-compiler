@@ -23,74 +23,45 @@
 
 #include "Dialect/OQ3/IR/OQ3Ops.h"
 
-#include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/SymbolTable.h"
+#include "mlir/IR/Visitors.h"
 #include "mlir/Support/LLVM.h"
-#include "mlir/Support/LogicalResult.h"
 #include "mlir/Transforms/DialectConversion.h"
-#include "mlir/Transforms/GreedyPatternRewriteDriver.h"
 
 #include "llvm/ADT/StringRef.h"
-
-#include <utility>
 
 using namespace mlir;
 using namespace quir;
 using namespace oq3;
 
-namespace {
-/// This pattern matches on variable declarations that are not marked 'output'
-/// and are not followed by a use of the same variable, and removes them
-struct UnusedVariablePat : public OpRewritePattern<DeclareVariableOp> {
-  UnusedVariablePat(MLIRContext *context, mlir::SymbolUserMap &symbolUses)
-      : OpRewritePattern<DeclareVariableOp>(context, /*benefit=*/1),
-        symbolUses(symbolUses) {}
-  mlir::SymbolUserMap &symbolUses;
-  LogicalResult
-  matchAndRewrite(DeclareVariableOp declOp,
-                  mlir::PatternRewriter &rewriter) const override {
+///
+/// \brief Entry point for the pass.
+void UnusedVariablePass::runOnOperation() {
+  mlir::SymbolTableCollection symbolTable;
+  mlir::SymbolUserMap symbolUsers(symbolTable, getOperation());
+
+  getOperation()->walk([&](DeclareVariableOp declOp) {
     if (declOp.isOutputVariable())
-      return failure();
+      return mlir::WalkResult::advance();
 
     // iterate through uses
-    for (auto *useOp : symbolUses.getUsers(declOp)) {
+    for (auto *useOp : symbolUsers.getUsers(declOp)) {
       if (auto useVariable = dyn_cast<VariableLoadOp>(useOp)) {
         if (!useVariable || !useVariable.use_empty())
-          return failure();
+          return mlir::WalkResult::advance();
       }
     }
 
     // No uses found, so now we can erase all references (just stores) and the
     // declaration
-    for (auto *useOp : symbolUses.getUsers(declOp))
-      rewriter.eraseOp(useOp);
+    for (auto *useOp : symbolUsers.getUsers(declOp))
+      useOp->erase();
+    ;
 
-    rewriter.eraseOp(declOp);
-    return success();
-  } // matchAndRewrite
+    declOp->erase();
 
-}; // struct UnusedVariablePat
-} // anonymous namespace
-
-///
-/// \brief Entry point for the pass.
-void UnusedVariablePass::runOnOperation() {
-  RewritePatternSet patterns(&getContext());
-  mlir::GreedyRewriteConfig config;
-  mlir::SymbolTableCollection symbolTable;
-  mlir::SymbolUserMap symbolUsers(symbolTable, getOperation());
-
-  // use cheaper top-down traversal (in this case, bottom-up would not behave
-  // any differently)
-  config.useTopDownTraversal = true;
-  // Disable to improve performance
-  config.enableRegionSimplification = false;
-
-  patterns.add<UnusedVariablePat>(&getContext(), symbolUsers);
-
-  if (failed(applyPatternsAndFoldGreedily(getOperation(), std::move(patterns),
-                                          config)))
-    signalPassFailure();
+    return mlir::WalkResult::advance();
+  });
 }
 
 llvm::StringRef UnusedVariablePass::getArgument() const {

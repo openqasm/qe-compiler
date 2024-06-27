@@ -380,8 +380,9 @@ LogicalResult verifyClassical_(CircuitOp op) {
   mlir::Operation *classicalOp = nullptr;
   WalkResult const result = op->walk([&](Operation *subOp) {
     if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
-        isa<CallCircuitOp>(subOp) || isa<quir::ReturnOp>(subOp) ||
-        isa<CircuitOp>(subOp) || subOp->hasTrait<mlir::quir::UnitaryOp>() ||
+        isa<qcs::ParameterLoadOp>(subOp) || isa<CallCircuitOp>(subOp) ||
+        isa<quir::ReturnOp>(subOp) || isa<CircuitOp>(subOp) ||
+        subOp->hasTrait<mlir::quir::UnitaryOp>() ||
         subOp->hasTrait<mlir::quir::CPTPOp>())
       return WalkResult::advance();
     classicalOp = subOp;

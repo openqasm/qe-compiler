@@ -58,7 +58,6 @@ bit is_excited;
 
 // CHECK: func.func @main() -> i32 {
 // CHECK: scf.for %arg0 = %c0 to %c1000 step %c1 {
-// CHECK: {{.*}} = qcs.parameter_load "theta" : !quir.angle<64> {initialValue = 3.141000e+00 : f64}
 // CHECK: [[QUBIT:%.*]] = quir.declare_qubit {id = 0 : i32} : !quir.qubit<1>
 // CHECK: scf.while : () -> () {
 // CHECK:    [[N:%.*]] = oq3.variable_load @n : i32
@@ -76,7 +75,7 @@ while (n != 0) {
 
     // CHECK: scf.if [[COND2]] {
     if (is_excited) {
-        // CHECK:  [[THETA:%.*]] = oq3.variable_load @theta : !quir.angle<64>
+        // CHECK: [[THETA:%.*]] = qcs.parameter_load "theta" : !quir.angle<64> {initialValue = 3.141000e+00 : f64}
         // CHECK:  quir.call_circuit @circuit_2([[QUBIT]], [[THETA]]) : (!quir.qubit<1>, !quir.angle<64>) -> ()
         // CHECK: }
         h $0;
