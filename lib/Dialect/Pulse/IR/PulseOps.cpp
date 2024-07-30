@@ -17,6 +17,7 @@
 #include "Dialect/Pulse/IR/PulseOps.h"
 
 #include "Dialect/Pulse/IR/PulseTraits.h"
+#include "Dialect/QCS/IR/QCSOps.h"
 #include "Dialect/QUIR/IR/QUIROps.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
@@ -356,8 +357,9 @@ LogicalResult verifyClassical_(SequenceOp op) {
   mlir::Operation *classicalOp = nullptr;
   WalkResult const result = op->walk([&](Operation *subOp) {
     if (isa<mlir::arith::ConstantOp>(subOp) || isa<quir::ConstantOp>(subOp) ||
-        isa<CallSequenceOp>(subOp) || isa<pulse::ReturnOp>(subOp) ||
-        isa<SequenceOp>(subOp) || isa<mlir::complex::CreateOp>(subOp) ||
+        isa<qcs::ParameterLoadOp>(subOp) || isa<CallSequenceOp>(subOp) ||
+        isa<pulse::ReturnOp>(subOp) || isa<SequenceOp>(subOp) ||
+        isa<mlir::complex::CreateOp>(subOp) ||
         subOp->hasTrait<mlir::pulse::SequenceAllowed>() ||
         subOp->hasTrait<mlir::pulse::SequenceRequired>())
       return WalkResult::advance();

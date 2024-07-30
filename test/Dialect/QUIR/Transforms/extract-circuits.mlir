@@ -18,8 +18,8 @@ module {
     return
   }
   // CHECK: quir.circuit @circuit_0
-  // CHECK: quir.delay %arg0, (%arg1)
-  // CHECK: %0:2 = quir.measure(%arg2, %arg3)
+  // CHECK: quir.delay %dur, (%arg0)
+  // CHECK: %0:2 = quir.measure(%arg1, %arg2)
   // CHECK: quir.return %0#0, %0#1 : i1, i1
   // CHECK: quir.circuit @circuit_1
   // CHECK: quir.call_gate @x(%arg0)
@@ -47,7 +47,7 @@ module {
       %4:2 = quir.measure(%0, %2) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
       // CHECK-NOT: quir.delay %dur_0, (%1) : !quir.duration<dt>, (!quir.qubit<1>) -> ()
       // CHECK-NOT: %4:2 = quir.measure(%0, %2) : (!quir.qubit<1>, !quir.qubit<1>) -> (i1, i1)
-      // CHECK: %4:2 = quir.call_circuit @circuit_0(%dur_0, %1, %0, %2)
+      // CHECK: %4:2 = quir.call_circuit @circuit_0(%1, %0, %2)
       qcs.parallel_control_flow {
       // CHECK: qcs.parallel_control_flow
       scf.if %4#0 {

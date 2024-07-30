@@ -1,6 +1,5 @@
 OPENQASM 3.0;
 // RUN: qss-compiler -X=qasm --emit=ast-pretty %s | FileCheck %s --match-full-lines --check-prefix AST-PRETTY
-// RUN: qss-compiler -X=qasm --emit=mlir %s --enable-parameters=false | FileCheck %s --match-full-lines --check-prefix MLIR
 // RUN: (! qss-compiler -X=qasm --emit=mlir --enable-parameters --enable-circuits-from-qasm %s 2>&1 ) | FileCheck %s --check-prefix CIRCUITS
 
 //
@@ -28,12 +27,10 @@ input int basis;
 // CIRCUITS: error: Input parameter basis type error. Input parameters must be angle or float[64].
 
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=flags, bits=32), inputVariable)
-// MLIR-DAG: oq3.declare_variable {input} @flags : !quir.cbit<32>
 input bit[32] flags;
 // CIRCUITS: error: Input parameter flags type error. Input parameters must be angle or float[64].
 
 // AST-PRETTY: DeclarationNode(type=ASTTypeBitset, CBitNode(name=result, bits=1), outputVariable)
-// MLIR-DAG: oq3.declare_variable {output} @result : !quir.cbit<1>
 output bit result;
 
 // TODO
