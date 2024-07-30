@@ -152,7 +152,7 @@ void LoadPulseCalsPass::loadPulseCals(CallCircuitOp callCircuitOp,
       LLVM_DEBUG(llvm::dbgs() << "no pulse cal loading needed for " << op);
       assert((!op->hasTrait<mlir::quir::UnitaryOp>() and
               !op->hasTrait<mlir::quir::CPTPOp>()) &&
-             "unkown operation");
+             "unknown operation");
     }
   });
 }
