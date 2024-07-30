@@ -1,0 +1,11 @@
+---
+features:
+  - |
+    Handling of ``qcs.parameter_load`` operations has been modified to be more direct
+    with reads straight from the angle variables. This brings significant performance enhancements
+    as a large number of MLIR operations have been removed. The consequence is that if an OpenQASM 3
+    input parameter value is written to this value will not be dynamically resolved. This could be
+    fixed in later versions of the compiler by using memref like semantics for parameters.
+fixes:
+  - |
+    Significant performance enhancements for both constant and parameter gate angles.

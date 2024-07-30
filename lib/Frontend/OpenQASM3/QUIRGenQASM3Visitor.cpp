@@ -839,11 +839,13 @@ ExpressionValueType QUIRGenQASM3Visitor::visit_(const ASTGateNode *node) {
       // must be a normal angle variable use
       if (!assign(pos, param->GetGateParamName())) {
         if (const auto *const ident = param->GetValueIdentifier()) {
-          pos = varHandler.generateVariableUse(getLocation(node), ident);
-          if (pos.getType() != builder.getType<AngleType>(64)) {
-            pos = circuitParentBuilder.create<CastOp>(
-                pos.getLoc(), builder.getType<AngleType>(64), pos);
-          }
+
+          double initialValue = 0.0;
+          if (param->IsNumber())
+            initialValue = param->AsDouble();
+
+          pos = varHandler.generateParameterLoad(
+              getLocation(node), ident->GetName(), initialValue);
           ssaOtherValues.push_back(pos);
         } else {
           reportError(node, mlir::DiagnosticSeverity::Error)
@@ -1143,27 +1145,15 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
   case ASTTypeMPDecimal:
   case ASTTypeMPComplex: {
     switchCircuit(false, getLocation(node));
+
     auto variableType = varHandler.resolveQUIRVariableType(node);
-    auto valOrError = visitAndGetExpressionValue(node->GetExpression());
-
-    varHandler.generateVariableDeclaration(
-        loc, idNode->GetName(), variableType,
-        node->GetModifierType() == QASM::ASTTypeInputModifier,
-        node->GetModifierType() == QASM::ASTTypeOutputModifier);
-
-    if (!valOrError) {
-      assert(hasFailed && "visitAndGetExpressionValue returned error but did "
-                          "not set state to failed.");
-      return;
-    }
-    auto val = valOrError.get();
 
     // generate variable assignment so that they are reinitialized on every
     // shot.
 
     bool genVariableWithVal = true;
 
-    // parameter support currently limited to quir::AngleType
+    // parameter support currently limited to quir::AngleType/Float64Type
     if (node->GetModifierType() == QASM::ASTTypeInputModifier) {
       bool genParameter = true;
       if (!enableParameters) {
@@ -1183,16 +1173,25 @@ void QUIRGenQASM3Visitor::visit(const ASTDeclarationNode *node) {
         genParameter = false;
       }
 
-      if (genParameter) {
-        auto load =
-            varHandler.generateParameterLoad(loc, idNode->GetName(), val);
-        varHandler.generateVariableAssignment(loc, idNode->GetName(), load);
+      if (genParameter)
         genVariableWithVal = false;
-      }
     }
 
-    if (genVariableWithVal)
+    if (genVariableWithVal) {
+      auto valOrError = visitAndGetExpressionValue(node->GetExpression());
+      if (!valOrError) {
+        assert(hasFailed && "visitAndGetExpressionValue returned error but did "
+                            "not set state to failed.");
+        return;
+      }
+      auto val = valOrError.get();
       varHandler.generateVariableAssignment(loc, idNode->GetName(), val);
+
+      varHandler.generateVariableDeclaration(
+          loc, idNode->GetName(), variableType,
+          node->GetModifierType() == QASM::ASTTypeInputModifier,
+          node->GetModifierType() == QASM::ASTTypeOutputModifier);
+    }
 
     return;
   }
@@ -1442,7 +1441,7 @@ QUIRGenQASM3Visitor::handleAssign(const ASTBinaryOpNode *node) {
                         "set state to failed.");
     return rightRefOrError;
   }
-  Value const rightRef = rightRefOrError.get();
+  const Value rightRef = rightRefOrError.get();
   return handleAssign(node, rightRef);
 }
 
@@ -1553,6 +1552,7 @@ QUIRGenQASM3Visitor::visitAndGetExpressionValue(const ASTExpressionNode *node) {
   BaseQASM3Visitor::visit(node);
   if (expression)
     ssaOtherValues.push_back((expression.get()));
+
   return std::move(expression);
 }
 
@@ -2255,8 +2255,12 @@ QUIRGenQASM3Visitor::visit_(const ASTCastExpressionNode *node) {
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(mlir::Location location) {
-  return builder.create<mlir::arith::ConstantOp>(
-      location, builder.getZeroAttr(builder.getI1Type()));
+  // Only create void value for error propagation reasons once
+  // to avoid adding many unused operations to the program.
+  if (!voidValue)
+    voidValue = builder.create<mlir::arith::ConstantOp>(
+        location, builder.getZeroAttr(builder.getI1Type()));
+  return voidValue;
 }
 
 mlir::Value QUIRGenQASM3Visitor::createVoidValue(QASM::ASTBase const *node) {
