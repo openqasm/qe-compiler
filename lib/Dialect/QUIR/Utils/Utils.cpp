@@ -97,7 +97,8 @@ auto getMainFunction(Operation *moduleOperation) -> Operation * {
       mainFunc = funcOp.getOperation();
       return WalkResult::interrupt();
     }
-    return WalkResult::advance();
+    // Don't process nested values
+    return WalkResult::skip();
   });
   if (!mainFunc)
     llvm::errs() << "Error: Main function not found!\n";
