@@ -247,6 +247,7 @@ list(APPEND RUN_CLANG_TIDY_BIN_ARGS
     -clang-tidy-binary ${CLANG_TIDY_BIN}
     -clang-apply-replacements-binary ${CLANG_AR_BIN}
     -style=file
+    -config-file="${CMAKE_CURRENT_SOURCE_DIR}/.clang-tidy"
     # Limit clang-tidy to project headers
     -header-filter="${CMAKE_SOURCE_DIR}/*.h"
     -quiet
