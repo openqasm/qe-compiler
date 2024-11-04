@@ -37,6 +37,10 @@ To build:
 3. Export local Conan recipe dependencies to Conan: `./conan_deps.sh`
 4. `mkdir build && cd build`
 5. Install Conan dependencies: `conan install .. --build=outdated -pr:h default -pr:b default`
+(In case you see https://github.com/openqasm/qe-compiler/issues/309#issuecomment-2455022632 which is seems to not able to detect your compiler version. Check this issue https://github.com/conan-io/conan/issues/11444
+   
+    To eliminate this , we make a sure a new default profile is setup by running the command.
+     `conan profile new default --detect --force`).
 6. Invoke the build with Conan: `conan build ..`. This will build the compiler.
 7. To run tests: `conan build .. --test`
 
