@@ -36,13 +36,10 @@ To build:
 2. Install Python dependencies: `pip install -r requirements-dev.txt`
 3. Export local Conan recipe dependencies to Conan: `./conan_deps.sh`
 4. `mkdir build && cd build`
-5. Install Conan dependencies: `conan install .. --build=outdated -pr:h default -pr:b default`
-(In case you see https://github.com/openqasm/qe-compiler/issues/309#issuecomment-2455022632 which is seems to not able to detect your compiler version. Check this issue https://github.com/conan-io/conan/issues/11444
-   
-    To eliminate this , we make a sure a new default profile is setup by running the command.
-     `conan profile new default --detect --force`).
-6. Invoke the build with Conan: `conan build ..`. This will build the compiler.
-7. To run tests: `conan build .. --test`
+5. If installing Conan for the first time, create a new profile `conan profile new default --detect`
+6. Install Conan dependencies: `conan install .. --build=outdated -pr:h default -pr:b default`
+7. Invoke the build with Conan: `conan build ..`. This will build the compiler.
+8. To run tests: `conan build .. --test`
 
 Alternatively instead of steps 6/7, you can build directly with CMake (also from within the build folder):
 1. Configure - `cmake -G Ninja -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE="Release" ..`
